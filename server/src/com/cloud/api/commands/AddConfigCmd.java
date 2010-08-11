@@ -78,6 +78,7 @@ public class AddConfigCmd extends BaseCmd {
 		catch (Exception ex) {
 			s_logger.error("Exception adding config value: ", ex);
 			throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add config value : " + ex.getMessage());
+			//test
 		}
 
     }
