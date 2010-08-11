@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="taglets/demo/custom/src"/>
-	<classpathentry kind="src" path="taglets/demo/extended/src"/>
-	<classpathentry kind="src" path="taglets/demo/simple/src"/>
 	<classpathentry kind="lib" path="ant/apache-ant-1.7.1/etc/ant-bootstrap.jar"/>
 	<classpathentry kind="lib" path="ant/apache-ant-1.7.1/lib/ant-antlr.jar"/>
 	<classpathentry kind="lib" path="ant/apache-ant-1.7.1/lib/ant-apache-bcel.jar"/>
@@ -31,12 +28,6 @@
 	<classpathentry kind="lib" path="ant/apache-ant-1.7.1/lib/ant.jar"/>
 	<classpathentry kind="lib" path="ant/apache-ant-1.7.1/lib/xercesImpl.jar"/>
 	<classpathentry kind="lib" path="ant/apache-ant-1.7.1/lib/xml-apis.jar"/>
-	<classpathentry kind="lib" path="pdfdoclet/iText-2.1.5.jar"/>
-	<classpathentry kind="lib" path="pdfdoclet/pdfdoclet-1.0.2-all.jar"/>
-	<classpathentry kind="lib" path="taglets/demo/regex/regex.jar"/>
-	<classpathentry kind="lib" path="taglets/taglets-javadoc.jar"/>
-	<classpathentry kind="lib" path="taglets/taglets-sources.jar"/>
-	<classpathentry kind="lib" path="taglets/taglets.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
