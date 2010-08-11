@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Copyright 2008 Cloud.Com Inc. All Rights Reserved -->
 
+<!-- docs -->
 <project name="Cloud.com Cloud Stack Build Dispatch" default="help" basedir=".">
     <description>
         This is the overall dispatch file.  It includes other build
