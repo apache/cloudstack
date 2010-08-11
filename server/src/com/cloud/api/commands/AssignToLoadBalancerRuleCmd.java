@@ -46,13 +46,6 @@ public class AssignToLoadBalancerRuleCmd extends BaseCmd {
     @Parameter(name="virtualmachineids", type=CommandType.LIST, collectionType=CommandType.LONG, required=false)
     private List<Long> virtualMachineIds;
 
-    @Parameter(name="account", type=CommandType.STRING, required=false)
-    private String accountName;
-
-    @Parameter(name="domainid", type=CommandType.LONG, required=false)
-    private Long domainId;
-
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -69,14 +62,6 @@ public class AssignToLoadBalancerRuleCmd extends BaseCmd {
         return virtualMachineIds;
     }
 
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -88,32 +73,8 @@ public class AssignToLoadBalancerRuleCmd extends BaseCmd {
     /*
     @Override
     public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        String accountName = (String)params.get(BaseCmd.Properties.ACCOUNT.getName());
-        Long domainId = (Long)params.get(BaseCmd.Properties.DOMAIN_ID.getName());
-        Long loadBalancerId = (Long)params.get(BaseCmd.Properties.ID.getName());
-        Long instanceId = (Long)params.get(BaseCmd.Properties.VIRTUAL_MACHINE_ID.getName());
-        String instanceIds = (String)params.get(BaseCmd.Properties.VIRTUAL_MACHINE_IDS.getName());
-
         if ((instanceId == null) && (instanceIds == null)) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "No virtual machine id (or list if ids) specified.");
-        }
-
-        List<Long> instanceIdList = new ArrayList<Long>();
-        if (instanceIds != null) {
-            StringTokenizer st = new StringTokenizer(instanceIds, ",");
-            while (st.hasMoreTokens()) {
-                String token = st.nextToken();
-                try {
-                    Long nextInstanceId = Long.parseLong(token);
-                    instanceIdList.add(nextInstanceId);
-                } catch (NumberFormatException nfe) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "The virtual machine id " + token + " is not a valid parameter.");
-                }
-            }
-        } else {
-            instanceIdList.add(instanceId);
         }
 
         if (account == null) {
@@ -136,22 +97,7 @@ public class AssignToLoadBalancerRuleCmd extends BaseCmd {
             }
         }
 
-        Map<String, String> paramMap = new HashMap<String, String>();
-        for (String key : params.keySet()) {
-            paramMap.put(key, (String)params.get(key));
-        }
         long jobId = getManagementServer().assignToLoadBalancerAsync(paramMap);
-
-        if (jobId == 0) {
-        	s_logger.warn("Unable to schedule async-job for AssignToLoadBalancerRule comamnd");
-        } else {
-	        if(s_logger.isDebugEnabled())
-	        	s_logger.debug("AssignToLoadBalancerRule command has been accepted, job id: " + jobId);
-        }
-
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-        return returnValues;
     }
         */
 

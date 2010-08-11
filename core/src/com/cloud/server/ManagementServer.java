@@ -2167,18 +2167,6 @@ public interface ManagementServer {
 	
 	public String getNetworkGroupsNamesForVm(long vmId);
 	
-	/**
-	 * Persists the Event as a completed event.
-	 * @return EventId of the persisted event
-	 */
-	public Long saveEvent(Long userId, Long accountId, String level, String type, String description, String params, long startEventId);
-	
-	/**
-	 * Persists the Event as a Started event.
-	 * @return EventId of the persisted event
-	 */
-	public Long saveStartedEvent(Long userId, Long accountId, String type, String description, long startEventId);
-	
 	boolean checkLocalStorageConfigVal(); 
 	
 	boolean addConfig(String instance, String component, String category, String name, String value, String description);

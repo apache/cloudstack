@@ -78,6 +78,7 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
@@ -116,6 +117,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
+import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
@@ -1508,9 +1510,10 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                 cmds[i++] = cmd;
             }
         }
-        final Answer [] answers = null;
+
+        Answer [] answers = null;
         try {
-            _agentMgr.send(hostId, cmds, false);
+        	answers = _agentMgr.send(hostId, cmds, false);
         } catch (final AgentUnavailableException e) {
             s_logger.warn("agent unavailable", e);
         } catch (final OperationTimedoutException e) {
@@ -1538,27 +1541,37 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         Long instanceIdParam = cmd.getVirtualMachineId();
         List<Long> instanceIds = cmd.getVirtualMachineIds();
 
-        // FIXME:  do validation similar to what was done in AssignToLoadBalancerRuleCmd.execute()
+        if ((instanceIdParam == null) && (instanceIds == null)) {
+        	throw new InvalidParameterValueException("Unable to assign to load balancer " + loadBalancerId + ", no instance id is specified.");
+        }
+
         if ((instanceIds == null) && (instanceIdParam != null)) {
             instanceIds = new ArrayList<Long>();
             instanceIds.add(instanceIdParam);
         }
 
-        // FIXME:  use these parameters for permission check...
-        String accountName = cmd.getAccountName();
-        Long domainId = cmd.getDomainId();
+        LoadBalancerVO loadBalancer = _loadBalancerDao.findById(loadBalancerId);
+        if (loadBalancer == null) {
+        	throw new InvalidParameterValueException("Failed to assign to load balancer " + loadBalancerId + ", the load balancer was not found.");
+        }
+
+        // Permission check...
+        Account account = (Account)UserContext.current().getAccountObject();
+        if (account != null) {
+        	if ((account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN)) {
+        		if (!_domainDao.isChildDomain(account.getDomainId(), loadBalancer.getDomainId())) {
+            		throw new PermissionDeniedException("Failed to assign to load balancer " + loadBalancerId + ", permission denied.");
+        		}
+        	} else if (account.getId().longValue() != loadBalancer.getAccountId()) {
+        		throw new PermissionDeniedException("Failed to assign to load balancer " + loadBalancerId + ", permission denied.");
+        	}
+        }
 
         Transaction txn = Transaction.currentTxn();
         try {
             List<FirewallRuleVO> firewallRulesToApply = new ArrayList<FirewallRuleVO>();
             long accountId = 0;
             DomainRouterVO router = null;
-
-            LoadBalancerVO loadBalancer = _loadBalancerDao.findById(Long.valueOf(loadBalancerId));
-            if (loadBalancer == null) {
-                s_logger.warn("Unable to find load balancer with id " + loadBalancerId);
-                return;
-            }
 
             List<LoadBalancerVMMapVO> mappedInstances = _loadBalancerVMMapDao.listByLoadBalancerId(loadBalancerId, false);
             Set<Long> mappedInstanceIds = new HashSet<Long>();
@@ -1689,7 +1702,6 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             String type = EventTypes.EVENT_NET_RULE_ADD;
             String ruleName = "load balancer";
             String level = EventVO.LEVEL_INFO;
-            Account account = _accountDao.findById(accountId);
 
             LoadBalancerVO loadBalancerLock = null;
             try {
@@ -1716,8 +1728,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                                     + updatedRule.getPublicPort() + "]->[" + updatedRule.getPrivateIpAddress() + ":"
                                     + updatedRule.getPrivatePort() + "]" + " " + updatedRule.getProtocol();
 
-                            // FIXME:  userId is first param, which should be retrieved from the context or from the command itself...
-//                            saveEvent(Long.valueOf(1), account.getId(), level, type, description);
+                            EventUtils.saveEvent(UserContext.current().getUserId(), loadBalancer.getAccountId(), level, type, description);
                         }
                     }
                 } else {

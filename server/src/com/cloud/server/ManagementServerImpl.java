@@ -38,7 +38,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -59,7 +58,6 @@ import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.AuthorizeNetworkGroupIngressCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
@@ -132,8 +130,8 @@ import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
@@ -637,11 +635,11 @@ public class ManagementServerImpl implements ManagementServer {
                 throw new CloudRuntimeException("The user " + username + " being creating is using a password that is different than what's in the db");
             }
 
-            saveEvent(new Long(1), new Long(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_CREATE, "User, " + username + " for accountId = " + accountId
+            EventUtils.saveEvent(new Long(1), new Long(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_CREATE, "User, " + username + " for accountId = " + accountId
                     + " and domainId = " + domainId + " was created.");
             return dbUser;
         } catch (Exception e) {
-            saveEvent(new Long(1), new Long(1), EventVO.LEVEL_ERROR, EventTypes.EVENT_USER_CREATE, "Error creating user, " + username + " for accountId = " + accountId
+        	EventUtils.saveEvent(new Long(1), new Long(1), EventVO.LEVEL_ERROR, EventTypes.EVENT_USER_CREATE, "Error creating user, " + username + " for accountId = " + accountId
                     + " and domainId = " + domainId);
             if (e instanceof CloudRuntimeException) {
                 s_logger.info("unable to create user: " + e);
@@ -870,7 +868,7 @@ public class ManagementServerImpl implements ManagementServer {
 
             AccountVO account = _accountDao.findById(accountId);
             deleteAccount(account);
-            saveEvent(Long.valueOf(1), Long.valueOf(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_DELETE, "User " + username + " (id: " + userId
+            EventUtils.saveEvent(Long.valueOf(1), Long.valueOf(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_DELETE, "User " + username + " (id: " + userId
                     + ") for accountId = " + accountId + " and domainId = " + userAccount.getDomainId() + " was deleted.");
             return true;
         } catch (Exception e) {
@@ -878,7 +876,7 @@ public class ManagementServerImpl implements ManagementServer {
             long domainId = 0L;
             if (userAccount != null)
                 domainId = userAccount.getDomainId();
-            saveEvent(Long.valueOf(1), Long.valueOf(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_DELETE, "Error deleting user " + username + " (id: " + userId
+            EventUtils.saveEvent(Long.valueOf(1), Long.valueOf(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_DELETE, "Error deleting user " + username + " (id: " + userId
                     + ") for accountId = " + accountId + " and domainId = " + domainId);
             return false;
         }
@@ -1210,45 +1208,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
 
-    private Long saveEvent(Long userId, Long accountId, String type, String description) {
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(accountId);
-        event.setType(type);
-        event.setDescription(description);
-        event = _eventDao.persist(event);
-        return event.getId();
-    }
-    
-    /*
-     * Save event after scheduling an async job
-     */
-    private Long saveScheduledEvent(Long userId, Long accountId, String type, String description) {
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(accountId);
-        event.setType(type);
-        event.setState(EventState.Scheduled);
-        event.setDescription("Scheduled async job for "+description);
-        event = _eventDao.persist(event);
-        return event.getId();
-    }
-    
-    /*
-     * Save event after starting execution of an async job
-     */
-    public Long saveStartedEvent(Long userId, Long accountId, String type, String description, long startEventId) {
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(accountId);
-        event.setType(type);
-        event.setState(EventState.Started);
-        event.setDescription(description);
-        event.setStartId(startEventId);
-        event = _eventDao.persist(event);
-    	return event.getId();
-    }
-
     @Override
     public boolean updateUser(long userId, String username, String password, String firstname, String lastname, String email, String timezone, String apiKey, String secretKey) throws InvalidParameterValueException{
         UserVO user = _userDao.findById(userId);
@@ -1281,54 +1240,17 @@ public class ManagementServerImpl implements ManagementServer {
 
         	
             _userDao.update(userId, username, password, firstname, lastname, email, accountId, timezone, apiKey, secretKey);
-            saveEvent(new Long(1), Long.valueOf(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_UPDATE, "User, " + username + " for accountId = "
+            EventUtils.saveEvent(new Long(1), Long.valueOf(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_UPDATE, "User, " + username + " for accountId = "
                     + accountId + " domainId = " + userAccount.getDomainId() + " and timezone = "+timezone + " was updated.");
         } catch (Throwable th) {
             s_logger.error("error updating user", th);
-            saveEvent(Long.valueOf(1), Long.valueOf(1), EventVO.LEVEL_ERROR, EventTypes.EVENT_USER_UPDATE, "Error updating user, " + username
+            EventUtils.saveEvent(Long.valueOf(1), Long.valueOf(1), EventVO.LEVEL_ERROR, EventTypes.EVENT_USER_UPDATE, "Error updating user, " + username
                     + " for accountId = " + accountId + " and domainId = " + userAccount.getDomainId());
             return false;
         }
         return true;
     }
     
-    private Long saveEvent(Long userId, Long accountId, String level, String type, String description) {
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(accountId);
-        event.setType(type);
-        event.setDescription(description);
-        event.setLevel(level);
-        event = _eventDao.persist(event);
-        return event.getId();
-    }
-    
-    private Long saveEvent(Long userId, Long accountId, String level, String type, String description, String params) {
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(accountId);
-        event.setType(type);
-        event.setDescription(description);
-        event.setLevel(level);
-        event.setParameters(params);
-        event = _eventDao.persist(event);
-        return event.getId();
-    }
-    
-    @Override
-    public Long saveEvent(Long userId, Long accountId, String level, String type, String description, String params, long startEventId) {
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(accountId);
-        event.setType(type);
-        event.setDescription(description);
-        event.setLevel(level);
-        event.setParameters(params);
-        event.setStartId(startEventId);
-        event = _eventDao.persist(event);
-        return event.getId();
-    }
-
     @Override
     public Pair<User, Account> findUserByApiKey(String apiKey) {
         return _accountDao.findUserAccountByApiKey(apiKey);
@@ -1465,13 +1387,13 @@ public class ManagementServerImpl implements ManagementServer {
             	if (!success) {
             		s_logger.debug(errorMsg);
             		 for(String ip : ipAddrsList){
-            			 saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_NET_IP_ASSIGN, "Unable to assign public IP " +ip, params);
+            			 EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_NET_IP_ASSIGN, "Unable to assign public IP " +ip, params);
                      }
             		throw new InternalErrorException(errorMsg);
             	}
                 txn.commit();
                 for(String ip : ipAddrsList){
-                	saveEvent(userId, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_NET_IP_ASSIGN, "Successfully assigned account IP " +ip, params);
+                	EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_NET_IP_ASSIGN, "Successfully assigned account IP " +ip, params);
                 }
             }
             } catch (InternalErrorException iee) {
@@ -1715,7 +1637,7 @@ public class ManagementServerImpl implements ManagementServer {
 		    	long startIPLong = NetUtils.ip2Long(startIP);
 		    	long endIPLong = NetUtils.ip2Long(endIP);		    	
 		        while (startIPLong <= endIPLong) {
-		        	saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_NET_IP_ASSIGN, "Unable to assign public IP " +NetUtils.long2Ip(startIPLong), params);
+		        	EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_NET_IP_ASSIGN, "Unable to assign public IP " +NetUtils.long2Ip(startIPLong), params);
 		        	startIPLong += 1;
 		        }
 				throw new Exception(e.getMessage());
@@ -1731,7 +1653,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public VolumeVO createVolume(long userId, long accountId, String name, long zoneId, long diskOfferingId, long startEventId, long size) throws InternalErrorException {
-        saveStartedEvent(userId, accountId, EventTypes.EVENT_VOLUME_CREATE, "Creating volume", startEventId);
+    	EventUtils.saveStartedEvent(userId, accountId, EventTypes.EVENT_VOLUME_CREATE, "Creating volume", startEventId);
         DataCenterVO zone = _dcDao.findById(zoneId);
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
         VolumeVO createdVolume = _storageMgr.createVolume(accountId, userId, name, zone, diskOffering, startEventId,size);
@@ -1788,7 +1710,7 @@ public class ManagementServerImpl implements ManagementServer {
         	throw rae;
         }
 
-        long eventId = saveScheduledEvent(userId, accountId, EventTypes.EVENT_VOLUME_CREATE, "creating volume");
+        long eventId = EventUtils.saveScheduledEvent(userId, accountId, EventTypes.EVENT_VOLUME_CREATE, "creating volume");
         
         VolumeOperationParam param = new VolumeOperationParam();
         param.setOp(VolumeOp.Create);
@@ -1905,9 +1827,9 @@ public class ManagementServerImpl implements ManagementServer {
         UserVmVO userVm = _userVmDao.findById(vmId);
         if (userVm != null) {
             if (succeed) {
-                saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_RESETPASSWORD, "successfully reset password for VM : " + userVm.getName(), null);
+            	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_RESETPASSWORD, "successfully reset password for VM : " + userVm.getName(), null);
             } else {
-                saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_RESETPASSWORD, "unable to reset password for VM : " + userVm.getName(), null);
+            	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_RESETPASSWORD, "unable to reset password for VM : " + userVm.getName(), null);
             }
         } else {
             s_logger.warn("Unable to find vm = " + vmId + " to reset password");
@@ -1965,7 +1887,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (vm.getDataCenterId() != volume.getDataCenterId()) {
         	throw new InvalidParameterValueException("Please specify a VM that is in the same zone as the volume.");
         }
-        long eventId = saveScheduledEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_ATTACH, "attaching volume: "+volumeId+" to Vm: "+vmId);
+        long eventId = EventUtils.saveScheduledEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_ATTACH, "attaching volume: "+volumeId+" to Vm: "+vmId);
         VolumeOperationParam param = new VolumeOperationParam();
         param.setUserId(1);
         param.setAccountId(volume.getAccountId());
@@ -2019,7 +1941,7 @@ public class ManagementServerImpl implements ManagementServer {
         	throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
         }
         
-        long eventId = saveScheduledEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_DETACH, "detaching volume: "+volumeId+" from Vm: "+vmId);
+        long eventId = EventUtils.saveScheduledEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_DETACH, "detaching volume: "+volumeId+" from Vm: "+vmId);
         VolumeOperationParam param = new VolumeOperationParam();
         param.setUserId(1);
         param.setAccountId(volume.getAccountId());
@@ -2044,9 +1966,9 @@ public class ManagementServerImpl implements ManagementServer {
     	UserVmVO vm = _userVmDao.findById(vmId);
     	VMTemplateVO iso = _templateDao.findById(isoId);
     	if(attach){
-    	    saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_ISO_ATTACH, "Attaching ISO: "+isoId+" to Vm: "+vmId, startEventId);
+    		EventUtils.saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_ISO_ATTACH, "Attaching ISO: "+isoId+" to Vm: "+vmId, startEventId);
     	} else {
-    	    saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_ISO_DETACH, "Detaching ISO: "+isoId+" from Vm: "+vmId, startEventId);
+    		EventUtils.saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_ISO_DETACH, "Detaching ISO: "+isoId+" from Vm: "+vmId, startEventId);
     	}
         boolean success = _vmMgr.attachISOToVM(vmId, isoId, attach);
 
@@ -2059,16 +1981,16 @@ public class ManagementServerImpl implements ManagementServer {
             _userVmDao.update(vmId, vm);
 
             if (attach) {
-                saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ISO_ATTACH, "Successfully attached ISO: " + iso.getName() + " to VM with ID: " + vmId,
+            	EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ISO_ATTACH, "Successfully attached ISO: " + iso.getName() + " to VM with ID: " + vmId,
                         null, startEventId);
             } else {
-                saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ISO_DETACH, "Successfully detached ISO from VM with ID: " + vmId, null, startEventId);
+            	EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ISO_DETACH, "Successfully detached ISO from VM with ID: " + vmId, null, startEventId);
             }
         } else {
             if (attach) {
-                saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ISO_ATTACH, "Failed to attach ISO: " + iso.getName() + " to VM with ID: " + vmId, null, startEventId);
+            	EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ISO_ATTACH, "Failed to attach ISO: " + iso.getName() + " to VM with ID: " + vmId, null, startEventId);
             } else {
-                saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ISO_DETACH, "Failed to detach ISO from VM with ID: " + vmId, null, startEventId);
+            	EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ISO_DETACH, "Failed to detach ISO from VM with ID: " + vmId, null, startEventId);
             }
         }
 
@@ -2097,7 +2019,7 @@ public class ManagementServerImpl implements ManagementServer {
         	throw new InvalidParameterValueException("Please specify a VM that is either Stopped or Running.");
         }
         
-        long eventId = saveScheduledEvent(userId, account.getId(), EventTypes.EVENT_ISO_ATTACH, "attaching ISO: "+isoId+" to Vm: "+vmId);
+        long eventId = EventUtils.saveScheduledEvent(userId, account.getId(), EventTypes.EVENT_ISO_ATTACH, "attaching ISO: "+isoId+" to Vm: "+vmId);
         
         AttachISOParam param = new AttachISOParam(vmId, userId, isoId, true);
         param.setEventId(eventId);
@@ -2128,7 +2050,7 @@ public class ManagementServerImpl implements ManagementServer {
         	throw new InvalidParameterValueException("Please specify a VM that is either Stopped or Running.");
         }
 
-        long eventId = saveScheduledEvent(userId, userVM.getAccountId(), EventTypes.EVENT_ISO_DETACH, "detaching ISO: "+isoId+" from Vm: "+vmId);
+        long eventId = EventUtils.saveScheduledEvent(userId, userVM.getAccountId(), EventTypes.EVENT_ISO_DETACH, "detaching ISO: "+isoId+" from Vm: "+vmId);
         AttachISOParam param = new AttachISOParam(vmId, userId, isoId.longValue(), false);
         param.setEventId(eventId);
         Gson gson = GsonHelper.getBuilder().create();
@@ -2195,7 +2117,7 @@ public class ManagementServerImpl implements ManagementServer {
             String domain, String password, String displayName, String group, String userData, String [] networkGroups, long startEventId, long size) throws ResourceAllocationException, InvalidParameterValueException, InternalErrorException,
             InsufficientStorageCapacityException, PermissionDeniedException, ExecutionException, StorageUnavailableException, ConcurrentOperationException {
 
-        saveStartedEvent(userId, accountId, EventTypes.EVENT_VM_CREATE, "Deploying Vm", startEventId);
+    	EventUtils.saveStartedEvent(userId, accountId, EventTypes.EVENT_VM_CREATE, "Deploying Vm", startEventId);
         
         AccountVO account = _accountDao.findById(accountId);
         DataCenterVO dc = _dcDao.findById(dataCenterId);
@@ -2513,7 +2435,7 @@ public class ManagementServerImpl implements ManagementServer {
         	}
         }
         
-        long eventId = saveScheduledEvent(userId, accountId, EventTypes.EVENT_VM_CREATE, "deploying Vm");
+        long eventId = EventUtils.saveScheduledEvent(userId, accountId, EventTypes.EVENT_VM_CREATE, "deploying Vm");
         
         DeployVMParam param = new DeployVMParam(userId, accountId, dataCenterId, serviceOfferingId, templateId, diskOfferingId, domain, password,
                 displayName, group, userData, networkGroups, eventId, size);
@@ -2538,7 +2460,7 @@ public class ManagementServerImpl implements ManagementServer {
         
         UserVmVO userVm = _userVmDao.findById(vmId);
 
-        long eventId = saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_VM_START, "starting Vm with Id: "+vmId);
+        long eventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_VM_START, "starting Vm with Id: "+vmId);
         
         VMOperationParam param = new VMOperationParam(userId, vmId, isoPath, eventId);
         Gson gson = GsonHelper.getBuilder().create();
@@ -2562,7 +2484,7 @@ public class ManagementServerImpl implements ManagementServer {
         
         UserVmVO userVm = _userVmDao.findById(vmId);
 
-        long eventId = saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_VM_STOP, "stopping Vm with Id: "+vmId);
+        long eventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_VM_STOP, "stopping Vm with Id: "+vmId);
         
         VMOperationParam param = new VMOperationParam(userId, userVm.getAccountId(), vmId, null, eventId);
         Gson gson = GsonHelper.getBuilder().create();
@@ -2588,7 +2510,7 @@ public class ManagementServerImpl implements ManagementServer {
         
         UserVmVO userVm = _userVmDao.findById(vmId);
 
-        long eventId = saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_VM_REBOOT, "rebooting Vm with Id: "+vmId);
+        long eventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_VM_REBOOT, "rebooting Vm with Id: "+vmId);
         
         VMOperationParam param = new VMOperationParam(userId, userVm.getAccountId(), vmId, null, eventId);
         Gson gson = GsonHelper.getBuilder().create();
@@ -2614,7 +2536,7 @@ public class ManagementServerImpl implements ManagementServer {
         
         UserVmVO userVm = _userVmDao.findById(vmId);
 
-        long eventId = saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_VM_DESTROY, "destroying Vm with Id: "+vmId);
+        long eventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_VM_DESTROY, "destroying Vm with Id: "+vmId);
         VMOperationParam param = new VMOperationParam(userId, userVm.getAccountId(), vmId, null, eventId);
         Gson gson = GsonHelper.getBuilder().create();
 
@@ -2634,15 +2556,15 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public boolean upgradeVirtualMachine(long userId, long vmId, long serviceOfferingId,long startEventId) {
         UserVmVO userVm = _userVmDao.findById(vmId);
-        saveStartedEvent(userId, userVm.getAccountId(), EventTypes.EVENT_VM_UPGRADE, "upgrading service offering on VM : " + userVm.getName(), startEventId);
+        EventUtils.saveStartedEvent(userId, userVm.getAccountId(), EventTypes.EVENT_VM_UPGRADE, "upgrading service offering on VM : " + userVm.getName(), startEventId);
         boolean success = _vmMgr.upgradeVirtualMachine(vmId, serviceOfferingId);
 
         String params = "id=" + vmId + "\nvmName=" + userVm.getName() + "\nsoId=" + serviceOfferingId + "\ntId=" + userVm.getTemplateId() + "\ndcId=" + userVm.getDataCenterId();
 
         if (success) {
-            this.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_UPGRADE, "Successfully upgrade service offering on VM : " + userVm.getName(), params, startEventId);
+        	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_UPGRADE, "Successfully upgrade service offering on VM : " + userVm.getName(), params, startEventId);
         } else {
-            this.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_UPGRADE, "Failed to upgrade service offering on VM : " + userVm.getName(), params, startEventId);
+        	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_UPGRADE, "Failed to upgrade service offering on VM : " + userVm.getName(), params, startEventId);
         }
         
         return success;
@@ -2709,7 +2631,7 @@ public class ManagementServerImpl implements ManagementServer {
         											 "new service offering tags: " + newTags);
         }
         
-        long eventId = saveScheduledEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_UPGRADE, "upgrading Vm with Id: "+vmId);
+        long eventId = EventUtils.saveScheduledEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_UPGRADE, "upgrading Vm with Id: "+vmId);
         param.setEventId(eventId);
         
         AsyncJobVO job = new AsyncJobVO();
@@ -2742,7 +2664,7 @@ public class ManagementServerImpl implements ManagementServer {
                 type = EventTypes.EVENT_VM_DISABLE_HA;
             }
             // create a event for the change in HA Enabled flag
-            saveEvent(userId, accountId, EventVO.LEVEL_INFO, type, description, null);
+            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, type, description, null);
         }
     }
     
@@ -2758,7 +2680,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public long startRouterAsync(long routerId) {
-        long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_START, "starting Router with Id: "+routerId);
+        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_START, "starting Router with Id: "+routerId);
 
         VMOperationParam param = new VMOperationParam(0, routerId, null, eventId);
         Gson gson = GsonHelper.getBuilder().create();
@@ -2779,7 +2701,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public long stopRouterAsync(long routerId) {
-        long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_STOP, "stopping Router with Id: "+routerId);
+        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_STOP, "stopping Router with Id: "+routerId);
         VMOperationParam param = new VMOperationParam(0, routerId, null, eventId);
         Gson gson = GsonHelper.getBuilder().create();
 
@@ -2801,7 +2723,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public long rebootRouterAsync(long routerId) {
-        long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_REBOOT, "rebooting Router with Id: "+routerId);
+        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_REBOOT, "rebooting Router with Id: "+routerId);
         VMOperationParam param = new VMOperationParam(0, routerId, null, eventId);
         Gson gson = GsonHelper.getBuilder().create();
 
@@ -2921,7 +2843,7 @@ public class ManagementServerImpl implements ManagementServer {
                 s_logger.warn("Unable to find virtual machine with id " + vmId);
                 throw new InvalidParameterValueException("Unable to find virtual machine with id " + vmId);
             }
-            saveStartedEvent(userId, userVm.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_APPLY, "Applying port forwarding service for Vm with Id: "+vmId, startEventId);
+            EventUtils.saveStartedEvent(userId, userVm.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_APPLY, "Applying port forwarding service for Vm with Id: "+vmId, startEventId);
             
             State vmState = userVm.getState();
             switch (vmState) {
@@ -2991,7 +2913,7 @@ public class ManagementServerImpl implements ManagementServer {
                         description = "deleted ip forwarding rule [" + fwRule.getPublicIpAddress() + ":" + fwRule.getPublicPort() + "]->[" + fwRule.getPrivateIpAddress() + ":"
                                 + fwRule.getPrivatePort() + "]" + " " + fwRule.getProtocol();
 
-                        saveEvent(userId, account.getId(), level, type, description);
+                        EventUtils.saveEvent(userId, account.getId(), level, type, description);
                     }
                 }
 
@@ -3117,7 +3039,7 @@ public class ManagementServerImpl implements ManagementServer {
                     String description = "created new ip forwarding rule [" + newFwRule.getPublicIpAddress() + ":" + newFwRule.getPublicPort() + "]->["
                             + newFwRule.getPrivateIpAddress() + ":" + newFwRule.getPrivatePort() + "]" + " " + newFwRule.getProtocol();
 
-                    saveEvent(userId, account.getId(), EventVO.LEVEL_INFO, EventTypes.EVENT_NET_RULE_ADD, description);
+                    EventUtils.saveEvent(userId, account.getId(), EventVO.LEVEL_INFO, EventTypes.EVENT_NET_RULE_ADD, description);
                 }
 
                 // now that individual rules have been created from the security group, save the security group mapping for this ip/vm instance
@@ -3163,7 +3085,7 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public long assignSecurityGroupAsync(Long userId, Long securityGroupId, List<Long> securityGroupIdList, String publicIp, Long vmId) {
         UserVm userVm = _userVmDao.findById(vmId);
-        long eventId = saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_APPLY, "applying port forwarding service for Vm with Id: "+vmId);
+        long eventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_APPLY, "applying port forwarding service for Vm with Id: "+vmId);
         SecurityGroupParam param = new SecurityGroupParam(userId, securityGroupId, securityGroupIdList, publicIp, vmId, eventId);
         Gson gson = GsonHelper.getBuilder().create();
 
@@ -3193,7 +3115,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (userVm == null) {
             throw new InvalidParameterValueException("Unable to find vm: " + vmId);
         }
-        saveStartedEvent(userId, userVm.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_REMOVE, "Removing security groups for Vm with Id: "+vmId, startEventId);
+        EventUtils.saveStartedEvent(userId, userVm.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_REMOVE, "Removing security groups for Vm with Id: "+vmId, startEventId);
         SecurityGroupVO securityGroup = _securityGroupDao.findById(Long.valueOf(securityGroupId));
         if (securityGroup == null) {
             throw new InvalidParameterValueException("Unable to find port forwarding service: " + securityGroupId);
@@ -3247,7 +3169,7 @@ public class ManagementServerImpl implements ManagementServer {
                     description = "deleted " + ruleName + " rule [" + fwRule.getPublicIpAddress() + ":" + fwRule.getPublicPort() + "]->[" + fwRule.getPrivateIpAddress() + ":"
                             + fwRule.getPrivatePort() + "]" + " " + fwRule.getProtocol();
 
-                    saveEvent(userId, account.getId(), level, type, description);
+                    EventUtils.saveEvent(userId, account.getId(), level, type, description);
                 }
             }
 
@@ -3288,7 +3210,7 @@ public class ManagementServerImpl implements ManagementServer {
                 String description = "created new ip forwarding rule [" + addedRule.getPublicIpAddress() + ":" + addedRule.getPublicPort() + "]->["
                         + addedRule.getPrivateIpAddress() + ":" + addedRule.getPrivatePort() + "]" + " " + addedRule.getProtocol();
 
-                saveEvent(userId, account.getId(), EventVO.LEVEL_INFO, EventTypes.EVENT_NET_RULE_ADD, description);
+                EventUtils.saveEvent(userId, account.getId(), EventVO.LEVEL_INFO, EventTypes.EVENT_NET_RULE_ADD, description);
             }
 
             // save off an event for removing the security group
@@ -3318,7 +3240,7 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public long removeSecurityGroupAsync(Long userId, long securityGroupId, String publicIp, long vmId) {
         UserVm userVm = _userVmDao.findById(vmId);
-        long eventId = saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_REMOVE, "removing security groups for Vm with Id: "+vmId);
+        long eventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_REMOVE, "removing security groups for Vm with Id: "+vmId);
         SecurityGroupParam param = new SecurityGroupParam(userId, securityGroupId, null, publicIp, vmId, eventId);
         Gson gson = GsonHelper.getBuilder().create();
 
@@ -3430,7 +3352,7 @@ public class ManagementServerImpl implements ManagementServer {
                     + newFwRule.getPrivateIpAddress() + ":" + newFwRule.getPrivatePort() + "]" + " " + newFwRule.getProtocol();
         }
 
-        saveEvent(Long.valueOf(userId), account.getId(), level, EventTypes.EVENT_NET_RULE_ADD, description);
+        EventUtils.saveEvent(Long.valueOf(userId), account.getId(), level, EventTypes.EVENT_NET_RULE_ADD, description);
 
         return newFwRule;
     }
@@ -3538,7 +3460,7 @@ public class ManagementServerImpl implements ManagementServer {
                                 String description = "deleted ip forwarding rule [" + rule.getPublicIpAddress() + ":" + rule.getPublicPort() + "]->[" + rule.getPrivateIpAddress()
                                                      + ":" + rule.getPrivatePort() + "]" + " " + rule.getProtocol();
 
-                                saveEvent(Long.valueOf(userId), account.getId(), EventVO.LEVEL_INFO, EventTypes.EVENT_NET_RULE_DELETE, description);
+                                EventUtils.saveEvent(Long.valueOf(userId), account.getId(), EventVO.LEVEL_INFO, EventTypes.EVENT_NET_RULE_DELETE, description);
                             }
                         }
                     }
@@ -4912,7 +4834,7 @@ public class ManagementServerImpl implements ManagementServer {
         	throw new InvalidParameterValueException("Please specify a template that is installed on secondary storage host: " + srcSecHost.getName());
         }
         
-        long eventId = saveScheduledEvent(userId, template.getAccountId(), EventTypes.EVENT_TEMPLATE_COPY, "copying template with Id: "+templateId+" from zone: "+sourceZoneId+" to: "+destZoneId);
+        long eventId = EventUtils.saveScheduledEvent(userId, template.getAccountId(), EventTypes.EVENT_TEMPLATE_COPY, "copying template with Id: "+templateId+" from zone: "+sourceZoneId+" to: "+destZoneId);
         
         CopyTemplateParam param = new CopyTemplateParam(userId, templateId, sourceZoneId, destZoneId, eventId);
         Gson gson = GsonHelper.getBuilder().create();
@@ -5866,7 +5788,7 @@ public class ManagementServerImpl implements ManagementServer {
         	if (s_logger.isDebugEnabled()) {
                 s_logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
             }
-            saveEvent(user.getId(), user.getAccountId(), EventTypes.EVENT_USER_LOGIN, "user has logged in");
+        	EventUtils.saveEvent(user.getId(), user.getAccountId(), EventTypes.EVENT_USER_LOGIN, "user has logged in");
             return user;
         } else {
         	if (s_logger.isDebugEnabled()) {
@@ -5879,7 +5801,7 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public void logoutUser(Long userId) {
         UserAccount userAcct = _userAccountDao.findById(userId);
-        saveEvent(userId, userAcct.getAccountId(), EventTypes.EVENT_USER_LOGOUT, "user has logged out");
+        EventUtils.saveEvent(userId, userAcct.getAccountId(), EventTypes.EVENT_USER_LOGOUT, "user has logged out");
     }
 
     @Override
@@ -5984,7 +5906,7 @@ public class ManagementServerImpl implements ManagementServer {
                     description = desc;
                 }
 
-                saveEvent(userId, accountId, level, type, description);
+                EventUtils.saveEvent(userId, accountId, level, type, description);
             }
         } finally {
             if (e != null) {
@@ -6086,7 +6008,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     public long startConsoleProxyAsync(long instanceId) {
-        long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_START, "starting console proxy with Id: "+instanceId);
+        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_START, "starting console proxy with Id: "+instanceId);
         VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
         Gson gson = GsonHelper.getBuilder().create();
 
@@ -6100,7 +6022,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     public long stopConsoleProxyAsync(long instanceId) {
-        long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_STOP, "stopping console proxy with Id: "+instanceId);
+        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_STOP, "stopping console proxy with Id: "+instanceId);
         VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
         Gson gson = GsonHelper.getBuilder().create();
 
@@ -6116,7 +6038,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     public long rebootConsoleProxyAsync(long instanceId) {
-        long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy with Id: "+instanceId);
+        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy with Id: "+instanceId);
         VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
         Gson gson = GsonHelper.getBuilder().create();
 
@@ -6132,7 +6054,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     public long destroyConsoleProxyAsync(long instanceId) {
-        long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_DESTROY, "destroying console proxy with Id: "+instanceId);
+        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_DESTROY, "destroying console proxy with Id: "+instanceId);
         VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
         Gson gson = GsonHelper.getBuilder().create();
 
@@ -6252,16 +6174,16 @@ public class ManagementServerImpl implements ManagementServer {
             DomainVO domain = new DomainVO(name, ownerId, parentId);
             try {
                 DomainVO dbDomain = _domainDao.create(domain);
-                saveEvent(new Long(1), ownerId, EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_CREATE, "Domain, " + name + " created with owner id = " + ownerId
+                EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_CREATE, "Domain, " + name + " created with owner id = " + ownerId
                         + " and parentId " + parentId);
                 return dbDomain;
             } catch (IllegalArgumentException ex) {
-                saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_CREATE, "Domain, " + name + " was not created with owner id = " + ownerId
+            	EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_CREATE, "Domain, " + name + " was not created with owner id = " + ownerId
                         + " and parentId " + parentId);
                 throw ex;
             }
         } else {
-            saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_CREATE, "Domain, " + name + " was not created with owner id = " + ownerId
+        	EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_CREATE, "Domain, " + name + " was not created with owner id = " + ownerId
                     + " and parentId " + parentId);
         }
         return null;
@@ -6289,15 +6211,15 @@ public class ManagementServerImpl implements ManagementServer {
                 if ((cleanup != null) && cleanup.booleanValue()) {
                     boolean success = cleanupDomain(domainId, ownerId);
                     if (!success) {
-                        saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_DELETE, "Failed to clean up domain resources and sub domains, domain with id " + domainId + " was not deleted.");
+                    	EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_DELETE, "Failed to clean up domain resources and sub domains, domain with id " + domainId + " was not deleted.");
                         return "Failed to clean up domain resources and sub domains, delete failed on domain " + domain.getName() + " (id: " + domainId + ").";
                     }
                 } else {
                     if (!_domainDao.remove(domainId)) {
-                        saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_DELETE, "Domain with id " + domainId + " was not deleted");
+                    	EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_DELETE, "Domain with id " + domainId + " was not deleted");
                         return "Delete failed on domain " + domain.getName() + " (id: " + domainId + "); please make sure all users and sub domains have been removed from the domain before deleting";
                     } else {
-                        saveEvent(new Long(1), ownerId, EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_DELETE, "Domain with id " + domainId + " was deleted");
+                    	EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_DELETE, "Domain with id " + domainId + " was deleted");
                     }
                 }
             }
@@ -6339,9 +6261,9 @@ public class ManagementServerImpl implements ManagementServer {
         // delete the domain itself
         boolean deleteDomainSuccess = _domainDao.remove(domainId);
         if (!deleteDomainSuccess) {
-            saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_DELETE, "Domain with id " + domainId + " was not deleted");
+        	EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_DELETE, "Domain with id " + domainId + " was not deleted");
         } else {
-            saveEvent(new Long(1), ownerId, EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_DELETE, "Domain with id " + domainId + " was deleted");
+        	EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_DELETE, "Domain with id " + domainId + " was deleted");
         }
 
         return success && deleteDomainSuccess;
@@ -6354,10 +6276,10 @@ public class ManagementServerImpl implements ManagementServer {
         if ((domains == null) || domains.isEmpty()) {
             _domainDao.update(domainId, domainName);
             DomainVO domain = _domainDao.findById(domainId);
-            saveEvent(new Long(1), domain.getOwner(), EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_UPDATE, "Domain, " + domainName + " was updated");
+            EventUtils.saveEvent(new Long(1), domain.getOwner(), EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_UPDATE, "Domain, " + domainName + " was updated");
         } else {
             DomainVO domain = _domainDao.findById(domainId);
-            saveEvent(new Long(1), domain.getOwner(), EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_UPDATE, "Failed to update domain " + domain.getName() + " with name " + domainName + ", name in use.");
+            EventUtils.saveEvent(new Long(1), domain.getOwner(), EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_UPDATE, "Failed to update domain " + domain.getName() + " with name " + domainName + ", name in use.");
         }
     }
 
@@ -6636,7 +6558,7 @@ public class ManagementServerImpl implements ManagementServer {
             throw new InvalidParameterValueException("Please specify a valid guest OS.");
         }
 
-        long eventId = saveScheduledEvent(userId, volume.getAccountId(), EventTypes.EVENT_TEMPLATE_CREATE, "creating template" +name);
+        long eventId = EventUtils.saveScheduledEvent(userId, volume.getAccountId(), EventTypes.EVENT_TEMPLATE_CREATE, "creating template" +name);
         CreatePrivateTemplateParam param = new CreatePrivateTemplateParam(userId, volume.getAccountId(), volumeId, guestOSId, eventId, name, description, requiresHvm, bits, passwordEnabled, isPublic, featured, snapshotId);
         Gson gson = GsonHelper.getBuilder().create();
 
@@ -6884,7 +6806,7 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public long deleteSecurityGroupAsync(long userId, Long accountId, long securityGroupId) {
     	
-        long eventId = saveScheduledEvent(userId, accountId, EventTypes.EVENT_PORT_FORWARDING_SERVICE_DELETE, "deleting security group with Id: " + securityGroupId);
+        long eventId = EventUtils.saveScheduledEvent(userId, accountId, EventTypes.EVENT_PORT_FORWARDING_SERVICE_DELETE, "deleting security group with Id: " + securityGroupId);
         SecurityGroupParam param = new SecurityGroupParam(userId, securityGroupId, null, null, null, eventId);
         Gson gson = GsonHelper.getBuilder().create();
 
@@ -7310,7 +7232,7 @@ public class ManagementServerImpl implements ManagementServer {
                     description = "deleted load balancer rule [" + updatedRule.getPublicIpAddress() + ":" + updatedRule.getPublicPort() + "]->["
                             + updatedRule.getPrivateIpAddress() + ":" + updatedRule.getPrivatePort() + "]" + " " + updatedRule.getProtocol();
 
-                    saveEvent(userId, account.getId(), level, type, description);
+                    EventUtils.saveEvent(userId, account.getId(), level, type, description);
                 }
             }
             txn.commit();
@@ -7401,7 +7323,7 @@ public class ManagementServerImpl implements ManagementServer {
                     description = "deleted " + ruleName + " rule [" + updatedRule.getPublicIpAddress() + ":" + updatedRule.getPublicPort() + "]->["
                                   + updatedRule.getPrivateIpAddress() + ":" + updatedRule.getPrivatePort() + "]" + " " + updatedRule.getProtocol();
 
-                    saveEvent(userId, account.getId(), level, type, description);
+                    EventUtils.saveEvent(userId, account.getId(), level, type, description);
                 }
             }
 
@@ -7891,7 +7813,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     public long startSecondaryStorageVmAsync(long instanceId) {
-        long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_START, "starting secondary storage Vm Id: "+instanceId);
+        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_START, "starting secondary storage Vm Id: "+instanceId);
         VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
         param.setOperation(VmOp.Start);
         Gson gson = GsonHelper.getBuilder().create();
@@ -7906,7 +7828,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     public long stopSecondaryStorageVmAsync(long instanceId) {
-        long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_STOP, "stopping secondary storage Vm Id: "+instanceId);
+        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_STOP, "stopping secondary storage Vm Id: "+instanceId);
         VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
         Gson gson = GsonHelper.getBuilder().create();
         param.setOperation(VmOp.Stop);
@@ -7921,7 +7843,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     public long rebootSecondaryStorageVmAsync(long instanceId) {
-        long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_REBOOT, "rebooting secondary storage Vm Id: "+instanceId);
+        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_REBOOT, "rebooting secondary storage Vm Id: "+instanceId);
         VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
         Gson gson = GsonHelper.getBuilder().create();
         param.setOperation(VmOp.Reboot);
@@ -7936,7 +7858,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     public long destroySecondaryStorageVmAsync(long instanceId) {
-        long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_DESTROY, "destroying secondary storage Vm Id: "+instanceId);
+        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_DESTROY, "destroying secondary storage Vm Id: "+instanceId);
         VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
         Gson gson = GsonHelper.getBuilder().create();
         param.setOperation(VmOp.Destroy);
