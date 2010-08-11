@@ -560,6 +560,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	_pod = "default";
         }
 		
+        
         _createvnetPath = Script.findScript(networkScriptsDir, "createvnet.sh");
         if(_createvnetPath == null) {
             throw new ConfigurationException("Unable to find createvnet.sh");
