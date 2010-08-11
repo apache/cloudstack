@@ -1,0 +1,12 @@
+build/build.number
+bin
+cloudstack-proprietary
+.lock-wscript
+artifacts
+.waf-*
+waf-*
+target
+override
+premium
+.metadata
+dist
