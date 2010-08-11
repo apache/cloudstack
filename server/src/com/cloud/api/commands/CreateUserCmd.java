@@ -50,7 +50,6 @@ public class CreateUserCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TIMEZONE, Boolean.FALSE));
     }
 
-    // add a comment for testing Git
     public String getName() {
         return s_name;
     }
