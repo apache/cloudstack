@@ -8,19 +8,202 @@ cloud.
 
 
 ---------------------------------------------------------------------
-HOW TO INSTALL THE CLOUDSTACK
+TABLE OF CONTENTS	
 ---------------------------------------------------------------------
 
 
-Please refer to the document INSTALL distributed with the source.
+1. Really quick start: building and installing a production stack
+2. Post-install: setting the CloudStack components up
+3. Installation paths: where the stack is installed on your system
+4. Uninstalling the CloudStack from your system
+5. Be part of the Cloud.com community!
 
 
 ---------------------------------------------------------------------
-HOW TO HACK ON THE CLOUDSTACK
+REALLY QUICK START: BUILDING AND INSTALLING A PRODUCTION STACK
 ---------------------------------------------------------------------
 
 
-Please refer to the document HACKING distributed with the source.
+You have two options.  Choose one:
+
+a) Building distribution packages from the source and installing them
+b) Building from the source and installing directly from there
+
+
+=== I want to build and install distribution packages ===
+
+This is the recommended way to run your CloudStack cloud.  The
+advantages are that dependencies are taken care of automatically
+for you, and you can verify the integrity of the installed files
+using your system's package manager.
+
+1. As root, install the build dependencies.
+
+   a) Fedora / CentOS: ./waf installrpmdeps
+   
+   b) Ubuntu: ./waf installdebdeps
+   
+2. As a non-root user, build the CloudStack packages.
+
+   a) Fedora / CentOS: ./waf rpm
+   
+   b) Ubuntu: ./waf deb
+   
+3. As root, install the CloudStack packages.
+   You can choose which components to install on your system.
+
+   a) Fedora / CentOS: the installable RPMs are in artifacts/rpmbuild
+   
+   b) Ubuntu: the installable DEBs are in artifacts/debbuild
+
+4. Configure and start the components you intend to run.
+   See "Setting the CloudStack components up" to find out how to
+   configure each component, and "Installation paths" for information
+   on where programs, initscripts and config files are installed.
+
+
+=== I want to build and install directly from the source ===
+
+This is the recommended way to run your CloudStack cloud if you
+intend to modify the source, if you intend to port the CloudStack to
+another distribution, or if you intend to run the CloudStack on a
+distribution for which packages are not built.
+
+1. As root, install the build dependencies.
+   See below for a list.
+
+2. As non-root, configure the build.
+   See below to discover configuration options.
+
+   ./waf configure
+
+3. As non-root, build the CloudStack.
+   To learn more, see "Quick guide to developing, building and
+   installing from source" below.
+
+   ./waf build
+
+4. As root, install the runtime dependencies.
+   See below for a list.
+   
+5. As root, Install the CloudStack
+
+   ./waf install
+   
+6. Configure and start the components you intend to run.
+   See "Setting the CloudStack components up" to find out how to
+   configure each component, and "Installation paths" for information
+   on where programs, initscripts and config files are installed.
+
+
+=== Dependencies of the CloudStack ===
+
+- Build dependencies:
+
+   1. FIXME DEPENDENCIES LIST THEM HERE
+
+- Runtime dependencies:
+
+   2. FIXME DEPENDENCIES LIST THEM HERE
+
+
+---------------------------------------------------------------------
+POST-INSTALL: SETTING THE CLOUDSTACK COMPONENTS UP
+---------------------------------------------------------------------
+
+
+The CloudStack installs several components on your system.
+
+Each component usually installs an initscript on your system, along
+with one configuration command that will set your system up to run
+said component properly.  You must set each component up before
+you can run it.  The Installation Manual will guide you through the
+process of setting each component up, and the section "Installation
+paths" will explain where to find the installed files and what each
+$VARIABLE means.
+
+
+=== cloud-management: the Management Server ===
+
+This Tomcat-based service runs your cloud and lets you manage it.
+Its initscript is called cloud-management, and its setup command is
+called cloud-setup-databases.
+
+
+=== cloud-usage: the Usage Monitor ===
+
+This Java-based service accounts usage metrics for your cloud.
+Its initscript is called cloud-usage, and it takes its configuration
+from the Management Server, so to set the Usage Monitor up, set the
+management server up.
+
+
+=== cloud-agent: the Cloud Agent ===
+
+This Java-based service runs virtual machines based on orders from
+the Management Service, connecting to it at startup.  Its initscript
+is called cloud-agent, and its setup command is called cloud-setup-agent.
+
+
+=== cloud-console-proxy: the Cloud Console Proxy ===
+
+This Java-based service provides access to virtual machine consoles
+based on orders from the Management Service, connecting to it at
+startup.  Its initscript is called cloud-console-proxy, and its setup
+command is called cloud-setup-console-proxy.
+
+
+=== cloud-vnet: the Cloud Virtual Networking Arbiter ===
+
+This C-based service provides network virtualization and isolation for
+virtual machines based on security settings established by the cloud
+operator.  Its initscript is called cloud-vnet; it requires no setup.
+
+
+---------------------------------------------------------------------
+INSTALLATION PATHS: WHERE THE STACK IS INSTALLED ON YOUR SYSTEM
+---------------------------------------------------------------------
+
+
+The CloudStack build system installs files on a variety of paths, each
+one of which is selectable when building from source.
+
+- $PREFIX:
+	the default prefix where the entire stack is installed
+	defaults to /usr/local on source builds
+	defaults to /usr on package builds
+	
+- $SYSCONFDIR/cloud:
+	
+	the prefix for CloudStack configuration files
+	defaults to $PREFIX/etc/cloud on source builds
+	defaults to /etc/cloud on package builds
+	
+- $SYSCONFDIR/init.d:
+	the prefix for CloudStack initscripts
+	defaults to $PREFIX/etc/init.d on source builds
+	defaults to /etc/init.d on package builds
+	
+- $BINDIR:
+	the CloudStack installs programs there
+	defaults to $PREFIX/bin on source builds
+	defaults to /usr/bin on package builds
+	
+- $LIBEXECDIR:
+	the CloudStack installs service runners there
+	defaults to $PREFIX/libexec on source builds
+	defaults to /usr/libexec on package builds (/usr/bin on Ubuntu)
+
+
+---------------------------------------------------------------------
+UNINSTALLING THE CLOUDSTACK FROM YOUR SYSTEM
+---------------------------------------------------------------------
+
+
+If you installed the CloudStack using packages, use your operating
+system package manager to remove the CloudStack packages.
+
+If you installed from the source:    ./waf uninstall
 
 
 ---------------------------------------------------------------------

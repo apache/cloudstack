@@ -18,41 +18,68 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
 
+@Implementation(method="assignSecurityGroup", manager=Manager.ManagementServer)
 public class AssignPortForwardingServiceCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(AssignPortForwardingServiceCmd.class.getName());
 	
     private static final String s_name = "assignportforwardingserviceresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IDS, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PUBLIC_IP, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VIRTUAL_MACHINE_ID, Boolean.TRUE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="id", type=CommandType.STRING)
+    private Long id;
+
+    @Parameter(name="ids", type=CommandType.LIST, collectionType=CommandType.LONG)
+    private List<Long> ids;
+
+    @Parameter(name="publicip", type=CommandType.STRING, required=true)
+    private String publicIp;
+
+    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=true)
+    private Long virtualMachineId;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getId() {
+        return id;
     }
+
+    public List<Long> getIds() {
+        return ids;
+    }
+
+    public String getPublicIp() {
+        return publicIp;
+    }
+
+    public Long getVirtualMachineId() {
+        return virtualMachineId;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     public String getName() {
         return s_name;
     }
     
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
+/*
 
     @Override
     public List<Pair<String, Object>> execute(Map<String, Object> params) {
@@ -121,4 +148,5 @@ public class AssignPortForwardingServiceCmd extends BaseCmd {
         returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
         return returnValues;
     }
+    */
 }

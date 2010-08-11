@@ -18,19 +18,10 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
-import com.cloud.domain.DomainVO;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
+import com.cloud.storage.VMTemplateVO;
 
 public class ListTemplatePermissionsCmd extends ListTemplateOrIsoPermissionsCmd {
 	protected String getResponseName() {

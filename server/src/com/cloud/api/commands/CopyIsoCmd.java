@@ -18,33 +18,53 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
 import com.cloud.async.executor.CopyTemplateResultObject;
 import com.cloud.serializer.SerializerHelper;
-import com.cloud.storage.Storage;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
+@Implementation(method="copyTemplate", manager=Manager.ManagementServer)
 public class CopyIsoCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(CopyIsoCmd.class.getName());
     private static final String s_name = "copyisoresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SOURCE_ZONE_ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DEST_ZONE_ID, Boolean.TRUE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="destzoneid", type=CommandType.LONG, required=true)
+    private Long destZoneId;
+
+    @Parameter(name="id", type=CommandType.LONG, required=true)
+    private Long id;
+
+    @Parameter(name="sourcezoneid", type=CommandType.LONG, required=true)
+    private Long sourceZoneId;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getDestinationZoneId() {
+        return destZoneId;
     }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Long getSourceZoneId() {
+        return sourceZoneId;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
@@ -55,11 +75,7 @@ public class CopyIsoCmd extends BaseCmd {
         return s_name;
     }
 
-    @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
-
+    /*
     @Override
     public List<Pair<String, Object>> execute(Map<String, Object> params) {
         Long isoId = (Long)params.get(BaseCmd.Properties.ID.getName());
@@ -120,6 +136,7 @@ public class CopyIsoCmd extends BaseCmd {
     	}
     
     }
+    */
     
     protected long getInstanceIdFromJobSuccessResult(String result) {
     	CopyTemplateResultObject resultObject = (CopyTemplateResultObject)SerializerHelper.fromSerializedString(result);

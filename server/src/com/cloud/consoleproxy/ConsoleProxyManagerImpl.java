@@ -985,7 +985,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager,
 		final AccountVO account = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
 
 		try {
-			List<VolumeVO> vols = _storageMgr.create(account, proxy, _template, dc, pod, _serviceOffering, null,0);
+			List<VolumeVO> vols = _storageMgr.create(account, proxy, _template, dc, pod, _serviceOffering, null);
 			if (vols == null) {
 				s_logger.error("Unable to alloc storage for console proxy");
 				return null;
@@ -1383,9 +1383,10 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager,
 				if (s_logger.isTraceEnabled())
 					s_logger.trace("Begin console proxy capacity scan");
 
-				// config var for consoleproxy.restart check
+				//config var for consoleproxy.restart check
 				String restart = _configDao.getValue("consoleproxy.restart");
-				if(restart != null && restart.equalsIgnoreCase("false"))
+				
+				if(restart.equalsIgnoreCase("false"))
 				{
 					s_logger.debug("Capacity scan disabled purposefully, consoleproxy.restart = false. This happens when the primarystorage is in maintenance mode");
 					return;

@@ -130,6 +130,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	public List<VMTemplateVO> listByAccountId(long accountId) {
         SearchCriteria<VMTemplateVO> sc = AccountIdSearch.create();
         sc.setParameters("accountId", accountId);
+        sc.setParameters("publicTemplate", false);
         return listActiveBy(sc);
 	}
 

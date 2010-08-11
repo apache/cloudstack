@@ -27,11 +27,11 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
 import com.cloud.host.HostVO;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.user.UserContext;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -63,25 +63,26 @@ public class ConsoleProxyServlet extends HttpServlet {
 				sendResponse(resp, "Access denied. You haven't logged in or your web session has timed out");
 				return;
             }
-            	
-            String userId = (String)session.getAttribute(BaseCmd.Properties.USER_ID.getName());
-            String account = (String)session.getAttribute(BaseCmd.Properties.ACCOUNT.getName());
-            Account accountObj = (Account)session.getAttribute(BaseCmd.Properties.ACCOUNT_OBJ.getName());
+
+            // FIXME:  are these set up correctly from ApiServer?
+            Long userId = UserContext.current().getUserId();
+            String account = UserContext.current().getAccountName();
+            Account accountObj = (Account)UserContext.current().getAccountObject();
 
             // Do a sanity check here to make sure the user hasn't already been deleted
-            if ((userId == null) || (account == null) || (accountObj == null) || !verifyUser(Long.valueOf(userId))) {
+            if ((userId == null) || (account == null) || (accountObj == null) || !verifyUser(userId)) {
 				s_logger.info("Invalid user/account, reject console/thumbnail access");
 				sendResponse(resp, "Access denied. Invalid or inconsistent account is found");
 				return;
             }
-			
+
 			String cmd = req.getParameter("cmd");
 			if(cmd == null || !isValidCmd(cmd)) {
 				s_logger.info("invalid console servlet command: " + cmd);
 				sendResponse(resp, "");
 				return;
 			}
-				
+
 			String vmIdString = req.getParameter("vm");
 			long vmId = 0;
 			try {

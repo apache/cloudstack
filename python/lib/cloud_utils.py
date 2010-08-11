@@ -790,14 +790,13 @@ class SetupFirewall2(ConfigTask):
 		
 	def execute(self):
 		
-		yield "Permitting traffic in the bridge interface, migration port and for VNC ports"
+		yield "Permitting traffic in the bridge interface and for VNC ports"
 		
 		if distro in (Fedora , CentOS):
 			
 			for rule in (
 				"-I FORWARD -i %s -o %s -j ACCEPT"%(self.brname,self.brname),
 				"-I INPUT 1 -p tcp --dport 5900:6100 -j ACCEPT",
-				"-I INPUT 1 -p tcp --dport 49152:49216 -j ACCEPT",
 				):
 				args = rule.split()
 				o = iptables(*args)
@@ -814,7 +813,6 @@ class SetupFirewall2(ConfigTask):
 				newtext.append(line)
 			file("/etc/ufw/before.rules","w").writelines(newtext)
 			ufw.allow.proto.tcp("from","any","to","any","port","5900:6100")
-			ufw.allow.proto.tcp("from","any","to","any","port","49152:49216")
 
 			stop_service("ufw")
 			start_service("ufw")
@@ -926,7 +924,7 @@ def setup_agent_config(configfile):
 		zoneandpod = prompt_for_hostpods(x)
 		if zoneandpod:
 			confopts["zone"],confopts["pod"] = zoneandpod
-			stderr("You selected zone %s pod %s",confopts["zone"],confopts["pod"])
+			stderr("You selected zone %s pod %s",e,confopts["zone"],confopts["pod"])
 		else:
 			stderr("Skipped -- using the previous zone %s pod %s",confopts["zone"],confopts["pod"])
 	except (urllib2.URLError,urllib2.HTTPError),e:

@@ -20,13 +20,16 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.async.executor.AssignToLoadBalancerExecutor;
-import com.cloud.async.executor.LoadBalancerParam;
+import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InternalErrorException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.AccountVO;
@@ -170,8 +173,16 @@ public interface NetworkManager extends Manager {
     boolean associateIP(DomainRouterVO router, List<String> ipAddrList, boolean add) throws ResourceAllocationException;
     
     boolean updateFirewallRule(FirewallRuleVO fwRule, String oldPrivateIP, String oldPrivatePort);
-    boolean executeAssignToLoadBalancer(AssignToLoadBalancerExecutor executor, LoadBalancerParam param);
-    
+//    boolean executeAssignToLoadBalancer(AssignToLoadBalancerExecutor executor, LoadBalancerParam param);
+
+    /**
+     * Assign a virtual machine, or list of virtual machines, to a load balancer.
+     */
+    void assignToLoadBalancer(AssignToLoadBalancerRuleCmd cmd)  throws NetworkRuleConflictException,
+                                                                       InternalErrorException,
+                                                                       PermissionDeniedException,
+                                                                       InvalidParameterValueException;
+
     /**
      * Add a DHCP entry on the domr dhcp server
      * @param routerHostId - the host id of the domr

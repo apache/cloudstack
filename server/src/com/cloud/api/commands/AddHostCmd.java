@@ -18,48 +18,87 @@
 
 package com.cloud.api.commands;
 
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
-import com.cloud.dc.ClusterVO;
-import com.cloud.dc.HostPodVO;
-import com.cloud.host.Host;
-import com.cloud.host.HostStats;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.storage.GuestOSCategoryVO;
-import com.cloud.utils.Pair;
-import com.cloud.vm.UserVmVO;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
 
+@Implementation(method="discoverHosts", manager=Manager.ManagementServer)
 public class AddHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddHostCmd.class.getName());
     private static final String s_name = "addhostresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.CLUSTER_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.CLUSTER_NAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.URL, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USERNAME, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PASSWORD, Boolean.TRUE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="clusterid", type=CommandType.LONG)
+    private Long clusterId;
+
+    @Parameter(name="clustername", type=CommandType.STRING)
+    private String clusterName;
+
+    @Parameter(name="password", type=CommandType.STRING, required=true)
+    private String password;
+
+    @Parameter(name="podid", type=CommandType.LONG)
+    private Long podId;
+
+    @Parameter(name="url", type=CommandType.STRING, required=true)
+    private String url;
+
+    @Parameter(name="username", type=CommandType.STRING, required=true)
+    private String username;
+
+    @Parameter(name="zoneid", type=CommandType.LONG, required=true)
+    private Long zoneId;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getClusterId() {
+        return clusterId;
     }
+
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public Long getPodId() {
+        return podId;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
         return s_name;
     }
-    @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
+    /*
     @Override
     public List<Pair<String, Object>> execute(Map<String, Object> params)
     {
@@ -237,4 +276,5 @@ public class AddHostCmd extends BaseCmd {
 		return serverTags;
     
     }
+    */
 }

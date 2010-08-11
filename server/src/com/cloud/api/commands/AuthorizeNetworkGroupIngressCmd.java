@@ -18,42 +18,107 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
-import com.cloud.network.security.NetworkGroupVO;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
-import com.cloud.utils.net.NetUtils;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
 
+@Implementation(method="authorizeNetworkGroupIngress", manager=Manager.ManagementServer)
 public class AuthorizeNetworkGroupIngressCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(AuthorizeNetworkGroupIngressCmd.class.getName());
 
     private static final String s_name = "authorizenetworkgroupingress";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PROTOCOL, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.START_PORT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.END_PORT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ICMP_TYPE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ICMP_CODE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NETWORK_GROUP_NAME, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.CIDR_LIST, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_NETWORK_GROUP_LIST, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="protocol", type=CommandType.STRING)
+    private String protocol;
+
+    @Parameter(name="startport", type=CommandType.INTEGER)
+    private Integer startPort;
+
+    @Parameter(name="endport", type=CommandType.INTEGER)
+    private Integer endPort;
+
+    @Parameter(name="icmptype", type=CommandType.INTEGER)
+    private Integer icmpType;
+
+    @Parameter(name="icmpcode", type=CommandType.INTEGER)
+    private Integer icmpCode;
+
+    @Parameter(name="networkgroupname", type=CommandType.STRING, required=true)
+    private String networkGroupName;
+
+    @Parameter(name="cidrlist", type=CommandType.STRING)
+    private String cidrList;
+
+    @Parameter(name="usernetworkgrouplist", type=CommandType.MAP)
+    private Map userNetworkGroupList;
+
+    @Parameter(name="account", type=CommandType.STRING)
+    private String accountName;
+
+    @Parameter(name="domainid", type=CommandType.LONG)
+    private Long domainId;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getAccountName() {
+        return accountName;
     }
+
+    public String getCidrList() {
+        return cidrList;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public Integer getEndPort() {
+        return endPort;
+    }
+
+    public Integer getIcmpCode() {
+        return icmpCode;
+    }
+
+    public Integer getIcmpType() {
+        return icmpType;
+    }
+
+    public String getNetworkGroupName() {
+        return networkGroupName;
+    }
+
+    public String getProtocol() {
+        if (protocol == null) {
+            return "all";
+        }
+        return protocol;
+    }
+
+    public Integer getStartPort() {
+        return startPort;
+    }
+
+    public Map getUserNetworkGroupList() {
+        return userNetworkGroupList;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     public String getName() {
         return s_name;
@@ -62,11 +127,8 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseCmd {
     public static String getResultObjectName() {
     	return "networkgroup";
     }
-    
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
+    /*
     @Override
     public List<Pair<String, Object>> execute(Map<String, Object> params) {
         Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
@@ -253,6 +315,7 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseCmd {
         //returnValues.add(new Pair<String, Object>(BaseCmd.Properties.RULE_ID.getName(), Long.valueOf(ruleId))); 
         return returnValues;
     }
+    */
 
     /*
 	protected long getInstanceIdFromJobSuccessResult(String result) {

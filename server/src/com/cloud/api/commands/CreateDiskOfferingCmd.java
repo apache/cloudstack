@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.domain.DomainVO;
 import com.cloud.exception.InvalidParameterValueException;
@@ -47,6 +48,55 @@ public class CreateDiskOfferingCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TAGS, Boolean.FALSE));
     }
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="disksize", type=CommandType.LONG, required=true)
+    private Long diskSize;
+
+    @Parameter(name="displaytext", type=CommandType.STRING, required=true)
+    private String displayText;
+
+    @Parameter(name="domainid", type=CommandType.LONG)
+    private Long domainId;
+
+    @Parameter(name="name", type=CommandType.STRING, required=true)
+    private String offeringName;
+
+    @Parameter(name="tags", type=CommandType.STRING)
+    private String tags;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getDiskSize() {
+        return diskSize;
+    }
+
+    public String getDisplayText() {
+        return displayText;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public String getOfferingName() {
+        return offeringName;
+    }
+
+    public String getTags() {
+        return tags;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {

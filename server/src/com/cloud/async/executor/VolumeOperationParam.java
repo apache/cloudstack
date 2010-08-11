@@ -31,8 +31,7 @@ public class VolumeOperationParam {
 	private long zoneId;
 	private String name;
 	private long diskOfferingId;
-    private long size;
-    
+	
 	// Used for Attach and Detach
 	private long vmId;
 	
@@ -125,11 +124,4 @@ public class VolumeOperationParam {
         return deviceId;
     }
 
-    public long getSize(){
-    	return size;
-    }
-    
-    public void setSize(long size){
-    	this.size = size;
-    }
 }

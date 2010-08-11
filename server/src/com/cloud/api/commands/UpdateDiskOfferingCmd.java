@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.user.User;
@@ -36,12 +37,53 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     static {
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISPLAY_TEXT, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISPLAY_TEXT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TAGS, Boolean.FALSE));
+
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
     }
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="displaytext", type=CommandType.STRING)
+    private String displayText;
+
+    @Parameter(name="id", type=CommandType.LONG, required=true)
+    private Long id;
+
+    @Parameter(name="name", type=CommandType.STRING)
+    private String diskOfferingName;
+
+    @Parameter(name="tags", type=CommandType.STRING)
+    private String tags;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getDisplayText() {
+        return displayText;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getDiskOfferingName() {
+        return diskOfferingName;
+    }
+
+    public String getTags() {
+        return tags;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
@@ -59,7 +101,6 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
         String displayText = (String)params.get(BaseCmd.Properties.DISPLAY_TEXT.getName());
         Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
         String tags = (String)params.get(BaseCmd.Properties.TAGS.getName());
-        Boolean editSOResult = false;
         
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);

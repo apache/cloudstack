@@ -55,14 +55,11 @@ import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRuleCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.alert.AlertManager;
-import com.cloud.api.BaseCmd;
+import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
-import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
-import com.cloud.async.executor.AssignToLoadBalancerExecutor;
-import com.cloud.async.executor.LoadBalancerParam;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -72,8 +69,8 @@ import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Vlan;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -97,10 +94,10 @@ import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
+import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.SecurityGroupVMMapDao;
 import com.cloud.offering.ServiceOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
@@ -136,14 +133,14 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouter;
+import com.cloud.vm.DomainRouter.Role;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
-import com.cloud.vm.DomainRouter.Role;
-import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -160,6 +157,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     @Inject FirewallRulesDao _rulesDao = null;
     @Inject SecurityGroupVMMapDao _securityGroupVMMapDao = null;
     @Inject LoadBalancerDao _loadBalancerDao = null;
+    @Inject LoadBalancerVMMapDao _loadBalancerVMMapDao = null;
     @Inject IPAddressDao _ipAddressDao = null;
     @Inject VMTemplateDao _templateDao =  null;
     @Inject DiskTemplateDao _diskDao = null;
@@ -186,8 +184,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     @Inject AsyncJobManager _asyncMgr;
     @Inject StoragePoolDao _storagePoolDao = null;
     @Inject ServiceOfferingDao _serviceOfferingDao = null;
-    @Inject
-    private UserStatisticsDao _statsDao;
+    @Inject UserStatisticsDao _statsDao;
 
     long _routerTemplateId = -1;
     int _routerRamSize;
@@ -433,7 +430,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             
             txn.commit();
 
-            List<VolumeVO> vols = _storageMgr.create(account, router, rtrTemplate, dc, pod, _offering, null,0);
+            List<VolumeVO> vols = _storageMgr.create(account, router, rtrTemplate, dc, pod, _offering, null);
             if (vols == null){
             	_ipAddressDao.unassignIpAddress(guestIp);
             	_routerDao.delete(router.getId());
@@ -606,7 +603,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                 router.setLastHostId(pod.second());
                 router = _routerDao.persist(router);
 
-                List<VolumeVO> vols = _storageMgr.create(account, router, template, dc, pod.first(), _offering, null,0);
+                List<VolumeVO> vols = _storageMgr.create(account, router, template, dc, pod.first(), _offering, null);
                 if(vols != null) {
                     found = true;
                     break;
@@ -1534,41 +1531,225 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     }
 
     @Override
-    public boolean executeAssignToLoadBalancer(AssignToLoadBalancerExecutor executor, LoadBalancerParam param) {
-        try {
-            executor.getAsyncJobMgr().getExecutorContext().getManagementServer().assignToLoadBalancer(param.getUserId(), param.getLoadBalancerId(), param.getInstanceIdList());
-            executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, "success");
-        } catch (InvalidParameterValueException e) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to assign vms " + StringUtils.join(param.getInstanceIdList(), ",") + " to load balancer " + param.getLoadBalancerId() + ": " + e.getMessage());
-            }
+    public void assignToLoadBalancer(AssignToLoadBalancerRuleCmd cmd)  throws NetworkRuleConflictException, InternalErrorException,
+                                                                              PermissionDeniedException, InvalidParameterValueException {
+        Long loadBalancerId = cmd.getLoadBalancerId();
+        Long instanceIdParam = cmd.getVirtualMachineId();
+        List<Long> instanceIds = cmd.getVirtualMachineIds();
 
-            executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.PARAM_ERROR, "Unable to assign vms " + StringUtils.join(param.getInstanceIdList(), ",") + " to load balancer " + param.getLoadBalancerId());
-        } catch (NetworkRuleConflictException e) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to assign vms " + StringUtils.join(param.getInstanceIdList(), ",") + " to load balancer " + param.getLoadBalancerId() + ": " + e.getMessage());
-            }
-
-            executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.NET_CONFLICT_LB_RULE_ERROR, e.getMessage());
-        } catch (InternalErrorException e) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to assign vms " + StringUtils.join(param.getInstanceIdList(), ",") + " to load balancer " + param.getLoadBalancerId() + ": " + e.getMessage());
-            }
-
-            executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, e.getMessage());
-        } catch (PermissionDeniedException e) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to assign vms " + StringUtils.join(param.getInstanceIdList(), ",") + " to load balancer " + param.getLoadBalancerId() + ": " + e.getMessage());
-            }
-            
-            executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-                AsyncJobResult.STATUS_FAILED, BaseCmd.ACCOUNT_ERROR, e.getMessage());
-        } catch(Exception e) {
-            s_logger.warn("Unable to assign vms " + StringUtils.join(param.getInstanceIdList(), ",") + " to load balancer " + param.getLoadBalancerId() + ": " + e.getMessage(), e);
-            executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-                    AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, e.getMessage());
+        // FIXME:  do validation similar to what was done in AssignToLoadBalancerRuleCmd.execute()
+        if ((instanceIds == null) && (instanceIdParam != null)) {
+            instanceIds = new ArrayList<Long>();
+            instanceIds.add(instanceIdParam);
         }
-        return true;
+
+        // FIXME:  use these parameters for permission check...
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+
+        Transaction txn = Transaction.currentTxn();
+        try {
+            List<FirewallRuleVO> firewallRulesToApply = new ArrayList<FirewallRuleVO>();
+            long accountId = 0;
+            DomainRouterVO router = null;
+
+            LoadBalancerVO loadBalancer = _loadBalancerDao.findById(Long.valueOf(loadBalancerId));
+            if (loadBalancer == null) {
+                s_logger.warn("Unable to find load balancer with id " + loadBalancerId);
+                return;
+            }
+
+            List<LoadBalancerVMMapVO> mappedInstances = _loadBalancerVMMapDao.listByLoadBalancerId(loadBalancerId, false);
+            Set<Long> mappedInstanceIds = new HashSet<Long>();
+            if (mappedInstances != null) {
+                for (LoadBalancerVMMapVO mappedInstance : mappedInstances) {
+                    mappedInstanceIds.add(Long.valueOf(mappedInstance.getInstanceId()));
+                }
+            }
+
+            for (Long instanceId : instanceIds) {
+                if (mappedInstanceIds.contains(instanceId)) {
+                    continue;
+                }
+
+                UserVmVO userVm = _vmDao.findById(instanceId);
+                if (userVm == null) {
+                    s_logger.warn("Unable to find virtual machine with id " + instanceId);
+                    throw new InvalidParameterValueException("Unable to find virtual machine with id " + instanceId);
+                } else {
+                    // sanity check that the vm can be applied to the load balancer
+                    ServiceOfferingVO offering = _serviceOfferingDao.findById(userVm.getServiceOfferingId());
+                    if ((offering == null) || !GuestIpType.Virtualized.equals(offering.getGuestIpType())) {
+                        // we previously added these instanceIds to the loadBalancerVMMap, so remove them here as we are rejecting the API request
+                        // without actually modifying the load balancer
+                        _loadBalancerVMMapDao.remove(loadBalancerId, instanceIds, Boolean.TRUE);
+
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Unable to add virtual machine " + userVm.toString() + " to load balancer " + loadBalancerId + ", bad network type (" + ((offering == null) ? "null" : offering.getGuestIpType()) + ")");
+                        }
+
+                        throw new InvalidParameterValueException("Unable to add virtual machine " + userVm.toString() + " to load balancer " + loadBalancerId + ", bad network type (" + ((offering == null) ? "null" : offering.getGuestIpType()) + ")");
+                    }
+                }
+
+                if (accountId == 0) {
+                    accountId = userVm.getAccountId();
+                } else if (accountId != userVm.getAccountId()) {
+                    s_logger.warn("guest vm " + userVm.getName() + " (id:" + userVm.getId() + ") belongs to account " + userVm.getAccountId()
+                            + ", previous vm in list belongs to account " + accountId);
+                    throw new InvalidParameterValueException("guest vm " + userVm.getName() + " (id:" + userVm.getId() + ") belongs to account " + userVm.getAccountId()
+                            + ", previous vm in list belongs to account " + accountId);
+                }
+                
+                DomainRouterVO nextRouter = null;
+                if (userVm.getDomainRouterId() != null)
+                    nextRouter = _routerDao.findById(userVm.getDomainRouterId());
+                if (nextRouter == null) {
+                    s_logger.warn("Unable to find router (" + userVm.getDomainRouterId() + ") for virtual machine with id " + instanceId);
+                    throw new InvalidParameterValueException("Unable to find router (" + userVm.getDomainRouterId() + ") for virtual machine with id " + instanceId);
+                }
+
+                if (router == null) {
+                    router = nextRouter;
+
+                    // Make sure owner of router is owner of load balancer.  Since we are already checking that all VMs belong to the same router, by checking router
+                    // ownership once we'll make sure all VMs belong to the owner of the load balancer.
+                    if (router.getAccountId() != loadBalancer.getAccountId()) {
+                        throw new InvalidParameterValueException("guest vm " + userVm.getName() + " (id:" + userVm.getId() + ") does not belong to the owner of load balancer " +
+                                loadBalancer.getName() + " (owner is account id " + loadBalancer.getAccountId() + ")");
+                    }
+                } else if (router.getId() != nextRouter.getId()) {
+                    throw new InvalidParameterValueException("guest vm " + userVm.getName() + " (id:" + userVm.getId() + ") belongs to router " + nextRouter.getName()
+                            + ", previous vm in list belongs to router " + router.getName());
+                }
+
+                // check for ip address/port conflicts by checking exising forwarding and loadbalancing rules
+                String ipAddress = loadBalancer.getIpAddress();
+                String privateIpAddress = userVm.getGuestIpAddress();
+                List<FirewallRuleVO> existingRulesOnPubIp = _rulesDao.listIPForwarding(ipAddress);
+
+                if (existingRulesOnPubIp != null) {
+                    for (FirewallRuleVO fwRule : existingRulesOnPubIp) {
+                        if (!(  (fwRule.isForwarding() == false) &&
+                                (fwRule.getGroupId() != null) &&
+                                (fwRule.getGroupId() == loadBalancer.getId().longValue())  )) {
+                            // if the rule is not for the current load balancer, check to see if the private IP is our target IP,
+                            // in which case we have a conflict
+                            if (fwRule.getPublicPort().equals(loadBalancer.getPublicPort())) {
+                                throw new NetworkRuleConflictException("An existing port forwarding service rule for " + ipAddress + ":" + loadBalancer.getPublicPort()
+                                        + " exists, found while trying to apply load balancer " + loadBalancer.getName() + " (id:" + loadBalancer.getId() + ") to instance "
+                                        + userVm.getName() + ".");
+                            }
+                        } else if (fwRule.getPrivateIpAddress().equals(privateIpAddress) && fwRule.getPrivatePort().equals(loadBalancer.getPrivatePort()) && fwRule.isEnabled()) {
+                            // for the current load balancer, don't add the same instance to the load balancer more than once
+                            continue;
+                        }
+                    }
+                }
+
+                FirewallRuleVO newFwRule = new FirewallRuleVO();
+                newFwRule.setAlgorithm(loadBalancer.getAlgorithm());
+                newFwRule.setEnabled(true);
+                newFwRule.setForwarding(false);
+                newFwRule.setPrivatePort(loadBalancer.getPrivatePort());
+                newFwRule.setPublicPort(loadBalancer.getPublicPort());
+                newFwRule.setPublicIpAddress(loadBalancer.getIpAddress());
+                newFwRule.setPrivateIpAddress(userVm.getGuestIpAddress());
+                newFwRule.setGroupId(loadBalancer.getId());
+
+                firewallRulesToApply.add(newFwRule);
+            }
+
+            // if there's no work to do, bail out early rather than reconfiguring the proxy with the existing rules
+            if (firewallRulesToApply.isEmpty()) {
+                return;
+            }
+
+            IPAddressVO ipAddr = _ipAddressDao.findById(loadBalancer.getIpAddress());
+            List<IPAddressVO> ipAddrs = listPublicIpAddressesInVirtualNetwork(accountId, ipAddr.getDataCenterId(), null);
+            for (IPAddressVO ipv : ipAddrs) {
+                List<FirewallRuleVO> rules = _rulesDao.listIPForwarding(ipv.getAddress(), false);
+                firewallRulesToApply.addAll(rules);
+            }
+
+            txn.start();
+
+            List<FirewallRuleVO> updatedRules = null;
+            if (router.getState().equals(State.Starting)) {
+                // Starting is a special case...if the router is starting that means the IP address hasn't yet been assigned to the domR and the update firewall rules script will fail.
+                // In this case, just store the rules and they will be applied when the router state is resent (after the router is started).
+                updatedRules = firewallRulesToApply;
+            } else {
+                updatedRules = updateFirewallRules(loadBalancer.getIpAddress(), firewallRulesToApply, router);
+            }
+
+            // Save and create the event
+            String description;
+            String type = EventTypes.EVENT_NET_RULE_ADD;
+            String ruleName = "load balancer";
+            String level = EventVO.LEVEL_INFO;
+            Account account = _accountDao.findById(accountId);
+
+            LoadBalancerVO loadBalancerLock = null;
+            try {
+                loadBalancerLock = _loadBalancerDao.acquire(loadBalancerId);
+                if (loadBalancerLock == null) {
+                    s_logger.warn("assignToLoadBalancer: Failed to lock load balancer " + loadBalancerId + ", proceeding with updating loadBalancerVMMappings...");
+                }
+                if ((updatedRules != null) && (updatedRules.size() == firewallRulesToApply.size())) {
+                    // flag the instances as mapped to the load balancer
+                    List<LoadBalancerVMMapVO> pendingMappedVMs = _loadBalancerVMMapDao.listByLoadBalancerId(loadBalancerId, true);
+                    for (LoadBalancerVMMapVO pendingMappedVM : pendingMappedVMs) {
+                        if (instanceIds.contains(pendingMappedVM.getInstanceId())) {
+                            LoadBalancerVMMapVO pendingMappedVMForUpdate = _loadBalancerVMMapDao.createForUpdate();
+                            pendingMappedVMForUpdate.setPending(false);
+                            _loadBalancerVMMapDao.update(pendingMappedVM.getId(), pendingMappedVMForUpdate);
+                        }
+                    }
+
+                    for (FirewallRuleVO updatedRule : updatedRules) {
+                        if (updatedRule.getId() == null) {
+                            _rulesDao.persist(updatedRule);
+
+                            description = "created new " + ruleName + " rule [" + updatedRule.getPublicIpAddress() + ":"
+                                    + updatedRule.getPublicPort() + "]->[" + updatedRule.getPrivateIpAddress() + ":"
+                                    + updatedRule.getPrivatePort() + "]" + " " + updatedRule.getProtocol();
+
+                            // FIXME:  userId is first param, which should be retrieved from the context or from the command itself...
+//                            saveEvent(Long.valueOf(1), account.getId(), level, type, description);
+                        }
+                    }
+                } else {
+                    // Remove the instanceIds from the load balancer since there was a failure.  Make sure to commit the
+                    // transaction here, otherwise the act of throwing the internal error exception will cause this
+                    // remove operation to be rolled back.
+                    _loadBalancerVMMapDao.remove(loadBalancerId, instanceIds, null);
+                    txn.commit();
+
+                    s_logger.warn("Failed to apply load balancer " + loadBalancer.getName() + " (id:" + loadBalancerId + ") to guest virtual machines " + StringUtils.join(instanceIds, ","));
+                    throw new InternalErrorException("Failed to apply load balancer " + loadBalancer.getName() + " (id:" + loadBalancerId + ") to guest virtual machine " + StringUtils.join(instanceIds, ","));
+                }
+            } finally {
+                if (loadBalancerLock != null) {
+                    _loadBalancerDao.release(loadBalancerId);
+                }
+            }
+
+            txn.commit();
+        } catch (Throwable e) {
+            txn.rollback();
+            if (e instanceof NetworkRuleConflictException) {
+                throw (NetworkRuleConflictException) e;
+            } else if (e instanceof InvalidParameterValueException) {
+                throw (InvalidParameterValueException) e;
+            } else if (e instanceof PermissionDeniedException) {
+                throw (PermissionDeniedException) e;
+            } else if (e instanceof InternalErrorException) {
+                s_logger.warn("ManagementServer error", e);
+                throw (InternalErrorException) e;
+            }
+            s_logger.warn("ManagementServer error", e);
+        }
     }
 
     @Override @DB
@@ -2050,7 +2231,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         final HashSet<Host> avoid = new HashSet<Host>();
 
         final HostVO fromHost = _hostDao.findById(router.getHostId());
-        if (fromHost.getHypervisorType() != Hypervisor.Type.KVM && fromHost.getClusterId() == null) {
+        if (fromHost.getClusterId() == null) {
             s_logger.debug("The host is not in a cluster");
             return null;
         }

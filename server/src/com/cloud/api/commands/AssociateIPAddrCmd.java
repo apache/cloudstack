@@ -18,38 +18,53 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
-import com.cloud.dc.VlanVO;
-import com.cloud.dc.Vlan.VlanType;
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InternalErrorException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.network.IPAddressVO;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
 
+@Implementation(method="associateIpAddress", manager=Manager.ManagementServer)
 public class AssociateIPAddrCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AssociateIPAddrCmd.class.getName());
 
     private static final String s_name = "associateipaddressresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.TRUE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="account", type=CommandType.STRING)
+    private String accountName;
+
+    @Parameter(name="domainid", type=CommandType.LONG)
+    private Long domainId;
+
+    @Parameter(name="zoneid", type=CommandType.LONG, required=true)
+    private Long zoneId;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getAccountName() {
+        return accountName;
     }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     public String getName() {
         return s_name;
@@ -59,10 +74,7 @@ public class AssociateIPAddrCmd extends BaseCmd {
     	return "addressinfo";
     }
 
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
-
+    /*
     @Override
     public List<Pair<String, Object>> execute(Map<String, Object> params) {
     	Long zoneId = (Long)params.get(BaseCmd.Properties.ZONE_ID.getName());
@@ -168,4 +180,5 @@ public class AssociateIPAddrCmd extends BaseCmd {
         }
         return embeddedObject;
     }
+    */
 }

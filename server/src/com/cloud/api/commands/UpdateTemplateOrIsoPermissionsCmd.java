@@ -8,6 +8,7 @@ import java.util.StringTokenizer;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -23,12 +24,60 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     static {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_PUBLIC, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_FEATURED, Boolean.FALSE));
+
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_NAMES, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_FEATURED, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_PUBLIC, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.OP, Boolean.FALSE));
     }
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="accounts", type=CommandType.LIST, collectionType=CommandType.STRING)
+    private List<String> accountNames;
+
+    @Parameter(name="id", type=CommandType.LONG, required=true)
+    private Long id;
+
+    @Parameter(name="isfeatured", type=CommandType.BOOLEAN)
+    private Boolean featured;
+
+    @Parameter(name="ispublic", type=CommandType.BOOLEAN)
+    private Boolean isPublic;
+
+    @Parameter(name="op", type=CommandType.STRING)
+    private String operation;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public List<String> getAccountNames() {
+        return accountNames;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Boolean isFeatured() {
+        return featured;
+    }
+
+    public Boolean isPublic() {
+        return isPublic;
+    }
+
+    public String getOperation() {
+        return operation;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
@@ -82,12 +131,6 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
             }
         }
 
-        // If the template is removed throw an error.
-        if (template.getRemoved() != null){
-        	s_logger.error("unable to update permissions for " + getMediaType() + " with id " + id + " as it is removed  ");
-        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to update permissions for " + getMediaType() + " with id " + id + " as it is removed ");
-        }
-        
         if (id == Long.valueOf(1)) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to update permissions for " + getMediaType() + " with id " + id);
         }

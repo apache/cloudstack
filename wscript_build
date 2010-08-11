@@ -475,7 +475,7 @@ bld.install_files("${MSENVIRON}/webapps/client",
 	cwd=start_path,relative_trick=True)
 
 # -> source files with tokens
-patterns = 'ui/*html ui/**/*html ui/**/*js ui/**/*css ui/**/*properties ui/**/*jsp'
+patterns = 'ui/*html ui/**/*html ui/**/*js ui/**/*css'
 src_files = Utils.to_list(filelist(patterns,flat=True))
 subst_files = [ x+".subst" for x in src_files ]
 inst_files = [ Utils.relpath(x,"ui") for x in src_files ]

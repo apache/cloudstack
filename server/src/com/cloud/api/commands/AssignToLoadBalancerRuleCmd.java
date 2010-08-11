@@ -18,43 +18,74 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
-import com.cloud.network.LoadBalancerVO;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
 
+@Implementation(method="assignToLoadBalancer", manager=Manager.NetworkManager)
 public class AssignToLoadBalancerRuleCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AssignToLoadBalancerRuleCmd.class.getName());
 
     private static final String s_name = "assigntoloadbalancerruleresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VIRTUAL_MACHINE_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VIRTUAL_MACHINE_IDS, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="id", type=CommandType.LONG, required=true)
+    private Long id;
+
+    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=false)
+    private Long virtualMachineId;
+
+    @Parameter(name="virtualmachineids", type=CommandType.LIST, collectionType=CommandType.LONG, required=false)
+    private List<Long> virtualMachineIds;
+
+    @Parameter(name="account", type=CommandType.STRING, required=false)
+    private String accountName;
+
+    @Parameter(name="domainid", type=CommandType.LONG, required=false)
+    private Long domainId;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getLoadBalancerId() {
+        return id;
     }
+
+    public Long getVirtualMachineId() {
+        return virtualMachineId;
+    }
+
+    public List<Long> getVirtualMachineIds() {
+        return virtualMachineIds;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     public String getName() {
         return s_name;
     }
     
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
-
+    /*
     @Override
     public List<Pair<String, Object>> execute(Map<String, Object> params) {
         Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
@@ -105,7 +136,11 @@ public class AssignToLoadBalancerRuleCmd extends BaseCmd {
             }
         }
 
-        long jobId = getManagementServer().assignToLoadBalancerAsync(userId.longValue(), loadBalancerId.longValue(), instanceIdList);
+        Map<String, String> paramMap = new HashMap<String, String>();
+        for (String key : params.keySet()) {
+            paramMap.put(key, (String)params.get(key));
+        }
+        long jobId = getManagementServer().assignToLoadBalancerAsync(paramMap);
 
         if (jobId == 0) {
         	s_logger.warn("Unable to schedule async-job for AssignToLoadBalancerRule comamnd");
@@ -117,5 +152,12 @@ public class AssignToLoadBalancerRuleCmd extends BaseCmd {
         List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
         returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
         return returnValues;
+    }
+        */
+
+    @Override
+    public String getResponse() {
+        // there's no specific response for this command
+        return null;
     }
 }

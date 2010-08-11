@@ -18,41 +18,81 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
+import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.Manager;
 
+@Implementation(method="addConfig", manager=Manager.ManagementServer)
 public class AddConfigCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddConfigCmd.class.getName());
 
     private static final String s_name = "addconfigresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.INSTANCE, Boolean.TRUE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.COMPONENT, Boolean.TRUE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.CATEGORY, Boolean.TRUE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.TRUE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VALUE, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DESCRIPTION, Boolean.FALSE));
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="category", type=CommandType.STRING, required=true)
+    private String category;
+
+    @Parameter(name="component", type=CommandType.STRING, required=true)
+    private String component;
+
+    @Parameter(name="description", type=CommandType.STRING)
+    private String description;
+
+    @Parameter(name="instance", type=CommandType.STRING, required=true)
+    private String instance;
+
+    @Parameter(name="name", type=CommandType.STRING, required=true)
+    private String name;
+
+    @Parameter(name="value", type=CommandType.STRING)
+    private String value;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getCategory() {
+        return category;
     }
+
+    public String getComponent() {
+        return component;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getInstance() {
+        return instance;
+    }
+
+    public String getConfigPropName() {
+        return name;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
     @Override
     public String getName() {
         return s_name;
     }
-    
-    @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
+    /*
     @Override
     public List<Pair<String, Object>> execute(Map<String, Object> params) {
     	String instance = (String) params.get(BaseCmd.Properties.INSTANCE.getName());
@@ -81,4 +121,5 @@ public class AddConfigCmd extends BaseCmd {
 		}
 
     }
+    */
 }

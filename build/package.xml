@@ -132,11 +132,7 @@
     <war destfile="${client.dist.dir}/client.war" webxml="${client.dir}/WEB-INF/web.xml">
       <fileset dir="${client.target.dir}">
         <include name="**/*" />
-      	<exclude name="**/*.properties" />
       </fileset>
-      <classes dir="${client.target.dir}">
-    	<include name="**/resources/*.properties" />
-      </classes>
       <lib dir="${jar.dir}">
         <include name="cloud-*.jar" />
       </lib>

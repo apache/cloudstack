@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.dc.ClusterVO;
 import com.cloud.server.Criteria;
@@ -42,16 +43,71 @@ public class ListStoragePoolsCmd extends BaseCmd{
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.CLUSTER_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IP_ADDRESS, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PATH, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
+
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
     }
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="clusterid", type=CommandType.LONG)
+    private Long clusterId;
+
+    @Parameter(name="ipaddress", type=CommandType.STRING)
+    private String ipAddress;
+
+    @Parameter(name="name", type=CommandType.STRING)
+    private String storagePoolName;
+
+    @Parameter(name="path", type=CommandType.STRING)
+    private String path;
+
+    @Parameter(name="podid", type=CommandType.LONG)
+    private Long podId;
+
+    @Parameter(name="zoneid", type=CommandType.LONG)
+    private Long zoneId;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getClusterId() {
+        return clusterId;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public String getStoragePoolName() {
+        return storagePoolName;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public Long getPodId() {
+        return podId;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
@@ -63,7 +119,6 @@ public class ListStoragePoolsCmd extends BaseCmd{
         return s_properties;
     }
 
-    @SuppressWarnings("unchecked")
 	@Override
     public List<Pair<String, Object>> execute(Map<String, Object> params) {
         String name = (String)params.get(BaseCmd.Properties.NAME.getName());

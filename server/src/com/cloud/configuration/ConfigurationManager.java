@@ -96,7 +96,6 @@ public interface ConfigurationManager extends Manager {
 	 * @param description
 	 * @param numGibibytes
 	 * @param mirrored
-	 * @param size
 	 * @return ID
 	 */
 	DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags);

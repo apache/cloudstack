@@ -91,7 +91,7 @@ binary-common:
 	dh_testdir
 	dh_testroot
 	dh_installchangelogs 
-	dh_installdocs -A README INSTALL HACKING README.html
+	dh_installdocs -A README HACKING
 #	dh_installexamples
 #	dh_installmenu
 #	dh_installdebconf

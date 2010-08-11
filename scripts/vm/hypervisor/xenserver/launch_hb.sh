@@ -26,5 +26,5 @@ for psid in `ps -ef | grep xenheartbeat | grep -v grep | awk '{print $2}'`; do
   kill $psid
 done
 
-nohup /opt/xensource/bin/xenheartbeat.sh $1 $2 >/var/log/heartbeat.log 2>&1 &
+nohup /opt/xensource/bin/heartbeat.sh $1 $2 >/var/log/heartbeat.log 2>&1 &
 echo "======> DONE <======"

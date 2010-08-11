@@ -25,11 +25,16 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -74,15 +80,20 @@ import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 
+import com.cloud.api.BaseCmd.CommandType;
+import com.cloud.async.AsyncJobManager;
+import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.maid.StackMaid;
+import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
@@ -90,7 +101,8 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.encoding.Base64;
-
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.gson.Gson;
 
 public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
@@ -101,8 +113,9 @@ public class ApiServer implements HttpRequestHandler {
     private static final short READ_ONLY_ADMIN_COMMAND = 4;
     private static final short USER_COMMAND = 8;
     private Properties _apiCommands = null;
-    private ManagementServer _ms = null;
-    
+    private AsyncJobManager _asyncMgr;
+    private ApiDispatcher _dispatcher;
+
     private static int _workerCount = 0;
 
     private static ApiServer s_instance = null;
@@ -110,7 +123,7 @@ public class ApiServer implements HttpRequestHandler {
     private static List<String> s_resellerCommands = null; // AKA domain-admin
     private static List<String> s_adminCommands = null;
     private static List<String> s_readOnlyAdminCommands = null;
-    
+
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
     static {
@@ -174,7 +187,9 @@ public class ApiServer implements HttpRequestHandler {
             s_logger.error("Exception loading properties file", ioex);
         }
 
-        _ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
+        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
+        _asyncMgr = locator.getManager(AsyncJobManager.class);
+        _dispatcher = new ApiDispatcher();
 
         int apiPort = 8096; // default port
         ConfigurationDao configDao = ComponentLocator.getLocator(ManagementServer.Name).getDao(ConfigurationDao.class);
@@ -233,7 +248,7 @@ public class ApiServer implements HttpRequestHandler {
             }
             try {
             	// always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM
-            	UserContext.registerContext(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, null, true);
+            	UserContext.registerContext(User.UID_SYSTEM, null, null, Account.ACCOUNT_ID_SYSTEM, null, null, true);
             	
                 String responseText = handleRequest(parameterMap, true, responseType);
                 sb.append(" 200 " + ((responseText == null) ? 0 : responseText.length()));
@@ -266,8 +281,9 @@ public class ApiServer implements HttpRequestHandler {
 
     public String handleRequest(Map params, boolean decode, String responseType) throws ServerApiException {
         String response = null;
+        String[] command = null;
         try {
-            String[] command = (String[])params.get("command");
+            command = (String[])params.get("command");
             if (command == null) {
                 s_logger.error("invalid request, no command sent");
                 if (s_logger.isTraceEnabled()) {
@@ -280,7 +296,7 @@ public class ApiServer implements HttpRequestHandler {
                 }
                 response = buildErrorResponse("invalid request, no command sent", responseType);
             } else {
-                Map<String, Object> paramMap = new HashMap<String, Object>();
+                Map<String, String> paramMap = new HashMap<String, String>();
                 Set keys = params.keySet();
                 Iterator keysIter = keys.iterator();
                 while (keysIter.hasNext()) {
@@ -288,18 +304,33 @@ public class ApiServer implements HttpRequestHandler {
                     if ("command".equalsIgnoreCase(key)) {
                         continue;
                     }
-                    Object[] value = (Object[])params.get(key);
-                    paramMap.put(key, value[0]);
+                    String[] value = (String[])params.get(key);
+
+                    String decodedValue = null;
+                    if (decode) {
+                        try {
+                            decodedValue = URLDecoder.decode(value[0], "UTF-8");
+                        } catch (UnsupportedEncodingException usex) {
+                            s_logger.warn(key + " could not be decoded, value = " + value[0]);
+                            throw new ServerApiException(BaseCmd.PARAM_ERROR, key + " could not be decoded, received value " + value[0]);
+                        }
+                    } else {
+                        decodedValue = value[0];
+                    }
+                    paramMap.put(key, decodedValue);
                 }
                 String cmdClassName = _apiCommands.getProperty(command[0]);
                 if (cmdClassName != null) {
                     Class<?> cmdClass = Class.forName(cmdClassName);
                     BaseCmd cmdObj = (BaseCmd)cmdClass.newInstance();
-                    cmdObj.setManagementServer(_ms);
-                    Map<String, Object> validatedParams = cmdObj.validateParams(paramMap, decode);
-                    
-                    List<Pair<String, Object>> resultValues = cmdObj.execute(validatedParams);
-                    response = cmdObj.buildResponse(resultValues, responseType);
+
+                    // This is where the command is either serialized, or directly dispatched
+                    response = queueCommand(cmdObj, paramMap);
+
+//                    Map<String, Object> validatedParams = cmdObj.validateParams(paramMap, decode);
+
+//                    List<Pair<String, Object>> resultValues = cmdObj.execute(validatedParams);
+//                    response = cmdObj.buildResponse(resultValues, responseType);
                 } else {
                     s_logger.warn("unknown API command: " + ((command == null) ? "null" : command[0]));
                     response = buildErrorResponse("unknown API command: " + ((command == null) ? "null" : command[0]), responseType);
@@ -309,11 +340,29 @@ public class ApiServer implements HttpRequestHandler {
             if (ex instanceof ServerApiException) {
             	throw (ServerApiException)ex;
             } else {
-                s_logger.error("error executing api command", ex);
+                s_logger.error("unhandled exception executing api command: " + ((command == null) ? "null" : command[0]), ex);
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal server error, unable to execute request.");
             }
         }
         return response;
+    }
+
+    private String queueCommand(BaseCmd cmdObj, Map<String, String> params) {
+        if (cmdObj instanceof BaseAsyncCmd) {
+            BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmdObj;
+
+            Gson gson = GsonHelper.getBuilder().create();
+
+            AsyncJobVO job = new AsyncJobVO();
+            job.setUserId(UserContext.current().getUserId());
+            job.setCmd(cmdObj.getClass().getName());
+            job.setCmdInfo(gson.toJson(params));
+            long jobId = _asyncMgr.submitAsyncJob(job);
+            return asyncCmd.getResponse(jobId);
+        } else {
+            _dispatcher.dispatch(cmdObj, params);
+            return cmdObj.getResponse();
+        }
     }
 
     public boolean verifyRequest(Map<String, Object[]> requestParameters, String userId) {
@@ -400,14 +449,21 @@ public class ApiServer implements HttpRequestHandler {
             }
 
             if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                UserContext.updateContext(user.getId(), account, account.getAccountName(), account.getId(), account.getDomainId(), null);
+
+                /*
     			requestParameters.put(BaseCmd.Properties.USER_ID.getName(), new String[] { user.getId().toString() });
                 requestParameters.put(BaseCmd.Properties.ACCOUNT.getName(), new String[] { account.getAccountName() });
                 requestParameters.put(BaseCmd.Properties.DOMAIN_ID.getName(), new String[] { account.getDomainId().toString() });
         		requestParameters.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { account });
+        		*/
     		} else {
+                UserContext.updateContext(user.getId(), account, null, null, null, null);
+                /*
     			requestParameters.put(BaseCmd.Properties.USER_ID.getName(), new String[] { user.getId().toString() });
     			requestParameters.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { account });
-    		}           
+    			*/
+    		}
 
             if (!isCommandAvailable(account.getType(), commandName)) {
         		return false;

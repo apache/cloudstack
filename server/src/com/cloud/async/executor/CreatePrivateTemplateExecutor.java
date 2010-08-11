@@ -188,7 +188,6 @@ public class CreatePrivateTemplateExecutor extends VolumeOperationExecutor {
 		resultObject.setCreated(templateHostRef.getCreated());
 		resultObject.setReady(templateHostRef != null && templateHostRef.getDownloadState() == Status.DOWNLOADED);
 		resultObject.setPasswordEnabled(template.getEnablePassword());
-		resultObject.setCrossZones(template.isCrossZones());
 		ManagementServer managerServer = getAsyncJobMgr().getExecutorContext().getManagementServer();
 		GuestOS os = managerServer.findGuestOSById(template.getGuestOSId());
         if (os != null) {

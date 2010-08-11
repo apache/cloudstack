@@ -29,14 +29,12 @@ import com.cloud.async.executor.StopVMExecutor;
 import com.cloud.async.executor.VMOperationParam;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.network.security.NetworkGroupVO;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.SnapshotVO;
@@ -54,8 +52,7 @@ import com.cloud.vm.VirtualMachine.Event;
  * 
  */
 public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> {
-
-    UserVmVO allocate(String displayName, VMTemplateVO template, ServiceOfferingVO serviceOffering, NetworkOfferingVO[] networkOfferings, DiskOfferingVO[] diskOfferings, AccountVO owner, long userId) throws InsufficientCapacityException;
+    
     
 	static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
     /**
@@ -80,11 +77,11 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @param diskOffering the disk offering for the root disk (deploying from ISO) or the data disk (deploying from a normal template)
      * @return UserVmVO if created; null if not.
      */
-    UserVmVO createVirtualMachine(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> avoids, long startEventId, long size) throws InsufficientStorageCapacityException, InternalErrorException, ResourceAllocationException;
+    UserVmVO createVirtualMachine(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> avoids, long startEventId) throws InsufficientStorageCapacityException, InternalErrorException, ResourceAllocationException;
     
-	UserVmVO createDirectlyAttachedVM(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> a, List<NetworkGroupVO> networkGroupVO, long startEventId, long size) throws InternalErrorException, ResourceAllocationException;
+	UserVmVO createDirectlyAttachedVM(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> a, List<NetworkGroupVO> networkGroupVO, long startEventId) throws InternalErrorException, ResourceAllocationException;
 
-	UserVmVO createDirectlyAttachedVMExternal(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> a, List<NetworkGroupVO> networkGroupVO, long startEventId, long size) throws InternalErrorException, ResourceAllocationException;
+	UserVmVO createDirectlyAttachedVMExternal(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> a, List<NetworkGroupVO> networkGroupVO, long startEventId) throws InternalErrorException, ResourceAllocationException;
 
     /**
      * Destroys one virtual machine
@@ -184,7 +181,7 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
     boolean rebootVirtualMachine(long userId, long vmId);
     OperationResponse executeRebootVM(RebootVMExecutor executor, VMOperationParam param);
     
-    boolean recoverVirtualMachine(long vmId) throws ResourceAllocationException, InternalErrorException;
+    boolean recoverVirtualMachine(long vmId) throws ResourceAllocationException;
 
     VMTemplateVO createPrivateTemplateRecord(Long userId, long vmId, String name, String description, long guestOsId, Boolean requiresHvm, Integer bits, Boolean passwordEnabled, boolean isPublic, boolean featured)
 		throws InvalidParameterValueException;

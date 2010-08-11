@@ -38,6 +38,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -58,6 +59,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.AuthorizeNetworkGroupIngressCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
@@ -101,15 +103,15 @@ import com.cloud.async.executor.SecurityGroupParam;
 import com.cloud.async.executor.UpdateLoadBalancerParam;
 import com.cloud.async.executor.UpgradeVMParam;
 import com.cloud.async.executor.VMOperationParam;
-import com.cloud.async.executor.VolumeOperationParam;
 import com.cloud.async.executor.VMOperationParam.VmOp;
+import com.cloud.async.executor.VolumeOperationParam;
 import com.cloud.async.executor.VolumeOperationParam.VolumeOp;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
-import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.consoleproxy.ConsoleProxyManager;
@@ -119,8 +121,8 @@ import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -186,22 +188,22 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.FileSystem;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Snapshot.SnapshotType;
-import com.cloud.storage.Storage.FileSystem;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.DiskTemplateDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -211,9 +213,9 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -235,12 +237,12 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -920,7 +922,9 @@ public class ManagementServerImpl implements ManagementServer {
                 if (!_vmMgr.destroyVirtualMachine(userId, vm.getId())) {
                     s_logger.error("Unable to destroy vm: " + vm.getId());
                     accountCleanupNeeded = true;
-                } 
+                } else {
+                	//_vmMgr.releaseGuestIpAddress(vm); FIXME FIXME bug 5561
+                }
             }
             
             // Mark the account's volumes as destroyed
@@ -1447,20 +1451,19 @@ public class ManagementServerImpl implements ManagementServer {
 		        List<String> ipAddrsList = new ArrayList<String>();
 		     	for (VlanVO vlan : vlansForAccount){
 		     		ipAddrsList.addAll(_publicIpAddressDao.assignAcccountSpecificIps(accountId, account.getDomainId().longValue(), vlan.getId(), false));
-		     				     		
+
 		     		long size = ipAddrsList.size();
 		     		_accountMgr.incrementResourceCount(accountId, ResourceType.public_ip, size);
 		     		s_logger.debug("Assigning new ip addresses " +ipAddrsList);		     		
 		     	}
 		     	if(ipAddrsList.isEmpty())
 		     		return;
-		     	
-		     	// Associate the IP's to DomR
-		     	boolean success = true;
-		     	String params = "\nsourceNat=" + false + "\ndcId=" + zoneId;
-		     	ArrayList<String> dummyipAddrList = new ArrayList<String>();
-		     	success = _networkMgr.associateIP(router,ipAddrsList, true);
-		     	String errorMsg = "Unable to assign public IP address pool";
+
+                String params = "\nsourceNat=" + false + "\ndcId=" + zoneId;
+
+                // Associate the IP's to DomR
+                boolean success = _networkMgr.associateIP(router,ipAddrsList, true);
+                String errorMsg = "Unable to assign public IP address pool";
             	if (!success) {
             		s_logger.debug(errorMsg);
             		 for(String ip : ipAddrsList){
@@ -1653,12 +1656,7 @@ public class ManagementServerImpl implements ManagementServer {
             if (!vlan.getVlanType().equals(VlanType.VirtualNetwork)) {
             	throw new IllegalArgumentException("only ip addresses that belong to a virtual network may be disassociated.");
             }
-			
-			//Check for account wide pool. It will have an entry for account_vlan_map. 
-            if (_accountVlanMapDao.findAccountVlanMap(accountId,ipVO.getVlanDbId()) != null){
-            	throw new PermissionDeniedException(publicIPAddress + " belongs to Account wide IP pool and cannot be disassociated");
-            }
-			
+
             txn.start();
             boolean success = _networkMgr.releasePublicIpAddress(userId, publicIPAddress);
             if (success)
@@ -1729,11 +1727,11 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public VolumeVO createVolume(long userId, long accountId, String name, long zoneId, long diskOfferingId, long startEventId, long size) throws InternalErrorException {
+    public VolumeVO createVolume(long userId, long accountId, String name, long zoneId, long diskOfferingId, long startEventId) throws InternalErrorException {
         saveStartedEvent(userId, accountId, EventTypes.EVENT_VOLUME_CREATE, "Creating volume", startEventId);
         DataCenterVO zone = _dcDao.findById(zoneId);
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
-        VolumeVO createdVolume = _storageMgr.createVolume(accountId, userId, name, zone, diskOffering, startEventId,size);
+        VolumeVO createdVolume = _storageMgr.createVolume(accountId, userId, name, zone, diskOffering, startEventId);
 
         if (createdVolume != null)
             return createdVolume;
@@ -1742,7 +1740,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public long createVolumeAsync(long userId, long accountId, String name, long zoneId, long diskOfferingId, long size) throws InvalidParameterValueException, InternalErrorException, ResourceAllocationException {
+    public long createVolumeAsync(long userId, long accountId, String name, long zoneId, long diskOfferingId) throws InvalidParameterValueException, InternalErrorException, ResourceAllocationException {
         // Check that the account is valid
     	AccountVO account = _accountDao.findById(accountId);
     	if (account == null) {
@@ -1797,8 +1795,7 @@ public class ManagementServerImpl implements ManagementServer {
         param.setZoneId(zoneId);
         param.setDiskOfferingId(diskOfferingId);
         param.setEventId(eventId);
-        param.setSize(size);
-        
+
         Gson gson = GsonHelper.getBuilder().create();
 
         AsyncJobVO job = new AsyncJobVO();
@@ -2191,7 +2188,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public UserVm deployVirtualMachine(long userId, long accountId, long dataCenterId, long serviceOfferingId, long templateId, Long diskOfferingId,
-            String domain, String password, String displayName, String group, String userData, String [] networkGroups, long startEventId, long size) throws ResourceAllocationException, InvalidParameterValueException, InternalErrorException,
+            String domain, String password, String displayName, String group, String userData, String [] networkGroups, long startEventId) throws ResourceAllocationException, InvalidParameterValueException, InternalErrorException,
             InsufficientStorageCapacityException, PermissionDeniedException, ExecutionException, StorageUnavailableException, ConcurrentOperationException {
 
         saveStartedEvent(userId, accountId, EventTypes.EVENT_VM_CREATE, "Deploying Vm", startEventId);
@@ -2275,7 +2272,7 @@ public class ManagementServerImpl implements ManagementServer {
             ArrayList<StoragePoolVO> a = new ArrayList<StoragePoolVO>(avoids.values());
             if (_directAttachNetworkExternalIpAllocator) {
             	try {
-            		created = _vmMgr.createDirectlyAttachedVMExternal(vmId, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, networkGroupVOs, startEventId, size);
+            		created = _vmMgr.createDirectlyAttachedVMExternal(vmId, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, networkGroupVOs, startEventId);
             	} catch (ResourceAllocationException rae) {
             		throw rae;
             	}
@@ -2296,13 +2293,13 @@ public class ManagementServerImpl implements ManagementServer {
             		}
 
             		try {
-            			created = _vmMgr.createVirtualMachine(vmId, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, startEventId, size);
+            			created = _vmMgr.createVirtualMachine(vmId, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, startEventId);
             		} catch (ResourceAllocationException rae) {
             			throw rae;
             		}
             	} else {
             		try {
-            			created = _vmMgr.createDirectlyAttachedVM(vmId, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, networkGroupVOs, startEventId, size);
+            			created = _vmMgr.createDirectlyAttachedVM(vmId, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, networkGroupVOs, startEventId);
             		} catch (ResourceAllocationException rae) {
             			throw rae;
             		}
@@ -2403,7 +2400,7 @@ public class ManagementServerImpl implements ManagementServer {
                     _userVmDao.update(started.getId(), started);
                     started = _userVmDao.findById(started.getId());
                 }
-                String params = "\nsourceNat=" + false + "\ndcId=" + dc.getId();
+
                 try {
 					associateIpAddressListToAccount(userId, accountId, dc.getId(),null);															
 				} catch (InsufficientAddressCapacityException e) {
@@ -2421,7 +2418,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public long deployVirtualMachineAsync(long userId, long accountId, long dataCenterId, long serviceOfferingId, long templateId,
-            Long diskOfferingId, String domain, String password, String displayName, String group, String userData, String [] networkGroups, long size)  throws InvalidParameterValueException, PermissionDeniedException {
+            Long diskOfferingId, String domain, String password, String displayName, String group, String userData, String [] networkGroups)  throws InvalidParameterValueException, PermissionDeniedException {
 
     	AccountVO account = _accountDao.findById(accountId);
         if (account == null) {
@@ -2515,7 +2512,7 @@ public class ManagementServerImpl implements ManagementServer {
         long eventId = saveScheduledEvent(userId, accountId, EventTypes.EVENT_VM_CREATE, "deploying Vm");
         
         DeployVMParam param = new DeployVMParam(userId, accountId, dataCenterId, serviceOfferingId, templateId, diskOfferingId, domain, password,
-                displayName, group, userData, networkGroups, eventId, size);
+                displayName, group, userData, networkGroups, eventId);
         Gson gson = GsonHelper.getBuilder().create();
 
         AsyncJobVO job = new AsyncJobVO();
@@ -2626,7 +2623,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean recoverVirtualMachine(long vmId) throws ResourceAllocationException, InternalErrorException {
+    public boolean recoverVirtualMachine(long vmId) throws ResourceAllocationException {
         return _vmMgr.recoverVirtualMachine(vmId);
     }
 
@@ -3383,58 +3380,55 @@ public class ManagementServerImpl implements ManagementServer {
             }
         }
 
-        if (userVm != null) {
-            Pair<String, String> privateIpPort = mappedPublicPorts.get(publicPort);
-            if (privateIpPort != null) {
-                if (privateIpPort.first().equals(userVm.getGuestIpAddress()) && privateIpPort.second().equals(privatePort)) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("skipping the creating of firewall rule " + ipAddress + ":" + publicPort + " to " + userVm.getGuestIpAddress() + ":" + privatePort + "; rule already exists.");
-                    }
-                    return null; // already mapped
-                } else {
-                    throw new NetworkRuleConflictException("An existing port forwarding service rule for " + ipAddress + ":" + publicPort
-                            + " already exists, found while trying to create mapping to " + userVm.getGuestIpAddress() + ":" + privatePort + ((securityGroupId == null) ? "." : " from port forwarding service "
-                            + securityGroupId.toString() + "."));
+        Pair<String, String> privateIpPort = mappedPublicPorts.get(publicPort);
+        if (privateIpPort != null) {
+            if (privateIpPort.first().equals(userVm.getGuestIpAddress()) && privateIpPort.second().equals(privatePort)) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("skipping the creating of firewall rule " + ipAddress + ":" + publicPort + " to " + userVm.getGuestIpAddress() + ":" + privatePort + "; rule already exists.");
                 }
-            }
-
-            FirewallRuleVO newFwRule = new FirewallRuleVO();
-            newFwRule.setEnabled(true);
-            newFwRule.setForwarding(true);
-            newFwRule.setPrivatePort(privatePort);
-            newFwRule.setProtocol(protocol);
-            newFwRule.setPublicPort(publicPort);
-            newFwRule.setPublicIpAddress(ipAddress);
-            newFwRule.setPrivateIpAddress(userVm.getGuestIpAddress());
-            newFwRule.setGroupId(securityGroupId);
-
-            // In 1.0 the rules were always persisted when a user created a rule.  When the rules get sent down
-            // the stopOnError parameter is set to false, so the agent will apply all rules that it can.  That
-            // behavior is preserved here by persisting the rule before sending it to the agent.
-            _firewallRulesDao.persist(newFwRule);
-
-            boolean success = _networkMgr.updateFirewallRule(newFwRule, null, null);
-
-            // Save and create the event
-            String description;
-            String ruleName = "ip forwarding";
-            String level = EventVO.LEVEL_INFO;
-            Account account = _accountDao.findById(userVm.getAccountId());
-
-            if (success == true) {
-                description = "created new " + ruleName + " rule [" + newFwRule.getPublicIpAddress() + ":" + newFwRule.getPublicPort() + "]->["
-                        + newFwRule.getPrivateIpAddress() + ":" + newFwRule.getPrivatePort() + "]" + " " + newFwRule.getProtocol();
+                return null; // already mapped
             } else {
-                level = EventVO.LEVEL_ERROR;
-                description = "failed to create new " + ruleName + " rule [" + newFwRule.getPublicIpAddress() + ":" + newFwRule.getPublicPort() + "]->["
-                        + newFwRule.getPrivateIpAddress() + ":" + newFwRule.getPrivatePort() + "]" + " " + newFwRule.getProtocol();
+                throw new NetworkRuleConflictException("An existing port forwarding service rule for " + ipAddress + ":" + publicPort
+                        + " already exists, found while trying to create mapping to " + userVm.getGuestIpAddress() + ":" + privatePort + ((securityGroupId == null) ? "." : " from port forwarding service "
+                        + securityGroupId.toString() + "."));
             }
-
-            saveEvent(Long.valueOf(userId), account.getId(), level, EventTypes.EVENT_NET_RULE_ADD, description);
-
-            return newFwRule;
         }
-        return null;
+
+        FirewallRuleVO newFwRule = new FirewallRuleVO();
+        newFwRule.setEnabled(true);
+        newFwRule.setForwarding(true);
+        newFwRule.setPrivatePort(privatePort);
+        newFwRule.setProtocol(protocol);
+        newFwRule.setPublicPort(publicPort);
+        newFwRule.setPublicIpAddress(ipAddress);
+        newFwRule.setPrivateIpAddress(userVm.getGuestIpAddress());
+        newFwRule.setGroupId(securityGroupId);
+
+        // In 1.0 the rules were always persisted when a user created a rule.  When the rules get sent down
+        // the stopOnError parameter is set to false, so the agent will apply all rules that it can.  That
+        // behavior is preserved here by persisting the rule before sending it to the agent.
+        _firewallRulesDao.persist(newFwRule);
+
+        boolean success = _networkMgr.updateFirewallRule(newFwRule, null, null);
+
+        // Save and create the event
+        String description;
+        String ruleName = "ip forwarding";
+        String level = EventVO.LEVEL_INFO;
+        Account account = _accountDao.findById(userVm.getAccountId());
+
+        if (success == true) {
+            description = "created new " + ruleName + " rule [" + newFwRule.getPublicIpAddress() + ":" + newFwRule.getPublicPort() + "]->["
+                    + newFwRule.getPrivateIpAddress() + ":" + newFwRule.getPrivatePort() + "]" + " " + newFwRule.getProtocol();
+        } else {
+            level = EventVO.LEVEL_ERROR;
+            description = "failed to create new " + ruleName + " rule [" + newFwRule.getPublicIpAddress() + ":" + newFwRule.getPublicPort() + "]->["
+                    + newFwRule.getPrivateIpAddress() + ":" + newFwRule.getPrivatePort() + "]" + " " + newFwRule.getProtocol();
+        }
+
+        saveEvent(Long.valueOf(userId), account.getId(), level, EventTypes.EVENT_NET_RULE_ADD, description);
+
+        return newFwRule;
     }
 
     @DB
@@ -4234,14 +4228,6 @@ public class ManagementServerImpl implements ManagementServer {
     		template = _templateDao.findById(templateId);
     		if (template == null) {
     			throw new InvalidParameterValueException("Please specify a valid template ID.");
-    		}// If ISO requested then it should be ISO.
-    		if (isIso && template.getFormat() != ImageFormat.ISO){
-    			s_logger.error("Template Id " + templateId + " is not an ISO");
-    			throw new InvalidParameterValueException("Template Id " + templateId + " is not an ISO");
-    		}// If ISO not requested then it shouldn't be an ISO.
-    		if (!isIso && template.getFormat() == ImageFormat.ISO){
-    			s_logger.error("Incorrect format of the template id " + templateId);
-    			throw new InvalidParameterValueException("Incorrect format " + template.getFormat() + " of the template id " + templateId);
     		}
         }
     	
@@ -4281,7 +4267,7 @@ public class ManagementServerImpl implements ManagementServer {
     			return _templateHostDao.listByHostTemplate(secondaryStorageHost.getId(), templateId);
     		}
     	} else {
-    		return _templateHostDao.listByOnlyTemplateId(templateId);
+    		return _templateHostDao.listByTemplateId(templateId);
     	}
     }
 
@@ -4775,6 +4761,20 @@ public class ManagementServerImpl implements ManagementServer {
     	VMTemplateVO template = _templateDao.createForUpdate(id);
     	
     	if (name != null) {
+    		// Check for duplicate name
+    		VMTemplateVO foundTemplate = _templateDao.findByTemplateName(name);
+    		if (foundTemplate != null)
+    		{
+    			if(foundTemplate.getId()==id)
+    			{
+    				//do nothing, you are updating the same template you own
+    			}
+    			else
+    			{
+    				s_logger.error("updateTemplate - Template name " + name + " already exists ");
+    				return false;
+    			}
+    		}
     		template.setName(name);
     	}
     	
@@ -6658,11 +6658,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<DiskOfferingVO> findPrivateDiskOffering() {
-        return _diskOfferingDao.findPrivateDiskOffering();
-    }
-
-    @Override
     @DB
     public boolean updateTemplatePermissions(long templateId, String operation, Boolean isPublic, Boolean isFeatured, List<String> accountNames) throws InvalidParameterValueException,
             PermissionDeniedException, InternalErrorException {
@@ -6815,7 +6810,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException {
-        if (numGibibytes!=0 && numGibibytes < 1) {
+        if (numGibibytes < 1) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
         } else if (numGibibytes > _maxVolumeSizeInGb) {
         	throw new InvalidParameterValueException("The maximum size for a disk is " + _maxVolumeSizeInGb + " Gb.");
@@ -7159,217 +7154,44 @@ public class ManagementServerImpl implements ManagementServer {
         }
     }
 
+    /*
     @Override @DB
-    public void assignToLoadBalancer(long userId, long loadBalancerId, List<Long> instanceIds) throws NetworkRuleConflictException, InternalErrorException,
-            PermissionDeniedException, InvalidParameterValueException {
-        Transaction txn = Transaction.currentTxn();
-        try {
-            List<FirewallRuleVO> firewallRulesToApply = new ArrayList<FirewallRuleVO>();
-            long accountId = 0;
-            DomainRouterVO router = null;
-
-            LoadBalancerVO loadBalancer = _loadBalancerDao.findById(Long.valueOf(loadBalancerId));
-            if (loadBalancer == null) {
-                s_logger.warn("Unable to find load balancer with id " + loadBalancerId);
-                return;
-            }
-
-            List<LoadBalancerVMMapVO> mappedInstances = _loadBalancerVMMapDao.listByLoadBalancerId(loadBalancerId, false);
-            Set<Long> mappedInstanceIds = new HashSet<Long>();
-            if (mappedInstances != null) {
-                for (LoadBalancerVMMapVO mappedInstance : mappedInstances) {
-                    mappedInstanceIds.add(Long.valueOf(mappedInstance.getInstanceId()));
-                }
-            }
-
-            for (Long instanceId : instanceIds) {
-                if (mappedInstanceIds.contains(instanceId)) {
-                    continue;
-                }
-
-                UserVmVO userVm = _userVmDao.findById(instanceId);
-                if (userVm == null) {
-                    s_logger.warn("Unable to find virtual machine with id " + instanceId);
-                    throw new InvalidParameterValueException("Unable to find virtual machine with id " + instanceId);
-                } else {
-                    // sanity check that the vm can be applied to the load balancer
-                    ServiceOfferingVO offering = _offeringsDao.findById(userVm.getServiceOfferingId());
-                    if ((offering == null) || !GuestIpType.Virtualized.equals(offering.getGuestIpType())) {
-                        // we previously added these instanceIds to the loadBalancerVMMap, so remove them here as we are rejecting the API request
-                        // without actually modifying the load balancer
-                        _loadBalancerVMMapDao.remove(loadBalancerId, instanceIds, Boolean.TRUE);
-
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Unable to add virtual machine " + userVm.toString() + " to load balancer " + loadBalancerId + ", bad network type (" + ((offering == null) ? "null" : offering.getGuestIpType()) + ")");
-                        }
-
-                        throw new InvalidParameterValueException("Unable to add virtual machine " + userVm.toString() + " to load balancer " + loadBalancerId + ", bad network type (" + ((offering == null) ? "null" : offering.getGuestIpType()) + ")");
-                    }
-                }
-
-                if (accountId == 0) {
-                    accountId = userVm.getAccountId();
-                } else if (accountId != userVm.getAccountId()) {
-                    s_logger.warn("guest vm " + userVm.getName() + " (id:" + userVm.getId() + ") belongs to account " + userVm.getAccountId()
-                            + ", previous vm in list belongs to account " + accountId);
-                    throw new InvalidParameterValueException("guest vm " + userVm.getName() + " (id:" + userVm.getId() + ") belongs to account " + userVm.getAccountId()
-                            + ", previous vm in list belongs to account " + accountId);
-                }
-                
-                DomainRouterVO nextRouter = null;
-                if (userVm.getDomainRouterId() != null)
-                	nextRouter = _routerDao.findById(userVm.getDomainRouterId());
-                if (nextRouter == null) {
-                    s_logger.warn("Unable to find router (" + userVm.getDomainRouterId() + ") for virtual machine with id " + instanceId);
-                    throw new InvalidParameterValueException("Unable to find router (" + userVm.getDomainRouterId() + ") for virtual machine with id " + instanceId);
-                }
-
-                if (router == null) {
-                    router = nextRouter;
-
-                    // Make sure owner of router is owner of load balancer.  Since we are already checking that all VMs belong to the same router, by checking router
-                    // ownership once we'll make sure all VMs belong to the owner of the load balancer.
-                    if (router.getAccountId() != loadBalancer.getAccountId()) {
-                        throw new InvalidParameterValueException("guest vm " + userVm.getName() + " (id:" + userVm.getId() + ") does not belong to the owner of load balancer " +
-                                loadBalancer.getName() + " (owner is account id " + loadBalancer.getAccountId() + ")");
-                    }
-                } else if (router.getId() != nextRouter.getId()) {
-                    throw new InvalidParameterValueException("guest vm " + userVm.getName() + " (id:" + userVm.getId() + ") belongs to router " + nextRouter.getName()
-                            + ", previous vm in list belongs to router " + router.getName());
-                }
-
-                // check for ip address/port conflicts by checking exising forwarding and loadbalancing rules
-                String ipAddress = loadBalancer.getIpAddress();
-                String privateIpAddress = userVm.getGuestIpAddress();
-                List<FirewallRuleVO> existingRulesOnPubIp = _firewallRulesDao.listIPForwarding(ipAddress);
-
-                if (existingRulesOnPubIp != null) {
-                    for (FirewallRuleVO fwRule : existingRulesOnPubIp) {
-                        if (!(  (fwRule.isForwarding() == false) &&
-                                (fwRule.getGroupId() != null) &&
-                                (fwRule.getGroupId() == loadBalancer.getId().longValue())  )) {
-                            // if the rule is not for the current load balancer, check to see if the private IP is our target IP,
-                            // in which case we have a conflict
-                            if (fwRule.getPublicPort().equals(loadBalancer.getPublicPort())) {
-                                throw new NetworkRuleConflictException("An existing port forwarding service rule for " + ipAddress + ":" + loadBalancer.getPublicPort()
-                                        + " exists, found while trying to apply load balancer " + loadBalancer.getName() + " (id:" + loadBalancer.getId() + ") to instance "
-                                        + userVm.getName() + ".");
-                            }
-                        } else if (fwRule.getPrivateIpAddress().equals(privateIpAddress) && fwRule.getPrivatePort().equals(loadBalancer.getPrivatePort()) && fwRule.isEnabled()) {
-                            // for the current load balancer, don't add the same instance to the load balancer more than once
-                            continue;
-                        }
-                    }
-                }
-
-                FirewallRuleVO newFwRule = new FirewallRuleVO();
-                newFwRule.setAlgorithm(loadBalancer.getAlgorithm());
-                newFwRule.setEnabled(true);
-                newFwRule.setForwarding(false);
-                newFwRule.setPrivatePort(loadBalancer.getPrivatePort());
-                newFwRule.setPublicPort(loadBalancer.getPublicPort());
-                newFwRule.setPublicIpAddress(loadBalancer.getIpAddress());
-                newFwRule.setPrivateIpAddress(userVm.getGuestIpAddress());
-                newFwRule.setGroupId(loadBalancer.getId());
-
-                firewallRulesToApply.add(newFwRule);
-            }
-
-            // if there's no work to do, bail out early rather than reconfiguring the proxy with the existing rules
-            if (firewallRulesToApply.isEmpty()) {
-                return;
-            }
-
-            IPAddressVO ipAddr = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
-            List<IPAddressVO> ipAddrs = _networkMgr.listPublicIpAddressesInVirtualNetwork(accountId, ipAddr.getDataCenterId(), null);
-            for (IPAddressVO ipv : ipAddrs) {
-                List<FirewallRuleVO> rules = _firewallRulesDao.listIPForwarding(ipv.getAddress(), false);
-                firewallRulesToApply.addAll(rules);
-            }
-
-            txn.start();
-
-            List<FirewallRuleVO> updatedRules = null;
-            if (router.getState().equals(State.Starting)) {
-                // Starting is a special case...if the router is starting that means the IP address hasn't yet been assigned to the domR and the update firewall rules script will fail.
-                // In this case, just store the rules and they will be applied when the router state is resent (after the router is started).
-                updatedRules = firewallRulesToApply;
-            } else {
-                updatedRules = _networkMgr.updateFirewallRules(loadBalancer.getIpAddress(), firewallRulesToApply, router);
-            }
-
-            // Save and create the event
-            String description;
-            String type = EventTypes.EVENT_NET_RULE_ADD;
-            String ruleName = "load balancer";
-            String level = EventVO.LEVEL_INFO;
-            Account account = _accountDao.findById(accountId);
-
-            LoadBalancerVO loadBalancerLock = null;
-            try {
-                loadBalancerLock = _loadBalancerDao.acquire(loadBalancerId);
-                if (loadBalancerLock == null) {
-                    s_logger.warn("assignToLoadBalancer: Failed to lock load balancer " + loadBalancerId + ", proceeding with updating loadBalancerVMMappings...");
-                }
-                if ((updatedRules != null) && (updatedRules.size() == firewallRulesToApply.size())) {
-                    // flag the instances as mapped to the load balancer
-                    List<LoadBalancerVMMapVO> pendingMappedVMs = _loadBalancerVMMapDao.listByLoadBalancerId(loadBalancerId, true);
-                    for (LoadBalancerVMMapVO pendingMappedVM : pendingMappedVMs) {
-                        if (instanceIds.contains(pendingMappedVM.getInstanceId())) {
-                            LoadBalancerVMMapVO pendingMappedVMForUpdate = _loadBalancerVMMapDao.createForUpdate();
-                            pendingMappedVMForUpdate.setPending(false);
-                            _loadBalancerVMMapDao.update(pendingMappedVM.getId(), pendingMappedVMForUpdate);
-                        }
-                    }
-
-                    for (FirewallRuleVO updatedRule : updatedRules) {
-                        if (updatedRule.getId() == null) {
-                            _firewallRulesDao.persist(updatedRule);
-
-                            description = "created new " + ruleName + " rule [" + updatedRule.getPublicIpAddress() + ":"
-                                    + updatedRule.getPublicPort() + "]->[" + updatedRule.getPrivateIpAddress() + ":"
-                                    + updatedRule.getPrivatePort() + "]" + " " + updatedRule.getProtocol();
-
-                            saveEvent(userId, account.getId(), level, type, description);
-                        }
-                    }
-                } else {
-                    // Remove the instanceIds from the load balancer since there was a failure.  Make sure to commit the
-                    // transaction here, otherwise the act of throwing the internal error exception will cause this
-                    // remove operation to be rolled back.
-                    _loadBalancerVMMapDao.remove(loadBalancerId, instanceIds, null);
-                    txn.commit();
-
-                    s_logger.warn("Failed to apply load balancer " + loadBalancer.getName() + " (id:" + loadBalancerId + ") to guest virtual machines " + StringUtils.join(instanceIds, ","));
-                    throw new InternalErrorException("Failed to apply load balancer " + loadBalancer.getName() + " (id:" + loadBalancerId + ") to guest virtual machine " + StringUtils.join(instanceIds, ","));
-                }
-            } finally {
-                if (loadBalancerLock != null) {
-                    _loadBalancerDao.release(loadBalancerId);
-                }
-            }
-
-            txn.commit();
-        } catch (Throwable e) {
-            txn.rollback();
-            if (e instanceof NetworkRuleConflictException) {
-                throw (NetworkRuleConflictException) e;
-            } else if (e instanceof InvalidParameterValueException) {
-                throw (InvalidParameterValueException) e;
-            } else if (e instanceof PermissionDeniedException) {
-                throw (PermissionDeniedException) e;
-            } else if (e instanceof InternalErrorException) {
-                s_logger.warn("ManagementServer error", e);
-                throw (InternalErrorException) e;
-            }
-            s_logger.warn("ManagementServer error", e);
-	    }
-    }
-
-    @Override @DB
-    public long assignToLoadBalancerAsync(long userId, long loadBalancerId, List<Long> instanceIds) {
+    public long assignToLoadBalancerAsync(long userId, long loadBalancerId, List<Long> instanceIds, Map<String, String> params) {
         LoadBalancerVO loadBalancer = null;
         try {
+            // unpack the params
+            String accountName = params.get(BaseCmd.Properties.ACCOUNT.getName());
+            String domainIdStr = params.get(BaseCmd.Properties.DOMAIN_ID.getName());
+            String loadBalancerIdStr = params.get(BaseCmd.Properties.ID.getName());
+            String instanceIdStr = params.get(BaseCmd.Properties.VIRTUAL_MACHINE_ID.getName());
+            String instanceIdList = params.get(BaseCmd.Properties.VIRTUAL_MACHINE_IDS.getName());
+
+            Long domainId = null;
+            if (domainIdStr != null) {
+                domainId = Long.valueOf(domainIdStr);
+            }
+
+            Long loadBalancerId = null;
+            if (loadBalancerIdStr != null) {
+                loadBalancerId = Long.valueOf(loadBalancerIdStr);
+            }
+
+            List<Long> instanceIds = new ArrayList<Long>();
+            if (instanceIdList != null) {
+                StringTokenizer st = new StringTokenizer(instanceIdList, ",");
+                while (st.hasMoreTokens()) {
+                    String token = st.nextToken();
+                    try {
+                        Long nextInstanceId = Long.parseLong(token);
+                        instanceIds.add(nextInstanceId);
+                    } catch (NumberFormatException nfe) {
+                        throw new ServerApiException(BaseCmd.PARAM_ERROR, "The virtual machine id " + token + " is not a valid parameter.");
+                    }
+                }
+            } else if (instanceIdStr != null) {
+                instanceIds.add(Long.valueOf(instanceIdStr));
+            }
+
             loadBalancer = _loadBalancerDao.acquire(loadBalancerId);
 
             // if unable to lock the load balancer, throw an exception
@@ -7379,6 +7201,7 @@ public class ManagementServerImpl implements ManagementServer {
 
             IPAddressVO ipAddress = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
             DomainRouterVO router = _routerDao.findBy(loadBalancer.getAccountId(), ipAddress.getDataCenterId());
+            params.put("domainrouterid", Long.valueOf(router.getId()).toString());
 
             List<LoadBalancerVMMapVO> mappedVMs = _loadBalancerVMMapDao.listByLoadBalancerId(loadBalancerId);
             for (LoadBalancerVMMapVO mappedVM : mappedVMs) {
@@ -7399,14 +7222,15 @@ public class ManagementServerImpl implements ManagementServer {
                 _loadBalancerVMMapDao.persist(loadBalancerMapping);
             }
 
-            LoadBalancerParam param = new LoadBalancerParam(userId, router.getId(), loadBalancerId, instanceIds);
+//            LoadBalancerParam param = new LoadBalancerParam(userId, router.getId(), loadBalancerId, instanceIds);
             Gson gson = GsonHelper.getBuilder().create();
 
             AsyncJobVO job = new AsyncJobVO();
             job.setUserId(UserContext.current().getUserId());
             job.setAccountId(loadBalancer.getAccountId());
             job.setCmd("AssignToLoadBalancer");
-            job.setCmdInfo(gson.toJson(param));
+//            job.setCmdInfo(gson.toJson(param));
+            job.setCmdInfo(gson.toJson(params));
             return _asyncMgr.submitAsyncJob(job, true);
         } finally {
             if (loadBalancer != null) {
@@ -7414,6 +7238,7 @@ public class ManagementServerImpl implements ManagementServer {
             }
         }
     }
+    */
 
     @Override @DB
     public boolean removeFromLoadBalancer(long userId, long loadBalancerId, List<Long> instanceIds) throws InvalidParameterValueException {
@@ -7759,10 +7584,7 @@ public class ManagementServerImpl implements ManagementServer {
                     return;
                 }
 
-                Transaction txn = null;
                 try {
-                	txn = Transaction.open(Transaction.CLOUD_DB);
-                	
                     List<AccountVO> accounts = _accountDao.findCleanups();
                     s_logger.info("Found " + accounts.size() + " accounts to cleanup");
                     for (AccountVO account : accounts) {
@@ -7776,9 +7598,6 @@ public class ManagementServerImpl implements ManagementServer {
                 } catch (Exception e) {
                     s_logger.error("Exception ", e);
                 } finally {
-                	if(txn != null)
-                		txn.close();
-                	
                     lock.unlock();
                 }
             } catch (Exception e) {
@@ -8532,17 +8351,6 @@ public class ManagementServerImpl implements ManagementServer {
         job.setCmdOriginator(CancelPrimaryStorageMaintenanceCmd.getResultObjectName());
         return _asyncMgr.submitAsyncJob(job);
 
-	}
-
-	@Override
-	public boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException {
-        if (size<0 || (size>0 && size < 1)) {
-            throw new InvalidParameterValueException("Please specify a size of at least 1 Gb.");
-        } else if (size > _maxVolumeSizeInGb) {
-        	throw new InvalidParameterValueException("The maximum size allowed is " + _maxVolumeSizeInGb + " Gb.");
-        }
-
-		return true;
 	}
 }
 

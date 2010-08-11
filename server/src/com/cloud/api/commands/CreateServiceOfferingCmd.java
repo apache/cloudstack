@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.offering.ServiceOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
@@ -37,18 +38,96 @@ public class CreateServiceOfferingCmd extends BaseCmd{
 	private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 	
 	static {
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.CPU_NUMBER, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.CPU_SPEED, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISPLAY_TEXT, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.MEMORY, Boolean.TRUE));
 		s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.TRUE));
-		s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISPLAY_TEXT, Boolean.TRUE));
-		s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.CPU_NUMBER, Boolean.TRUE));
-		s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.CPU_SPEED, Boolean.TRUE));
-		s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.MEMORY, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.OFFER_HA, Boolean.FALSE));
 		s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.STORAGE_TYPE, Boolean.FALSE));
-		s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.OFFER_HA, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TAGS, Boolean.FALSE));
 		s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USE_VIRTUAL_NETWORK, Boolean.FALSE));
+
 		s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-		s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TAGS, Boolean.FALSE));
 	}
 	
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="cpunumber", type=CommandType.LONG, required=true)
+    private Long cpuNumber;
+
+    @Parameter(name="cpuspeed", type=CommandType.LONG, required=true)
+    private Long cpuSpeed;
+
+    @Parameter(name="displaytext", type=CommandType.STRING, required=true)
+    private String displayText;
+
+    @Parameter(name="memory", type=CommandType.LONG, required=true)
+    private Long memory;
+
+    @Parameter(name="name", type=CommandType.STRING, required=true)
+    private String serviceOfferingName;
+
+    @Parameter(name="offerha", type=CommandType.BOOLEAN)
+    private Boolean offerHa;
+
+    @Parameter(name="storagetype", type=CommandType.STRING)
+    private String storageType;
+
+    @Parameter(name="tags", type=CommandType.STRING)
+    private String tags;
+
+    @Parameter(name="usevirtualnetwork", type=CommandType.BOOLEAN)
+    private Boolean useVirtualNetwork;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getCpuNumber() {
+        return cpuNumber;
+    }
+
+    public Long getCpuSpeed() {
+        return cpuSpeed;
+    }
+
+    public String getDisplayText() {
+        return displayText;
+    }
+
+    public Long getMemory() {
+        return memory;
+    }
+
+    public String getServiceOfferingName() {
+        return serviceOfferingName;
+    }
+
+    public Boolean getOfferHa() {
+        return offerHa;
+    }
+
+    public String getStorageType() {
+        return storageType;
+    }
+
+    public String getTags() {
+        return tags;
+    }
+
+    public Boolean getUseVirtualNetwork() {
+        return useVirtualNetwork;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
 	@Override
     public String getName() {
 		return _name;
