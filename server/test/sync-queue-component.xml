@@ -1,0 +1,8 @@
+<components.xml>
+    <management-server class="com.vmops.async.TestSyncQueueManager">
+        <dao name="sync queue dao" class="com.vmops.async.dao.SyncQueueDaoImpl"/>
+        <dao name="sync queue item dao" class="com.vmops.async.dao.SyncQueueItemDaoImpl"/>
+        <manager name="sync queue manager" class="com.vmops.async.SyncQueueManagerImpl">
+        </manager>
+    </management-server>
+</components.xml>

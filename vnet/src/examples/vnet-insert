@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Insert the vnet module if it can be found and
+# it's not already there.
+vnet_insert () {
+    local module="vnet_module"
+    local mod_dir=/lib/modules/$(uname -r)
+    local mod_obj=""
+
+    if lsmod | grep -q ${module} ; then
+        echo "VNET: ${module} loaded"
+        return
+    fi
+    local mods=$(find ${mod_dir} -name "${module}.*o")
+    if [[ ${mods} ]] ; then
+        for mod_obj in ${mods} ; do
+            break
+        done
+    fi
+    if [ -z "${mod_obj}" ] ; then
+        echo "VNET: ${module} not found"
+        exit 1
+    fi
+    echo "VNET: Loading ${module} from ${mod_obj}"
+    insmod ${mod_obj} "$@"
+}
+
+vnet_insert "$@"

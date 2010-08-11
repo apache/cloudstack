@@ -1,0 +1,35 @@
+#!/bin/sh -e
+
+case "$1" in
+    configure)
+        if ! id cloud > /dev/null 2>&1 ; then
+            adduser --system --home /var/lib/cloud/management --no-create-home \
+                --group --disabled-password --shell /bin/sh cloud
+                # update me in all the .postinst that you can find me in, as well
+        fi
+
+	for i in /var/lib/cloud/mnt /var/cache/cloud/management \
+	  /var/cache/cloud/management/work /var/cache/cloud/management/temp \
+	  /var/log/cloud/management /etc/cloud/management/Catalina \
+	  /etc/cloud/management/Catalina/localhost /var/lib/cloud/management /etc/cloud/management/Catalina/localhost/client
+	do
+		chmod 0770 $i
+		chgrp cloud $i
+	done
+
+	test -f /var/lib/cloud/management/.ssh/id_rsa || su - cloud -c 'yes "" | ssh-keygen -t rsa -q -N ""' < /dev/null
+
+	for i in /etc/cloud/management/db.properties
+	do
+		chmod 0640 $i
+		chgrp cloud $i
+	done
+	
+	if [ "$2" = "" ] ; then # no recently configured version, this is a first install
+		/usr/sbin/update-rc.d cloud-management defaults || true
+	fi
+	
+    ;;
+esac
+
+#DEBHELPER#

@@ -1,0 +1,181 @@
+<?xml version="1.0"?>
+<!--
+  components.xml is the configuration file for the VM Ops
+  insertion servers.  Someone can quickly pull together an
+  insertion server by selecting the correct adapters to use.
+
+  Here are some places to look for information.
+    - To find out the general functionality that each Manager 
+      or Adapter provide, look at the javadoc for the interface
+      that it implements.  The interface is usually the
+      "key" attribute in the declaration.
+    - To find specific implementation of each Manager or
+      Adapter, look at the javadoc for the actual class.  The 
+      class can be found in the <class> element.
+    - To find out the configuration parameters for each Manager 
+      or Adapter, look at the javadoc for the actual implementation
+      class.  It should be documented in the description of the 
+      class.
+    - To know more about the components.xml in general, look for
+      the javadoc for ComponentLocator.java.
+
+  If you found that the Manager or Adapter are not properly 
+  documented, please contact the author.
+-->
+<components.xml>
+    <management-server class="com.vmops.server.ManagementServerImpl">
+        <dao name="domain router" class="com.vmops.vm.dao.DomainRouterDaoImpl"/>
+        <dao name="host" class="com.vmops.host.dao.HostDaoImpl"/>
+        <dao name="VM Instance" class="com.vmops.vm.dao.VMInstanceDaoImpl"/>
+        <dao name="User VM" class="com.vmops.vm.dao.UserVmDaoImpl"/>
+        <dao name="ServiceOffering" class="com.vmops.service.dao.ServiceOfferingDaoImpl">
+            <param name="cache.size">50</param>
+            <param name="cache.time.to.live">-1</param>
+        </dao>
+        <dao name="DiskOffering" class="com.vmops.storage.dao.DiskOfferingDaoImpl"/>
+        <dao name="VMDisk" class="com.vmops.storage.dao.VmDiskDaoImpl"/>
+        <dao name="host zone" class="com.vmops.dc.dao.DataCenterDaoImpl">
+            <param name="cache.size">50</param>
+            <param name="cache.time.to.live">-1</param>
+        </dao>
+        <dao name="host pod" class="com.vmops.dc.dao.HostPodDaoImpl">
+            <param name="cache.size">50</param>
+            <param name="cache.time.to.live">-1</param>
+        </dao>
+        <dao name="vlan" class="com.vmops.dc.dao.VlanDaoImpl">
+        </dao>
+        <dao name="Volume" class="com.vmops.storage.dao.VolumeDaoImpl"/>
+        <dao name="Events" class="com.vmops.event.dao.EventDaoImpl"/>
+        <dao name="VM Template" class="com.vmops.storage.dao.VMTemplateDaoImpl">
+            <param name="cache.size">50</param>
+            <param name="cache.time.to.live">-1</param>
+	        <param name="routing.uniquename">routing</param>
+        </dao>
+        <dao name="User" class="com.vmops.user.dao.UserDaoImpl">
+            <param name="cache.size">5000</param>
+            <param name="cache.time.to.live">300</param>
+        </dao>
+        <dao name="UserStats" class="com.vmops.user.dao.UserStatisticsDaoImpl"/>
+        <dao name="Disk Template" class="com.vmops.storage.dao.DiskTemplateDaoImpl">
+            <param name="cache.size">50</param>
+            <param name="cache.time.to.live">-1</param>
+        </dao>
+        <dao name="Firewall Rules" class="com.vmops.network.dao.FirewallRulesDaoImpl"/>
+        <dao name="Security Group" class="com.vmops.network.dao.SecurityGroupDaoImpl"/>
+        <dao name="Load Balancer" class="com.vmops.network.dao.LoadBalancerDaoImpl"/>
+        <dao name="Network Rule Config" class="com.vmops.network.dao.NetworkRuleConfigDaoImpl"/>
+        <dao name="Security Group Mapping" class="com.vmops.network.dao.SecurityGroupVMMapDaoImpl"/>
+        <dao name="Load Balancer Mapping" class="com.vmops.network.dao.LoadBalancerVMMapDaoImpl"/>
+        <dao name="IP Addresses" class="com.vmops.network.dao.IPAddressDaoImpl"/>
+		<dao name="Datacenter IP Addresses" class="com.vmops.dc.dao.DataCenterIpAddressDaoImpl"/>
+        <dao name="Pricing" class="com.vmops.pricing.dao.PricingDaoImpl"/>
+        <dao name="Usage" class="com.vmops.usage.dao.UsageDaoImpl"/>
+        <dao name="UsageJob" class="com.vmops.usage.dao.UsageJobDaoImpl"/>
+        <dao name="Alert" class="com.vmops.alert.dao.AlertDaoImpl"/>
+        <dao name="Capacity" class="com.vmops.capacity.dao.CapacityDaoImpl"/>
+        <dao name="Domain" class="com.vmops.domain.dao.DomainDaoImpl"/>
+        <dao name="Account" class="com.vmops.user.dao.AccountDaoImpl"/>
+        <dao name="Limit" class="com.vmops.configuration.dao.LimitDaoImpl"/>
+        <dao name="UserAccount" class="com.vmops.user.dao.UserAccountDaoImpl"/>
+        <dao name="Usage IPAddress" class="com.vmops.usage.dao.UsageIPAddressDaoImpl"/>
+        <dao name="VM Template Host" class="com.vmops.storage.dao.VMTemplateHostDaoImpl"/>
+        <dao name="VM Template Pool" class="com.vmops.storage.dao.VMTemplatePoolDaoImpl"/>
+        <dao name="Launch Permission" class="com.vmops.storage.dao.LaunchPermissionDaoImpl"/>
+        <dao name="Configuration" class="com.vmops.configuration.dao.ConfigurationDaoImpl"/>
+        <dao name="HA" class="com.vmops.ha.dao.HighAvailabilityDaoImpl"/>
+        <dao name="Console Proxy" class="com.vmops.vm.dao.ConsoleProxyDaoImpl"/>
+        <dao name="Upgrade" class="com.vmops.maint.dao.AgentUpgradeDaoImpl"/>
+        <dao name="Management Server Host" class="com.vmops.cluster.dao.ManagementServerHostDaoImpl"/>
+        <dao name="Snapshot" class="com.vmops.storage.dao.SnapshotDaoImpl"/>
+        <dao name="ScheduledVMBackup" class="com.vmops.user.dao.ScheduledVMBackupDaoImpl"/>
+        <dao name="AsyncJobDao" class="com.vmops.async.dao.AsyncJobDaoImpl"/>
+        <dao name="SyncQueueDao" class="com.vmops.async.dao.SyncQueueDaoImpl"/>
+        <dao name="SyncQueueItemDao" class="com.vmops.async.dao.SyncQueueItemDaoImpl"/>
+		<dao name="GuestOSDao" class="com.vmops.storage.dao.GuestOSDaoImpl"/>
+		
+        <dao name="StoragePoolDao" class="com.vmops.storage.dao.StoragePoolDaoImpl"/>
+        <dao name="StoragePoolHostDao" class="com.vmops.storage.dao.StoragePoolHostDaoImpl"/>
+        <dao name="HostDetails" class="com.vmops.host.dao.DetailsDaoImpl"/>
+        
+
+        
+        <adapters key="com.vmops.agent.manager.allocator.HostAllocator">
+            <adapter name="FirstFitRouting" class="com.vmops.agent.manager.allocator.impl.FirstFitRoutingAllocator"/>
+            <adapter name="FirstFit" class="com.vmops.agent.manager.allocator.impl.FirstFitAllocator"/>
+        </adapters>
+        <adapters key="com.vmops.agent.manager.allocator.StorageAllocator">
+            <adapter name="Storage" class="com.vmops.agent.manager.allocator.impl.FirstFitStorageAllocator">
+              <param name="storage.overprovisioning.factor">2</param>
+            </adapter>
+            <adapter name="Storage" class="com.vmops.agent.manager.allocator.impl.RandomStoragePoolAllocator">
+              <param name="storage.overprovisioning.factor">2</param>
+            </adapter>
+        </adapters>
+        <adapters key="com.vmops.agent.manager.allocator.PodAllocator">
+            <adapter name="User First" class="com.vmops.agent.manager.allocator.impl.UserConcentratedAllocator"/>
+        </adapters>
+
+
+        <adapters key="com.vmops.consoleproxy.ConsoleProxyAllocator">
+            <adapter name="Balance" class="com.vmops.consoleproxy.ConsoleProxyBalanceAllocator"/>
+        </adapters>
+
+
+        <adapters key="com.vmops.server.auth.UserAuthenticator">
+            <adapter name="MD5" class="com.vmops.server.auth.MD5UserAuthenticator"/>
+        </adapters>
+        <adapters key="com.vmops.ha.Investigator">
+            <adapter name="SimpleInvestigator" class="com.vmops.ha.CheckOnAgentInvestigator"/>
+            <adapter name="PingInvestigator" class="com.vmops.ha.InvestigatorImpl"/>
+        </adapters>
+        <adapters key="com.vmops.ha.FenceBuilder">
+            <adapter name="StorageFenceBuilder" class="com.vmops.ha.StorageFence"/>
+        </adapters>
+        <adapters key="com.vmops.cluster.ClusterServiceAdapter">
+            <adapter name="ClusterService" class="com.vmops.cluster.ClusterServiceServletAdapter"/>
+        </adapters>
+        <adapters key="com.vmops.resource.Discoverer">
+            <adapter name="XenServer" class="com.vmops.resource.xen.XenServerDiscoverer"/>
+            <adapter name="SecondaryStorage" class="com.vmops.storage.secondary.SecondaryStorageDiscoverer"/>
+            <adapter name="DummyHostServer" class="com.vmops.resource.DummyHostDiscoverer"/>
+        </adapters>
+        <manager name="account manager" class="com.vmops.user.AccountManagerImpl">
+        </manager>
+        <manager name="agent manager" class="com.vmops.agent.manager.ClusteredAgentManagerImpl">
+        </manager>
+		<manager name="configuration manager" class="com.vmops.configuration.ConfigurationManagerImpl">
+			<param name="premium">true</param>
+		</manager>
+        <manager name="network manager" class="com.vmops.network.NetworkManagerImpl">
+        </manager>
+        <manager name="download manager" class="com.vmops.storage.download.DownloadMonitorImpl">
+        </manager>
+        <manager name="console proxy manager" class="com.vmops.consoleproxy.ConsoleProxyManagerImpl">
+        </manager>
+        <manager name="vm manager" class="com.vmops.vm.UserVmManagerImpl"/>
+        <manager name="upgrade manager" class="com.vmops.maint.UpgradeManagerImpl">
+        </manager>
+        <manager name="StorageManager" class="com.vmops.storage.StorageManagerImpl">
+        </manager>
+        <manager name="HA Manager" class="com.vmops.ha.HighAvailabilityManagerExtImpl">
+        </manager>
+        <manager name="Cluster Manager" class="com.vmops.cluster.ClusterManagerImpl">
+        </manager>
+        <manager name="SyncQueueManager" class="com.vmops.async.SyncQueueManagerImpl">
+        </manager>
+        <manager name="AsyncJobManager" class="com.vmops.async.AsyncJobManagerImpl">
+        </manager>
+        <manager name="AsyncJobExecutorContext" class="com.vmops.async.AsyncJobExecutorContextImpl">
+        </manager>
+        
+        <manager name="Alert Manager" class="com.vmops.alert.AlertManagerImpl">
+        </manager>
+        <manager name="Template Manager" class="com.vmops.template.TemplateManagerImpl">
+        </manager>
+        <adapters key="com.vmops.alert.AlertAdapter">
+            <adapter name="ClusterAlert" class="com.vmops.alert.ClusterAlertAdapter"/>
+            <adapter name="ConsoleProxyAlert" class="com.vmops.alert.ConsoleProxyAlertAdapter"/>
+        </adapters>
+    </management-server>
+
+</components.xml>

@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# This script will be executed *after* all the other init scripts.
+# You can put your own initialization stuff in here if you don't
+# want to do the full Sys V style init stuff.
+# @VERSION@
+
+touch /var/lock/subsys/local
+ethtool -K eth0 tx off
+ethtool -K eth1 tx off

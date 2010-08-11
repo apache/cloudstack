@@ -1,0 +1,62 @@
+# -*- mode: Makefile; -*-
+#============================================================================
+#
+# Copyright (C) 2004 Mike Wray <mike.wray@hp.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free software Foundation, Inc.,
+# 59 Temple Place, suite 330, Boston, MA 02111-1307 USA
+#============================================================================
+
+ifeq ($(src),)
+SRC_DIR=
+else
+SRC_DIR=$(src)/
+endif
+
+VNET_SRC :=
+VNET_SRC += etherip.c
+VNET_SRC += random.c
+VNET_SRC += sa.c
+VNET_SRC += esp.c
+ifeq ($(KERNEL_MINOR),18)
+VNET_SRC += sa_algorithm.c
+endif
+VNET_SRC += skb_context.c
+VNET_SRC += skb_util.c
+VNET_SRC += sxpr_util.c
+VNET_SRC += timer_util.c
+VNET_SRC += tunnel.c
+VNET_SRC += varp.c
+VNET_SRC += varp_socket.c
+VNET_SRC += vif.c
+VNET_SRC += vnet.c
+VNET_SRC += vnet_dev.c
+VNET_SRC += vnet_ioctl.c
+VNET_SRC += vnet_eval.c
+VNET_SRC += vnet_forward.c
+
+VNET_LIB_SRC += allocate.c
+VNET_LIB_SRC += enum.c
+VNET_LIB_SRC += hash_table.c
+VNET_LIB_SRC += iostream.c
+VNET_LIB_SRC += kernel_stream.c
+VNET_LIB_SRC += mem_stream.c
+VNET_LIB_SRC += sxpr.c
+VNET_LIB_SRC += sxpr_parser.c
+VNET_LIB_SRC += sys_net.c
+VNET_LIB_SRC += sys_string.c
+
+VNET_OBJ := $(VNET_SRC:.c=.o)
+VNET_LIB_OBJ := $(VNET_LIB_SRC:.c=.o)
+

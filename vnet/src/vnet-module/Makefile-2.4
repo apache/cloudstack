@@ -1,0 +1,98 @@
+# -*- mode: Makefile; -*-
+#============================================================================
+#
+# Copyright (C) 2004 Mike Wray <mike.wray@hp.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free software Foundation, Inc.,
+# 59 Temple Place, suite 330, Boston, MA 02111-1307 USA
+#============================================================================
+
+#============================================================================
+# Vnet module makefile for 2.4 series kernels.
+
+LINUX_SERIES =2.4
+include Makefile.ver
+
+KERNEL_MODULE := vnet_module.o
+
+CONFIG_MODVERSIONS := $(shell grep 'CONFIG_MODVERSIONS=y' $(KERNEL_SRC)/.config && echo 1 || echo 0)
+
+include Makefile.vnet
+
+VNET_OBJ += $(VNET_LIB_OBJ)
+
+#----------------------------------------------------------------------------
+
+vpath %.h $(KERNEL_SRC)/include
+INCLUDES+= -I $(KERNEL_SRC)/include
+
+vpath %.h $(LIBXUTIL_DIR)
+vpath %.c $(LIBXUTIL_DIR)
+INCLUDES += -I $(LIBXUTIL_DIR)
+
+INCLUDES+= -I .
+
+#----------------------------------------------------------------------------
+
+CPPFLAGS += -D__KERNEL__
+CPPFLAGS += -DMODULE
+
+ifeq ($(CONFIG_MODVERSIONS), 1)
+CPPFLAGS += -DMODVERSIONS
+CPPFLAGS += -include $(KERNEL_SRC)/include/linux/modversions.h
+endif
+
+CPPFLAGS += $(INCLUDES)
+
+CFLAGS += -Wall
+CFLAGS += -Wstrict-prototypes
+CFLAGS += -Wno-trigraphs
+CFLAGS += -Wno-unused-function
+CFLAGS += -Wno-unused-parameter 
+
+CFLAGS += -g
+CFLAGS += -O2
+CFLAGS += -fno-strict-aliasing 
+CFLAGS += -fno-common 
+#CFLAGS += -fomit-frame-pointer
+
+# Dependencies. Gcc generates them for us.
+CFLAGS += -Wp,-MD,.$(@F).d
+VNET_DEP = .*.d
+#----------------------------------------------------------------------------
+
+.PHONY: all
+all: module
+
+.PHONY: module modules
+module modules: $(KERNEL_MODULE)
+
+$(KERNEL_MODULE): $(VNET_OBJ)
+	$(LD) -r -o $@ $^
+
+.PHONY: install install-module modules_install
+install install-module modules_install: module
+	install -m 0755 -d $(DESTDIR)$(KERNEL_MODULE_DIR)
+	install -m 0554 $(KERNEL_MODULE) $(DESTDIR)$(KERNEL_MODULE_DIR)
+
+TAGS:
+	etags *.c *.h
+
+.PHONY: clean
+clean:
+	-@$(RM) *.a *.o *.ko *~
+	-@$(RM) $(VNET_DEP) .*.cmd *.mod.?
+	-@$(RM) -r .tmp_versions
+
+-include $(VNET_DEP)

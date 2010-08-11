@@ -1,0 +1,652 @@
+---------------------------------------------------------------------
+THE QUICK GUIDE TO CLOUDSTACK DEVELOPMENT
+---------------------------------------------------------------------
+
+
+=== Overview of the development lifecycle ===
+
+To hack on a CloudStack component, you will generally:
+
+1. Configure the source code:
+   ./waf configure --prefix=/home/youruser/cloudstack
+   (see below, "./waf configure")
+   
+2. Build and install the CloudStack
+   ./waf install
+   (see below, "./waf install")
+   
+3. Set the CloudStack component up
+   (see below, "Running the CloudStack components from source")
+
+4. Run the CloudStack component
+   (see below, "Running the CloudStack components from source")
+
+5. Modify the source code
+
+6. Build and install the CloudStack again
+   ./waf install --preserve-config
+   (see below, "./waf install")
+   
+7. GOTO 4
+
+
+=== What is this waf thing in my development lifecycle? ===
+
+waf is a self-contained, advanced build system written by Thomas Nagy,
+in the spirit of SCons or the GNU autotools suite.
+
+* To run waf on Linux / Mac: ./waf [...commands...]
+* To run waf on Windows:     waf.bat [...commands...]
+
+./waf --help should be your first discovery point to find out both the
+configure-time options and the different processes that you can run
+using waf.
+
+
+=== What do the different waf commands above do? ===
+
+1. ./waf configure --prefix=/some/path
+    
+    You run this command *once*, in preparation to building, or every
+    time you need to change a configure-time variable.
+        
+    This runs configure() in wscript, which takes care of setting the
+    variables and options that waf will use for compilation and
+    installation, including the installation directory (PREFIX).
+    
+    For convenience reasons, if you forget to run configure, waf
+    will proceed with some default configuration options.  By
+    default, PREFIX is /usr/local, but you can set it e.g. to
+    /home/youruser/cloudstack if you plan to do a non-root
+    install.  Be ware that you can later install the stack as a
+    regular user, but most components need to *run* as root.
+    
+    ./waf showconfig displays the values of the configure-time options
+    
+2. ./waf
+    
+    You run this command to trigger compilation of the modified files.
+    
+    This runs the contents of wscript_build, which takes care of
+    discovering and describing what needs to be built, which
+    build products / sources need to be installed, and where.
+    
+3. ./waf install
+    
+    You run this command when you want to install the CloudStack.
+    
+    If you are going to install for production, you should run this
+    process as root.  If, conversely, you only want to install the
+    stack as your own user and in a directory that you have write
+    permission, it's fine to run waf install as your own user.
+    
+    This runs the contents of wscript_build, with an option variable
+    Options.is_install = True.  When this variable is set, waf will
+    install the files described in wscript_build.  For convenience
+    reasons, when you run install, any files that need to be recompiled
+    will also be recompiled prior to installation.
+    
+    --------------------
+    
+    WARNING: each time you do ./waf install, the configuration files
+    in the installation directory are *overwritten*.
+    
+    There are, however, two ways to get around this:
+
+       a) ./waf install has an option --preserve-config.  If you pass
+          this option when installing, configuration files are never
+          overwritten.
+          
+          This option is useful when you have modified source files and
+          you need to deploy them on a system that already has the
+          CloudStack installed and configured, but you do *not* want to
+          overwrite the existing configuration of the CloudStack.
+          
+          If, however, you have reconfigured and rebuilt the source
+          since the last time you did ./waf install, then you are
+          advised to replace the configuration files and set the
+          components up again, because some configuration files
+          in the source use identifiers that may have changed during
+          the last ./waf configure.  So, if this is your case, check
+          out the next way:
+          
+       b) Every configuration file can be overridden in the source
+          without touching the original.
+          
+          - Look for said config file X (or X.in) in the source, then
+          - create an override/ folder in the folder that contains X, then
+          - place a file named X (or X.in) inside override/, then
+          - put the desired contents inside X (or X.in)
+          
+          Now, every time you run ./waf install, the file that will be
+          installed is path/to/override/X.in, instead of /path/to/X.in.
+          
+          This option is useful if you are developing the CloudStack
+          and constantly reinstalling it.  It guarantees that every
+          time you install the CloudStack, the installation will have
+          the correct configuration and will be ready to run.
+    
+
+=== Running the CloudStack components from source (for debugging / coding) ===
+
+It is not technically possible to run the CloudStack components from
+the source.  That, however, is fine -- each component can be run
+independently from the install directory:
+
+- Management Server
+
+    1) Execute ./waf install as your current user (or as root if the
+    installation path is only writable by root).
+    
+    WARNING: if any CloudStack configuration files have been
+    already configured / altered, they will be *overwritten* by this
+    process.  Append --preserve-config to ./waf install to prevent this
+    from happening.  Or resort to the override method discussed
+    above (search for "override" in this document).
+
+    2) If you haven't done so yet, set up the management server database:
+    
+    - either run ./waf deploydb_kvm, or
+    - run $BINDIR/cloud-setup-databases
+    
+    3) Execute ./waf run as your current user (or as root if the
+    installation path is only writable by root).  Alternatively,
+    you can use ./waf debug and this will run with debugging enabled.
+    
+    
+- Agent (Linux-only):
+
+    1) Execute ./waf install as your current user (or as root if the
+    installation path is only writable by root).
+    
+    WARNING: if any CloudStack configuration files have been
+    already configured / altered, they will be *overwritten* by this
+    process.  Append --preserve-config to ./waf install to prevent this
+    from happening.  Or resort to the override method discussed
+    above (search for "override" in this document).
+
+    2) If you haven't done so yet, set the Agent up:
+    
+    - run $BINDIR/cloud-setup-agent
+    
+    3) Execute ./waf run_agent as root
+    
+        this will launch sudo and require your root password unless you have
+        set sudo up not to ask for it
+    
+
+- Console Proxy (Linux-only):
+
+    1) Execute ./waf install as your current user (or as root if the
+    installation path is only writable by root).
+    
+    WARNING: if any CloudStack configuration files have been
+    already configured / altered, they will be *overwritten* by this
+    process.  Append --preserve-config to ./waf install to prevent this
+    from happening.  Or resort to the override method discussed
+    above (search for "override" in this document).
+
+    2) If you haven't done so yet, set the Console Proxy up:
+    
+    - run $BINDIR/cloud-setup-console-proxy
+
+    3) Execute ./waf run_console_proxy
+    
+        this will launch sudo and require your root password unless you have
+        set sudo up not to ask for it
+
+
+---------------------------------------------------------------------
+BUILD SYSTEM TIPS
+---------------------------------------------------------------------
+
+
+=== Integrating compilation and execution of each component into Eclipse ===
+
+To run the Management Server from Eclipse, set up an External Tool of the
+Program variety.  Put the path to the waf binary in the Location of the
+window, and the source directory as Working Directory.  Then specify
+"install --preserve-config run" as arguments (without the quotes).  You can
+now use the Run button in Eclipse to execute the Management Server directly
+from Eclipse.  You can replace run with debug if you want to run the
+Management Server with the Debugging Proxy turned on.
+
+To run the Agent or Console Proxy from Eclipse, set up an External Tool of
+the Program variety just like in the Management Server case.  In there,
+however, specify "install --preserve-config run_agent" or 
+"install --preserve-config run_console_proxy" as arguments instead.
+Remember that you need to set sudo up to not ask you for a password and not
+require a TTY, otherwise sudo -- implicitly called by waf run_agent or
+waf run_console_proxy -- will refuse to work.
+
+
+=== Building targets selectively ===
+
+You can find out the targets of the build system:
+
+./waf list_targets
+
+If you want to run a specific task generator,
+
+./waf build --targets=patchsubst
+
+should run just that one (and whatever targets are required to build that
+one, of course).
+
+
+=== Common targets ===
+
+* ./waf configure: you must always run configure once, and provide it with
+  the target installation paths for when you run install later
+	o --help: will show you all the configure options
+	o --no-dep-check: will skip dependency checks for java packages
+	  needed to compile (saves 20 seconds when redoing the configure)
+	o --with-db-user, --with-db-pw, --with-db-host: informs the build
+	  system of the MySQL configuration needed to set up the management
+	  server upon install, and to do deploydb
+
+* ./waf build: will compile any source files (and, on some projects, will
+  also perform any variable substitutions on any .in files such as the
+  MANIFEST files).  Build outputs will be in <projectdir>/artifacts/default.
+  
+* ./waf install: will compile if not compiled yet, then execute an install
+  of the built targets.  I had to write a significantly large amount of code
+  (that is, couple tens of lines of code) to make install work.
+
+* ./waf run: will run the management server in the foreground
+
+* ./waf debug: will run the management server in the foreground, and open
+  port 8787 to connect with the debugger (see the Run / debug options of
+  waf --help to change that port)
+
+* ./waf deploydb: deploys the database using the MySQL configuration supplied
+  with the configuration options when you did ./waf configure.  RUN WAF BUILD
+  FIRST AT LEAST ONCE.
+
+* ./waf dist: create a source tarball.  These tarballs will be distributed
+  independently on our Web site, and will form the source release of the
+  Cloud Stack.  It is a self-contained release that can be ./waf built and
+  ./waf installed everywhere.
+  
+* ./waf clean: remove known build products
+
+* ./waf distclean: remove the artifacts/ directory altogether
+
+* ./waf uninstall: uninstall all installed files
+
+* ./waf rpm: build RPM packages
+	o if the build fails because the system lacks dependencies from our
+	  other modules, waf will attempt to install RPMs from the repos,
+	  then try the build
+	o it will place the built packages in artifacts/rpmbuild/
+
+* ./waf deb: build Debian packages
+	o if the build fails because the system lacks dependencies from our
+	  other modules, waf will attempt to install DEBs from the repos,
+	  then try the build
+	o it will place the built packages in artifacts/debbuild/
+
+* ./waf uninstallrpms: removes all Cloud.com RPMs from a system (but not
+  logfiles or modified config files)
+
+* ./waf viewrpmdeps: displays RPM dependencies declared in the RPM specfile
+
+* ./waf installrpmdeps: runs Yum to install the packages required to build
+  the CloudStack
+
+* ./waf uninstalldebs: removes all Cloud.com DEBs from a system (AND logfiles
+  AND modified config files)
+* ./waf viewdebdeps: displays DEB dependencies declared in the project
+  debian/control file
+
+* ./waf installdebdeps: runs aptitude to install the packages required to
+  build our software
+
+
+=== Overriding certain source files ===
+
+Earlier in this document we explored overriding configuration files.
+Overrides are not limited to configuration files.
+
+If you want to provide your own server-setup.xml or SQL files in client/setup:
+
+    * create a directory override inside the client/setup folder
+    * place your file that should override a file in client/setup there
+
+There's also override support in client/tomcatconf and agent/conf.
+
+
+=== Environment substitutions ===
+
+Any file named "something.in" has its tokens (@SOMETOKEN@) automatically
+substituted for the corresponding build environment variable.  The build
+environment variables are generally constructed at configure time and
+controllable by the --command-line-parameters to waf configure, and should
+be available as a list of variables inside the file
+artifacts/c4che/build.default.py.
+
+
+=== The prerelease mechanism ===
+
+The prerelease mechanism (--prerelease=BRANCHNAME) allows developers and
+builders to build packages with pre-release Release tags.  The Release tags
+are constructed in such a way that both the build number and the branch name
+is included, so developers can push these packages to repositories and upgrade
+them using yum or aptitude without having to delete packages manually and
+install packages manually every time a new build is done.  Any package built
+with the prerelease mechanism gets a standard X.Y.Z version number -- and,
+due to the way that the prerelease Release tags are concocted, always upgrades
+any older prerelease package already present on any system.  The prerelease
+mechanism must never be used to create packages that are intended to be
+released as stable software to the general public.
+
+Relevant documentation:
+
+    http://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Version
+    http://fedoraproject.org/wiki/PackageNamingGuidelines#Pre-Release_packages
+   
+Everything comes together on the build server in the following way:
+
+
+=== SCCS info ===
+
+When building a source distribution (waf dist), or RPM/DEB distributions
+(waf deb / waf rpm), waf will automatically detect the relevant source code
+control information if the git command is present on the machine where waf
+is run, and it will write the information to a file called sccs-info inside
+the source tarball / install it into /usr/share/doc/cloud*/sccs-info when
+installing the packages.
+
+If this source code conrol information cannot be calculated, then the old
+sccs-info file is preserved across dist runs if it exists, and if it did
+not exist before, the fact that the source could not be properly tracked
+down to a repository is noted in the file.
+
+
+=== Debugging the build system ===
+
+Almost all targets have names.  waf build -vvvvv --zones=task will give you
+the task names that you can use in --targets.
+
+
+---------------------------------------------------------------------
+UNDERSTANDING THE BUILD SYSTEM
+---------------------------------------------------------------------
+
+
+=== Documentation for the build system ===
+
+The first and foremost reference material:
+
+- http://freehackers.org/~tnagy/wafbook/index.html
+
+Examples
+
+- http://code.google.com/p/waf/wiki/CodeSnippets
+- http://code.google.com/p/waf/w/list
+
+FAQ
+
+- http://code.google.com/p/waf/wiki/FAQ
+
+
+=== Why waf ===
+
+The CloudStack uses waf to build itself.  waf is a relative newcomer
+to the build system world; it borrows concepts from SCons and
+other later-generation build systems:
+
+- waf is very flexible and rich; unlike other build systems, it covers
+  the entire life cycle, from compilation to installation to
+  uninstallation.  it also supports dist (create source tarball),
+  distcheck (check that the source tarball compiles and installs),
+  autoconf-like checks for dependencies at compilation time,
+  and more.
+
+- waf is self-contained.  A single file, distributed with the project,
+  enables everything to be built, with only a dependency on Python,
+  which is freely available and shipped in all Linux computers.
+
+- waf also supports building projects written in multiple languages
+  (in the case of the CloudStack, we build from C, Java and Python).
+
+- since waf is written in Python, the entire library of the Python
+  language is available to use in the build process.
+
+
+=== Hacking on the build system: what are these wscript files? ===
+
+1. wscript:  contains most commands you can run from within waf
+2. wscript_configure: contains the process that discovers the software
+                      on the system and configures the build to fit that
+2. wscript_build: contains a manifest of *what* is built and installed
+
+Refer to the waf book for general information on waf:
+   http://freehackers.org/~tnagy/wafbook/index.html
+
+
+=== What happens when waf runs ===
+
+When you run waf, this happens behind the scenes:
+
+- When you run waf for the first time, it unpacks itself to a hidden
+  directory .waf-1.X.Y.MD5SUM, including the main program and all
+  the Python libraries it provides and needs.
+  
+- Immediately after unpacking itself, waf reads the wscript file
+  at the root of the source directory.  After parsing this file and
+  loading the functions defined here, it reads wscript_build and
+  generates a function build() based on it.
+  
+- After loading the build scripts as explained above, waf calls
+  the functions you specified in the command line.
+  
+So, for example, ./waf configure build install will:
+
+* call configure() from wscript,
+* call build() loaded from the contents of wscript_build,
+* call build() once more but with Options.is_install = True.
+
+As part of build(), waf invokes ant to build the Java portion of our
+stack.
+
+
+=== How and why we use ant within waf ===
+
+By now, you have probably noticed that we do, indeed, ship ant
+build files in the CloudStack.  During the build process, waf calls
+ant directly to build the Java portions of our stack, and it uses
+the resulting JAR files to perform the installation.
+
+The reason we do this rather than use the native waf capabilities
+for building Java projects is simple: by using ant, we can leverage
+the support built-in for ant in Eclipse and many other IDEs.  Another
+reason to do this is because Java developers are familiar with ant,
+so adding a new JAR file or modifying what gets built into the
+existing JAR files is facilitated for Java developers.
+
+If you add to the ant build files a new ant target that uses the
+compile-java macro, waf will automatically pick it up, along with its
+depends= and JAR name attributes.  In general, all you need to do is
+add the produced JAR name to the packaging manifests (cloud.spec and
+debian/{name-of-package}.install).
+
+
+---------------------------------------------------------------------
+FOR ANT USERS
+---------------------------------------------------------------------
+
+
+If you are using Ant directly instead of using waf, these instructions apply to you:
+
+in this document, the example instructions are based on local source repository rooted at c:\root. You are free to locate it to anywhere you'd like to.
+3.1 Setup developer build type
+
+       1) Go to c:\cloud\java\build directory
+
+        2) Copy file build-cloud.properties.template to file build-cloud.properties, then modify some of the parameters to match your local setup. The template properties file should have content as
+
+            debug=true
+            debuglevel=lines,vars,source
+            tomcat.home=$TOMCAT_HOME      --> change to your local Tomcat root directory such as c:/apache-tomcat-6.0.18
+            debug.jvmarg=-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n
+            deprecation=off
+            build.type=developer
+            target.compat.version=1.5
+            source.compat.version=1.5
+            branding.name=default
+
+        3) Make sure the following Environment variables and Path are set:
+
+set enviroment variables:
+CATALINA_HOME:
+JAVA_HOME:  
+CLOUD_HOME:  
+MYSQL_HOME:
+
+update the path to include
+
+MYSQL_HOME\bin
+
+    4) Clone a full directory tree of C:\cloud\java\build\deploy\production to C:\cloud\java\build\deploy\developer
+
+            You can use Windows Explorer to copy the directory tree over. Please note, during your daily development process, whenever you see updates in C:\cloud\java\build\deploy\production, be sure to sync it into C:\cloud\java\build\deploy\developer.
+3.2 Common build instructions
+
+After you have setup the build type, you are ready to perform build and run Management Server alone locally.
+
+cd java
+python waf configure build install
+
+More at Build system.
+
+Will install the management server and its requisites to the appropriate place (your Tomcat instance on Windows, /usr/local on Linux).  It will also install the agent to /usr/local/cloud/agent (this will change in the future).
+4. Database and Server deployment
+
+After a successful management server build (database deployment scripts use some of the artifacts from build process), you can use database deployment script to deploy and initialize the database. You can find the deployment scripts in C:/cloud/java/build/deploy/db.  deploy-db.sh is used to create, populate your DB instance. Please take a look at content of deploy-db.sh for more details
+
+Before you run the scripts, you should edit C:/cloud/java/build/deploy/developer/db/server-setup-dev.xml to allocate Public and Private IP ranges for your development setup. Ensure that the ranges you pick are unallocated to others.
+
+Customized VM templates to be populated are in C:/cloud/java/build/deploy/developer/db/templates-dev.sql  Edit this file to customize the templates to your needs.
+
+Deploy the DB by running
+
+./deploy-db.sh ../developer/db/server-setup-dev.xml ../developer/db/templates-dev.xml
+4.1. Management Server Deployment
+
+ant build-server
+
+Build Management Server
+
+ant deploy-server
+
+Deploy Management Server software to Tomcat environment
+
+ant debug
+
+Start Management Server in debug mode. The JVM debug options can be found in cloud-build.properties
+
+ant run
+
+Start Management Server in normal mode.
+
+5. Agent deployment
+
+After a successful build process, you should be able to find build artifacts at distribution directory, in this example case, for developer build type, the artifacts locate at c:\cloud\java\dist\developer, particularly, if you have run
+
+ant package-agent build command, you should see the agent software be packaged in a single file named agent.zip under c:\cloud\java\dist\developer, together with the agent deployment script deploy-agent.sh.
+5.1 Agent Type
+
+Agent software can be deployed and configured to serve with different roles at run time. In current implementation, there are 3 types of agent configuration, respectively called as Computing Server, Routing Server and Storage Server.
+
+    * When agent software is configured to run as Computing server, it is responsible to host user VMs. Agent software should be running in Xen Dom0 system on computer server machine.
+
+    * When agent software is configured to run as Routing Server, it is responsible to host routing VMs for user virtual network and console proxy system VMs. Routing server serves as the bridge to outside network, the machine that agent software is running should have at least two network interfaces, one towards outside network, one participates the internal VMOps management network. Like computer server, agent software on routing server should also be running in Xen Dom0 system.
+
+    * When agent software is configured to run as Storage server, it is responsible to provide storage service for all VMs. The storage service is based on ZFS running on a Solaris system, agent software on storage server is therefore running under Solaris (actually a Solaris VM), Dom0 systems on computing server and routing server can access the storage service through iScsi initiator. The storage volume will be eventually mounted on Dom0 system and make available to DomU VMs through our agent software.
+
+5.2 Resource sharing
+
+All developers can share the same set of agent server machines for development, to make this possible, the concept of instance appears in various places
+
+    * VM names. VM names are structual names, it contains a instance section that can identify VMs from different VMOps cloud instances. VMOps cloud instance name is configured in server configuration parameter AgentManager/instance.name
+    * iScsi initiator mount point. For Computing servers and Routing servers, the mount point can distinguish the mounted DomU VM images from different agent deployments. The mount location can be specified in agent.properties file with a name-value pair named mount.parent
+    * iScsi target allocation point. For storage servers, this allocation point can distinguish the storage allocation from different storage agent deployments. The allocation point can be specified in agent.properties file with a name-value pair named parent
+
+5.4 Deploy agent software
+
+Before running the deployment scripts, first copy the build artifacts agent.zip and deploy-agent.sh to your personal development directory on agent server machines. By our current convention, you can create your personal development directory that usually locates at /root/your name. In following example, the agent package and deployment scripts are copied to test0.lab.vmops.com and the deployment script file has been marked as executible.
+
+    On build machine,
+
+        scp agent.zip root@test0:/root/your name
+
+        scp deploy-agent.sh root@test0:/root/your name
+
+    On agent server machine
+
+chmod +x deploy-agent.sh
+5.4.1 Deploy agent on computing server
+
+deploy-agent.sh -d /root/<your name>/agent -h <management server IP> -t computing -m expert   
+5.4.2 Deploy agent on routing server
+
+deploy-agent.sh -d /root/<your name>/agent -h <management server IP> -t routing -m expert   
+5.4.3 Deploy agent on storage server
+
+deploy-agent.sh -d /root/<your name>/agent -h <management server IP> -t storage -m expert   
+5.5 Configure agent
+
+After you have deployed the agent software, you should configure the agent by editing the agent.properties file under /root/<your name>/agent/conf directory on each of the Routing, Computing and Storage servers. Add/Edit following properties. The rest are defaults that get populated by the agent at runtime.
+    workers=3
+    host=<replace with your management server IP>
+    port=8250
+    pod=<replace with your pod id>
+    zone=<replace with your zone id>
+   instance=<your unique instance name>
+   developer=true
+
+Following is a sample agent.properties file for Routing server
+
+   workers=3
+   id=1
+   port=8250
+   pod=RC
+   storage=comstar
+   zone=RC
+   type=routing
+   private.network.nic=xenbr0
+   instance=RC
+   public.network.nic=xenbr1
+   developer=true
+   host=192.168.1.138
+5.5 Running agent
+
+Edit /root/<ryour name>/agent/conf/log4j-cloud.xml to update the location of logs to somewhere under /root/<your name>
+
+Once you have deployed and configured the agent software, you are ready to launch it. Under the agent root directory (in our example, /root/<your name>/agent. there is a scrip file named run.sh, you can use it to launch the agent.
+
+Launch agent in detached background process
+
+nohup ./run.sh & 
+
+Launch agent in interactive mode
+
+./run.sh
+
+Launch agent in debug mode, for example, following command makes JVM listen at TCP port 8787
+
+./run.sh -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n
+
+If agent is launched in debug mode, you may use Eclipse IDE to remotely debug it, please note, when you are sharing agent server machine with others, choose a TCP port that is not in use by someone else.
+
+Please also note that, run.sh also searches for /etc/cloud directory for agent.properties, make sure it uses the correct agent.properties file!
+5.5. Stopping the Agents
+
+the pid of the agent process is in /var/run/agent.<Instance>.pid
+
+To Stop the agent:
+
+kill <pid of agent>
+
+ 

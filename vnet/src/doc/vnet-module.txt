@@ -1,0 +1,72 @@
+Vnet Low-level Command Interface
+Mike Wray <mike.wray@hp.com>
+2006/10/12
+
+The vnet kernel module and user-space daemon vnetd support a low-level
+command interface to control vnets. The kernel module creates /proc/vnet/policy,
+which is used by writing commands into it. Vnetd listens on the unix-domain
+socket /tmp/vnetd.
+
+The vn utility in ../scripts provides a higher-level interface to
+the vnet commands (using the kernel module or vnetd).
+
+The commands are:
+
+(vnet.add (id <id>) [(vnetif <ifname>)] [(security { none | auth | conf } )] )
+
+Create the vnet with id <id> and the given security level (default none).
+Vnet ids are 128-bit and can be specified as 8 fields of 1 to 4 hex digits
+separated by colons. A vnet id with no colons is treated as one with the first
+7 fields zero. Examples:
+
+1500 - equivalent to 0:0:0:0:0:0:0:1500
+aaff:0:0:0:0:0:77:88
+
+Security levels:
+- none: no security
+- auth: message authentication (IPSEC hmac)
+- conf: message confidentiality (IPSEC hmac and encryption)
+
+The <ifname> is the name of the network device created for the vnet.
+If not given it defaults to vnif<N>, where <N> is the hex for the
+8-th field in the id. Note that network device names can have a
+maximum of 14 characters.
+
+(vnet.del (id <id>))
+
+Delete the vnet with id <id>.
+
+(vif.add (vnet <vnetid>) (vmac <macaddr>))
+
+Add the vif with MAC address <macaddr> to the vnet with id <vnetid>.
+This makes the vnet module respond to VARP requests for <macaddr>
+on vnet <vnetid>. The vnet implementation learns MAC addresses
+so doing this should not be necessary.
+
+(vif.del (vnet <vnetid>) (vmac <macaddr>))
+
+Remove the vif with MAC address <macaddr> from the vnet with id <vnetid>.
+The vnet module will stop responding to VARP for the vif.
+
+(peer.add (addr <addr>))
+
+Add a peer at IP address <addr> to forward multicasts to,
+and accept forwarded multicasts from.
+
+(peer.del (addr <addr>))
+
+Delete a peer.
+
+(vif.list)  - get list of vifs.
+(vnet.list) - get list of vnets.
+(varp.list) - get vnet/varp info.
+(peer.list) - get list of peers.
+
+The kernel module produces output on the console, and vnetd
+returns output on the unix socket. The kernel module also provides
+the following files which can be read to get information:
+
+/proc/vnet/vifs  - get list of vifs.
+/proc/vnet/vnets - get list of vnets.
+/proc/vnet/varp  - get vnet/varp info.
+/proc/vnet/peers - get list of peers.

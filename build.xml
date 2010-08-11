@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2008 Cloud.Com Inc. All Rights Reserved -->
+
+<project name="Cloud.com Cloud Stack Build Dispatch" default="help" basedir=".">
+    <description>
+        This is the overall dispatch file.  It includes other build
+        files but doesnot provide targets of its own.  Do not modify
+        this file.  If you need to create your own targets, modify the 
+        developer.xml.
+    </description>
+  
+    <dirname property="base.dir" file="${ant.file.Cloud.com Cloud Stack Build Dispatch}"/>
+    <property name="build.dir" location="${base.dir}/build"/>
+
+    <condition property="build-cloud.properties.file" value="${build.dir}/override/build-cloud.properties" else="${build.dir}/build-cloud.properties">
+      <available file="${build.dir}/override/build-cloud.properties" />
+    </condition>
+  
+    <property file="${build-cloud.properties.file}"/>
+  
+    <property name="dist.dir" location="${base.dir}/dist"/>
+    <property name="target.dir" location="${base.dir}/target"/>
+
+    <condition property="build.file" value="premium/build-cloud-premium.xml" else="build-cloud.xml">
+      <and>
+        <available file="build/premium/build-cloud-premium.xml"/>
+        <not>
+          <isset property="OSS"/>
+        </not>
+      </and>
+    </condition>
+
+    <condition property="package.file" value="premium/package-premium.xml" else="package.xml">
+      <and>
+        <available file="build/premium/package-premium.xml"/>
+        <not>
+          <isset property="OSS"/>
+        </not>
+      </and>
+    </condition>
+
+    <condition property="developer.file" value="premium/developer-premium.xml" else="developer.xml">
+      <and>
+        <available file="build/premium/developer-premium.xml"/>
+        <not>
+          <isset property="OSS"/>
+        </not>
+      </and>
+    </condition>
+	
+    <condition property="docs.file" value="premium/build-docs-premium.xml" else="build-docs.xml">
+      <and>
+        <available file="build/premium/build-docs-premium.xml"/>
+        <not>
+          <isset property="OSS"/>
+        </not>
+      </and>
+    </condition>
+
+    <condition property="test.file" value="premium/build-tests-premium.xml" else="build-tests.xml">
+      <and>
+        <available file="build/premium/build-tests-premium.xml"/>
+        <not>
+          <isset property="OSS"/>
+        </not>
+      </and>
+    </condition>
+
+    <import file="${base.dir}/plugins/zynga/build.xml" optional='true'/>
+    <import file="${build.dir}/${build.file}" optional="false"/>
+    <import file="${build.dir}/${docs.file}" optional="true"/>
+    <import file="${build.dir}/${test.file}" optional="true"/>
+    <import file="${build.dir}/${package.file}" optional="true"/>
+    <import file="${build.dir}/${developer.file}" optional="true"/>
+  
+</project>
+
+

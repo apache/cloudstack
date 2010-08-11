@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2008 VMOps, Inc. All Rights Reserved -->
+
+<project name="VMOps-Common" default="help" basedir=".">
+  <!--
+	     compile-java requires the following parameters
+	       - top.dir = the root directory of the source.
+	       - jar.name = name of the jar file.
+	       - classpath = classpath to use for this compile      
+
+
+	     The directory structure under the ${top.dir} needs to be.
+	         - src
+	         
+	     The target files are generated to ${classes.dir}/${jar.name}.
+	     The jar file is generated to ${dist.dir}/${jar.name}.jar. 
+	-->
+  <target name="help">
+    <echo message="This file is meant to be imported by other build.xml to provide common
+                   functionality.  Don not edit this file unless you are sure about adding
+                   common functionality."/>
+  </target>
+  
+  <dirname property="base.dir" file="${ant.file.VMOps-Common}/.."/>
+  <property name="build.dir" location="${base.dir}/build"/>
+  
+  <property name="target.dir" location="${base.dir}/target"/>
+  <property name="classes.dir" location="${target.dir}/classes"/>
+  <property name="jar.dir" location="${target.dir}/jar"/>
+  <property name="dep.cache.dir" location="${target.dir}/dep-cache"/>
+  <property name="debug" value="true"/>
+  <property name="debuglevel" value="lines,source"/>
+  
+  <macrodef name="compile-java">
+    <attribute name="top.dir" description="Top Directory of the source.  We will add src to this to get the source code."/>
+    <attribute name="jar.name" description="Name of the jar file"/>
+    <attribute name="classpath" description="class path to use"/>
+    <element name="include-files" optional="true"/>
+    <element name="exclude-files" optional="true"/>
+    
+    <sequential>
+
+      <mkdir dir="${classes.dir}/@{jar.name}"/>
+        
+      <depend srcdir="@{top.dir}/src" destdir="${classes.dir}/@{jar.name}" cache="${dep.cache.dir}" />
+        
+      <javac srcdir="@{top.dir}/src" debug="${debug}" debuglevel="${debuglevel}" deprecation="${deprecation}" destdir="${classes.dir}/@{jar.name}" source="${source.compat.version}" target="${target.compat.version}" includeantruntime="false" compiler="javac1.6">
+        <!-- compilerarg line="-processor com.cloud.annotation.LocalProcessor -processorpath ${base.dir}/tools/src -Xlint:all"/ -->
+        <!-- compilerarg line="-processor com.cloud.utils.LocalProcessor -processorpath ${base.dir}/utils/src -Xlint:all"/ -->
+        <compilerarg line="-Xlint:all"/>
+        <classpath refid="@{classpath}" />
+        <exclude-files/>
+      </javac>
+      <jar jarfile="${jar.dir}/@{jar.name}" basedir="${classes.dir}/@{jar.name}">
+        <manifest>
+          <attribute name="Class-Path" value="" />
+          <attribute name="Built-By" value="${built.by}" />
+          <attribute name="Specification-Title" value="VMOps Cloud Stack" />
+          <attribute name="Specification-Version" value="${impl.version}" />
+          <attribute name="Specification-Vendor" value="${company.name}" />
+          <attribute name="Implementation-Title" value="@{jar.name}" />
+          <attribute name="Implementation-Version" value="${impl.version}" />
+          <attribute name="Implementation-Vendor" value="${company.name}" />
+        </manifest>
+        <include-files/>
+      </jar>
+    </sequential>
+  </macrodef>
+  
+  <macrodef name="clean-java">
+    <attribute name="top.dir" description="Top Directory of the source.  We will add src to this to get the source code."/>
+    <attribute name="jar.name" description="Name of the jar file"/>
+    
+    <sequential>
+      <local name="compile.java.bin.dir"/>
+      <property name="compile.java.bin.dir" location="${classes.dir}/@{jar.name}" />
+      <rmdir dir="${compile.java.bin.dir}"/>
+      <rm file="${jar.dir}/@{jar.name}"/>
+    </sequential>
+  </macrodef>
+  
+</project>

@@ -1,0 +1,4 @@
+# management server compile-time environment parameters
+
+paths.script=@AGENTLIBDIR@
+mount.parent=@MSMNTDIR@

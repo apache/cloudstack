@@ -1,0 +1,60 @@
+# -*- mode: Makefile; -*-
+#============================================================================
+#
+# Copyright (C) 2004 Mike Wray <mike.wray@hp.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free software Foundation, Inc.,
+# 59 Temple Place, suite 330, Boston, MA 02111-1307 USA
+#============================================================================
+
+#============================================================================
+# Vnet module makefile for 2.6 series kernels.
+
+LINUX_SERIES =2.6
+include Makefile.ver
+
+export KERNEL_MINOR=$(shell echo $(LINUX_VERSION) |cut -d"-" -f1 |cut -d"." -f3)
+$(warning KERNEL_MINOR		$(KERNEL_MINOR))
+
+KERNEL_MODULE ?= vnet_module.ko
+
+#----------------------------------------------------------------------------
+#export KBUILD_VERBOSE=1
+
+.PHONY: all
+all: module module_version
+
+.PHONY: module
+module modules:
+	$(MAKE) -C $(KERNEL_SRC) M=`pwd` modules
+
+.PHONY: module_version
+module_version:
+	$(warning Module version $(shell strings $(KERNEL_MODULE) | grep vermagic))
+
+.PHONY: install install-module modules_install
+install install-module modules_install: module
+	install -m 0755 -d $(DESTDIR)$(KERNEL_MODULE_DIR)
+	install -m 0554 $(KERNEL_MODULE) $(DESTDIR)$(KERNEL_MODULE_DIR)
+
+.PHONY: clean
+clean:
+	-@$(MAKE) -C $(KERNEL_SRC) M=$(PWD) clean
+	-@$(RM) *.a *.o *.ko *~ .*.d .*.cmd *.mod.?
+	-@$(RM) -r .tmp_versions
+
+.PHONY: TAGS
+TAGS:
+	etags *.c *.h
+

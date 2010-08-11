@@ -1,0 +1,904 @@
+#!/usr/bin/env python
+#  -*- mode: python; -*-
+#============================================================================
+# Copyright (C) 2005, 2006 Mike Wray <mike.wray@hp.com>
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation; either version 2.1 of the License, or
+# (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#============================================================================
+
+# Vnet (network virtualization) control utility.
+
+import os
+import os.path
+import re
+import socket
+import sys
+sys.path.insert(0,"@PYTHONDIR@")
+from getopt import getopt, GetoptError
+
+#from xen.xend import sxp
+#from xen.xend.PrettyPrint import prettyprint
+import cloud_sxp as sxp
+from cloud_PrettyPrint import prettyprint
+
+# Path of unix-domain socket to vnetd.
+VNETD_PATH = "/tmp/vnetd"
+
+def vnetd_running():
+    return os.path.exists(VNETD_PATH)
+
+def vnetd_open():
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    sock.connect(VNETD_PATH)
+    fi = sock.makefile('r', 0)
+    fo = sock.makefile('w', 0)
+    return (fi, fo)
+
+os.defpath += ':/sbin:/usr/sbin:/usr/local/sbin'
+CMD_IFCONFIG = 'ifconfig'
+CMD_BRCTL    = 'brctl'
+
+opts = None
+
+class Opts:
+
+    def __init__(self, **kwds):
+        for (k, v) in kwds.items():
+            setattr(self, k, v)
+
+opts = Opts(verbose=False, dryrun=False)
+
+def set_opts(val):
+    global opts
+    opts = val
+    return opts
+
+def cmd(prog, *args):
+    """Execute command 'prog' with 'args', optionally printing the command.
+    """
+    global opts
+    command = " ".join([ prog ] + map(str, args))
+    if opts.verbose:
+        print command
+    if not opts.dryrun:
+        os.system(command)
+
+def vif_bridge_add(bridge, vif):
+    """Add a network interface to a bridge.
+    """
+    cmd(CMD_BRCTL, 'addif', bridge, vif)
+
+def vif_bridge_rem(bridge, vif):
+    """Remove a network interface from a bridge.
+    """
+    cmd(CMD_BRCTL, 'delif', bridge, vif)
+
+def bridge_create(bridge, **kwd):
+    """Create a bridge.
+    Defaults hello time to 0, forward delay to 0 and stp off.
+    """
+    cmd(CMD_BRCTL, 'addbr', bridge)
+    if kwd.get('hello', None) is None:
+        kwd['hello'] = 0
+    if kwd.get('fd', None) is None:
+        kwd['fd'] = 0
+    if kwd.get('stp', None) is None:
+        kwd['stp'] = 'off'
+    bridge_set(bridge, **kwd)
+    cmd(CMD_IFCONFIG, bridge, "up")
+
+def bridge_set(bridge, hello=None, fd=None, stp=None):
+    """Set bridge parameters.
+    """
+    if hello is not None:
+        cmd(CMD_BRCTL, 'sethello', bridge, hello)
+    if fd is not None:
+        cmd(CMD_BRCTL, 'setfd', bridge, fd)
+    if stp is not None:
+        cmd(CMD_BRCTL, 'stp', bridge, stp)
+
+def bridge_del(bridge):
+    """Delete a bridge.
+    """
+    cmd(CMD_IFCONFIG, bridge, 'down')
+    cmd(CMD_BRCTL, 'delbr', bridge)
+
+class Bridge:
+    # Network interfaces are at /sys/class/net/*.
+    # A bridge interface has ./bridge dir, ./brif is dir of bridged interfaces
+    # (symlinks to the brport dirs).
+    # If an interface is bridged ./brport is bridged port info,
+    # brport/bridge is a symlink to the bridge.
+
+    INTERFACE_DIR = "/sys/class/net"
+
+    def isBridge(klass, dev):
+        """Test if a network interface is a bridge.
+        """
+        devdir = os.path.join(klass.INTERFACE_DIR, dev)
+        brdir = os.path.join(devdir, "bridge")
+        try:
+            os.stat(brdir)
+            return True
+        except:
+            return False
+
+    isBridge = classmethod(isBridge)
+
+    def getInterfaces(klass):
+        """Get a list of the network interfaces.
+        """
+        try:
+            v = os.listdir(klass.INTERFACE_DIR)
+            v.sort()
+            return v
+        except:
+            return []
+
+    getInterfaces = classmethod(getInterfaces)
+
+    def getInterfaceAddr(klass, intf):
+        intfdir = os.path.join(klass.INTERFACE_DIR, intf)
+        addrfile = os.path.join(intfdir, "address")
+        try:
+            f = file(addrfile, "rb")
+        except Exception, ex:
+            #print ex
+            return None
+        try:
+            return f.readline().strip()
+        finally:
+            f.close()
+
+    getInterfaceAddr = classmethod(getInterfaceAddr)
+
+    def getBridges(klass):
+        """Get a list of the bridges.
+        """
+        return [ dev for dev in klass.getInterfaces() if klass.isBridge(dev) ]
+
+    getBridges = classmethod(getBridges)
+
+    def getBridgeInterfaces(klass, dev):
+        """Get a list of the interfaces attached to a bridge.
+        """
+        devdir = os.path.join(klass.INTERFACE_DIR, dev)
+        intfdir = os.path.join(devdir, "brif")
+        try:
+            v = os.listdir(intfdir)
+            v.sort()
+            return v
+        except:
+            return []
+
+    getBridgeInterfaces = classmethod(getBridgeInterfaces)
+
+    def getBridge(klass, dev):
+        """Get the bridge an interface is attached to (if any).
+        """
+        devdir = os.path.join(klass.INTERFACE_DIR, dev)
+        brfile = os.path.join(devdir, "brport/bridge")
+        try:
+            brpath = os.readlink(brfile)
+            return os.path.basename(brpath)
+        except:
+            return None
+
+    getBridge = classmethod(getBridge)
+
+def vnet_cmd(expr):
+    """Send a command expression to the vnet implementation.
+    """
+    if vnetd_running():
+        (fi, fo) = vnetd_open()
+    else:
+        fi = None
+        fo = file("/proc/vnet/policy", "wb")
+    try:
+        sxp.show(expr, fo)
+        fo.flush()
+    finally:
+        if fi: fi.close()
+        if fo: fo.close()
+
+def varp_flush():
+    """Flush the varp cache.
+    """
+    expr = ['varp.flush']
+    return vnet_cmd(expr)
+
+def vif_add(vnetid, vmac):
+    """Tell the vnet implementation to add a vif to a vnet.
+    """
+    expr = ['vif.add', ['vnet', vnetid], ['vmac', vmac]]
+    return vnet_cmd(expr)
+
+def vif_del(vnetid, vmac):
+    """Tell the vnet implementation to delete a vif from a vnet.
+    """
+    expr = ['vif.del', ['vnet', vnetid], ['vmac', vmac]]
+    return vnet_cmd(expr)
+
+def vnet_add(vnetid, vnetif=None, security=None):
+    """Tell the vnet implementation to add a vnet.
+    """
+    expr = ['vnet.add', ['id', vnetid]]
+    if vnetif:
+        expr.append(['vnetif', vnetif])
+    if security:
+        expr.append(['security', security])
+    return vnet_cmd(expr)
+
+def peer_add(addr, port=None):
+    expr = ['peer.add', ['addr', addr]]
+    if port:
+        expr.append(['port', port])
+    return vnet_cmd(expr)
+    
+def peer_del(addr, port=None):
+    expr = ['peer.del', ['addr', addr]]
+    return vnet_cmd(expr)
+
+def vnet_del(vnetid):
+    """Tell the vnet implementation to delete a vnet.
+    """
+    expr = ['vnet.del', ['id', vnetid]]
+    return vnet_cmd(expr)
+
+def vnet_create(vnetid, vnetif=None, bridge=None, security=None):
+    """Tell the vnet implementation to add a vnet.
+    If 'bridge' is non-null, create the bridge and add the vnet interface
+    to it.
+    """
+    vnet_add(vnetid, vnetif=vnetif, security=security)
+    val = vnet_lookup(vnetid)
+    if not vnetif:
+        vnetif = sxp.child_value(val, "vnetif")
+    vmac = get_mac(vnetif)
+    emac = get_mac("eth0") or get_mac("eth1") or get_mac("eth2")
+    if emac and vmac != emac:
+        set_mac(vnetif, emac)
+    cmd(CMD_IFCONFIG, vnetif, 'up')
+    if bridge:
+        bridge_create(bridge)
+        vif_bridge_add(bridge, vnetif)
+    return val
+        
+def vnet_delete(vnet, delbridge=False):
+    """Tell the vnet implementation to delete a vnet.
+    If the vnet interface is attached to a bridge,
+    remove it from the bridge, and if delbridge is true
+    delete the bridge.
+    """
+    v = vnet_lookup(vnet)    
+    if not v:
+        raise GetoptError("vnet not found: %s" % vnet)
+    vnetid = sxp.child_value(v, "id")
+    vnetif = sxp.child_value(v, "vnetif")
+    bridge = Bridge.getBridge(vnetif)
+    if bridge:
+        vif_bridge_rem(bridge, vnetif)
+        if delbridge:
+            bridge_del(bridge)
+    return vnet_del(vnetid)
+
+def get_mac(intf):
+    """Get the mac address of an interface.
+    """
+    try:
+        return Bridge.getInterfaceAddr(intf)
+    except:
+        pass
+
+    hwre = re.compile(".*\s+HWaddr\s+(?P<mac>\S*)\s+.*")
+    fin = os.popen("%s %s" % (CMD_IFCONFIG, intf), 'r')
+    try:
+        for x in fin:
+            m = hwre.match(x)
+            if not m:
+                continue
+            info = m.groupdict()
+            return info['mac']
+        return None
+    finally:
+        fin.close()
+
+def set_mac(intf, mac):
+    cmd(CMD_IFCONFIG, intf, 'down')
+    cmd(CMD_IFCONFIG, intf, 'hw', 'ether', mac)
+    cmd(CMD_IFCONFIG, intf, 'up')
+
+def get_addr(host):
+    return socket.gethostbyname(host)
+
+def get_port(srv):
+    return srv
+
+def vnetidof(v):
+    """Normalise a vnet id. Adds leading 0 fields to make up 8 if
+    there aren't enough. Pads all fields to 4 hex digits.
+    """
+    try:
+        l = v.split(":")
+        l = [ int(x or 0, 16) for x in l ]
+        l = [ 0 ] * (8 - len(l)) + l
+        return ":".join([ "%04x" % x for x in l ])
+    except:
+        return None
+
+def vnet_lookup(vnet, vnets=None):
+    """Find the vnet with the given vnet id or vnet interface.
+
+    @param vnet id or interface
+    @param vnets list of vnet info to use (get from implementation if None)
+    @return vnet info or None if not found
+    """
+    vnetid = vnetidof(vnet)
+    if vnets is None:
+        vnets = vnet_list()
+    for v in vnets:
+        vid = sxp.child_value(v, "id")
+        if vid == vnet or vid == vnetid:
+            return v
+        if sxp.child_value(v, "vnetif") == vnet:
+            return v
+    return None
+
+def get_vnetid(vnet):
+    """Get the normalised vnet id of the given vnet id or vnet interface.
+    Raises an error if the vnet cannot be found.
+    """
+    v = vnet_lookup(vnet)
+    if not v:
+        raise GetoptError("vnet not found: %s" % vnet)
+    vnetid = sxp.child_value(v, "id")
+    return vnetid
+
+def vif_list():
+    """Get the list of vif info from the vnet implementation.
+    """
+    if vnetd_running():
+        (fi, fo) = vnetd_open()
+        sxp.show(['vif.list'], fo)
+        fo.flush()
+    else:
+        fi = file("/proc/vnet/vifs")
+        fo = None
+    try:
+        return sxp.parse(fi) or []
+    finally:
+        if fi: fi.close()
+        if fo: fo.close()
+
+def vnets_filter(vnetlist, vnets):
+    """Filter a list of vnet info by a list of vnet ids or interfaces.
+    """
+    if vnets is None:
+        val = vnetlist
+    else:
+        val = []
+        for x in vnets:
+            v = vnet_lookup(x, vnets=vnetlist)
+            if not v:
+                continue
+            val.append(v)
+    return val
+
+def vnet_list(vnets=None):
+    """Get the list of vnet info from the vnet implementation,
+    sorted by vnet id.
+
+    @param vnets list of vnet ids or interfaces to filter the results by
+    """
+    if vnetd_running():
+        (fi, fo) = vnetd_open()
+        sxp.show(['vnet.list'], fo)
+        fo.flush()
+    else:
+        fi = file("/proc/vnet/vnets")
+        fo = None
+    try:
+        val = vnets_filter(sxp.parse(fi) or [], vnets)
+        val.sort(lambda x, y:
+                   cmp(sxp.child_value(x, "id"),
+                       sxp.child_value(y, "id")))
+        return val
+    finally:
+        if fi: fi.close()
+        if fo: fo.close()
+        
+def vnif_list(vnets=None):
+    """Get the list of vnet interface names from the vnet implementation.
+
+    @param vnets list of vnet ids or interfaces to filter the results by
+    """
+    vnifs = []
+    for v in vnet_list(vnets=vnets):
+        vnetif = sxp.child_value(v, "vnetif")
+        if vnetif:
+            vnifs.append(vnetif)
+    return vnifs
+        
+def varp_list():
+    """Get the list of varp info from the vnet implementation.
+    """
+    if vnetd_running():
+        (fi, fo) = vnetd_open()
+        sxp.show(['varp.list'], fo)
+        fo.flush()
+    else:
+        fi = file("/proc/vnet/varp")
+        fo = None
+    try:
+        return sxp.parse(fi) or []
+    finally:
+        if fi: fi.close()
+        if fo: fo.close()
+
+def peer_list():
+    if vnetd_running():
+        (fi, fo) = vnetd_open()
+        sxp.show(['peer.list'], fo)
+        fo.flush()
+    else:
+        fi = file("/proc/vnet/peers")
+        fo = None
+    try:
+        return sxp.parse(fi) or []
+    finally:
+        if fi: fi.close()
+        if fo: fo.close()
+
+class Opt:
+    """Declares command-line options for a command.
+    """
+
+    def getopt(klass, argv, opts, args):
+        """Get options and args from argv.
+        The value opts in the return value has an attribute for
+        eacho option or arg. The value args in the return value
+        is the remaining arguments.
+
+        @param argv arguments
+        @param opts option specifiers (list of Opt objects)
+        @param args arg specififiers (list of Arg objects)
+        @return (opts, args)
+        """
+        shortopts = "".join([ x.optShort() for x in opts ])
+        longopts  = [ x.optLong() for x in opts ]
+        (ovals, oargs) = getopt(argv[1:], shortopts, longopts)
+        odir = Opts()
+        for x in opts:
+            x.setDefault(odir)
+        for (k, v) in ovals:
+            for x in opts:
+                x.setOpt(k, v, odir)
+        argc = len(oargs)
+        if len(oargs) < len(args):
+            raise GetoptError("insufficient arguments for %s" % argv[0])
+        for (x, v) in zip(args, oargs):
+            x.setArg(v, odir)
+        return (odir, oargs[len(args): ])
+
+    getopt = classmethod(getopt)
+
+    def gethelp(klass, opts, args):
+        l = []
+        for x in opts:
+            l.append(x.help())
+        for x in args:
+            l.append(x.help())
+        return " ".join(l)
+
+    gethelp = classmethod(gethelp)
+
+    """A command=-line option.
+
+    @param name option name (this attribute is set to value in opts)
+    @param short short option flag (single-character string)
+    @param long long option name (defaults to option name, pass "" to suppress)
+    @param arg argument name (option has no arg if not specified)
+    """
+    def __init__(self, name, short=None, long=None, arg=False):
+        self.name = name
+        self.short = short
+        if long is None:
+            long = name
+        elif not long:
+            long = None
+        self.long = long
+        self.arg = arg
+
+    def help(self):
+        s = self.keyShort()
+        l = self.keyLong()
+        if s and l:
+            return "[%s | %s]" % (s, l)
+        else:
+            return s or l
+
+    def keyShort(self):
+        if self.short:
+            return "-%s" % self.short
+        else:
+            return None
+
+    def keyLong(self):
+        if self.long:
+            return "--%s" % self.long
+        else:
+            return None
+
+    def optLong(self):
+        if not self.long:
+            return None
+        if self.arg:
+            return "%s=" % self.long
+        else:
+            return self.long
+
+    def optShort(self):
+        if not self.short:
+            return None
+        if self.arg:
+            return "%s:" % self.short
+        else:
+            return self.short
+
+    def setDefault(self, vals):
+        if self.arg:
+            setattr(vals, self.name, None)
+        else:
+            setattr(vals, self.name, False)
+
+    def setOpt(self, k, v, vals):
+        if k in [ self.keyShort(), self.keyLong() ]:
+            if self.arg:
+                setattr(vals, self.name, v)
+            else:
+                if v not in [ None, '' ]:
+                    raise GetoptError("option %s does not take an argument" % k)
+                setattr(vals, self.name, True)
+
+class Arg:
+
+    """A command-line parameter. Args get their values from arguments
+    left over after option processing and are assigned in order.
+    The value is accessible as the attribute called 'name' in opts.
+
+    @param name argument name
+    """
+    def __init__(self, name):
+        self.name = name
+
+    def setArg(self, v, vals):
+        setattr(vals, self.name, v)
+
+    def help(self):
+        return "<%s>" % self.name
+            
+class VnMain:
+
+    """Methods beginning with this prefix are commands.
+    They must all have arguments like this:
+
+    op_foo(self, argv, args, opts)
+
+    argv: original command-line arguments
+    args: arguments left after option processing
+    opts: option and arg values (accessible as attributes)
+
+    Method options are specified by setting attribute
+    .opts on the method to a list of Option objects.
+    For args set .args to a list of Arg objects.
+    Use .use for short usage string, .help for long help.
+
+    Each option or arg defines an attribute in opts. For example
+    an option with name 'foo' is accessible as 'opts.foo'.
+    """
+    opPrefix = "op_"
+
+    def __init__(self, argv):
+        if argv:
+            self.name = argv[0]
+        else:
+            self.name = "vn"
+        self.argv = argv
+        self.argc = len(argv)
+
+    def error(self, v):
+        print >>sys.stderr, "%s: %s" % (self.name, v)
+        sys.exit(1)
+        
+    def getFunction(self, opname):
+        key = self.opPrefix + opname.replace("-", "_")
+        fn = getattr(self, key, None)
+        if not fn:
+            raise ValueError("unknown command: %s" % opname)
+        return fn
+    
+    def main(self):
+        if self.argc < 2:
+            args = ["help"]
+        else:
+            args = self.argv[1:]
+        try:
+            fn = self.getFunction(args[0])
+        except ValueError, ex:
+            self.error(ex)
+        try:
+            fnopts = self.getOpts(fn)
+            fnargs = self.getArgs(fn)
+            (opts, parms) = Opt.getopt(args, fnopts, fnargs)
+            return fn(args, parms, opts)
+        except GetoptError, ex:
+            self.error(ex)
+        except ValueError, ex:
+            self.error(ex)
+        except Exception, ex:
+            import traceback; traceback.print_exc()
+            self.error(ex)
+
+    def getOpts(self, meth):
+        return getattr(meth, "opts", [])
+    
+    def getArgs(self, meth):
+        return getattr(meth, "args", [])
+    
+    def getUse(self, meth):
+        return getattr(meth, "use", "")
+    
+    def getHelp(self, meth):
+        return getattr(meth, "help", "") or self.getUse(meth)
+
+    def fnHelp(self, meth):
+        return Opt.gethelp(self.getOpts(meth), self.getArgs(meth))
+
+    def printHelp(self, fn, opt_long):
+        meth = getattr(self, fn)
+        opname = fn[len(self.opPrefix):].replace("_", "-")
+        if opt_long:
+            help = self.getHelp(meth)
+            print "\n  %s" % opname
+            if help:
+                print "%s" % help
+        else:
+            use = self.getUse(meth)
+            print "  %s %s" % (opname, self.fnHelp(meth))
+            if use:
+                print "\t\t%s" % use
+
+    def show_vnif(self, dev):
+        cmd(CMD_IFCONFIG, dev)
+        bridge = Bridge.getBridge(dev)
+        if bridge:
+            print "          Bridge:", bridge
+            interfaces = Bridge.getBridgeInterfaces(bridge)
+            if dev in interfaces:
+                interfaces.remove(dev)
+            if interfaces:
+                print "          Interfaces:", ", ".join(interfaces)
+            print
+
+    def op_help(self, argv, args, opts):
+        if opts.long:
+            print '%s <command> <options>' % self.name
+            print self.long_help
+        else:
+            print '%s:' % self.name
+        l = dir(self)
+        l.sort()
+        for fn in l:
+            if fn.startswith(self.opPrefix):
+                self.printHelp(fn, opts.long)
+        print
+
+    op_help.opts = [ Opt('long', short='l') ]
+
+    def op_vnets(self, argv, args, opts):
+        vnets = vnet_list(vnets=args or None)
+        for v in vnets:
+            prettyprint(v, width=50)
+            print
+            if not opts.long:
+                continue
+            vnif = sxp.child_value(v, "vnetif")
+            if not vnif:
+                continue
+            self.show_vnif(vnif)
+        if opts.all:
+            vnetids = {}
+            for v in vnets:
+                vnetids[sxp.child_value(v, "id")] = v
+            for v in vif_list():
+                vnet = sxp.child_value(v, "vnet")
+                if vnet not in vnetids:
+                    continue
+                prettyprint(v)
+                print
+            for v in varp_list():
+                prettyprint(v)
+                print
+
+    op_vnets.opts = [ Opt('all', short='a'), Opt('long', short='l') ]
+
+    def op_vnifs(self, argv, args, opts):
+        vnifs = vnif_list(vnets=args or None)
+        for vnif in vnifs:
+            self.show_vnif(vnif)
+
+    def op_vifs(self, argv, args, opts):
+        for v in vif_list():
+            prettyprint(v)
+            print
+
+    def op_varp(self, argv, args, opts):
+        for v in varp_list():
+            prettyprint(v)
+            print
+
+    def op_varp_flush(self, argv, args, opts):
+        varp_flush()
+
+    def op_vnet_create(self, argv, args, opts):
+        return vnet_create(opts.vnet,
+                           vnetif=opts.vnetif,
+                           bridge=opts.bridge,
+                           security=opts.security)
+
+    op_vnet_create.args = [ Arg('vnet') ]
+    op_vnet_create.opts = [ Opt('security', short='s', arg="SECURITY"),
+                            Opt('bridge', short='b', arg="BRIDGE"),
+                            Opt('vnetif', short='v', arg="VNETIF") ]
+
+    def op_vnet_delete(self, argv, args, opts):
+        vnetid = get_vnetid(opts.vnet)
+        return vnet_delete(vnetid, delbridge=opts.bridge)
+
+    op_vnet_delete.args = [ Arg('vnet') ]
+    op_vnet_delete.opts = [ Opt('bridge', short='b') ]
+
+    def op_vif_add(self, argv, args, opts):
+        vnetid = get_vnetid(opts.vnet)
+        if opts.interface:
+            vmac = get_mac(opts.vmac)
+            if not vmac:
+                raise ValueError("interface not found: %s" % opts.vmac)
+        else:
+            vmac = opts.vmac
+        return vif_add(vnetid, vmac)
+
+    op_vif_add.args = [ Arg('vnet'), Arg('vmac') ]
+    op_vif_add.opts = [ Opt('interface', short='i') ]
+
+    def op_vif_delete(self, argv, args, opts):
+        vnetid = get_vnetid(opts.vnet)
+        if opts.interface:
+            vmac = get_mac(opts.vmac)
+        else:
+            vmac = opts.vmac
+        return vif_del(vnetid, vmac)
+
+    op_vif_delete.args = [ Arg('vnet'), Arg('vmac') ]
+    op_vif_delete.opts = [ Opt('interface', short='i') ]
+
+    def op_peer_add(self, argv, args, opts):
+        addr = get_addr(opts.addr)
+        if(opts.port):
+            port = get_port(opts.port)
+        else:
+            port = None
+        return peer_add(addr, port)
+        
+    op_peer_add.args = [ Arg('addr') ]
+    op_peer_add.opts = [ Opt('port', short='p') ]
+    
+    def op_peer_delete(self, argv, args, opts):
+        addr = get_addr(opts.addr)
+        return peer_del(addr)
+
+    op_peer_delete.args = [ Arg('addr') ]
+    
+    def op_peers(self, argv, args, opts):
+        for v in peer_list():
+            prettyprint(v)
+            print
+
+    def op_bridges(self, argv, args, opts):
+        if opts.long:
+            for bridge in Bridge.getBridges():
+                cmd(CMD_IFCONFIG, bridge)
+                interfaces = Bridge.getBridgeInterfaces(bridge)
+                if interfaces:
+                    print "          Interfaces:", ", ".join(interfaces)
+                    print
+        else:
+            for bridge in Bridge.getBridges():
+                print bridge,
+                interfaces = Bridge.getBridgeInterfaces(bridge)
+                if interfaces:
+                    print ":", ", ".join(interfaces)
+                else:
+                    print
+            
+    op_bridges.opts = [ Opt('long', short='l') ]
+
+    def op_insmod(self, argv, args, opts):
+        """Insert the vnet kernel module."""
+        """cmd("/etc/xen/scripts/vnet-insert", *args)"""
+
+    long_help          = """Control utility for vnets (virtual networking).
+Report bugs to Mike Wray <mike.wray@hp.com>.
+"""
+
+    op_help.use        = "Print help."
+    op_help.help       = "Print help, long help if the option -l or --long is given."
+
+    op_vnets.use       = """Print vnets."""
+    op_vnets.help      = """Print vnet information, where options are:
+    -a, -all           Print vnets, vifs and varp info.
+    -l, --long         Print ifconfigs for vnet interfaces."""
+
+    op_vifs.use        = "Print vifs."
+
+    op_vnifs.use       = "Print ifconfigs for vnet network interfaces."
+
+    op_varp.use        = "Print varp info and entries in the varp cache."
+
+    op_varp_flush.use  = "Flush the varp cache."
+    
+    op_vnet_create.use = "Create a vnet."
+
+    op_vnet_delete.use = "Delete a vnet."
+    op_vnet_delete.help = """Delete a vnet.
+    -b, --bridge       Delete the bridge the vnet interface is attached to.
+    """
+
+    op_vif_add.use     = "Add a vif to a vnet."
+    op_vif_add.help    = """Add a vif to a vnet. Not usually needed as vifs
+are added automatically.
+    -i, --interface    The vmac is the name of an interface to get the mac from."""
+
+    op_vif_delete.use  = "Delete a vif from a vnet."
+    op_vif_delete.help = """Delete a vif from a vnet. Not usually needed as vifs
+are removed periodically.
+    -i, --interface    The vmac is the name of an interface to get the mac from."""
+
+    op_peer_add.use    = "Add a peer."
+    op_peer_add.help   = """Add a peer: <addr> <port>
+Vnets use multicast to discover interfaces, but networks are often configured
+not to forward multicast. Vnets forward multicasts to peers using UDP.
+Only add peers if multicasts are not working, check with
+
+ping -b 224.10.0.1
+
+Only add peers at one machine in a subnet, otherwise you may cause forwarding
+loops.
+"""
+
+    op_peer_delete.use = "Delete a peer."
+    op_peer_delete.help= "Delete a peer: <addr>"
+
+    op_peers.use       = "List peers."
+    op_peers.help      = "List peers."
+
+    op_bridges.use     = "Print bridges."
+
+    op_insmod.use      = "Insert the vnet kernel module, optionally with parameters."
+
+if __name__ == "__main__":
+    vn = VnMain(sys.argv)
+    vn.main()
+    

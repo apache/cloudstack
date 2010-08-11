@@ -1,0 +1,109 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import sys, os, subprocess, errno, re, traceback
+
+# ---- This snippet of code adds the sources path and the waf configured PYTHONDIR to the Python path ----
+# ---- We do this so cloud_utils can be looked up in the following order:
+# ---- 1) Sources directory
+# ---- 2) waf configured PYTHONDIR
+# ---- 3) System Python path
+for pythonpath in (
+		"@PYTHONDIR@",
+		os.path.join(os.path.dirname(__file__),os.path.pardir,os.path.pardir,"python","lib"),
+	):
+		if os.path.isdir(pythonpath): sys.path.insert(0,pythonpath)
+# ---- End snippet of code ----
+import cloud_utils
+from cloud_utils import stderr,CheckFailed,TaskFailed,backup_etc,restore_etc
+from cloud_utils import setup_agent_config,stop_service,enable_service
+from cloud_utils import exit as bail
+from cloud_utils import all, any
+
+
+#--------------- procedure starts here ------------
+
+# FÏXME for backup and restore: collect service state for all services so we can restore the system's runtime state back to what it was before
+# possible exit states:
+# a. system configuration needs administrator attention
+# b. automatic reconfiguration failed
+# c. process interrupted
+# d. everything was configured properly (exit status 0)
+
+brname = "@PACKAGE@br0"
+servicename = "@PACKAGE@-agent"
+configfile = "@AGENTSYSCONFDIR@/agent.properties"
+backupdir = "@SHAREDSTATEDIR@/@AGENTPATH@/etcbackup"
+
+#=================== the magic happens here ====================
+
+stderr("Welcome to the Cloud Agent setup")
+stderr("")
+
+try:
+	
+	# pre-flight checks for things that the administrator must fix
+	do_check_kvm = not ( "--no-kvm" in sys.argv[1:] )
+	try:
+		for f,n in cloud_utils.preflight_checks(
+				do_check_kvm=do_check_kvm
+			):
+			stderr(n)
+			f()
+	except CheckFailed,e:
+		stderr(str(e))
+		bail(cloud_utils.E_NEEDSMANUALINTERVENTION,
+			"Cloud Agent setup cannot continue until these issues have been addressed")
+	
+	# system configuration tasks that our Cloud Agent setup performs
+	
+	try:
+		tasks = cloud_utils.config_tasks(brname)
+		if all( [ t.done() for t in tasks ] ):
+			
+			stderr("All configuration tasks have been performed already")
+			
+		else:
+			
+			backup_etc(backupdir)
+			try:
+				# run all tasks that have not been done
+				for t in [ n for n in tasks if not n.done() ]:
+					t.run()
+			except:
+				# oops, something wrong, restore system to earlier state and re-raise
+				stderr("A fatal issue has been detected -- restoring system configuration.\nPlease be patient; *do not* interrupt this process.")
+				restore_etc(backupdir)
+				for t in [ n for n in tasks if hasattr(n,"restore_state") ]:
+					t.restore_state()
+				raise
+			
+	except (TaskFailed,CheckFailed),e:
+		# some configuration task or post-flight check failed, we exit right away
+		stderr(str(e))
+		bail(cloud_utils.E_SETUPFAILED,"Cloud Agent setup failed")
+	
+	setup_agent_config(configfile)
+	stderr("Enabling and starting the Cloud Agent")
+	stop_service(servicename)
+	enable_service(servicename)
+	stderr("Cloud Agent restarted")
+	
+except KeyboardInterrupt,e:
+	# user interrupted, we exit right away
+	bail(cloud_utils.E_INTERRUPTED,"Cloud Agent setup interrupted")
+except SystemExit,e:
+	# process above handled a failure then called bail(), which raises a SystemExit on CentOS
+	sys.exit(e.code)
+except Exception,e:
+	# at ths point, any exception has been dealt with cleanly by restoring system config from a backup
+	# we just inform the user that there was a problem
+	# and bail prematurely
+	stderr("Cloud Agent setup has experienced an unrecoverable error.  Please report the following technical details to Cloud.com.")
+	traceback.print_exc()
+	bail(cloud_utils.E_UNHANDLEDEXCEPTION,"Cloud Agent setup ended prematurely")
+
+stderr("")
+stderr("Cloud Agent setup completed successfully")
+
+# ========================= end program ========================

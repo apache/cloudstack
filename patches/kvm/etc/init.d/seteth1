@@ -1,0 +1,223 @@
+
+
+
+#! /bin/bash
+# chkconfig: 35 09 90
+# description: pre-boot configuration using boot line parameters 
+#   This file exists in /etc/init.d/ 
+
+replace_in_file() {
+  local filename=$1
+  local keyname=$2
+  local value=$3
+  sed -i /$keyname=/d $filename
+  echo "$keyname=$value" >> $filename
+  return $?
+}
+
+setup_interface() {
+  local intfnum=$1
+  local ip=$2
+  local mask=$3
+  
+  cfg=/etc/sysconfig/network-scripts/ifcfg-eth${intfnum} 
+  replace_in_file ${cfg} IPADDR ${ip}
+  replace_in_file ${cfg} NETMASK ${mask}
+  replace_in_file ${cfg} BOOTPROTO STATIC
+  if [ "$ip" == "0.0.0.0" ]
+  then
+    replace_in_file ${cfg} ONBOOT No
+  else
+    replace_in_file ${cfg} ONBOOT Yes
+  fi
+}
+
+setup_common() {
+  setup_interface "0" $ETH0_IP $ETH0_MASK
+  setup_interface "1" $ETH1_IP $ETH1_MASK
+  setup_interface "2" $ETH2_IP $ETH2_MASK
+  
+  replace_in_file /etc/sysconfig/network GATEWAY $GW
+  replace_in_file /etc/sysconfig/network HOSTNAME $NAME
+  echo "NOZEROCONF=yes" >> /etc/sysconfig/network
+  hostname $NAME
+  
+  #Nameserver
+  if [ -n "$NS1" ]
+  then
+    echo "nameserver $NS1" > /etc/dnsmasq-resolv.conf
+    echo "nameserver $NS1" > /etc/resolv.conf
+  fi
+  
+  if [ -n "$NS2" ]
+  then
+    echo "nameserver $NS2" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $NS2" >> /etc/resolv.conf
+  fi
+  if [[ -n "$MGMTNET"  && -n "$LOCAL_GW" ]]
+  then
+    echo "$MGMTNET via $LOCAL_GW dev eth1" > /etc/sysconfig/network-scripts/route-eth1
+  fi
+}
+
+setup_router() {
+  setup_common
+  [ -z $DHCP_RANGE ] && DHCP_RANGE=$ETH0_IP
+  if [ -n "$DOMAIN" ]
+  then
+    #send domain name to dhcp clients
+    sed -i s/[#]*dhcp-option=15.*$/dhcp-option=15,\"$DOMAIN\"/ /etc/dnsmasq.conf
+    #DNS server will append $DOMAIN to local queries
+    sed -r -i s/^[#]?domain=.*$/domain=$DOMAIN/ /etc/dnsmasq.conf
+    #answer all local domain queries
+    sed  -i -e "s/^[#]*local=.*$/local=\/$DOMAIN\//" /etc/dnsmasq.conf
+  fi
+  sed -i -e "s/^dhcp-range=.*$/dhcp-range=$DHCP_RANGE,static/" /etc/dnsmasq.conf
+  sed -i -e "s/^[#]*listen-address=.*$/listen-address=$ETH0_IP/" /etc/dnsmasq.conf
+  sed -i  /gateway/d /etc/hosts
+  echo "$ETH0_IP $NAME" >> /etc/hosts
+  [ -f /etc/httpd/conf/httpd.conf ] && sed -i -e "s/^Listen.*$/Listen $ETH0_IP:80/" /etc/httpd/conf/httpd.conf
+  [ -f /etc/httpd/conf.d/ssl.conf ] && mv /etc/httpd/conf.d/ssl.conf /etc/httpd/conf.d/ssl.conf.bak
+  [ -f /etc/ssh/sshd_config ] && sed -i -e "s/^[#]*ListenAddress.*$/ListenAddress $ETH1_IP/" /etc/ssh/sshd_config
+}
+
+setup_dhcpsrvr() {
+  setup_common
+  [ -z $DHCP_RANGE ] && DHCP_RANGE=$ETH0_IP
+  if [ -n "$DOMAIN" ]
+  then
+    #send domain name to dhcp clients
+    sed -i s/[#]*dhcp-option=15.*$/dhcp-option=15,\"$DOMAIN\"/ /etc/dnsmasq.conf
+    #DNS server will append $DOMAIN to local queries
+    sed -r -i s/^[#]?domain=.*$/domain=$DOMAIN/ /etc/dnsmasq.conf
+    #answer all local domain queries
+    sed  -i -e "s/^[#]*local=.*$/local=\/$DOMAIN\//" /etc/dnsmasq.conf
+  else
+    #delete domain option
+    sed -i /^dhcp-option=15.*$/d /etc/dnsmasq.conf
+    sed -i /^domain=.*$/d /etc/dnsmasq.conf
+    sed  -i -e "/^local=.*$/d" /etc/dnsmasq.conf
+  fi
+  sed -i -e "s/^dhcp-range=.*$/dhcp-range=$DHCP_RANGE,static/" /etc/dnsmasq.conf
+  sed -i -e "s/^[#]*dhcp-option=option:router.*$/dhcp-option=option:router,$GW/" /etc/dnsmasq.conf
+  echo "dhcp-option=6,$NS1,$NS2" >> /etc/dnsmasq.conf
+  sed -i  /gateway/d /etc/hosts
+  echo "$ETH0_IP $NAME" >> /etc/hosts
+  [ -f /etc/httpd/conf/httpd.conf ] && sed -i -e "s/^Listen.*$/Listen $ETH0_IP:80/" /etc/httpd/conf/httpd.conf
+  [ -f /etc/httpd/conf.d/ssl.conf ] && mv /etc/httpd/conf.d/ssl.conf /etc/httpd/conf.d/ssl.conf.bak
+}
+
+setup_secstorage() {
+  setup_common
+  sed -i  /gateway/d /etc/hosts
+  public_ip=$ETH2_IP
+  [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH1_IP
+  echo "$public_ip $NAME" >> /etc/hosts
+  [ -f /etc/httpd/conf/httpd.conf ] && sed -i -e "s/^Listen.*:80$/Listen $public_ip:80/" /etc/httpd/conf/httpd.conf
+  [ -f /etc/httpd/conf/httpd.conf ] && sed -i -e "s/^Listen.*:443$/Listen $public_ip:443/" /etc/httpd/conf/httpd.conf
+}
+
+setup_console_proxy() {
+  setup_common
+  public_ip=$ETH2_IP
+  [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH1_IP
+  sed -i  /gateway/d /etc/hosts
+  echo "$public_ip $NAME" >> /etc/hosts
+}
+
+if [ -f /mnt/cmdline ]
+then
+    CMDLINE=$(cat /mnt/cmdline)
+else
+    CMDLINE=$(cat /proc/cmdline)
+fi
+
+TYPE="router"
+
+for i in $CMDLINE
+  do
+    # search for foo=bar pattern and cut out foo
+    KEY=$(echo $i | cut -d= -f1)
+    VALUE=$(echo $i | cut -d= -f2)
+    case $KEY in 
+      eth0ip)
+          ETH0_IP=$VALUE
+          ;;
+      eth1ip)
+          ETH1_IP=$VALUE
+          ;;
+      eth2ip)
+          ETH2_IP=$VALUE
+          ;;
+      gateway)
+          GW=$VALUE
+          ;;
+      eth0mask)
+          ETH0_MASK=$VALUE
+          ;;
+      eth1mask)
+          ETH1_MASK=$VALUE
+          ;;
+      eth2mask)
+          ETH2_MASK=$VALUE
+          ;;
+      dns1)
+          NS1=$VALUE
+          ;;
+      dns2)
+          NS2=$VALUE
+          ;;
+      domain)
+          DOMAIN=$VALUE
+          ;;
+      mgmtcidr)
+          MGMTNET=$VALUE
+          ;;
+      localgw)
+          LOCAL_GW=$VALUE
+          ;;
+      template)
+        TEMPLATE=$VALUE
+      	;;
+      name)
+	NAME=$VALUE
+	;;
+      dhcprange)
+        DHCP_RANGE=$(echo $VALUE | tr ':' ',')
+      	;;
+      type)
+        TYPE=$VALUE	
+	;;
+    esac
+done
+
+case $TYPE in 
+   router)
+       [ "$NAME" == "" ] && NAME=router
+       setup_router
+	;;
+   dhcpsrvr)
+       [ "$NAME" == "" ] && NAME=dhcpsrvr
+       setup_dhcpsrvr
+	;;
+   secstorage)
+       [ "$NAME" == "" ] && NAME=secstorage
+       setup_secstorage;
+	;;
+   consoleproxy)
+       [ "$NAME" == "" ] && NAME=consoleproxy
+       setup_console_proxy;
+	;;
+esac
+
+if [ ! -d /root/.ssh ]
+then
+   mkdir /root/.ssh
+   chmod 700 /root/.ssh
+fi
+if [ -f /mnt/id_rsa.pub ]
+then
+   cat /mnt/id_rsa.pub > /root/.ssh/authorized_keys
+   chmod 600 /root/.ssh/authorized_keys
+fi
+

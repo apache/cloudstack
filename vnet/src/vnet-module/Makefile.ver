@@ -1,0 +1,51 @@
+# -*- mode: Makefile; -*-
+#============================================================================
+#
+# Copyright (C) 2004 Mike Wray <mike.wray@hp.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free software Foundation, Inc.,
+# 59 Temple Place, suite 330, Boston, MA 02111-1307 USA
+#============================================================================
+
+LINUX_SERIES?=2.6
+
+LINUX_VERSION?=$(shell (/bin/ls -d $(XEN_ROOT)/linux-$(LINUX_SERIES).* 2>/dev/null) | \
+                      sed -e 's!^.*linux-\(.\+\).hg!\1!' )
+
+ifeq ($(LINUX_VERSION),)
+$(error Kernel source for linux $(LINUX_SERIES) not found)
+endif
+
+KERNEL_VERSION?=$(shell (/bin/ls -d $(XEN_ROOT)/build-linux-$(LINUX_VERSION)* 2>/dev/null) | \
+                      grep -v -m 1 -e '-xenU' | \
+                      sed -e 's!^.*linux-\(.\+\)!\1!' )
+
+KERNEL_SRC ?= $(XEN_ROOT)/build-linux-$(KERNEL_VERSION)
+
+ifeq ($(KERNEL_SRC),)
+$(error Kernel source for kernel $(KERNEL_VERSION) not found)
+endif
+
+# Get the full kernel release version from its makefile, as the source path
+# may not have the extraversion, e.g. linux-2.6.12-xen0 may contain release 
+# 2.6.12.6-xen0.
+KERNEL_RELEASE?=$(shell make -s -C $(KERNEL_SRC) kernelrelease)
+
+KERNEL_MODULE_DIR=/lib/modules/$(KERNEL_RELEASE)/kernel
+
+$(warning KERNEL_SRC		$(KERNEL_SRC))
+$(warning LINUX_VERSION		$(LINUX_VERSION))
+$(warning KERNEL_VERSION	$(KERNEL_VERSION))
+$(warning KERNEL_RELEASE	$(KERNEL_RELEASE))
+$(warning KERNEL_MODULE_DIR	$(KERNEL_MODULE_DIR))

@@ -1,0 +1,3 @@
+These are the configure-time variables used to compile this CloudStack:
+
+@CONFIGUREVARS@

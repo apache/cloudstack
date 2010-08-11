@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Copyright 2008 Cloud.com, Inc. All Rights Reserved -->
+
+<project name="Cloud.com Developer Targets" basedir=".">
+  <description>
+        This is a developer.xml with tools to start and stop tomcat and 
+        generally developer targets that has nothing to do with compiling.
+    </description>
+
+  <dirname property="base.dir" file="${ant.file.Cloud.com Developer Targets}"/>
+  <property name="build.dir" location="${base.dir}/build"/>
+  
+  <property name="tomcat.home" location="${env.CATALINA_HOME}"/>
+  <property name="assertion" value="-ea"/>
+
+  <property name="dist.dir" location="${base.dir}"/>
+  <property name="deploy.work.dir" location="${dist.dir}"/>
+  <property name="server.deploy.to.dir" location="${tomcat.home}"/>
+
+  <target name="clean-edits" description="Delete all the editor backup files in the source tree.">
+    <delete>
+      <fileset dir="${base.dir}" includes="**/*~" />
+    </delete>
+  </target>
+
+  <target name="run" depends="start-tomcat"/>
+  <target name="stop" depends="stop-tomcat"/>
+  <target name="debug" depends="debug-tomcat"/>
+  
+  <target name="debug-suspend">
+    <java jar="${tomcat.home}/bin/bootstrap.jar" fork="true">
+      <jvmarg value="-Dcatalina.home=${tomcat.home}"/>
+      <jvmarg value="-Xdebug"/>
+      <jvmarg value="-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y"/>
+      <jvmarg value="-ea"/>
+      <jvmarg value="-Xms256m"/>
+      <jvmarg value="-Xmx384m"/>
+    </java>
+  </target>
+
+  <target name="stop-tomcat">
+    <java dir="${tomcat.home}/bin/" jar="${tomcat.home}/bin/bootstrap.jar" fork="true">
+      <arg value="stop"/>
+    </java>
+  </target>
+
+  <target name="start-tomcat" depends="stop-tomcat">
+    <echo message="Start Tomcat" />
+    <java dir="${tomcat.home}/bin/" jar="${tomcat.home}/bin/bootstrap.jar" fork="true">
+      <jvmarg value="${assertion}"/>
+      <jvmarg value="-Xms256m"/>
+      <jvmarg value="-Xmx384m"/>
+      <jvmarg value="-ea"/>
+      <arg value="start"/>
+    </java>
+  </target>
+
+  <target name="debug-tomcat">
+    <java jar="${tomcat.home}/bin/bootstrap.jar" fork="true">
+      <jvmarg value="-Dcatalina.home=${tomcat.home}"/>
+      <jvmarg value="-Xdebug"/>
+      <jvmarg value="${debug.jvmarg}"/>
+      <jvmarg value="-ea"/>
+      <jvmarg value="-Xms256m"/>
+      <jvmarg value="-Xmx384m"/>
+    </java>
+  </target>
+
+  <target name="clean-tomcat" depends="stop-tomcat">
+    <delete dir="${tomcat.home}/webapps/client"/>
+    <delete dir="${tomcat.home}/work/Catalina"/>
+    <delete dir="${tomcat.home}/temp" />
+    <delete dir="${tomcat.home}/logs" />
+    <delete quiet="false" >
+      <fileset dir="${tomcat.home}/conf" >
+      	<include name="**/component*.xml" />
+      </fileset>
+    </delete>
+  </target>
+
+  <target name="unzip" if="zip.uptodate">
+    <unzip src="${deploy.work.dir}/client.zip" dest="${deploy.work.dir}/client"/>
+  </target>
+
+  <target name="unzip-usage" if="usagezip.uptodate">
+    <unzip src="${deploy.work.dir}/usage.zip" dest="${deploy.work.dir}/usage"/>
+  </target>
+  <!--
+  <target name="deploy-db">
+    <property file="
+    <sql
+        driver="com.mysql.jdbc.Driver"
+        url="jdbc:database-url"
+        userid="cloud"
+        password="cloud"
+        src="data.sql"
+    />
+  </target>
+-->
+  <target name="deploy-server" depends="deploy-common" >
+    <copy todir="${server.deploy.to.dir}/webapps/client/WEB-INF/lib/vms" file="${dist.dir}/systemvm.zip" />
+  </target>
+
+
+  <target name="deploy-common" > 
+    <condition property="zip.uptodate">
+      <available file="${deploy.work.dir}/client.zip" type="file"/>
+    </condition>
+    <antcall target="unzip" inheritAll="true"/>
+    <unwar overwrite="true" src="${deploy.work.dir}/client/client.war" dest="${server.deploy.to.dir}/webapps/client"/>
+    <copy todir="${server.deploy.to.dir}/lib">
+      <fileset dir="${deploy.work.dir}/client/lib/">
+        <include name="*.jar"/>
+      </fileset>
+    </copy>
+    <copy todir="${server.deploy.to.dir}/webapps/client/WEB-INF/lib/scripts/vm/hypervisor/xenserver" file="${dist.dir}/patch.tgz" />
+    <touch file="${server.deploy.to.dir}/webapps/client/WEB-INF/lib/scripts/vm/hypervisor/xenserver/version"/>
+    <echo file="${server.deploy.to.dir}/webapps/client/WEB-INF/lib/scripts/vm/hypervisor/xenserver/version" append="false" message="${version}.${build.number}"/>
+    <copy overwrite="true" todir="${server.deploy.to.dir}/conf">
+      <fileset dir="${deploy.work.dir}/client/conf/">
+        <include name="**/*"/>
+      </fileset>
+    </copy>
+    <chmod perm="755">
+      <fileset dir="${server.deploy.to.dir}/webapps/client/WEB-INF/lib">
+        <include name="**/*"/>
+      </fileset>
+    </chmod>
+    <replace file="${server.deploy.to.dir}/conf/catalina.properties" summary="true">
+      <replacetoken><![CDATA[shared.loader=
+]]></replacetoken>
+      <replacevalue><![CDATA[shared.loader=${catalina.home},${catalina.home}/conf
+          ]]></replacevalue>    </replace>
+  </target>
+
+  <target name="deploy-usage">
+    <condition property="usagezip.uptodate">
+      <available file="${deploy.work.dir}/usage.zip" type="file" />
+    </condition>
+    <antcall target="unzip-usage" inheritAll="true" />
+    <copy todir="${server.deploy.to.dir}/bin">
+      <fileset dir="${deploy.work.dir}/usage/bin/">
+        <include name="*.sh"/>
+      </fileset>
+    </copy>
+    <copy overwrite="true" todir="${server.deploy.to.dir}/conf">
+      <fileset dir="${deploy.work.dir}/usage/conf/">
+        <include name="**/*"/>
+      </fileset>
+    </copy>
+    <copy overwrite="true" todir="${server.deploy.to.dir}/webapps/client/WEB-INF/lib">
+      <fileset dir="${deploy.work.dir}/usage/lib/">
+        <include name="**/*.jar"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="deploydb">
+    <condition property="server-setup.file" value="override/server-setup.xml" else="server-setup.xml">
+      <available file="${setup.db.dir}/override/server-setup.xml" />
+    </condition>
+
+    <condition property="kvm.templates.file" value="override/templates.kvm.sql" else="templates.kvm.sql">
+      <available file="${setup.db.dir}/override/templates.kvm.sql" />
+    </condition>
+
+    <condition property="xenserver.templates.file" value="override/templates.xenserver.sql" else="templates.xenserver.sql">
+      <available file="${setup.db.dir}/override/templates.xenserver.sql" />
+    </condition>
+
+
+    <condition property="templates.file" value="${kvm.templates.file}" else="${xenserver.templates.file}" >
+      <isset property="KVM"/>
+    </condition>
+
+    <echo message="deploydb ${server-setup.file} ${templates.file} ${DBROOTPW}" />
+    <exec dir="${setup.db.dir}" executable="bash">
+      <arg value="deploy-db-dev.sh" />
+      <arg value="${server-setup.file}" />
+      <arg value="${templates.file}" />
+      <arg value="${DBROOTPW}" />
+      <env key="CATALINA_HOME" value="${tomcat.home}"/>
+    </exec>
+  </target>
+
+</project>

@@ -1,0 +1,81 @@
+#!/bin/bash
+
+# chkconfig: 35 99 10
+# description: Cloud Console Proxy
+
+# WARNING: if this script is changed, then all other initscripts MUST BE changed to match it as well
+
+. /etc/rc.d/init.d/functions
+
+whatami=cloud-console-proxy
+
+# set environment variables
+
+SHORTNAME="$whatami"
+PIDFILE=@PIDDIR@/"$whatami".pid
+LOCKFILE=@LOCKDIR@/"$SHORTNAME"
+LOGFILE=@CPLOG@
+PROGNAME="Cloud Console Proxy"
+
+unset OPTIONS
+[ -r @SYSCONFDIR@/sysconfig/"$SHORTNAME" ] && source @SYSCONFDIR@/sysconfig/"$SHORTNAME"
+DAEMONIZE=@BINDIR@/@PACKAGE@-daemonize
+PROG=@LIBEXECDIR@/console-proxy-runner
+
+start() {
+        echo -n $"Starting $PROGNAME: "
+	if hostname --fqdn >/dev/null 2>&1 ; then
+		daemon --check=$SHORTNAME --pidfile=${PIDFILE} "$DAEMONIZE" \
+			-n "$SHORTNAME" -p "$PIDFILE" -l "$LOGFILE" "$PROG" $OPTIONS
+		RETVAL=$?
+		echo
+	else
+		failure
+		echo
+		echo The host name does not resolve properly to an IP address.  Cannot start "$PROGNAME". > /dev/stderr
+		RETVAL=9
+	fi
+	[ $RETVAL = 0 ] && touch ${LOCKFILE}
+	return $RETVAL
+}
+
+stop() {
+	echo -n $"Stopping $PROGNAME: "
+	killproc -p ${PIDFILE} $SHORTNAME # -d 10 $SHORTNAME
+	RETVAL=$?
+	echo
+	[ $RETVAL = 0 ] && rm -f ${LOCKFILE} ${PIDFILE}
+}
+
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  status)
+        status -p ${PIDFILE} $SHORTNAME
+	RETVAL=$?
+	;;
+  restart)
+	stop
+	sleep 3
+	start
+	;;
+  condrestart)
+	if status -p ${PIDFILE} $SHORTNAME >&/dev/null; then
+		stop
+		sleep 3
+		start
+	fi
+	;;
+  *)
+	echo $"Usage: $whatami {start|stop|restart|condrestart|status|help}"
+	RETVAL=3
+esac
+
+exit $RETVAL
+

@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="ISO-8859-1"?> 
+
+<data>
+
+  <version>2.0</version>
+
+  <!--
+    ipAddressRange:  It is possible to specify a single IP address.  For example, to add 192.168.1.1
+    as the only address, specify as <ipAddressRange>192.168.1.1<ipAddressRange>.  To specify 192.168.1.1
+    to 192.168.1.150 specify as <ipAddressRange>192.168.1.1-192.168.1.150</ipAddressRange>
+   -->
+  <zones>
+    <zone>
+      <id>1</id>
+      <name>ZONE1</name>
+      <dns1>72.52.126.11</dns1>
+      <dns2>72.52.126.12</dns2>
+      <internalDns1>192.168.10.253</internalDns1>
+      <internalDns2>192.168.10.254</internalDns2>
+      <gateway>172.16.0.1</gateway>
+      <netmask>255.255.0.0</netmask>
+      <ipAddressRange>172.16.1.1-172.16.255.253</ipAddressRange>
+      <guestNetworkCidr>10.1.1.0/24</guestNetworkCidr>
+    </zone>
+  </zones>
+
+  <!--
+    ipAddressRange:  It is possible to specify a single IP address.  For example, to add 192.168.1.1
+    as the only address, specify as <ipAddressRange>192.168.1.1<ipAddressRange>.  To specify 192.168.1.1
+    to 192.168.1.150 specify as <ipAddressRange>192.168.1.1-192.168.1.150</ipAddressRange>
+    
+    At the moment there is no way to specify a different netmask for each pod.  The netmask
+    is controlled by the private.net.mask parameter further down this file.
+   -->
+  <pods>
+    <pod>
+      <id>1</id>
+      <name>POD1</name>
+      <zoneId>1</zoneId> 
+      <gateway>192.168.2.1</gateway>
+      <cidr>192.168.2.0/24</cidr>
+      <ipAddressRange>192.168.2.20-192.168.2.170</ipAddressRange>
+    </pod>
+  </pods>
+
+<!--
+  <vlans>
+    <vlan>
+      <zoneId>1</zoneId>
+      <vlanId>30</vlanId>
+      <vlanType>VirtualNetwork</vlanType>
+      <gateway>192.168.30.1</gateway>
+      <netmask>255.255.255.0</netmask>
+      <ipAddressRange>192.168.30.10-192.168.30.19</ipAddressRange>
+    </vlan>
+    <vlan>
+      <zoneId>1</zoneId>
+      <vlanId>31</vlanId>
+      <vlanType>VirtualNetwork</vlanType>
+      <gateway>192.168.31.1</gateway>
+      <netmask>255.255.255.0</netmask>
+      <ipAddressRange>192.168.31.10-192.168.31.19</ipAddressRange>
+    </vlan>
+  </vlans>
+  -->
+  <!--
+    * id is the unique id of the service offering
+    * name is the name of the service offering
+    * displayText is the text that will be shown in the UI (usually as a dropdown list)
+    * cpu is the number of CPUs for the offering
+    * ramSize is total memory in MB
+    * speed is the CPU speed for each core in MHZ
+    * diskSpace is the storage space in MB
+    * enableHA is a true/false value to determine if HA should be turned on for vms with this service offering.  Default is false.
+  -->
+  <serviceOfferings>
+    <serviceOffering>
+      <id>1</id>
+      <name>Small Instance</name>
+      <displayText>Small Instance [500MHZ CPU, 512MB MEM, 16GB Disk] - $0.10 per hour</displayText>
+      <cpu>1</cpu>
+      <ramSize>512</ramSize>
+      <speed>500</speed>
+    </serviceOffering>
+    <serviceOffering>
+      <id>2</id>
+      <name>Medium Instance</name>
+      <displayText>Medium Instance [2GHZ CPU, 2GB MEM, 32GB Disk] - $0.20 per hour</displayText>
+      <cpu>1</cpu>
+      <ramSize>2048</ramSize>
+      <speed>2000</speed>
+    </serviceOffering>
+    <serviceOffering>
+      <id>3</id>
+      <name>Large Instance</name>
+      <displayText>Large Instance [2GHZ CPU, 4GB MEM, 64GB Disk] - $0.30 per hour</displayText>
+      <cpu>2</cpu>
+      <ramSize>4096</ramSize>
+      <speed>2000</speed>
+    </serviceOffering>
+  </serviceOfferings>
+
+  <diskOfferings>
+    <diskOffering>
+      <id>1</id>
+      <domainId>1</domainId>
+      <name>Small Disk</name>
+      <displayText>Small Disk [16GB Disk]</displayText>
+      <diskSpace>16000</diskSpace>
+    </diskOffering>
+    <diskOffering>
+      <id>2</id>
+      <domainId>1</domainId>
+      <name>Medium Disk</name>
+      <displayText>Medium Disk [32GB Disk]</displayText>
+      <diskSpace>32000</diskSpace>
+    </diskOffering>
+    <diskOffering>
+      <id>3</id>
+      <domainId>1</domainId>
+      <name>Large Disk</name>
+      <displayText>Large Disk [64GB Disk]</displayText>
+      <diskSpace>64000</diskSpace>
+    </diskOffering>
+  </diskOfferings>
+
+  <!--
+    This is the user section.  Use this to create users for your fresh setup.
+    
+    * firstname/lastname are optional parameters
+    * id and email, however, are *required*
+  -->
+  <users>
+    <user>
+      <id>2</id>
+      <username>admin</username>
+      <password>password</password>
+      <firstname>Admin</firstname>
+      <lastname>User</lastname>
+      <email>admin@mailprovider.com</email>
+    </user>
+  </users>
+  
+  <!--
+    This is the configuration section.  It contains various configuration settings
+    unrelated between each other, but influencing the operation of the cloud.
+  -->
+  
+  <configurationEntries>
+	<!--
+    The guest.ip.network and guest.netmask parameters control the guest virtual network.
+    The guest virtual network is an overlay network on top of the management network and
+    is managed by VMOps multitenant hypervisor.  By default, as you can see from the
+    netmask, the guest network is limited to 254 guests, so you may want to change the
+    netmask if you plan to run larger-than-254-guest clusters of VMs in a single guest
+    network.
+    -->
+    <configuration>
+      <name>guest.ip.network</name>
+      <value>10.1.1.1</value>
+    </configuration>
+     <configuration>
+      <name>guest.netmask</name>
+      <value>255.255.255.0</value>
+    </configuration>
+    <!--
+    The default.zone parameter controls in which zone machines are created by default,
+    if you do not specify a zone.
+    -->
+    <configuration>
+      <name>default.zone</name>
+      <value>ZONE1</value>
+    </configuration>
+    <!--
+    The domain.suffix parameter...
+    -->    <configuration>
+      <name>domain.suffix</name>
+      <value>qatest-vmops.com</value>
+    </configuration>
+    <!--
+    The instance.name parameter is tacked to the end of the names of the VMs you create.
+    So, for example, with the TEST value as it ships by default, your VMs would be named:
+    i-X-Y-TEST, where X is the account ID and Y is the serially incrementing VM ID.
+    -->    
+    <configuration>
+      <name>instance.name</name>
+      <value>TEST</value>
+    </configuration>
+    <!--
+    The integration.api.port parameter controls on which port the REST API listens.
+    -->    
+    <configuration>
+      <name>integration.api.port</name>
+      <value>8096</value>
+    </configuration>
+    <!--
+    The memory.capacity.threshold is a percentage value (e.g. 0.85 is 85%).  Whenever
+    the Percent Used memory in a pod exceeds this threshold, our software will alert
+    you.
+    -->    
+    <configuration>
+      <name>memory.capacity.threshold</name>
+      <value>0.85</value>
+    </configuration>
+    <!--
+    This parameter is similar to memory.capacity.threshold, but for CPU capacity.
+    -->
+    <configuration>
+      <name>cpu.capacity.threshold</name>
+      <value>0.85</value>
+    </configuration>
+    <!--
+    The following two parameters:
+    1. storage.capacity.threshold
+    2. storage.allocated.capacity.threshold
+    are similar to the last two parameters, but apply to storage.  If at any point,
+    the Storage Used (actual data size used in the storage volume) or Storage
+    Allocated (total storage configured across a pod) exceeds these thresholds,
+    our software will alert you.
+    -->
+    <configuration>
+      <name>storage.capacity.threshold</name>
+      <value>0.85</value>
+    </configuration>
+    <configuration>
+      <name>storage.allocated.capacity.threshold</name>
+      <value>0.85</value>
+    </configuration>
+    <!--
+    The following two parameters operate in a similar fashion to the earlier
+    thresholds.  If the percentage of allocated IPs vs. available IPs exceed
+    these thresholds, you will be alerted.
+    -->
+    <configuration>
+      <name>public.ip.capacity.threshold</name>
+      <value>0.85</value>
+    </configuration>
+    <configuration>
+      <name>private.ip.capacity.threshold</name>
+      <value>0.85</value>
+    </configuration>
+    <!--
+    capacity.check.period tells the Management Server how often to check the
+    available capacity.  The value is expressed in milliseconds.
+    -->
+    <configuration>
+      <name>capacity.check.period</name>
+      <value>300000</value>
+    </configuration>
+    <!--
+    expunge.interval is the number of seconds after which destroyed VMs will be
+    cleaned out of the storage server and no longer recoverable.
+    -->
+    <configuration>
+      <name>expunge.interval</name>
+      <value>86400</value>
+    </configuration>
+    <!--
+    The wait parameter expresses how many seconds a command can be sitting in the queue.
+    Commands to the different participants in the cloud are serialized through a single-
+    consumer queue, to coordinate several multi-step actions.  If, theoretically, a
+    command in the queue is holding the subsequent commands up for too long (by default,
+    as you can see, half an hour), then the queue itself is cleaned up and you
+    get a failure alert in your Management UI.
+    -->
+    <configuration>
+      <name>wait</name>
+      <value>1800</value>
+    </configuration>
+
+    <!--
+    The upgrade URL is the URL of the management server that agents will connect to
+    in order to automatically upgrade.  This should be the configured host/port of
+    either a load balancer if clustering is used, or the management server if a single
+    server is installed.  If the port to use is 80, the ":8080" portion of the
+    value below can be removed.
+    
+    In the vast majority of cases, all you need to change is the host, from example.com
+    to whatever IP address or host name of your management server / load balancer.
+    -->
+    <configuration>
+      <name>upgrade.url</name>
+      <value>http://example.com:8080/client/agent/update.zip</value>
+    </configuration>
+
+    <!--
+    The following two throttling parameters are expressed in Mb/s (mega*bits* per second).
+    
+    Each value is the default limit for each user (as a whole) in terms of served bandwidth
+    rate.  To be more precise: users' downloads to their VMs are *not* limited; these
+    parameters govern the limits of outbound traffic.
+    
+    The first one is the overall limit.  The second limit applies only to multicast traffic.
+    -->
+    <configuration>
+      <name>network.throttling.rate</name>
+      <value>200</value>
+    </configuration>
+    <configuration>
+      <name>multicast.throttling.rate</name>
+      <value>10</value>
+    </configuration>
+    <configuration>
+      <name>secstorage.encrypt.copy</name>
+      <value>false</value>
+    </configuration>
+
+    <!--
+    usage.aggregation.timezone is the timezone to use for aggregating usage.  This timezone
+    will specify the boundaries for one day, i.e. when daily usage records are generated, it will
+    be one day's worth of usage in this timezone's day.  The value of must be a valid Java 1.6
+    timezone id, a list of timezone ids is here (but not guaranteed to be 100% accurate)
+    http://www.java2s.com/Tutorial/Java/0120__Development/GettingallthetimezonesIDs.htm
+
+    usage.stats.job.exec.time is the time at which the usage statistics aggregation job will run.
+    The value is specified as an HH24:MM time, e.g. 00:30 to run at 12:30am (server time).  The
+    default value is configured to run at 12:15am and will aggregate usage data from the previous
+    day.
+    -->
+    <configuration>
+      <name>usage.aggregation.timezone</name>
+      <value>GMT</value>
+    </configuration>
+    <configuration>
+      <name>usage.stats.job.exec.time</name>
+      <value>00:15</value>
+    </configuration>
+    <configuration>
+      <name>system.vm.local.storage.required</name>
+      <value>false</value>
+    </configuration>
+    <!--
+    <configuration>
+      <name>hypervisor.type</name>
+      <value></value>
+    </configuration>
+    -->
+    <configuration>
+      <name>secondary.storage.vm</name>
+      <value>false</value>
+    </configuration>
+
+    <!-- 
+        The following are for configuring alerts and a proper email (where system
+        alerts will be sent to) and smtp server needs to be
+        configured before enabling this feature.
+    -->
+    <configuration>
+      <name>alert.smtp.host</name>
+      <value>smtp.host.com</value>
+    </configuration>
+    <configuration>
+      <name>alert.smtp.port</name>
+      <value>25</value>
+    </configuration>
+    <configuration>
+      <name>alert.smtp.useAuth</name>
+      <value>false</value>
+    </configuration>
+    <configuration>
+      <name>alert.smtp.username</name>
+      <value>some.user@example.com</value>
+    </configuration>
+    <configuration>
+      <name>alert.smtp.password</name>
+      <value>password</value>
+    </configuration>
+    <configuration>
+      <name>alert.email.sender</name>
+      <value>some.user@example.com</value>
+    </configuration>
+    <configuration>
+      <name>alert.email.addresses</name>
+      <value>some.admin@example.com</value>
+    </configuration>
+    <configuration>
+      <name>alert.smtp.debug</name>
+      <value>false</value>
+    </configuration>
+    <!--
+    	mount.parent determines where secondary storage is mounted on the management server.
+    -->
+    <!--
+    <configuration>
+      <name>mount.parent</name>
+      <value>/var/lib/cloud/mnt</value>
+    </configuration>
+    -->
+  </configurationEntries>
+</data>

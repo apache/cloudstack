@@ -1,0 +1,9 @@
+/usr/share/java/cloud-core-extras.jar
+/usr/share/java/cloud-server-extras.jar
+/etc/cloud/management/commands-ext.properties
+/etc/cloud/management/components-premium.xml
+/usr/share/cloud/setup/create-database-premium.sql
+/usr/share/cloud/setup/create-schema-premium.sql
+/usr/lib/cloud/agent/scripts/vm/hypervisor/xen/*
+/usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/*
+/usr/lib/cloud/agent/vms/systemvm-premium.zip

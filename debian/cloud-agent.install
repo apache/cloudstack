@@ -1,0 +1,12 @@
+/etc/cloud/agent/agent.properties
+/etc/cloud/agent/developer.properties.template
+/etc/cloud/agent/environment.properties
+/etc/cloud/agent/log4j-cloud.xml
+/etc/init.d/cloud-agent
+/usr/bin/agent-runner
+/usr/bin/cloud-setup-agent
+/usr/lib/cloud/agent/css
+/usr/lib/cloud/agent/ui
+/usr/lib/cloud/agent/js
+/usr/lib/cloud/agent/images
+/var/log/cloud/agent

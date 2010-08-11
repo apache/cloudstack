@@ -1,0 +1,41 @@
+#!/bin/bash
+#
+# @PACKAGE@-management      This shell script takes care of starting and stopping Tomcat
+#
+# chkconfig: - 80 20
+#
+### BEGIN INIT INFO
+# Provides: tomcat6
+# Required-Start: $network $syslog
+# Required-Stop: $network $syslog
+# Default-Start:
+# Default-Stop:
+# Description: Release implementation for Servlet 2.5 and JSP 2.1
+# Short-Description: start and stop tomcat
+### END INIT INFO
+#
+# - originally written by Henri Gomez, Keith Irwin, and Nicolas Mailhot
+# - heavily rewritten by Deepak Bhole and Jason Corley
+#
+
+if [ -r /etc/rc.d/init.d/functions ]; then
+    . /etc/rc.d/init.d/functions
+fi
+if [ -r /lib/lsb/init-functions ]; then
+    . /lib/lsb/init-functions
+fi
+
+
+NAME="$(basename $0)"
+
+# See how we were called.
+case "$1" in
+    status)
+           status ${NAME}
+           RETVAL=$?
+        ;;
+    *)
+	   . /etc/rc.d/init.d/tomcat6
+esac
+
+exit $RETVAL

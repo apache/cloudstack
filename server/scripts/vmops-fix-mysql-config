@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# chkconfig: 35 99 10
+# description: VMOps Usage Server
+
+# WARNING: if this script is changed, then vmops-management MUST BE changed to match it as well
+
+set -e
+
+sed -i 's/^interactive_timeout.*/interactive_timeout = 86400/' /etc/my.cnf
+sed -i 's/^wait_timeout.*/wait_timeout = 86400/' /etc/my.cnf
+sed -i 's/^interactive-timeout.*/interactive-timeout = 86400/' /etc/my.cnf
+sed -i 's/^wait-timeout.*/wait-timeout = 86400/' /etc/my.cnf

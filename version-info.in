@@ -1,0 +1,10 @@
+This is the version information for the manifests in the JAR files.
+
+JAVACFLAGS (taken from ant debuglevel property):  @JAVACFLAGS@
+Implementation_Version:                           @Implementation_Version@
+Ant arguments:                                    @ant_args@
+
+This file exists solely to trigger ant recompilation if it is needed.
+Otherwise, JAR files and all the dependent files are brought from cache.
+This file does not get installed or used in any other way other than
+during the build process.

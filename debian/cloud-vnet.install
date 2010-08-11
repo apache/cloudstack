@@ -1,0 +1,3 @@
+/usr/sbin/cloud-vn
+/usr/sbin/cloud-vnetd
+/etc/init.d/cloud-vnetd

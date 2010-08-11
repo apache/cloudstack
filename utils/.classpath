@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="test"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="/thirdparty/log4j-1.2.15.jar"/>
+	<classpathentry kind="lib" path="/thirdparty/cglib-nodep-2.2.jar"/>
+	<classpathentry kind="lib" path="/thirdparty/ehcache-1.5.0.jar"/>
+	<classpathentry kind="lib" path="/thirdparty/commons-dbcp-1.2.2.jar"/>
+	<classpathentry kind="lib" path="/thirdparty/commons-pool-1.4.jar"/>
+	<classpathentry kind="lib" path="/thirdparty/junit-4.8.1.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

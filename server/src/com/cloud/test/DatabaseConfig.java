@@ -1,0 +1,1206 @@
+/**
+ *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
+ * 
+ * This software is licensed under the GNU General Public License v3 or later.
+ * 
+ * It is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ */
+
+package com.cloud.test;
+
+import java.io.File;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.net.URISyntaxException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+import org.apache.log4j.Logger;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
+import com.cloud.offering.ServiceOffering.GuestIpType;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDaoImpl;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.dao.DiskOfferingDaoImpl;
+import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.net.NfsUtils;
+
+public class DatabaseConfig {
+    private static final Logger s_logger = Logger.getLogger(DatabaseConfig.class.getName());
+
+    private String _configFileName = null;
+    private String _currentObjectName = null;
+    private String _currentFieldName = null;
+    private Map<String, String> _currentObjectParams = null;
+
+    private static Map<String, String> s_configurationDescriptions = new HashMap<String, String>();
+    private static Map<String, String> s_configurationComponents = new HashMap<String, String>();
+    private static Map<String, String> s_defaultConfigurationValues = new HashMap<String, String>();
+
+    // Change to HashSet
+    private static HashSet<String> objectNames = new HashSet<String>();
+    private static HashSet<String> fieldNames = new HashSet<String>();
+    
+    // Maintain an IPRangeConfig object to handle IP related logic
+    private final IPRangeConfig iprc = ComponentLocator.inject(IPRangeConfig.class);
+    
+    // Maintain a PodZoneConfig object to handle Pod/Zone related logic
+    private final PodZoneConfig pzc = ComponentLocator.inject(PodZoneConfig.class);
+    
+    // Global variables to store network.throttling.rate and multicast.throttling.rate from the configuration table
+    // Will be changed from null to a non-null value if the value existed in the configuration table
+    private String _networkThrottlingRate = null;
+    private String _multicastThrottlingRate = null;
+    
+    private int _poolId = 2;
+
+    static {
+    	// initialize the objectNames ArrayList
+    	objectNames.add("zone");
+    	objectNames.add("vlan");
+    	objectNames.add("pod");
+    	objectNames.add("storagePool");
+    	objectNames.add("secondaryStorage");
+    	objectNames.add("serviceOffering");
+        objectNames.add("diskOffering");
+    	objectNames.add("user");
+    	objectNames.add("pricing");
+    	objectNames.add("configuration");
+    	objectNames.add("privateIpAddresses");
+    	objectNames.add("publicIpAddresses");
+    	
+    	// initialize the fieldNames ArrayList
+    	fieldNames.add("id");
+    	fieldNames.add("name");
+    	fieldNames.add("dns1");
+    	fieldNames.add("dns2");
+    	fieldNames.add("internalDns1");
+    	fieldNames.add("internalDns2");
+    	fieldNames.add("guestNetworkCidr");
+    	fieldNames.add("gateway");
+    	fieldNames.add("netmask");
+    	fieldNames.add("vncConsoleIp");
+    	fieldNames.add("zoneId");
+    	fieldNames.add("vlanId");
+    	fieldNames.add("cpu");
+    	fieldNames.add("ramSize");
+    	fieldNames.add("speed");
+    	fieldNames.add("useLocalStorage");
+    	fieldNames.add("diskSpace");
+    	fieldNames.add("nwRate");
+    	fieldNames.add("mcRate");
+    	fieldNames.add("price");
+    	fieldNames.add("username");
+    	fieldNames.add("password");
+    	fieldNames.add("firstname");
+    	fieldNames.add("lastname");
+    	fieldNames.add("email");
+    	fieldNames.add("priceUnit");
+    	fieldNames.add("type");
+    	fieldNames.add("value");
+    	fieldNames.add("podId");
+    	fieldNames.add("podName");
+    	fieldNames.add("ipAddressRange");
+    	fieldNames.add("vlanType");
+    	fieldNames.add("vlanName");
+    	fieldNames.add("cidr");
+    	fieldNames.add("vnet");
+    	fieldNames.add("mirrored");
+    	fieldNames.add("enableHA");
+    	fieldNames.add("displayText");
+    	fieldNames.add("domainId");
+    	fieldNames.add("hostAddress");
+    	fieldNames.add("hostPath");
+    	fieldNames.add("guestIpType");
+    	fieldNames.add("url");
+    	fieldNames.add("storageType");
+    	fieldNames.add("category");
+    	fieldNames.add("tags");
+    	
+
+    	
+        s_configurationDescriptions.put("host.stats.interval", "the interval in milliseconds when host stats are retrieved from agents");
+        s_configurationDescriptions.put("storage.stats.interval", "the interval in milliseconds when storage stats (per host) are retrieved from agents");
+        s_configurationDescriptions.put("volume.stats.interval", "the interval in milliseconds when volume stats are retrieved from agents");
+        s_configurationDescriptions.put("host", "host address to listen on for agent connection");
+        s_configurationDescriptions.put("port", "port to listen on for agent connection");
+        //s_configurationDescriptions.put("guest.ip.network", "ip address for the router");
+        //s_configurationDescriptions.put("guest.netmask", "default netmask for the guest network");
+        s_configurationDescriptions.put("domain.suffix", "domain suffix for users");
+        s_configurationDescriptions.put("instance.name", "Name of the deployment instance");
+        s_configurationDescriptions.put("storage.overprovisioning.factor", "Storage Allocator overprovisioning factor");
+        s_configurationDescriptions.put("retries.per.host", "The number of times each command sent to a host should be retried in case of failure.");
+        s_configurationDescriptions.put("integration.api.port", "internal port used by the management server for servicing Integration API requests");
+        s_configurationDescriptions.put("usage.stats.job.exec.time", "the time at which the usage statistics aggregation job will run as an HH24:MM time, e.g. 00:30 to run at 12:30am");
+        s_configurationDescriptions.put("usage.stats.job.aggregation.range", "the range of time for aggregating the user statistics specified in minutes (e.g. 1440 for daily, 60 for hourly)");
+        s_configurationDescriptions.put("consoleproxy.domP.enable", "Obsolete");
+        s_configurationDescriptions.put("consoleproxy.port", "Obsolete");
+        s_configurationDescriptions.put("consoleproxy.url.port", "Console proxy port for AJAX viewer");
+        s_configurationDescriptions.put("consoleproxy.ram.size", "RAM size (in MB) used to create new console proxy VMs");
+        s_configurationDescriptions.put("consoleproxy.cmd.port", "Console proxy command port that is used to communicate with management server");
+        s_configurationDescriptions.put("consoleproxy.loadscan.interval", "The time interval(in milliseconds) to scan console proxy working-load info");
+        s_configurationDescriptions.put("consoleproxy.capacityscan.interval", "The time interval(in millisecond) to scan whether or not system needs more console proxy to ensure minimal standby capacity");
+        s_configurationDescriptions.put("consoleproxy.capacity.standby", "The minimal number of console proxy viewer sessions that system is able to serve immediately(standby capacity)");
+        s_configurationDescriptions.put("alert.email.addresses", "comma seperated list of email addresses used for sending alerts");
+        s_configurationDescriptions.put("alert.smtp.host", "SMTP hostname used for sending out email alerts");
+        s_configurationDescriptions.put("alert.smtp.port", "port the SMTP server is listening on (default is 25)");
+        s_configurationDescriptions.put("alert.smtp.useAuth", "If true, use SMTP authentication when sending emails.  If false, do not use SMTP authentication when sending emails.");
+        s_configurationDescriptions.put("alert.smtp.username", "username for SMTP authentication (applies only if alert.smtp.useAuth is true)");
+        s_configurationDescriptions.put("alert.smtp.password", "password for SMTP authentication (applies only if alert.smtp.useAuth is true)");
+        s_configurationDescriptions.put("alert.email.sender", "sender of alert email (will be in the From header of the email)");
+        s_configurationDescriptions.put("memory.capacity.threshold", "percentage (as a value between 0 and 1) of memory utilization above which alerts will be sent about low memory available");
+        s_configurationDescriptions.put("cpu.capacity.threshold", "percentage (as a value between 0 and 1) of cpu utilization above which alerts will be sent about low cpu available");
+        s_configurationDescriptions.put("storage.capacity.threshold", "percentage (as a value between 0 and 1) of storage utilization above which alerts will be sent about low storage available");
+        s_configurationDescriptions.put("public.ip.capacity.threshold", "percentage (as a value between 0 and 1) of public IP address space utilization above which alerts will be sent");
+        s_configurationDescriptions.put("private.ip.capacity.threshold", "percentage (as a value between 0 and 1) of private IP address space utilization above which alerts will be sent");
+        s_configurationDescriptions.put("max.account.user.vms", "the maximum number of user VMs that can be deployed for an account");
+        s_configurationDescriptions.put("max.account.public.ips", "the maximum number of public IPs that can be reserved for an account");
+        s_configurationDescriptions.put("expunge.interval", "the interval to wait before running the expunge thread");
+        s_configurationDescriptions.put("network.throttling.rate", "default data transfer rate in megabits per second allowed per user");
+        s_configurationDescriptions.put("multicast.throttling.rate", "default multicast rate in megabits per second allowed");
+        s_configurationDescriptions.put("use.local.storage", "Indicates whether to use local storage pools or shared storage pools for user VMs");
+        s_configurationDescriptions.put("use.local.storage", "Indicates whether to use local storage pools or shared storage pools for system VMs.");
+        s_configurationDescriptions.put("snapshot.poll.interval", "The time interval in seconds when the management server polls for snapshots to be scheduled.");
+        s_configurationDescriptions.put("snapshot.recurring.test", "Flag for testing recurring snapshots");
+        s_configurationDescriptions.put("snapshot.test.minutes.per.hour", "Set it to a smaller value to take more recurring snapshots");
+        s_configurationDescriptions.put("snapshot.test.hours.per.day", "Set it to a smaller value to take more recurring snapshots");
+        s_configurationDescriptions.put("snapshot.test.days.per.week", "Set it to a smaller value to take more recurring snapshots");
+        s_configurationDescriptions.put("snapshot.test.days.per.month", "Set it to a smaller value to take more recurring snapshots");
+        s_configurationDescriptions.put("snapshot.test.weeks.per.month", "Set it to a smaller value to take more recurring snapshots");
+        s_configurationDescriptions.put("snapshot.test.months.per.year", "Set it to a smaller value to take more recurring snapshots");
+        s_configurationDescriptions.put("network.type", "The type of network that this deployment will use.");
+        s_configurationDescriptions.put("hypervisor.type", "The type of hypervisor that this deployment will use.");
+        
+        
+        s_configurationComponents.put("host.stats.interval", "management-server");
+        s_configurationComponents.put("storage.stats.interval", "management-server");
+        s_configurationComponents.put("volume.stats.interval", "management-server");
+        s_configurationComponents.put("integration.api.port", "management-server");
+        s_configurationComponents.put("usage.stats.job.exec.time", "management-server");
+        s_configurationComponents.put("usage.stats.job.aggregation.range", "management-server");
+		s_configurationComponents.put("consoleproxy.domP.enable", "management-server");
+		s_configurationComponents.put("consoleproxy.port", "management-server");
+		s_configurationComponents.put("consoleproxy.url.port", "management-server");
+        s_configurationComponents.put("router.cleanup.interval", "management-server");
+        s_configurationComponents.put("alert.email.addresses", "management-server");
+        s_configurationComponents.put("alert.smtp.host", "management-server");
+        s_configurationComponents.put("alert.smtp.port", "management-server");
+        s_configurationComponents.put("alert.smtp.useAuth", "management-server");
+        s_configurationComponents.put("alert.smtp.username", "management-server");
+        s_configurationComponents.put("alert.smtp.password", "management-server");
+        s_configurationComponents.put("alert.email.sender", "management-server");
+        s_configurationComponents.put("memory.capacity.threshold", "management-server");
+        s_configurationComponents.put("cpu.capacity.threshold", "management-server");
+        s_configurationComponents.put("storage.capacity.threshold", "management-server");
+        s_configurationComponents.put("public.ip.capacity.threshold", "management-server");
+        s_configurationComponents.put("private.ip.capacity.threshold", "management-server");
+        s_configurationComponents.put("capacity.check.period", "management-server");
+        s_configurationComponents.put("max.account.user.vms", "management-server");
+        s_configurationComponents.put("max.account.public.ips", "management-server");
+        s_configurationComponents.put("network.throttling.rate", "management-server");
+        s_configurationComponents.put("multicast.throttling.rate", "management-server");
+        s_configurationComponents.put("account.cleanup.interval", "management-server");
+        s_configurationComponents.put("expunge.delay", "UserVmManager");
+        s_configurationComponents.put("expunge.interval", "UserVmManager");
+        s_configurationComponents.put("host", "AgentManager");
+        s_configurationComponents.put("port", "AgentManager");
+//        s_configurationComponents.put("guest.ip.network", "AgentManager");
+//        s_configurationComponents.put("guest.netmask", "AgentManager");
+        s_configurationComponents.put("domain", "AgentManager");
+        s_configurationComponents.put("instance.name", "AgentManager");
+        s_configurationComponents.put("storage.overprovisioning.factor", "StorageAllocator");
+        s_configurationComponents.put("retries.per.host", "AgentManager");
+		s_configurationComponents.put("start.retry", "AgentManager");
+		s_configurationComponents.put("wait", "AgentManager");
+		s_configurationComponents.put("ping.timeout", "AgentManager");
+		s_configurationComponents.put("ping.interval", "AgentManager");
+		s_configurationComponents.put("alert.wait", "AgentManager");
+		s_configurationComponents.put("update.wait", "AgentManager");
+		s_configurationComponents.put("domain.suffix", "AgentManager");
+		s_configurationComponents.put("consoleproxy.ram.size", "AgentManager");
+		s_configurationComponents.put("consoleproxy.cmd.port", "AgentManager");
+		s_configurationComponents.put("consoleproxy.loadscan.interval", "AgentManager");
+		s_configurationComponents.put("consoleproxy.capacityscan.interval", "AgentManager");
+		s_configurationComponents.put("consoleproxy.capacity.standby", "AgentManager");
+		s_configurationComponents.put("consoleproxy.session.max", "AgentManager");
+		s_configurationComponents.put("consoleproxy.session.timeout", "AgentManager");
+		s_configurationComponents.put("expunge.workers", "UserVmManager");
+        s_configurationComponents.put("stop.retry.interval", "HighAvailabilityManager");
+        s_configurationComponents.put("restart.retry.interval", "HighAvailabilityManager");
+        s_configurationComponents.put("investigate.retry.interval", "HighAvailabilityManager");
+        s_configurationComponents.put("migrate.retry.interval", "HighAvailabilityManager");
+        s_configurationComponents.put("storage.overwrite.provisioning", "UserVmManager");
+        s_configurationComponents.put("init", "none");
+        s_configurationComponents.put("system.vm.use.local.storage", "ManagementServer");
+        s_configurationComponents.put("use.local.storage", "ManagementServer");
+        s_configurationComponents.put("snapshot.poll.interval", "SnapshotManager");
+        s_configurationComponents.put("snapshot.recurring.test", "SnapshotManager");
+        s_configurationComponents.put("snapshot.test.minutes.per.hour", "SnapshotManager");
+        s_configurationComponents.put("snapshot.test.hours.per.day", "SnapshotManager");
+        s_configurationComponents.put("snapshot.test.days.per.week", "SnapshotManager");
+        s_configurationComponents.put("snapshot.test.days.per.month", "SnapshotManager");
+        s_configurationComponents.put("snapshot.test.weeks.per.month", "SnapshotManager");
+        s_configurationComponents.put("snapshot.test.months.per.year", "SnapshotManager");
+        s_configurationComponents.put("network.type", "ManagementServer");
+        s_configurationComponents.put("hypervisor.type", "ManagementServer");
+
+        
+        s_defaultConfigurationValues.put("host.stats.interval", "60000");
+        s_defaultConfigurationValues.put("storage.stats.interval", "60000");
+        //s_defaultConfigurationValues.put("volume.stats.interval", "-1");
+        s_defaultConfigurationValues.put("port", "8250");
+        s_defaultConfigurationValues.put("integration.api.port", "8096");
+        s_defaultConfigurationValues.put("usage.stats.job.exec.time", "00:15"); // run at 12:15am
+        s_defaultConfigurationValues.put("usage.stats.job.aggregation.range", "1440"); // do a daily aggregation
+//        s_defaultConfigurationValues.put("guest.ip.network", "10.1.1.1");
+//        s_defaultConfigurationValues.put("guest.netmask", "255.255.255.0");
+        s_defaultConfigurationValues.put("storage.overprovisioning.factor", "2");
+        s_defaultConfigurationValues.put("retries.per.host", "2");
+        s_defaultConfigurationValues.put("ping.timeout", "2.5");
+        s_defaultConfigurationValues.put("ping.interval", "60");
+        s_defaultConfigurationValues.put("snapshot.poll.interval", "300");
+        s_defaultConfigurationValues.put("snapshot.recurring.test", "false");
+        s_defaultConfigurationValues.put("snapshot.test.minutes.per.hour", "60");
+        s_defaultConfigurationValues.put("snapshot.test.hours.per.day", "24");
+        s_defaultConfigurationValues.put("snapshot.test.days.per.week", "7");
+        s_defaultConfigurationValues.put("snapshot.test.days.per.month", "30");
+        s_defaultConfigurationValues.put("snapshot.test.weeks.per.month", "4");
+        s_defaultConfigurationValues.put("snapshot.test.months.per.year", "12");
+        s_defaultConfigurationValues.put("alert.wait", "1800");
+        s_defaultConfigurationValues.put("update.wait", "600");
+        s_defaultConfigurationValues.put("max.account.user.vms", "20");
+        s_defaultConfigurationValues.put("max.account.public.ips", "20");
+        s_defaultConfigurationValues.put("expunge.interval", "86400");
+        s_defaultConfigurationValues.put("instance.name", "VM");
+        s_defaultConfigurationValues.put("expunge.workers", "1");
+        s_defaultConfigurationValues.put("stop.retry.interval", "600");
+        s_defaultConfigurationValues.put("restart.retry.interval", "600");
+        s_defaultConfigurationValues.put("investigate.retry.interval", "60");
+        s_defaultConfigurationValues.put("migrate.retry.interval", "120");
+        // s_defaultConfigurationValues.put("network.throttling.rate", "200");
+        // s_defaultConfigurationValues.put("multicast.throttling.rate", "10");
+        s_defaultConfigurationValues.put("account.cleanup.interval", "86400");
+        s_defaultConfigurationValues.put("system.vm.use.local.storage", "false");
+        s_defaultConfigurationValues.put("use.local.storage", "false");
+        s_defaultConfigurationValues.put("init", "false");
+        s_defaultConfigurationValues.put("network.type", "vnet");
+        s_defaultConfigurationValues.put("hypervisor.type", "kvm");
+    }
+    
+    protected DatabaseConfig() {
+    }
+
+    /**
+     * @param args - name of server-setup.xml file which contains the bootstrap data
+     */
+    public static void main(String[] args) {
+        System.setProperty("javax.xml.parsers.DocumentBuilderFactory", "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl");
+        System.setProperty("javax.xml.parsers.SAXParserFactory", "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl");
+        if (args.length < 1) {
+            s_logger.error("error starting database config, missing initial data file");
+        } else {
+            try {
+                DatabaseConfig config = ComponentLocator.inject(DatabaseConfig.class, args[0]);
+                config.doVersionCheck();
+                config.doConfig();
+                System.exit(0);
+            } catch (Exception ex) {
+                System.out.print("Error Caught");
+                ex.printStackTrace();
+                s_logger.error("error", ex);
+            }
+        }
+    }
+
+    public DatabaseConfig(String configFileName) {
+        _configFileName = configFileName;
+    }
+    
+    private void doVersionCheck() {
+    	try {
+    		String warningMsg = "\nYou are using an outdated format for server-setup.xml. Please switch to the new format.\n";
+    		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+    		DocumentBuilder dbuilder = dbf.newDocumentBuilder();
+    		File configFile = new File(_configFileName);
+    		Document d = dbuilder.parse(configFile);
+    		NodeList nodeList = d.getElementsByTagName("version");
+    		
+    		if (nodeList.getLength() == 0) {
+    			System.out.println(warningMsg);
+    			return;
+    		}
+    		
+    		Node firstNode = nodeList.item(0);
+    		String version = firstNode.getTextContent();
+    		
+    		if (!version.equals("2.0")) {
+    			System.out.println(warningMsg);
+    		}
+    		
+    	} catch (ParserConfigurationException parserException) {
+    		parserException.printStackTrace();
+    	} catch (IOException ioException) {
+    		ioException.printStackTrace();
+    	} catch (SAXException saxException) {
+    		saxException.printStackTrace();
+    	}
+    }
+
+    @DB
+    protected void doConfig() {
+        Transaction txn = Transaction.currentTxn();
+        try {
+        	
+            File configFile = new File(_configFileName);
+            
+            SAXParserFactory spfactory = SAXParserFactory.newInstance();
+            SAXParser saxParser = spfactory.newSAXParser();
+            DbConfigXMLHandler handler = new DbConfigXMLHandler();
+            handler.setParent(this);
+            
+            txn.start();
+
+            // Save user configured values for all fields
+            saxParser.parse(configFile, handler);
+            
+            // Save default values for configuration fields
+            saveVMTemplate();
+            saveRootDomain();
+            saveDefaultConfiguations();
+            
+            txn.commit();
+            // Save network.throttling.rate and multicast.throttling.rate for all service offerings, if these values are in the configuration table
+            saveThrottlingRates();
+            // Check pod CIDRs against each other, and against the guest ip network/netmask
+            pzc.checkAllPodCidrSubnets();
+            
+            txn.commit();
+        } catch (Exception ex) {
+        	System.out.print("ERROR IS"+ex);
+            s_logger.error("error", ex);
+            txn.rollback();
+        }
+    }
+
+    private void setCurrentObjectName(String name) {
+        _currentObjectName = name;
+    }
+
+    private void saveCurrentObject() {
+        if ("zone".equals(_currentObjectName)) {
+            saveZone();
+        } else if ("vlan".equals(_currentObjectName)) {
+        	saveVlan();
+        } else if ("pod".equals(_currentObjectName)) {
+            savePod();
+        } else if ("serviceOffering".equals(_currentObjectName)) {
+            saveServiceOffering();
+        } else if ("diskOffering".equals(_currentObjectName)) {
+            saveDiskOffering();
+        } else if ("user".equals(_currentObjectName)) {
+            saveUser();
+        } else if ("configuration".equals(_currentObjectName)) {
+            saveConfiguration();
+        } else if ("storagePool".equals(_currentObjectName)) {
+        	saveStoragePool();
+        } else if ("secondaryStorage".equals(_currentObjectName)) {
+        	saveSecondaryStorage();
+        }
+        _currentObjectParams = null;
+    }
+    
+    @DB
+    public void saveSecondaryStorage() {
+    	long dataCenterId = Long.parseLong(_currentObjectParams.get("zoneId"));
+    	String url = _currentObjectParams.get("url");
+    	String mountPoint;
+    	try {
+    		mountPoint = NfsUtils.url2Mount(url);
+    	} catch (URISyntaxException e1) {
+    		return;
+    	}
+    	String insertSql1 = "INSERT INTO `host` (`id`, `name`, `status` , `type` , `private_ip_address`, `private_netmask` ,`private_mac_address` , `storage_ip_address` ,`storage_netmask`, `storage_mac_address`, `data_center_id`, `version`, `sequence`, `dom0_memory`, `last_ping`, `resource`, `guid`, `hypervisor_type`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    	String insertSqlHostDetails = "INSERT INTO `host_details` (`id`, `host_id`, `name`, `value`) VALUES(?,?,?,?)";
+    	Transaction txn = Transaction.currentTxn();
+    	try {
+    		PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql1);
+    		stmt.setLong(1, 0);
+    		stmt.setString(2, url);
+    		stmt.setString(3, "UP");
+    		stmt.setString(4, "SecondaryStorage");
+    		stmt.setString(5, "192.168.122.1");
+    		stmt.setString(6, "255.255.255.0");
+    		stmt.setString(7, "92:ff:f5:ad:23:e1");
+    		stmt.setString(8, "192.168.122.1");
+    		stmt.setString(9, "255.255.255.0");
+    		stmt.setString(10, "92:ff:f5:ad:23:e1");
+    		stmt.setLong(11, dataCenterId);
+    		stmt.setString(12, "1.9.7");
+    		stmt.setLong(13, 1);
+    		stmt.setLong(14, 0);
+    		stmt.setLong(15, 1238425896);
+    		
+    		boolean nfs = false;
+    		if (url.startsWith("nfs")) {
+    			nfs = true;
+    		}
+    		if (nfs) {
+    		stmt.setString(16, "com.cloud.storage.resource.NfsSecondaryStorageResource");
+    		} else {
+    			stmt.setString(16, "com.cloud.storage.secondary.LocalSecondaryStorageResource");
+    		}
+    		stmt.setString(17, url);
+    		stmt.setString(18, "None");
+    		stmt.executeUpdate();
+
+    		stmt = txn.prepareAutoCloseStatement(insertSqlHostDetails);
+    		stmt.setLong(1, 1);
+    		stmt.setLong(2, 1);
+    		stmt.setString(3, "mount.parent");
+    		if (nfs) {
+    			stmt.setString(4, "/mnt");
+    		} else
+    			stmt.setString(4, "/");
+    		stmt.executeUpdate();
+
+    		stmt.setLong(1, 2);
+    		stmt.setLong(2, 1);
+    		stmt.setString(3, "mount.path");
+    		if (nfs) {
+    			stmt.setString(4, mountPoint);
+    		} else
+    			stmt.setString(4, url.replaceFirst("file:/", ""));
+    		stmt.executeUpdate();
+
+    		stmt.setLong(1, 3);
+    		stmt.setLong(2, 1);
+    		stmt.setString(3, "orig.url");
+    		stmt.setString(4, url);
+    		stmt.executeUpdate();
+
+    	} catch (SQLException ex) {
+    		System.out.println("Error creating secondary storage: " + ex.getMessage());
+    		return;
+    	}
+    }
+    
+    @DB
+    public void saveStoragePool() {
+         String name = _currentObjectParams.get("name");
+         long dataCenterId = Long.parseLong(_currentObjectParams.get("zoneId"));
+         long podId = Long.parseLong(_currentObjectParams.get("podId"));
+         String hostAddress = _currentObjectParams.get("hostAddress");
+         String hostPath = _currentObjectParams.get("hostPath");
+         String storageType = _currentObjectParams.get("storageType");
+         String uuid = UUID.nameUUIDFromBytes(new String(hostAddress+hostPath).getBytes()).toString();
+ 
+         String insertSql1 = "INSERT INTO `storage_pool` (`id`, `name`, `uuid` , `pool_type` , `port`, `data_center_id` ,`available_bytes` , `capacity_bytes` ,`host_address`, `path`, `created`, `pod_id` ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+         // String insertSql2 = "INSERT INTO `netfs_storage_pool` VALUES (?,?,?)";
+         
+         Transaction txn = Transaction.currentTxn();
+         try {
+             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql1);
+             stmt.setLong(1, _poolId++);
+             stmt.setString(2, name);
+             stmt.setString(3, uuid);
+             if (storageType == null)
+            	 stmt.setString(4, "NetworkFileSystem");
+             else
+            	 stmt.setString(4, storageType);
+             stmt.setLong(5, 111);
+             stmt.setLong(6, dataCenterId);
+             stmt.setLong(7,0);
+             stmt.setLong(8,0);
+             stmt.setString(9, hostAddress);
+             stmt.setString(10, hostPath);
+             stmt.setDate(11, new Date(new java.util.Date().getTime()));
+             stmt.setLong(12, podId);
+             stmt.executeUpdate();
+             // stmt = txn.prepareAutoCloseStatement(insertSql2);
+             // stmt.setLong(1, 2);
+             // stmt.setString(2, hostAddress);
+             // stmt.setString(3, hostPath);
+             // stmt.executeUpdate();
+
+         } catch (SQLException ex) {
+        	 System.out.println("Error creating storage pool: " + ex.getMessage());
+             s_logger.error("error creating service offering", ex);
+             return;
+         }
+
+	}
+
+	private void saveZone() {
+        long id = Long.parseLong(_currentObjectParams.get("id"));
+        String name = _currentObjectParams.get("name");
+        //String description = _currentObjectParams.get("description");
+        String dns1 = _currentObjectParams.get("dns1");
+        String dns2 = _currentObjectParams.get("dns2");
+        String internalDns1 = _currentObjectParams.get("internalDns1");
+        String internalDns2 = _currentObjectParams.get("internalDns2");
+        String vnetRange = _currentObjectParams.get("vnet");
+        String guestNetworkCidr = _currentObjectParams.get("guestNetworkCidr");
+        
+        // Check that all IPs are valid
+        String ipError = "Please enter a valid IP address for the field: ";
+        if (!IPRangeConfig.validOrBlankIP(dns1)) printError(ipError + "dns1");
+        if (!IPRangeConfig.validOrBlankIP(dns2)) printError(ipError + "dns2");
+        if (!IPRangeConfig.validOrBlankIP(internalDns1)) printError(ipError + "internalDns1");
+        if (!IPRangeConfig.validOrBlankIP(internalDns2)) printError(ipError + "internalDns2");
+        if (!IPRangeConfig.validCIDR(guestNetworkCidr)) printError("Please enter a valid value for guestNetworkCidr");
+    	int vnetStart = -1;
+    	int vnetEnd = -1;
+    	if (vnetRange != null) {
+            String[] tokens = vnetRange.split("-");
+            vnetStart = Integer.parseInt(tokens[0]);
+            vnetEnd = Integer.parseInt(tokens[1]);
+        }
+    	
+    	pzc.saveZone(false, id, name, dns1, dns2, internalDns1, internalDns2, vnetStart, vnetEnd, guestNetworkCidr);
+        
+    }
+    
+    private void saveVlan() {
+    	String zoneId = _currentObjectParams.get("zoneId");
+    	String vlanId = _currentObjectParams.get("vlanId");
+    	String gateway = _currentObjectParams.get("gateway");
+        String netmask = _currentObjectParams.get("netmask");
+        String publicIpRange = _currentObjectParams.get("ipAddressRange");
+        String vlanType = _currentObjectParams.get("vlanType");
+        String vlanPodName = _currentObjectParams.get("podName");
+        
+        String ipError = "Please enter a valid IP address for the field: ";
+        if (!IPRangeConfig.validOrBlankIP(gateway)) printError(ipError + "gateway");
+        if (!IPRangeConfig.validOrBlankIP(netmask)) printError(ipError + "netmask");
+        
+        // Check that the given IP address range was valid
+    	if (!checkIpAddressRange(publicIpRange)) printError("Please enter a valid public IP range.");
+        
+    	// Split the IP address range
+    	String[] ipAddressRangeArray = publicIpRange.split("\\-");
+    	String startIP = ipAddressRangeArray[0];
+    	String endIP = null;
+    	if (ipAddressRangeArray.length > 1) endIP = ipAddressRangeArray[1];
+    	
+    	// If a netmask was provided, check that the startIP, endIP, and gateway all belong to the same subnet
+    	if (netmask != null && netmask != "") {
+    		if (endIP != null) {
+    			if (!IPRangeConfig.sameSubnet(startIP, endIP, netmask)) printError("Start and end IPs for the public IP range must be in the same subnet, as per the provided netmask.");
+    		}
+    		
+    		if (gateway != null && gateway != "") {
+    			if (!IPRangeConfig.sameSubnet(startIP, gateway, netmask)) printError("The start IP for the public IP range must be in the same subnet as the gateway, as per the provided netmask.");
+    			if (endIP != null) {
+    				if (!IPRangeConfig.sameSubnet(endIP, gateway, netmask)) printError("The end IP for the public IP range must be in the same subnet as the gateway, as per the provided netmask.");
+    			}
+    		}
+    	}
+    	
+    	long zoneDbId = Long.parseLong(zoneId);
+    	String zoneName = PodZoneConfig.getZoneName(zoneDbId);
+    	
+    	pzc.modifyVlan(zoneName, true, vlanId, gateway, netmask, vlanPodName, vlanType, publicIpRange);
+    	
+    	long vlanDbId = pzc.getVlanDbId(zoneName, vlanId);
+    	iprc.saveIPRange("public", -1, zoneDbId, vlanDbId, startIP, endIP);
+        
+    }
+
+    private void savePod() {
+        long id = Long.parseLong(_currentObjectParams.get("id"));
+        String name = _currentObjectParams.get("name");
+        long dataCenterId = Long.parseLong(_currentObjectParams.get("zoneId"));
+        String privateIpRange = _currentObjectParams.get("ipAddressRange");
+        String gateway = _currentObjectParams.get("gateway");
+        String cidr = _currentObjectParams.get("cidr");
+        String zoneName = PodZoneConfig.getZoneName(dataCenterId);
+        String startIP = null;
+        String endIP = null;
+        String vlanRange = _currentObjectParams.get("vnet");
+        
+        int vlanStart = -1;
+        int vlanEnd = -1;
+        if (vlanRange != null) {
+            String[] tokens = vlanRange.split("-");
+            vlanStart = Integer.parseInt(tokens[0]);
+            vlanEnd = Integer.parseInt(tokens[1]);
+        }
+        
+        // Get the individual cidrAddress and cidrSize values
+		String[] cidrPair = cidr.split("\\/");
+		String cidrAddress = cidrPair[0];
+		String cidrSize = cidrPair[1];
+        long cidrSizeNum = Long.parseLong(cidrSize);
+        
+        // Check that the gateway is in the same subnet as the CIDR
+    	if (!IPRangeConfig.sameSubnetCIDR(gateway, cidrAddress, cidrSizeNum)) {
+    		printError("For pod " + name + " in zone " + zoneName + " , please ensure that your gateway is in the same subnet as the  pod's CIDR address.");
+    	}
+        
+        pzc.savePod(false, id, name, dataCenterId, gateway, cidr, vlanStart, vlanEnd);
+                       
+		if (privateIpRange != null) {
+			// Check that the given IP address range was valid
+			if (!checkIpAddressRange(privateIpRange)) printError("Please enter a valid private IP range.");
+    		
+    		String[] ipAddressRangeArray = privateIpRange.split("\\-");
+    		startIP = ipAddressRangeArray[0];
+    		endIP = null;
+    		if (ipAddressRangeArray.length > 1) endIP = ipAddressRangeArray[1];
+		}
+    	
+    	// Check that the start IP and end IP match up with the CIDR
+    	if (!IPRangeConfig.sameSubnetCIDR(startIP, endIP, cidrSizeNum)) {
+    		printError("For pod " + name + " in zone " + zoneName + ", please ensure that your start IP and end IP are in the same subnet, as per the pod's CIDR size.");
+    	}
+    	
+		if (!IPRangeConfig.sameSubnetCIDR(startIP, cidrAddress, cidrSizeNum)) {
+			printError("For pod " + name + " in zone " + zoneName + ", please ensure that your start IP is in the same subnet as the pod's CIDR address.");
+		}
+		
+		if (!IPRangeConfig.sameSubnetCIDR(endIP, cidrAddress, cidrSizeNum)) {
+			printError("For pod " + name + " in zone " + zoneName + ", please ensure that your end IP is in the same subnet as the pod's CIDR address.");
+		}
+    	
+		if (privateIpRange != null) {
+			// Save the IP address range
+			iprc.saveIPRange("private", id, dataCenterId, -1, startIP, endIP);
+		}
+
+    }
+
+    @DB
+    protected void saveServiceOffering() {
+        long id  = Long.parseLong(_currentObjectParams.get("id"));
+        String name = _currentObjectParams.get("name");
+        String displayText = _currentObjectParams.get("displayText");
+        int cpu = Integer.parseInt(_currentObjectParams.get("cpu"));
+        int ramSize = Integer.parseInt(_currentObjectParams.get("ramSize"));
+        int speed = Integer.parseInt(_currentObjectParams.get("speed"));
+        String useLocalStorageValue = _currentObjectParams.get("useLocalStorage");
+                
+//        int nwRate = Integer.parseInt(_currentObjectParams.get("nwRate"));
+//        int mcRate = Integer.parseInt(_currentObjectParams.get("mcRate"));
+        int nwRate = 200;
+        int mcRate = 10;
+        boolean ha = Boolean.parseBoolean(_currentObjectParams.get("enableHA"));
+        boolean mirroring = Boolean.parseBoolean(_currentObjectParams.get("mirrored"));
+        String guestIpType = _currentObjectParams.get("guestIpType");
+        GuestIpType type = null;
+        if (guestIpType == null) {
+            type = GuestIpType.Virtualized;
+        } else {
+            type = GuestIpType.valueOf(guestIpType);
+        }
+        
+        boolean useLocalStorage;
+        if (useLocalStorageValue != null) {
+        	if (Boolean.parseBoolean(useLocalStorageValue)) {
+        		useLocalStorage = true;
+        	} else {
+        		useLocalStorage = false;
+        	}
+        } else {
+        	useLocalStorage = false;
+        }
+        
+        ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, nwRate, mcRate, ha, displayText, type, useLocalStorage, false, null);
+        ServiceOfferingDaoImpl dao = ComponentLocator.inject(ServiceOfferingDaoImpl.class);
+        try {
+            dao.persist(serviceOffering);
+        } catch (Exception e) {
+            s_logger.error("error creating service offering", e);
+            
+        }
+        /*
+        String insertSql = "INSERT INTO `cloud`.`service_offering` (id, name, cpu, ram_size, speed, nw_rate, mc_rate, created, ha_enabled, mirrored, display_text, guest_ip_type, use_local_storage) " +
+                "VALUES (" + id + ",'" + name + "'," + cpu + "," + ramSize + "," + speed + "," + nwRate + "," + mcRate + ",now()," + ha + "," + mirroring + ",'" + displayText + "','" + guestIpType + "','" + useLocalStorage + "')";
+
+        Transaction txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            s_logger.error("error creating service offering", ex);
+            return;
+        }
+        */
+    }
+    
+    @DB
+    protected void saveDiskOffering() {
+        long id  = Long.parseLong(_currentObjectParams.get("id"));
+        long domainId  = Long.parseLong(_currentObjectParams.get("domainId"));
+        String name = _currentObjectParams.get("name");
+        String displayText = _currentObjectParams.get("displayText");
+        int diskSpace = Integer.parseInt(_currentObjectParams.get("diskSpace"));
+//        boolean mirroring = Boolean.parseBoolean(_currentObjectParams.get("mirrored"));
+        String tags = _currentObjectParams.get("tags");
+        
+        if (tags != null && tags.length() > 0) {
+            String[] tokens = tags.split(",");
+            StringBuilder newTags = new StringBuilder();
+            for (String token : tokens) {
+                newTags.append(token.trim()).append(",");
+            }
+            newTags.delete(newTags.length() - 1, newTags.length());
+            tags = newTags.toString();
+        }
+        DiskOfferingVO diskOffering = new DiskOfferingVO(domainId, name, displayText, diskSpace, tags);
+        DiskOfferingDaoImpl offering = ComponentLocator.inject(DiskOfferingDaoImpl.class);
+        try {
+            offering.persist(diskOffering);
+        } catch (Exception e) {
+            s_logger.error("error creating disk offering", e);
+            
+        }
+        /*
+        String insertSql = "INSERT INTO `cloud`.`disk_offering` (id, domain_id, name, display_text, disk_size, mirrored, tags) " +
+                "VALUES (" + id + "," + domainId + ",'" + name + "','" + displayText + "'," + diskSpace + "," + mirroring + ", ? )";
+
+        Transaction txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            stmt.setString(1, tags);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            s_logger.error("error creating disk offering", ex);
+            return;
+        }
+        */
+    }
+    
+    @DB
+    protected void saveThrottlingRates() {
+    	boolean saveNetworkThrottlingRate = (_networkThrottlingRate != null);
+    	boolean saveMulticastThrottlingRate = (_multicastThrottlingRate != null);
+    	
+    	if (!saveNetworkThrottlingRate && !saveMulticastThrottlingRate) return;
+    	
+    	String insertNWRateSql = "UPDATE `cloud`.`service_offering` SET `nw_rate` = ?";
+    	String insertMCRateSql = "UPDATE `cloud`.`service_offering` SET `mc_rate` = ?";
+    	
+        Transaction txn = Transaction.currentTxn();
+    	try {
+            PreparedStatement stmt;
+            
+            if (saveNetworkThrottlingRate) {
+            	stmt = txn.prepareAutoCloseStatement(insertNWRateSql);
+            	stmt.setString(1, _networkThrottlingRate);
+            	stmt.executeUpdate();
+            }
+            
+            if (saveMulticastThrottlingRate) {
+            	stmt = txn.prepareAutoCloseStatement(insertMCRateSql);
+            	stmt.setString(1, _multicastThrottlingRate);
+            	stmt.executeUpdate();
+            }
+            
+        } catch (SQLException ex) {
+            s_logger.error("error saving network and multicast throttling rates to all service offerings", ex);
+            return;
+        }
+    }
+
+    // no configurable values for VM Template, hard-code the defaults for now
+    private void saveVMTemplate() {
+    /*
+        long id = 1;
+        String uniqueName = "routing";
+        String name = "DomR Template";
+        int isPublic = 0;
+        String path = "template/private/u000000/os/routing";
+        String type = "ext3";
+        int requiresHvm = 0;
+        int bits = 64;
+        long createdByUserId = 1;
+        int isReady = 1;
+
+        String insertSql = "INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, path, created, type, hvm, bits, created_by, ready) " +
+                "VALUES (" + id + ",'" + uniqueName + "','" + name + "'," + isPublic + ",'" + path + "',now(),'" + type + "'," +
+                requiresHvm + "," + bits + "," + createdByUserId + "," + isReady + ")";
+
+        Transaction txn = Transaction.open();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            s_logger.error("error creating vm template: " + ex);
+        } finally {
+        	txn.close();
+        }
+     */
+/*
+        // do it again for console proxy template
+        id = 2;
+        uniqueName = "consoleproxy";
+        name = "Console Proxy Template";
+        isPublic = 0;
+        path = "template/private/u000000/os/consoleproxy";
+        type = "ext3";
+        
+        insertSql = "INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, path, created, type, hvm, bits, created_by, ready) " +
+        "VALUES (" + id + ",'" + uniqueName + "','" + name + "'," + isPublic + ",'" + path + "',now(),'" + type + "'," +
+        requiresHvm + "," + bits + "," + createdByUserId + "," + isReady + ")";
+
+	    Transaction txn = Transaction.currentTxn();
+		try {
+		    PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+		    stmt.executeUpdate();
+		} catch (SQLException ex) {
+		    s_logger.error("error creating vm template: " + ex);
+		} finally {
+			txn.close();
+		}
+*/
+    }
+
+    @DB
+    protected void saveUser() {
+        // insert system account
+        String insertSql = "INSERT INTO `cloud`.`account` (id, account_name, type, domain_id) VALUES (1, 'system', '1', '1')";
+        Transaction txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            s_logger.error("error creating system account", ex);
+        }
+
+        // insert system user
+        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created) VALUES (1, 'system', '', 1, 'system', 'cloud', now())";
+	    txn = Transaction.currentTxn();
+		try {
+		    PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+		    stmt.executeUpdate();
+		} catch (SQLException ex) {
+		    s_logger.error("error creating system user", ex);
+		}
+		
+    	// insert admin user
+        long id = Long.parseLong(_currentObjectParams.get("id"));
+        String username = _currentObjectParams.get("username");
+        String firstname = _currentObjectParams.get("firstname");
+        String lastname = _currentObjectParams.get("lastname");
+        String password = _currentObjectParams.get("password");
+        String email = _currentObjectParams.get("email");
+        
+        if (email == null || email.equals("")) printError("An email address for each user is required.");
+        
+        MessageDigest md5 = null;
+        try {
+            md5 = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            s_logger.error("error saving user", e);
+            return;
+        }
+        md5.reset();
+        BigInteger pwInt = new BigInteger(1, md5.digest(password.getBytes()));
+        String pwStr = pwInt.toString(16);
+        int padding = 32 - pwStr.length();
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < padding; i++) {
+            sb.append('0'); // make sure the MD5 password is 32 digits long
+        }
+        sb.append(pwStr);
+
+        // create an account for the admin user first
+        insertSql = "INSERT INTO `cloud`.`account` (id, account_name, type, domain_id) VALUES (" + id + ", '" + username + "', '1', '1')";
+        txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            s_logger.error("error creating account", ex);
+        }
+
+        // now insert the user
+        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, email, created) " +
+                "VALUES (" + id + ",'" + username + "','" + sb.toString() + "', 2, '" + firstname + "','" + lastname + "','" + email + "',now())";
+
+        txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            s_logger.error("error creating user", ex);
+        }
+    }
+
+    private void saveDefaultConfiguations() {
+        for (String name : s_defaultConfigurationValues.keySet()) {
+            String value = s_defaultConfigurationValues.get(name);
+            saveConfiguration(name, value, null);
+        }
+    }
+    
+    private void saveConfiguration() {
+        String name = _currentObjectParams.get("name");
+        String value = _currentObjectParams.get("value");
+        String category = _currentObjectParams.get("category");
+        saveConfiguration(name, value, category);
+    }
+    
+    @DB
+    protected void saveConfiguration(String name, String value, String category) {
+        String instance = "DEFAULT";
+        String description = s_configurationDescriptions.get(name);
+        String component = s_configurationComponents.get(name);
+        if (category == null) {
+        	category = "Advanced";
+        }
+        
+        String instanceNameError = "Please enter a non-blank value for the field: ";
+        if (name.equals("instance.name")) {
+        	if (value == null || value.isEmpty() || !value.matches("^[A-Za-z0-9]{1,8}$"))
+        		printError(instanceNameError + "configuration: instance.name can not be empty and can only contain numbers and alphabets up to 8 characters long");
+        }
+        
+        if (name.equals("network.throttling.rate")) {
+        	if (value != null && !value.isEmpty()) _networkThrottlingRate = value;
+        }
+        
+        if (name.equals("multicast.throttling.rate")) {
+        	if (value != null && !value.isEmpty()) _multicastThrottlingRate = value;
+        }
+
+        String insertSql = "INSERT INTO `cloud`.`configuration` (instance, component, name, value, description, category) " +
+            "VALUES ('" + instance + "','" + component + "','" + name + "','" + value + "','" + description + "','" + category + "')";
+        
+        String selectSql = "SELECT name FROM cloud.configuration WHERE name = '" + name + "'";
+
+        Transaction txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(selectSql);
+            ResultSet result = stmt.executeQuery();
+            Boolean hasRow = result.next();
+            if (!hasRow) {
+            	stmt = txn.prepareAutoCloseStatement(insertSql);
+            	stmt.executeUpdate();
+            }
+        } catch (SQLException ex) {
+            s_logger.error("error creating configuration", ex);
+        }
+    }
+    
+    private boolean checkIpAddressRange(String ipAddressRange) {
+    	String[] ipAddressRangeArray = ipAddressRange.split("\\-");
+    	String startIP = ipAddressRangeArray[0];
+    	String endIP = null;
+    	if (ipAddressRangeArray.length > 1) endIP = ipAddressRangeArray[1];
+    	
+    	if (!IPRangeConfig.validIP(startIP)) {
+    		s_logger.error("The private IP address: " + startIP + " is invalid.");
+    		return false;
+    	}
+    	
+    	if (!IPRangeConfig.validOrBlankIP(endIP)) {
+    		s_logger.error("The private IP address: " + endIP + " is invalid.");
+    		return false;
+    	}
+    	
+    	if (!IPRangeConfig.validIPRange(startIP, endIP)) {
+    		s_logger.error("The  IP range " + startIP + " -> " + endIP + " is invalid.");
+    		return false;
+    	}
+    	
+    	return true;
+    }
+
+    @DB
+    protected void saveRootDomain() {
+        String insertSql = "insert into `cloud`.`domain` (id, name, parent, owner, path, level) values (1, 'ROOT', NULL, 2, '/', 0)";
+        Transaction txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            s_logger.error("error creating ROOT domain", ex);
+        }
+        
+        /*
+        String updateSql = "update account set domain_id = 1 where id = 2";
+        Transaction txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareStatement(updateSql);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            s_logger.error("error updating admin user", ex);
+        } finally {
+        	txn.close();
+        }
+
+        updateSql = "update account set domain_id = 1 where id = 1";
+        Transaction txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareStatement(updateSql);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            s_logger.error("error updating system user", ex);
+        } finally {
+        	txn.close();
+        }
+        */
+    }
+
+    class DbConfigXMLHandler extends DefaultHandler {
+        private DatabaseConfig _parent = null;
+
+        public void setParent(DatabaseConfig parent) {
+            _parent = parent;
+        }
+
+        @Override
+        public void endElement(String s, String s1, String s2)
+                throws SAXException {
+            if (DatabaseConfig.objectNames.contains(s2) || "object".equals(s2)) {
+                _parent.saveCurrentObject();
+            } else if (DatabaseConfig.fieldNames.contains(s2) || "field".equals(s2)) {
+                _currentFieldName = null;
+            }
+        }
+
+        @Override
+        public void startElement(String s, String s1, String s2,
+                Attributes attributes) throws SAXException {
+        	if ("object".equals(s2)) {
+        		_parent.setCurrentObjectName(convertName(attributes.getValue("name")));
+           } else if ("field".equals(s2)) {
+               if (_currentObjectParams == null) {
+                   _currentObjectParams = new HashMap<String, String>();
+               }
+               _currentFieldName = convertName(attributes.getValue("name"));
+           } else if (DatabaseConfig.objectNames.contains(s2)) {
+                _parent.setCurrentObjectName(s2);
+            } else if (DatabaseConfig.fieldNames.contains(s2)) {
+                if (_currentObjectParams == null) {
+                    _currentObjectParams = new HashMap<String, String>();
+                }
+                _currentFieldName = s2;
+            }
+        }
+
+        @Override
+		public void characters(char[] ch, int start, int length) throws SAXException {
+            if ((_currentObjectParams != null) && (_currentFieldName != null)) {
+                String currentFieldVal = new String(ch, start, length);
+                _currentObjectParams.put(_currentFieldName, currentFieldVal);
+            }
+        }
+        
+        private String convertName(String name) {
+    		if (name.contains(".")){
+    			String[] nameArray = name.split("\\.");
+    			for (int i = 1; i < nameArray.length; i++) {
+    				String word = nameArray[i];
+    				nameArray[i] = word.substring(0, 1).toUpperCase() + word.substring(1).toLowerCase();
+    			}
+    			name = "";
+    			for (int i = 0; i < nameArray.length; i++) {
+    				name = name.concat(nameArray[i]);
+    			}
+    		}
+    		return name;
+    	}
+        
+    }
+    
+    public static List<String> genReturnList(String success, String message) {
+		List<String> returnList = new ArrayList<String>(2);
+		returnList.add(0, success);
+		returnList.add(1, message);
+		return returnList;
+	}
+    
+    public static void printError(String message) {
+    	System.out.println(message);
+    	System.exit(1);
+    }
+
+    public static String getDatabaseValueString(String selectSql, String name, String errorMsg) {
+		Transaction txn = Transaction.open("getDatabaseValueString");
+		PreparedStatement stmt = null;
+		
+		try {
+			stmt = txn.prepareAutoCloseStatement(selectSql);
+			ResultSet rs = stmt.executeQuery();
+	    	if (rs.next()) {
+	    		String value = rs.getString(name);
+	    		return value;
+	    	}
+	    	else return null;
+		} catch (SQLException e) {
+			System.out.println("Exception: " + e.getMessage());
+			printError(errorMsg);
+		} finally {
+		    txn.close();
+		}
+		return null;
+	}
+    
+    public static long getDatabaseValueLong(String selectSql, String name, String errorMsg) {
+		Transaction txn = Transaction.open("getDatabaseValueLong");
+		PreparedStatement stmt = null;
+		
+		try {
+			stmt = txn.prepareAutoCloseStatement(selectSql);
+			ResultSet rs = stmt.executeQuery();
+	    	if (rs.next()) return rs.getLong(name);
+	    	else return -1;
+		} catch (SQLException e) {
+			System.out.println("Exception: " + e.getMessage());
+			printError(errorMsg);
+		} finally {
+		    txn.close();
+		}
+		return -1;
+	}
+    
+    public static void saveSQL(String sql, String errorMsg) {
+        Transaction txn = Transaction.open("saveSQL");
+		try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(sql);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+        	System.out.println("SQL Exception: " + ex.getMessage());
+            printError(errorMsg);
+        } finally {
+            txn.close();
+        }
+	}
+   
+}

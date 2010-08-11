@@ -1,0 +1,55 @@
+This directory contains the implementation of vnets:
+virtual private networks for virtual machines.
+
+make
+        - compile in local dirs. The module is in vnet-module/vnet_module.ko.
+
+make dist
+        - compile and install into $(XEN_ROOT)/dist/install,
+        - where XEN_ROOT is the root of the xen tree.
+
+make install
+        - compile and install into system.
+
+By default the makefiles expect this code to have been installed
+in tools/vnet in a xen source tree. If compiling outside the xen
+source tree, set XEN_ROOT to the location of the xen source.
+You can do this in the environment or in a Make.local file
+in the current directory (see Make.env for details).
+
+The xen0 kernel must have been compiled before building the vnet module.
+The vnet module installs to
+ /lib/modules/<kernel version>-xen0/kernel/xen/vnet_module.ko
+
+The vnet module should be loaded before starting xend, or
+xend will fail to create any persistent vnets it has in its configuration.
+The script network-vnet is a modified version of the xen network script
+that loads the module if it's not already loaded.
+
+The module uses kernel crypto functions, and these need to be
+enabled in the xen0 kernel config. They should be on by default -
+if they're not you will get compile or insmod errors (see below).
+
+Kernel config options:
+
+1)	You will need to have your xen0 kernel compiled with HMAC_SUPPORT 
+	2.6.x = (MAIN MENU: Cryptographic Options -> HMAC Support)
+	BEFORE running "make install".
+
+2)	You will want at least some of the other algorithms listed under
+	"Cryptographic Options" for the kernel compiled as modules.
+
+3)	You will want the networking IPsec/VLAN options compiled in as modules
+	2.6.x = (MAIN MENU: Device Drivers -> Networking Support -> 
+				Networking Options ->
+					IP: AH transformation
+					IP: ESP transformation
+					IP: IPComp transformation 
+					IP: tunnel transformation
+
+					IPsec user configuration interface
+	
+					802.1Q VLAN Support
+
+Please refer to the additional documentation found in tools/vnet/doc for
+proper syntax and config file parameters.

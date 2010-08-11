@@ -1,0 +1,10 @@
+#!/bin/sh
+scriptdir=/etc/xen/scripts/
+
+case ${1} in
+    start)
+        ${scriptdir}/vnet-insert
+        ;;
+esac
+
+${scriptdir}/network-bridge "$@"

@@ -1,0 +1,176 @@
+=head1 NAME
+
+vn - Vnet (virtual networking) management utility.
+
+=head1 SYNOPSIS
+
+vn <command> [args]
+
+=head1 DESCRIPTION
+
+The B<vn> utility manages vnets, virtual networks for virtual machines.
+Before using vnets, the vnet kernel module must be installed or
+the user-space daemon vnetd must be running. Using the kernel module is recommended,
+see the B<insmod> command below.
+
+A vnet is a virtual network that behaves like a private LAN, transporting
+Ethernet frames. Each vnet is identified by a 128-bit vnet id and
+has a network device that interfaces to it. Ethernet packets written
+to the device are encapsulated and sent to the network.
+Received vnet packets are decapsulated and delivered from the device
+corresponding to their vnet id. The default encapsulation uses UDP on port 1798.
+
+Usually each vnet device is enslaved to a corresponding bridge, and virtual
+machine interfaces are attached to vnets by enslaving them to the bridge.
+Each vnet behaves like a private LAN: traffic on one vnet is not visible
+on other vnets, and interfaces on a vnet cannot see traffic on the
+physical network. 
+
+Vnets can be connected together into larger networks
+by direct bridging or packet forwarding, or by using multihomed vms
+with interfaces on several vnets, or vnets and the physical network.
+As vnet interfaces are discovered dynamically, vnet connectivity is maintained
+if a vm using a vnet is migrated from one physical machine to another.
+
+In the commands vnet ids can be given in two forms. Long form, as 8 4-digit hex fields
+separated by colons, for example 0000:0000:0000:0000:0000:0000:0000:0004, and
+short form as a hex field, for example 0004 or 4. The short form is the same as the
+long form with the first 7 fields zero. Vnet id 0000:0000:0000:0000:0000:0000:0000:0001
+is reserved for the physical network and has no vnet device.
+
+Vnets use multicast to discover the location of virtual interfaces, by default
+using multicast group 224.10.0.1. If all the machines hosting vnets are on
+the same subnet, or reachable by multicast, vnets will span all the machines
+automatically. If some machines are not reachable by multicast you can configure
+vnets to perform multicast forwarding using UDP. 
+
+The vnet devices are fully-functional network devices, so you can add IP addresses
+to them and test connectivity without any vms running.
+For example, using vnif0004 on machines A and B:
+
+        A> ifconfig vnif0004 192.0.2.11
+        B> ifconfig vnif0004 192.0.2.12
+        B> ping 192.0.2.11
+
+If the vnet device is enslaved to a bridge you will have to add the IP address
+to the bridge instead. Use C<brctl show> or C<vn vnets> to see if a vnet
+device is on a bridge.
+
+=over 4
+
+=item B<insmod> I<[varp_mcaddr=ADDR]>
+
+Insert the vnet kernel module, optionally supplying the multicast
+address to use, default 224.10.0.1.
+
+=item B<varp>
+
+Print varp infrormation and varp cache.
+
+=item B<vnets> [options]
+
+Print the list of vnets (virtual networks). If a vnet device is on a bridge,
+also shows the bridge and its bridged interfaces.
+
+=over 4
+
+=item B<-a | --all>
+
+Also print the vifs on each vnet and varp information.
+
+=item B<-l | --long>
+
+Also print the ifconfig for the vnet devices.
+
+=back
+
+=item B<vnet-create> I<[options]> I<vnetid>
+
+Create a vnet with the given id. The options are:
+
+=over 4
+
+=item B<-s | --security> I<level>
+
+Security level, which can be one of I<none> for no security,
+I<auth> for message authentication, and I<conf> for message
+authentication and confidentiality. The default is no security.
+Security is provided using IPSEC, but uses hard-wired keys.
+
+=item B<-b | --bridge> I<bridgename>
+
+Create a bridge for the vnet called I<bridgename> and enslave
+the vnet device to it.
+
+=item B<-v | --vnetif> I<vnetifname>
+
+Use I<vnetifname> as the name for the vnet device. If this option
+is not specified the default is to name the device vnifN where N
+is the last field of the vnet id as 4 hex characters.
+For example vnif0004. Network device names can be at
+most 14 characters.
+
+=back
+
+=item B<vnet-delete> I<[options]> I<vnetid>
+
+Delete the vnet with the given id. The vnet device goes away too.
+
+=over 4
+
+=item B<-b | --bridge>
+
+If this option is specified, delete the bridge associated with the vnet.
+
+=back
+
+=item B<vifs>
+
+Print the list of vifs (virtual interfaces).
+
+=item B<vif-add> I<[-i|-interface]> I<vnet> I<vmac>
+
+Add a vif to a vnet. Here I<vnet> is the vnet id and I<vmac>
+is the vif's MAC address. Alternatively, I<vmac> can be the name of
+a network device if the I<-i> or -I<--interface> flag is given.
+
+It is not usually necessary to use B<vif-add> as vnets automatically
+add vifs for the MAC addresses they see.
+
+=item B<vif-delete> I<[-i|-interface]> I<vnet> I<vmac>
+
+Delete a vif from a vnet. Here I<vnet> is the vnet id and I<vmac>
+is the vif's MAC address. Alternatively, I<vmac> can be the name of
+a network device if the I<-i> of -I<--interface> flag is given.
+
+It is not usually necessary to use B<vif-delete> as vnets periodically
+delete unused vifs.
+
+=item B<peers>
+
+Print the list of peer vnet machines to forward multicasts to, and accept
+forwarded multicasts from.
+
+=item B<peer-add> I<addr>
+
+Add the peer with the given IP address or hostname.
+
+=item B<peer-delete> I<addr>
+
+Delete the peer with the given IP address or hostname.
+
+=back
+
+=head1 AUTHOR
+
+The author of vn and vnets is Mike Wray of HP Labs. Please send problems, bugs,
+enhancements requests etc. to mike.wray@hp.com.
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2006 Mike Wray <mike.wray@hp.com>.
+
+This library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 2.1 of the License, or
+(at your option) any later version.

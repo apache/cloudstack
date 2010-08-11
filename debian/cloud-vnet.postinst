@@ -1,0 +1,13 @@
+#!/bin/sh -e
+
+case "$1" in
+    configure)
+
+	if [ "$2" = "" ] ; then # no recently configured version, this is a first install
+		/usr/sbin/update-rc.d cloud-vnet defaults || true
+	fi
+	
+    ;;
+esac
+
+#DEBHELPER#

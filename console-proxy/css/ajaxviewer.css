@@ -1,0 +1,86 @@
+body {
+	margin:0 0;
+	text-align: center;
+}
+	
+#main_panel {
+	clear:both;
+	margin: 0 auto;
+	text-align: left;
+}
+
+.canvas_tile {
+	cursor:crosshair;
+}
+
+#toolbar {
+	font:normal 12px 'Trebuchet MS','Arial'; 
+	margin:0 auto; 
+	text-align: left;
+	padding:0 0; 
+	height:32px;
+	background-image:url(/resource/images/back.gif); 
+	background-repeat:repeat-x; 
+}
+
+#toolbar ul { 
+	margin:0 0; 
+	padding:0 10px 0 10px; 
+	float:left;
+	display:block;
+	line-height:32px;
+	list-style:none; 
+}
+
+#toolbar li {
+	float:left; 
+	display:inline; 
+	padding:0;
+	height:32px;
+}
+
+#toolbar a { 
+	color:white; 
+	float:left;
+	display:block;
+	padding:0 3px 0 3px; 
+	text-decoration:none;
+	line-height:32px;
+}
+
+#toolbar a span { 
+	display:block; 
+	float:none; 
+	padding:0 10px 0 7px; 
+} 
+
+#toolbar a span img { 
+	border:none; 
+	margin:8px 4px 0 0; 
+} 
+
+#toolbar a:hover { 
+	background: url(/resource/images/left.png) no-repeat left center; 
+} 
+
+#toolbar a:hover span { 
+	background:url(/resource/images/right.png) no-repeat right center; 
+}
+
+span.dark {
+	margin-right:20px;
+	float:right;
+	display:block;
+	width:32px;
+	height:30px;
+	background:url(/resource/images/gray-green.png) no-repeat center center; 
+}
+
+span.bright {
+	margin-right:20px;
+	float:right;
+	display:block;
+	width:32px;
+	height:30px;
+	background:url(/resource/images/bright-green.png) no-repeat center center; 
+}

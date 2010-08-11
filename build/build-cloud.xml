@@ -1,0 +1,566 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2008 Cloud, Inc. All Rights Reserved -->
+
+<project name="Cloud Stack" default="help" basedir=".">
+  <description>
+		Cloud Stack ant build file
+    </description>
+
+  <!--
+ 	Always use this variable to refer to the base directory because this
+	variable is changeable
+    -->
+  <dirname property="base.dir" file="${ant.file.Cloud Stack}/.." />
+  <property name="build.dir" location="${base.dir}/build" />
+
+  <!-- Import anything that the user wants to set-->
+  <!-- Import properties files and environment variables here -->
+
+  <property environment="env" />
+
+  <condition property="build-cloud.properties.file" value="${build.dir}/override/build-cloud.properties" else="${build.dir}/build-cloud.properties">
+    <available file="${build.dir}/override/build-cloud.properties" />
+  </condition>
+
+  <condition property="cloud.properties.file" value="${build.dir}/override/cloud.properties" else="${build.dir}/cloud.properties">
+    <available file="${build.dir}/override/cloud.properties" />
+  </condition>
+
+  <condition property="override.file" value="${build.dir}/override/replace.properties" else="${build.dir}/replace.properties">
+    <available file="${build.dir}/override/replace.properties" />
+  </condition>
+
+  <echo message="Using build parameters from ${build-cloud.properties.file}" />
+  <property file="${build-cloud.properties.file}" />
+
+  <echo message="Using company info from ${cloud.properties.file}" />
+  <property file="${cloud.properties.file}" />
+
+  <echo message="Using override file from ${override.file}" />
+  <property file="${override.file}" />
+
+  <property file="${base.dir}/build/build.number" />
+
+  <import file="${build.dir}/build-common.xml" />
+
+  <!-- In case these didn't get defined in the build-cloud.properties -->
+  <property name="branding.name" value="default" />
+  <property name="tomcat.home" value="${env.CATALINA_HOME}" />
+  <property name="deprecation" value="off" />
+  <property name="target.compat.version" value="1.6" />
+  <property name="source.compat.version" value="1.6" />
+  <property name="debug" value="true" />
+  <property name="debuglevel" value="lines,source"/>
+
+  <!-- directories for build and distribution -->
+  <property name="dist.dir" location="${base.dir}/dist/" />
+  <property name="target.dir" location="${base.dir}/target" />
+  <property name="classes.dir" location="${target.dir}/classes" />
+  <property name="jar.dir" location="${target.dir}/jar" />
+  <property name="dep.cache.dir" location="${target.dir}/dep-cache" />
+  <property name="build.log" location="${target.dir}/ant_verbose.txt" />
+
+  <property name="thirdparty.dir" location="${base.dir}/thirdparty" />
+  <property name="deps.dir" location="${base.dir}/deps" />
+
+  <!-- directories for client compilation-->
+  <property name="client.dir" location="${base.dir}/client" />
+  <property name="client.test.dir" location="${client.dir}/test" />
+  <property name="client.target.dir" location="${target.dir}/ui" />
+  <property name="ui.user.dir" location="${base.dir}/ui" />
+  <property name="setup.db.dir" location="${base.dir}/setup/db" />
+
+  <!-- directories for server compilation-->
+  <property name="server.dir" location="${base.dir}/server" />
+  <property name="server.test.dir" location="${server.dir}/test" />
+  <property name="server.dist.dir" location="${dist.dir}/client" />
+
+  <!-- directories for core code compilation-->
+  <property name="core.dir" location="${base.dir}/core" />
+  <property name="core.test.dir" location="${core.dir}/test/" />
+
+  <!-- directories for agent code compilation-->
+  <property name="agent.dir" location="${base.dir}/agent" />
+  <property name="agent.test.dir" location="${utils.dir}/test/" />
+  <property name="agent.dist.dir" location="${dist.dir}/agent" />
+
+  <property name="scripts.dir" location="${base.dir}/scripts" />
+  <property name="scripts.target.dir" location="${target.dir}/scripts"/>
+
+  <!-- directories for console proxy & applet code compilation-->
+  <property name="console-common.dir" location="${base.dir}/console" />
+  <property name="console-common.dist.dir" location="${dist.dir}/console-common" />
+
+  <property name="console-proxy.dir" location="${base.dir}/console-proxy" />
+  <property name="console-proxy.dist.dir" location="${dist.dir}/console-proxy" />
+
+  <property name="console-viewer.dir" location="${base.dir}/console-viewer" />
+  <property name="console-viewer.dist.dir" location="${dist.dir}/console-viewer" />
+
+  <property name="tools.dir" location="${base.dir}/tools" />
+<!--  <property name="antcontrib.dir" location="${tools.dir}/tools/ant/apache-ant-1.8.0/lib" />-->
+  <property name="deploy.dir" location="${build.dir}/deploy" />
+  <property name="production.dir" location="${deploy.dir}/production" />
+  <property name="meld.home" location="/usr/local/bin" />
+  <property name="assertion" value="-da" />
+
+  <!-- directories for testing -->
+  <property name="test.target.dir" location="${target.dir}/test" />
+  <property name="test.classes.dir" location="${test.target.dir}/classes" />
+
+  <!-- directories for branding -->
+  <property name="branding.dir" location="${build.dir}/deploy/branding/${branding.name}" />
+
+  <property name="core.jar" value="cloud-core.jar" />
+  <property name="utils.jar" value="cloud-utils.jar" />
+  <property name="server.jar" value="cloud-server.jar" />
+  <property name="agent.jar" value="cloud-agent.jar" />
+  <property name="console-common.jar" value="cloud-console-common.jar" />
+  <property name="console-proxy.jar" value="cloud-console-proxy.jar" />
+  <property name="api.jar" value="cloud-api.jar"/>
+
+  <!--
+		Import information about the build version and company information
+	-->
+  <property name="version" value="${company.major.version}.${company.minor.version}.${company.patch.version}" />
+
+  <!-- Class paths -->
+  <path id="prod.src.path">
+    <pathelement location="${server.dir}/src" />
+    <pathelement location="${utils.dir}/src" />
+    <pathelement location="${core.dir}/src" />
+    <pathelement location="${agent.dir}/src" />
+  </path>
+
+  <path id="src.classpath">
+  </path>
+     
+  <path id="thirdparty.classpath">
+    <filelist files="${thirdparty.classpath}" />
+    <fileset dir="${thirdparty.dir}" erroronmissingdir="false">
+      <include name="*.jar" />
+    </fileset>
+  </path>
+
+  <path id="dist.classpath">
+    <fileset dir="${target.dir}">
+      <include name="**/*.jar" />
+    </fileset>
+  </path>
+
+  <path id="test.classpath">
+    <fileset dir="${dist.dir}">
+      <include name="**/*.jar" />
+    </fileset>
+  </path>
+
+  <!-- directories for util code compilation-->
+  <property name="utils.dir" location="${base.dir}/utils" />
+  <property name="utils.test.dir" location="${utils.dir}/test/" />
+  <path id="utils.classpath">
+    <path refid="thirdparty.classpath" />
+  </path>
+  <target name="compile-utils" depends="-init" description="Compile the utilities jar that is shared.">
+    <compile-java jar.name="${utils.jar}" top.dir="${utils.dir}" classpath="utils.classpath" />
+  </target>
+
+  <property name="api.dir" location="${base.dir}/api" />
+  <property name="api.test.dir" location="${api.dir}/test/" />
+  <path id="api.classpath">
+    <path refid="thirdparty.classpath" />
+    <path refid="dist.classpath"/>
+  </path>
+  <target name="compile-api" depends="-init, compile-utils" description="Compile the utilities jar that is shared.">
+    <compile-java jar.name="${api.jar}" top.dir="${api.dir}" classpath="api.classpath" />
+  </target>
+  
+  <path id="core.classpath">
+    <path refid="thirdparty.classpath" />
+    <path refid="dist.classpath" />
+  </path>
+  <target name="compile-core" depends="-init, compile-utils, compile-api" description="Compile the core business logic.">
+    <compile-java jar.name="${core.jar}" top.dir="${core.dir}" classpath="core.classpath" />
+  </target>
+
+  <path id="server.classpath">
+    <path refid="thirdparty.classpath" />
+    <path refid="dist.classpath" />
+  </path>
+  <target name="compile-server" depends="-init, compile-utils, compile-core" description="Compile the management server.">
+    <compile-java jar.name="${server.jar}" top.dir="${server.dir}" classpath="server.classpath" />
+  </target>
+
+  <path id="client.classpath">
+    <path refid="thirdparty.classpath" />
+    <path refid="dist.classpath" />
+  </path>
+
+  <target name="build-scripts" depends="-init">
+    <copy todir="${scripts.target.dir}">
+      <fileset dir="${scripts.dir}">
+        <include name="**/*"/>
+        <exclude name="**/.*" />
+        <exclude name="**/network/domr/mth/" />
+        <exclude name="**/network/domr/kvm/" />
+        <exclude name="**/network/domr/xenserver/" />
+        <exclude name="**/storage/zfs/" />
+        <exclude name="**/storage/iscsi/" />
+        <exclude name="**/hypervisor/xen/" />
+      </fileset>
+      <filterset>
+        <filter token="VERSION" value="${impl.version}"/>
+      </filterset>
+    </copy>
+  </target>
+
+  <target name="build-ui" depends="-init" description="Builds the UI">
+    <mkdir dir="${client.target.dir}" />
+    <copy todir="${client.target.dir}">
+      <fileset dir="${ui.user.dir}">
+        <include name="**/*.html" />
+        <include name="**/*.js"/>
+        <include name="**/*.jsp"/>
+        <include name="**/*.properties"/>
+        <exclude name="**/.classpath" />
+        <exclude name="**/.project" />
+      </fileset>
+      <filterset>
+        <filter token="VERSION" value="${impl.version}"/>
+      </filterset>
+    </copy>
+    <copy todir="${client.target.dir}">
+      <fileset dir="${ui.user.dir}">
+        <include name="**/*"/>
+        <exclude name="**/*.html" />
+        <exclude name="**/*.js"/>
+        <exclude name="**/*.jsp"/>
+        <exclude name="**/*.properties"/>
+        <exclude name="**/.classpath" />
+        <exclude name="**/.project" />
+      </fileset>
+    </copy>
+  </target>
+
+  <target name="build-server" depends="compile-server">
+    <mkdir dir="${server.dist.dir}" />
+    <mkdir dir="${server.dist.dir}/lib" />
+    <mkdir dir="${server.dist.dir}/conf" />
+
+    <copy todir="${server.dist.dir}/lib">
+      <fileset dir="${thirdparty.dir}">
+        <include name="mysql-connector-java-5.1.7-bin.jar" />
+	<include name="cglib-nodep-2.2.jar" />
+	<include name="gson-1.3.jar" />
+	<include name="log4j-1.2.15.jar" />
+	<include name="apache-log4j-extras-1.0.jar" />
+	<include name="ehcache-1.5.0.jar" />
+	<include name="commons-logging-1.1.1.jar" />
+	<include name="commons-dbcp-1.2.2.jar" />
+	<include name="commons-pool-1.4.jar" />
+	<include name="backport-util-concurrent-3.0.jar" />
+	<include name="httpcore-4.0.jar" />
+	<include name="commons-httpclient-3.1.jar" />
+	<include name="commons-codec-1.4.jar" />
+	<include name="email.jar" />
+	<include name="xmlrpc-client-3.1.3.jar" />
+	<include name="xmlrpc-common-3.1.3.jar" />
+	<include name="xenserver-5.5.0-1.jar" />
+	<include name="ws-commons-util-1.0.2.jar" />
+	<include name="trilead-ssh2-build213.jar" />
+      </fileset>
+    </copy>
+
+    <copy overwrite="true" todir="${server.dist.dir}/conf">
+      <fileset dir="${base.dir}/client/tomcatconf">
+        <include name="*.in" />
+      </fileset>
+      <globmapper from="*.in" to="*" />
+      <filterchain>
+        <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
+          <param type="propertiesfile" value="${override.file}" />
+        </filterreader>
+      </filterchain>
+    </copy>
+  	
+    <copy overwrite="true" todir="${server.dist.dir}/conf">
+        <fileset dir="${server.dir}/src/com/cloud/migration">
+          <include name="*.xml" />
+        </fileset>
+  	</copy>
+  </target>
+
+  <path id="console-common.classpath">
+    <path refid="thirdparty.classpath" />
+    <path refid="dist.classpath" />
+  </path>
+  <target name="compile-console-common" depends="-init" description="Compile the console-common jar that is shared.">
+    <compile-java jar.name="${console-common.jar}" top.dir="${console-common.dir}" classpath="console-common.classpath" />
+  </target>
+
+  <path id="console-proxy.classpath">
+    <path refid="thirdparty.classpath" />
+    <path refid="dist.classpath" />
+  </path>
+  <target name="compile-console-proxy" depends="-init, compile-console-common" description="Compile the console proxy.">
+    <compile-java jar.name="${console-proxy.jar}" top.dir="${console-proxy.dir}" classpath="console-proxy.classpath" />
+  </target>
+
+  <target name="copy-console-proxy" depends="-init">
+    <property name="copyto.dir" value="${console-proxy.dist.dir}" />
+    <mkdir dir="${copyto.dir}" />
+    <mkdir dir="${copyto.dir}/conf" />
+    <mkdir dir="${copyto.dir}/logs" />
+    <mkdir dir="${copyto.dir}/applet" />
+    <mkdir dir="${copyto.dir}/images" />
+    <mkdir dir="${copyto.dir}/js" />
+    <mkdir dir="${copyto.dir}/ui" />
+    <mkdir dir="${copyto.dir}/css" />
+
+    <copy todir="${copyto.dir}">
+      <fileset dir="${thirdparty.dir}">
+        <include name="log4j-1.2.15.jar" />
+        <include name="apache-log4j-extras-1.0.jar" />
+         <include name="gson-1.3.jar" />
+      </fileset>
+    </copy>
+
+    <copy todir="${copyto.dir}">
+      <fileset dir="${jar.dir}">
+        <include name="cloud-console-proxy.jar" />
+        <include name="cloud-console-common.jar" />
+      </fileset>
+    </copy>
+    <copy todir="${copyto.dir}/conf">
+      <fileset dir="${production.dir}/consoleproxy/conf">
+        <include name="log4j-cloud.xml" />
+        <include name="consoleproxy.properties" />
+      </fileset>
+    </copy>
+    <copy todir="${copyto.dir}/images">
+      <fileset dir="${console-proxy.dir}/images">
+        <include name="*.jpg" />
+        <include name="*.gif" />
+        <include name="*.png" />
+        <include name="*.cur" />
+      </fileset>
+    </copy>
+    <copy todir="${copyto.dir}/applet">
+      <fileset dir="${jar.dir}">
+        <include name="VMOpsConsoleApplet.jar" />
+      </fileset>
+    </copy>
+    <copy todir="${copyto.dir}/js">
+      <fileset dir="${console-proxy.dir}/js">
+        <include name="*.js" />
+      </fileset>
+    </copy>
+    <copy todir="${copyto.dir}/ui">
+      <fileset dir="${console-proxy.dir}/ui">
+        <include name="*.ftl" />
+      </fileset>
+    </copy>
+    <copy todir="${copyto.dir}/css">
+      <fileset dir="${console-proxy.dir}/css">
+        <include name="*.css" />
+      </fileset>
+    </copy>
+  </target>
+
+  <target name="build-console-proxy" depends="-init, build-console-viewer, compile-console-proxy, copy-console-proxy">
+    <copy todir="${console-proxy.dist.dir}">
+      <fileset dir="${console-proxy.dir}/scripts">
+      </fileset>
+    </copy>
+    <copy todir="${console-proxy.dist.dir}">
+      <fileset dir="${console-proxy.dir}/scripts">
+      </fileset>
+    </copy>
+    <copy todir="${console-proxy.dist.dir}/conf">
+      <fileset dir="${console-proxy.dir}/conf">
+      </fileset>
+    </copy>
+  </target>
+
+  <path id="console-viewer.classpath">
+    <path refid="thirdparty.classpath" />
+    <path refid="dist.classpath" />
+  </path>
+  <target name="build-console-viewer" depends="-init" description="Compile console viewer applet">
+
+    <mkdir dir="${classes.dir}/console-viewer" />
+    <depend srcdir="${console-viewer.dir}/src" destdir="${classes.dir}/console-viewer" cache="${dep.cache.dir}" />
+
+    <javac srcdir="${console-common.dir}/src" debug="${debug}" debuglevel="${debuglevel}" deprecation="${deprecation}" destdir="${classes.dir}/console-viewer" source="${source.compat.version}" target="${target.compat.version}" includeantruntime="false">
+      <classpath refid="console-viewer.classpath" />
+      <exclude name="${compile.java.exclude.files}" />
+      <compilerarg value="-Xlint:all" />
+    </javac>
+
+    <javac srcdir="${console-viewer.dir}/src" debug="${debug}" debuglevel="${debuglevel}" deprecation="${deprecation}" destdir="${classes.dir}/console-viewer" source="${source.compat.version}" target="${target.compat.version}" includeantruntime="false">
+      <classpath refid="console-viewer.classpath" />
+      <exclude name="${compile.java.exclude.files}" />
+      <compilerarg value="-Xlint:all" />
+    </javac>
+    <jar jarfile="${jar.dir}/VMOpsConsoleApplet.jar" basedir="${classes.dir}/console-viewer">
+      <manifest>
+        <attribute name="Class-Path" value="" />
+        <attribute name="Built-By" value="${built.by}" />
+        <attribute name="Manifest-Version" value="1.0" />
+        <attribute name="Main-Class" value="ConsoleViewer" />
+      </manifest>
+    </jar>
+  </target>
+
+  <path id="agent.classpath">
+    <path refid="thirdparty.classpath" />
+    <fileset dir="${target.dir}">
+      <include name="**/${core.jar}" />
+      <include name="**/${utils.jar}" />
+      <include name="**/${api.jar}"/>
+    </fileset>
+  </path>
+  <target name="compile-agent" depends="-init, compile-utils, compile-core, compile-api" description="Compile the management agent.">
+    <compile-java jar.name="${agent.jar}" top.dir="${agent.dir}" classpath="agent.classpath" />
+  </target>
+
+  <target name="-init-test" depends="-init">
+    <mkdir dir="${test.target.dir}" />
+    <mkdir dir="${test.classes.dir}" />
+  </target>
+
+  <target name="build-agent" depends="-init, build-console-proxy, compile-agent">
+    <mkdir dir="${agent.dist.dir}" />
+    <mkdir dir="${agent.dist.dir}/scripts" />
+    <mkdir dir="${agent.dist.dir}/conf" />
+    <mkdir dir="${agent.dist.dir}/logs" />
+    <mkdir dir="${agent.dist.dir}/db" />
+    <mkdir dir="${agent.dist.dir}/storagehdpatch" />
+
+    <condition property="agent.properties" value="override/agent.properties" else="agent.properties">
+      <available file="${agent.dir}/conf/override/agent.properties" />
+    </condition>
+
+    <condition property="developer.properties" value="override/developer.properties" else="developer.properties">
+      <available file="${agent.dir}/conf/override/developer.properties" />
+    </condition>
+
+    <copy overwrite="true" todir="${agent.dist.dir}/conf" flatten="true">
+      <fileset dir="${agent.dir}/conf">
+        <include name="${agent.properties}" />
+        <include name="${developer.properties}" />
+      </fileset>
+      <filterchain>
+        <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
+          <param type="propertiesfile" value="${override.file}" />
+        </filterreader>
+      </filterchain>
+    </copy>
+
+    <copy overwrite="true" todir="${agent.dist.dir}/conf" flatten="true">
+      <fileset dir="${agent.dir}/conf">
+        <include name="log4j-cloud.xml.in" />
+      </fileset>
+      <globmapper from="*.in" to="*" />
+      <filterchain>
+        <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
+          <param type="propertiesfile" value="${override.file}" />
+        </filterreader>
+      </filterchain>
+    </copy>
+    <delete file="${agent.dist.dir}/conf/log4j-cloud.xml.in"/>
+
+    <copy todir="${agent.dist.dir}">
+      <fileset dir="${agent.dir}/scripts">
+        <include name="agent.sh" />
+        <include name="run.sh" />
+      </fileset>
+    </copy>
+  </target>
+
+  <target name="build-servers" depends="-init, build-server" />
+
+  <target name="build-opensource" depends="-init, build-server, build-agent, build-console-proxy, build-scripts, build-ui">
+    <copy overwrite="true" todir="${dist.dir}">
+      <fileset dir="${base.dir}/build/deploy/">
+        <include name="deploy-agent.sh" />
+        <include name="deploy-server.sh" />
+        <include name="deploy-console-proxy.sh" />
+        <include name="install.sh" />
+      </fileset>
+      <fileset dir="${base.dir}/client">
+        <include name="setup/**/*" />
+      </fileset>
+    </copy>
+    <chmod file="${dist.dir}/deploy-agent.sh" perm="uog+xr" />
+    <chmod file="${dist.dir}/deploy-server.sh" perm="uog+xr" />
+  </target>
+ 
+	
+  <target name="build-kvm-domr-patch" depends="-init">		
+    <tar destfile="${dist.dir}/patch.tar">
+	  <tarfileset dir="${base.dir}/patches/kvm" filemode="755">
+	    <include name="**/*"/>
+            <exclude name="**/.classpath" />
+            <exclude name="**/.project" />
+	  </tarfileset>
+	  <tarfileset dir="${base.dir}/patches/shared" filemode="755">
+            <include name="**/*"/>
+            <exclude name="**/.classpath" />
+            <exclude name="**/.project" />
+          </tarfileset>
+    </tar>
+    <gzip destfile="${dist.dir}/patch.tgz" src="${dist.dir}/patch.tar"/>
+    <delete file="${dist.dir}/patch.tar"/>
+  </target>
+
+  <target name="help">
+    <echo level="info" message="Ant Build File for Cloud.com Cloud Stack" />
+    <echo level="info" message="Type 'ant -projecthelp' to get a list of targets and their descriptions." />
+  </target>
+  <target name="usage" depends="help" />
+
+  <target name="-init">
+    <mkdir dir="${dist.dir}" />
+    <mkdir dir="${target.dir}" />
+    <record name="${build.log}" loglevel="verbose" action="start" />
+
+    <!-- create a UTC build timestamp using ISO 8601 formatting -->
+    <tstamp>
+      <format property="utc.build.timestamp" pattern="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" timezone="GMT" />
+    </tstamp>
+
+    <!-- remember who/where did the build -->
+    <exec executable="hostname" outputproperty="host.name" />
+    <property name="builder.at" value="${user.name} at ${host.name}" />
+    <property name="builder.id" value="${builder.at}, on ${utc.build.timestamp}" />
+    <property name="built.by" value="${builder.at}, ${utc.build.timestamp}" />
+    <echo level="info" message="builder: ${builder.id}" />
+
+    <!-- set build.number property, stored in eponymous file -->
+    <buildnumber file="${build.dir}/build.number" />
+    <condition property="impl.version" value="${version}.${manual.build.number}" else="${version}.${build.number}">
+       <isset property="manual.build.number"/>
+     </condition>
+
+    <echo message="Build number is ${impl.version}" />
+
+    <!-- Create the build directory structure used by compile -->
+    <mkdir dir="${jar.dir}" />
+    <mkdir dir="${docs.dir}" />
+    <mkdir dir="${dep.cache.dir}" />
+    <record name="${build.log}" action="stop" />
+  </target>
+
+  <target name="clean" description="clean up files generated by the build">
+    <delete file="${build.log}" />
+    <delete dir="${classes.dir}" />
+    <delete dir="${jar.dir}" />
+    <delete dir="${dist.dir}" />
+  </target>
+
+  <target name="clean-all" depends="clean" description="Clean all of the generated files, including dependency cache and javadoc">
+    <delete dir="${target.dir}" />
+  </target>
+</project>
+
+
