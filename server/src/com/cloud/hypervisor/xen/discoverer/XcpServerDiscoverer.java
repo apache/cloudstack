@@ -214,17 +214,17 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 details.put(HostInfo.HOST_OS_KERNEL_VERSION, hostKernelVer);
                 details.put(HostInfo.HYPERVISOR_VERSION, xenVersion);
 
-                if (!params.containsKey("public.network.device") && _publicNic != null) {
+                if (!params.containsKey("public.network.device")) {
                     params.put("public.network.device", _publicNic);
                     details.put("public.network.device", _publicNic);
                 }
                 
-                if (!params.containsKey("guest.network.device") && _guestNic != null) {
+                if (!params.containsKey("guest.network.device")) {
                     params.put("guest.network.device", _guestNic);
                     details.put("guest.network.device", _guestNic);
                 }
                 
-                if (!params.containsKey("private.network.device") && _privateNic != null) {
+                if (!params.containsKey("private.network.device")) {
                     params.put("private.network.device", _privateNic);
                     details.put("private.network.device", _privateNic);
                 }

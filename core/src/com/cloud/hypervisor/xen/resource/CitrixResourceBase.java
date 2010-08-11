@@ -148,13 +148,13 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ServerResource;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume.StorageResourceType;
 import com.cloud.storage.Volume.VolumeType;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.resource.StoragePoolResource;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.NumbersUtil;
@@ -171,7 +171,6 @@ import com.cloud.vm.State;
 import com.cloud.vm.VirtualMachineName;
 import com.trilead.ssh2.SCPClient;
 import com.xensource.xenapi.APIVersion;
-import com.xensource.xenapi.Bond;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Console;
 import com.xensource.xenapi.Host;
@@ -184,10 +183,6 @@ import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Session;
 import com.xensource.xenapi.Types;
-import com.xensource.xenapi.Types.BadServerResponse;
-import com.xensource.xenapi.Types.IpConfigurationMode;
-import com.xensource.xenapi.Types.VmPowerState;
-import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VIF;
@@ -195,6 +190,9 @@ import com.xensource.xenapi.VLAN;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.VMGuestMetrics;
 import com.xensource.xenapi.XenAPIObject;
+import com.xensource.xenapi.Types.BadServerResponse;
+import com.xensource.xenapi.Types.VmPowerState;
+import com.xensource.xenapi.Types.XenAPIException;
 
 /**
  * Encapsulates the interface to the XenServer API.
@@ -2794,7 +2792,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     protected String startSystemVM(String vmName, String vlanId, Network nw0, List<VolumeVO> vols, String bootArgs, String guestMacAddr, String privateIp, String privateMacAddr,
             String publicMacAddr, int cmdPort, long ramSize) {
 
-    	setupLinkLocalNetwork();
         VM vm = null;
         List<Ternary<SR, VDI, VolumeVO>> mounts = null;
         Connection conn = getConnection();
@@ -3166,29 +3163,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Found a network called " + name + " on host=" + _host.ip + ";  Network=" + nr.uuid + "; pif=" + pr.uuid);
                     }
-                    if (pr.bondMasterOf != null && pr.bondMasterOf.size() > 0) {
-                        if (pr.bondMasterOf.size() > 1) {
-                            String msg = new StringBuilder("Unsupported configuration.  Network " + name + " has more than one bond.  Network=").append(nr.uuid)
-                                    .append("; pif=").append(pr.uuid).toString();
-                            s_logger.warn(msg);
-                            return null;
-                        }
-                        Bond bond = pr.bondMasterOf.iterator().next();
-                        Set<PIF> slaves = bond.getSlaves(conn);
-                        for (PIF slave : slaves) {
-                            PIF.Record spr = slave.getRecord(conn);
-                            if (spr.management) {
-                            	Host host = Host.getByUuid(conn, _host.uuid);
-                                if (!transferManagementNetwork(conn, host, slave, spr, pif)) {
-                                    String msg = new StringBuilder("Unable to transfer management network.  slave=" + spr.uuid + "; master=" + pr.uuid + "; host="
-                                            + _host.uuid).toString();
-                                    s_logger.warn(msg);
-                                    return null;
-                                }
-                                break;
-                            }
-                        }
-                    }
 
                     return new Nic(network, nr, pif, pr);
                 }
@@ -3546,6 +3520,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             }         
             _host.privatePif = privateNic.pr.uuid;
             _host.privateNetwork = privateNic.nr.uuid;
+            _privateNetworkName = privateNic.nr.nameLabel;
 
             Nic guestNic = null;
             if (_guestNetworkName != null && !_guestNetworkName.equals(_privateNetworkName)) {
@@ -3557,6 +3532,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             } else {
             	guestNic = privateNic;
             }
+            _guestNetworkName = guestNic.nr.nameLabel;
             _host.guestNetwork = guestNic.nr.uuid;
             _host.guestPif = guestNic.pr.uuid;
 
@@ -3572,6 +3548,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             }
             _host.publicPif = publicNic.pr.uuid;
             _host.publicNetwork = publicNic.nr.uuid;
+            _publicNetworkName = publicNic.nr.nameLabel;
 
 
             Nic storageNic1 = getLocalNetwork(conn, _storageNetworkName1);
@@ -3679,35 +3656,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
     }
     
-    protected boolean transferManagementNetwork(Connection conn, Host host, PIF src, PIF.Record spr, PIF dest) throws XmlRpcException, XenAPIException {
-        dest.reconfigureIp(conn, spr.ipConfigurationMode, spr.IP, spr.netmask, spr.gateway, spr.DNS);
-        Host.managementReconfigure(conn, dest);
-        String hostUuid = null;
-        int count = 0;
-        while (count < 10) {
-            try {
-                Thread.sleep(10000);
-                hostUuid = host.getUuid(conn);
-                if (hostUuid != null) {
-                    break;
-                }
-            } catch (XmlRpcException e) {
-                s_logger.debug("Waiting for host to come back: " + e.getMessage());
-            } catch (XenAPIException e) {
-                s_logger.debug("Waiting for host to come back: " + e.getMessage());
-            } catch (InterruptedException e) {
-                s_logger.debug("Gotta run");
-                return false;
-            }
-        }
-        if (hostUuid == null) {
-            s_logger.warn("Unable to transfer the management network from " + spr.uuid);
-            return false;
-        }
-
-        src.reconfigureIp(conn, IpConfigurationMode.NONE, null, null, null, null);
-        return true;
-    }
    
     @Override
     public StartupCommand[] initialize() throws IllegalArgumentException{
@@ -3719,6 +3667,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             s_logger.warn("Unable to get host information for " + _host.ip);
             return null;
         }
+
+        setupLinkLocalNetwork();
 
         destroyStoppedVm();
         StartupRoutingCommand cmd = new StartupRoutingCommand();
@@ -4066,15 +4016,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             if (details == null) {
                 details = new HashMap<String, String>();
             }
-            if (_privateNetworkName != null) {
             details.put("private.network.device", _privateNetworkName);
-            }
-            if (_publicNetworkName != null) {
             details.put("public.network.device", _publicNetworkName);
-            } 
-            if (_guestNetworkName != null) {
             details.put("guest.network.device", _guestNetworkName);
-            }
             details.put("can_bridge_firewall", Boolean.toString(_canBridgeFirewall));
             cmd.setHostDetails(details);
             cmd.setName(hr.nameLabel);
@@ -4281,11 +4225,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 vdir.nameLabel = dskch.getName();
                 vdir.SR = poolSr;
                 vdir.type = Types.VdiType.USER;
-                
-                if(cmd.getSize()!=0)
-                	vdir.virtualSize = cmd.getSize();
-                else
-                	vdir.virtualSize = dskch.getSize();
+                vdir.virtualSize = dskch.getSize();
                 vdi = VDI.create(conn, vdir);
             }
 

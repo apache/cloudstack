@@ -25,8 +25,8 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
 public class AddConfigCmd extends BaseCmd {
@@ -43,6 +43,63 @@ public class AddConfigCmd extends BaseCmd {
     	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VALUE, Boolean.FALSE));
     	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DESCRIPTION, Boolean.FALSE));
     }
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="category", type=CommandType.STRING, required=true)
+    private String category;
+
+    @Parameter(name="component", type=CommandType.STRING, required=true)
+    private String component;
+
+    @Parameter(name="description", type=CommandType.STRING)
+    private String description;
+
+    @Parameter(name="instance", type=CommandType.STRING, required=true)
+    private String instance;
+
+    @Parameter(name="name", type=CommandType.STRING, required=true)
+    private String name;
+
+    @Parameter(name="value", type=CommandType.STRING)
+    private String value;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getCategory() {
+        return category;
+    }
+
+    public String getComponent() {
+        return component;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getInstance() {
+        return instance;
+    }
+
+    public String getConfigPropName() {
+        return name;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
     @Override
     public String getName() {
         return s_name;

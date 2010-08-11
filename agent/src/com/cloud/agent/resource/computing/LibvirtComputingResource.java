@@ -114,7 +114,6 @@ import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
-import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartConsoleProxyAnswer;
@@ -853,8 +852,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 				}
 			}
 			
-			/*if (isDirectAttachedNetwork(router.getVlanId()))
-				default_network_rules_for_systemvm(vmName);*/
+			if (isDirectAttachedNetwork(router.getVlanId()))
+				default_network_rules_for_systemvm(vmName);
 		} catch (LibvirtException e) {
 			if (nics != null) {
 				cleanupVMNetworks(nics);
@@ -1070,8 +1069,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((StopCommand)cmd);
             } else if (cmd instanceof GetVmStatsCommand) {
                 return execute((GetVmStatsCommand)cmd);
-            } else if (cmd instanceof RebootRouterCommand) {
-                return execute((RebootRouterCommand)cmd);
             } else if (cmd instanceof RebootCommand) {
                 return execute((RebootCommand)cmd);
             } else if (cmd instanceof GetHostStatsCommand) {
@@ -1177,7 +1174,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	  if (primaryPool == null) {
         		  String result = "Failed to get primary pool";
         		  s_logger.debug(result);
-        		  return new CreateAnswer(cmd, result);
+        		  new CreateAnswer(cmd, result);
         	  }
         	  
         	  if (cmd.getTemplateUrl() != null) {
@@ -1185,7 +1182,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         		  if (tmplVol == null) {
         			  String result = "Failed to get tmpl vol";
         			  s_logger.debug(result);
-        			  return new CreateAnswer(cmd, result);
+        			  new CreateAnswer(cmd, result);
         		  }
 
         		  LibvirtStorageVolumeDef volDef = new LibvirtStorageVolumeDef(UUID.randomUUID().toString(), tmplVol.getInfo().capacity, volFormat.QCOW2, tmplVol.getPath(), volFormat.QCOW2);
@@ -1272,14 +1269,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 				s_logger.debug("Failed to backup snaptshot: " + result);
 				return new BackupSnapshotAnswer(cmd, false, result, null);
 			}
-			/*Delete the snapshot on primary*/
-			Domain vm = getDomain(cmd.getVmName());
-    		String vmUuid = vm.getUUIDString();
-    		Object[] args = new Object[] {snapshotName, vmUuid};
-    		String snapshot = SnapshotXML.format(args);
-    		s_logger.debug(snapshot);
-    		DomainSnapshot snap = vm.snapshotLookupByName(snapshotName);
-    		snap.delete(0);
 		} catch (LibvirtException e) {
 			return new BackupSnapshotAnswer(cmd, false, e.toString(), null);
 		} catch (URISyntaxException e) {
@@ -1289,45 +1278,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
     
     protected DeleteSnapshotBackupAnswer execute(final DeleteSnapshotBackupCommand cmd) {
-    	 Long dcId = cmd.getDataCenterId();
-         Long accountId = cmd.getAccountId();
-         Long volumeId = cmd.getVolumeId();
-    	try {
-    		StoragePool secondaryStoragePool = getNfsSPbyURI(_conn, new URI(cmd.getSecondaryStoragePoolURL()));
-			String ssPmountPath = _mountPoint + File.separator + secondaryStoragePool.getUUIDString();
-			String snapshotDestPath = ssPmountPath + File.separator + dcId + File.separator + "snapshots" + File.separator + accountId + File.separator + volumeId;
-			
-			final Script command = new Script(_manageSnapshotPath, _timeout, s_logger);
-			command.add("-d", snapshotDestPath);
-			command.add("-n", cmd.getSnapshotName());
-			
-			command.execute();
-    	} catch (LibvirtException e) {
-    		return new DeleteSnapshotBackupAnswer(cmd, false, e.toString());
-    	} catch (URISyntaxException e) {
-    		return new DeleteSnapshotBackupAnswer(cmd, false, e.toString());
-		}
     	return new DeleteSnapshotBackupAnswer(cmd, true, null);
     }
     
     protected Answer execute(DeleteSnapshotsDirCommand cmd) {
-    	 Long dcId = cmd.getDataCenterId();
-         Long accountId = cmd.getAccountId();
-         Long volumeId = cmd.getVolumeId();
-    	try {
-    		StoragePool secondaryStoragePool = getNfsSPbyURI(_conn, new URI(cmd.getSecondaryStoragePoolURL()));
-			String ssPmountPath = _mountPoint + File.separator + secondaryStoragePool.getUUIDString();
-			String snapshotDestPath = ssPmountPath + File.separator + dcId + File.separator + "snapshots" + File.separator + accountId + File.separator + volumeId;
-			
-			final Script command = new Script(_manageSnapshotPath, _timeout, s_logger);
-			command.add("-d", snapshotDestPath);
-			command.add("-n", cmd.getSnapshotName());
-			command.execute();
-    	} catch (LibvirtException e) {
-    		return new Answer(cmd, false, e.toString());
-    	} catch (URISyntaxException e) {
-    		return new Answer(cmd, false, e.toString());
-		}
     	return new Answer(cmd, true, null);
     }
     
@@ -1521,7 +1475,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	 if (secondaryPool == null) {
         		 return new Answer(cmd, false, " Failed to create storage pool");
         	 }
-        	 tmplVol = getVolume(secondaryPool, getPathOfStoragePool(secondaryPool) + tmpltname);
+        	 tmplVol = secondaryPool.storageVolLookupByName(tmpltname);
         	 if (tmplVol == null) {
         		 return new Answer(cmd, false, " Can't find volume");
         	 }
@@ -1535,7 +1489,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	 if (primaryVol == null) {
         		 return new Answer(cmd, false, " Can't create storage volume on storage pool");
         	 }
-        	 
         	 StorageVolInfo priVolInfo = primaryVol.getInfo();
         	 DownloadAnswer answer = new DownloadAnswer(null,
                      100,
@@ -1567,8 +1520,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 				}
 
 				if (secondaryPool != null) {
-					secondaryPool.destroy();
-					secondaryPool.undefine();
 					secondaryPool.free();
 				}
 			} catch (LibvirtException l) {
@@ -1857,6 +1808,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	}
 
 	private Answer execute(CheckVirtualMachineCommand cmd) {
+		if (VirtualMachineName.isValidRouterName(cmd.getVmName()) || VirtualMachineName.isValidConsoleProxyName(cmd.getVmName()) ) {
+			/*For domr, the trick is that the actual vmname is vmName-domrId.
+			 *Here, we need to build the relationship between vmName and its actual name at first*/
+			getAllVms();
+		}
+
         final State state = getVmState(cmd.getVmName());
         Integer vncPort = null;
         if (state == State.Running) {
@@ -2067,16 +2024,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		}
     	}
 	}
-	
-	 protected Answer execute(RebootRouterCommand cmd) {
-		 RebootAnswer answer = (RebootAnswer) execute((RebootCommand) cmd);
-		 String result = _virtRouterResource.connect(cmd.getPrivateIpAddress());
-		 if (result == null) {
-			 return answer;
-		 } else {
-			 return new Answer(cmd, false, result);
-		 }
-	 }
 
 	protected GetVmStatsAnswer execute(GetVmStatsCommand cmd) {
 		List<String> vmNames = cmd.getVmNames();
@@ -2112,8 +2059,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             _vms.put(vmName, State.Stopping);
         }
         try {
-        	/*if (isDirectAttachedNetwork(cmd.getVnet()))
-        		destroy_network_rules_for_vm(vmName);*/
+        	if (isDirectAttachedNetwork(cmd.getVnet()))
+        		destroy_network_rules_for_vm(vmName);
             String result = stopVM(vmName, defineOps.UNDEFINE_VM);
             
             answer =  new StopAnswer(cmd, null, port, bytesSent, bytesReceived);
@@ -2286,8 +2233,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 				}
 			}
 			
-			/*if (isDirectAttachedNetwork(cmd.getGuestNetworkId()))
-				default_network_rules(cmd.getVmName(), cmd.getGuestIpAddress());*/
+			if (isDirectAttachedNetwork(cmd.getGuestNetworkId()))
+				default_network_rules(cmd.getVmName(), cmd.getGuestIpAddress());
 	
 			return null;
 		} catch(LibvirtException e) {
@@ -3168,7 +3115,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		disks.add(hda);
 		
 		diskDef hdb = new diskDef();
-		hdb.defFileBasedDisk(datadiskPath, "hdb",  diskDef.diskBus.IDE, diskDef.diskFmtType.RAW);
+		hdb.defFileBasedDisk(datadiskPath, "vdb",  diskDef.diskBus.IDE, diskDef.diskFmtType.QCOW2);
 		disks.add(hdb);
 		
 		return disks;
@@ -3216,12 +3163,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			disks.add(hdb);
 		}
 		
-		/*Add a placeholder for iso, even if there is no iso attached*/
-		diskDef hdc = new diskDef();
-		hdc.defFileBasedDisk(isoPath, "hdc", diskDef.diskBus.IDE, diskDef.diskFmtType.RAW);
-		hdc.setDeviceType(diskDef.deviceType.CDROM);
-		disks.add(hdc);
-
+		if (isoPath != null) {
+			diskDef hdc = new diskDef();
+			hdc.defFileBasedDisk(isoPath, "hdc", diskDef.diskBus.IDE, diskDef.diskFmtType.RAW);
+			hdc.setDeviceType(diskDef.deviceType.CDROM);
+			disks.add(hdc);
+		}
 		return disks;
     }
     
@@ -3544,8 +3491,5 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     	}
     	return vol;
-    }
-    private String getPathOfStoragePool(StoragePool pool) throws LibvirtException {
-    	return _mountPoint + File.separator + pool.getUUIDString() + File.separator;
     }
 }

@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
@@ -38,16 +39,91 @@ public class UpdateUserCmd extends BaseCmd {
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USERNAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PASSWORD, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.FIRSTNAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.LASTNAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.EMAIL, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TIMEZONE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.API_KEY, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.EMAIL, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.FIRSTNAME, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.LASTNAME, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PASSWORD, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SECRET_KEY, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TIMEZONE, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USERNAME, Boolean.FALSE));
     }
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="apikey", type=CommandType.STRING)
+    private String apiKey;
+
+    @Parameter(name="email", type=CommandType.STRING)
+    private String email;
+
+    @Parameter(name="firstname", type=CommandType.STRING)
+    private String firstname;
+
+    @Parameter(name="id", type=CommandType.LONG, required=true)
+    private Long id;
+
+    @Parameter(name="lastname", type=CommandType.STRING)
+    private String lastname;
+
+    @Parameter(name="password", type=CommandType.STRING)
+    private String password;
+
+    @Parameter(name="secretkey", type=CommandType.STRING)
+    private String secretKey;
+
+    @Parameter(name="timezone", type=CommandType.STRING)
+    private String timezone;
+
+    @Parameter(name="username", type=CommandType.STRING)
+    private String username;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getApiKey() {
+        return apiKey;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getFirstname() {
+        return firstname;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getLastname() {
+        return lastname;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    public String getTimezone() {
+        return timezone;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     public String getName() {
         return s_name;

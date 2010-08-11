@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.server.Criteria;
 import com.cloud.storage.GuestOSVO;
@@ -42,6 +43,35 @@ public class ListGuestOsCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
     }
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="id", type=CommandType.LONG)
+    private Long id;
+
+    @Parameter(name="oscategoryid", type=CommandType.LONG)
+    private Long osCategoryId;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getId() {
+        return id;
+    }
+
+    public Long getOsCategoryId() {
+        return osCategoryId;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
     @Override
     public String getName() {
         return s_name;

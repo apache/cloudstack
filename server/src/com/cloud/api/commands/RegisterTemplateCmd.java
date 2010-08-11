@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.InvalidParameterValueException;
@@ -43,22 +44,110 @@ public class RegisterTemplateCmd extends BaseCmd {
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISPLAY_TEXT, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.URL, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.BITS, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISPLAY_TEXT, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.FORMAT, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_FEATURED, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_PUBLIC, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.OS_TYPE_ID, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PASSWORD_ENABLED, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.REQUIRES_HVM, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_PUBLIC, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_FEATURED, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.FORMAT, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.OS_TYPE_ID, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.URL, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.TRUE));
 
-        
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
     }
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="bits", type=CommandType.INTEGER)
+    private Integer bits;
+
+    @Parameter(name="displaytext", type=CommandType.STRING, required=true)
+    private String displayText;
+
+    @Parameter(name="format", type=CommandType.STRING, required=true)
+    private String format;
+
+    @Parameter(name="isfeatured", type=CommandType.BOOLEAN)
+    private Boolean featured;
+
+    @Parameter(name="ispublic", type=CommandType.BOOLEAN)
+    private Boolean publicTemplate;
+
+    @Parameter(name="name", type=CommandType.STRING, required=true)
+    private String templateName;
+
+    @Parameter(name="ostypeid", type=CommandType.LONG, required=true)
+    private Long osTypeId;
+
+    @Parameter(name="passwordenabled", type=CommandType.BOOLEAN)
+    private Boolean passwordEnabled;
+
+    @Parameter(name="requireshvm", type=CommandType.BOOLEAN)
+    private Boolean requiresHvm;
+
+    @Parameter(name="url", type=CommandType.STRING, required=true)
+    private String url;
+
+    @Parameter(name="zoneid", type=CommandType.LONG, required=true)
+    private Long zoneId;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Integer getBits() {
+        return bits;
+    }
+
+    public String getDisplayText() {
+        return displayText;
+    }
+
+    public String getFormat() {
+        return format;
+    }
+
+    public Boolean isFeatured() {
+        return featured;
+    }
+
+    public Boolean isPublic() {
+        return publicTemplate;
+    }
+
+    public String getTemplateName() {
+        return templateName;
+    }
+
+    public Long getOsTypeId() {
+        return osTypeId;
+    }
+
+    public Boolean isPasswordEnabled() {
+        return passwordEnabled;
+    }
+
+    public Boolean getRequiresHvm() {
+        return requiresHvm;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
@@ -180,8 +269,7 @@ public class RegisterTemplateCmd extends BaseCmd {
         		listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), template.getId().toString()));
         		listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), template.getName()));
         		listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_TEXT.getName(), template.getDisplayText()));
-        		listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.IS_PUBLIC.getName(), Boolean.valueOf(template.isPublicTemplate()).toString()));
-        		listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.CROSS_ZONES.getName(), Boolean.valueOf(template.isCrossZones()).toString()));
+        		listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.IS_PUBLIC.getName(), Boolean.valueOf(template.isPublicTemplate()).toString()));    
         		
         		if (templateHostRef != null) {
         			listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(templateHostRef.getCreated())));

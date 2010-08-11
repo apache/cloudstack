@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Parameter;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.server.Criteria;
 import com.cloud.utils.Pair;
@@ -38,17 +39,79 @@ public class ListSystemVMsCmd extends BaseCmd  {
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
     
     static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HOST_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.STATE, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.STATE, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SYSTEM_VM_TYPE, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
+
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SYSTEM_VM_TYPE, Boolean.FALSE));
     }
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="hostid", type=CommandType.LONG)
+    private Long hostId;
+
+    @Parameter(name="id", type=CommandType.LONG)
+    private Long id;
+
+    @Parameter(name="name", type=CommandType.STRING)
+    private String systemVmName;
+
+    @Parameter(name="podid", type=CommandType.LONG)
+    private Long podId;
+
+    @Parameter(name="state", type=CommandType.STRING)
+    private String state;
+
+    @Parameter(name="systemvmtype", type=CommandType.STRING)
+    private String systemVmType;
+
+    @Parameter(name="zoneid", type=CommandType.LONG)
+    private Long zoneId;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getHostId() {
+        return hostId;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getSystemVmName() {
+        return systemVmName;
+    }
+
+    public Long getPodId() {
+        return podId;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public String getSystemVmType() {
+        return systemVmType;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {

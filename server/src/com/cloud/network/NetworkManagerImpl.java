@@ -97,7 +97,6 @@ import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -433,7 +432,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             
             txn.commit();
 
-            List<VolumeVO> vols = _storageMgr.create(account, router, rtrTemplate, dc, pod, _offering, null,0);
+            List<VolumeVO> vols = _storageMgr.create(account, router, rtrTemplate, dc, pod, _offering, null);
             if (vols == null){
             	_ipAddressDao.unassignIpAddress(guestIp);
             	_routerDao.delete(router.getId());
@@ -606,7 +605,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                 router.setLastHostId(pod.second());
                 router = _routerDao.persist(router);
 
-                List<VolumeVO> vols = _storageMgr.create(account, router, template, dc, pod.first(), _offering, null,0);
+                List<VolumeVO> vols = _storageMgr.create(account, router, template, dc, pod.first(), _offering, null);
                 if(vols != null) {
                     found = true;
                     break;
@@ -2050,7 +2049,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         final HashSet<Host> avoid = new HashSet<Host>();
 
         final HostVO fromHost = _hostDao.findById(router.getHostId());
-        if (fromHost.getHypervisorType() != Hypervisor.Type.KVM && fromHost.getClusterId() == null) {
+        if (fromHost.getClusterId() == null) {
             s_logger.debug("The host is not in a cluster");
             return null;
         }

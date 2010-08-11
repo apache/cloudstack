@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.async.executor.CopyTemplateResultObject;
 import com.cloud.serializer.SerializerHelper;
@@ -45,6 +46,41 @@ public class CopyIsoCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SOURCE_ZONE_ID, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DEST_ZONE_ID, Boolean.TRUE));
     }
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="destzoneid", type=CommandType.LONG, required=true)
+    private Long destZoneId;
+
+    @Parameter(name="id", type=CommandType.LONG, required=true)
+    private Long id;
+
+    @Parameter(name="sourcezoneid", type=CommandType.LONG, required=true)
+    private Long sourceZoneId;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getDestinationZoneId() {
+        return destZoneId;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Long getSourceZoneId() {
+        return sourceZoneId;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {

@@ -199,7 +199,8 @@
     <copy todir="${scripts.target.dir}">
       <fileset dir="${scripts.dir}">
         <include name="**/*"/>
-        <exclude name="**/.*" />
+        <exclude name="**/.classpath" />
+        <exclude name="**/.project" />
         <exclude name="**/network/domr/mth/" />
         <exclude name="**/network/domr/kvm/" />
         <exclude name="**/network/domr/xenserver/" />
@@ -220,7 +221,6 @@
         <include name="**/*.html" />
         <include name="**/*.js"/>
         <include name="**/*.jsp"/>
-        <include name="**/*.properties"/>
         <exclude name="**/.classpath" />
         <exclude name="**/.project" />
       </fileset>
@@ -234,7 +234,6 @@
         <exclude name="**/*.html" />
         <exclude name="**/*.js"/>
         <exclude name="**/*.jsp"/>
-        <exclude name="**/*.properties"/>
         <exclude name="**/.classpath" />
         <exclude name="**/.project" />
       </fileset>

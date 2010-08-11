@@ -121,25 +121,6 @@ public class VMInstanceVO implements VirtualMachine {
     @Column(name="update_time", updatable=true)
     @Temporal(value=TemporalType.TIMESTAMP)
     Date updateTime;
-    
-    public VMInstanceVO(long id,
-                        String name,
-                        String instanceName,
-                        Type type,
-                        Long vmTemplateId,
-                        long guestOSId,
-                        boolean haEnabled) {
-        this.id = id;
-        this.name = name;
-        if (vmTemplateId != null) {
-            this.templateId = vmTemplateId;
-        }
-        this.instanceName = instanceName;
-        this.type = type;
-        this.guestOSId = guestOSId;
-        this.haEnabled = haEnabled;
-    }
-                       
 	
     public VMInstanceVO(long id,
                         String name,

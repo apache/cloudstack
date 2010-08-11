@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
@@ -44,6 +45,41 @@ public class AttachVolumeCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DEVICE_ID, Boolean.FALSE));
         
     }
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="deviceid", type=CommandType.LONG)
+    private Long deviceId;
+
+    @Parameter(name="id", type=CommandType.LONG, required=true)
+    private Long id;
+
+    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=true)
+    private Long virtualMachineId;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getDeviceId() {
+        return deviceId;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Long getVirtualMachineId() {
+        return virtualMachineId;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     public String getName() {
         return s_name;

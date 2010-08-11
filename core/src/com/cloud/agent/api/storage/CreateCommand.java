@@ -29,7 +29,6 @@ public class CreateCommand extends Command {
     private StoragePoolTO pool;
     private DiskCharacteristicsTO diskCharacteristics;
     private String templateUrl;
-    private long size;
     
     protected CreateCommand() {
         super();
@@ -45,7 +44,7 @@ public class CreateCommand extends Command {
      * @param pool
      */
     public CreateCommand(VolumeVO vol, VMInstanceVO vm, DiskCharacteristicsTO diskCharacteristics, String templateUrl, StoragePoolVO pool) {
-        this(vol, vm, diskCharacteristics, pool, 0);
+        this(vol, vm, diskCharacteristics, pool);
         this.templateUrl = templateUrl;
     }
 
@@ -57,12 +56,11 @@ public class CreateCommand extends Command {
      * @param diskCharacteristics
      * @param pool
      */
-    public CreateCommand(VolumeVO vol, VMInstanceVO vm, DiskCharacteristicsTO diskCharacteristics, StoragePoolVO pool, long size) {
+    public CreateCommand(VolumeVO vol, VMInstanceVO vm, DiskCharacteristicsTO diskCharacteristics, StoragePoolVO pool) {
         this.volId = vol.getId();
         this.diskCharacteristics = diskCharacteristics;        
         this.pool = new StoragePoolTO(pool);
         this.templateUrl = null;
-        this.size = size;
     }
     
     @Override
@@ -84,9 +82,5 @@ public class CreateCommand extends Command {
     
     public long getVolumeId() {
         return volId;
-    }
-    
-    public long getSize(){
-    	return this.size;
     }
 }

@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
@@ -38,8 +39,42 @@ public class UpdateAccountCmd extends BaseCmd{
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NEW_NAME, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.TRUE));
+
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
     }
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="account", type=CommandType.STRING, required=true)
+    private String accountName;
+
+    @Parameter(name="domainid", type=CommandType.LONG, required=true)
+    private Long domainId;
+
+    @Parameter(name="newname", type=CommandType.STRING, required=true)
+    private String newName;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public String getNewName() {
+        return newName;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {

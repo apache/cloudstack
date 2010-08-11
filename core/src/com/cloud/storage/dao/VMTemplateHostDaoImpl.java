@@ -145,13 +145,6 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 	    sc.setParameters("destroyed", false);
 	    return listBy(sc);
 	}
-	
-	@Override
-	public List<VMTemplateHostVO> listByOnlyTemplateId(long templateId) {
-	    SearchCriteria<VMTemplateHostVO> sc = TemplateSearch.create();
-	    sc.setParameters("template_id", templateId);	    
-	    return listBy(sc);
-	}
 
 	@Override
 	public VMTemplateHostVO findByHostTemplate(long hostId, long templateId) {

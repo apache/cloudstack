@@ -154,16 +154,17 @@ public class ApiServlet extends HttpServlet {
 
             boolean isNew = ((session == null) ? true : session.isNew());
 
-            Object accountObj = null;
+            // Initialize an empty context and we will update it after we have verified the request below,
+            // we no longer rely on web-session here, verifyRequest will populate user/account information
+            // if a API key exists
+            UserContext.registerContext(null, null, null, null, null, null, false);
             String userId = null;
-            String account = null;
-            String domainId = null;
-            
+
             if (!isNew) {
                 userId = (String)session.getAttribute(BaseCmd.Properties.USER_ID.getName());
-                account = (String)session.getAttribute(BaseCmd.Properties.ACCOUNT.getName());
-                domainId = (String)session.getAttribute(BaseCmd.Properties.DOMAIN_ID.getName());
-                accountObj = session.getAttribute(BaseCmd.Properties.ACCOUNT_OBJ.getName());
+                String account = (String)session.getAttribute(BaseCmd.Properties.ACCOUNT.getName());
+                String domainId = (String)session.getAttribute(BaseCmd.Properties.DOMAIN_ID.getName());
+                Object accountObj = session.getAttribute(BaseCmd.Properties.ACCOUNT_OBJ.getName());
                 String sessionKey = (String)session.getAttribute(BaseCmd.Properties.SESSION_KEY.getName());
                 String[] sessionKeyParam = (String[])params.get(BaseCmd.Properties.SESSION_KEY.getName());
                 if ((sessionKeyParam == null) || (sessionKey == null) || !sessionKey.equals(sessionKeyParam[0])) {
@@ -178,26 +179,19 @@ public class ApiServlet extends HttpServlet {
                         s_logger.info("missing command, ignoring request...");
                         resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "no command specified");
                         return;
-                    }   
+                    }
+                    UserContext.updateContext(Long.valueOf(userId), accountObj, account, ((Account)accountObj).getId(), Long.valueOf(domainId), session.getId());
                 } else {
-                    // Clear out the variables we retrieved from the session and invalidate the session.  This ensures
-                    // we won't allow a request across management server restarts if the userId was serialized to the
+                    // Invalidate the session to ensure we won't allow a request across management server restarts if the userId was serialized to the
                     // stored session
-                    userId = null;
-                    account = null;
-                    accountObj = null;
                     session.invalidate();
                     resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials");
                     return;
                 }
             }
 
-            // Initialize an empty context and we will update it after we have verified the request below,
-            // we no longer rely on web-session here, verifyRequest will populate user/account information
-            // if a API key exists
-            UserContext.registerContext(null, null, null, false);
-
             if (_apiServer.verifyRequest(params, userId)) {
+                /*
             	if (accountObj != null) {
             		Account userAccount = (Account)accountObj;
             		if (userAccount.getType() == Account.ACCOUNT_TYPE_NORMAL) {
@@ -214,6 +208,7 @@ public class ApiServlet extends HttpServlet {
             	// update user context info here so that we can take information if the request is authenticated
             	// via api key mechenism
             	updateUserContext(params, session != null ? session.getId() : null);
+                */
             	try {
             		String response = _apiServer.handleRequest(params, false, responseType);
             		writeResponse(resp, response != null ? response : "", false, responseType);
@@ -237,7 +232,8 @@ public class ApiServlet extends HttpServlet {
             UserContext.unregisterContext();
         }
     }
-    
+
+    /*
     private void updateUserContext(Map<String, Object[]> requestParameters, String sessionId) {
     	String userIdStr = (String)(requestParameters.get(BaseCmd.Properties.USER_ID.getName())[0]);
     	Account accountObj = (Account)(requestParameters.get(BaseCmd.Properties.ACCOUNT_OBJ.getName())[0]);
@@ -252,6 +248,7 @@ public class ApiServlet extends HttpServlet {
     	
     	UserContext.updateContext(userId, accountId, sessionId);
     }
+    */
 
     // FIXME: rather than isError, we might was to pass in the status code to give more flexibility
     private void writeResponse(HttpServletResponse resp, String response, boolean isError, String responseType) {

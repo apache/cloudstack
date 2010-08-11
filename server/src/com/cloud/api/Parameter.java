@@ -16,27 +16,22 @@
  * 
  */
 
-package com.cloud.api.commands;
+package com.cloud.api;
 
-import org.apache.log4j.Logger;
+import static java.lang.annotation.ElementType.FIELD;
 
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.VMTemplateVO;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public class ListTemplatePermissionsCmd extends ListTemplateOrIsoPermissionsCmd {
-	protected String getResponseName() {
-    	return "listtemplatepermissionsresponse";
-    }
-    
-	protected String getMediaType() {
-    	return "template";
-    }
-	
-	protected Logger getLogger() {
-		return Logger.getLogger(ListTemplatePermissionsCmd.class.getName());    
-	}
-	
-	protected boolean templateIsCorrectType(VMTemplateVO template) {
-		return !template.getFormat().equals(ImageFormat.ISO);
-	}
+import com.cloud.api.BaseCmd.CommandType;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target({FIELD})
+public @interface Parameter {
+    String name() default "";
+    boolean required() default false;
+    CommandType type() default CommandType.OBJECT;
+    CommandType collectionType() default CommandType.OBJECT;
 }
+

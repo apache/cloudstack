@@ -25,13 +25,13 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
 public class CreateSnapshotPolicyCmd extends BaseCmd {
@@ -41,16 +41,80 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VOLUME_ID, Boolean.TRUE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SCHEDULE, Boolean.TRUE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TIMEZONE, Boolean.TRUE));
+
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.INTERVAL_TYPE, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.MAX_SNAPS, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SCHEDULE, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TIMEZONE, Boolean.TRUE));
+    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VOLUME_ID, Boolean.TRUE));
     }
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="account", type=CommandType.STRING)
+    private String accountName;
+
+    @Parameter(name="domainid", type=CommandType.LONG)
+    private Long domainId;
+
+    @Parameter(name="intervaltype", type=CommandType.STRING, required=true)
+    private String intervalType;
+
+    @Parameter(name="maxsnaps", type=CommandType.INTEGER, required=true)
+    private Integer maxSnaps;
+
+    @Parameter(name="schedule", type=CommandType.STRING, required=true)
+    private String schedule;
+
+    @Parameter(name="timezone", type=CommandType.STRING, required=true)
+    private String timezone;
+
+    @Parameter(name="volumeid", type=CommandType.LONG, required=true)
+    private Long volumeId;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public String getIntervalType() {
+        return intervalType;
+    }
+
+    public Integer getMaxSnaps() {
+        return maxSnaps;
+    }
+
+    public String getSchedule() {
+        return schedule;
+    }
+
+    public String getTimezone() {
+        return timezone;
+    }
+
+    public Long getVolumeId() {
+        return volumeId;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     public String getName() {
         return s_name;

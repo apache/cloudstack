@@ -21,7 +21,6 @@ package com.cloud.api;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -35,7 +34,6 @@ import com.cloud.async.AsyncJobVO;
 import com.cloud.serializer.SerializerHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
-import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 
 public abstract class BaseCmd {
@@ -45,8 +43,12 @@ public abstract class BaseCmd {
     public static final String RESPONSE_TYPE_XML = "xml";
     public static final String RESPONSE_TYPE_JSON = "json";
     
-    private Map<String, String> _params;
+//    private Map<String, String> _params;
     private ManagementServer _ms = null;
+
+    public enum CommandType {
+        BOOLEAN, DATE, FLOAT, INTEGER, LIST, LONG, OBJECT, MAP, STRING, TZDATE
+    }
 
     public static final short TYPE_STRING = 0;
     public static final short TYPE_INT = 1;
@@ -100,7 +102,7 @@ public abstract class BaseCmd {
     public static final int STORAGE_RESOURCE_IN_USE = 580;
 
 
-    private static final DateFormat _format = new SimpleDateFormat("yyyy-MM-dd");
+    public static final DateFormat INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
     private static final DateFormat _outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
 
     public enum Properties {
@@ -411,12 +413,15 @@ public abstract class BaseCmd {
     public abstract String getName();
     public abstract List<Pair<Enum, Boolean>> getProperties();
 
+    /*
     public Map<String, String> getParams() {
         return _params;
     }
     public void setParams(Map<String, String> params) {
         _params = params;
     }
+    */
+
     public ManagementServer getManagementServer() {
         return _ms;
     }
@@ -435,12 +440,14 @@ public abstract class BaseCmd {
         return formattedString;
     }
 
-    public Map<String, Object> validateParams(Map<String, Object> params, boolean decode) {
-        List<Pair<Enum, Boolean>> properties = getProperties();
+    public Map<String, Object> validateParams(Map<String, String> params, boolean decode) {
+//        List<Pair<Enum, Boolean>> properties = getProperties();
 
         // step 1 - all parameter names passed in will be converted to lowercase
         Map<String, Object> processedParams = lowercaseParams(params, decode);
+        return processedParams;
 
+        /*
         // step 2 - make sure all required params exist, and all existing params adhere to the appropriate data type
         Map<String, Object> validatedParams = new HashMap<String, Object>();
         for (Pair<Enum, Boolean> propertyPair : properties) {
@@ -524,91 +531,101 @@ public abstract class BaseCmd {
         }
 
         return validatedParams;
+        */
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> lowercaseParams(Map<String, Object> params, boolean decode) {
+    private Map<String, Object> lowercaseParams(Map<String, String> params, boolean decode) {
         Map<String, Object> lowercaseParams = new HashMap<String, Object>();
         for (String key : params.keySet()) {
-        	int arrayStartIndex = key.indexOf('[');
-        	int arrayStartLastIndex = key.lastIndexOf('[');
-        	if (arrayStartIndex != arrayStartLastIndex) {
-        		throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
-        	}
+            lowercaseParams.put(key.toLowerCase(), params.get(key));
+        }
+        return lowercaseParams;
+    }
 
-        	if (arrayStartIndex > 0) {
-        		int arrayEndIndex = key.indexOf(']');
-        		int arrayEndLastIndex = key.lastIndexOf(']');
-        		if ((arrayEndIndex < arrayStartIndex) || (arrayEndIndex != arrayEndLastIndex)) {
-        			// malformed parameter
-        			throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
-        		}
+    // FIXME:  move this to a utils method so that maps can be unpacked and integer/long values can be appropriately cast
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> unpackParams(Map<String, String> params, boolean decode) {
+        Map<String, Object> lowercaseParams = new HashMap<String, Object>();
+        for (String key : params.keySet()) {
+            int arrayStartIndex = key.indexOf('[');
+            int arrayStartLastIndex = key.lastIndexOf('[');
+            if (arrayStartIndex != arrayStartLastIndex) {
+                throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
+            }
 
-        		// Now that we have an array object, check for a field name in the case of a complex object
-        		int fieldIndex = key.indexOf('.');
-        		String fieldName = null;
-        		if (fieldIndex < arrayEndIndex) {
-        			throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
-        		} else {
-        			fieldName = key.substring(fieldIndex + 1);
-        		}
+            if (arrayStartIndex > 0) {
+                int arrayEndIndex = key.indexOf(']');
+                int arrayEndLastIndex = key.lastIndexOf(']');
+                if ((arrayEndIndex < arrayStartIndex) || (arrayEndIndex != arrayEndLastIndex)) {
+                    // malformed parameter
+                    throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
+                }
 
-        		// parse the parameter name as the text before the first '[' character
-        		String paramName = key.substring(0, arrayStartIndex);
-        		paramName = paramName.toLowerCase();
+                // Now that we have an array object, check for a field name in the case of a complex object
+                int fieldIndex = key.indexOf('.');
+                String fieldName = null;
+                if (fieldIndex < arrayEndIndex) {
+                    throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
+                } else {
+                    fieldName = key.substring(fieldIndex + 1);
+                }
 
-        		Map<Integer, Map> mapArray = null;
-        		Map<String, Object> mapValue = null;
-        		String indexStr = key.substring(arrayStartIndex+1, arrayEndIndex);
-        		int index = 0;
-        		boolean parsedIndex = false;
-    			try {
-    				if (indexStr != null) {
-    					index = Integer.parseInt(indexStr);
-    					parsedIndex = true;
-    				}
-    			} catch (NumberFormatException nfe) {
-    				s_logger.warn("Invalid parameter " + key + " received, unable to parse object array, returning an error.");
-    			}
+                // parse the parameter name as the text before the first '[' character
+                String paramName = key.substring(0, arrayStartIndex);
+                paramName = paramName.toLowerCase();
 
-    			if (!parsedIndex) {
-    				throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
-    			}
+                Map<Integer, Map> mapArray = null;
+                Map<String, Object> mapValue = null;
+                String indexStr = key.substring(arrayStartIndex+1, arrayEndIndex);
+                int index = 0;
+                boolean parsedIndex = false;
+                try {
+                    if (indexStr != null) {
+                        index = Integer.parseInt(indexStr);
+                        parsedIndex = true;
+                    }
+                } catch (NumberFormatException nfe) {
+                    s_logger.warn("Invalid parameter " + key + " received, unable to parse object array, returning an error.");
+                }
 
-        		Object value = lowercaseParams.get(paramName);
-        		if (value == null) {
-        			// for now, assume object array with sub fields
-        			mapArray = new HashMap<Integer, Map>();
-        			mapValue = new HashMap<String, Object>();
-        			mapArray.put(Integer.valueOf(index), mapValue);
-        		} else if (value instanceof Map) {
-        			mapArray = (HashMap)value;
-        			mapValue = mapArray.get(Integer.valueOf(index));
-        			if (mapValue == null) {
-        			    mapValue = new HashMap<String, Object>();
-        			    mapArray.put(Integer.valueOf(index), mapValue);
-        			}
-        		}
+                if (!parsedIndex) {
+                    throw new ServerApiException(MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key + "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
+                }
 
-        		// we are ready to store the value for a particular field into the map for this object, make sure the value is decoded if required
-        		String valueStr = (String)params.get(key);
-        		String decodedValue = null;
-        		if (decode) {
+                Object value = lowercaseParams.get(paramName);
+                if (value == null) {
+                    // for now, assume object array with sub fields
+                    mapArray = new HashMap<Integer, Map>();
+                    mapValue = new HashMap<String, Object>();
+                    mapArray.put(Integer.valueOf(index), mapValue);
+                } else if (value instanceof Map) {
+                    mapArray = (HashMap)value;
+                    mapValue = mapArray.get(Integer.valueOf(index));
+                    if (mapValue == null) {
+                        mapValue = new HashMap<String, Object>();
+                        mapArray.put(Integer.valueOf(index), mapValue);
+                    }
+                }
+
+                // we are ready to store the value for a particular field into the map for this object, make sure the value is decoded if required
+                String valueStr = (String)params.get(key);
+                String decodedValue = null;
+                if (decode) {
                     try {
-                    	decodedValue = URLDecoder.decode(valueStr, "UTF-8");
+                        decodedValue = URLDecoder.decode(valueStr, "UTF-8");
                     } catch (UnsupportedEncodingException usex) {
                         s_logger.warn(key + " could not be decoded, value = " + valueStr);
                         throw new ServerApiException(PARAM_ERROR, key + " could not be decoded, received value " + valueStr);
                     }
                 } else {
-                	decodedValue = valueStr;
+                    decodedValue = valueStr;
                 }
-        		mapValue.put(fieldName, decodedValue);
+                mapValue.put(fieldName, decodedValue);
 
-        		lowercaseParams.put(paramName, mapArray);
-        	} else {
+                lowercaseParams.put(paramName, mapArray);
+            } else {
                 lowercaseParams.put(key.toLowerCase(), params.get(key));
-        	}
+            }
         }
         return lowercaseParams;
     }

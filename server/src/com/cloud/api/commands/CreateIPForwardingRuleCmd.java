@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.network.FirewallRuleVO;
@@ -44,11 +45,60 @@ public class CreateIPForwardingRuleCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IP_ADDRESS, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PUBLIC_PORT, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PRIVATE_PORT, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PROTOCOL, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PUBLIC_PORT, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VIRTUAL_MACHINE_ID, Boolean.TRUE));
     }
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="ipaddress", type=CommandType.STRING, required=true)
+    private String ipAddress;
+
+    @Parameter(name="privateport", type=CommandType.STRING, required=true)
+    private String privatePort;
+
+    @Parameter(name="protocol", type=CommandType.STRING, required=true)
+    private String protocol;
+
+    @Parameter(name="publicport", type=CommandType.STRING, required=true)
+    private String publicPort;
+
+    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=true)
+    private Long virtualMachineId;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public String getPrivatePort() {
+        return privatePort;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public String getPublicPort() {
+        return publicPort;
+    }
+
+    public Long getVirtualMachineId() {
+        return virtualMachineId;
+    }
+
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.server.Criteria;
@@ -38,12 +39,48 @@ public class ListAsyncJobsCmd extends BaseCmd {
 
     static {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
+
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.START_TZDATE, Boolean.FALSE));
+
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
     }
     
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name="account", type=CommandType.STRING)
+    private String accountName;
+
+    @Parameter(name="domainid", type=CommandType.LONG)
+    private Long domainId;
+
+    @Parameter(name="startdate", type=CommandType.TZDATE)
+    private Date startDate;
+
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public Date getStartDate() {
+        return startDate;
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
     public String getName() {
         return s_name;
     }

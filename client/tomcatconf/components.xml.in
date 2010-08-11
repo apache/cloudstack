@@ -129,9 +129,6 @@
             <adapter name="Balance" class="com.cloud.consoleproxy.ConsoleProxyBalanceAllocator"/>
         </adapters>
 
-        <adapters key="com.cloud.storage.secondary.SecondaryStorageVmAllocator">
-            <adapter name="Balance" class="com.cloud.storage.secondary.SecondaryStorageVmDefaultAllocator"/>
-        </adapters>
         <adapters key="com.cloud.server.auth.UserAuthenticator">
             <adapter name="MD5" class="com.cloud.server.auth.MD5UserAuthenticator"/>
         </adapters>
@@ -170,8 +167,6 @@
         <manager name="download manager" class="com.cloud.storage.download.DownloadMonitorImpl">
         </manager>
         <manager name="console proxy manager" class="com.cloud.consoleproxy.AgentBasedStandaloneConsoleProxyManager">
-        </manager>
-        <manager name="secondary storage vm manager" class="com.cloud.storage.secondary.SecondaryStorageManagerImpl">
         </manager>
         <manager name="vm manager" class="com.cloud.vm.UserVmManagerImpl"/>
         <manager name="upgrade manager" class="com.cloud.maint.UpgradeManagerImpl">

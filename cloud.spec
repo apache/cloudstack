@@ -237,7 +237,6 @@ Requires: augeas >= 0.7.1
 Requires: rsync
 Requires: /bin/egrep
 Requires: /sbin/ip
-Requires: vconfig
 Group:     System Environment/Libraries
 %description agent
 The Cloud.com agent is in charge of managing shared computing resources in
@@ -451,18 +450,14 @@ fi
 %doc %{_docdir}/%{name}-%{version}/version-info
 %doc %{_docdir}/%{name}-%{version}/configure-info
 %doc README
-%doc INSTALL
 %doc HACKING
-%doc README.html
 %doc debian/copyright
 
 %files client-ui
 %defattr(0644,root,root,0755)
 %{_datadir}/%{name}/management/webapps/client/*
 %doc README
-%doc INSTALL
 %doc HACKING
-%doc README.html
 %doc debian/copyright
 
 %files server
@@ -470,9 +465,7 @@ fi
 %{_javadir}/%{name}-server.jar
 %{_sysconfdir}/%{name}/server/*
 %doc README
-%doc INSTALL
 %doc HACKING
-%doc README.html
 %doc debian/copyright
 
 %if %{_premium}
@@ -482,9 +475,7 @@ fi
 %{_libdir}/%{name}/agent/scripts/*
 %{_libdir}/%{name}/agent/vms/systemvm.zip
 %doc README
-%doc INSTALL
 %doc HACKING
-%doc README.html
 %doc debian/copyright
 
 %else
@@ -494,23 +485,19 @@ fi
 %{_libdir}/%{name}/agent/scripts/installer/*
 %{_libdir}/%{name}/agent/scripts/network/domr/*.sh
 %{_libdir}/%{name}/agent/scripts/storage/*.sh
-%{_libdir}/%{name}/agent/scripts/storage/zfs/*
 %{_libdir}/%{name}/agent/scripts/storage/qcow2/*
 %{_libdir}/%{name}/agent/scripts/storage/secondary/*
 %{_libdir}/%{name}/agent/scripts/util/*
 %{_libdir}/%{name}/agent/scripts/vm/*.sh
 %{_libdir}/%{name}/agent/scripts/vm/storage/nfs/*
-%{_libdir}/%{name}/agent/scripts/vm/storage/iscsi/*
 %{_libdir}/%{name}/agent/scripts/vm/network/*
 %{_libdir}/%{name}/agent/scripts/vm/hypervisor/*.sh
 %{_libdir}/%{name}/agent/scripts/vm/hypervisor/kvm/*
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xen/*
 %{_libdir}/%{name}/agent/vms/systemvm.zip
 %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/*
+%{_libdir}/%{name}/agent/vms/systemvm-premium.zip
 %doc README
-%doc INSTALL
 %doc HACKING
-%doc README.html
 %doc debian/copyright
 
 %endif
@@ -519,9 +506,7 @@ fi
 %defattr(-,root,root,-)
 %attr(755,root,root) %{_bindir}/%{name}-daemonize
 %doc README
-%doc INSTALL
 %doc HACKING
-%doc README.html
 %doc debian/copyright
 
 %files deps
@@ -544,16 +529,13 @@ fi
 %{_javadir}/%{name}-xmlrpc-common-3.*.jar
 %{_javadir}/%{name}-xmlrpc-client-3.*.jar
 %doc README
-%doc INSTALL
 %doc HACKING
-%doc README.html
 %doc debian/copyright
 
 %files core
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-core.jar
 %doc README
-%doc INSTALL
 %doc HACKING
 %doc debian/copyright
 
@@ -563,18 +545,14 @@ fi
 %attr(0755,root,root) %{_sbindir}/%{name}-vn
 %attr(0755,root,root) %{_initrddir}/%{name}-vnetd
 %doc README
-%doc INSTALL
 %doc HACKING
-%doc README.html
 %doc debian/copyright
 
 %files python
 %defattr(0644,root,root,0755)
 %{_prefix}/lib*/python*/site-packages/%{name}*
 %doc README
-%doc INSTALL
 %doc HACKING
-%doc README.html
 %doc debian/copyright
 
 %files setup
@@ -594,9 +572,7 @@ fi
 %{_datadir}/%{name}/setup/postprocess-20to21.sql
 %{_datadir}/%{name}/setup/schema-20to21.sql
 %doc README
-%doc INSTALL
 %doc HACKING
-%doc README.html
 %doc debian/copyright
 
 %files client
@@ -638,16 +614,13 @@ fi
 %dir %attr(770,root,%{name}) %{_localstatedir}/log/%{name}/management
 %dir %attr(770,root,%{name}) %{_localstatedir}/log/%{name}/agent
 %doc README
-%doc INSTALL
 %doc HACKING
-%doc README.html
 %doc debian/copyright
 
 %files agent-libs
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-agent.jar
 %doc README
-%doc INSTALL
 %doc HACKING
 %doc debian/copyright
 
@@ -666,9 +639,7 @@ fi
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
 %dir %attr(770,root,root) %{_localstatedir}/log/%{name}/agent
 %doc README
-%doc INSTALL
 %doc HACKING
-%doc README.html
 %doc debian/copyright
 
 %files console-proxy
@@ -683,9 +654,7 @@ fi
 %attr(0755,root,root) %{_bindir}/%{name}-setup-console-proxy
 %dir %attr(770,root,root) %{_localstatedir}/log/%{name}/console-proxy
 %doc README
-%doc INSTALL
 %doc HACKING
-%doc README.html
 %doc debian/copyright
 
 %if %{_premium}
@@ -698,18 +667,14 @@ fi
 %{_libdir}/%{name}/test/*
 %{_sysconfdir}/%{name}/test/*
 %doc README
-%doc INSTALL
 %doc HACKING
-%doc README.html
 %doc debian/copyright
 
 %files premium-deps
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-premium/*.jar
 %doc README
-%doc INSTALL
 %doc HACKING
-%doc README.html
 %doc debian/copyright
 
 %files premium
@@ -723,9 +688,7 @@ fi
 %{_datadir}/%{name}/setup/create-database-premium.sql
 %{_datadir}/%{name}/setup/create-schema-premium.sql
 %doc README
-%doc INSTALL
 %doc HACKING
-%doc README.html
 %doc debian/copyright
 
 %files usage
@@ -738,9 +701,7 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/usage/log4j-%{name}_usage.xml
 %config(noreplace) %attr(640,root,%{name}) %{_sysconfdir}/%{name}/usage/db.properties
 %doc README
-%doc INSTALL
 %doc HACKING
-%doc README.html
 %doc debian/copyright
 
 %endif
