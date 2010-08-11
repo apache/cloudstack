@@ -132,7 +132,11 @@
     <war destfile="${client.dist.dir}/client.war" webxml="${client.dir}/WEB-INF/web.xml">
       <fileset dir="${client.target.dir}">
         <include name="**/*" />
+      	<exclude name="**/*.properties" />
       </fileset>
+      <classes dir="${client.target.dir}">
+    	<include name="**/resources/*.properties" />
+      </classes>
       <lib dir="${jar.dir}">
         <include name="cloud-*.jar" />
       </lib>
@@ -232,8 +236,7 @@
     </delete>
   </target>
 
-<!-- The following target is OBSOLETE.  If you need to add a jar file / target, go to the function def runant(target): in wscrpit_build, and list the jar file and the target in the appropriate places -->
-<target name="sendjarfiles" depends="compile-utils, compile-core, compile-server, compile-agent, compile-console-common, compile-console-proxy, build-console-viewer">
+  <target name="sendjarfiles" depends="compile-utils, compile-core, compile-server, compile-agent, compile-console-common, compile-console-proxy, build-console-viewer">
     <copy todir="${waf.artifacts}">
       <fileset dir="${target.dir}/jar"/>
     </copy>

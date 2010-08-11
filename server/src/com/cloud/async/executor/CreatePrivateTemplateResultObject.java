@@ -52,6 +52,9 @@ public class CreatePrivateTemplateResultObject {
 	@Param(name="passwordenabled")
 	private boolean passwordEnabled;
 	
+	@Param(name="crossZones")
+	private boolean crossZones;
+	
 	@Param(name="ostypeid")
 	private Long osTypeId;
 	
@@ -197,6 +200,14 @@ public class CreatePrivateTemplateResultObject {
 		this.passwordEnabled = passwordEnabled;
 	}
 	
+	public boolean isCrossZones() {
+		return crossZones;
+	}
+
+	public void setCrossZones(boolean crossZones) {
+		this.crossZones = crossZones;
+	}
+
 	public long getDomainId() {
 		return domainId;
 	}

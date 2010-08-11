@@ -922,9 +922,7 @@ public class ManagementServerImpl implements ManagementServer {
                 if (!_vmMgr.destroyVirtualMachine(userId, vm.getId())) {
                     s_logger.error("Unable to destroy vm: " + vm.getId());
                     accountCleanupNeeded = true;
-                } else {
-                	//_vmMgr.releaseGuestIpAddress(vm); FIXME FIXME bug 5561
-                }
+                } 
             }
             
             // Mark the account's volumes as destroyed
@@ -1656,7 +1654,12 @@ public class ManagementServerImpl implements ManagementServer {
             if (!vlan.getVlanType().equals(VlanType.VirtualNetwork)) {
             	throw new IllegalArgumentException("only ip addresses that belong to a virtual network may be disassociated.");
             }
-
+			
+			//Check for account wide pool. It will have an entry for account_vlan_map. 
+            if (_accountVlanMapDao.findAccountVlanMap(accountId,ipVO.getVlanDbId()) != null){
+            	throw new PermissionDeniedException(publicIPAddress + " belongs to Account wide IP pool and cannot be disassociated");
+            }
+			
             txn.start();
             boolean success = _networkMgr.releasePublicIpAddress(userId, publicIPAddress);
             if (success)
@@ -1727,11 +1730,11 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public VolumeVO createVolume(long userId, long accountId, String name, long zoneId, long diskOfferingId, long startEventId) throws InternalErrorException {
+    public VolumeVO createVolume(long userId, long accountId, String name, long zoneId, long diskOfferingId, long startEventId, long size) throws InternalErrorException {
         saveStartedEvent(userId, accountId, EventTypes.EVENT_VOLUME_CREATE, "Creating volume", startEventId);
         DataCenterVO zone = _dcDao.findById(zoneId);
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
-        VolumeVO createdVolume = _storageMgr.createVolume(accountId, userId, name, zone, diskOffering, startEventId);
+        VolumeVO createdVolume = _storageMgr.createVolume(accountId, userId, name, zone, diskOffering, startEventId,size);
 
         if (createdVolume != null)
             return createdVolume;
@@ -1740,7 +1743,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public long createVolumeAsync(long userId, long accountId, String name, long zoneId, long diskOfferingId) throws InvalidParameterValueException, InternalErrorException, ResourceAllocationException {
+    public long createVolumeAsync(long userId, long accountId, String name, long zoneId, long diskOfferingId, long size) throws InvalidParameterValueException, InternalErrorException, ResourceAllocationException {
         // Check that the account is valid
     	AccountVO account = _accountDao.findById(accountId);
     	if (account == null) {
@@ -1795,7 +1798,8 @@ public class ManagementServerImpl implements ManagementServer {
         param.setZoneId(zoneId);
         param.setDiskOfferingId(diskOfferingId);
         param.setEventId(eventId);
-
+        param.setSize(size);
+        
         Gson gson = GsonHelper.getBuilder().create();
 
         AsyncJobVO job = new AsyncJobVO();
@@ -2188,7 +2192,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public UserVm deployVirtualMachine(long userId, long accountId, long dataCenterId, long serviceOfferingId, long templateId, Long diskOfferingId,
-            String domain, String password, String displayName, String group, String userData, String [] networkGroups, long startEventId) throws ResourceAllocationException, InvalidParameterValueException, InternalErrorException,
+            String domain, String password, String displayName, String group, String userData, String [] networkGroups, long startEventId, long size) throws ResourceAllocationException, InvalidParameterValueException, InternalErrorException,
             InsufficientStorageCapacityException, PermissionDeniedException, ExecutionException, StorageUnavailableException, ConcurrentOperationException {
 
         saveStartedEvent(userId, accountId, EventTypes.EVENT_VM_CREATE, "Deploying Vm", startEventId);
@@ -2272,7 +2276,7 @@ public class ManagementServerImpl implements ManagementServer {
             ArrayList<StoragePoolVO> a = new ArrayList<StoragePoolVO>(avoids.values());
             if (_directAttachNetworkExternalIpAllocator) {
             	try {
-            		created = _vmMgr.createDirectlyAttachedVMExternal(vmId, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, networkGroupVOs, startEventId);
+            		created = _vmMgr.createDirectlyAttachedVMExternal(vmId, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, networkGroupVOs, startEventId, size);
             	} catch (ResourceAllocationException rae) {
             		throw rae;
             	}
@@ -2293,13 +2297,13 @@ public class ManagementServerImpl implements ManagementServer {
             		}
 
             		try {
-            			created = _vmMgr.createVirtualMachine(vmId, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, startEventId);
+            			created = _vmMgr.createVirtualMachine(vmId, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, startEventId, size);
             		} catch (ResourceAllocationException rae) {
             			throw rae;
             		}
             	} else {
             		try {
-            			created = _vmMgr.createDirectlyAttachedVM(vmId, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, networkGroupVOs, startEventId);
+            			created = _vmMgr.createDirectlyAttachedVM(vmId, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, networkGroupVOs, startEventId, size);
             		} catch (ResourceAllocationException rae) {
             			throw rae;
             		}
@@ -2418,7 +2422,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public long deployVirtualMachineAsync(long userId, long accountId, long dataCenterId, long serviceOfferingId, long templateId,
-            Long diskOfferingId, String domain, String password, String displayName, String group, String userData, String [] networkGroups)  throws InvalidParameterValueException, PermissionDeniedException {
+            Long diskOfferingId, String domain, String password, String displayName, String group, String userData, String [] networkGroups, long size)  throws InvalidParameterValueException, PermissionDeniedException {
 
     	AccountVO account = _accountDao.findById(accountId);
         if (account == null) {
@@ -2512,7 +2516,7 @@ public class ManagementServerImpl implements ManagementServer {
         long eventId = saveScheduledEvent(userId, accountId, EventTypes.EVENT_VM_CREATE, "deploying Vm");
         
         DeployVMParam param = new DeployVMParam(userId, accountId, dataCenterId, serviceOfferingId, templateId, diskOfferingId, domain, password,
-                displayName, group, userData, networkGroups, eventId);
+                displayName, group, userData, networkGroups, eventId, size);
         Gson gson = GsonHelper.getBuilder().create();
 
         AsyncJobVO job = new AsyncJobVO();
@@ -2623,7 +2627,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean recoverVirtualMachine(long vmId) throws ResourceAllocationException {
+    public boolean recoverVirtualMachine(long vmId) throws ResourceAllocationException, InternalErrorException {
         return _vmMgr.recoverVirtualMachine(vmId);
     }
 
@@ -4228,6 +4232,14 @@ public class ManagementServerImpl implements ManagementServer {
     		template = _templateDao.findById(templateId);
     		if (template == null) {
     			throw new InvalidParameterValueException("Please specify a valid template ID.");
+    		}// If ISO requested then it should be ISO.
+    		if (isIso && template.getFormat() != ImageFormat.ISO){
+    			s_logger.error("Template Id " + templateId + " is not an ISO");
+    			throw new InvalidParameterValueException("Template Id " + templateId + " is not an ISO");
+    		}// If ISO not requested then it shouldn't be an ISO.
+    		if (!isIso && template.getFormat() == ImageFormat.ISO){
+    			s_logger.error("Incorrect format of the template id " + templateId);
+    			throw new InvalidParameterValueException("Incorrect format " + template.getFormat() + " of the template id " + templateId);
     		}
         }
     	
@@ -4267,7 +4279,7 @@ public class ManagementServerImpl implements ManagementServer {
     			return _templateHostDao.listByHostTemplate(secondaryStorageHost.getId(), templateId);
     		}
     	} else {
-    		return _templateHostDao.listByTemplateId(templateId);
+    		return _templateHostDao.listByOnlyTemplateId(templateId);
     	}
     }
 
@@ -4761,20 +4773,6 @@ public class ManagementServerImpl implements ManagementServer {
     	VMTemplateVO template = _templateDao.createForUpdate(id);
     	
     	if (name != null) {
-    		// Check for duplicate name
-    		VMTemplateVO foundTemplate = _templateDao.findByTemplateName(name);
-    		if (foundTemplate != null)
-    		{
-    			if(foundTemplate.getId()==id)
-    			{
-    				//do nothing, you are updating the same template you own
-    			}
-    			else
-    			{
-    				s_logger.error("updateTemplate - Template name " + name + " already exists ");
-    				return false;
-    			}
-    		}
     		template.setName(name);
     	}
     	
@@ -6658,6 +6656,11 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
+    public List<DiskOfferingVO> findPrivateDiskOffering() {
+        return _diskOfferingDao.findPrivateDiskOffering();
+    }
+
+    @Override
     @DB
     public boolean updateTemplatePermissions(long templateId, String operation, Boolean isPublic, Boolean isFeatured, List<String> accountNames) throws InvalidParameterValueException,
             PermissionDeniedException, InternalErrorException {
@@ -6810,7 +6813,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException {
-        if (numGibibytes < 1) {
+        if (numGibibytes!=0 && numGibibytes < 1) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
         } else if (numGibibytes > _maxVolumeSizeInGb) {
         	throw new InvalidParameterValueException("The maximum size for a disk is " + _maxVolumeSizeInGb + " Gb.");
@@ -7584,7 +7587,10 @@ public class ManagementServerImpl implements ManagementServer {
                     return;
                 }
 
+                Transaction txn = null;
                 try {
+                	txn = Transaction.open(Transaction.CLOUD_DB);
+                	
                     List<AccountVO> accounts = _accountDao.findCleanups();
                     s_logger.info("Found " + accounts.size() + " accounts to cleanup");
                     for (AccountVO account : accounts) {
@@ -7598,6 +7604,9 @@ public class ManagementServerImpl implements ManagementServer {
                 } catch (Exception e) {
                     s_logger.error("Exception ", e);
                 } finally {
+                	if(txn != null)
+                		txn.close();
+                	
                     lock.unlock();
                 }
             } catch (Exception e) {
@@ -8351,6 +8360,17 @@ public class ManagementServerImpl implements ManagementServer {
         job.setCmdOriginator(CancelPrimaryStorageMaintenanceCmd.getResultObjectName());
         return _asyncMgr.submitAsyncJob(job);
 
+	}
+
+	@Override
+	public boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException {
+        if (size<0 || (size>0 && size < 1)) {
+            throw new InvalidParameterValueException("Please specify a size of at least 1 Gb.");
+        } else if (size > _maxVolumeSizeInGb) {
+        	throw new InvalidParameterValueException("The maximum size allowed is " + _maxVolumeSizeInGb + " Gb.");
+        }
+
+		return true;
 	}
 }
 

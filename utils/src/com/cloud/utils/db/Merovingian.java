@@ -278,8 +278,6 @@ public class Merovingian {
     		
     		Ternary<Savepoint, Integer, Long> lock = _locks.get(key);
     		if (lock != null) {
-    			validLock = true;
-    			
         		if (lock.second() > 1) {
         			lock.second(lock.second() - 1);
         			if (s_logger.isTraceEnabled()) {
@@ -287,6 +285,15 @@ public class Merovingian {
         			}
         			return false;
         		}
+        		
+        		//
+        		// set this to true only if we are really done with the DB lock. Which means, the lock count has been
+        		// reached to zero
+        		//
+        		// While we are holding the DB lock, we also need to hold the memory lock as well, to lock the first gate
+        		// and prevent others to come in and test with DB lock unnecessarily
+        		//
+    			validLock = true;
         		
                 if (s_logger.isDebugEnabled() && !_locks.keySet().iterator().next().equals(key)) {
                     s_logger.trace("Lock: Releasing out of order for " + key);
@@ -298,7 +305,10 @@ public class Merovingian {
         		Connection conn = getConnection(key, true);
         		
         		conn.rollback(lock.first());
+    		} else {
+    			s_logger.warn("Merovingian.release() is called against key " + key + " but the lock of this key does not exist!");
     		}
+    		
     		if (_locks.size() == 0) {
     			closeConnection();
     		}
@@ -308,13 +318,17 @@ public class Merovingian {
 	    } finally {
     		synchronized(s_memLocks) {
     		    Pair<Lock, Integer> memLock = s_memLocks.get(key);
-    		    memLock.second(memLock.second() - 1);
-    		    if (memLock.second() <= 0) {
-    		        s_memLocks.remove(key);
+    		    if(memLock != null) {
+	    		    memLock.second(memLock.second() - 1);
+	    		    if (memLock.second() <= 0) {
+	    		        s_memLocks.remove(key);
+	    		    }
+	    		    
+	    		    if(validLock)
+	    		    	memLock.first().unlock();
+    		    } else {
+    		    	throw new CloudRuntimeException("Merovingian.release() is called for key " + key + ", but its memory lock no longer exist! This is not good, guys");
     		    }
-    		    
-    		    if(validLock)
-    		    	memLock.first().unlock();
     		}
 	    }
 		return true;

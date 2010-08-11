@@ -60,9 +60,7 @@
   <property name="dep.cache.dir" location="${target.dir}/dep-cache" />
   <property name="build.log" location="${target.dir}/ant_verbose.txt" />
 
-  <property name="proprietary.dir" location="${base.dir}/cloudstack-proprietary" />
-
-  <property name="thirdparty.dir" location="${proprietary.dir}/thirdparty" />
+  <property name="thirdparty.dir" location="${base.dir}/thirdparty" />
   <property name="deps.dir" location="${base.dir}/deps" />
 
   <!-- directories for client compilation-->
@@ -201,8 +199,7 @@
     <copy todir="${scripts.target.dir}">
       <fileset dir="${scripts.dir}">
         <include name="**/*"/>
-        <exclude name="**/.classpath" />
-        <exclude name="**/.project" />
+        <exclude name="**/.*" />
         <exclude name="**/network/domr/mth/" />
         <exclude name="**/network/domr/kvm/" />
         <exclude name="**/network/domr/xenserver/" />
@@ -223,6 +220,7 @@
         <include name="**/*.html" />
         <include name="**/*.js"/>
         <include name="**/*.jsp"/>
+        <include name="**/*.properties"/>
         <exclude name="**/.classpath" />
         <exclude name="**/.project" />
       </fileset>
@@ -236,6 +234,7 @@
         <exclude name="**/*.html" />
         <exclude name="**/*.js"/>
         <exclude name="**/*.jsp"/>
+        <exclude name="**/*.properties"/>
         <exclude name="**/.classpath" />
         <exclude name="**/.project" />
       </fileset>

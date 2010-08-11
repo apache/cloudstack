@@ -162,6 +162,7 @@ public class UpdateTemplateCmd extends BaseCmd {
             templateData.add(new Pair<String, Object>(BaseCmd.Properties.FORMAT.getName(), updatedTemplate.getFormat()));
             templateData.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_ID.getName(), updatedTemplate.getGuestOSId()));
             templateData.add(new Pair<String, Object>(BaseCmd.Properties.PASSWORD_ENABLED.getName(), updatedTemplate.getEnablePassword()));
+            templateData.add(new Pair<String, Object>(BaseCmd.Properties.CROSS_ZONES.getName(), Boolean.valueOf(updatedTemplate.isCrossZones()).toString()));
             return templateData;
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "internal error updating template");

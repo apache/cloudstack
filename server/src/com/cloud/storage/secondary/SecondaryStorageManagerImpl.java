@@ -784,7 +784,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		final AccountVO account = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
 		
         try {
-			List<VolumeVO> vols = _storageMgr.create(account, secStorageVm, _template, dc, pod, _serviceOffering, null);
+			List<VolumeVO> vols = _storageMgr.create(account, secStorageVm, _template, dc, pod, _serviceOffering, null,0);
 			if( vols == null ){
 				s_logger.error("Unable to alloc storage for secondary storage vm");
 				return null;

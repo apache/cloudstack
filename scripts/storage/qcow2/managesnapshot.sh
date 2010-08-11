@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# $Id: managesnapshot.sh 11474 2010-08-06 05:53:02Z edison $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/qcow2/managesnapshot.sh $
+# $Id: managesnapshot.sh 11601 2010-08-11 17:26:15Z kris $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.refactor/java/scripts/storage/qcow2/managesnapshot.sh $
 # managesnapshot.sh -- manage snapshots for a single disk (create, destroy, rollback)
 #
 
@@ -34,16 +34,19 @@ create_snapshot() {
 }
 
 destroy_snapshot() {
-  local disk=$1
+  local backupSnapDir=$1
   local snapshotname=$2
   local failed=0
 
-  qemu-img snapshot -d $snapshotname $disk
-  
-  if [ $? -gt 0 ]
+  if [ -f $backupSnapDir/$snapshotname ]
   then
-    printf "***Failed to delete snapshot $snapshotname for path $disk\n" >&2
-    failed=1
+     rm -f $backupSnapDir/$snapshotname
+  
+     if [ $? -gt 0 ]
+     then
+        printf "***Failed to delete snapshot $snapshotname for path $backupSnapDir\n" >&2
+        failed=1
+     fi
   fi
 
   return $failed 

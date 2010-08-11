@@ -34,6 +34,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.exception.ExecutionException;
@@ -92,9 +93,10 @@ public interface StorageManager extends Manager {
      * @param offering service offering of the vm.
      * @param diskOffering disk offering of the vm.
      * @param avoids storage pools to avoid.
+     * @param size : size of the volume if defined
      * @return List of VolumeVO
      */
-	List<VolumeVO> create(Account account, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, ServiceOfferingVO offering, DiskOfferingVO diskOffering) throws StorageUnavailableException, ExecutionException;
+	List<VolumeVO> create(Account account, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, ServiceOfferingVO offering, DiskOfferingVO diskOffering, long size) throws StorageUnavailableException, ExecutionException;
 	
 	/**
 	 * Create StoragePool based on uri
@@ -156,7 +158,7 @@ public interface StorageManager extends Manager {
 	public long createUserVM(Account account, VMInstanceVO vm,
 			VMTemplateVO template, DataCenterVO dc, HostPodVO pod,
 			ServiceOfferingVO offering, DiskOfferingVO diskOffering,
-			List<StoragePoolVO> avoids);
+			List<StoragePoolVO> avoids, long size);
 
 	/**
 	 * This method sends the given command on all the hosts in the primary storage pool given until is succeeds on any one.
@@ -168,7 +170,7 @@ public interface StorageManager extends Manager {
 	 * @return The answer for that command, could be success or failure.
 	 */
 	Answer sendToHostsOnStoragePool(Long poolId, Command cmd, String basicErrMsg);
-	Answer sendToHostsOnStoragePool(Long poolId, Command cmd, String basicErrMsg, int retriesPerHost, int pauseBeforeRetry, boolean shouldBeSnapshotCapable);
+	Answer sendToHostsOnStoragePool(Long poolId, Command cmd, String basicErrMsg, int retriesPerHost, int pauseBeforeRetry, boolean shouldBeSnapshotCapable, Long vmId );
 	
 
 	/**
@@ -195,9 +197,10 @@ public interface StorageManager extends Manager {
 	 * @param name
 	 * @param dc
 	 * @param diskOffering
+	 * @param size
 	 * @return VolumeVO
 	 */
-	VolumeVO createVolume(long accountId, long userId, String name, DataCenterVO dc, DiskOfferingVO diskOffering, long startEventId);
+	VolumeVO createVolume(long accountId, long userId, String name, DataCenterVO dc, DiskOfferingVO diskOffering, long startEventId, long size);
 	
 	/**
 	 * Marks the specified volume as destroyed in the management server database. The expunge thread will delete the volume from its storage pool.
@@ -229,6 +232,8 @@ public interface StorageManager extends Manager {
 	 * @return true if one of the above conditions is true
 	 */
 	boolean volumeInactive(VolumeVO volume);
+	
+	String getVmNameOnVolume(VolumeVO volume);
 	
 	List<Pair<VolumeVO, StoragePoolVO>> isStoredOn(VMInstanceVO vm);
 

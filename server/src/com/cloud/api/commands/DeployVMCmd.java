@@ -52,10 +52,10 @@ public class DeployVMCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.GROUP, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NETWORK_GROUP_LIST, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SERVICE_OFFERING_ID, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SIZE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TEMPLATE_ID, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_DATA, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.TRUE));
-
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
     }
@@ -84,6 +84,9 @@ public class DeployVMCmd extends BaseCmd {
 
     @Parameter(name="serviceofferingid", type=CommandType.LONG, required=true)
     private Long serviceOfferingId;
+
+    @Parameter(name="size", type=CommandType.LONG)
+    private Long size;
 
     @Parameter(name="templateid", type=CommandType.LONG, required=true)
     private Long templateId;
@@ -125,6 +128,10 @@ public class DeployVMCmd extends BaseCmd {
 
     public Long getServiceOfferingId() {
         return serviceOfferingId;
+    }
+
+    public Long getSize() {
+        return size;
     }
 
     public Long getTemplateId() {
@@ -172,10 +179,13 @@ public class DeployVMCmd extends BaseCmd {
         String group = (String)params.get(BaseCmd.Properties.GROUP.getName());
         String userData = (String) params.get(BaseCmd.Properties.USER_DATA.getName());
         String networkGroupList = (String)params.get(BaseCmd.Properties.NETWORK_GROUP_LIST.getName());
-
+        Long size = (Long)params.get(BaseCmd.Properties.SIZE.getName());
         String password = null;
         Long accountId = null;
 
+        if(size == null)
+        	size = Long.valueOf(0);
+        
         VMTemplateVO template = getManagementServer().findTemplateById(templateId);
         if (template == null) {
             throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "Unable to find template with id " + templateId);
@@ -253,7 +263,7 @@ public class DeployVMCmd extends BaseCmd {
     		long jobId = mgr.deployVirtualMachineAsync(userId.longValue(), accountId.longValue(), zoneId.longValue(),
     				serviceOfferingId.longValue(),
     				templateId.longValue(), diskOfferingId, 
-    				null, password, displayName, group, userData, groups);
+    				null, password, displayName, group, userData, groups,size);
 
     		long vmId = 0;
     		if (jobId == 0) {

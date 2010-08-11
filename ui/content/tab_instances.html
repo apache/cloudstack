@@ -1,3 +1,5 @@
+<script type="text/javascript" src="scripts/cloud.core.instances.js"></script>	
+
 <!-- Content Panel -->
 <!-- Submenu -->
 <div class="submenu_links" id="submenu_links">
@@ -9,7 +11,7 @@
         System</div>
 </div>
 <!--VM -->
-<div class="maincontent" style="display: block;" id="submenu_content_vms">
+<div class="maincontent" style="display: none;" id="submenu_content_vms">
     <div id="maincontent_title">
         <div class="maintitle_icon">
             <img src="images/instancetitle_icons.gif" title="instance" />
@@ -389,7 +391,7 @@
     </div>
 </div>
 <!-- Create Template Dialog -->
-<div id="dialog_create_template" title="Create Template">
+<div id="dialog_create_template" title="Create Template" style="display:none">
     <p>
         Please specify the following information before creating a template of your disk
         volume: <b><span id="volume_name"></span></b>. Creating a template could take up
@@ -866,7 +868,7 @@
 </div>
 <!-- New VM Wizard (end) -->
 <!-- Change Service Offering Dialog -->
-<div id="dialog_change_service_offering" title="Change Service Offering">
+<div id="dialog_change_service_offering" title="Change Service Offering" style="display:none">
     <p>
         To change your service for <b><span id="change_vm_name"></span></b>, please select
         from the following services and select 'Change'. You must restart your virtual instance
@@ -893,7 +895,7 @@
 </ul>
 <!-- List Network Groups Dialog (end) -->
 <!-- Change Group Dialog -->
-<div id="dialog_change_group" title="Change Group">
+<div id="dialog_change_group" title="Change Group" style="display:none">
     <p>
         Please specify the new group you want to assign to your Virtual Instance: <b><span
             id="vm_name"></span></b>. If no such group exists, a new one will be created
@@ -913,7 +915,7 @@
     </div>
 </div>
 <!-- Change Name Dialog -->
-<div id="dialog_change_name" title="Change Name">
+<div id="dialog_change_name" title="Change Name" style="display:none">
     <p>
         Please specify the new name you want to change for your Virtual Instance: <b><span
             id="vm_name"></span></b>.</p>
@@ -932,7 +934,7 @@
     </div>
 </div>
 <!-- Attach ISO Dialog -->
-<div id="dialog_attach_iso" title="Attach ISO">
+<div id="dialog_attach_iso" title="Attach ISO" style="display:none">
     <p>
         Please specify the ISO you wish to attach to your Virtual Instance: <b><span id="vm_name">
         </span></b>.</p>
@@ -1695,7 +1697,7 @@
 	Terms and Conditions Dialog 
 	****  Please change this accordingly ****
 -->
-<div id="dialog_t_and_c" title="Terms and Conditions">
+<div id="dialog_t_and_c" title="Terms and Conditions" style="display:none">
     <p>
         <b>Terms and Conditions</b><br />
         </br> Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor

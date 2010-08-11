@@ -82,8 +82,8 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -94,6 +94,7 @@ import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
@@ -121,24 +122,25 @@ import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offering.ServiceOffering.GuestIpType;
+import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Snapshot.SnapshotType;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VirtualMachineTemplate.BootloaderType;
+import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.VolumeType;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.DiskTemplateDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -1199,11 +1201,180 @@ public class UserVmManagerImpl implements UserVmManager {
     	}
     	
     	userVm.setGuestIpAddress(null);
-    	//_vmDao.update(userVm.getId(), userVm); FIXME need an updateIf
+    	_vmDao.update(userVm.getId(), userVm); 
+    }
+    
+    @Override
+    public UserVmVO allocate(String displayName, VMTemplateVO template, ServiceOfferingVO serviceOffering, NetworkOfferingVO[] networkOfferings, DiskOfferingVO[] diskOfferings, AccountVO owner, long userId) throws InsufficientCapacityException {
+        /*
+        long accountId = account.getId();
+        long dataCenterId = dc.getId();
+        long serviceOfferingId = offering.getId();
+        UserVmVO vm = new UserVmVO();
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Creating vm for account id=" + account.getId() +
+                ", name="+ account.getAccountName() + "; dc=" + dc.getName() +
+                "; offering=" + offering.getId() + "; diskOffering=" + ((diskOffering != null) ? diskOffering.getName() : "none") +
+                "; template=" + template.getId());
+        }
+
+        DomainRouterVO router = _routerDao.findBy(accountId, dataCenterId, Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
+        if (router == null) {
+            throw new InternalErrorException("Cannot find a router for account (" + accountId + "/" +
+                account.getAccountName() + ") in " + dataCenterId);
+        }
+        
+        // Determine the Guest OS Id
+        long guestOSId;
+        if (template != null) {
+            guestOSId = template.getGuestOSId();
+        } else {
+            throw new InternalErrorException("No template or ISO was specified for the VM.");
+        }
+        long numVolumes = -1;
+        Transaction txn = Transaction.currentTxn();
+        long routerId = router.getId();
+        
+        String name;
+        txn.start();
+        
+        account = _accountDao.lock(accountId, true);
+        if (account == null) {
+            throw new InternalErrorException("Unable to lock up the account: " + accountId);
+        }
+
+        // First check that the maximum number of UserVMs for the given accountId will not be exceeded
+        if (_accountMgr.resourceLimitExceeded(account, ResourceType.user_vm)) {
+            ResourceAllocationException rae = new ResourceAllocationException("Maximum number of virtual machines for account: " + account.getAccountName() + " has been exceeded.");
+            rae.setResourceType("vm");
+            throw rae;
+        }
+        
+        boolean isIso = Storage.ImageFormat.ISO.equals(template.getFormat());
+        numVolumes = (isIso || (diskOffering == null)) ? 1 : 2;
+        _accountMgr.incrementResourceCount(account.getId(), ResourceType.user_vm);
+        _accountMgr.incrementResourceCount(account.getId(), ResourceType.volume, numVolumes);
+        txn.commit();
+        
+        name = VirtualMachineName.getVmName(vmId, accountId, _instance);
+
+        String diskOfferingIdentifier = (diskOffering != null) ? String.valueOf(diskOffering.getId()) : "-1";
+        String eventParams = "id=" + vmId + "\nvmName=" + name + "\nsoId=" + serviceOfferingId + "\ndoId=" + diskOfferingIdentifier + "\ntId=" + template.getId() + "\ndcId=" + dataCenterId;
+        EventVO event = new EventVO();
+        event.setUserId(userId);
+        event.setAccountId(accountId);
+        event.setStartId(startEventId);
+        event.setState(EventState.Completed);
+        event.setType(EventTypes.EVENT_VM_CREATE);
+        event.setParameters(eventParams);
+
+        try {
+            Pair<HostPodVO, Long> pod = null;
+            long poolid = 0;
+            Set<Long> podsToAvoid = new HashSet<Long>();
+
+            while ((pod = _agentMgr.findPod(template, offering, dc, account.getId(), podsToAvoid)) != null) {
+                if (vm == null) {
+                    vm = new UserVmVO(vmId, name, template.getId(), guestOSId, accountId, account.getDomainId().longValue(),
+                            serviceOfferingId, null, null, router.getGuestNetmask(),
+                            null,null,null,
+                            routerId, pod.first().getId(), dataCenterId,
+                            offering.getOfferHA(), displayName, group, userData);
+                    
+                    if (diskOffering != null) {
+                        vm.setMirroredVols(diskOffering.isMirrored());
+                    }
+
+                    vm.setLastHostId(pod.second());
+                    
+                    vm = _vmDao.persist(vm);
+                } else {
+                    vm.setPodId(pod.first().getId());
+                    _vmDao.updateIf(vm, Event.OperationRetry, null);
+                }
+                
+                String ipAddressStr = acquireGuestIpAddress(dataCenterId, accountId, vm);
+                if (ipAddressStr == null) {
+                    s_logger.warn("Failed user vm creation : no guest ip address available");
+                    releaseGuestIpAddress(vm);
+                    ResourceAllocationException rae = new ResourceAllocationException("No guest ip addresses available for " + account.getAccountName() + " (try destroying some instances)");
+                    rae.setResourceType("vm");
+                    throw rae;
+                }
+
+                poolid = _storageMgr.createUserVM(account, vm, template, dc, pod.first(), offering, diskOffering, avoids);
+                if ( poolid != 0) {
+                    break;
+                }
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Unable to find storage host in pod " + pod.first().getName() + " (id:" + pod.first().getId() + ") while creating " + vm.toString() + ", checking other pods");
+                }
+
+                // if it fails at storage allocation round, reset lastHostId to "release"
+                // the CPU/memory allocation on the candidate host
+                vm.setLastHostId(null);
+                _vmDao.update(vm.getId(), vm);
+                
+                podsToAvoid.add(pod.first().getId());
+            }
+
+            if ((vm == null) || (poolid == 0)) {
+                throw new ResourceAllocationException("Create VM " + ((vm == null) ? vmId : vm.toString()) + " failed due to no Storage Pool is available");
+            }
+
+            txn.start();
+            if(vm != null && vm.getName() != null && vm.getDisplayName() != null)
+            {
+                if(!vm.getName().equals(vm.getDisplayName()))
+                    event.setDescription("successfully created VM instance : " + vm.getName()+"("+vm.getDisplayName()+")");
+                else
+                    event.setDescription("successfully created VM instance : " + vm.getName());
+            }
+            else
+            {
+                event.setDescription("successfully created VM instance :"+name);
+            }
+            
+            _eventDao.persist(event);
+            
+            _vmDao.updateIf(vm, Event.OperationSucceeded, null);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("vm created " + vmId);
+            }
+            txn.commit();
+
+            return _vmDao.findById(vmId);
+        } catch (Throwable th) {
+            s_logger.error("Unable to create vm", th);
+            if (vm != null) {
+                _vmDao.delete(vmId);
+            }
+            _accountMgr.decrementResourceCount(account.getId(), ResourceType.user_vm);
+            _accountMgr.decrementResourceCount(account.getId(), ResourceType.volume, numVolumes);
+            
+            String eventDescription = "Failed to create VM: ";
+            if (vm == null) {
+                eventDescription += "new instance";
+            } else {
+                eventDescription += vm.getName();
+                if (!vm.getName().equals(vm.getDisplayName())) {
+                    eventDescription += " (" + vm.getDisplayName() + ")";
+                }
+            }
+
+            if (th instanceof ResourceAllocationException) {
+                throw (ResourceAllocationException)th;
+            }
+            throw new CloudRuntimeException("Unable to create vm", th);
+        }
+        */
+
+        return null;
     }
     
     @Override @DB
-    public UserVmVO createVirtualMachine(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> avoids, long startEventId) throws InternalErrorException, ResourceAllocationException {
+    public UserVmVO createVirtualMachine(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> avoids, long startEventId, long size) throws InternalErrorException, ResourceAllocationException {
         long accountId = account.getId();
         long dataCenterId = dc.getId();
         long serviceOfferingId = offering.getId();
@@ -1300,7 +1471,7 @@ public class UserVmManagerImpl implements UserVmManager {
                 	throw rae;
                 }
 
-            	poolid = _storageMgr.createUserVM(account, vm, template, dc, pod.first(), offering, diskOffering, avoids);
+            	poolid = _storageMgr.createUserVM(account, vm, template, dc, pod.first(), offering, diskOffering, avoids,size);
                 if ( poolid != 0) {
                     break;
                 }
@@ -1526,8 +1697,9 @@ public class UserVmManagerImpl implements UserVmManager {
     }
     
     @Override @DB
-    public boolean recoverVirtualMachine(long vmId) throws ResourceAllocationException {
+    public boolean recoverVirtualMachine(long vmId) throws ResourceAllocationException, InternalErrorException {
         UserVmVO vm = _vmDao.findById(vmId);
+        
         if (vm == null || vm.getRemoved() != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to find vm or vm is removed: " + vmId);
@@ -1557,6 +1729,10 @@ public class UserVmManagerImpl implements UserVmManager {
     	txn.start();
 
         account = _accountDao.lock(vm.getAccountId(), true);
+        
+        //if the account is deleted, throw error
+        if(account.getRemoved()!=null)
+        	throw new InternalErrorException("Unable to recover VM as the account is deleted");
         
     	// First check that the maximum number of UserVMs for the given accountId will not be exceeded
         if (_accountMgr.resourceLimitExceeded(account, ResourceType.user_vm)) {
@@ -2382,7 +2558,7 @@ public class UserVmManagerImpl implements UserVmManager {
     
     @DB
     @Override
-	public UserVmVO createDirectlyAttachedVM(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> a, List<NetworkGroupVO>  networkGroups, long startEventId) throws InternalErrorException, ResourceAllocationException {
+	public UserVmVO createDirectlyAttachedVM(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> a, List<NetworkGroupVO>  networkGroups, long startEventId, long size) throws InternalErrorException, ResourceAllocationException {
     	
     	long accountId = account.getId();
 	    long dataCenterId = dc.getId();
@@ -2509,7 +2685,7 @@ public class UserVmManagerImpl implements UserVmManager {
 	            
 	            vm = _vmDao.findById(vmId);
 	            try {
-	            	poolId = _storageMgr.createUserVM(account,  vm, template, dc, pod.first(), offering, diskOffering, a);
+	            	poolId = _storageMgr.createUserVM(account,  vm, template, dc, pod.first(), offering, diskOffering, a,size);
 	            } catch (CloudRuntimeException e) {
 	            	_vmDao.delete(vmId);
 	                _ipAddressDao.unassignIpAddress(guestIp);
@@ -2582,7 +2758,7 @@ public class UserVmManagerImpl implements UserVmManager {
     
     @DB
     @Override
-	public UserVmVO createDirectlyAttachedVMExternal(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> a, List<NetworkGroupVO>  networkGroups, long startEventId) throws InternalErrorException, ResourceAllocationException {
+	public UserVmVO createDirectlyAttachedVMExternal(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> a, List<NetworkGroupVO>  networkGroups, long startEventId, long size) throws InternalErrorException, ResourceAllocationException {
 	    long accountId = account.getId();
 	    long dataCenterId = dc.getId();
 	    long serviceOfferingId = offering.getId();
@@ -2668,7 +2844,7 @@ public class UserVmManagerImpl implements UserVmManager {
 	
 	            vm = _vmDao.findById(vmId);
 	            try {
-	            	poolId = _storageMgr.createUserVM(account,  vm, template, dc, pod.first(), offering, diskOffering, a);
+	            	poolId = _storageMgr.createUserVM(account,  vm, template, dc, pod.first(), offering, diskOffering,a,size);
 	            } catch (CloudRuntimeException e) {
 	            	_vmDao.delete(vmId);
 	                _accountMgr.decrementResourceCount(account.getId(), ResourceType.user_vm);

@@ -481,10 +481,11 @@ public interface ManagementServer {
      * @param name - name for the volume
      * @param zoneId - id of the zone to create this volume on
      * @param diskOfferingId - id of the disk offering to create this volume with
+     * @param size - size of the volume
      * @return true if success, false if not
      */
-    VolumeVO createVolume(long accountId, long userId, String name, long zoneId, long diskOfferingId, long startEventId) throws InternalErrorException;
-    long createVolumeAsync(long accountId, long userId, String name, long zoneId, long diskOfferingId) throws InvalidParameterValueException, InternalErrorException, ResourceAllocationException;
+    VolumeVO createVolume(long accountId, long userId, String name, long zoneId, long diskOfferingId, long startEventId, long size) throws InternalErrorException;
+    long createVolumeAsync(long accountId, long userId, String name, long zoneId, long diskOfferingId, long size) throws InvalidParameterValueException, InternalErrorException, ResourceAllocationException;
     
     /**
      * Finds the root volume of the VM
@@ -643,14 +644,15 @@ public interface ManagementServer {
      * @param displayName user-supplied name to be shown in the UI or returned in the API
      * @param groupName user-supplied groupname to be shown in the UI or returned in the API
      * @param userData user-supplied base64-encoded data that can be retrieved by the instance from the virtual router
+     * @param size -- size to be used for volume creation in case the disk offering is private (i.e. size=0)
      * @return VirtualMachine if successfully deployed, null otherwise
      * @throws InvalidParameterValueException if the parameter values are incorrect.
      * @throws ExecutionException
      * @throws StorageUnavailableException
      * @throws ConcurrentOperationException
      */
-    UserVm deployVirtualMachine(long userId, long accountId, long dataCenterId, long serviceOfferingId, long templateId, Long diskOfferingId, String domain, String password, String displayName, String group, String userData, String [] groups, long startEventId) throws ResourceAllocationException, InvalidParameterValueException, InternalErrorException, InsufficientStorageCapacityException, PermissionDeniedException, ExecutionException, StorageUnavailableException, ConcurrentOperationException;
-    long deployVirtualMachineAsync(long userId, long accountId, long dataCenterId, long serviceOfferingId, long templateId, Long diskOfferingId, String domain, String password, String displayName, String group, String userData, String [] groups) throws InvalidParameterValueException, PermissionDeniedException;
+    UserVm deployVirtualMachine(long userId, long accountId, long dataCenterId, long serviceOfferingId, long templateId, Long diskOfferingId, String domain, String password, String displayName, String group, String userData, String [] groups, long startEventId, long size) throws ResourceAllocationException, InvalidParameterValueException, InternalErrorException, InsufficientStorageCapacityException, PermissionDeniedException, ExecutionException, StorageUnavailableException, ConcurrentOperationException;
+    long deployVirtualMachineAsync(long userId, long accountId, long dataCenterId, long serviceOfferingId, long templateId, Long diskOfferingId, String domain, String password, String displayName, String group, String userData, String [] groups, long size) throws InvalidParameterValueException, PermissionDeniedException;
     
     /**
      * Starts a Virtual Machine
@@ -712,8 +714,9 @@ public interface ManagementServer {
      * Recovers a destroyed virtual machine.
      * @param vmId
      * @return true if recovered, false otherwise
+     * @throws InternalErrorException 
      */
-    boolean recoverVirtualMachine(long vmId) throws ResourceAllocationException;
+    boolean recoverVirtualMachine(long vmId) throws ResourceAllocationException, InternalErrorException;
 
     /**
      * Upgrade the virtual machine to a new service offering
@@ -1767,6 +1770,12 @@ public interface ManagementServer {
     DiskOfferingVO findDiskOfferingById(long diskOffering);
 
     /**
+     * Finds the obj associated with the private disk offering 
+     * @return -- vo obj for private disk offering
+     */
+    List<DiskOfferingVO> findPrivateDiskOffering();
+
+    /**
      * Update the permissions on a template.  A private template can be made public, or individual accounts can be granted permission to launch instances from the template.
      * @param templateId
      * @param operation
@@ -2173,4 +2182,6 @@ public interface ManagementServer {
 	boolean checkLocalStorageConfigVal(); 
 	
 	boolean addConfig(String instance, String component, String category, String name, String value, String description);
+	
+	boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException;
 }

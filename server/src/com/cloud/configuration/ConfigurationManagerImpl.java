@@ -142,7 +142,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	saveConfigurationEvent(userId, null, EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, "Successfully edited configuration value.", "name=" + name, "value=" + value);
     }
     
-    private String validateConfigurationValue(String name, String value) {
+    private String validateConfigurationValue(String name, String value) throws InvalidParameterValueException {
     	if (value == null) {
     		return null;
     	}
@@ -170,11 +170,18 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		}
 		
     	if(type.equals(String.class)) {
-			if (range.equals("privateip")) {
-				if (!NetUtils.isSiteLocalAddress(value)) {
-					s_logger.error("privateip range " + value
-									+ " is not a site local address for configuration variable " + name);
-					return "Please enter a site local IP address.";
+			if (range.equals("privateip")) 
+			{
+				try {
+					if (!NetUtils.isSiteLocalAddress(value)) {
+						s_logger.error("privateip range " + value
+										+ " is not a site local address for configuration variable " + name);
+						return "Please enter a site local IP address.";
+					}
+				} catch (NullPointerException e) 
+				{
+					s_logger.error("Error parsing ip address for " + name);
+					throw new InvalidParameterValueException("Error parsing ip address");
 				}
 			} else if (range.equals("netmask")) {
 				if (!NetUtils.isValidNetmask(value)) {

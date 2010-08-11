@@ -86,6 +86,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
@@ -134,6 +135,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
     protected SearchBuilder<SnapshotVO> PolicySnapshotSearch;
     protected SearchBuilder<SnapshotPolicyVO> PoliciesForSnapSearch;
 
+    private String _hypervisorType;
     private final boolean _shouldBeSnapshotCapable = true; // all methods here should be snapshot capable.
 
     @Override @DB
@@ -344,9 +346,12 @@ public class SnapshotManagerImpl implements SnapshotManager {
         txn.commit();
 
         // Send a ManageSnapshotCommand to the agent
-        ManageSnapshotCommand cmd = new ManageSnapshotCommand(ManageSnapshotCommand.CREATE_SNAPSHOT, id, volume.getPath(), snapshotName, _vmDao.findById(volume.getInstanceId()).getInstanceName());
+        String vmName = _storageMgr.getVmNameOnVolume(volume);
+     
+        ManageSnapshotCommand cmd = new ManageSnapshotCommand(ManageSnapshotCommand.CREATE_SNAPSHOT, id, volume.getPath(), snapshotName, vmName);
         String basicErrMsg = "Failed to create snapshot for volume: " + volume.getId();
-        ManageSnapshotAnswer answer = (ManageSnapshotAnswer) _storageMgr.sendToHostsOnStoragePool(volume.getPoolId(), cmd, basicErrMsg, _totalRetries, _pauseInterval, _shouldBeSnapshotCapable);
+        ManageSnapshotAnswer answer = (ManageSnapshotAnswer) _storageMgr.sendToHostsOnStoragePool(volume.getPoolId(), cmd, basicErrMsg, _totalRetries, _pauseInterval,
+        													_shouldBeSnapshotCapable, volume.getInstanceId());
 
         txn = Transaction.currentTxn();
         txn.start();
@@ -521,6 +526,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         }
         String firstBackupUuid = volume.getFirstSnapshotBackupUuid();
         boolean isVolumeInactive = _storageMgr.volumeInactive(volume);
+        String vmName = _storageMgr.getVmNameOnVolume(volume);
         BackupSnapshotCommand backupSnapshotCommand =
             new BackupSnapshotCommand(primaryStoragePoolNameLabel,
                                       secondaryStoragePoolUrl,
@@ -533,7 +539,8 @@ public class SnapshotManagerImpl implements SnapshotManager {
                                       prevBackupUuid,
                                       firstBackupUuid,
                                       isFirstSnapshotOfRootVolume,
-                                      isVolumeInactive);
+                                      isVolumeInactive,
+                                      vmName);
         
         String backedUpSnapshotUuid = null;
         // By default, assume failed.
@@ -544,7 +551,8 @@ public class SnapshotManagerImpl implements SnapshotManager {
                                                                                                   basicErrMsg,
                                                                                                   _totalRetries,
                                                                                                   _pauseInterval,
-                                                                                                  _shouldBeSnapshotCapable);
+                                                                                                  _shouldBeSnapshotCapable,
+                                                                                                  volume.getInstanceId());
         if (answer != null && answer.getResult()) {
             backedUpSnapshotUuid = answer.getBackupSnapshotName();
             if (backedUpSnapshotUuid != null) {
@@ -734,7 +742,8 @@ public class SnapshotManagerImpl implements SnapshotManager {
                                                                                    basicErrMsg,
                                                                                    _totalRetries,
                                                                                    _pauseInterval,
-                                                                                   _shouldBeSnapshotCapable);
+                                                                                   _shouldBeSnapshotCapable,
+                                                                                   volume.getInstanceId());
         }
         
         return answer;
@@ -893,7 +902,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
                                                                      details,
                                                                      _totalRetries,
                                                                      _pauseInterval,
-                                                                     _shouldBeSnapshotCapable);
+                                                                     _shouldBeSnapshotCapable, volume.getInstanceId());
                 
                 if ((answer != null) && answer.getResult()) {
                     // This is not the last snapshot.
@@ -1020,7 +1029,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         	Long poolId = volume.getPoolId();
         	if (poolId != null) {
         	    // Retry only once for this command. There's low chance of failure because of a connection problem.
-        	    answer = _storageMgr.sendToHostsOnStoragePool(poolId, cmd, basicErrMsg, 1, _pauseInterval, _shouldBeSnapshotCapable);
+        	    answer = _storageMgr.sendToHostsOnStoragePool(poolId, cmd, basicErrMsg, 1, _pauseInterval, _shouldBeSnapshotCapable, volume.getInstanceId());
         	}
         	else {
         	    s_logger.info("Pool id for volume id: " + volumeId + " belonging to account id: " + accountId + " is null. Assuming the snapshotsDir for the account has already been deleted");
@@ -1230,7 +1239,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
                                 snapshot.getName(),
                                 backupOfNextSnapshot);
                     String basicErrMsg = "Failed to destroy snapshot id: " + snapshotId + " for volume id: " + volumeId;
-                    Answer answer = _storageMgr.sendToHostsOnStoragePool(volume.getPoolId(), cmd, basicErrMsg, _totalRetries, _pauseInterval, _shouldBeSnapshotCapable);
+                    Answer answer = _storageMgr.sendToHostsOnStoragePool(volume.getPoolId(), cmd, basicErrMsg, _totalRetries, _pauseInterval, _shouldBeSnapshotCapable, volume.getInstanceId());
                     
                     if ((answer != null) && answer.getResult()) {
                         success = true;
@@ -1287,6 +1296,8 @@ public class SnapshotManagerImpl implements SnapshotManager {
             throw new ConfigurationException("Unable to get the configuration dao.");
         }
         
+        _hypervisorType = configDao.getValue("hypervisor.type");
+        
         DateUtil.IntervalType.HOURLY.setMax(NumbersUtil.parseInt(configDao.getValue("snapshot.max.hourly"), HOURLYMAX));
         DateUtil.IntervalType.DAILY.setMax(NumbersUtil.parseInt(configDao.getValue("snapshot.max.daily"), DAILYMAX));
         DateUtil.IntervalType.WEEKLY.setMax(NumbersUtil.parseInt(configDao.getValue("snapshot.max.weekly"), WEEKLYMAX));
@@ -1329,5 +1340,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
     public boolean stop() {
         return true;
     }
+    
+    
 
 }

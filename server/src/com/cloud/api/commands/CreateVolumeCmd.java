@@ -28,7 +28,9 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.async.executor.VolumeOperationResultObject;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.serializer.SerializerHelper;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
@@ -48,6 +50,7 @@ public class CreateVolumeCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SNAPSHOT_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SIZE, Boolean.FALSE));
     }
 
     /////////////////////////////////////////////////////
@@ -128,6 +131,7 @@ public class CreateVolumeCmd extends BaseCmd {
     	Long zoneId = (Long) params.get(BaseCmd.Properties.ZONE_ID.getName());
     	Long diskOfferingId = (Long) params.get(BaseCmd.Properties.DISK_OFFERING_ID.getName());
         Long snapshotId = (Long)params.get(BaseCmd.Properties.SNAPSHOT_ID.getName());
+        Long size = (Long)params.get(BaseCmd.Properties.SIZE.getName());
 
     	if (account == null) {
     		// Admin API call
@@ -167,12 +171,45 @@ public class CreateVolumeCmd extends BaseCmd {
             userId = Long.valueOf(Account.ACCOUNT_ID_SYSTEM);
         }
 
+        if(size==null){
+        	size = Long.valueOf(0);
+        }
+        
         boolean useSnapshot = false;
-        if (snapshotId == null) {
-            if ((zoneId == null) || (diskOfferingId == null)) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Missing parameter(s), both zoneid and diskofferingid must be specified.");
+        if (snapshotId == null) 
+        {
+            if ((zoneId == null)) 
+            {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Missing parameter,zoneid must be specified.");
             }
-        } else {
+            
+            if(diskOfferingId == null && size == 0)
+            {
+            	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Missing parameter(s),either a positive volume size or a valid disk offering id must be specified.");
+            }
+            else if(diskOfferingId == null && size != 0)
+            {
+            	//validate the size to ensure between min and max size range
+            	try 
+            	{
+					boolean ok = getManagementServer().validateCustomVolumeSizeRange(size);
+					
+					if(!ok)
+						throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid size for custom volume creation:");
+					
+				} catch (InvalidParameterValueException e) 
+				{
+					s_logger.warn("Invalid size for custom volume creation");
+					throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid size for custom volume creation:"+e.getMessage());
+				}
+            	
+            	//this is the case of creating var size vol with private disk offering
+            	List<DiskOfferingVO> privateTemplateList = getManagementServer().findPrivateDiskOffering();
+            	diskOfferingId = privateTemplateList.get(0).getId(); //we use this id for creating volume
+            }
+        } 
+        else 
+        {
             useSnapshot = true;
             //Verify parameters
             Snapshot snapshotCheck = getManagementServer().findSnapshotById(snapshotId);
@@ -197,7 +234,7 @@ public class CreateVolumeCmd extends BaseCmd {
     		if (useSnapshot) {
                 jobId = getManagementServer().createVolumeFromSnapshotAsync(userId, account.getId(), snapshotId, name);
     		} else {
-    		    jobId = getManagementServer().createVolumeAsync(userId, account.getId(), name, zoneId, diskOfferingId);
+    		    jobId = getManagementServer().createVolumeAsync(userId, account.getId(), name, zoneId, diskOfferingId, size);
     		}
     		
     		if (jobId == 0) {

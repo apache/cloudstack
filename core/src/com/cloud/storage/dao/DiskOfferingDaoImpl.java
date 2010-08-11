@@ -38,12 +38,17 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     private static final Logger s_logger = Logger.getLogger(DiskOfferingDaoImpl.class);
 
     private final SearchBuilder<DiskOfferingVO> DomainIdSearch;
+    private final SearchBuilder<DiskOfferingVO> PrivateDiskOfferingSearch;
     private final Attribute _typeAttr;
 
     protected DiskOfferingDaoImpl() {
         DomainIdSearch  = createSearchBuilder();
         DomainIdSearch.and("domainId", DomainIdSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         DomainIdSearch.done();
+        
+        PrivateDiskOfferingSearch  = createSearchBuilder();
+        PrivateDiskOfferingSearch.and("diskSize", PrivateDiskOfferingSearch.entity().getDiskSize(), SearchCriteria.Op.EQ);
+        PrivateDiskOfferingSearch.done();
         
         _typeAttr = _allAttributes.get("type");
     }
@@ -53,6 +58,13 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         SearchCriteria<DiskOfferingVO> sc = DomainIdSearch.create();
         sc.setParameters("domainId", domainId);
         // FIXME:  this should not be exact match, but instead should find all available disk offerings from parent domains
+        return listActiveBy(sc);
+    }
+    
+    @Override
+    public List<DiskOfferingVO> findPrivateDiskOffering() {
+        SearchCriteria<DiskOfferingVO> sc = PrivateDiskOfferingSearch.create();
+        sc.setParameters("diskSize", 0);
         return listActiveBy(sc);
     }
     

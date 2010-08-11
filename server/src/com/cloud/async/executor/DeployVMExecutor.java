@@ -60,7 +60,7 @@ public class DeployVMExecutor extends VMOperationExecutor {
 				param.getUserId(), param.getAccountId(), param.getDataCenterId(),
 				param.getServiceOfferingId(),
 				param.getTemplateId(), param.getDiskOfferingId(), param.getDomain(), 
-				param.getPassword(), param.getDisplayName(), param.getGroup(), param.getUserData(), param.getNetworkGroup(), param.getEventId());
+				param.getPassword(), param.getDisplayName(), param.getGroup(), param.getUserData(), param.getNetworkGroup(), param.getEventId(), param.getSize());
 			
     		asyncMgr.completeAsyncJob(getJob().getId(),
         		AsyncJobResult.STATUS_SUCCEEDED, 0, composeResultObject(param.getUserId(), vm, param));

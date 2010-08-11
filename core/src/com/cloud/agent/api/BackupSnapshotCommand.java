@@ -30,6 +30,7 @@ public class BackupSnapshotCommand extends SnapshotCommand {
     private boolean isFirstSnapshotOfRootVolume;
     private boolean isVolumeInactive;
     private String firstBackupUuid;
+    private String vmName;
     
     protected BackupSnapshotCommand() {
         
@@ -56,7 +57,8 @@ public class BackupSnapshotCommand extends SnapshotCommand {
                                  String prevBackupUuid,
                                  String firstBackupUuid,
                                  boolean isFirstSnapshotOfRootVolume,
-                                 boolean isVolumeInactive) 
+                                 boolean isVolumeInactive,
+                                 String vmName) 
     {
         super(primaryStoragePoolNameLabel, secondaryStoragePoolURL, snapshotUuid, snapshotName, dcId, accountId, volumeId);
         this.prevSnapshotUuid = prevSnapshotUuid;
@@ -64,6 +66,7 @@ public class BackupSnapshotCommand extends SnapshotCommand {
         this.firstBackupUuid = firstBackupUuid;
         this.isFirstSnapshotOfRootVolume = isFirstSnapshotOfRootVolume;
         this.isVolumeInactive = isVolumeInactive;
+        this.vmName = vmName;
     }
 
     public String getPrevSnapshotUuid() {
@@ -86,4 +89,7 @@ public class BackupSnapshotCommand extends SnapshotCommand {
         return isVolumeInactive;
     }
     
+    public String getVmName() {
+    	return vmName;
+    }
 }

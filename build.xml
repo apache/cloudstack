@@ -10,15 +10,7 @@
     </description>
   
     <dirname property="base.dir" file="${ant.file.Cloud.com Cloud Stack Build Dispatch}"/>
-
-    <condition property="build.dir" value="${base.dir}/build" else="${base.dir}/build"> <!-- silly no-op -->
-      <and>
-        <available file="cloudstack-proprietary/build/build-cloud-premium.xml"/>
-        <not>
-          <isset property="OSS"/>
-        </not>
-      </and>
-    </condition>
+    <property name="build.dir" location="${base.dir}/build"/>
 
     <condition property="build-cloud.properties.file" value="${build.dir}/override/build-cloud.properties" else="${build.dir}/build-cloud.properties">
       <available file="${build.dir}/override/build-cloud.properties" />
@@ -29,57 +21,57 @@
     <property name="dist.dir" location="${base.dir}/dist"/>
     <property name="target.dir" location="${base.dir}/target"/>
 
-    <condition property="build.file" value="cloudstack-proprietary/build/build-cloud-premium.xml" else="${build.dir}/build-cloud.xml">
+    <condition property="build.file" value="premium/build-cloud-premium.xml" else="build-cloud.xml">
       <and>
-        <available file="cloudstack-proprietary/build/build-cloud-premium.xml"/>
+        <available file="build/premium/build-cloud-premium.xml"/>
         <not>
           <isset property="OSS"/>
         </not>
       </and>
     </condition>
 
-    <condition property="package.file" value="cloudstack-proprietary/build/package-premium.xml" else="${build.dir}/package.xml">
+    <condition property="package.file" value="premium/package-premium.xml" else="package.xml">
       <and>
-        <available file="cloudstack-proprietary/build/package-premium.xml"/>
+        <available file="build/premium/package-premium.xml"/>
         <not>
           <isset property="OSS"/>
         </not>
       </and>
     </condition>
 
-    <condition property="developer.file" value="cloudstack-proprietary/build/developer-premium.xml" else="${build.dir}/developer.xml">
+    <condition property="developer.file" value="premium/developer-premium.xml" else="developer.xml">
       <and>
-        <available file="cloudstack-proprietary/build/developer-premium.xml"/>
+        <available file="build/premium/developer-premium.xml"/>
         <not>
           <isset property="OSS"/>
         </not>
       </and>
     </condition>
 	
-    <condition property="docs.file" value="cloudstack-proprietary/build/build-docs-premium.xml" else="${build.dir}/build-docs.xml">
+    <condition property="docs.file" value="premium/build-docs-premium.xml" else="build-docs.xml">
       <and>
-        <available file="cloudstack-proprietary/build/build-docs-premium.xml"/>
+        <available file="build/premium/build-docs-premium.xml"/>
         <not>
           <isset property="OSS"/>
         </not>
       </and>
     </condition>
 
-    <condition property="test.file" value="cloudstack-proprietary/build/build-tests-premium.xml" else="${build.dir}/build-tests.xml">
+    <condition property="test.file" value="premium/build-tests-premium.xml" else="build-tests.xml">
       <and>
-        <available file="cloudstack-proprietary/build/build-tests-premium.xml"/>
+        <available file="build/premium/build-tests-premium.xml"/>
         <not>
           <isset property="OSS"/>
         </not>
       </and>
     </condition>
 
-    <import file="${base.dir}/cloudstack-proprietary/plugins/zynga/build.xml" optional='true'/>
-    <import file="${build.file}" optional="false"/>
-    <import file="${docs.file}" optional="true"/>
-    <import file="${test.file}" optional="true"/>
-    <import file="${package.file}" optional="true"/>
-    <import file="${developer.file}" optional="true"/>
+    <import file="${base.dir}/plugins/zynga/build.xml" optional='true'/>
+    <import file="${build.dir}/${build.file}" optional="false"/>
+    <import file="${build.dir}/${docs.file}" optional="true"/>
+    <import file="${build.dir}/${test.file}" optional="true"/>
+    <import file="${build.dir}/${package.file}" optional="true"/>
+    <import file="${build.dir}/${developer.file}" optional="true"/>
   
 </project>
 

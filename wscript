@@ -48,7 +48,7 @@ for _globber in [
 	for f in _globber: Scripting.excludes.append(_basename(f)) # _basename() only the filename
 
 # things never to consider when building or installing
-for pattern in ["**/.project","**/.classpath"]: Node.exclude_regs += "\n%s"%pattern
+for pattern in ["**/.project","**/.classpath","**/.pydevproject"]: Node.exclude_regs += "\n%s"%pattern
 
 # Support functions
 
@@ -789,6 +789,18 @@ def run(args):
 def debug(ctx):
 	"""runs the management server in debug mode"""
 	run("debug")
+
+@throws_command_errors
+def run_agent(args):
+	"""runs the management server"""
+	conf = _getbuildcontext()
+	_check_call("sudo",[_join(conf.env.LIBEXECDIR,"agent-runner")])
+
+@throws_command_errors
+def run_console_proxy(args):
+	"""runs the management server"""
+	conf = _getbuildcontext()
+	_check_call("sudo",[_join(conf.env.LIBEXECDIR,"console-proxy-runner")])
 
 def simulate_agent(args):
 	"""runs the agent simulator, compiling and installing files as needed

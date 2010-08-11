@@ -214,10 +214,14 @@ public class ListTemplatesCmd extends BaseCmd {
                 templateData.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_TEXT.getName(), template.getDisplayText()));
                 templateData.add(new Pair<String, Object>(BaseCmd.Properties.IS_PUBLIC.getName(), Boolean.valueOf(template.isPublicTemplate()).toString()));
                 templateData.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(templateHostRef.getCreated())));
+                if(template.getRemoved() != null){
+                	templateData.add(new Pair<String, Object>(BaseCmd.Properties.REMOVED.getName(), getDateString(template.getRemoved())));
+                }
                 templateData.add(new Pair<String, Object>(BaseCmd.Properties.IS_READY.getName(), Boolean.valueOf(templateHostRef.getDownloadState()==Status.DOWNLOADED).toString()));
                 templateData.add(new Pair<String, Object>(BaseCmd.Properties.IS_FEATURED.getName(), Boolean.valueOf(template.isFeatured()).toString()));
                 templateData.add(new Pair<String, Object>(BaseCmd.Properties.PASSWORD_ENABLED.getName(), Boolean.valueOf(template.getEnablePassword()).toString()));
                 templateData.add(new Pair<String, Object>(BaseCmd.Properties.CROSS_ZONES.getName(), Boolean.valueOf(template.isCrossZones()).toString()));
+                templateData.add(new Pair<String, Object>(BaseCmd.Properties.FORMAT.getName(), template.getFormat()));
                 
                 GuestOS os = getManagementServer().findGuestOSById(template.getGuestOSId());
                 if (os != null) {

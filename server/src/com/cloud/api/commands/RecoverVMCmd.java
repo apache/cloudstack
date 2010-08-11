@@ -27,6 +27,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
@@ -100,6 +101,8 @@ public class RecoverVMCmd extends BaseCmd {
             return returnValues;
         } catch (ResourceAllocationException ex) {
             throw new ServerApiException(BaseCmd.VM_RECOVER_ERROR, "Failed to recover virtual machine with id " + vmId + "; " + ex.getMessage());
-        }
+        } catch (InternalErrorException e) {
+        	throw new ServerApiException(BaseCmd.VM_RECOVER_ERROR, "Failed to recover virtual machine with id " + vmId + "; " + e.getMessage());
+		}
     }
 }

@@ -31,6 +31,7 @@ public class DeployVMParam extends VMOperationParam {
 	private String userData;
 	private long domainId;
 	private String [] networkGroups;
+	private long size;
 	
 	public DeployVMParam() {
 	}
@@ -58,7 +59,7 @@ public class DeployVMParam extends VMOperationParam {
 	        long serviceOfferingId, long templateId,
 	        Long diskOfferingId, String domain, String password,
 	        String displayName, String group, String userData, 
-	        String [] networkGroups, long eventId) {
+	        String [] networkGroups, long eventId, long size) {
 	        
 	        setUserId(userId);
 	        setAccountId(accountId);
@@ -73,7 +74,12 @@ public class DeployVMParam extends VMOperationParam {
 	        this.userData = userData;
 	        this.setNetworkGroups(networkGroups);
 	        this.eventId = eventId;
+	        this.size = size;
 	    }
+	
+	public long getSize(){
+		return size;
+	}
 	
 	public long getDataCenterId() {
 		return dataCenterId;

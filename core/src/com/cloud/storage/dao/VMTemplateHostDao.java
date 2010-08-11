@@ -27,6 +27,8 @@ public interface VMTemplateHostDao extends GenericDao<VMTemplateHostVO, Long> {
     List<VMTemplateHostVO> listByHostId(long id);
 
     List<VMTemplateHostVO> listByTemplateId(long templateId);
+    
+    List<VMTemplateHostVO> listByOnlyTemplateId(long templateId);
 
     VMTemplateHostVO findByHostTemplate(long hostId, long templateId);
 

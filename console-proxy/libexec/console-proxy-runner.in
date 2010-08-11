@@ -33,7 +33,7 @@ for x in private public ; do
 		defaultroute=`ip route | grep ^default | cut -d ' ' -f 5`
 		test -n "$defaultroute"
 		echo "Using auto-discovered network device $defaultroute which is the default route"
-		SERVICEARGS="$SERVICEARGS -D$x.network.device="$defaultroute
+		SERVICEARGS="$SERVICEARGS $x.network.device="$defaultroute
 	fi
 done
 
@@ -52,7 +52,7 @@ function termagent() {
 
 trap termagent TERM
 while true ; do
-	java -Xms128M -Xmx384M -cp "$CLASSPATH" $SERVICEARGS "$@" com.cloud.agent.AgentShell &
+	java -Xms128M -Xmx384M -cp "$CLASSPATH" "$@" com.cloud.agent.AgentShell $SERVICEARGS &
 	agentpid=$!
 	echo "Console Proxy started.  PID: $!" >&2
 	wait $agentpid

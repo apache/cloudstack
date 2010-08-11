@@ -156,6 +156,24 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     }
     
     public UserVmVO(long id,
+                    String instanceName,
+                    String displayName,
+                    long templateId,
+                    long guestOsId,
+                    boolean haEnabled,
+                    long domainId,
+                    long accountId,
+                    long serviceOfferingId,
+                    String group,
+                    String userData) {
+        super(id, displayName, instanceName, Type.User, templateId, guestOsId, haEnabled);
+        this.group = group;
+        this.userData = userData;
+        this.displayName = displayName;
+        
+    }
+    
+    public UserVmVO(long id,
                     String name,
                     long templateId,
                     long guestOSId,

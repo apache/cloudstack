@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# $Id: modifyvlan.sh 11388 2010-08-02 17:04:13Z edison $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/vm/network/vnet/modifyvlan.sh $
+# $Id: modifyvlan.sh 11601 2010-08-11 17:26:15Z kris $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.refactor/java/scripts/vm/network/vnet/modifyvlan.sh $
 # modifyvlan.sh -- adds and deletes VLANs from a Routing Server
 #
 #
@@ -126,6 +126,13 @@ if [ "$oflag$vflag$pflag" != "111" ]
 then
 	usage
 	exit 2
+fi
+
+# Vlan module is loaded?
+lsmod|grep ^8021q >& /dev/null
+if [ $? -gt 0 ]
+then
+   modprobe 8021q >& /dev/null
 fi
 
 if [ "$op" == "add" ]

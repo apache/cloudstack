@@ -156,6 +156,10 @@ public class DiskOfferingVO implements DiskOffering {
         this.displayText = displayText;
     }
 
+    public long getDiskSize(){
+    	return diskSize;
+    }
+    
     public long getDiskSizeInBytes() {
         return diskSize * 1024 * 1024;
     }

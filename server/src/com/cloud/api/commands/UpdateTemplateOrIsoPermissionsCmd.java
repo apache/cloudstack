@@ -131,6 +131,12 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
             }
         }
 
+        // If the template is removed throw an error.
+        if (template.getRemoved() != null){
+        	s_logger.error("unable to update permissions for " + getMediaType() + " with id " + id + " as it is removed  ");
+        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to update permissions for " + getMediaType() + " with id " + id + " as it is removed ");
+        }
+        
         if (id == Long.valueOf(1)) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to update permissions for " + getMediaType() + " with id " + id);
         }

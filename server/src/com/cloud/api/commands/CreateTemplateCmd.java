@@ -219,14 +219,6 @@ public class CreateTemplateCmd extends BaseCmd {
         c.addCriteria(Criteria.NAME, name);
         c.addCriteria(Criteria.CREATED_BY, Long.valueOf(volume.getAccountId()));
         List<VMTemplateVO> templates = getManagementServer().searchForTemplates(c);
-        if ((templates != null) && !templates.isEmpty()) {
-            for (VMTemplateVO template : templates) {
-                if (template.getName().equalsIgnoreCase(name)) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "a private template with name " + name + " already exists for account " +
-                            volume.getAccountId() + ", please try again with a different name");
-                }
-            }
-        }
         
         // If command is executed via 8096 port, set userId to the id of System account (1)
         if (userId == null) {

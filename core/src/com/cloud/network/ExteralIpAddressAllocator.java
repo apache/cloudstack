@@ -48,12 +48,12 @@ public class ExteralIpAddressAllocator implements IpAddrAllocator{
     @Inject IPAddressDao _ipAddressDao = null;
     @Inject VlanDao _vlanDao;
 	private boolean _isExternalIpAllocatorEnabled = false;
-	private String _externalIpAllocatorUrl;
+	private String _externalIpAllocatorUrl = null;
 
 	
 	@Override
 	public IpAddr getPrivateIpAddress(String macAddr, long dcId, long podId) {
-		if (this._externalIpAllocatorUrl.equalsIgnoreCase("")) {
+		if (_externalIpAllocatorUrl == null || this._externalIpAllocatorUrl.equalsIgnoreCase("")) {
 			return new IpAddr();
 		}
 		String urlString = this._externalIpAllocatorUrl + "?command=getIpAddr&mac=" + macAddr + "&dc=" + dcId + "&pod=" + podId;
@@ -102,10 +102,12 @@ public class ExteralIpAddressAllocator implements IpAddrAllocator{
 	@Override
 	public boolean releasePrivateIpAddress(String ip, long dcId, long podId) {
 		/*TODO: call API to release the ip address from external DHCP server*/
-		String urlString = this._externalIpAllocatorUrl + "?command=releaseIpAddr&ip=" + ip + "&dc=" + dcId + "&pod=" + podId;
-		if (this._externalIpAllocatorUrl.equalsIgnoreCase("")) {
+		if (_externalIpAllocatorUrl == null || this._externalIpAllocatorUrl.equalsIgnoreCase("")) {
 			return false;
 		}
+		
+		String urlString = this._externalIpAllocatorUrl + "?command=releaseIpAddr&ip=" + ip + "&dc=" + dcId + "&pod=" + podId;
+		
 		 s_logger.debug("releaseIP:" + urlString);
 		BufferedReader in = null;
 		try {
