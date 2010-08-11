@@ -18,11 +18,11 @@
     <property file="${build-cloud.properties.file}"/>
 	
 	<property name="premium.name" value="cloudstack-proprietary"/>
-	<property name="premium.dir" location="${base.dir}/${premium.name}"/> 
+	<property name="premium.base.dir" location="${base.dir}/${premium.name}"/> 
 	
-    <condition property="build.dir" value="${base.dir}/build" else="${premium.dir}/build"> <!-- silly no-op -->
+    <condition property="my.build.dir" value="${premium.base.dir}/build" else="${base.dir}/build"> 
       <and>
-        <available file="${premium.dir}/build"/>
+        <available file="${premium.base.dir}/build"/>
         <not>
           <isset property="OSS"/>
         </not>
@@ -33,10 +33,9 @@
     <property name="dist.dir" location="${base.dir}/dist"/>
     <property name="target.dir" location="${base.dir}/target"/>
 
-    <import file="${build.dir}/build-cloud.xml" optional="false"/>
-    <import file="${build.dir}/build-docs.xml" optional="true"/>
-    <import file="${build.dir}/build-test.xml" optional="true"/>
-    <import file="${build.dir}/package.xml" optional="true"/>
-    <import file="${build.dir}/developer.xml" optional="true"/>
-  
+    <import file="${my.build.dir}/build-cloud.xml" optional="false"/>
+    <import file="${my.build.dir}/build-docs.xml" optional="true"/>
+    <import file="${my.build.dir}/build-test.xml" optional="true"/>
+    <import file="${my.build.dir}/package.xml" optional="true"/> 
+    <import file="${my.build.dir}/developer.xml" optional="true"/>
 </project>
