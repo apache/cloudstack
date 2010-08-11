@@ -624,6 +624,10 @@ public class TestVMWare {
 		cb.getConnection().getService().powerOffVM_Task(morVm);
 	}
 	
+	private void testCustomField() throws Exception {
+		// TODO
+	}
+	
 	public static void main(String[] args) throws Exception {
 		setupLog4j();
 		TestVMWare client = new TestVMWare();
