@@ -234,7 +234,7 @@ conf.env.USAGECLASSPATH = pathsep.join(usageclasspath)
 compilecp = []# list(srcdirs)
 # 2.a) the thirdparty/ directory in the source if on Windows / Mac
 # 2.b) the deps/ directory in the source if on Linux
-if conf.env.DISTRO in ["Windows","Mac"]:  compilecp+= _glob(_join("thirdparty","*.jar"))
+if conf.env.DISTRO in ["Windows","Mac"]:  compilecp+= _glob(_join("cloudstack-proprietary","thirdparty","*.jar"))
 else:					  compilecp+= _glob(_join("deps","*.jar"))
 # 3. the system classpath (system-installed JARs)
 compilecp+= [ conf.env.SYSTEMCLASSPATH ]

@@ -60,7 +60,9 @@
   <property name="dep.cache.dir" location="${target.dir}/dep-cache" />
   <property name="build.log" location="${target.dir}/ant_verbose.txt" />
 
-  <property name="thirdparty.dir" location="${base.dir}/thirdparty" />
+  <property name="proprietary.dir" location="${base.dir}/cloudstack-proprietary" />
+
+  <property name="thirdparty.dir" location="${proprietary.dir}/thirdparty" />
   <property name="deps.dir" location="${base.dir}/deps" />
 
   <!-- directories for client compilation-->
