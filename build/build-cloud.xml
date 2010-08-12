@@ -529,7 +529,7 @@
 
     <!-- create a UTC build timestamp using ISO 8601 formatting -->
     <tstamp>
-      <format property="utc.build.timestamp" pattern="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" timezone="GMT" />
+      <format property="utc.build.timestamp" pattern="yyyy-MM-dd'T'HH:mm:ss'Z'" timezone="GMT" />
     </tstamp>
 
     <!-- remember who/where did the build -->
@@ -541,7 +541,7 @@
 
     <!-- set build.number property, stored in eponymous file -->
     <buildnumber file="${build.dir}/build.number" />
-    <condition property="impl.version" value="${version}.${manual.build.number}" else="${version}.${build.number}">
+    <condition property="impl.version" value="${version}.${manual.build.number}" else="${version}.${utc.build.timestamp}">
        <isset property="manual.build.number"/>
      </condition>
 
