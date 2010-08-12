@@ -423,6 +423,7 @@ fi
 %{_javadir}/%{name}-utils.jar
 %doc %{_docdir}/%{name}-%{version}/sccs-info
 %doc %{_docdir}/%{name}-%{version}/configure-info
+%doc %{_docdir}/%{name}-%{version}/version-info
 %doc README
 %doc HACKING
 %doc debian/copyright
