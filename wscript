@@ -312,8 +312,7 @@ def _install_files_filtered(self,destdir,listoffiles,**kwargs):
 	if isinstance(listoffiles,str) and '**' in listoffiles:
 		listoffiles = cwd.ant_glob(listoffiles,flat=True)
 	elif isinstance(listoffiles,str) and '*' in listoffiles:
-		gl=cwd.abspath() + os.sep + listoffiles
-		listoffiles=_glob(gl)
+		listoffiles = [ n for x in listoffiles.split() for n in _glob(cwd.abspath() + os.sep + x.replace("/",os.sep))  ]
 	listoffiles = Utils.to_list(listoffiles)[:]
 	listoffiles = [ x for x in listoffiles if not ( x.endswith("~") or x == "override" or "%soverride"%os.sep in x ) ]
 	for n,f in enumerate(listoffiles):

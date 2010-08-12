@@ -296,7 +296,7 @@ patterns = Utils.to_list(
 )
 premiumpatterns = patterns + ["cloudstack-proprietary/console-proxy-premium/certs/**"]
 
-artifacts = "target/jar/VMOpsConsoleApplet.jar " + " ".join( "target/jar/cloud-%s.jar"%j for j in "console-proxy console-common agent utils api core".split() )
+artifacts = "target/jar/VMOpsConsoleApplet.jar " + " ".join( "target/jar/cloud-%s.jar"%j for j in "console-proxy console-common agent utils  core".split() )
 premiumartifacts = artifacts + " target/jar/cloud-console-proxy-premium.jar"
 
 sources = " ".join( [ filelist(x,src=True,bld=False,dir=False,flat=True) for x in patterns ] )
