@@ -1,5 +1,4 @@
 build/build.number
-build/.project
 bin
 cloudstack-proprietary
 .lock-wscript
@@ -8,6 +7,8 @@ artifacts
 waf-*
 target
 override
-premium
 .metadata
 dist
+*~
+*.bak
+cloud-*.tar.bz2
