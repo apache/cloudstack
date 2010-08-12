@@ -1,0 +1,44 @@
+#! /bin/bash
+
+stage=$1
+option=$2
+
+export VMOPS_HOME=/usr/local/vmops
+
+usage() {
+	echo "Usage: vsetup [networking|zpool]"
+	echo "    networking: probe NICs, configure networking, and detect disks"
+	echo "    zpool: create ZFS storage pool"
+}
+
+if [ "$stage" != "networking" ] && [ "$stage" != "zpool" ] && [ "$stage" != "detectdisks" ] 
+then
+	usage
+	exit 1
+fi
+
+if [ "$option" != "" ] && [ "$option" != "-listonly" ]
+then
+	usage
+	exit 1
+fi
+
+$VMOPS_HOME/agent/scripts/installer/run_installer.sh storage $stage $option
+
+if [ $? -eq 0 ] 
+then
+	if [ "$stage" == "networking" ]
+	then
+		echo "Please edit /etc/vmops/disks.properties and then run \"vsetup zpool\"."
+	else
+		if [ "$stage" == "zpool" ]
+		then
+			echo "Press enter to reboot the computer..."
+			read
+			reboot
+		fi
+	fi	
+fi
+
+
+
