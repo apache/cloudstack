@@ -31,7 +31,10 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.BaseCmd;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
+import com.cloud.api.commands.UpdateZoneCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.DataCenterVO;
@@ -59,6 +62,8 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.user.AccountVO;
+import com.cloud.user.User;
+import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
@@ -667,7 +672,32 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
     
     @Override
-    public DataCenterVO editZone(long userId, long zoneId, String newZoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException {
+    public DataCenterVO editZone(UpdateZoneCmd cmd) throws InvalidParameterValueException, InternalErrorException 
+    {
+    	//Parameter validation as from execute() method in V1
+    	Long zoneId = cmd.getId();
+    	String zoneName = cmd.getZoneName();
+    	String dns1 = cmd.getDns1();
+    	String dns2 = cmd.getDns2();
+    	String internalDns1 = cmd.getInternalDns1();
+    	String internalDns2 = cmd.getInternalDns2();
+    	String vnetRange = cmd.getVnet();
+    	String guestCidr = cmd.getGuestCidrAddress();
+    	Long userId = UserContext.current().getUserId();
+    
+    	if (userId == null) {
+            userId = Long.valueOf(User.UID_SYSTEM);
+        }
+
+    	DataCenterVO zone = _zoneDao.findById(zoneId);
+    	if (zone == null) {
+    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find zone by id " + zoneId);
+    	}
+    	
+    	if (zoneName == null) {
+    		zoneName = zone.getName();
+    	}
+
     	// Make sure the zone exists
     	if (!validZone(zoneId)) {
     		throw new InvalidParameterValueException("A zone with ID: " + zoneId + " does not exist.");
@@ -702,13 +732,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     		}
     	}
     	
-    	//5. Reached here, hence editable
-    	
-    	DataCenterVO zone = _zoneDao.findById(zoneId);
+    	//5. Reached here, hence editable   	
+    	DataCenterVO zoneHandle = _zoneDao.findById(zoneId);
     	String oldZoneName = zone.getName();
     	
-    	if (newZoneName == null) {
-    		newZoneName = oldZoneName;
+    	if (zoneName == null) {
+    		zoneName = oldZoneName;
     	}
     	
     	if (dns1 == null) {
@@ -723,10 +752,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	if(guestCidr == null)
     		guestCidr = zone.getGuestNetworkCidr();    	
     	
-    	boolean checkForDuplicates = !newZoneName.equals(oldZoneName);
-    	checkZoneParameters(newZoneName, dns1, dns2, internalDns1, internalDns2, checkForDuplicates);
+    	boolean checkForDuplicates = !zoneName.equals(oldZoneName);
+    	checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, checkForDuplicates);
 
-    	zone.setName(newZoneName);
+    	zone.setName(zoneName);
     	zone.setDns1(dns1);
     	zone.setDns2(dns2);
     	zone.setInternalDns1(internalDns1);
