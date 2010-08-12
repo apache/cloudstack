@@ -151,7 +151,7 @@ public class ListSnapshotsCmd extends BaseCmd {
             snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.VOLUME_ID.getName(), volumeId));
             snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.VOLUME_NAME.getName(), volume.getName()));
             snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.VOLUME_TYPE.getName(), volume.getVolumeType()));
-            snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), snapshot.getCreated()));
+            snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(snapshot.getCreated())));
             snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), snapshot.getName()));
             
             AsyncJobVO asyncJob = getManagementServer().findInstancePendingAsyncJob("snapshot", snapshot.getId());
