@@ -18,37 +18,22 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.Manager;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.user.User;
-import com.cloud.utils.Pair;
+import com.cloud.serializer.Param;
+import com.cloud.serializer.SerializerHelper;
 
+@Implementation(method="updateZone", manager=Manager.ConfigManager)
 public class UpdateZoneCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateZoneCmd.class.getName());
 
     private static final String s_name = "updatezoneresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DNS1, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DNS2, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.GUEST_CIDR_ADDRESS, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.INTERNAL_DNS1, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.INTERNAL_DNS2, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VNET, Boolean.FALSE));
-
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -117,60 +102,155 @@ public class UpdateZoneCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+    
+
+    private DataCenterVO responseObject = null;
+
 
     @Override
     public String getName() {
         return s_name;
     }
+
     @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
+    public String getResponse() 
+    {
+        UpdateZoneResponse response = new UpdateZoneResponse();
+        if (responseObject != null) {
+            response.setStatus("true");
+            response.setDisplayText("Successfully updated zone");
+            response.setId(responseObject.getId());
+            response.setGuestCidrAddress(responseObject.getGuestNetworkCidr());
+            response.setDns1(responseObject.getDns1());
+            response.setDns2(responseObject.getDns2());
+            response.setInternalDns1(responseObject.getInternalDns1());
+            response.setInternalDns2(responseObject.getInternalDns2());
+            response.setZoneName(responseObject.getName());
+            response.setVnet(responseObject.getVnet());
+        } 
+        else 
+        {
+        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update zone; internal error.");
+        }
+        
+        return SerializerHelper.toSerializedString(responseObject);
     }
+    
+    public void setResponseObject(DataCenterVO zone) {
+        responseObject = zone;
+    }
+    // helper class for the response object
+    private class UpdateZoneResponse 
+    {
+        @Param(name="status")
+        private String status;
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-    	Long zoneId = (Long) params.get(BaseCmd.Properties.ID.getName());
-    	String zoneName = (String) params.get(BaseCmd.Properties.NAME.getName());
-    	String dns1 = (String) params.get(BaseCmd.Properties.DNS1.getName());
-    	String dns2 = (String) params.get(BaseCmd.Properties.DNS2.getName());
-    	String dns3 = (String) params.get(BaseCmd.Properties.INTERNAL_DNS1.getName());
-    	String dns4 = (String) params.get(BaseCmd.Properties.INTERNAL_DNS2.getName());
-    	String vnet = (String) params.get(BaseCmd.Properties.VNET.getName());
-    	String guestCidr = (String) params.get(BaseCmd.Properties.GUEST_CIDR_ADDRESS.getName());
-    	Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-    	
-    	if (userId == null) {
-            userId = Long.valueOf(User.UID_SYSTEM);
-        }
-    	
-    	//verify input parameters
-    	DataCenterVO zone = getManagementServer().findDataCenterById(zoneId);
-    	if (zone == null) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find zone by id " + zoneId);
-    	}
-    	
-    	if (zoneName == null) {
-    		zoneName = zone.getName();
-    	}
+        @Param(name="displaytext")
+        private String displayText;
 
-    	DataCenterVO updatedZone = null;
-    	
-        try {
-             updatedZone = getManagementServer().editZone(userId, zoneId, zoneName, dns1, dns2, dns3, dns4, vnet,guestCidr);
-        } catch (Exception ex) {
-            s_logger.error("Exception updating zone", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        }
-
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
+		@Param(name="dns1")
+        private String dns1;
         
-        if (updatedZone == null) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update zone; internal error.");
-        } else {
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), "true"));
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_TEXT.getName(), "Successfully updated zone."));
+        @Param(name="dns2")
+        private String dns2;
+
+		@Param(name="guestcidraddress")
+        private String guestCidrAddress;
+        
+        @Param(name="id")
+        private Long id;
+
+        @Param(name="internaldns1")
+        private String internalDns1;
+        
+        @Param(name="internaldns2")
+        private String internalDns2;
+
+        @Param(name="zonename")
+        private String zoneName;
+        
+        @Param(name="vnet")
+        private String vnet;
+        
+        public String getGuestCidrAddress() {
+			return guestCidrAddress;
+		}
+
+		public void setGuestCidrAddress(String guestCidrAddress) {
+			this.guestCidrAddress = guestCidrAddress;
+		}
+
+		public Long getId() {
+			return id;
+		}
+
+		public void setId(Long id) {
+			this.id = id;
+		}
+
+		public String getInternalDns1() {
+			return internalDns1;
+		}
+
+		public void setInternalDns1(String internalDns1) {
+			this.internalDns1 = internalDns1;
+		}
+
+		public String getInternalDns2() {
+			return internalDns2;
+		}
+
+		public void setInternalDns2(String internalDns2) {
+			this.internalDns2 = internalDns2;
+		}
+
+		public String getZoneName() {
+			return zoneName;
+		}
+
+		public void setZoneName(String zoneName) {
+			this.zoneName = zoneName;
+		}
+
+		public String getVnet() {
+			return vnet;
+		}
+
+		public void setVnet(String vnet) {
+			this.vnet = vnet;
+		}
+        
+        public String getDns1() {
+			return dns1;
+		}
+
+		public void setDns1(String dns1) {
+			this.dns1 = dns1;
+		}
+
+		public String getDns2() {
+			return dns2;
+		}
+
+		public void setDns2(String dns2) {
+			this.dns2 = dns2;
+		}
+        
+        public String getDisplayText() {
+            return displayText;
+        }
+
+        public void setDisplayText(String displayText) {
+            this.displayText = displayText;
         }
         
-        return returnValues;
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+                
     }
 }
