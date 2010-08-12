@@ -70,40 +70,10 @@ public class AssignToLoadBalancerRuleCmd extends BaseCmd {
         return s_name;
     }
     
-    /*
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        if ((instanceId == null) && (instanceIds == null)) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "No virtual machine id (or list if ids) specified.");
-        }
-
-        if (account == null) {
-            account = getManagementServer().findActiveAccount(accountName, domainId);
-        }
-
-        if (userId == null) {
-            userId = Long.valueOf(1);
-        }
-
-        LoadBalancerVO loadBalancer = getManagementServer().findLoadBalancerById(loadBalancerId.longValue());
-        if (loadBalancer == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find load balancer rule, with id " + loadBalancerId);
-        } else if (account != null) {
-            if (!isAdmin(account.getType()) && (loadBalancer.getAccountId() != account.getId().longValue())) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Account " + account.getAccountName() + " does not own load balancer rule " + loadBalancer.getName() +
-                        " (id:" + loadBalancer.getId() + ")");
-            } else if (!getManagementServer().isChildDomain(account.getDomainId(), loadBalancer.getDomainId())) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid load balancer rule id (" + loadBalancer.getId() + ") given, unable to assign instances to load balancer rule.");
-            }
-        }
-
-        long jobId = getManagementServer().assignToLoadBalancerAsync(paramMap);
-    }
-        */
-
     @Override
     public String getResponse() {
-        // there's no specific response for this command
+        // There's no specific response for this command, if the command failed an exception would have been thrown.  If we are here, then it succeeded.
+        // Seems like we should return success/true as the response though, so this will probably have to change.
         return null;
     }
 }
