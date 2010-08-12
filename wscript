@@ -144,8 +144,9 @@ def svninfo(*args):
 	else: url = "SVN " + url[0].strip()
 	return rev + "\n" + url
 
-def gitinfo(*args):
-	try: p = _Popen(['git','remote','show','-n','origin']+list(args),stdin=PIPE,stdout=PIPE,stderr=PIPE)
+def gitinfo(dir=None):
+	if dir and not _isdir(dir): return ''
+	try: p = _Popen(['git','remote','show','-n','origin'],stdin=PIPE,stdout=PIPE,stderr=PIPE,cwd=dir)
 	except OSError,e:
 		if e.errno == 2: return '' # svn command is not installed
 		raise
@@ -158,7 +159,7 @@ def gitinfo(*args):
 	except IndexError: url = [ s[5:] for s in stdout if s.startswith("URL") ][0]
 	assert url
 	
-	p = _Popen(['git','log','-1']+list(args),stdin=PIPE,stdout=PIPE,stderr=PIPE)
+	p = _Popen(['git','log','-1'],stdin=PIPE,stdout=PIPE,stderr=PIPE,cwd=dir)
 	stdout,stderr = p.communicate('')
 	retcode = p.wait()
 	if retcode: return
@@ -168,6 +169,15 @@ def gitinfo(*args):
 	assert commitid
 	
 	return "Git Revision: %s"%commitid + "\n" + "Git URL: %s"%url
+
+def allgitinfo():
+	t = gitinfo()
+	if not t: return t
+	
+	u = gitinfo(_join(pardir,"cloudstack-proprietary"))
+	if not u: return t
+	
+	return t + "\n\ncloustack-proprietary:\n" + u
 
 def _getbuildnumber(): # FIXME implement for git
 	n = Options.options.BUILDNUMBER
@@ -230,6 +240,7 @@ def discover_ant_targets_and_properties(files):
 	propsinpropfiles = [ l.strip().split("=",1) for f in files if f.endswith(".properties") for l in file(f).readlines() if "=" in l and not l.startswith("#") ]
 	props = dict( propsinxml + propsinpropfiles )
 	props["base.dir"] = '.'
+	props["p.base.dir"] = '.'
 
 	result = []
 	for name,target in targets.items():
@@ -528,7 +539,7 @@ def dist_hook():
 	if Options.options.OSS:
 		[ shutil.rmtree(f) for f in "cloudstack-proprietary".split() if _exists(f) ]
 		
-	stdout = svninfo("..") or gitinfo()
+	stdout = svninfo("..") or allgitinfo()
 	if stdout:
 		f = file("sccs-info","w")
 		f.write(stdout)

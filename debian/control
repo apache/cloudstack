@@ -22,7 +22,7 @@ Provides: vmops-utils
 Conflicts: vmops-utils
 Replaces: vmops-utils
 Architecture: any
-Depends: openjdk-6-jre
+Depends: openjdk-6-jre, python
 Description: Cloud.com utility library
  The Cloud.com utility libraries provide a set of Java classes used
  in the Cloud.com Cloud Stack.

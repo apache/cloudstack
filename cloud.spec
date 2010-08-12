@@ -44,6 +44,7 @@ intelligent cloud implementation.
 %package utils
 Summary:   Cloud.com utility library
 Requires: java >= 1.6.0
+Requires: python
 Group:     System Environment/Libraries
 Obsoletes: vmops-utils < %{version}-%{release}
 %description utils

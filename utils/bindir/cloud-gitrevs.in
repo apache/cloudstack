@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+
+import os, sys
+
+path = os.path.join("@DOCDIR@","sccs-info")
+try: text = file(path).read(-1)
+except IOError,e:
+	if e.errno == 2:
+		sys.stderr.write("error: SCCS info file %r cannot be found\n"%path)
+		sys.exit(1)
+	else: raise
+lines = [ s.strip() for s in text.split("\n") if s.startswith('Git Revision: ') ]
+print " ".join( [ s[14:] for s in lines ] )
