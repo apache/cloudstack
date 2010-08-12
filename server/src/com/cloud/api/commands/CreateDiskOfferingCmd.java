@@ -18,36 +18,24 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.Date;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.domain.DomainVO;
-import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.serializer.Param;
+import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.utils.Pair;
 
+@Implementation(method="createDiskOffering", manager=Manager.ConfigManager)
 public class CreateDiskOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateDiskOfferingCmd.class.getName());
 
     private static final String s_name = "creatediskofferingresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISPLAY_TEXT, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISK_SIZE, Boolean.TRUE));
-//        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_MIRRORED, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TAGS, Boolean.FALSE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -67,7 +55,6 @@ public class CreateDiskOfferingCmd extends BaseCmd {
 
     @Parameter(name="tags", type=CommandType.STRING)
     private String tags;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -93,60 +80,128 @@ public class CreateDiskOfferingCmd extends BaseCmd {
         return tags;
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
+    private DiskOfferingVO responseObject = null;
 
     @Override
     public String getName() {
         return s_name;
     }
-    @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
     @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        // FIXME: add domain-private disk offerings
-//        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-//        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-        Long domainId = (Long)params.get(BaseCmd.Properties.DOMAIN_ID.getName());
-        String name = (String)params.get(BaseCmd.Properties.NAME.getName());
-        String displayText = (String)params.get(BaseCmd.Properties.DISPLAY_TEXT.getName());
-        Long numGB = (Long) params.get(BaseCmd.Properties.DISK_SIZE.getName());
-//        Boolean isMirrored = (Boolean)params.get(BaseCmd.Properties.IS_MIRRORED.getName());
-        String tags = (String)params.get(BaseCmd.Properties.TAGS.getName());
-
-//        if (isMirrored == null) {
-//            isMirrored = Boolean.FALSE;
-//        }
-        if (domainId == null) {
-            domainId = DomainVO.ROOT_DOMAIN;
-        }
-
-        DiskOfferingVO diskOffering = null;
-        try {
-        	diskOffering = getManagementServer().createDiskOffering(domainId.longValue(), name, displayText, numGB.intValue(),tags);
-        } catch (InvalidParameterValueException ex) {
-        	throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, ex.getMessage());
-        }
-        
-        if (diskOffering == null) {
+    public String getResponse() {
+        DiskOfferingResponse response = new DiskOfferingResponse();
+        if (responseObject != null) {
+            response.setId(responseObject.getId());
+            response.setCreated(responseObject.getCreated());
+            response.setDiskSize(responseObject.getDiskSize());
+            response.setDisplayText(responseObject.getDisplayText());
+            response.setDomainId(responseObject.getDomainId());
+            // FIXME:  domain name in the response
+//            response.setDomain(responseObject.getDomain());
+            response.setName(responseObject.getName());
+            response.setTags(responseObject.getTags());
+        } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create disk offering");
         }
+        return SerializerHelper.toSerializedString(responseObject);
+    }
 
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.toString(diskOffering.getId())));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), diskOffering.getDomainId()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), getManagementServer().findDomainIdById(diskOffering.getDomainId()).getName()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), diskOffering.getName()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_TEXT.getName(), diskOffering.getDisplayText()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DISK_SIZE.getName(), diskOffering.getDiskSizeInBytes()));
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.IS_MIRRORED.getName(), diskOffering.isMirrored()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), diskOffering.getCreated()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.TAGS.getName(), diskOffering.getTags()));
-        return returnValues;
+    public void setResponseObject(DiskOfferingVO diskOffering) {
+        responseObject = diskOffering;
+    }
+
+    // helper class for the response object
+    private class DiskOfferingResponse {
+        @Param(name="id")
+        private Long id;
+
+        @Param(name="domainid")
+        private Long domainId;
+
+        @Param(name="domain")
+        private String domain;
+
+        @Param(name="name")
+        private String name;
+
+        @Param(name="displaytext")
+        private String displayText;
+
+        @Param(name="disksize")
+        private Long diskSize;
+
+        @Param(name="created")
+        private Date created;
+
+        @Param(name="tags")
+        private String tags;
+
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(Long id) {
+            this.id = id;
+        }
+
+        public Long getDomainId() {
+            return domainId;
+        }
+
+        public void setDomainId(Long domainId) {
+            this.domainId = domainId;
+        }
+
+        public String getDomain() {
+            return domain;
+        }
+
+        public void setDomain(String domain) {
+            this.domain = domain;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getDisplayText() {
+            return displayText;
+        }
+
+        public void setDisplayText(String displayText) {
+            this.displayText = displayText;
+        }
+
+        public Long getDiskSize() {
+            return diskSize;
+        }
+
+        public void setDiskSize(Long diskSize) {
+            this.diskSize = diskSize;
+        }
+
+        public Date getCreated() {
+            return created;
+        }
+
+        public void setCreated(Date created) {
+            this.created = created;
+        }
+
+        public String getTags() {
+            return tags;
+        }
+
+        public void setTags(String tags) {
+            this.tags = tags;
+        }
     }
 }

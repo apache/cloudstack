@@ -19,10 +19,11 @@ package com.cloud.configuration;
 
 import java.util.List;
 
+import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.service.ServiceOfferingVO;
@@ -99,7 +100,7 @@ public interface ConfigurationManager extends Manager {
 	 * @param size
 	 * @return ID
 	 */
-	DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags);
+	DiskOfferingVO createDiskOffering(CreateDiskOfferingCmd cmd) throws InvalidParameterValueException;
 	
 	/**
 	 * Creates a new pod

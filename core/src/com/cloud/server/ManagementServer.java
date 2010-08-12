@@ -1827,18 +1827,6 @@ public interface ManagementServer {
     List<DiskOfferingVO> searchForDiskOfferings(Criteria c);
 
     /**
-     * Create a disk offering
-     * @param domainId the id of the domain in which the disk offering is valid
-     * @param name the name of the disk offering
-     * @param description a string description of the disk offering
-     * @param numGibibytes the number of gibibytes in the disk offering (1 gibibyte = 1024 MB)
-     * @param mirrored boolean value of whether or not the offering provides disk mirroring
-     * @param tags Comma separated string to indicate special tags for the disk offering.
-     * @return the created disk offering, null if failed to create
-     */
-    DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException;
-
-    /**
      * Delete a disk offering
      * @param id id of the disk offering to delete
      * @return true if deleted, false otherwise

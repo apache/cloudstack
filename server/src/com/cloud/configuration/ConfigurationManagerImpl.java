@@ -22,7 +22,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,20 +31,22 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.domain.DomainVO;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
@@ -61,6 +62,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -91,14 +93,21 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 	@Inject EventDao _eventDao;
 	@Inject UserDao _userDao;
 	public boolean _premium;
- 
+
+	private int _maxVolumeSizeInGb;
+
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
     	_name = name;
         
         Object premium = params.get("premium");
         _premium = (premium != null) && ((String) premium).equals("true");
-        
+
+        String maxVolumeSizeInGbString = _configDao.getValue("max.volume.size.gb");
+        int maxVolumeSizeGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2000);
+
+        _maxVolumeSizeInGb = maxVolumeSizeGb;
+
     	return true;
     }
     
@@ -897,9 +906,26 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     		return false;
     	}
     }
-    
-    public DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags) {
-    	long diskSize = numGibibytes * 1024;
+
+    @Override
+    public DiskOfferingVO createDiskOffering(CreateDiskOfferingCmd cmd) throws InvalidParameterValueException {
+        Long domainId = cmd.getDomainId();
+        String name = cmd.getOfferingName();
+        String description = cmd.getDisplayText();
+        int numGibibytes = cmd.getDiskSize().intValue();
+        String tags = cmd.getTags();
+
+        if (domainId == null) {
+            domainId = Long.valueOf(DomainVO.ROOT_DOMAIN);
+        }
+
+        if ((numGibibytes != 0) && (numGibibytes < 1)) {
+            throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
+        } else if (numGibibytes > _maxVolumeSizeInGb) {
+            throw new InvalidParameterValueException("The maximum size for a disk is " + _maxVolumeSizeInGb + " Gb.");
+        }
+
+        long diskSize = numGibibytes * 1024;
     	tags = cleanupTags(tags);
 		DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize,tags);
 		return _diskOfferingDao.persist(newDiskOffering);

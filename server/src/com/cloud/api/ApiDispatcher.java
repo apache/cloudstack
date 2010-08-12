@@ -13,6 +13,7 @@ import java.util.StringTokenizer;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd.CommandType;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageManager;
@@ -27,6 +28,7 @@ import com.cloud.vm.UserVmManager;
 public class ApiDispatcher {
     private static final Logger s_logger = Logger.getLogger(ApiDispatcher.class.getName());
 
+    private ConfigurationManager _configMgr;
     private ManagementServer _mgmtServer;
     private NetworkManager _networkMgr;
     private StorageManager _storageMgr;
@@ -35,6 +37,7 @@ public class ApiDispatcher {
     public ApiDispatcher() {
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
         _mgmtServer = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
+        _configMgr = locator.getManager(ConfigurationManager.class);
         _networkMgr = locator.getManager(NetworkManager.class);
         _storageMgr = locator.getManager(StorageManager.class);
         _userVmMgr = locator.getManager(UserVmManager.class);
@@ -80,6 +83,9 @@ public class ApiDispatcher {
         String methodName = impl.method();
         Object mgr = _mgmtServer;
         switch (impl.manager()) {
+        case ConfigManager:
+            mgr = _configMgr;
+            break;
         case NetworkManager:
             mgr = _networkMgr;
             break;
