@@ -12,3 +12,5 @@ premium
 dist
 *~
 *.bak
+cloud-*.tar.bz2
+
