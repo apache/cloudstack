@@ -35,7 +35,7 @@
 
     <import file="${my.build.dir}/build-cloud.xml" optional="false"/>
     <import file="${my.build.dir}/build-docs.xml" optional="true"/>
-    <import file="${my.build.dir}/build-test.xml" optional="true"/>
+    <import file="${my.build.dir}/build-tests.xml" optional="true"/>
     <import file="${my.build.dir}/package.xml" optional="true"/> 
     <import file="${my.build.dir}/developer.xml" optional="true"/>
 </project>

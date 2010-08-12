@@ -10,3 +10,5 @@ override
 premium
 .metadata
 dist
+*~
+*.bak
