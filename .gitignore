@@ -7,8 +7,8 @@ artifacts
 waf-*
 target
 override
-premium
 .metadata
 dist
 *~
 *.bak
+cloud-*.tar.bz2
