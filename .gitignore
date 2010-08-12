@@ -7,7 +7,6 @@ artifacts
 waf-*
 target
 override
-premium
 .metadata
 dist
 *~
