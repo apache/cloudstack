@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.async.executor.DestroyVMExecutor;
 import com.cloud.async.executor.OperationResponse;
 import com.cloud.async.executor.RebootVMExecutor;
@@ -165,11 +167,11 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
 
     /**
      * upgrade the service offering of the virtual machine
-     * @param vmId id of the virtual machine being upgraded
-     * @param serviceOfferingId id of the service offering the vm should now run under
+     * @param cmd
      * @return success/failure
+     * @throws InvalidParameterValueException 
      */
-    boolean upgradeVirtualMachine(long vmId, long serviceOfferingId);
+    boolean upgradeVirtualMachine(UpgradeVMCmd cmd) throws ServerApiException, InvalidParameterValueException;
     
     /**
      * Obtains statistics for a list of host or VMs; CPU and network utilization

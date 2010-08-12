@@ -37,6 +37,8 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import net.sf.ehcache.config.Configuration;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -63,6 +65,8 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.CreatePrivateTemplateCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
@@ -73,10 +77,12 @@ import com.cloud.async.executor.OperationResponse;
 import com.cloud.async.executor.RebootVMExecutor;
 import com.cloud.async.executor.StartVMExecutor;
 import com.cloud.async.executor.StopVMExecutor;
+import com.cloud.async.executor.UpgradeVMParam;
 import com.cloud.async.executor.VMExecutorHelper;
 import com.cloud.async.executor.VMOperationListener;
 import com.cloud.async.executor.VMOperationParam;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
@@ -90,6 +96,7 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
@@ -123,6 +130,8 @@ import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offering.ServiceOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.serializer.GsonHelper;
+import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -151,9 +160,11 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
+import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
@@ -177,6 +188,7 @@ import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.google.gson.Gson;
 
 @Local(value={UserVmManager.class})
 public class UserVmManagerImpl implements UserVmManager {
@@ -208,6 +220,7 @@ public class UserVmManagerImpl implements UserVmManager {
     @Inject NetworkManager _networkMgr = null;
     @Inject StorageManager _storageMgr = null;
     @Inject AgentManager _agentMgr = null;
+    @Inject ConfigurationManager _configMgr = null;
     @Inject AccountDao _accountDao = null;
     @Inject UserDao _userDao = null;
     @Inject SnapshotDao _snapshotDao = null;
@@ -224,7 +237,8 @@ public class UserVmManagerImpl implements UserVmManager {
     @Inject NetworkGroupManager _networkGroupManager;
     @Inject ServiceOfferingDao _serviceOfferingDao;
     @Inject EventDao _eventDao = null;
-
+    @Inject UserVmDao _userVmDao = null;
+    
     private IpAddrAllocator _IpAllocator;
     ScheduledExecutorService _executor = null;
     int _expungeInterval;
@@ -1077,13 +1091,95 @@ public class UserVmManagerImpl implements UserVmManager {
     		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
     	return new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
     }
-
+    
     @Override
-    public boolean upgradeVirtualMachine(long vmId, long serviceOfferingId) {
-        UserVmVO vm = _vmDao.createForUpdate(vmId);
-        vm.setServiceOfferingId(serviceOfferingId);
-        vm.setHaEnabled(_serviceOfferingDao.findById(serviceOfferingId).getOfferHA());
-        return _vmDao.update(vmId, vm);
+    public boolean upgradeVirtualMachine(UpgradeVMCmd cmd) throws ServerApiException, InvalidParameterValueException
+    {
+        Long virtualMachineId = cmd.getId();
+        Long serviceOfferingId = cmd.getServiceOfferingId();
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long userId = UserContext.current().getUserId();
+
+        // Verify input parameters
+        
+        UserVmVO vmInstance = _userVmDao.createForUpdate(virtualMachineId.longValue());
+        if (vmInstance == null) {
+        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + virtualMachineId);
+        }       
+
+        if (account != null) 
+        {
+            if (!isAdmin(account.getType()) && (account.getId().longValue() != vmInstance.getAccountId())) 
+            {
+                throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + virtualMachineId + " for this account");
+            } 
+            else if (_domainDao.isChildDomain(account.getDomainId(),vmInstance.getDomainId())) 
+            {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid virtual machine id (" + virtualMachineId + ") given, unable to upgrade virtual machine.");
+            }
+        }
+
+        // If command is executed via 8096 port, set userId to the id of System account (1)
+        if (userId == null) {
+            userId = Long.valueOf(User.UID_SYSTEM);
+        }                         
+            
+        // Check that the specified service offering ID is valid
+        ServiceOfferingVO newServiceOffering = _offeringDao.findById(serviceOfferingId);
+        if (newServiceOffering == null) {
+        	throw new InvalidParameterValueException("Unable to find a service offering with id " + serviceOfferingId);
+        }
+            
+            // Check that the VM is stopped
+            if (!vmInstance.getState().equals(State.Stopped)) {
+                s_logger.warn("Unable to upgrade virtual machine " + vmInstance.toString() + " in state " + vmInstance.getState());
+                throw new InvalidParameterValueException("Unable to upgrade virtual machine " + vmInstance.toString() + " in state " + vmInstance.getState() + "; make sure the virtual machine is stopped and not in an error state before upgrading.");
+            }
+            
+            // Check if the service offering being upgraded to is what the VM is already running with
+            if (vmInstance.getServiceOfferingId() == newServiceOffering.getId()) {
+                if (s_logger.isInfoEnabled()) {
+                    s_logger.info("Not upgrading vm " + vmInstance.toString() + " since it already has the requested service offering (" + newServiceOffering.getName() + ")");
+                }
+                
+                throw new InvalidParameterValueException("Not upgrading vm " + vmInstance.toString() + " since it already has the requested service offering (" + newServiceOffering.getName() + ")");
+            }
+            
+            // Check that the service offering being upgraded to has the same Guest IP type as the VM's current service offering
+            ServiceOfferingVO currentServiceOffering = _offeringDao.findById(vmInstance.getServiceOfferingId());
+            if (!currentServiceOffering.getGuestIpType().equals(newServiceOffering.getGuestIpType())) {
+            	String errorMsg = "The service offering being upgraded to has a guest IP type: " + newServiceOffering.getGuestIpType();
+            	errorMsg += ". Please select a service offering with the same guest IP type as the VM's current service offering (" + currentServiceOffering.getGuestIpType() + ").";
+            	throw new InvalidParameterValueException(errorMsg);
+            }
+            
+            // Check that the service offering being upgraded to has the same storage pool preference as the VM's current service offering
+            if (currentServiceOffering.getUseLocalStorage() != newServiceOffering.getUseLocalStorage()) {
+                throw new InvalidParameterValueException("Unable to upgrade virtual machine " + vmInstance.toString() + ", cannot switch between local storage and shared storage service offerings.  Current offering useLocalStorage=" +
+                       currentServiceOffering.getUseLocalStorage() + ", target offering useLocalStorage=" + newServiceOffering.getUseLocalStorage());
+            }
+
+            // Check that there are enough resources to upgrade the service offering
+            if (!_agentMgr.isVirtualMachineUpgradable(vmInstance, newServiceOffering)) {
+               throw new InvalidParameterValueException("Unable to upgrade virtual machine, not enough resources available for an offering of " +
+                       newServiceOffering.getCpu() + " cpu(s) at " + newServiceOffering.getSpeed() + " Mhz, and " + newServiceOffering.getRamSize() + " MB of memory");
+            }
+            
+            // Check that the service offering being upgraded to has all the tags of the current service offering
+            List<String> currentTags = _configMgr.csvTagsToList(currentServiceOffering.getTags());
+            List<String> newTags = _configMgr.csvTagsToList(newServiceOffering.getTags());
+            if (!newTags.containsAll(currentTags)) {
+            	throw new InvalidParameterValueException("Unable to upgrade virtual machine; the new service offering does not have all the tags of the " +
+            											 "current service offering. Current service offering tags: " + currentTags + "; " +
+            											 "new service offering tags: " + newTags);
+            }
+            
+			long eventId = EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_UPGRADE, "upgrading Vm with Id: "+vmInstance.getId());
+ 
+            vmInstance.setServiceOfferingId(serviceOfferingId);
+            vmInstance.setHaEnabled(_serviceOfferingDao.findById(serviceOfferingId).getOfferHA());
+            return _vmDao.update(vmInstance.getId(), vmInstance);
+            
     }
 
     @Override
@@ -2939,4 +3035,10 @@ public class UserVmManagerImpl implements UserVmManager {
     		}
     	}
     }
+	
+	private static boolean isAdmin(short accountType) {
+	    return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
+	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
+	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
+	}
 }
