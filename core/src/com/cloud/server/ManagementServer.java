@@ -984,14 +984,6 @@ public interface ManagementServer {
     ServiceOfferingVO updateServiceOffering(long userId, long serviceOfferingId, String name, String displayText, Boolean offerHA, Boolean useVirtualNetwork, String tags);
     
     /**
-     * Deletes a service offering
-     * @param userId
-     * @param serviceOfferingId
-     * @return success/failure
-     */
-    boolean deleteServiceOffering(long userId, long serviceOfferingId);
-    
-    /**
      * Adds a new pod to the database
      * @param userId
      * @param podName
@@ -1825,24 +1817,7 @@ public interface ManagementServer {
      * @return a list of disk offerings that match the given criteria
      */
     List<DiskOfferingVO> searchForDiskOfferings(Criteria c);
-
-    /**
-     * Delete a disk offering
-     * @param id id of the disk offering to delete
-     * @return true if deleted, false otherwise
-     */
-    boolean deleteDiskOffering(long id);
-    
-    /**
-     * Update a disk offering
-     * @param userId
-     * @param disk offering id
-     * @param name the name of the disk offering to be updated
-     * @param description a string description of the disk offering to be updated
-     * @param tags for the disk offering. if null, no change will be made. if empty string, all tags will be removed.
-     * @return updated disk offering
-     */
-    DiskOfferingVO updateDiskOffering(long userId, long diskOfferingId, String name, String description, String tags);
+   
     
     /**
      * 

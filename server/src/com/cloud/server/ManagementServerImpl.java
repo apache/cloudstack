@@ -4219,10 +4219,6 @@ public class ManagementServerImpl implements ManagementServer {
     	return _configMgr.updateServiceOffering(userId, serviceOfferingId, name, displayText, offerHA, useVirtualNetwork, tags);
     }
     
-    @Override
-    public boolean deleteServiceOffering(long userId, long serviceOfferingId) {
-        return _configMgr.deleteServiceOffering(userId, serviceOfferingId);
-    }
 
     @Override
     public HostPodVO createPod(long userId, String podName, Long zoneId, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException {
@@ -6725,16 +6721,6 @@ public class ManagementServerImpl implements ManagementServer {
         */
 
         return _diskOfferingDao.search(sc, searchFilter);
-    }
-
-    @Override
-    public DiskOfferingVO updateDiskOffering(long userId, long diskOfferingId, String name, String description, String tags) {
-    	return _configMgr.updateDiskOffering(userId, diskOfferingId, name, description, tags);
-    }
-
-    @Override
-    public boolean deleteDiskOffering(long id) {
-        return _diskOfferingDao.remove(Long.valueOf(id));
     }
 
     @Override

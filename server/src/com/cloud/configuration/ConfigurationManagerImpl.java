@@ -32,6 +32,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.commands.CreateDiskOfferingCmd;
+import com.cloud.api.commands.DeleteDiskOfferingCmd;
+import com.cloud.api.commands.UpdateDiskOfferingCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.DataCenterVO;
@@ -150,6 +152,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	
     	saveConfigurationEvent(userId, null, EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, "Successfully edited configuration value.", "name=" + name, "value=" + value);
     }
+    
     
     private String validateConfigurationValue(String name, String value) throws InvalidParameterValueException {
     	if (value == null) {
@@ -864,7 +867,37 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         }
     }
     
-    public DiskOfferingVO updateDiskOffering(long userId, long diskOfferingId, String name, String displayText, String tags) {
+    
+    @Override
+    public DiskOfferingVO createDiskOffering(CreateDiskOfferingCmd cmd) throws InvalidParameterValueException {
+        Long domainId = cmd.getDomainId();
+        String name = cmd.getOfferingName();
+        String description = cmd.getDisplayText();
+        int numGibibytes = cmd.getDiskSize().intValue();
+        String tags = cmd.getTags();
+
+        if (domainId == null) {
+            domainId = Long.valueOf(DomainVO.ROOT_DOMAIN);
+        }
+
+        if ((numGibibytes != 0) && (numGibibytes < 1)) {
+            throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
+        } else if (numGibibytes > _maxVolumeSizeInGb) {
+            throw new InvalidParameterValueException("The maximum size for a disk is " + _maxVolumeSizeInGb + " Gb.");
+        }
+
+        long diskSize = numGibibytes * 1024;
+    	tags = cleanupTags(tags);
+		DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize,tags);
+		return _diskOfferingDao.persist(newDiskOffering);
+    }
+    
+    public DiskOfferingVO updateDiskOffering(UpdateDiskOfferingCmd cmd) {
+    	Long diskOfferingId = cmd.getId();
+    	String name = cmd.getName();
+    	String displayText = cmd.getDisplayText();
+    	String tags = cmd.getTags();
+    	
     	boolean updateNeeded = (name != null || displayText != null || tags != null);
     	if (!updateNeeded) {
     		return _diskOfferingDao.findById(diskOfferingId);
@@ -895,8 +928,30 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     }
     
-    public boolean deleteServiceOffering(long userId, long serviceOfferingId) {
+    
+    public boolean deleteDiskOffering(DeleteDiskOfferingCmd cmd) throws InvalidParameterValueException{
+    	Long diskOfferingId = cmd.getId();
+    	
+    	DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
+    	
+    	if (offering == null) {
+    		throw new InvalidParameterValueException("Unable to find disk offering by id " + diskOfferingId);
+    	}
+    	
+    	if (_diskOfferingDao.remove(diskOfferingId)) {
+    		return true;
+    	} else {
+    		return false;
+    	}
+    }
+
+    
+    public boolean deleteServiceOffering(long userId, long serviceOfferingId) throws InvalidParameterValueException{
     	ServiceOfferingVO offering = _serviceOfferingDao.findById(serviceOfferingId);
+    	
+    	if (offering == null) {
+    		throw new InvalidParameterValueException("Unable to find service offering by id " + serviceOfferingId);
+    	}
     	
     	if (_serviceOfferingDao.remove(serviceOfferingId)) {
     		saveConfigurationEvent(userId, null, EventTypes.EVENT_SERVICE_OFFERING_EDIT, "Successfully deleted service offering with name: " + offering.getName(), "soId=" + serviceOfferingId, "name=" + offering.getName(),
@@ -907,29 +962,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     }
 
-    @Override
-    public DiskOfferingVO createDiskOffering(CreateDiskOfferingCmd cmd) throws InvalidParameterValueException {
-        Long domainId = cmd.getDomainId();
-        String name = cmd.getOfferingName();
-        String description = cmd.getDisplayText();
-        int numGibibytes = cmd.getDiskSize().intValue();
-        String tags = cmd.getTags();
 
-        if (domainId == null) {
-            domainId = Long.valueOf(DomainVO.ROOT_DOMAIN);
-        }
-
-        if ((numGibibytes != 0) && (numGibibytes < 1)) {
-            throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
-        } else if (numGibibytes > _maxVolumeSizeInGb) {
-            throw new InvalidParameterValueException("The maximum size for a disk is " + _maxVolumeSizeInGb + " Gb.");
-        }
-
-        long diskSize = numGibibytes * 1024;
-    	tags = cleanupTags(tags);
-		DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize,tags);
-		return _diskOfferingDao.persist(newDiskOffering);
-    }
     
     public String changePrivateIPRange(boolean add, long podId, String startIP, String endIP) throws InvalidParameterValueException {
     	checkPrivateIpRangeErrors(podId, startIP, endIP);

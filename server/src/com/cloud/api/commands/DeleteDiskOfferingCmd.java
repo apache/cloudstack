@@ -18,27 +18,18 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.utils.Pair;
+import com.cloud.api.BaseCmd.Manager;
 
+@Implementation(method="deleteDiskOffering", manager=Manager.ConfigManager)
 public class DeleteDiskOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteDiskOfferingCmd.class.getName());
 
     private static final String s_name = "deletediskofferingresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -65,24 +56,11 @@ public class DeleteDiskOfferingCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
-
+  
     @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long id = (Long)params.get(BaseCmd.Properties.ID.getName());
-        
-        //verify input parameters 
-        DiskOfferingVO disk = getManagementServer().findDiskOfferingById(id);
-        if (disk == null) {
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a disk offering with id " + id);
-        }
-
-        boolean result = getManagementServer().deleteDiskOffering(id);
-
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), Boolean.valueOf(result).toString()));
-        return returnValues;
+    public String getResponse() {
+        // There's no specific response for this command, if the command failed an exception would have been thrown.  If we are here, then it succeeded.
+        // Seems like we should return success/true as the response though, so this will probably have to change.
+        return null;
     }
 }

@@ -20,6 +20,8 @@ package com.cloud.configuration;
 import java.util.List;
 
 import com.cloud.api.commands.CreateDiskOfferingCmd;
+import com.cloud.api.commands.DeleteDiskOfferingCmd;
+import com.cloud.api.commands.UpdateDiskOfferingCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Vlan.VlanType;
@@ -81,14 +83,21 @@ public interface ConfigurationManager extends Manager {
 	 * @param tags
 	 * @return updated disk offering
 	 */
-	DiskOfferingVO updateDiskOffering(long userId, long diskOfferingId, String name, String description, String tags);
+	DiskOfferingVO updateDiskOffering(UpdateDiskOfferingCmd cmd);
+	
+	/**
+	 * Deletes a disk offering
+	 * @param userId
+	 * @param diskOfferingId
+	 */
+	boolean deleteDiskOffering(DeleteDiskOfferingCmd cmd) throws InvalidParameterValueException;
 	
 	/**
 	 * Deletes a service offering
 	 * @param userId
 	 * @param serviceOfferingId
 	 */
-	boolean deleteServiceOffering(long userId, long serviceOfferingId);
+	boolean deleteServiceOffering(long userId, long serviceOfferingId) throws InvalidParameterValueException;
 	
 	/**
 	 * Creates a new disk offering
