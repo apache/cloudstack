@@ -35,7 +35,7 @@ for e in required_env:
 	
 sourcedir = bld.srcnode.abspath()
 builddir = bld.path.abspath(bld.env)
-buildpremium = _exists(_join(sourcedir,"premium"))
+buildpremium = _exists(_join(sourcedir,"cloudstack-proprietary"))
 filelist = bld.path.ant_glob
 
 sccsinfo = _join(sourcedir,"sccs-info")
@@ -65,7 +65,7 @@ if buildpremium: antxmlfiles += _glob(_join("build","premium","*.xml")) + _glob(
 targets,antprops = Utils.discover_ant_targets_and_properties(antxmlfiles)
 
 javac_env = bld.env.copy()
-# FIXME trigger recompilation / cache avoidance when debuglevel changes
+# FIXME trigger recompilation / cache avoidance when debuglevel changes.  ATM this does not happen.
 if antprops.get('debuglevel',None): javac_env.append_value("JAVACFLAGS",["-g:%s"%antprops['debuglevel']])
 Implementation_Version = bld.env.VERSION
 buildnumber = Utils.getbuildnumber()
@@ -74,9 +74,6 @@ if buildnumber: Implementation_Version += "." + buildnumber
 # compile .class files using waf
 classpathentries = [ _join(builddir,x[2]) for x in targets ]
 javawclasspath = pathsep.join( classpathentries + [ _abspath(x) for x in bld.env.CLASSPATH.split(pathsep) ] )
-#for entry in javawclasspath.split(pathsep):
-	#print entry
-	#assert os.path.exists(entry)
 javac_tgens = [
 		bld( features='javac', name=name, srcdir=srcdir, outdir=classdir,
 		after=" ".join(deps), classpath=javawclasspath, env=javac_env )
@@ -103,6 +100,8 @@ if not buildpremium: ant_args += ["-DOSS=true"]
 # this is to trigger recompilation / cache avoidance if the relevant environment for ant changes
 tgen = bld(features='subst', name='version-info', source="version-info.in", target="version-info")
 tgen.dict = { "Implementation_Version":Implementation_Version,"JAVACFLAGS":javac_env.JAVACFLAGS,"ant_args":ant_args }
+bld.install_files("${DOCDIR}","version-info")
+
 build_targets += ["version-info"]
 ant_sources += " version-info"
 
@@ -154,7 +153,7 @@ if bld.env.DISTRO not in ['Windows','Mac']:
 # ================ Third-party / dependency installation ===============
 
 bld.install_files('${JAVADIR}','deps/*.jar')
-if buildpremium: bld.install_files('${PREMIUMJAVADIR}','thirdparty/*.jar')
+if buildpremium: bld.install_files('${PREMIUMJAVADIR}','cloudstack-proprietary/thirdparty/*.jar')
 
 # =================== End 3rdparty/dep install ========================
 
@@ -266,20 +265,20 @@ deps = " ".join( Utils.to_list(
 ) )
 thirdparties = " ".join( Utils.to_list(
 	"""
-	thirdparty/xmlrpc-client-3.1.3.jar
-	thirdparty/xmlrpc-common-3.1.3.jar
-	thirdparty/ws-commons-util-1.0.2.jar
-	thirdparty/log4j-1.2.15.jar
-	thirdparty/gson-1.3.jar
-	thirdparty/apache-log4j-extras-1.0.jar
-	thirdparty/commons-httpclient-3.1.jar
-	thirdparty/commons-logging-1.1.1.jar
-	thirdparty/commons-collections-3.2.1.jar
-	thirdparty/commons-codec-1.4.jar
-	thirdparty/commons-pool-1.4.jar
-	thirdparty/libvirt-0.4.5.jar
-	thirdparty/jna.jar
-	thirdparty/cglib-nodep-2.2.jar
+	cloudstack-proprietary/thirdparty/xmlrpc-client-3.1.3.jar
+	cloudstack-proprietary/thirdparty/xmlrpc-common-3.1.3.jar
+	cloudstack-proprietary/thirdparty/ws-commons-util-1.0.2.jar
+	cloudstack-proprietary/thirdparty/log4j-1.2.15.jar
+	cloudstack-proprietary/thirdparty/gson-1.3.jar
+	cloudstack-proprietary/thirdparty/apache-log4j-extras-1.0.jar
+	cloudstack-proprietary/thirdparty/commons-httpclient-3.1.jar
+	cloudstack-proprietary/thirdparty/commons-logging-1.1.1.jar
+	cloudstack-proprietary/thirdparty/commons-collections-3.2.1.jar
+	cloudstack-proprietary/thirdparty/commons-codec-1.4.jar
+	cloudstack-proprietary/thirdparty/commons-pool-1.4.jar
+	cloudstack-proprietary/thirdparty/libvirt-0.4.5.jar
+	cloudstack-proprietary/thirdparty/jna.jar
+	cloudstack-proprietary/thirdparty/cglib-nodep-2.2.jar
 	"""
 ) )
 
@@ -295,9 +294,9 @@ patterns = Utils.to_list(
 	scripts/storage/secondary/*sh
 	"""
 )
-premiumpatterns = patterns + ["console-proxy-premium/certs/**"]
+premiumpatterns = patterns + ["cloudstack-proprietary/console-proxy-premium/certs/**"]
 
-artifacts = "target/jar/VMOpsConsoleApplet.jar " + " ".join( "target/jar/cloud-%s.jar"%j for j in "console-proxy console-common agent utils core".split() )
+artifacts = "target/jar/VMOpsConsoleApplet.jar " + " ".join( "target/jar/cloud-%s.jar"%j for j in "console-proxy console-common agent utils api core".split() )
 premiumartifacts = artifacts + " target/jar/cloud-console-proxy-premium.jar"
 
 sources = " ".join( [ filelist(x,src=True,bld=False,dir=False,flat=True) for x in patterns ] )
@@ -317,16 +316,24 @@ def zip_up(task):
 	for inp in task.inputs:
 		if inp.id&3==Node.BUILD:
 			src = inp.bldpath(task.env)
-			srcname = "/".join(src.split("/")[1:])
+			srcname = src
+			srcname = "/".join(srcname.split("/")[1:]) # chop off default/
 			if srcname.startswith("target/jar"): srcname = "/".join(srcname.split("/")[2:]) # chop off target/jar
 		else:
 			src = inp.srcpath(task.env)
-			srcname = "/".join(src.split("/")[2:])
-		if srcname.startswith('scripts/run') or srcname.startswith('scripts/config_ssl') \
-			or srcname.startswith('scripts/config_auth') or srcname.startswith('scripts/ssvm-check'): srcname = "/".join(srcname.split("/")[1:])
-		elif srcname.startswith('storage'): srcname = "scripts/" + srcname
-		elif srcname.startswith('VMOpsConsoleApplet'): srcname = "applet/" + srcname
-		elif srcname.startswith('certs'): srcname = srcname
+			srcname = src
+			srcname = "/".join(srcname.split("/")[1:]) # chop off ../
+			if srcname.startswith("cloudstack-proprietary"): srcname = "/".join(srcname.split("/")[1:]) # chop off cloudstack proprietary
+			srcname = "/".join(srcname.split("/")[1:]) # chop off project name
+		# post-process the paths
+		if True in [ srcname.startswith(strt) for strt in [ 'scripts/run','scripts/config_ssl','scripts/config_auth','scripts/ssvm-check' ] ]:
+			srcname = "/".join(srcname.split("/")[1:])
+		elif srcname.startswith('storage'):
+			srcname = "scripts/" + srcname
+		elif srcname.startswith('VMOpsConsoleApplet'):
+			srcname = "applet/" + srcname
+		elif srcname.startswith('certs'):
+			srcname = srcname
 		z.write(src,srcname)
 	z.close()
 	return 0
@@ -429,9 +436,9 @@ for src,tgt,inst in zip(src_files,subst_files,inst_files):
 
 # ================== Subst / installation of scripts in bin directories ========================
 
-bld.install_files_filtered("${LIBEXECDIR}","*/libexec/*",chmod=0755)
-bld.install_files_filtered("${BINDIR}","*/bindir/*",chmod=0755)
-bld.install_files_filtered("${SBINDIR}","*/sbindir/*",chmod=0755)
+bld.install_files_filtered("${LIBEXECDIR}","*/libexec/* cloudstack-proprietary/*/libexec/*",chmod=0755)
+bld.install_files_filtered("${BINDIR}","*/bindir/* cloudstack-proprietary/*/bindir/*",chmod=0755)
+bld.install_files_filtered("${SBINDIR}","*/sbindir/* cloudstack-proprietary/*/sbindir/*",chmod=0755)
 
 # ================== End subst / installation of scripts in bin directories ========================
 
@@ -441,16 +448,16 @@ bld.install_files_filtered("${SBINDIR}","*/sbindir/*",chmod=0755)
 # build / install declarations of test project
 if buildpremium:
 	proj = 'test'
-	start_path = bld.path.find_dir("test/scripts")
+	start_path = bld.path.find_dir("cloudstack-proprietary/test/scripts")
 	bld.install_files('${LIBDIR}/${PACKAGE}/test',
 		start_path.ant_glob("**",src=True,bld=False,dir=False,flat=True),
 		cwd=start_path,relative_trick=True)
-	start_path = bld.path.find_dir("test/metadata")
+	start_path = bld.path.find_dir("cloudstack-proprietary/test/metadata")
 	bld.install_files('${SHAREDSTATEDIR}/${PACKAGE}/test',
 		start_path.ant_glob("**",src=True,bld=False,dir=False,flat=True),
 		cwd=start_path,relative_trick=True)
 	if not Options.options.PRESERVECONFIG:
-		bld.install_files('${SYSCONFDIR}/%s/%s'%(bld.env.PACKAGE,proj),'%s/conf/*'%proj) # install config
+		bld.install_files('${SYSCONFDIR}/%s/%s'%(bld.env.PACKAGE,proj),'cloudstack-proprietary/test/conf/*')
 
 # build / install declarations of server project <- this is actually now in client project
 bld.install_files("${MSENVIRON}/webapps/client/WEB-INF",'client/WEB-INF/web.xml') # install web.xml file
@@ -465,7 +472,6 @@ bld.install_files("${AGENTLIBDIR}",
 	cwd=start_path,relative_trick=True)
 if not Options.options.PRESERVECONFIG:
 	bld.install_files_filtered("${AGENTSYSCONFDIR}","%s/conf/*"%proj)
-bld.install_files_filtered("${BINDIR}","%s/bindir/*"%proj,chmod=0755)
 
 # build / install declarations of client UI project
 
@@ -476,7 +482,7 @@ bld.install_files("${MSENVIRON}/webapps/client",
 	cwd=start_path,relative_trick=True)
 
 # -> source files with tokens
-patterns = 'ui/*html ui/**/*html ui/**/*js ui/**/*css'
+patterns = 'ui/*html ui/**/*html ui/**/*js ui/**/*css ui/**/*properties ui/**/*jsp'
 src_files = Utils.to_list(filelist(patterns,flat=True))
 subst_files = [ x+".subst" for x in src_files ]
 inst_files = [ Utils.relpath(x,"ui") for x in src_files ]
@@ -522,12 +528,13 @@ bld.install_files("${MSENVIRON}/webapps/client/scripts", "ui/scripts/cloud.min.j
 
 # substitute and install generic tomcat config
 if not Options.options.PRESERVECONFIG:
-	bld.install_files_filtered("${MSCONF}",filelist("*/tomcatconf/*"))
+	bld.install_files_filtered("${MSCONF}","*/tomcatconf/* cloudstack-proprietary/*/tomcatconf/*")
 	bld.install_files("${MSCONF}",'client/tomcatconf/db.properties',chmod=0640)
 	bld.setownership("${MSCONF}/db.properties","root",bld.env.MSUSER)
 
 # apply distro-specific config on top of the 'all' generic cloud-management config
-distrospecificdirs=_glob(_join("*","distro",bld.env.DISTRO.lower(),"*"))
+globspec = _join("*","distro",bld.env.DISTRO.lower(),"*") # matches premium/distro/centos/SYSCONFDIR
+distrospecificdirs=_glob(globspec) + _glob(_join("cloudstack-proprietary",globspec))
 for dsdir in distrospecificdirs:
 	start_path = bld.srcnode.find_dir(dsdir)
 	subpath,varname = _split(dsdir)
@@ -542,18 +549,20 @@ for dsdir in distrospecificdirs:
 # build / install declarations of usage
 if buildpremium:
 	if not Options.options.PRESERVECONFIG:
-		bld.install_files_filtered("${USAGESYSCONFDIR}","usage/conf/*")
+		#print filelist("usage/conf/* cloudstack-proprietary/usage/conf/*")
+		#assert False
+		bld.install_files_filtered("${USAGESYSCONFDIR}","usage/conf/* cloudstack-proprietary/usage/conf/*")
 		bld.symlink_as("${USAGESYSCONFDIR}/db.properties",Utils.subst_vars("${MSCONF}/db.properties",bld.env))
 
 # install db data files
-bld.install_files_filtered("${SETUPDATADIR}",filelist("*/db/*",excl=Node.exclude_regs + "\ncloud-gate"))
+bld.install_files_filtered("${SETUPDATADIR}",filelist("*/db/* cloudstack-proprietary/*/db/*",excl=Node.exclude_regs + "\ncloud-gate\ncloud-bridge"))
 
 # ================== End installation of scripts / bindirs / configuration files ===========================
 
 
 # ====================== Feature-specific plugins ========================
 
-for plugin in _glob(_join("plugins","*")):
+for plugin in _glob(_join("plugins","*")) + _glob(_join("cloudstack-proprietary","plugins","*")):
 	if not _exists(_join(plugin,"build.xml")): continue
 	pluginname = _basename(plugin)
 	target = 'target/jar/cloud-%s.jar' % pluginname
@@ -566,7 +575,7 @@ for plugin in _glob(_join("plugins","*")):
 
 # ====================== Vendor-specific plugins ========================
 
-for vendor in _glob(_join("vendor","*")):
+for vendor in _glob(_join("vendor","*")) + _glob(_join("cloudstack-proprietary","vendor","*")):
 	if not Options.options.PRESERVECONFIG:
 		bld.install_files_filtered("${MSCONF}/%s"%vendor,filelist("%s/tomcatconf/*"%vendor))
 
