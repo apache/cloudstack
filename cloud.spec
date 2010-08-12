@@ -448,6 +448,8 @@ fi
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-utils.jar
 %{_javadir}/%{name}-api.jar
+%attr(755,root,root) %{_bindir}/cloud-sccs
+%attr(755,root,root) %{_bindir}/cloud-gitrevs
 %doc %{_docdir}/%{name}-%{version}/sccs-info
 %doc %{_docdir}/%{name}-%{version}/version-info
 %doc %{_docdir}/%{name}-%{version}/configure-info
