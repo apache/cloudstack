@@ -25,23 +25,18 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.Manager;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
 
+@Implementation(method="updateConfiguration", manager=Manager.ConfigManager)
 public class UpdateCfgCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateCfgCmd.class.getName());
 
     private static final String s_name = "updateconfigurationresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VALUE, Boolean.FALSE));
-
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -72,30 +67,27 @@ public class UpdateCfgCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        String name = (String) params.get(BaseCmd.Properties.NAME.getName());
-        String value = (String) params.get(BaseCmd.Properties.VALUE.getName());
-        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-        
-        if (userId == null) {
-            userId = Long.valueOf(User.UID_SYSTEM);
-        }
-        
-        try {
-        	getManagementServer().updateConfiguration(userId, name, value);
-        } catch (Exception ex) {
-        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        }
-
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), "true"));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_TEXT.getName(), "Successfully updated configuration value."));
-        
-        return returnValues;
-    }
+//    @Override
+//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
+//        String name = (String) params.get(BaseCmd.Properties.NAME.getName());
+//        String value = (String) params.get(BaseCmd.Properties.VALUE.getName());
+//        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
+//        
+//        if (userId == null) {
+//            userId = Long.valueOf(User.UID_SYSTEM);
+//        }
+//        
+//        try {
+//        	getManagementServer().updateConfiguration(userId, name, value);
+//        } catch (Exception ex) {
+//        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+//        }
+//
+//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
+//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), "true"));
+//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_TEXT.getName(), "Successfully updated configuration value."));
+//        
+//        return returnValues;
+//    }
 }

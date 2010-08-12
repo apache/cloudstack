@@ -76,6 +76,7 @@ import com.cloud.api.commands.ReconnectHostCmd;
 import com.cloud.api.commands.StartRouterCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
 import com.cloud.api.commands.StartVMCmd;
+import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobExecutor;
@@ -1137,15 +1138,41 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean updateAccount(long accountId, String accountName) {
+    public boolean updateAccount(UpdateAccountCmd cmd) throws InvalidParameterValueException{
+    	Long domainId = cmd.getDomainId();
+    	String accountName = cmd.getAccountName();
+    	String newAccountName = cmd.getNewName();
+    	
+    	if (newAccountName == null) {
+    		newAccountName = accountName;
+    	}
+    	
         boolean success = false;
-        AccountVO account = _accountDao.findById(accountId);
-        if ((account == null) || (account.getAccountName().equals(accountName))) {
+        Account account = _accountDao.findAccount(accountName, domainId);
+
+        //Check if account exists
+        if (account == null) {
+        	s_logger.error("Unable to find account " + accountName + " in domain " + domainId);
+    		throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+        }
+        
+        //Don't allow to modify system account
+        if (account.getId().longValue() == Account.ACCOUNT_ID_SYSTEM) {
+    		throw new InvalidParameterValueException ("Can not modify system account");
+    	}
+        
+        //Check if user performing the action is allowed to modify this account
+        Account adminAccount = (Account)UserContext.current().getAccountObject();
+        if ((adminAccount != null) && isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
+          throw new InvalidParameterValueException("Invalid account " + accountName + " in domain " + domainId + " given, unable to update account.");
+        }
+        
+        if (account.getAccountName().equals(accountName)) {
             success = true;
         } else {
             AccountVO acctForUpdate = _accountDao.createForUpdate();
-            acctForUpdate.setAccountName(accountName);
-            success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
+            acctForUpdate.setAccountName(newAccountName);
+            success = _accountDao.update(Long.valueOf(account.getId()), acctForUpdate);
         }
         return success;
     }
@@ -4203,12 +4230,7 @@ public class ManagementServerImpl implements ManagementServer {
     public List<HostPodVO> listPods(long dataCenterId) {
         return _hostPodDao.listByDataCenterId(dataCenterId);
     }
-
-    @Override
-    public void updateConfiguration(long userId, String name, String value) throws InvalidParameterValueException, InternalErrorException {
-        _configMgr.updateConfiguration(userId, name, value);
-    }
-
+    
     @Override
     public ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean useVirtualNetwork, String tags) {
         return _configMgr.createServiceOffering(userId, name, cpu, ramSize, speed, displayText, localStorageRequired, offerHA, useVirtualNetwork, tags);
@@ -4240,10 +4262,10 @@ public class ManagementServerImpl implements ManagementServer {
         return _configMgr.createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr);
     }
 
-    @Override
-    public DataCenterVO editZone(long userId, Long zoneId, String newZoneName, String dns1, String dns2, String dns3, String dns4, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException {
-        return _configMgr.editZone(userId, zoneId, newZoneName, dns1, dns2, dns3, dns4, vnetRange, guestCidr);
-    }
+//    @Override
+//    public DataCenterVO editZone(long userId, Long zoneId, String newZoneName, String dns1, String dns2, String dns3, String dns4, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException {
+//        return _configMgr.editZone(userId, zoneId, newZoneName, dns1, dns2, dns3, dns4, vnetRange, guestCidr);
+//    }
 
     @Override
     public void deleteZone(long userId, Long zoneId) throws InvalidParameterValueException, InternalErrorException {
@@ -8183,12 +8205,6 @@ public class ManagementServerImpl implements ManagementServer {
 			return true;
 		else
 			return false;
-	}
-
-	@Override
-	public boolean addConfig(String instance, String component,String category, String name, String value, String description) 
-	{
-		return _configMgr.addConfig(category, instance, component, name, value, description);		
 	}
 
 	public boolean preparePrimaryStorageForMaintenance(long primaryStorageId, long userId) {

@@ -24,8 +24,10 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.BaseCmd.Manager;
+import com.cloud.configuration.ConfigurationVO;
+import com.cloud.storage.DiskOfferingVO;
 
-@Implementation(method="addConfig", manager=Manager.ManagementServer)
+@Implementation(method="addConfig", manager=Manager.ConfigManager)
 public class AddConfigCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddConfigCmd.class.getName());
 
@@ -86,6 +88,7 @@ public class AddConfigCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
 
     @Override
     public String getName() {

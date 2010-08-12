@@ -19,8 +19,10 @@ package com.cloud.configuration;
 
 import java.util.List;
 
+import com.cloud.api.commands.AddConfigCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.DeleteDiskOfferingCmd;
+import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
 import com.cloud.api.commands.UpdateZoneCmd;
 import com.cloud.dc.DataCenterVO;
@@ -46,6 +48,16 @@ public interface ConfigurationManager extends Manager {
 	 * @param value
 	 */
 	void updateConfiguration(long userId, String name, String value) throws InvalidParameterValueException, InternalErrorException;
+	
+	
+	/**
+	 * Updates a configuration entry with a new value
+	 * @param userId
+	 * @param name
+	 * @param value
+	 */
+	void updateConfiguration(UpdateCfgCmd cmd) throws InvalidParameterValueException, InternalErrorException;
+	
 	
 	/**
 	 * Creates a new service offering
@@ -84,7 +96,7 @@ public interface ConfigurationManager extends Manager {
 	 * @param tags
 	 * @return updated disk offering
 	 */
-	DiskOfferingVO updateDiskOffering(UpdateDiskOfferingCmd cmd);
+	DiskOfferingVO updateDiskOffering(UpdateDiskOfferingCmd cmd) throws InvalidParameterValueException;
 	
 	/**
 	 * Deletes a disk offering
@@ -238,5 +250,5 @@ public interface ConfigurationManager extends Manager {
 	 * @param description
 	 * @return
 	 */
-	public boolean addConfig(String instance, String component,String category, String name, String value, String description);
+	public boolean addConfig(AddConfigCmd cmd);
 }

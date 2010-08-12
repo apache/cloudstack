@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.alert.AlertVO;
+import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.capacity.CapacityVO;
@@ -97,6 +98,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmStats;
+
 
 /**
  * ManagementServer is the interface to talk to the Managment Server.
@@ -223,7 +225,7 @@ public interface ManagementServer {
      * @return true if update was successful, false otherwise
      */
     
-    boolean updateAccount(long accountId, String accountName);
+    boolean updateAccount(UpdateAccountCmd cmd) throws InvalidParameterValueException;
 
     /**
      * Enables a user by userId
@@ -1030,20 +1032,20 @@ public interface ManagementServer {
      */
     DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String dns3, String dns4, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException;
     
-    /**
-     * Edits a zone in the database
-     * @param userId
-     * @param zoneId
-     * @param newZoneName
-     * @param dns1
-     * @param dns2
-     * @param dns3
-     * @param dns4
-     * @param vnetRange range of the vnet to add to the zone.
-     * @param guestNetworkCidr
-     * @return Zone
-     */
-    DataCenterVO editZone(long userId, Long zoneId, String newZoneName, String dns1, String dns2, String dns3, String dns4, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException;
+//    /**
+//     * Edits a zone in the database
+//     * @param userId
+//     * @param zoneId
+//     * @param newZoneName
+//     * @param dns1
+//     * @param dns2
+//     * @param dns3
+//     * @param dns4
+//     * @param vnetRange range of the vnet to add to the zone.
+//     * @param guestNetworkCidr
+//     * @return Zone
+//     */
+//    DataCenterVO editZone(long userId, Long zoneId, String newZoneName, String dns1, String dns2, String dns3, String dns4, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException;
     
     /**
      * Deletes a zone from the database
@@ -1436,7 +1438,7 @@ public interface ManagementServer {
      * @param value
   	 * @return
      */
-    void updateConfiguration(long userId, String name, String value) throws InvalidParameterValueException, InternalErrorException;
+//    void updateConfiguration(long userId, String name, String value) throws InvalidParameterValueException, InternalErrorException;
 	
 	/**
 	 * Creates or updates an IP forwarding or load balancer rule.
@@ -2132,7 +2134,7 @@ public interface ManagementServer {
 	
 	boolean checkLocalStorageConfigVal(); 
 	
-	boolean addConfig(String instance, String component, String category, String name, String value, String description);
+//	boolean addConfig(String instance, String component, String category, String name, String value, String description);
 	
 	boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException;
 }

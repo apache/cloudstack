@@ -33,8 +33,10 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.AddConfigCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.DeleteDiskOfferingCmd;
+import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
 import com.cloud.api.commands.UpdateZoneCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -156,6 +158,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     	
     	saveConfigurationEvent(userId, null, EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, "Successfully edited configuration value.", "name=" + name, "value=" + value);
+    }
+    
+    public void updateConfiguration(UpdateCfgCmd cmd) throws InvalidParameterValueException, InternalErrorException{
+    	long userId = UserContext.current().getUserId();
+    	String name = cmd.getName();
+    	String value = cmd.getValue();
+    	updateConfiguration (userId, name, value);
     }
     
     
@@ -921,18 +930,25 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		return _diskOfferingDao.persist(newDiskOffering);
     }
     
-    public DiskOfferingVO updateDiskOffering(UpdateDiskOfferingCmd cmd) {
+    public DiskOfferingVO updateDiskOffering(UpdateDiskOfferingCmd cmd) throws InvalidParameterValueException{
     	Long diskOfferingId = cmd.getId();
     	String name = cmd.getName();
     	String displayText = cmd.getDisplayText();
     	String tags = cmd.getTags();
+    	
+    	//Check if diskOffering exists
+    	DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
+    	
+    	if (diskOffering == null) {
+    		throw new InvalidParameterValueException("Unable to find disk offering by id " + diskOfferingId);
+    	}
     	
     	boolean updateNeeded = (name != null || displayText != null || tags != null);
     	if (!updateNeeded) {
     		return _diskOfferingDao.findById(diskOfferingId);
     	}
     	
-    	DiskOfferingVO diskOffering = _diskOfferingDao.createForUpdate(diskOfferingId);
+    	diskOffering = _diskOfferingDao.createForUpdate(diskOfferingId);
     	
     	if (name != null) {
     		diskOffering.setName(name);
@@ -1735,8 +1751,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
 
 	@Override
-	public boolean addConfig(String instance, String component,String category, String name, String value, String description) 
-	{
+	public boolean addConfig(AddConfigCmd cmd){
+		String category = cmd.getCategory();
+		String instance = cmd.getInstance();
+		String component = cmd.getComponent();
+		String name = cmd.getName();
+		String value = cmd.getValue();
+		String description = cmd.getDescription();
 		try
 		{
 			ConfigurationVO entity = new ConfigurationVO(category, instance, component, name, value, description);
