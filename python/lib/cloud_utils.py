@@ -939,11 +939,11 @@ def setup_agent_config(configfile, host, zone, pod):
 				stderr("You selected zone %s pod %s",confopts["zone"],confopts["pod"])
 			else:
 				stderr("Skipped -- using the previous zone %s pod %s",confopts["zone"],confopts["pod"])
-		else:
+	    else:
 			confopts["zone"] = zone
 			confopts["pod"] = pod
 	except (urllib2.URLError,urllib2.HTTPError),e:
-		stderr("Query failed: %s.  Defaulting to zone %s pod %s",confopts["zone"],confopts["pod"])
+		stderr("Query failed: %s.  Defaulting to zone %s pod %s",str(e),confopts["zone"],confopts["pod"])
 
 	for opt,val in confopts.items():
 		line = "=".join([opt,val])
@@ -988,7 +988,7 @@ def setup_consoleproxy_config(configfile, host, zone, pod):
 			confopts["zone"] = zone
 			confopts["pod"] = pod
 	except (urllib2.URLError,urllib2.HTTPError),e:
-		stderr("Query failed: %s.  Defaulting to zone %s pod %s",e,confopts["zone"],confopts["pod"])
+		stderr("Query failed: %s.  Defaulting to zone %s pod %s",str(e),confopts["zone"],confopts["pod"])
 
 	for opt,val in confopts.items():
 		line = "=".join([opt,val])
