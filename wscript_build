@@ -460,7 +460,10 @@ if buildpremium:
 		bld.install_files('${SYSCONFDIR}/%s/%s'%(bld.env.PACKAGE,proj),'cloudstack-proprietary/test/conf/*')
 
 # build / install declarations of server project <- this is actually now in client project
-bld.install_files("${MSENVIRON}/webapps/client/WEB-INF",'client/WEB-INF/web.xml') # install web.xml file
+start_path = bld.path.find_dir("client/WEB-INF")
+bld.install_files('${MSENVIRON}/webapps/client/WEB-INF',
+	start_path.ant_glob("**",src=True,bld=False,dir=False,flat=True),
+	cwd=start_path,relative_trick=True)
 if not Options.options.PRESERVECONFIG:
 	bld.install_files_filtered("${SERVERSYSCONFDIR}","server/conf/*")
 
