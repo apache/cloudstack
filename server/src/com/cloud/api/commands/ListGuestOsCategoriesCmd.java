@@ -25,9 +25,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.server.Criteria;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.utils.Pair;
 
@@ -38,31 +36,7 @@ public class ListGuestOsCategoriesCmd extends BaseCmd {
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     static {
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
     }
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="id", type=CommandType.LONG)
-    private Long id;
-
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public Long getId() {
-        return id;
-    }
-
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
@@ -77,30 +51,8 @@ public class ListGuestOsCategoriesCmd extends BaseCmd {
     public List<Pair<String, Object>> execute(Map<String, Object> params) {
         
         List<GuestOSCategoryVO> guestOSCategoryList = null;
-        try 
-        {
-        	Long id = (Long)params.get(BaseCmd.Properties.ID.getName());
-            Integer pageSize = (Integer)params.get(BaseCmd.Properties.PAGESIZE.getName());
-            Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
-            
-            Long startIndex = Long.valueOf(0);
-            int pageSizeNum = 50;
-        	if (pageSize != null) {
-        		pageSizeNum = pageSize.intValue();
-        	}
-            if (page != null) {
-                int pageNum = page.intValue();
-                if (pageNum > 0) {
-                    startIndex = Long.valueOf(pageSizeNum * (pageNum-1));
-                }
-            }
-            
-            Criteria c = new Criteria("id", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
-            
-            if (id != null) {
-            	c.addCriteria(Criteria.ID, id);
-            }
-        	guestOSCategoryList = getManagementServer().listGuestOSCategoriesByCriteria(c);
+        try {
+        	guestOSCategoryList = getManagementServer().listAllGuestOSCategories();
         } catch (Exception ex) {
             s_logger.error("Exception listing guest OS categories", ex);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to list guest OS categories due to exception: " + ex.getMessage());

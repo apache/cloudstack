@@ -69,7 +69,6 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.async.executor.DestroyVMExecutor;
-import com.cloud.async.executor.OperationResponse;
 import com.cloud.async.executor.RebootVMExecutor;
 import com.cloud.async.executor.StartVMExecutor;
 import com.cloud.async.executor.StopVMExecutor;
@@ -119,9 +118,10 @@ import com.cloud.network.dao.SecurityGroupDao;
 import com.cloud.network.dao.SecurityGroupVMMapDao;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupVO;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.offering.ServiceOffering.GuestIpType;
+import com.cloud.pricing.dao.PricingDao;
+import com.cloud.service.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.ServiceOffering.GuestIpType;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
@@ -156,7 +156,6 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -202,6 +201,7 @@ public class UserVmManagerImpl implements UserVmManager {
     @Inject LoadBalancerDao _loadBalancerDao = null;
     @Inject IPAddressDao _ipAddressDao = null;
     @Inject HostPodDao _podDao = null;
+    @Inject PricingDao _pricingDao = null;
     @Inject CapacityDao _capacityDao = null;
     @Inject NetworkManager _networkMgr = null;
     @Inject StorageManager _storageMgr = null;
@@ -411,6 +411,9 @@ public class UserVmManagerImpl implements UserVmManager {
     			if (details != null && !details.isEmpty())
     				errorMsg += "; " + details;
     		}
+            event.setDescription(errorMsg);
+            event.setLevel(EventVO.LEVEL_ERROR);
+            _eventDao.persist(event);
     		throw new InternalErrorException(errorMsg);
     	}
     }
@@ -484,6 +487,9 @@ public class UserVmManagerImpl implements UserVmManager {
     				errorMsg += "; " + details;
     		}
     		
+            event.setDescription(errorMsg);
+            event.setLevel(EventVO.LEVEL_ERROR);
+            _eventDao.persist(event);
     		throw new InternalErrorException(errorMsg);
     	}
     }
@@ -522,8 +528,8 @@ public class UserVmManagerImpl implements UserVmManager {
     }
 
     @Override
-    public UserVmVO startVirtualMachine(long userId, long vmId, String isoPath, long startEventId) throws ExecutionException, StorageUnavailableException, ConcurrentOperationException {
-        return startVirtualMachine(userId, vmId, null, isoPath, startEventId);
+    public UserVmVO startVirtualMachine(long userId, long vmId, String isoPath) throws ExecutionException, StorageUnavailableException, ConcurrentOperationException {
+        return startVirtualMachine(userId, vmId, null, isoPath);
     }
     
     @Override
@@ -558,9 +564,9 @@ public class UserVmManagerImpl implements UserVmManager {
     }
 
     @Override
-    public UserVmVO startVirtualMachine(long userId, long vmId, String password, String isoPath, long startEventId) throws ExecutionException, StorageUnavailableException, ConcurrentOperationException {
+    public UserVmVO startVirtualMachine(long userId, long vmId, String password, String isoPath) throws ExecutionException, StorageUnavailableException, ConcurrentOperationException {
         try {
-            return start(userId, vmId, password, isoPath, startEventId);
+            return start(userId, vmId, password, isoPath, 0);
         } catch (StorageUnavailableException e) {
             s_logger.debug("Unable to start vm because storage is unavailable: " + e.getMessage());
             throw e;
@@ -608,20 +614,9 @@ public class UserVmManagerImpl implements UserVmManager {
             }
             return vm;
         }
-        String eventParams = "id=" + vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId();
-        event = new EventVO();
-        event.setType(EventTypes.EVENT_VM_START);
-        event.setUserId(userId);
-        event.setAccountId(vm.getAccountId());
-        event.setParameters(eventParams);
-        event.setState(EventState.Completed);
-        event.setStartId(startEventId);
+
         if (state.isTransitional()) {
-        	String description = "Concurrent operations on the vm " + vm.getId() + " - " + vm.getName() + "; state = " + state.toString();        	
-        	event.setDescription(description);
-    		event.setLevel(EventVO.LEVEL_ERROR);
-    		_eventDao.persist(event);
-        	throw new ConcurrentOperationException(description);
+        	throw new ConcurrentOperationException("Concurrent operations on the vm " + vm.getId() + " - " + vm.getName() + "; state = " + state.toString());
         }
         
         DataCenterVO dc = _dcDao.findById(vm.getDataCenterId());
@@ -650,11 +645,7 @@ public class UserVmManagerImpl implements UserVmManager {
         String guestOSDescription;
         GuestOSVO guestOS = _guestOSDao.findById(vm.getGuestOSId());
         if (guestOS == null) {
-        	String description = "Could not find guest OS description for vm: " + vm.getName();
-        	s_logger.debug(description);        	        
-        	event.setDescription(description);
-    		event.setLevel(EventVO.LEVEL_ERROR);
-    		_eventDao.persist(event);
+        	s_logger.debug("Could not find guest OS description for vm: " + vm.getName());
         	return null;
         } else {
         	guestOSDescription = guestOS.getName();
@@ -664,32 +655,34 @@ public class UserVmManagerImpl implements UserVmManager {
 
         HostVO host = (HostVO) _agentMgr.findHost(Host.Type.Routing, dc, pod, sp, offering, template, vm, null, avoid);
 
-        if (host == null) {	
-        	String description = "Unable to find any host for " + vm.toString();
-            s_logger.error(description);
-            event.setDescription(description);
-    		event.setLevel(EventVO.LEVEL_ERROR);
-    		_eventDao.persist(event);
+        if (host == null) {
+            s_logger.error("Unable to find any host for " + vm.toString());
             return null;
         }
 
         if (!_vmDao.updateIf(vm, Event.StartRequested, host.getId())) {
-            String description = "Unable to start VM " + vm.toString() + " because the state is not correct.";
-            s_logger.error(description);
-            event.setDescription(description);
-    		event.setLevel(EventVO.LEVEL_ERROR);
-    		_eventDao.persist(event);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Unable to start VM " + vm.toString() + " because the state is not correct.");
+            }
             return null;
         }
         
         boolean started = false;
         Transaction txn = Transaction.currentTxn();
         try {
+            String eventParams = "id=" + vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ndoId=" + diskOfferingId + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId();
+            event = new EventVO();
+            event.setType(EventTypes.EVENT_VM_START);
+            event.setUserId(userId);
+            event.setAccountId(vm.getAccountId());
+            event.setParameters(eventParams);
+            event.setState(EventState.Completed);
+            event.setStartId(startEventId);
             
             String vnet = null;
             DomainRouterVO router = null;
             if (vm.getDomainRouterId() != null) {
-                router = _networkMgr.addVirtualMachineToGuestNetwork(vm, password, startEventId);
+                router = _networkMgr.addVirtualMachineToGuestNetwork(vm, password);
             	if (router == null) {
             		s_logger.error("Unable to add vm " + vm.getId() + " - " + vm.getName());
             		_vmDao.updateIf(vm, Event.OperationFailed, null);
@@ -704,8 +697,6 @@ public class UserVmManagerImpl implements UserVmManager {
             	}
 
             	vnet = router.getVnet();
-            	s_logger.debug("VM: " + vm.getName() + " discovered vnet: " + vnet + " from router: " + router.getName());
-            	            	
             	if(NetworkManager.USE_POD_VLAN){
             		if(vm.getPodId() != router.getPodId()){
             			//VM is in a different Pod
@@ -753,13 +744,13 @@ public class UserVmManagerImpl implements UserVmManager {
                 }
                 	
                 	
-                if( retry < _retry ) {
+                vm.setStorageIp(storageIps[0]);
+
+                if( retry < _retry) {
                     if (!_vmDao.updateIf(vm, Event.OperationRetry, host.getId())) {
-                        String description = "Unable to start VM " + vm.toString() + " because the state is not correct.";
-                        s_logger.debug(description);
-                        event.setDescription(description);
-                		event.setLevel(EventVO.LEVEL_ERROR);
-                		_eventDao.persist(event);
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Unable to start VM " + vm.toString() + " because the state is not correct.");
+                        }
                         return null;
                     }
                 }
@@ -813,13 +804,9 @@ public class UserVmManagerImpl implements UserVmManager {
 	                s_logger.debug("Unable to start " + vm.toString() + " on host " + host.toString() + " due to " + answer.getDetails());
                 } catch (OperationTimedoutException e) {
                 	if (e.isActive()) {
-                		String description = "Unable to start vm " + vm.getName() + " due to operation timed out and it is active so scheduling a restart.";                		
+                		s_logger.debug("Unable to start vm " + vm.getName() + " due to operation timed out and it is active so scheduling a restart.");
                 		_haMgr.scheduleRestart(vm, true);
                 		host = null;
-                        s_logger.debug(description);
-                        event.setDescription(description);
-                		event.setLevel(EventVO.LEVEL_ERROR);
-                		_eventDao.persist(event);
                 		return null;
                 	}
                 } catch (AgentUnavailableException e) {
@@ -871,6 +858,7 @@ public class UserVmManagerImpl implements UserVmManager {
 
             if (!started) {
 	            vm.setVnet(null);
+	            vm.setStorageIp(null);
 
 	            txn.start();
 	            if (_vmDao.updateIf(vm, Event.OperationFailed, null)) {
@@ -888,10 +876,6 @@ public class UserVmManagerImpl implements UserVmManager {
             	s_logger.warn(th.getMessage());
             	throw (ExecutionException)th;
             }
-            String description = "Unable to start VM " + vm.getName() + " because of an unknown exception";
-            event.setDescription(description);
-    		event.setLevel(EventVO.LEVEL_ERROR);
-    		_eventDao.persist(event);
             return null;
         }
     }
@@ -914,64 +898,52 @@ public class UserVmManagerImpl implements UserVmManager {
     }
     
     @Override
-    public OperationResponse executeStopVM(final StopVMExecutor executor, final VMOperationParam param) {
+    public boolean executeStopVM(final StopVMExecutor executor, final VMOperationParam param) {
         final UserVmVO vm = _vmDao.findById(param.getVmId());
-        OperationResponse response; 
-        String resultDescription = "Success";
-        
         if (vm == null || vm.getRemoved() != null) {
-        	resultDescription = "VM is either removed or deleted";
         	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-        		AsyncJobResult.STATUS_SUCCEEDED, 0, resultDescription);        	
+        		AsyncJobResult.STATUS_SUCCEEDED, 0, "VM is either removed or deleted");
+            	
         	if(s_logger.isDebugEnabled())
-        		s_logger.debug("Execute asynchronize stop VM command: " +resultDescription);
-        	response = new OperationResponse(OperationResponse.STATUS_SUCCEEDED, resultDescription);
-        	return response;
+        		s_logger.debug("Execute asynchronize stop VM command: VM is either removed or deleted");
+        	return true;
         }
         
         State state = vm.getState();
         if (state == State.Stopped) {
-        	resultDescription = "VM is already stopped";
         	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-        		AsyncJobResult.STATUS_SUCCEEDED, 0, resultDescription);
+        		AsyncJobResult.STATUS_SUCCEEDED, 0, "VM is already stopped");
         	
         	if(s_logger.isDebugEnabled())
-        		s_logger.debug("Execute asynchronize stop VM command: " +resultDescription);
-        	response = new OperationResponse(OperationResponse.STATUS_SUCCEEDED, resultDescription);
-            return response;
+        		s_logger.debug("Execute asynchronize stop VM command: VM is already stopped");
+            return true;
         }
         
         if (state == State.Creating || state == State.Destroyed || state == State.Expunging) {
-        	resultDescription = "VM is not in a stoppable state";
         	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-        		AsyncJobResult.STATUS_SUCCEEDED, 0, resultDescription);
+        		AsyncJobResult.STATUS_SUCCEEDED, 0, "VM is not in a stoppable state");
             	
         	if(s_logger.isDebugEnabled())
-        		s_logger.debug("Execute asynchronize stop VM command: " +resultDescription);
-        	response = new OperationResponse(OperationResponse.STATUS_SUCCEEDED, resultDescription);
-            return response;
+        		s_logger.debug("Execute asynchronize stop VM command: VM is not in a stoppable state");
+        	return true;
         }
         
         if (!_vmDao.updateIf(vm, Event.StopRequested, vm.getHostId())) {
-        	resultDescription = "VM is not in a state to stop";
         	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-            		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
+            		AsyncJobResult.STATUS_FAILED, 0, "VM is not in a state to stop");
                 	
         	if(s_logger.isDebugEnabled())
-        		s_logger.debug("Execute asynchronize stop VM command: " +resultDescription);
-        	response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-            return response;
+        		s_logger.debug("Execute asynchronize stop VM command: VM is not in a state to stop");
+            return true;
         }
         
         if (vm.getHostId() == null) {
-        	resultDescription = "VM host is null (invalid VM)";
         	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-            		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
+            		AsyncJobResult.STATUS_FAILED, 0, "VM host is null (invalid VM)");
                 	
         	if(s_logger.isDebugEnabled())
-        		s_logger.debug("Execute asynchronize stop VM command: " +resultDescription);
-        	response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-            return response;
+        		s_logger.debug("Execute asynchronize stop VM command: VM host is null (invalid VM)");
+            return true;
         }
         
         AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
@@ -984,19 +956,31 @@ public class UserVmManagerImpl implements UserVmManager {
         try {
 			long seq = _agentMgr.send(vm.getHostId(), new Command[] {cmd}, true,
 				new VMOperationListener(executor, param, vm, 0));
-			resultDescription = "Execute asynchronize stop VM command: sending command to agent, seq - " + seq;
+			
         	if(s_logger.isDebugEnabled())
-        		s_logger.debug(resultDescription);
-			response = new OperationResponse(OperationResponse.STATUS_IN_PROGRESS, resultDescription);
-			return response;
+        		s_logger.debug("Execute asynchronize stop VM command: sending command to agent, seq - " + seq);
+			
+			return false;
 		} catch (AgentUnavailableException e) {
-			resultDescription = "Agent is not available";
         	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-        		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
+        		AsyncJobResult.STATUS_FAILED, 0, "Agent is not available");
             _vmDao.updateIf(vm, Event.OperationFailed, vm.getHostId());
-            response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
             
-            return response;
+            try {
+	            EventVO event = new EventVO();
+	            event.setUserId(param.getUserId());
+	            event.setAccountId(vm.getAccountId());
+	            event.setType(EventTypes.EVENT_VM_STOP);
+	            event.setState(EventState.Completed);
+	            event.setStartId(param.getEventId());
+	            event.setParameters("id="+vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
+	            event.setDescription("failed to stop VM instance : " + vm.getName());
+	            event.setLevel(EventVO.LEVEL_ERROR);
+	            _eventDao.persist(event);
+            } catch(Exception ex) {
+            	s_logger.warn("Unable to save event due to unexpected exception, ", ex);
+            }
+        	return true;
 		}
     }
 
@@ -1040,18 +1024,16 @@ public class UserVmManagerImpl implements UserVmManager {
     }
 
     @Override
-    public OperationResponse executeRebootVM(RebootVMExecutor executor, VMOperationParam param) {
+    public boolean executeRebootVM(RebootVMExecutor executor, VMOperationParam param) {
     	
         final UserVmVO vm = _vmDao.findById(param.getVmId());
-        String resultDescription;
-        
         if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getRemoved() != null) {
-        	resultDescription = "VM does not exist or in destroying state";
         	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-        		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
+        		AsyncJobResult.STATUS_FAILED, 0, "VM does not exist or in destroying state");
+        	
         	if(s_logger.isDebugEnabled())
-        		s_logger.debug("Execute asynchronize Reboot VM command: " +resultDescription);
-        	return new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
+        		s_logger.debug("Execute asynchronize Reboot VM command: VM does not exist or in destroying state");
+        	return true;
         }
         
         if (vm.getState() == State.Running && vm.getHostId() != null) {
@@ -1059,21 +1041,20 @@ public class UserVmManagerImpl implements UserVmManager {
             try {
 				long seq = _agentMgr.send(vm.getHostId(), new Command[] {cmd}, true,
 					new VMOperationListener(executor, param, vm, 0));
-				resultDescription = "Execute asynchronize Reboot VM command: sending command to agent, seq - " + seq;
+				
             	if(s_logger.isDebugEnabled())
-            		s_logger.debug(resultDescription);
-				return new OperationResponse(OperationResponse.STATUS_IN_PROGRESS, resultDescription);
+            		s_logger.debug("Execute asynchronize Reboot VM command: sending command to agent, seq - " + seq);
+				return false;
 			} catch (AgentUnavailableException e) {
-				resultDescription = "Agent is not available";
 	        	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-            		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-	        	return new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
+            		AsyncJobResult.STATUS_FAILED, 0, "Agent is not available");
+	        	return true;
 			}
         }
-        resultDescription = "VM is not running or agent host is disconnected";
+        
     	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-    		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-    	return new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
+    		AsyncJobResult.STATUS_FAILED, 0, "VM is not running or agent host is disconnected");
+    	return true;
     }
 
     @Override
@@ -1201,7 +1182,7 @@ public class UserVmManagerImpl implements UserVmManager {
     	userVm.setGuestIpAddress(null);
     	//_vmDao.update(userVm.getId(), userVm); FIXME need an updateIf
     }
-    
+
     @Override @DB
     public UserVmVO createVirtualMachine(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> avoids, long startEventId) throws InternalErrorException, ResourceAllocationException {
         long accountId = account.getId();
@@ -1359,6 +1340,10 @@ public class UserVmManagerImpl implements UserVmManager {
             		eventDescription += " (" + vm.getDisplayName() + ")";
             	}
             }
+            
+            event.setDescription(eventDescription);
+            event.setLevel(EventVO.LEVEL_ERROR);
+            _eventDao.persist(event);
 
             if (th instanceof ResourceAllocationException) {
                 throw (ResourceAllocationException)th;
@@ -1419,92 +1404,91 @@ public class UserVmManagerImpl implements UserVmManager {
     }
 
     @Override @DB
-    public OperationResponse executeDestroyVM(DestroyVMExecutor executor, VMOperationParam param) {
+    public boolean executeDestroyVM(DestroyVMExecutor executor, VMOperationParam param) {
         UserVmVO vm = _vmDao.findById(param.getVmId());
         State state = vm.getState();
-        OperationResponse response; 
-        String resultDescription = "Success";               
-        
         if (vm == null || state == State.Destroyed || state == State.Expunging || vm.getRemoved() != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to find vm or vm is destroyed: " + param.getVmId());
             }
-            resultDescription = "VM does not exist or already in destroyed state";
-            response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
+            
         	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-        		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-        	return response;
+        		AsyncJobResult.STATUS_FAILED, 0, "VM does not exist or already in destroyed state");
+        	return true;
         }
         
         if(state == State.Stopping) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("VM is being stopped: " + param.getVmId());
             }
-            resultDescription = "VM is being stopped, please re-try later";
-            response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
+            
         	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-        		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-        	return response;
+        		AsyncJobResult.STATUS_FAILED, 0, "VM is being stopped, please re-try later");
+        	return true;
         }
 
         if (state == State.Running) {
             if (vm.getHostId() == null) {
-            	resultDescription = "VM host is null (invalid VM)";
-            	response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
             	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-                		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
+                		AsyncJobResult.STATUS_FAILED, 0, "VM host is null (invalid VM)");
+                    	
             	if(s_logger.isDebugEnabled())
-            		s_logger.debug("Execute asynchronize destroy VM command: " + resultDescription);
-                return response;
+            		s_logger.debug("Execute asynchronize destroy VM command: VM host is null (invalid VM)");
+                return true;
             }
         	
             if (!_vmDao.updateIf(vm, Event.StopRequested, vm.getHostId())) {
-            	resultDescription = "Failed to issue stop command, please re-try later";
-            	response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
             	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-                		AsyncJobResult.STATUS_FAILED, 0, resultDescription);            	    	
+                		AsyncJobResult.STATUS_FAILED, 0, "Failed to issue stop command, please re-try later");
+                    	
             	if(s_logger.isDebugEnabled())
-            		s_logger.debug("Execute asynchronize destroy VM command:" + resultDescription);            	
-                return response;
+            		s_logger.debug("Execute asynchronize destroy VM command: failed to issue stop command, please re-try later");
+                return true;
             }
-            long childEventId = executor.getAsyncJobMgr().getExecutorContext().getManagementServer().saveStartedEvent(param.getUserId(), param.getAccountId(),
-            		EventTypes.EVENT_VM_STOP, "stopping vm " + vm.getName(), 0);
-            param.setChildEventId(childEventId);
+            
             StopCommand cmd = new StopCommand(vm, vm.getInstanceName(), vm.getVnet());
             try {
     			long seq = _agentMgr.send(vm.getHostId(), new Command[] {cmd}, true,
     				new VMOperationListener(executor, param, vm, 0));
-    			resultDescription = "Execute asynchronize destroy VM command: sending stop command to agent, seq - " + seq;
+    			
             	if(s_logger.isDebugEnabled())
-            		s_logger.debug(resultDescription);
-            	response = new OperationResponse(OperationResponse.STATUS_IN_PROGRESS, resultDescription);
-            	return response;
+            		s_logger.debug("Execute asynchronize destroy VM command: sending stop command to agent, seq - " + seq);
+            	
+            	return false;
     		} catch (AgentUnavailableException e) {
-    			resultDescription = "Agent is not available";
-    			response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
             	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-            		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-            	return response;
+            		AsyncJobResult.STATUS_FAILED, 0, "Agent is not available");
+            	return true;
     		}
         }
         
         Transaction txn = Transaction.currentTxn();
-        txn.start();        
+        txn.start();
+        
+        EventVO event = new EventVO();
+        event.setUserId(param.getUserId());
+        event.setAccountId(vm.getAccountId());
+        event.setType(EventTypes.EVENT_VM_DESTROY);
+        event.setStartId(param.getEventId());
+        event.setParameters("id="+vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
+        if(!vm.getName().equals(vm.getDisplayName()))
+        	event.setDescription("successfully destroyed VM instance : " + vm.getName()+"("+vm.getDisplayName()+")");
+        else
+        	event.setDescription("successfully destroyed VM instance : " + vm.getName());
+        _eventDao.persist(event);
         
         _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
-        if (!_vmDao.updateIf(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId()) ) {
-        	resultDescription = "Unable to destroy the vm because it is not in the correct state";
-            s_logger.debug(resultDescription + vm.toString());
+        if (!_vmDao.updateIf(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
+            s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm.toString());
             
             txn.rollback();
-            response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
         	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-            		AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-            return response;
+            		AsyncJobResult.STATUS_FAILED, 0, "Unable to destroy the vm because it is not in the correct state");
+            return true;
         }
 
         // Now that the VM is destroyed, clean the network rules associated with it.
-        cleanNetworkRules(param.getUserId(), vm.getId());
+        cleanNetworkRules(param.getUserId(), vm.getId().longValue());
 
         // Mark the VM's root disk as destroyed
         List<VolumeVO> volumes = _volsDao.findByInstanceAndType(vm.getId(), VolumeType.ROOT);
@@ -1519,10 +1503,9 @@ public class UserVmManagerImpl implements UserVmManager {
         }
         
         txn.commit();
-        response = new OperationResponse(OperationResponse.STATUS_SUCCEEDED, resultDescription);
     	executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
     		AsyncJobResult.STATUS_SUCCEEDED, 0, "success");
-    	return response;
+    	return true;
     }
     
     @Override @DB
@@ -1718,6 +1701,7 @@ public class UserVmManagerImpl implements UserVmManager {
             vm.setVnet(null);
             vm.setProxyAssignTime(null);
             vm.setProxyId(null);
+            vm.setStorageIp(null);
 
             txn.start();
             
@@ -2017,7 +2001,7 @@ public class UserVmManagerImpl implements UserVmManager {
         SnapshotVO snapshot = _snapshotDao.findById(Long.valueOf(snapshotId));
         if (snapshot != null) {
             VolumeVO volume = _volsDao.findById(snapshot.getVolumeId());
-            ManageSnapshotCommand cmd = new ManageSnapshotCommand(ManageSnapshotCommand.DESTROY_SNAPSHOT, snapshotId, snapshot.getPath(), snapshot.getName(), null);
+            ManageSnapshotCommand cmd = new ManageSnapshotCommand(ManageSnapshotCommand.DESTROY_SNAPSHOT, snapshotId, snapshot.getPath(), snapshot.getName());
 
             Answer answer = null;
             String basicErrMsg = "Failed to destroy template snapshot: " + snapshot.getName();
@@ -2054,7 +2038,7 @@ public class UserVmManagerImpl implements UserVmManager {
         id = snapshot.getId();
 
         // Send a ManageSnapshotCommand to the agent
-        ManageSnapshotCommand cmd = new ManageSnapshotCommand(ManageSnapshotCommand.CREATE_SNAPSHOT, id, volume.getPath(), snapshotName, null);
+        ManageSnapshotCommand cmd = new ManageSnapshotCommand(ManageSnapshotCommand.CREATE_SNAPSHOT, id, volume.getPath(), snapshotName);
         
         String basicErrMsg = "Failed to create snapshot for volume: " + volume.getId();
         // This can be sent to a KVM host too. We are only taking snapshots on primary storage, which doesn't require XenServer.
@@ -2294,7 +2278,6 @@ public class UserVmManagerImpl implements UserVmManager {
                                                                    accountId,
                                                                    volumeId,
                                                                    backupSnapshotUUID,
-                                                                   snapshot.getName(),
                                                                    origTemplateInstallPath,
                                                                    templateId,
                                                                    name);
@@ -2316,6 +2299,17 @@ public class UserVmManagerImpl implements UserVmManager {
             String basicErrMsg = "Failed to create template from snapshot: " + snapshot.getName();
             // This can be sent to a KVM host too.
             CreatePrivateTemplateAnswer answer = (CreatePrivateTemplateAnswer) _storageMgr.sendToHostsOnStoragePool(volume.getPoolId(), cmd, basicErrMsg);
+            // Don't proceed further if there was an exception above.
+            if (answer == null) {
+                return null;
+            }
+            
+            String eventParams = "id="+templateId+"\nname=" + name + "\ndcId=" + zoneId +"\nsize="+volume.getSize();
+            EventVO event = new EventVO();
+            event.setUserId(userId.longValue());
+            event.setAccountId(snapshot.getAccountId());
+            event.setType(EventTypes.EVENT_TEMPLATE_CREATE);
+            event.setParameters(eventParams);
 
             if ((answer != null) && answer.getResult()) {
                 
@@ -2364,12 +2358,19 @@ public class UserVmManagerImpl implements UserVmManager {
                 templateHostVO.setInstallPath(answer.getPath());
                 templateHostVO.setLastUpdated(new Date());
                 templateHostVO.setSize(answer.getVirtualSize());
-                _templateHostDao.persist(templateHostVO);                
+                _templateHostDao.persist(templateHostVO);
+                
+                event.setDescription("Created template " + name + " from snapshot " + snapshotId);
+                event.setLevel(EventVO.LEVEL_INFO);
+                _eventDao.persist(event);
                 
                 // Increment the number of templates
                 _accountMgr.incrementResourceCount(volume.getAccountId(), ResourceType.template);
                 
-            } else {                
+            } else {
+                event.setDescription("Failed to create template " + name + " from snapshot " + snapshotId);
+                event.setLevel(EventVO.LEVEL_ERROR);
+                _eventDao.persist(event);
                 
                 // Remove the template record
                 _templateDao.remove(templateId);
@@ -2533,22 +2534,8 @@ public class UserVmManagerImpl implements UserVmManager {
 	            break; // if we got here, we found a host and can stop searching the pods
 	        }
 	
-	        if (poolId == 0) {
-	        	if(vm != null && vm.getName()!=null && vm.getDisplayName() != null)
-	        	{
-	        		if(!vm.getName().equals(vm.getDisplayName()))
-	        			s_logger.debug("failed to create VM instance : " + name+"("+vm.getInstanceName()+")");
-	        		else
-	        			s_logger.debug("failed to create VM instance : " + name);
-	        	}
-	        	else
-	        	{
-	        		s_logger.debug("failed to create VM instance : " + name);
-	        	}
-	            return null;
-	        }
-	        
 	        txn.start();
+	
 	        EventVO event = new EventVO();
 	        event.setUserId(userId);
 	        event.setAccountId(accountId);
@@ -2556,6 +2543,26 @@ public class UserVmManagerImpl implements UserVmManager {
 	        event.setStartId(startEventId);
 	        event.setState(EventState.Completed);
 	        String diskOfferingIdentifier = (diskOffering != null) ? String.valueOf(diskOffering.getId()) : "-1";
+	
+	        if (poolId == 0) {
+	        	if(vm != null && vm.getName()!=null && vm.getDisplayName() != null)
+	        	{
+	        		if(!vm.getName().equals(vm.getDisplayName()))
+	        			event.setDescription("failed to create VM instance : " + name+"("+vm.getInstanceName()+")");
+	        		else
+	        			event.setDescription("failed to create VM instance : " + name);
+	        	}
+	        	else
+	        	{
+	        		event.setDescription("failed to create VM instance : " + name);
+	        	}
+	            event.setLevel(EventVO.LEVEL_ERROR);
+	            _eventDao.persist(event);
+		        String eventParams = "\nvmName=" + name + "\nsoId=" + serviceOfferingId + "\ndoId=" + diskOfferingIdentifier + "\ntId=" + templateId + "\ndcId=" + dataCenterId;
+		        event.setParameters(eventParams);
+	            txn.commit();
+	            return null;
+	        }
 	        String eventParams = "id=" + vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ndoId=" + diskOfferingIdentifier + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId();
 	        event.setParameters(eventParams);
 	        if(!vm.getName().equals(vm.getDisplayName()))
@@ -2682,24 +2689,8 @@ public class UserVmManagerImpl implements UserVmManager {
 	            break; // if we got here, we found a host and can stop searching the pods
 	        }
 	
-	        if (poolId == 0) {
-	        	if(vm != null && vm.getName()!=null && vm.getDisplayName() != null)
-	        	{
-	        		if(!vm.getName().equals(vm.getDisplayName()))
-	        			s_logger.debug("failed to create VM instance : " + name+"("+vm.getDisplayName()+")");
-	        		else
-	        			s_logger.debug("failed to create VM instance : " + name);
-	        	}
-	        	else
-	        	{
-	        		s_logger.debug("failed to create VM instance : " + name);
-	        	}
-	        		          
-	            txn.commit();
-	            return null;
-	        }
 	        txn.start();
-	    	
+	
 	        EventVO event = new EventVO();
 	        event.setUserId(userId);
 	        event.setAccountId(accountId);
@@ -2707,6 +2698,27 @@ public class UserVmManagerImpl implements UserVmManager {
 	        event.setStartId(startEventId);
             event.setState(EventState.Completed);
 	        String diskOfferingIdentifier = (diskOffering != null) ? String.valueOf(diskOffering.getId()) : "-1";
+	
+	        if (poolId == 0) {
+	        	if(vm != null && vm.getName()!=null && vm.getDisplayName() != null)
+	        	{
+	        		if(!vm.getName().equals(vm.getDisplayName()))
+	        			event.setDescription("failed to create VM instance : " + name+"("+vm.getDisplayName()+")");
+	        		else
+	        			event.setDescription("failed to create VM instance : " + name);
+	        	}
+	        	else
+	        	{
+	        		event.setDescription("failed to create VM instance : " + name);
+	        	}
+	        	
+	            event.setLevel(EventVO.LEVEL_ERROR);
+	            _eventDao.persist(event);
+		        String eventParams = "\nvmName=" + name + "\nsoId=" + serviceOfferingId + "\ndoId=" + diskOfferingIdentifier + "\ntId=" + templateId + "\ndcId=" + dataCenterId;
+		        event.setParameters(eventParams);
+	            txn.commit();
+	            return null;
+	        }
 	        String eventParams = "id=" + vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ndoId=" + diskOfferingIdentifier + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId();
 	        event.setParameters(eventParams);
 	        if(!vm.getName().equals(vm.getDisplayName()))
@@ -2763,4 +2775,5 @@ public class UserVmManagerImpl implements UserVmManager {
     		}
     	}
     }
+	
 }

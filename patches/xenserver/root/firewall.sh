@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# $Id: firewall.sh 9947 2010-06-25 19:34:24Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/patches/xenserver/root/firewall.sh $
+# $Id: firewall.sh 9804 2010-06-22 18:36:49Z alex $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.x.beta/java/patches/xenserver/root/firewall.sh $
 # firewall.sh -- allow some ports / protocols to vm instances
 #
 #

@@ -59,7 +59,7 @@ public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, 
 	 */
 	@Override
 	public List<SnapshotScheduleVO> getCoincidingSnapshotSchedules(long volumeId, Date date) {
-		SearchCriteria<SnapshotScheduleVO> sc = coincidingSchedulesSearch.create();
+		SearchCriteria sc = coincidingSchedulesSearch.create();
 	    sc.setParameters("volumeId", volumeId);
 	    sc.setParameters("scheduledTimestamp", date);
 	    // Don't return manual snapshots. They will be executed through another code path.
@@ -72,7 +72,7 @@ public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, 
      */
     @Override
     public List<SnapshotScheduleVO> getSchedulesToExecute(Date currentTimestamp) {
-        SearchCriteria<SnapshotScheduleVO> sc = executableSchedulesSearch.create();
+        SearchCriteria sc = executableSchedulesSearch.create();
         sc.setParameters("scheduledTimestamp", currentTimestamp);
         // Don't return manual snapshots. They will be executed through another code path.
         sc.addAnd("policyId", SearchCriteria.Op.NEQ, 1L);
@@ -85,7 +85,7 @@ public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, 
     @Override
     public SnapshotScheduleVO getCurrentSchedule(Long volumeId, Long policyId, boolean executing) {
         assert volumeId != null;
-        SearchCriteria<SnapshotScheduleVO> sc = createSearchCriteria();
+        SearchCriteria sc = createSearchCriteria();
         sc.addAnd("volumeId", SearchCriteria.Op.EQ, volumeId);
         if (policyId != null) {
             sc.addAnd("policyId", SearchCriteria.Op.EQ, policyId);

@@ -30,7 +30,6 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
-import com.cloud.host.Status;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.db.GenericDao;
 
@@ -78,17 +77,8 @@ public class StoragePoolVO implements StoragePool {
     @Column(name="capacity_bytes", updatable=true, nullable=true)
     private long capacityBytes;
 
-    @Column(name="status",  updatable=true, nullable=false)
-    @Enumerated(value=EnumType.STRING)
-    private Status status;
-    
 	public long getId() {
 		return id;
-	}
-	
-	@Override
-	public Status getStatus() {
-		return status;
 	}
 
 	public StoragePoolVO() {
@@ -188,11 +178,6 @@ public class StoragePoolVO implements StoragePool {
         this.hostAddress = hostAddress;
         this.port = port;
         this.path = path;
-    }
-    
-    public void setStatus(Status status)
-    {
-    	this.status = status;
     }
     
     public void setId(long id) {

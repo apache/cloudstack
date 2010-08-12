@@ -89,21 +89,21 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
 
 	@Override
 	public List<StoragePoolHostVO> listByPoolId(long id) {
-	    SearchCriteria<StoragePoolHostVO> sc = PoolSearch.create();
+	    SearchCriteria sc = PoolSearch.create();
 	    sc.setParameters("pool_id", id);
 	    return listBy(sc);
 	}
 
 	@Override
 	public List<StoragePoolHostVO> listByHostId(long hostId) {
-	    SearchCriteria<StoragePoolHostVO> sc = HostSearch.create();
+	    SearchCriteria sc = HostSearch.create();
 	    sc.setParameters("host_id", hostId);
 	    return listBy(sc);
 	}
 
 	@Override
 	public StoragePoolHostVO findByPoolHost(long poolId, long hostId) {
-		SearchCriteria<StoragePoolHostVO> sc = PoolHostSearch.create();
+		SearchCriteria sc = PoolHostSearch.create();
 	    sc.setParameters("pool_id", poolId);
 	    sc.setParameters("host_id", hostId);
 	    return findOneBy(sc);
@@ -220,7 +220,7 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
 	  */
 	 public void deletePrimaryRecordsForHost(long hostId)
 	 {
-		 SearchCriteria<StoragePoolHostVO> sc = HostSearch.create();
+		 SearchCriteria sc = HostSearch.create();
 		 sc.setParameters("host_id", hostId);
 		 Transaction txn = Transaction.currentTxn();
 		 txn.start();
@@ -232,7 +232,7 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
 
 	@Override
 	public void deleteStoragePoolHostDetails(long hostId, long poolId) {
-		SearchCriteria<StoragePoolHostVO> sc = PoolHostSearch.create();
+		SearchCriteria sc = PoolHostSearch.create();
 		sc.setParameters("host_id", hostId);
 		sc.setParameters("pool_id", poolId);
 		 Transaction txn = Transaction.currentTxn();

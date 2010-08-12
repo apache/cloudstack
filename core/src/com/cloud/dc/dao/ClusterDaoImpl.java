@@ -42,7 +42,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     
     @Override
     public List<ClusterVO> listByPodId(long podId) {
-        SearchCriteria<ClusterVO> sc = PodSearch.create();
+        SearchCriteria sc = PodSearch.create();
         sc.setParameters("pod", podId);
         
         return listActiveBy(sc);
@@ -50,7 +50,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     
     @Override
     public ClusterVO findBy(String name, long podId) {
-        SearchCriteria<ClusterVO> sc = PodSearch.create();
+        SearchCriteria sc = PodSearch.create();
         sc.setParameters("pod", podId);
         sc.setParameters("name", name);
         

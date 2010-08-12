@@ -47,7 +47,7 @@ public class DetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implements De
 
     @Override
     public DetailVO findDetail(long hostId, String name) {
-        SearchCriteria<DetailVO> sc = DetailSearch.create();
+        SearchCriteria sc = DetailSearch.create();
         sc.setParameters("hostId", hostId);
         sc.setParameters("name", name);
         
@@ -56,7 +56,7 @@ public class DetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implements De
 
     @Override
     public Map<String, String> findDetails(long hostId) {
-        SearchCriteria<DetailVO> sc = HostSearch.create();
+        SearchCriteria sc = HostSearch.create();
         sc.setParameters("hostId", hostId);
         
         List<DetailVO> results = search(sc, null);
@@ -71,7 +71,7 @@ public class DetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implements De
     public void persist(long hostId, Map<String, String> details) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        SearchCriteria<DetailVO> sc = HostSearch.create();
+        SearchCriteria sc = HostSearch.create();
         sc.setParameters("hostId", hostId);
         delete(sc);
         

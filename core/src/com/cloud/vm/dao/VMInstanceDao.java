@@ -52,6 +52,13 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long> {
 	 */
 	public List<VMInstanceVO> listNonExpungedByZoneAndTemplate(long zoneId, long templateId);
 	
+    /**
+	 * Updates display name and group for vm; enables/disables ha
+	 * @param id vm id.
+	 * @param displan name, group and enable for ha
+	 */
+    void updateVM(long id, String displayName, String group, boolean enalbe);
+    
     boolean updateIf(VMInstanceVO vm, VirtualMachine.Event event, Long hostId);
     
     /**

@@ -32,7 +32,7 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
     @Override
     public AlertVO getLastAlert(short type, long dataCenterId, Long podId) {
         Filter searchFilter = new Filter(AlertVO.class, "createdDate", Boolean.FALSE, Long.valueOf(1), Long.valueOf(1));
-        SearchCriteria<AlertVO> sc = createSearchCriteria();
+        SearchCriteria sc = createSearchCriteria();
 
         sc.addAnd("type", SearchCriteria.Op.EQ, Short.valueOf(type));
         sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, Long.valueOf(dataCenterId));

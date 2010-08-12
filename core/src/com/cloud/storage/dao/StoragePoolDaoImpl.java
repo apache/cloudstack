@@ -31,19 +31,15 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.host.HostVO;
-import com.cloud.host.Status;
 import com.cloud.storage.StoragePoolDetailVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -59,7 +55,6 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
     protected final SearchBuilder<StoragePoolVO> HostPathDcSearch;
     protected final SearchBuilder<StoragePoolVO> DcPodAnyClusterSearch;
     protected final SearchBuilder<StoragePoolVO> DeleteLvmSearch;
-    protected final GenericSearchBuilder<StoragePoolVO, Long> MaintenanceCountSearch;
     
     protected final StoragePoolDetailsDao _detailsDao;
 	
@@ -82,24 +77,24 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
         
     	DcPodSearch = createSearchBuilder();
     	DcPodSearch.and("datacenterId", DcPodSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-    	DcPodSearch.and().op("nullpod", DcPodSearch.entity().getPodId(), SearchCriteria.Op.NULL);
+    	DcPodSearch.op(Op.AND, "nullpod", DcPodSearch.entity().getPodId(), SearchCriteria.Op.NULL);
     	DcPodSearch.or("podId", DcPodSearch.entity().getPodId(), SearchCriteria.Op.EQ);
     	DcPodSearch.cp();
-    	DcPodSearch.and().op("nullcluster", DcPodSearch.entity().getClusterId(), SearchCriteria.Op.NULL);
+    	DcPodSearch.op(Op.AND, "nullcluster", DcPodSearch.entity().getClusterId(), SearchCriteria.Op.NULL);
     	DcPodSearch.or("cluster", DcPodSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
     	DcPodSearch.cp();
     	DcPodSearch.done();
     	
     	DcPodAnyClusterSearch = createSearchBuilder();
         DcPodAnyClusterSearch.and("datacenterId", DcPodAnyClusterSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        DcPodAnyClusterSearch.and().op("nullpod", DcPodAnyClusterSearch.entity().getPodId(), SearchCriteria.Op.NULL);
+        DcPodAnyClusterSearch.op(Op.AND, "nullpod", DcPodAnyClusterSearch.entity().getPodId(), SearchCriteria.Op.NULL);
         DcPodAnyClusterSearch.or("podId", DcPodAnyClusterSearch.entity().getPodId(), SearchCriteria.Op.EQ);
         DcPodAnyClusterSearch.cp();
         DcPodAnyClusterSearch.done();
         
         DeleteLvmSearch = createSearchBuilder();
         DeleteLvmSearch.and("ids", DeleteLvmSearch.entity().getId(), SearchCriteria.Op.IN);
-        DeleteLvmSearch.and().op("LVM", DeleteLvmSearch.entity().getPoolType(), SearchCriteria.Op.EQ);
+        DeleteLvmSearch.op(SearchCriteria.Op.AND,"LVM", DeleteLvmSearch.entity().getPoolType(), SearchCriteria.Op.EQ);
         DeleteLvmSearch.or("Filesystem", DeleteLvmSearch.entity().getPoolType(), SearchCriteria.Op.EQ);
         DeleteLvmSearch.cp();
         DeleteLvmSearch.done();
@@ -120,18 +115,12 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
         HostPathDcSearch.and("path", HostPathDcSearch.entity().getPath(), SearchCriteria.Op.EQ);
         HostPathDcSearch.done();
 
-        MaintenanceCountSearch = createSearchBuilder(Long.class);
-        MaintenanceCountSearch.and("pool", MaintenanceCountSearch.entity().getId(), SearchCriteria.Op.EQ);
-        MaintenanceCountSearch.select(null, Func.COUNT, null);
-        MaintenanceCountSearch.and("status", MaintenanceCountSearch.entity().getStatus(), SearchCriteria.Op.IN);
-        MaintenanceCountSearch.done();
-
         _detailsDao = ComponentLocator.inject(StoragePoolDetailsDaoImpl.class);
     }
     
 	@Override
 	public List<StoragePoolVO> findPoolByName(String name) {
-		SearchCriteria<StoragePoolVO> sc = NameSearch.create();
+		SearchCriteria sc = NameSearch.create();
         sc.setParameters("name", name);
         return listBy(sc);
 	}
@@ -139,7 +128,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 
 	@Override
 	public StoragePoolVO findPoolByUUID(String uuid) {
-		SearchCriteria<StoragePoolVO> sc = UUIDSearch.create();
+		SearchCriteria sc = UUIDSearch.create();
         sc.setParameters("uuid", uuid);
         return findOneBy(sc);
 	}
@@ -147,7 +136,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 
 	@Override
 	public List<StoragePoolVO> listByDataCenterId(long datacenterId) {
-		SearchCriteria<StoragePoolVO> sc = DatacenterSearch.create();
+		SearchCriteria sc = DatacenterSearch.create();
         sc.setParameters("datacenterId", datacenterId);
         return listBy(sc);
 	}
@@ -171,14 +160,14 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 	
     @Override
     public List<StoragePoolVO> listByStorageHost(String hostFqdnOrIp) {
-        SearchCriteria<StoragePoolVO> sc = HostSearch.create();
+        SearchCriteria sc = HostSearch.create();
         sc.setParameters("host", hostFqdnOrIp);
         return listBy(sc);
     }
 
     @Override
     public StoragePoolVO findPoolByHostPath(long datacenterId, Long podId, String host, String path) {
-        SearchCriteria<StoragePoolVO> sc = HostPathDcPodSearch.create();
+        SearchCriteria sc = HostPathDcPodSearch.create();
         sc.setParameters("hostAddress", host);
         sc.setParameters("path", path);
         sc.setParameters("datacenterId", datacenterId);
@@ -190,14 +179,14 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 	@Override
 	public List<StoragePoolVO> listBy(long datacenterId, long podId, Long clusterId) {
 	    if (clusterId != null) {
-    		SearchCriteria<StoragePoolVO> sc = DcPodSearch.create();
+    		SearchCriteria sc = DcPodSearch.create();
             sc.setParameters("datacenterId", datacenterId);
             sc.setParameters("podId", podId);
            
             sc.setParameters("cluster", clusterId);
             return listActiveBy(sc);
 	    } else {
-	        SearchCriteria<StoragePoolVO> sc = DcPodAnyClusterSearch.create();
+	        SearchCriteria sc = DcPodAnyClusterSearch.create();
 	        sc.setParameters("datacenterId", datacenterId);
 	        sc.setParameters("podId", podId);
 	        return listActiveBy(sc);
@@ -206,7 +195,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 
 	@Override
 	public List<StoragePoolVO> listPoolByHostPath(String host, String path) {
-        SearchCriteria<StoragePoolVO> sc = HostPathDcSearch.create();
+        SearchCriteria sc = HostPathDcSearch.create();
         sc.setParameters("hostAddress", host);
         sc.setParameters("path", path);
         
@@ -215,7 +204,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 	
 	public StoragePoolVO listById(Integer id)
 	{
-        SearchCriteria<StoragePoolVO> sc = HostSearch.create();
+        SearchCriteria sc = HostSearch.create();
         sc.setParameters("id", id);
         
         return findOneBy(sc);
@@ -240,7 +229,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 	@Override
 	public void deleteStoragePoolRecords(ArrayList<Long> ids)
 	{
-			SearchCriteria<StoragePoolVO> sc = DeleteLvmSearch.create();
+			SearchCriteria sc = DeleteLvmSearch.create();
 			sc.setParameters("ids", ids.toArray());
 			sc.setParameters("LVM", StoragePoolType.LVM);
 			sc.setParameters("Filesystem", StoragePoolType.Filesystem);
@@ -359,19 +348,4 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 	    _detailsDao.configure("DetailsDao", params);
 	    return true;
 	}
-	
-    @Override
-    public long countBy(long primaryStorageId, Status... statuses) {
-        SearchCriteria<Long> sc = MaintenanceCountSearch.create();
-        
-        sc.setParameters("status", (Object[])statuses);
-        sc.setParameters("pool", primaryStorageId);
-        
-        List<Long> rs = searchAll(sc, null);
-        if (rs.size() == 0) {
-            return 0;
-        }
-        
-        return rs.get(0);
-    }
 }

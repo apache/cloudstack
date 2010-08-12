@@ -62,7 +62,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
     }
     
     public boolean mark(long dcId, String ip) {
-        SearchCriteria<IPAddressVO> sc = DcIpSearch.create();
+        SearchCriteria sc = DcIpSearch.create();
         sc.setParameters("dataCenterId", dcId);
         sc.setParameters("ipAddress", ip);
         
@@ -82,7 +82,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
     	Transaction txn = Transaction.currentTxn();
 		try {
 			txn.start();
-	        SearchCriteria<IPAddressVO> sc = VlanDbIdSearch.create();
+	        SearchCriteria sc = VlanDbIdSearch.create();
 	        sc.setParameters("vlanDbId", vlanDbId);
 	        sc.setParameters("sourceNat", sourceNat);
 	        
@@ -124,7 +124,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
 		Transaction txn = Transaction.currentTxn();
 		try {
 			txn.start();
-	        SearchCriteria<IPAddressVO> sc = VlanDbIdSearchUnallocated.create();
+	        SearchCriteria sc = VlanDbIdSearchUnallocated.create();
 	        sc.setParameters("vlanDbId", vlanDbId);
 	        
 			IPAddressVO ip = this.lock(sc, true);
@@ -170,13 +170,13 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
 
     @Override
     public List<IPAddressVO> listByAccount(long accountId) {
-    	SearchCriteria<IPAddressVO> sc = AccountSearch.create();
+    	SearchCriteria sc = AccountSearch.create();
         sc.setParameters("accountId", accountId);
         return listBy(sc);
     }
 	
 	public List<IPAddressVO> listByDcIdIpAddress(long dcId, String ipAddress) {
-		SearchCriteria<IPAddressVO> sc = DcIpSearch.create();
+		SearchCriteria sc = DcIpSearch.create();
 		sc.setParameters("dataCenterId", dcId);
 		sc.setParameters("ipAddress", ipAddress);
 		return listBy(sc);

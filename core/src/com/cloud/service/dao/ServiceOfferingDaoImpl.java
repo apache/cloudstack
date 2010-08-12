@@ -47,7 +47,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     
     @Override
     public ServiceOfferingVO findByName(String name) {
-        SearchCriteria<ServiceOfferingVO> sc = UniqueNameSearch.create();
+        SearchCriteria sc = UniqueNameSearch.create();
         sc.setParameters("name", name);
         List<ServiceOfferingVO> vos = searchAll(sc, null, null, false);
         if (vos.size() == 0) {

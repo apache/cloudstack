@@ -26,6 +26,10 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+/**
+ * @author ahuang
+ *
+ */
 @Local(value={DiskTemplateDao.class})
 public class DiskTemplateDaoImpl extends GenericDaoBase<DiskTemplateVO, Long> implements DiskTemplateDao {
     
@@ -42,7 +46,7 @@ public class DiskTemplateDaoImpl extends GenericDaoBase<DiskTemplateVO, Long> im
     }
     
     public DiskTemplateVO findByTypeAndSize(String type, long size) {
-    	SearchCriteria<DiskTemplateVO> sc = TypeSizeSearch.create();
+    	SearchCriteria sc = TypeSizeSearch.create();
     	sc.setParameters("type", type);
     	sc.setParameters("size", size);
     	

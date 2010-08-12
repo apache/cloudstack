@@ -125,7 +125,15 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 				s_logger.debug("ConfigurationServer made secondary storage copy encrypted.");
 				
 				_configDao.update("secstorage.secure.copy.cert", "realhostip");
-				s_logger.debug("ConfigurationServer made secondary storage copy use realhostip.");					          	         
+				s_logger.debug("ConfigurationServer made secondary storage copy use realhostip.");
+				
+	             //Add default manual snapshot policy
+	            SnapshotPolicyVO snapPolicy = new SnapshotPolicyVO(0L, "00", "GMT", (short)4, 0);
+	            _snapPolicyDao.persist(snapPolicy);
+	            
+	            // Save Virtual Networking service offerings
+	            _configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Virtual Networking", 1, 512, 500, "Small Instance, Virtual Networking, $0.05 per hour", false, false, true, null);
+	            _configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Virtual Networking", 1, 1024, 1000, "Medium Instance, Virtual Networking, $0.10 per hour", false, false, true, null);
 			}
 			
 			boolean externalIpAlloator = Boolean.parseBoolean(_configDao.getValue("direct.attach.network.externalIpAllocator.enabled"));
@@ -138,18 +146,12 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 			// Save Direct Networking service offerings
 			_configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Direct Networking", 1, 512, 500, "Small Instance, Direct Networking, $0.05 per hour", false, false, false, null);			
 			_configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Direct Networking", 1, 1024, 1000, "Medium Instance, Direct Networking, $0.10 per hour", false, false, false, null);			
-			  // Save Virtual Networking service offerings
-            _configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Virtual Networking", 1, 512, 500, "Small Instance, Virtual Networking, $0.05 per hour", false, false, true, null);
-            _configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Virtual Networking", 1, 1024, 1000, "Medium Instance, Virtual Networking, $0.10 per hour", false, false, true, null);
+			
 			// Save default disk offerings
-			_configMgr.createDiskOffering(DomainVO.ROOT_DOMAIN, "Small", "Small Disk, 5 GB", 5, null);
-			_configMgr.createDiskOffering(DomainVO.ROOT_DOMAIN, "Medium", "Medium Disk, 20 GB", 20, null);
-			_configMgr.createDiskOffering(DomainVO.ROOT_DOMAIN, "Large", "Large Disk, 100 GB", 100, null);
+			_configMgr.createDiskOffering(DomainVO.ROOT_DOMAIN, "Small", "Small Disk, 5 GB", 5, false, null);
+			_configMgr.createDiskOffering(DomainVO.ROOT_DOMAIN, "Medium", "Medium Disk, 20 GB", 20, false, null);
+			_configMgr.createDiskOffering(DomainVO.ROOT_DOMAIN, "Large", "Large Disk, 100 GB", 100, false, null);
 
-			   //Add default manual snapshot policy
-            SnapshotPolicyVO snapPolicy = new SnapshotPolicyVO(0L, "00", "GMT", (short)4, 0);
-            _snapPolicyDao.persist(snapPolicy);
-            
 			// Save the mount parent to the configuration table
 			String mountParent = getMountParent();
 			if (mountParent != null) {
@@ -229,7 +231,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 	*/
 
 	private String[] getGatewayAndNetmask() {
-		String defaultRoute = Script.runSimpleBashScript("/sbin/ip route | grep default");
+		String defaultRoute = Script.runSimpleBashScript("/sbin/route | grep default");
 		
 		if (defaultRoute == null) {
 			return null;
@@ -237,12 +239,12 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 		
 		String[] defaultRouteList = defaultRoute.split("\\s+");
 		
-		if (defaultRouteList.length != 7) {
+		if (defaultRouteList.length != 8) {
 			return null;
 		}
 		
-		String gateway = defaultRouteList[2];
-		String ethDevice = defaultRouteList[4];
+		String gateway = defaultRouteList[1];
+		String ethDevice = defaultRouteList[7];
 		String netmask = null;
 		
 		if (ethDevice != null) {
@@ -412,7 +414,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
         String already = _configDao.getValue("ssh.privatekey");
 
-        if (already == null || already.isEmpty()) {
+        if (already == null) {
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("Need to store in the database");
             }

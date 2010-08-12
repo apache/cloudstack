@@ -25,7 +25,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.async.executor.CreateOrUpdateRuleResultObject;
 import com.cloud.network.SecurityGroupVO;
@@ -42,54 +41,11 @@ public class CreatePortForwardingServiceRuleCmd extends BaseCmd {
     static {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PORT_FORWARDING_SERVICE_ID, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PUBLIC_PORT, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PRIVATE_PORT, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PROTOCOL, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PUBLIC_PORT, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PORT_FORWARDING_SERVICE_ID, Boolean.TRUE));
     }
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="portforwardingserviceid", type=CommandType.LONG, required=true)
-    private Long portForwardingServiceId;
-
-    @Parameter(name="privateport", type=CommandType.STRING, required=true)
-    private String privatePort;
-
-    @Parameter(name="protocol", type=CommandType.STRING, required=true)
-    private String protocol;
-
-    @Parameter(name="publicport", type=CommandType.STRING, required=true)
-    private String publicPort;
-
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public Long getPortForwardingServiceId() {
-        return portForwardingServiceId;
-    }
-
-    public String getPrivatePort() {
-        return privatePort;
-    }
-
-    public String getProtocol() {
-        return protocol;
-    }
-
-    public String getPublicPort() {
-        return publicPort;
-    }
-
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     public String getName() {
         return s_name;

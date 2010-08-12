@@ -22,10 +22,12 @@ import java.util.List;
 
 import com.cloud.network.SecurityGroupVMMapVO;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.SearchCriteria;
 
 public interface SecurityGroupVMMapDao extends GenericDao<SecurityGroupVMMapVO, Long> {
     List<SecurityGroupVMMapVO> listByIpAndInstanceId(String ipAddress, long instanceId);
     List<SecurityGroupVMMapVO> listByInstanceId(long instanceId);
     List<SecurityGroupVMMapVO> listByIp(String ipAddress);
     List<SecurityGroupVMMapVO> listBySecurityGroup(long securityGroupId);
+    int delete(SearchCriteria sc);
 }

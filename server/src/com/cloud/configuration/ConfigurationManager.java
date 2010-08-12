@@ -98,7 +98,7 @@ public interface ConfigurationManager extends Manager {
 	 * @param mirrored
 	 * @return ID
 	 */
-	DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags);
+	DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, boolean mirrored, String tags);
 	
 	/**
 	 * Creates a new pod
@@ -224,15 +224,4 @@ public interface ConfigurationManager extends Manager {
 	 */
 	boolean isPremium();
 
-	/**
-	 * Persists a config value via the API call
-	 * @param instance
-	 * @param component
-	 * @param category
-	 * @param name
-	 * @param value
-	 * @param description
-	 * @return
-	 */
-	public boolean addConfig(String instance, String component,String category, String name, String value, String description);
 }

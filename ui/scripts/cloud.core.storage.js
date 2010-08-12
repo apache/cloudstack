@@ -16,14 +16,14 @@
  * 
  */
 
-// Version: 1.9.1.452
+// Version: @VERSION@
 
 function showStorageTab(domainId, targetTab) {      
     var currentSubMenu;
        		
     var populateZoneField = function(isAdmin) {         
         $.ajax({
-	            data: createURL("command=listZones&available=true&response=json"+maxPageSize),
+		    data: "command=listZones&available=true&response=json",
 		    dataType: "json",
 		    success: function(json) {
 			    var zones = json.listzonesresponse.zone;					    
@@ -50,7 +50,7 @@ function showStorageTab(domainId, targetTab) {
     
     var populateDiskOfferingField = function() {        
         $.ajax({
-	            data: createURL("command=listDiskOfferings&response=json"),
+		    data: "command=listDiskOfferings&response=json",
 		    dataType: "json",
 		    success: function(json) {			    
 		        var offerings = json.listdiskofferingsresponse.diskoffering;								
@@ -68,7 +68,7 @@ function showStorageTab(domainId, targetTab) {
     var populateVirtualMachineField = function(domainId, account, zoneId) {        
 	    $.ajax({
 		    cache: false,
-		    data: createURL("command=listVirtualMachines&state=Running&zoneid="+zoneId+"&domainid="+domainId+"&account="+account+"&response=json"+maxPageSize),
+		    data: "command=listVirtualMachines&state=Running&zoneid="+zoneId+"&domainid="+domainId+"&account="+account+"&response=json",
 		    dataType: "json",
 		    success: function(json) {			    
 			    var instances = json.listvirtualmachinesresponse.virtualmachine;				
@@ -80,7 +80,7 @@ function showStorageTab(domainId, targetTab) {
 			    }
 				$.ajax({
 					cache: false,
-					data: createURL("command=listVirtualMachines&state=Stopped&zoneid="+zoneId+"&domainid="+domainId+"&account="+account+"&response=json"+maxPageSize),
+					data: "command=listVirtualMachines&state=Stopped&zoneid="+zoneId+"&domainid="+domainId+"&account="+account+"&response=json",
 					dataType: "json",
 					success: function(json) {			    
 						var instances = json.listvirtualmachinesresponse.virtualmachine;								
@@ -97,7 +97,7 @@ function showStorageTab(domainId, targetTab) {
     
     var populateOSTypeField = function() {     
         $.ajax({
-	            data: createURL("command=listOsTypes&response=json"),
+		    data: "command=listOsTypes&response=json",
 		    dataType: "json",
 		    success: function(json) {
 			    types = json.listostypesresponse.ostype;
@@ -147,7 +147,7 @@ function showStorageTab(domainId, targetTab) {
                     template.fadeIn("slow");	           									
 					    					
 				    $.ajax({
- 					    data: createURL("command=createVolume&zoneId="+zoneId+"&name="+encodeURIComponent(name)+"&diskOfferingId="+diskofferingId+"&accountId="+"1"+"&response=json"), 
+					    data: "command=createVolume&zoneId="+zoneId+"&name="+encodeURIComponent(name)+"&diskOfferingId="+diskofferingId+"&accountId="+"1"+"&response=json", 
 					    dataType: "json",
 					    success: function(json) {						        
 					        var jobId = json.createvolumeresponse.jobid;
@@ -156,7 +156,7 @@ function showStorageTab(domainId, targetTab) {
 								    
 					        $("body").everyTime(2000, timerKey, function() {
 							    $.ajax({
-								    data: createURL("command=queryAsyncJobResult&jobId="+json.createvolumeresponse.jobid+"&response=json"),
+								    data: "command=queryAsyncJobResult&jobId="+json.createvolumeresponse.jobid+"&response=json",
 								    dataType: "json",
 								    success: function(json) {										       						   
 									    var result = json.queryasyncjobresultresponse;
@@ -239,6 +239,9 @@ function showStorageTab(domainId, targetTab) {
     
         // FUNCTION: volume JSON to Template
 	    function volumeJSONToTemplate(json, template) {		
+			if (getHypervisorType() == "kvm") {
+				template.find("#volume_action_create_template_span").show();
+			}
 	        template.attr("id", "volume"+json.id);   
 		    if (index++ % 2 == 0) {
 			    template.addClass("smallrow_even");
@@ -254,18 +257,17 @@ function showStorageTab(domainId, targetTab) {
 			template.data("vmid", json.virtualmachineid);
 			template.data("zoneId", json.zoneid);
 		    
-		    template.find("#volume_id").text(noNull(json.id));
-		    template.find("#volume_name").text(noNull(json.name));
-			template.find("#volume_zone").text(noNull(json.zonename));
-		    template.find("#volume_account").text(noNull(json.account));
-		    template.find("#volume_deviceid").text(noNull(json.deviceid));
-		    template.find("#volume_domain").text(noNull(json.domain));
-		    template.find("#volume_hostname").text(noNull(json.storage));
-		    template.find("#volume_path").text(noNull(json.path));
-		    template.find("#volume_state").text(noNull(json.state));
+		    template.find("#volume_id").text(json.id);
+		    template.find("#volume_name").text(json.name);
+			template.find("#volume_zone").text(json.zonename);
+		    template.find("#volume_account").text(json.account);
+		    template.find("#volume_domain").text(json.domain);
+		    template.find("#volume_hostname").text(json.storage);
+		    template.find("#volume_path").text(json.path);
+		    template.find("#volume_state").text(json.state);
 		    template.find("#volume_size").text((json.size == "0") ? "" : convertBytes(json.size));		    
-		    template.find("#volume_type").text(noNull(json.type) + " (" + noNull(json.storagetype) + " storage)");
-			if (json.virtualmachineid == null) {
+		    template.find("#volume_type").text(json.type + " (" + json.storagetype + " storage)");
+			if (json.virtualmachineid == undefined) {
 				template.find("#volume_vmname").text("detached");
 			} else {
 				template.find("#volume_vmname").text(getVmName(json.vmname, json.vmdisplayname) + " (" + json.vmstate + ")");
@@ -274,14 +276,23 @@ function showStorageTab(domainId, targetTab) {
 			setDateField(json.created, template.find("#volume_created"));			
 		   		    		
 			if(json.type=="ROOT") {
+				if (json.virtualmachineid != undefined && json.vmstate == "Stopped" && getHypervisorType() == "kvm") {
+					template.find("#volume_action_create_template_span").show();
+				}
 			} else {
 				// DataDisk
 				if (json.virtualmachineid != undefined) {
 					if (json.storagetype == "shared" && (json.vmstate == "Running" || json.vmstate == "Stopped")) {
 						template.find("#volume_action_detach_span").show();
 					}
+					if (json.vmstate == "Stopped" && getHypervisorType() == "kvm") {
+						template.find("#volume_action_create_template_span").show();
+					}
 				} else {
 					// Disk not attached
+					if (getHypervisorType() == "kvm") {
+						template.find("#volume_action_create_template_span").show();
+					}
 					if (json.storagetype == "shared") {
 						template.find("#volume_action_attach_span, #volume_action_delete_span").show();
 					}
@@ -300,14 +311,14 @@ function showStorageTab(domainId, targetTab) {
             var commandString;            
 			var advanced = submenuContent.find("#search_button").data("advanced");                    
 			if (advanced != null && advanced) {		
-			    var name = submenuContent.find("#advanced_search #adv_search_name").val();	
+			    var name = submenuContent.find("#advanced_search #adv_search_name").val();	    
 			    var zone = submenuContent.find("#advanced_search #adv_search_zone").val();
 			    var pod = submenuContent.find("#advanced_search #adv_search_pod").val();
 			    var domainId = submenuContent.find("#advanced_search #adv_search_domain").val();
 			    var account = submenuContent.find("#advanced_search #adv_search_account").val();
 			    var moreCriteria = [];								
 				if (name!=null && trim(name).length > 0) 
-					moreCriteria.push("&name="+encodeURIComponent(trim(name)));	
+					moreCriteria.push("&name="+encodeURIComponent(trim(name)));										
 			    if (zone!=null && zone.length > 0) 
 					moreCriteria.push("&zoneId="+zone);		
 			    if (pod!=null && pod.length > 0) 
@@ -415,14 +426,14 @@ function showStorageTab(domainId, targetTab) {
                              rowContainer.hide();	
 	                         	                                               
 	                         $.ajax({
-					                 data: createURL("command=createVolume&snapshotid="+snapshotId+"&name="+name+"&response=json"),
+						         data: "command=createVolume&snapshotid="+snapshotId+"&name="+name+"&response=json",
 						         dataType: "json",
 						         success: function(json) {							           								 
 							        var jobId = json.createvolumeresponse.jobid;					        
 					                var timerKey = "createVolumeJob"+jobId;        					        
                                     $("body").everyTime(2000, timerKey, function() {
 							            $.ajax({
-									    data: createURL("command=queryAsyncJobResult&jobId="+json.createvolumeresponse.jobid+"&response=json"),
+								            data: "command=queryAsyncJobResult&jobId="+json.createvolumeresponse.jobid+"&response=json",
 								            dataType: "json",
 								            success: function(json) {										       						   
 									            var result = json.queryasyncjobresultresponse;									           
@@ -472,7 +483,7 @@ function showStorageTab(domainId, targetTab) {
                      rowContainer.hide();	
 	             	                       
 	                 $.ajax({
-				                 data: createURL("command=deleteSnapshot&id="+snapshotId+"&response=json"),
+						 data: "command=deleteSnapshot&id="+snapshotId+"&response=json",
 						 dataType: "json",
 						 success: function(json) {											 
 							var jobId = json.deletesnapshotresponse.jobid;					        
@@ -480,7 +491,7 @@ function showStorageTab(domainId, targetTab) {
 					        
                             $("body").everyTime(2000, timerKey, function() {
 							    $.ajax({
-								    data: createURL("command=queryAsyncJobResult&jobId="+json.deletesnapshotresponse.jobid+"&response=json"),
+								    data: "command=queryAsyncJobResult&jobId="+json.deletesnapshotresponse.jobid+"&response=json",
 								    dataType: "json",
 								    success: function(json) {										       						   
 									    var result = json.queryasyncjobresultresponse;									    
@@ -541,14 +552,14 @@ function showStorageTab(domainId, targetTab) {
 				             rowContainer.hide(); 	                                  
 	                                                    
 	                         $.ajax({
-					                 data: createURL("command=createTemplate&snapshotid="+snapshotId+"&name="+name+"&displaytext="+displayText+"&ostypeid="+osTypeId+"&response=json"),
+						         data: "command=createTemplate&snapshotid="+snapshotId+"&name="+name+"&displaytext="+displayText+"&ostypeid="+osTypeId+"&response=json",
 						         dataType: "json",
 						         success: function(json) {							            					           								 
 							        var jobId = json.createtemplateresponse.jobid;					        
 					                var timerKey = "createTemplateJob"+jobId;        					        
                                     $("body").everyTime(2000, timerKey, function() {
 							            $.ajax({
-									    data: createURL("command=queryAsyncJobResult&jobId="+json.createtemplateresponse.jobid+"&response=json"),
+								            data: "command=queryAsyncJobResult&jobId="+json.createtemplateresponse.jobid+"&response=json",
 								            dataType: "json",
 								            success: function(json) {									                							       						   
 									            var result = json.queryasyncjobresultresponse;									           
@@ -592,6 +603,7 @@ function showStorageTab(domainId, targetTab) {
 	        }
 	    }); 
 	    
+		if (getHypervisorType() == "xenserver") {
 			$("#volume_action_snapshot_grid, #volume_action_take_snapshot_container, #volume_action_recurring_snapshot_container").show();
 			$("#submenu_snapshot").show().bind("click", function(event) {			        
 				event.preventDefault();
@@ -614,7 +626,8 @@ function showStorageTab(domainId, targetTab) {
 				currentPage = 1;  			
 				listSnapshots();
 			});  
-		if (getHypervisorType() == "kvm") {
+		}
+		else if (getHypervisorType() == "kvm") {
 		    $("#dialog_add_pool #pool_cluster_container").hide();
 		}
 			
@@ -657,7 +670,7 @@ function showStorageTab(domainId, targetTab) {
 	    }));
 		
 		$.ajax({
-		        data: createURL("command=listOsTypes&response=json"),
+			data: "command=listOsTypes&response=json",
 			dataType: "json",
 			success: function(json) {
 				types = json.listostypesresponse.ostype;
@@ -753,7 +766,7 @@ function showStorageTab(domainId, targetTab) {
 		        if(snapshotPolicyId == null || snapshotPolicyId.length==0)
 		            return;
 	            $.ajax({
-		    data: createURL("command=deleteSnapshotPolicies&id="+snapshotPolicyId+"&response=json"),
+                    data: "command=deleteSnapshotPolicies&id="+snapshotPolicyId+"&response=json",
                     dataType: "json",                        
                     success: function(json) {                              
                         clearTopPanel($("#"+targetId).data("intervalType"));                        
@@ -882,7 +895,7 @@ function showStorageTab(domainId, targetTab) {
 		            
 		            var thisLink;
 		            $.ajax({
-			data: createURL("command=createSnapshotPolicy&intervaltype="+intervalType+"&schedule="+schedule+"&volumeid="+volumeId+"&maxsnaps="+max+"&timezone="+encodeURIComponent(timezone)+"&response=json"),
+                        data: "command=createSnapshotPolicy&intervaltype="+intervalType+"&schedule="+schedule+"&volumeid="+volumeId+"&maxsnaps="+max+"&timezone="+encodeURIComponent(timezone)+"&response=json",
                         dataType: "json",                        
                         success: function(json) {	                                                                              
                             switch(intervalType) {
@@ -979,7 +992,7 @@ function showStorageTab(domainId, targetTab) {
 				            rowContainer.hide(); 
 				                					            					        
 						    $.ajax({
-							        data: createURL("command=deleteVolume&id="+volumeId+"&response=json"),
+								data: "command=deleteVolume&id="+volumeId+"&response=json",
 								dataType: "json",
 								success: function(json) {							                    					                    				                				                
 									volumeTemplate.slideUp("slow", function(){
@@ -1013,12 +1026,12 @@ function showStorageTab(domainId, targetTab) {
 				            rowContainer.hide();
 				            					            					        
 						    $.ajax({
-							        data: createURL("command=detachVolume&id="+volumeId+"&response=json"),
+								data: "command=detachVolume&id="+volumeId+"&response=json",
 								dataType: "json",
 								success: function(json) {							                    					                    				                				                
 									$("body").everyTime(5000, timerKey, function() {
 										$.ajax({
-										        data: createURL("command=queryAsyncJobResult&jobId="+json.detachvolumeresponse.jobid+"&response=json"),
+											data: "command=queryAsyncJobResult&jobId="+json.detachvolumeresponse.jobid+"&response=json",
 											dataType: "json",
 											success: function(json) {									                
 												var result = json.queryasyncjobresultresponse;										           
@@ -1088,12 +1101,12 @@ function showStorageTab(domainId, targetTab) {
 				      
 				            var virtualMachineId = $("#dialog_attach_volume #volume_vm").val();		
 						    $.ajax({
-							        data: createURL("command=attachVolume&id="+volumeId+'&virtualMachineId='+virtualMachineId+"&response=json"),
+								data: "command=attachVolume&id="+volumeId+'&virtualMachineId='+virtualMachineId+"&response=json",
 								dataType: "json",
 								success: function(json) {							                    					                    				                				                
 									$("body").everyTime(5000, timerKey, function() {
 										$.ajax({
-										        data: createURL("command=queryAsyncJobResult&jobId="+json.attachvolumeresponse.jobid+"&response=json"),
+											data: "command=queryAsyncJobResult&jobId="+json.attachvolumeresponse.jobid+"&response=json",
 											dataType: "json",
 											success: function(json) {									                
 												var result = json.queryasyncjobresultresponse;										           
@@ -1174,7 +1187,7 @@ function showStorageTab(domainId, targetTab) {
 							template.find("#row_container").hide();
 							
 							$.ajax({
-							        data: createURL("command=createTemplate&volumeId="+volumeId+"&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password+"&response=json"),
+								data: "command=createTemplate&volumeId="+volumeId+"&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password+"&response=json",
 								dataType: "json",
 								success: function(json) {
 									$("body").everyTime(
@@ -1182,7 +1195,7 @@ function showStorageTab(domainId, targetTab) {
 										timerKey,
 										function() {
 											$.ajax({
-											        data: createURL("command=queryAsyncJobResult&jobId="+json.createtemplateresponse.jobid+"&response=json"),
+												data: "command=queryAsyncJobResult&jobId="+json.createtemplateresponse.jobid+"&response=json",
 												dataType: "json",
 												success: function(json) {
 													var result = json.queryasyncjobresultresponse;
@@ -1237,12 +1250,12 @@ function showStorageTab(domainId, targetTab) {
 							loadingImg.fadeIn("slow");
 				            rowContainer.hide(); 									              					            					        
 						    $.ajax({
-							        data: createURL("command=createSnapshot&volumeid="+volumeId+"&response=json"),
+								data: "command=createSnapshot&volumeid="+volumeId+"&response=json",
 								dataType: "json",
 								success: function(json) {							                    					                    				                				                
 									$("body").everyTime(5000, timerKey, function() {									    
 										$.ajax({
-										        data: createURL("command=queryAsyncJobResult&jobId="+json.createsnapshotresponse.jobid+"&response=json"),
+											data: "command=queryAsyncJobResult&jobId="+json.createsnapshotresponse.jobid+"&response=json",
 											dataType: "json",
 											success: function(json) {												    							                
 												var result = json.queryasyncjobresultresponse;										           
@@ -1291,7 +1304,7 @@ function showStorageTab(domainId, targetTab) {
 			        var dialogBox = $("#dialog_recurring_snapshot"); 					
 					clearTopPanel();
 					$.ajax({
-			    data: createURL("command=listSnapshotPolicies&volumeid="+volumeId+"&response=json"),
+	                    data: "command=listSnapshotPolicies&volumeid="+volumeId+"&response=json",
 	                    dataType: "json",
 	                    async: false,
 	                    success: function(json) {								
@@ -1402,7 +1415,7 @@ function showStorageTab(domainId, targetTab) {
 					if (expanded == null || expanded == false) {										
 						$.ajax({
 							cache: false,
-							data: createURL("command=listSnapshots&volumeid="+volumeId+"&response=json"+maxPageSize),
+							data: "command=listSnapshots&volumeid="+volumeId+"&response=json",
 							dataType: "json",
 							success: function(json) {							    
 								var items = json.listsnapshotsresponse.snapshot;																						
@@ -1467,14 +1480,14 @@ function showStorageTab(domainId, targetTab) {
                              template.fadeIn("slow");	                                  
 	                                                
 	                         $.ajax({
-					                 data: createURL("command=createVolume&snapshotid="+snapshotId+"&name="+name+"&response=json"),
+						         data: "command=createVolume&snapshotid="+snapshotId+"&name="+name+"&response=json",
 						         dataType: "json",
 						         success: function(json) {							           								 
 							        var jobId = json.createvolumeresponse.jobid;					        
 					                var timerKey = "createVolumeJob"+jobId;        					        
                                     $("body").everyTime(2000, timerKey, function() {
 							            $.ajax({
-									    data: createURL("command=queryAsyncJobResult&jobId="+json.createvolumeresponse.jobid+"&response=json"),
+								            data: "command=queryAsyncJobResult&jobId="+json.createvolumeresponse.jobid+"&response=json",
 								            dataType: "json",
 								            success: function(json) {										       						   
 									            var result = json.queryasyncjobresultresponse;									           
@@ -1537,7 +1550,7 @@ function showStorageTab(domainId, targetTab) {
                      rowContainer.hide();	   
 	                         
 	                 $.ajax({
-				                 data: createURL("command=deleteSnapshot&id="+snapshotId+"&response=json"),
+						 data: "command=deleteSnapshot&id="+snapshotId+"&response=json",
 						 dataType: "json",
 						 success: function(json) {											 
 							var jobId = json.deletesnapshotresponse.jobid;					        
@@ -1545,7 +1558,7 @@ function showStorageTab(domainId, targetTab) {
 					        
                             $("body").everyTime(2000, timerKey, function() {
 							    $.ajax({
-								    data: createURL("command=queryAsyncJobResult&jobId="+json.deletesnapshotresponse.jobid+"&response=json"),
+								    data: "command=queryAsyncJobResult&jobId="+json.deletesnapshotresponse.jobid+"&response=json",
 								    dataType: "json",
 								    success: function(json) {										       						   
 									    var result = json.queryasyncjobresultresponse;									    
@@ -1606,14 +1619,14 @@ function showStorageTab(domainId, targetTab) {
 				             rowContainer.hide(); 	                                  
 	                                                    
 	                         $.ajax({
-					                 data: createURL("command=createTemplate&snapshotid="+snapshotId+"&name="+name+"&displaytext="+displayText+"&ostypeid="+osTypeId+"&response=json"),
+						         data: "command=createTemplate&snapshotid="+snapshotId+"&name="+name+"&displaytext="+displayText+"&ostypeid="+osTypeId+"&response=json",
 						         dataType: "json",
 						         success: function(json) {							            					           								 
 							        var jobId = json.createtemplateresponse.jobid;					        
 					                var timerKey = "createTemplateJob"+jobId;        					        
                                     $("body").everyTime(2000, timerKey, function() {
 							            $.ajax({
-									    data: createURL("command=queryAsyncJobResult&jobId="+json.createtemplateresponse.jobid+"&response=json"),
+								            data: "command=queryAsyncJobResult&jobId="+json.createtemplateresponse.jobid+"&response=json",
 								            dataType: "json",
 								            success: function(json) {									                							       						   
 									            var result = json.queryasyncjobresultresponse;									           
@@ -1686,534 +1699,525 @@ function showStorageTab(domainId, targetTab) {
 		    setDateField(json.created, template.find("#created"));		    
 	    }	
     }
-
-        
-	mainContainer.load("content/tab_storage.html", function() {		
-	    if (isAdmin()) {  	   
-            populateZoneField(true);
-            populateDiskOfferingField();  
-            populateOSTypeField();  		
-    		
-		    // *** Primary Storage (begin) ***
-		    
-		    function poolJSONToTemplate(json, template) {
-		        template.attr("id", "pool"+json.id);
-		    
-			    if (index++ % 2 == 0) {
-				    template.find("#row_container").addClass("smallrow_even");
-			    } else {
-				    template.find("#row_container").addClass("smallrow_odd");
-			    }
-    	
-			    template.data("id", json.id).data("name", sanitizeXSS(json.name));
-			    template.find("#pool_id").text(json.id);
-			    template.find("#pool_name").text(json.name);
-			    template.find("#pool_zone").text(json.zonename);
-			    template.find("#pool_pod").text(json.podname);
-			    template.find("#pool_cluster").text(json.clustername);
-			    template.find("#pool_type").text(json.type);
-			    template.find("#pool_ip").text(json.ipaddress);
-			    template.find("#pool_path").text(json.path);
-			    template.find("#pool_tags").text(json.tags);
-			    
-			    var statHtml = "<strong> Disk Total:</strong> " +convertBytes(json.disksizetotal)+" | <strong>Disk Allocated:</strong> " + convertBytes(json.disksizeallocated);
-			    template.find("#pool_statistics").html(statHtml); 			
-    			    						        
-			    /*
-			    var statHtml = "<div class='hostcpu_icon'></div><p><strong> Disk Total:</strong> " +convertBytes(json.disksizetotal)+" | <strong>Disk Allocated:</strong> " + json.disksizeallocated + "</p>";
-			    template.find("#storage_disk_stat").html(statHtml);
-    			
-			    // State
-			    if (json.state == 'Up') {
-				    template.find("#storage_state_bar").removeClass("yellow_statusbar grey_statusbar red_statusbar").addClass("green_statusbar ");
-				    template.find("#storage_state").text(json.state).removeClass("grid_celltitles grid_stoppedtitles").addClass("grid_runningtitles");
-				    template.find(".grid_links").find("#storage_action_cancel_maint_container, #storage_action_remove_container").hide();
-			    } else if (json.state == 'Down' || json.state == "Alert") {
-				    template.find("#storage_state_bar").removeClass("yellow_statusbar grey_statusbar green_statusbar").addClass("red_statusbar");
-				    template.find("#storage_state").text(json.state).removeClass("grid_celltitles grid_runningtitles").addClass("grid_stoppedtitles");
-    				
-				    if (json.state == "Alert") {
-					    template.find(".grid_links").find("#storage_action_reconnect_container, #storage_action_enable_maint_container, #storage_action_cancel_maint_container, #storage_action_remove_container").hide();
-				    } else {
-					    template.find(".grid_links").find("#storage_action_reconnect_container, #storage_action_cancel_maint_container, #storage_action_remove_container").hide();
-				    }
-			    } else {
-				    template.find("#storage_state_bar").removeClass("yellow_statusbar green_statusbar red_statusbar").addClass("grey_statusbar");
-				    template.find("#storage_state").text(json.state).removeClass("grid_runningtitles grid_stoppedtitles").addClass("grid_celltitles ");
-    				
-				    if (json.state == "ErrorInMaintenance") {
-					    template.find(".grid_links").find("#storage_action_reconnect_container, #storage_action_remove_container").hide();
-				    } else if (json.state == "PrepareForMaintenance") {
-					    template.find(".grid_links").find("#storage_action_reconnect_container, #storage_action_enable_maint_container, #storage_action_remove_container").hide();
-				    } else if (json.state == "Maintenance") {
-					    template.find(".grid_links").find("#storage_action_reconnect_container, #storage_action_enable_maint_container, #storage_action_cancel_maint_container").hide();
-				    } else if (json.state == "Disconnected") {
-					    template.find(".grid_links").find("#storage_action_reconnect_container, #storage_action_enable_maint_container, #storage_action_cancel_maint_container, #storage_action_remove_container").hide();
-				    } else {
-					    alert("Unsupported Host State: " + json.state);
-				    }
-			    } */
+    
+    if (isAdmin()) {  	   
+        populateZoneField(true);
+        populateDiskOfferingField();  
+        populateOSTypeField();  		
+		
+	    // *** Primary Storage (begin) ***
+	    
+	    function poolJSONToTemplate(json, template) {
+	        template.attr("id", "pool"+json.id);
+	    
+		    if (index++ % 2 == 0) {
+			    template.find("#row_container").addClass("smallrow_even");
+		    } else {
+			    template.find("#row_container").addClass("smallrow_odd");
 		    }
-    		
-		    // Dialog Setup
-		    activateDialog($("#dialog_add_pool").dialog({ 
-			    autoOpen: false,
-			    modal: true,
-			    zIndex: 2000
-		    }));
+	
+		    template.data("id", json.id).data("name", sanitizeXSS(json.name));
+		    template.find("#pool_id").text(json.id);
+		    template.find("#pool_name").text(json.name);
+		    template.find("#pool_zone").text(json.zonename);
+		    template.find("#pool_pod").text(json.podname);
+		    template.find("#pool_cluster").text(json.clustername);
+		    template.find("#pool_type").text(json.type);
+		    template.find("#pool_ip").text(json.ipaddress);
+		    template.find("#pool_path").text(json.path);
+		    template.find("#pool_tags").text(json.tags);
+		    
+		    var statHtml = "<strong> Disk Total:</strong> " +convertBytes(json.disksizetotal)+" | <strong>Disk Allocated:</strong> " + convertBytes(json.disksizeallocated);
+		    template.find("#pool_statistics").html(statHtml); 			
+			    						        
+		    /*
+		    var statHtml = "<div class='hostcpu_icon'></div><p><strong> Disk Total:</strong> " +convertBytes(json.disksizetotal)+" | <strong>Disk Allocated:</strong> " + json.disksizeallocated + "</p>";
+		    template.find("#storage_disk_stat").html(statHtml);
 			
-			// if hypervisor is KVM, limit the server option to NFS for now
-			if (getHypervisorType() == 'kvm') {
-				$("#dialog_add_pool").find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');
-			}
-			
-			$("#dialog_add_pool").find("#pool_zone").bind("change", function(event) {
-				var zoneId = $(this).val();
-				$.ajax({
-				        data: createURL("command=listPods&zoneId="+zoneId+"&response=json"+maxPageSize),
-					dataType: "json",
-					async: false,
-					success: function(json) {
-						var pods = json.listpodsresponse.pod;
-						var podSelect = $("#dialog_add_pool").find("#pool_pod").empty();	
-						if (pods != null && pods.length > 0) {
-						    for (var i = 0; i < pods.length; i++) {
-							    podSelect.append("<option value='" + pods[i].id + "'>" + sanitizeXSS(pods[i].name) + "</option>"); 
-						    }
-						}
-						$("#dialog_add_pool").find("#pool_pod").change();
-					}
-				});
-			});
-			
-			$("#dialog_add_pool").find("#pool_pod").bind("change", function(event) {			     
-			    var podId = $(this).val();
-			    if(podId == null || podId.length == 0)
-			        return;		
-			    var clusterSelect = $("#dialog_add_pool").find("#pool_cluster").empty();			            
-			    $.ajax({
-				data: createURL("command=listClusters&response=json&podid=" + podId),
-			        dataType: "json",
-			        success: function(json) {				                        
-			            var items = json.listclustersresponse.cluster;
-			            if(items != null && items.length > 0) {				                		                
-			                for(var i=0; i<items.length; i++) 			                    
-			                    clusterSelect.append("<option value='" + items[i].id + "'>" + items[i].name + "</option>");		                
-			            }			            
-			        }
-			    });		    
-			});
-    		
-    		function nfsURL(server, path) {
-    		    var url;
-    		    if(server.indexOf("://")==-1)
-				    url = "nfs://" + server + path;
-				else
-				    url = server + path;
-				return url;
-    		}
-			
-			function iscsiURL(server, iqn, lun) {
-    		    var url;
-    		    if(server.indexOf("://")==-1)
-				    url = "iscsi://" + server + iqn + "/" + lun;
-				else
-				    url = server + iqn + "/" + lun;
-				return url;
-    		}
-    		
-		    // Add New Primary Storage
-			
-			$("#dialog_add_pool #add_pool_protocol").change(function(event) {
-				if ($(this).val() == "iscsi") {
-					$("#dialog_add_pool #add_pool_path_container").hide();
-					$("#dialog_add_pool #add_pool_iqn_container, #dialog_add_pool #add_pool_lun_container").show();
-				} else {
-					$("#dialog_add_pool #add_pool_path_container").show();
-					$("#dialog_add_pool #add_pool_iqn_container, #dialog_add_pool #add_pool_lun_container").hide();
-				}
-			});
-			
-			$("#pool_template").bind("click", function(event) {		                  
-				var template = $(this);				
-				var id = template.data("id");	
-				var name = template.data("name");
-				var submenuContent = $("#submenu_content_pool");	
-				switch(event.target.id) {
-				    case "delete_link": 
-						$("#dialog_confirmation")
-						.html("Please confirm the deletion of your primary storage: " + name)
-						.dialog('option', 'buttons', { 						
-							"Confirm": function() { 
-								$(this).dialog("close"); 
-								$.ajax({
-								        data: createURL("command=deleteStoragePool&id="+id+"&response=json"),
-									dataType: "json",
-									success: function(json) {							   
-										template.slideUp("slow", function() { 				   
-											$(this).remove(); 
-											changeGridRowsTotal(submenuContent.find("#grid_rows_total"), -1);
-										});
-									}
-								});   
-							}, 
-							"Cancel": function() { 
-								$(this).dialog("close"); 
-							} 
-						}).dialog("open");
-						break;
-				}
-				return false;  //event.preventDefault() + event.stopPropogation()
-			});  
-			
-		    $("#storage_action_new_pool").bind("click", function(event) {
-			    $("#dialog_add_pool")
-			    .dialog('option', 'buttons', { 				    
-				    "Add": function() { 	
-				    	var thisDialog = $(this);
-				    	
-					    // validate values
-						var protocol = thisDialog.find("#add_pool_protocol").val();
-						
-					    var isValid = true;						    
-					    if($("#dialog_add_pool #pool_cluster_container").css("display") != "none")	//if HypervisorType is "kvm", cluster field is hidden. Then, shouldn't validate it.				    
-					        isValid &= validateDropDownBox("Cluster", thisDialog.find("#pool_cluster"), thisDialog.find("#pool_cluster_errormsg"), false);  //required, reset error text					    				
-					    isValid &= validateString("Name", thisDialog.find("#add_pool_name"), thisDialog.find("#add_pool_name_errormsg"));
-					    isValid &= validateString("Server", thisDialog.find("#add_pool_nfs_server"), thisDialog.find("#add_pool_nfs_server_errormsg"));	
-						if (protocol == "nfs") {
-							isValid &= validateString("Path", thisDialog.find("#add_pool_path"), thisDialog.find("#add_pool_path_errormsg"));	
-						} else {
-							isValid &= validateString("Target IQN", thisDialog.find("#add_pool_iqn"), thisDialog.find("#add_pool_iqn_errormsg"));	
-							isValid &= validateString("LUN #", thisDialog.find("#add_pool_lun"), thisDialog.find("#add_pool_lun_errormsg"));	
-						}
-						isValid &= validateString("Tags", thisDialog.find("#add_pool_tags"), thisDialog.find("#add_pool_tags_errormsg"), true);	//optional
-					    if (!isValid) return;
-    					    					
-    					var submenuContent = $("#submenu_content_pool");    					    					
-    					var template = $("#pool_template").clone(true).attr("id", "pool"+(new Date().getTime()));  //set a temporary Id to make the template unique before it gets a real Id.	
-					    var loadingImg = template.find(".adding_loading");		
-                        var rowContainer = template.find("#row_container");    	                               
-                        loadingImg.find(".adding_text").text("Adding....");	
-                        loadingImg.show();  
-                        rowContainer.hide();                                   
-                        submenuContent.find("#grid_content").prepend(template.fadeIn("slow"));       					
-    					
-    					var array1 = [];
-					    var name = trim(thisDialog.find("#add_pool_name").val());
-					    array1.push("&name="+encodeURIComponent(name));
-					    
-					    var server = trim(thisDialog.find("#add_pool_nfs_server").val());	
-					    	
-					    var zoneId = thisDialog.find("#pool_zone").val();	
-					    array1.push("&zoneId="+zoneId);
-					    
-					    //if HypervisorType is "kvm", cluster field is hidden.				    
-					    if($("#dialog_add_pool #pool_cluster_container").css("display") != "none") { 
-					        var clusterId = thisDialog.find("#pool_cluster").val();
-					        array1.push("&clusterid="+clusterId);
-					    }
-					    
-						var podId = thisDialog.find("#pool_pod").val();
-						array1.push("&podId="+podId);
-						
-						var url = null;
-						if (protocol == "nfs") {
-							var path = trim(thisDialog.find("#add_pool_path").val());
-							if(path.substring(0,1)!="/")
-								path = "/" + path; 
-							url = nfsURL(server, path);
-						} else {
-							var iqn = trim(thisDialog.find("#add_pool_iqn").val());
-							if(iqn.substring(0,1)!="/")
-								iqn = "/" + iqn; 
-							var lun = trim(thisDialog.find("#add_pool_lun").val());
-							url = iscsiURL(server, iqn, lun);
-						}
-						array1.push("&url="+encodeURIComponent(url));
-						
-					    var tags = trim(thisDialog.find("#add_pool_tags").val());
-						if(tags != null && tags.length > 0)
-						    array1.push("&tags="+encodeURIComponent(tags));						
-											    
-					    thisDialog.dialog("close");
-					    
-					    $.ajax({
-						    data: createURL("command=createStoragePool&response=json" + array1.join("")),
-						    dataType: "json",
-						    success: function(json) {
-							    var json = json.createstoragepoolresponse;							    
-							    poolJSONToTemplate(json.storagepool[0], template);							    							    
-							    changeGridRowsTotal(submenuContent.find("#grid_rows_total"), 1);
-							    loadingImg.hide();  
-                                rowContainer.show();    
-						    },			
-	                        error: function(XMLHttpResponse) {		                   
-		                        handleError(XMLHttpResponse);	
-		                        template.slideUp("slow", function(){ $(this).remove(); } );							    
-	                        }							    
-					    });
-				    }, 
-				    "Cancel": function() { 
-					    $(this).dialog("close"); 
-				    } 
-			    }).dialog("open");
-			    return false;
-		    });
-    		    			
-    		function listStoragePools() {   
-    		    var submenuContent = $("#submenu_content_pool");
-    		     
-               	var commandString;            
-			    var advanced = submenuContent.find("#search_button").data("advanced");                    
-			    if (advanced != null && advanced) {		
-			        var name = submenuContent.find("#advanced_search #adv_search_name").val();				     
-			        var zone = submenuContent.find("#advanced_search #adv_search_zone").val();	
-			        var pod = submenuContent.find("#advanced_search #adv_search_pod").val();	
-			        var ip = submenuContent.find("#advanced_search #adv_search_ip").val();		
-			        var path = submenuContent.find("#advanced_search #adv_search_path").val();				      
-			        var moreCriteria = [];								
-				    if (name!=null && trim(name).length > 0) 
-					    moreCriteria.push("&name="+encodeURIComponent(trim(name)));					   
-			        if (zone!=null && zone.length > 0) 
-					    moreCriteria.push("&zoneId="+zone);	
-					if (pod!=null && pod.length > 0) 
-					    moreCriteria.push("&podId="+pod);	
-					if (ip!=null && trim(ip).length > 0) 
-					    moreCriteria.push("&ipaddress="+encodeURIComponent(trim(ip)));		
-					if (path!=null && trim(path).length > 0) 
-					    moreCriteria.push("&path="+encodeURIComponent(trim(path)));						       	
-				    commandString = "command=listStoragePools&page="+currentPage+moreCriteria.join("")+"&response=json";
-			    } else {          			
-                    var searchInput = submenuContent.find("#search_input").val();            
-                    if (searchInput != null && searchInput.length > 0) 
-                        commandString = "command=listStoragePools&page="+currentPage+"&keyword="+searchInput+"&response=json"
-                    else
-                        commandString = "command=listStoragePools&page="+currentPage+"&response=json";
-                }
-               	
-               	//listItems(submenuContent, commandString, jsonResponse1, jsonResponse2, template, fnJSONToTemplate);         
-                listItems(submenuContent, commandString, "liststoragepoolsresponse", "storagepool", $("#pool_template"), poolJSONToTemplate);               
-    		}
-    			
-    		submenuContentEventBinder($("#submenu_content_pool"), listStoragePools);	
-    			
-		    $("#submenu_pool").bind("click", function(event) {  		       
-			    event.preventDefault();
-			    
-			    currentSubMenu.addClass("submenu_links_off").removeClass("submenu_links_on");		
-			    $(this).addClass("submenu_links_on").removeClass("submenu_links_off");
-			    currentSubMenu = $(this); 
-			    
-			    $("#submenu_content_pool").show();
-			    $("#submenu_content_storage").hide();
-			    $("#submenu_content_volume").hide();
-			    $("#submenu_content_snapshot").hide();
-                
-                currentPage = 1;
-			    listStoragePools();
-		    });	    		
-		    // *** Primary Storage (end) ***
-    		
-    		
-    		
-    		
-    		
-    			
-		    // *** Secondary Storage (begin) ***				
-		    // Add Secondary Storage Dialog (begin)
-		    activateDialog($("#dialog_add_host").dialog({ 
-			    autoOpen: false,
-			    modal: true,
-			    zIndex: 2000
-		    }));		
-		    $("#storage_action_new_host").bind("click", function(event) {
-			    $("#dialog_add_host")
-			    .dialog('option', 'buttons', { 				    
-				    "Add": function() { 
-				        var thisDialog = $(this);
-				    
-					    // validate values					
-					    var isValid = true;							    
-					    isValid &= validateString("NFS Server", thisDialog.find("#add_storage_nfs_server"), thisDialog.find("#add_storage_nfs_server_errormsg"));	
-					    isValid &= validatePath("Path", thisDialog.find("#add_storage_path"), thisDialog.find("#add_storage_path_errormsg"));					
-					    if (!isValid) return;
-    						
-    					var submenuContent = $("#submenu_content_storage");	  
-    					var template = $("#storage_template").clone(true);		
-					    var loadingImg = template.find(".adding_loading");		
-                        var rowContainer = template.find("#row_container");    	                               
-                        loadingImg.find(".adding_text").text("Adding....");	
-                        loadingImg.show();  
-                        rowContainer.hide();                                   
-                        submenuContent.find("#grid_content").prepend(template.fadeIn("slow"));    
-    					     					  								            				
-					    var zoneId = thisDialog.find("#storage_zone").val();		
-					    var nfs_server = trim(thisDialog.find("#add_storage_nfs_server").val());		
-					    var path = trim(thisDialog.find("#add_storage_path").val());	    					    				    					   					
-    					var url = nfsURL(nfs_server, path);    					   					
-					    
-					    thisDialog.dialog("close");					  
-					    $.ajax({
- 						    data: createURL("command=addSecondaryStorage&zoneId="+zoneId+"&url="+encodeURIComponent(url)+"&response=json"),
-						    dataType: "json",
-						    success: function(json) {								    						    
-							    var secondaryStorage = json.addsecondarystorageresponse.secondarystorage[0];							  
-							    storageJSONToTemplate(secondaryStorage, template);							    
-							    changeGridRowsTotal(submenuContent.find("#grid_rows_total"), 1) ;
-							    loadingImg.hide();  
-                                rowContainer.show();    
-						    },			
-	                        error: function(XMLHttpResponse) {		                   
-		                        handleError(XMLHttpResponse);	
-		                        template.slideUp("slow", function(){ $(this).remove(); } );							    
-	                        }					    			    
-					    });
-				    }, 
-				    "Cancel": function() { 
-					    $(this).dialog("close"); 
-				    } 
-			    }).dialog("open");
-			    return false;
-		    });
-		    // Add Secondary Storage Dialog (end)
-    				
-		    // FUNCTION: Storage JSON to Template
-		    function storageJSONToTemplate(json, template) {
-		        template.attr("id", "secondaryStorage_"+json.id).data("secondaryStorageId", json.id);
-			    if (index++ % 2 == 0) {
-				    template.find("#row_container").addClass("smallrow_even");
-			    } else {
-				    template.find("#row_container").addClass("smallrow_odd");
-			    }
-			    template.data("hostName", sanitizeXSS(json.name));
+		    // State
+		    if (json.state == 'Up') {
+			    template.find("#storage_state_bar").removeClass("yellow_statusbar grey_statusbar red_statusbar").addClass("green_statusbar ");
+			    template.find("#storage_state").text(json.state).removeClass("grid_celltitles grid_stoppedtitles").addClass("grid_runningtitles");
+			    template.find(".grid_links").find("#storage_action_cancel_maint_container, #storage_action_remove_container").hide();
+		    } else if (json.state == 'Down' || json.state == "Alert") {
+			    template.find("#storage_state_bar").removeClass("yellow_statusbar grey_statusbar green_statusbar").addClass("red_statusbar");
+			    template.find("#storage_state").text(json.state).removeClass("grid_celltitles grid_runningtitles").addClass("grid_stoppedtitles");
 				
-				template.find("#storage_status").text(json.state);
-				template.find("#storage_type").text(json.type);
-			    template.find("#storage_name").text(json.name);
-				template.find("#storage_zone").text(json.zonename);
-				//template.find("#storage_pod").text(json.podname);
-			    template.find("#storage_ip").text(json.ipaddress);
-			    template.find("#storage_version").text(json.version);
-			    
-			    setDateField(json.disconnected, template.find("#storage_disconnected"));			   
-		    }    		    	
-    		
-    		function listSecondaryStorage() {    	
-    		    var submenuContent = $("#submenu_content_storage");    		
-    			
-            	var commandString;            
-			    var advanced = submenuContent.find("#search_button").data("advanced");                    
-			    if (advanced != null && advanced) {		
-			        var name = submenuContent.find("#advanced_search #adv_search_name").val();	
-			        var state = submenuContent.find("#advanced_search #adv_search_state").val();
-			        var zone = submenuContent.find("#advanced_search #adv_search_zone").val();			        
-			        //var pod = submenuContent.find("#advanced_search #adv_search_pod").val();
-			        var domainId = submenuContent.find("#advanced_search #adv_search_domain").val();
-			        var moreCriteria = [];								
-				    if (name!=null && trim(name).length > 0) 
-					    moreCriteria.push("&name="+encodeURIComponent(trim(name)));				
-				    if (state!=null && state.length > 0) 
-					    moreCriteria.push("&state="+state);		
-			        if (zone!=null && zone.length > 0) 
-					    moreCriteria.push("&zoneId="+zone);		
-			        //if (pod!=null && pod.length > 0) 
-					//    moreCriteria.push("&podId="+pod);
-					if (domainId!=null && domainId.length > 0) 
-					    moreCriteria.push("&domainid="+domainId);				
-				    commandString = "command=listHosts&type=SecondaryStorage&page="+currentPage+moreCriteria.join("")+"&response=json"; 
-			    } else {    
-                    var searchInput = $("#submenu_content_storage #search_input").val();              
-                    if (searchInput != null && searchInput.length > 0) 
-                        commandString = "command=listHosts&type=SecondaryStorage&page="+currentPage+"&keyword="+searchInput+"&response=json"
-                    else
-                        commandString = "command=listHosts&type=SecondaryStorage&page="+currentPage+"&response=json";    
-                }
-                	
-                //listItems(submenuContent, commandString, jsonResponse1, jsonResponse2, template, fnJSONToTemplate);         
-                listItems(submenuContent, commandString, "listhostsresponse", "host", $("#storage_template"), storageJSONToTemplate);    	    
-    		}
-    			
-    		submenuContentEventBinder($("#submenu_content_storage"), listSecondaryStorage);	
-    						
-		    $("#submenu_storage").bind("click", function(event) {   		
-			    event.preventDefault();
-			    
-			    $(this).addClass("submenu_links_on").removeClass("submenu_links_off");
-			    currentSubMenu.addClass("submenu_links_off").removeClass("submenu_links_on");
-			    currentSubMenu = $(this);
-			    
-			    $("#submenu_content_storage").show();
-			    $("#submenu_content_pool").hide();
-			    $("#submenu_content_volume").hide();
-			    $("#submenu_content_snapshot").hide();
-    			
-    			currentPage = 1;
-			    listSecondaryStorage();
-		    });
-    		
-    		$("#storage_template").bind("click", function(event) {		                  
-				var template = $(this);				
-				var id = template.data("secondaryStorageId");	
-				var name = template.data("hostName");
-				var submenuContent = $("#submenu_content_storage");	
-				switch(event.target.id) {
-				    case "delete_link":  
-						$("#dialog_confirmation")
-						.html("Please confirm the deletion of your secondary storage: " + name)
-						.dialog('option', 'buttons', { 						
-							"Confirm": function() { 
-								$(this).dialog("close"); 
-								$.ajax({
-								        data: createURL("command=deleteHost&id="+id+"&response=json"),
-									dataType: "json",
-									success: function(json) {							   
-										template.slideUp("slow", function() { 				   
-											$(this).remove(); 
-											changeGridRowsTotal(submenuContent.find("#grid_rows_total"), -1);
-										});
-									}
-								});    
-							}, 
-							"Cancel": function() { 
-								$(this).dialog("close"); 
-							} 
-						}).dialog("open");
-						break;
+			    if (json.state == "Alert") {
+				    template.find(".grid_links").find("#storage_action_reconnect_container, #storage_action_enable_maint_container, #storage_action_cancel_maint_container, #storage_action_remove_container").hide();
+			    } else {
+				    template.find(".grid_links").find("#storage_action_reconnect_container, #storage_action_cancel_maint_container, #storage_action_remove_container").hide();
+			    }
+		    } else {
+			    template.find("#storage_state_bar").removeClass("yellow_statusbar green_statusbar red_statusbar").addClass("grey_statusbar");
+			    template.find("#storage_state").text(json.state).removeClass("grid_runningtitles grid_stoppedtitles").addClass("grid_celltitles ");
+				
+			    if (json.state == "ErrorInMaintenance") {
+				    template.find(".grid_links").find("#storage_action_reconnect_container, #storage_action_remove_container").hide();
+			    } else if (json.state == "PrepareForMaintenance") {
+				    template.find(".grid_links").find("#storage_action_reconnect_container, #storage_action_enable_maint_container, #storage_action_remove_container").hide();
+			    } else if (json.state == "Maintenance") {
+				    template.find(".grid_links").find("#storage_action_reconnect_container, #storage_action_enable_maint_container, #storage_action_cancel_maint_container").hide();
+			    } else if (json.state == "Disconnected") {
+				    template.find(".grid_links").find("#storage_action_reconnect_container, #storage_action_enable_maint_container, #storage_action_cancel_maint_container, #storage_action_remove_container").hide();
+			    } else {
+				    alert("Unsupported Host State: " + json.state);
+			    }
+		    } */
+	    }
+		
+	    // Dialog Setup
+	    activateDialog($("#dialog_add_pool").dialog({ 
+		    autoOpen: false,
+		    modal: true,
+		    zIndex: 2000
+	    }));
+		
+		// if hypervisor is KVM, limit the server option to NFS for now
+		if (getHypervisorType() == 'kvm') {
+			$("#dialog_add_pool").find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');
+		}
+		
+		$("#dialog_add_pool").find("#pool_zone").bind("change", function(event) {
+			var zoneId = $(this).val();
+			$.ajax({
+				data: "command=listPods&zoneId="+zoneId+"&response=json",
+				dataType: "json",
+				async: false,
+				success: function(json) {
+					var pods = json.listpodsresponse.pod;
+					var podSelect = $("#dialog_add_pool").find("#pool_pod").empty();	
+					if (pods != null && pods.length > 0) {
+					    for (var i = 0; i < pods.length; i++) {
+						    podSelect.append("<option value='" + pods[i].id + "'>" + sanitizeXSS(pods[i].name) + "</option>"); 
+					    }
+					}
+					$("#dialog_add_pool").find("#pool_pod").change();
 				}
-				return false;  //event.preventDefault() + event.stopPropogation()
-			});      			
-		    // *** Secondary Storage (end) ***	
-    		    		
-    		
-		    // *** Volume (begin) ***				
-		    initializeVolumeTab(true);  
-		    $("#volume_hostname_header, #volume_hostname_container, #volume_account_header, #volume_account_container, #snapshot_account_header, #snapshot_account_container, #snapshot_domain_header, #snapshot_domain_container, #volume_snapshot_account_header, #volume_snapshot_account_container, #volume_snapshot_domain_header, #volume_snapshot_domain_container").show();	   	    		
-		    // *** Volume (end) ***	      		
-    		    	
-    		if(targetTab==null)  {  	
-    		    currentSubMenu = $("#submenu_pool");	
-		        $("#submenu_pool").click();	  //default tab is Primary Storage page
+			});
+		});
+		
+		$("#dialog_add_pool").find("#pool_pod").bind("change", function(event) {			     
+		    var podId = $(this).val();
+		    if(podId == null || podId.length == 0)
+		        return;		
+		    var clusterSelect = $("#dialog_add_pool").find("#pool_cluster").empty();			            
+		    $.ajax({
+		        data: "command=listClusters&response=json&podid=" + podId,
+		        dataType: "json",
+		        success: function(json) {				                        
+		            var items = json.listclustersresponse.cluster;
+		            if(items != null && items.length > 0) {				                		                
+		                for(var i=0; i<items.length; i++) 			                    
+		                    clusterSelect.append("<option value='" + items[i].id + "'>" + items[i].name + "</option>");		                
+		            }			            
+		        }
+		    });		    
+		});
+		
+		function nfsURL(server, path) {
+		    var url;
+		    if(server.indexOf("://")==-1)
+			    url = "nfs://" + server + path;
+			else
+			    url = server + path;
+			return url;
+		}
+		
+		function iscsiURL(server, iqn, lun) {
+		    var url;
+		    if(server.indexOf("://")==-1)
+			    url = "iscsi://" + server + iqn + "/" + lun;
+			else
+			    url = server + iqn + "/" + lun;
+			return url;
+		}
+		
+	    // Add New Primary Storage
+		
+		$("#dialog_add_pool #add_pool_protocol").change(function(event) {
+			if ($(this).val() == "iscsi") {
+				$("#dialog_add_pool #add_pool_path_container").hide();
+				$("#dialog_add_pool #add_pool_iqn_container, #dialog_add_pool #add_pool_lun_container").show();
+			} else {
+				$("#dialog_add_pool #add_pool_path_container").show();
+				$("#dialog_add_pool #add_pool_iqn_container, #dialog_add_pool #add_pool_lun_container").hide();
+			}
+		});
+		
+		$("#pool_template").bind("click", function(event) {		                  
+			var template = $(this);				
+			var id = template.data("id");	
+			var name = template.data("name");
+			var submenuContent = $("#submenu_content_pool");	
+			switch(event.target.id) {
+			    case "delete_link": 
+					$("#dialog_confirmation")
+					.html("Please confirm the deletion of your primary storage: " + name)
+					.dialog('option', 'buttons', { 						
+						"Confirm": function() { 
+							$(this).dialog("close"); 
+							$.ajax({
+								data: "command=deleteStoragePool&id="+id+"&response=json",
+								dataType: "json",
+								success: function(json) {							   
+									template.slideUp("slow", function() { 				   
+										$(this).remove(); 
+										changeGridRowsTotal(submenuContent.find("#grid_rows_total"), -1);
+									});
+								}
+							});   
+						}, 
+						"Cancel": function() { 
+							$(this).dialog("close"); 
+						} 
+					}).dialog("open");
+					break;
+			}
+			return false;  //event.preventDefault() + event.stopPropogation()
+		});  
+		
+	    $("#storage_action_new_pool").bind("click", function(event) {
+		    $("#dialog_add_pool")
+		    .dialog('option', 'buttons', { 				    
+			    "Add": function() { 	
+			    	var thisDialog = $(this);
+			    	
+				    // validate values
+					var protocol = thisDialog.find("#add_pool_protocol").val();
+					
+				    var isValid = true;						    
+				    if($("#dialog_add_pool #pool_cluster_container").css("display") != "none")	//if HypervisorType is "kvm", cluster field is hidden. Then, shouldn't validate it.				    
+				        isValid &= validateDropDownBox("Cluster", thisDialog.find("#pool_cluster"), thisDialog.find("#pool_cluster_errormsg"), false);  //required, reset error text					    				
+				    isValid &= validateString("Name", thisDialog.find("#add_pool_name"), thisDialog.find("#add_pool_name_errormsg"));
+				    isValid &= validateString("Server", thisDialog.find("#add_pool_nfs_server"), thisDialog.find("#add_pool_nfs_server_errormsg"));	
+					if (protocol == "nfs") {
+						isValid &= validateString("Path", thisDialog.find("#add_pool_path"), thisDialog.find("#add_pool_path_errormsg"));	
+					} else {
+						isValid &= validateString("Target IQN", thisDialog.find("#add_pool_iqn"), thisDialog.find("#add_pool_iqn_errormsg"));	
+						isValid &= validateString("LUN #", thisDialog.find("#add_pool_lun"), thisDialog.find("#add_pool_lun_errormsg"));	
+					}
+					isValid &= validateString("Tags", thisDialog.find("#add_pool_tags"), thisDialog.find("#add_pool_tags_errormsg"), true);	//optional
+				    if (!isValid) return;
+					    					
+					var submenuContent = $("#submenu_content_pool");    					    					
+					var template = $("#pool_template").clone(true).attr("id", "pool"+(new Date().getTime()));  //set a temporary Id to make the template unique before it gets a real Id.	
+				    var loadingImg = template.find(".adding_loading");		
+                    var rowContainer = template.find("#row_container");    	                               
+                    loadingImg.find(".adding_text").text("Adding....");	
+                    loadingImg.show();  
+                    rowContainer.hide();                                   
+                    submenuContent.find("#grid_content").prepend(template.fadeIn("slow"));       					
+					
+					var array1 = [];
+				    var name = trim(thisDialog.find("#add_pool_name").val());
+				    array1.push("&name="+encodeURIComponent(name));
+				    
+				    var server = trim(thisDialog.find("#add_pool_nfs_server").val());	
+				    	
+				    var zoneId = thisDialog.find("#pool_zone").val();	
+				    array1.push("&zoneId="+zoneId);
+				    
+				    //if HypervisorType is "kvm", cluster field is hidden.				    
+				    if($("#dialog_add_pool #pool_cluster_container").css("display") != "none") { 
+				        var clusterId = thisDialog.find("#pool_cluster").val();
+				        array1.push("&clusterid="+clusterId);
+				    }
+				    
+					var podId = thisDialog.find("#pool_pod").val();
+					array1.push("&podId="+podId);
+					
+					var url = null;
+					if (protocol == "nfs") {
+						var path = trim(thisDialog.find("#add_pool_path").val());
+						if(path.substring(0,1)!="/")
+							path = "/" + path; 
+						url = nfsURL(server, path);
+					} else {
+						var iqn = trim(thisDialog.find("#add_pool_iqn").val());
+						if(iqn.substring(0,1)!="/")
+							iqn = "/" + iqn; 
+						var lun = trim(thisDialog.find("#add_pool_lun").val());
+						url = iscsiURL(server, iqn, lun);
+					}
+					array1.push("&url="+encodeURIComponent(url));
+					
+				    var tags = trim(thisDialog.find("#add_pool_tags").val());
+					if(tags != null && tags.length > 0)
+					    array1.push("&tags="+encodeURIComponent(tags));						
+										    
+				    thisDialog.dialog("close");
+				    
+				    $.ajax({
+					    data: "command=createStoragePool&response=json" + array1.join(""),
+					    dataType: "json",
+					    success: function(json) {
+						    var json = json.createstoragepoolresponse;							    
+						    poolJSONToTemplate(json.storagepool[0], template);							    							    
+						    changeGridRowsTotal(submenuContent.find("#grid_rows_total"), 1);
+						    loadingImg.hide();  
+                            rowContainer.show();    
+					    },			
+                        error: function(XMLHttpResponse) {		                   
+	                        handleError(XMLHttpResponse);	
+	                        template.slideUp("slow", function(){ $(this).remove(); } );							    
+                        }							    
+				    });
+			    }, 
+			    "Cancel": function() { 
+				    $(this).dialog("close"); 
+			    } 
+		    }).dialog("open");
+		    return false;
+	    });
+		    			
+		function listStoragePools() {   
+		    var submenuContent = $("#submenu_content_pool");
+		     
+           	var commandString;            
+		    var advanced = submenuContent.find("#search_button").data("advanced");                    
+		    if (advanced != null && advanced) {		
+		        var name = submenuContent.find("#advanced_search #adv_search_name").val();				     
+		        var zone = submenuContent.find("#advanced_search #adv_search_zone").val();	
+		        var ip = submenuContent.find("#advanced_search #adv_search_ip").val();		
+		        var path = submenuContent.find("#advanced_search #adv_search_path").val();				      
+		        var moreCriteria = [];								
+			    if (name!=null && trim(name).length > 0) 
+				    moreCriteria.push("&name="+encodeURIComponent(trim(name)));					   
+		        if (zone!=null && zone.length > 0) 
+				    moreCriteria.push("&zoneId="+zone);	
+				if (ip!=null && trim(ip).length > 0) 
+				    moreCriteria.push("&ipaddress="+encodeURIComponent(trim(ip)));		
+				if (path!=null && trim(path).length > 0) 
+				    moreCriteria.push("&path="+encodeURIComponent(trim(path)));						       	
+			    commandString = "command=listStoragePools&page="+currentPage+moreCriteria.join("")+"&response=json";
+		    } else {          			
+                var searchInput = submenuContent.find("#search_input").val();            
+                if (searchInput != null && searchInput.length > 0) 
+                    commandString = "command=listStoragePools&page="+currentPage+"&keyword="+searchInput+"&response=json"
+                else
+                    commandString = "command=listStoragePools&page="+currentPage+"&response=json";
+            }
+           	
+           	//listItems(submenuContent, commandString, jsonResponse1, jsonResponse2, template, fnJSONToTemplate);         
+            listItems(submenuContent, commandString, "liststoragepoolsresponse", "storagepool", $("#pool_template"), poolJSONToTemplate);               
+		}
+			
+		submenuContentEventBinder($("#submenu_content_pool"), listStoragePools);	
+			
+	    $("#submenu_pool").bind("click", function(event) {  		       
+		    event.preventDefault();
+		    
+		    currentSubMenu.addClass("submenu_links_off").removeClass("submenu_links_on");		
+		    $(this).addClass("submenu_links_on").removeClass("submenu_links_off");
+		    currentSubMenu = $(this); 
+		    
+		    $("#submenu_content_pool").show();
+		    $("#submenu_content_storage").hide();
+		    $("#submenu_content_volume").hide();
+		    $("#submenu_content_snapshot").hide();
+            
+            currentPage = 1;
+		    listStoragePools();
+	    });	    		
+	    // *** Primary Storage (end) ***
+		
+		
+		
+		
+		
+			
+	    // *** Secondary Storage (begin) ***				
+	    // Add Secondary Storage Dialog (begin)
+	    activateDialog($("#dialog_add_host").dialog({ 
+		    autoOpen: false,
+		    modal: true,
+		    zIndex: 2000
+	    }));		
+	    $("#storage_action_new_host").bind("click", function(event) {
+		    $("#dialog_add_host")
+		    .dialog('option', 'buttons', { 				    
+			    "Add": function() { 
+			        var thisDialog = $(this);
+			    
+				    // validate values					
+				    var isValid = true;							    
+				    isValid &= validateString("NFS Server", thisDialog.find("#add_storage_nfs_server"), thisDialog.find("#add_storage_nfs_server_errormsg"));	
+				    isValid &= validatePath("Path", thisDialog.find("#add_storage_path"), thisDialog.find("#add_storage_path_errormsg"));					
+				    if (!isValid) return;
+						
+					var submenuContent = $("#submenu_content_storage");	  
+					var template = $("#storage_template").clone(true);		
+				    var loadingImg = template.find(".adding_loading");		
+                    var rowContainer = template.find("#row_container");    	                               
+                    loadingImg.find(".adding_text").text("Adding....");	
+                    loadingImg.show();  
+                    rowContainer.hide();                                   
+                    submenuContent.find("#grid_content").prepend(template.fadeIn("slow"));    
+					     					  								            				
+				    var zoneId = thisDialog.find("#storage_zone").val();		
+				    var nfs_server = trim(thisDialog.find("#add_storage_nfs_server").val());		
+				    var path = trim(thisDialog.find("#add_storage_path").val());	    					    				    					   					
+					var url = nfsURL(nfs_server, path);    					   					
+				    
+				    thisDialog.dialog("close");					  
+				    $.ajax({
+					    data: "command=addSecondaryStorage&zoneId="+zoneId+"&url="+encodeURIComponent(url)+"&response=json",
+					    dataType: "json",
+					    success: function(json) {								    						    
+						    var secondaryStorage = json.addsecondarystorageresponse.secondarystorage[0];							  
+						    storageJSONToTemplate(secondaryStorage, template);							    
+						    changeGridRowsTotal(submenuContent.find("#grid_rows_total"), 1) ;
+						    loadingImg.hide();  
+                            rowContainer.show();    
+					    },			
+                        error: function(XMLHttpResponse) {		                   
+	                        handleError(XMLHttpResponse);	
+	                        template.slideUp("slow", function(){ $(this).remove(); } );							    
+                        }					    			    
+				    });
+			    }, 
+			    "Cancel": function() { 
+				    $(this).dialog("close"); 
+			    } 
+		    }).dialog("open");
+		    return false;
+	    });
+	    // Add Secondary Storage Dialog (end)
+				
+	    // FUNCTION: Storage JSON to Template
+	    function storageJSONToTemplate(json, template) {
+	        template.attr("id", "secondaryStorage_"+json.id).data("secondaryStorageId", json.id);
+		    if (index++ % 2 == 0) {
+			    template.find("#row_container").addClass("smallrow_even");
+		    } else {
+			    template.find("#row_container").addClass("smallrow_odd");
 		    }
-		    else {
-		        currentSubMenu = $("#"+targetTab);	
-		        $("#"+targetTab).click(); 	   
-		    }  
-	       
-        } else {  //*** isAdmin()==false              
-            $("#submenu_content_pool, #pool_template, #dialog_add_pool, #submenu_content_storage, #storage_template, #dialog_add_host, #submenu_pool, #submenu_storage").hide(); //hide Primary Storage tab, Secondary Storage tab 
-                                                           	  	
-            populateZoneField(false);    		
-	        populateDiskOfferingField();
-	        populateOSTypeField();  
-	            		 		
-	        // *** Volume (begin) ***				
-	        initializeVolumeTab(false);	 
-	        $("#volume_hostname_header, #volume_hostname_container, #volume_account_header, #volume_account_container, #snapshot_account_header, #snapshot_account_container, #snapshot_domain_header, #snapshot_domain_container, #volume_snapshot_account_header, #volume_snapshot_account_container, #volume_snapshot_domain_header, #volume_snapshot_domain_container").hide();	
-	        $("#volume_created_header, #volume_created_container").css("width", "30%");			
-	        // *** Volume (end) ***		        
-	        
-	        currentSubMenu = $("#submenu_volume"); //default tab is volume
-		    $("#submenu_volume").click(); 	    	    
-        }
-    });
+		    template.data("hostName", sanitizeXSS(json.name));
+			template.find("#storage_type").text(json.type);
+		    template.find("#storage_name").text(json.name);
+			template.find("#storage_zone").text(json.zonename);
+		    template.find("#storage_ip").text(json.ipaddress);
+		    template.find("#storage_version").text(json.version);
+		    
+		    setDateField(json.disconnected, template.find("#storage_disconnected"));			   
+	    }    		    	
+		
+		function listSecondaryStorage() {    	
+		    var submenuContent = $("#submenu_content_storage");    		
+			
+        	var commandString;            
+		    var advanced = submenuContent.find("#search_button").data("advanced");                    
+		    if (advanced != null && advanced) {		
+		        var name = submenuContent.find("#advanced_search #adv_search_name").val();	
+		        //var state = submenuContent.find("#advanced_search #adv_search_state").val();
+		        var zone = submenuContent.find("#advanced_search #adv_search_zone").val();			        
+		        //var pod = submenuContent.find("#advanced_search #adv_search_pod").val();
+		        var domainId = submenuContent.find("#advanced_search #adv_search_domain").val();
+		        var moreCriteria = [];								
+			    if (name!=null && trim(name).length > 0) 
+				    moreCriteria.push("&name="+encodeURIComponent(trim(name)));				
+			    //if (state!=null && state.length > 0) 
+				//    moreCriteria.push("&state="+state);		
+		        if (zone!=null && zone.length > 0) 
+				    moreCriteria.push("&zoneId="+zone);		
+		        //if (pod!=null && pod.length > 0) 
+				//    moreCriteria.push("&podId="+pod);
+				if (domainId!=null && domainId.length > 0) 
+				    moreCriteria.push("&domainid="+domainId);				
+			    commandString = "command=listHosts&type=SecondaryStorage&page="+currentPage+moreCriteria.join("")+"&response=json"; 
+		    } else {    
+                var searchInput = $("#submenu_content_storage #search_input").val();              
+                if (searchInput != null && searchInput.length > 0) 
+                    commandString = "command=listHosts&type=SecondaryStorage&page="+currentPage+"&keyword="+searchInput+"&response=json"
+                else
+                    commandString = "command=listHosts&type=SecondaryStorage&page="+currentPage+"&response=json";    
+            }
+            	
+            //listItems(submenuContent, commandString, jsonResponse1, jsonResponse2, template, fnJSONToTemplate);         
+            listItems(submenuContent, commandString, "listhostsresponse", "host", $("#storage_template"), storageJSONToTemplate);    	    
+		}
+			
+		submenuContentEventBinder($("#submenu_content_storage"), listSecondaryStorage);	
+						
+	    $("#submenu_storage").bind("click", function(event) {   		
+		    event.preventDefault();
+		    
+		    $(this).addClass("submenu_links_on").removeClass("submenu_links_off");
+		    currentSubMenu.addClass("submenu_links_off").removeClass("submenu_links_on");
+		    currentSubMenu = $(this);
+		    
+		    $("#submenu_content_storage").show();
+		    $("#submenu_content_pool").hide();
+		    $("#submenu_content_volume").hide();
+		    $("#submenu_content_snapshot").hide();
+			
+			currentPage = 1;
+		    listSecondaryStorage();
+	    });
+		
+		$("#storage_template").bind("click", function(event) {		                  
+			var template = $(this);				
+			var id = template.data("secondaryStorageId");	
+			var name = template.data("hostName");
+			var submenuContent = $("#submenu_content_storage");	
+			switch(event.target.id) {
+			    case "delete_link":  
+					$("#dialog_confirmation")
+					.html("Please confirm the deletion of your secondary storage: " + name)
+					.dialog('option', 'buttons', { 						
+						"Confirm": function() { 
+							$(this).dialog("close"); 
+							$.ajax({
+								data: "command=deleteHost&id="+id+"&response=json",
+								dataType: "json",
+								success: function(json) {							   
+									template.slideUp("slow", function() { 				   
+										$(this).remove(); 
+										changeGridRowsTotal(submenuContent.find("#grid_rows_total"), -1);
+									});
+								}
+							});    
+						}, 
+						"Cancel": function() { 
+							$(this).dialog("close"); 
+						} 
+					}).dialog("open");
+					break;
+			}
+			return false;  //event.preventDefault() + event.stopPropogation()
+		});      			
+	    // *** Secondary Storage (end) ***	
+		    		
+		
+	    // *** Volume (begin) ***				
+	    initializeVolumeTab(true);  
+	    $("#volume_hostname_header, #volume_hostname_container, #volume_account_header, #volume_account_container, #snapshot_account_header, #snapshot_account_container, #snapshot_domain_header, #snapshot_domain_container, #volume_snapshot_account_header, #volume_snapshot_account_container, #volume_snapshot_domain_header, #volume_snapshot_domain_container").show();	   	    		
+	    // *** Volume (end) ***	      		
+		    	
+		if(targetTab==null)  {  	
+		    currentSubMenu = $("#submenu_pool");	
+	        $("#submenu_pool").click();	  //default tab is Primary Storage page
+	    }
+	    else {
+	        currentSubMenu = $("#"+targetTab);	
+	        $("#"+targetTab).click(); 	   
+	    }  
+       
+    } else {  //*** isAdmin()==false              
+        $("#submenu_content_pool, #pool_template, #dialog_add_pool, #submenu_content_storage, #storage_template, #dialog_add_host, #submenu_pool, #submenu_storage").hide(); //hide Primary Storage tab, Secondary Storage tab 
+                                                       	  	
+        populateZoneField(false);    		
+        populateDiskOfferingField();
+        populateOSTypeField();  
+            		 		
+        // *** Volume (begin) ***				
+        initializeVolumeTab(false);	 
+        $("#volume_hostname_header, #volume_hostname_container, #volume_account_header, #volume_account_container, #snapshot_account_header, #snapshot_account_container, #snapshot_domain_header, #snapshot_domain_container, #volume_snapshot_account_header, #volume_snapshot_account_container, #volume_snapshot_domain_header, #volume_snapshot_domain_container").hide();	
+        $("#volume_created_header, #volume_created_container").css("width", "30%");			
+        // *** Volume (end) ***		        
+        
+        currentSubMenu = $("#submenu_volume"); //default tab is volume
+	    $("#submenu_volume").click(); 	    	    
+    }   
 }

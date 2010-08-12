@@ -26,7 +26,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.dc.DataCenterVO;
@@ -34,8 +33,8 @@ import com.cloud.domain.DomainVO;
 import com.cloud.host.HostVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
@@ -48,97 +47,20 @@ public class ListIsosCmd extends BaseCmd {
 
     static {
     	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.BOOTABLE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_PUBLIC, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_READY, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ISO_FILTER, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
-
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
+    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
+    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_PUBLIC, Boolean.FALSE));
+    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_READY, Boolean.FALSE));
+    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ISO_FILTER, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.BOOTABLE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
 
     }
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="account", type=CommandType.STRING)
-    private String accountName;
-
-    @Parameter(name="bootable", type=CommandType.BOOLEAN)
-    private Boolean bootable;
-
-    @Parameter(name="domainid", type=CommandType.LONG)
-    private Long domainId;
-
-    @Parameter(name="id", type=CommandType.LONG)
-    private Long id;
-
-    @Parameter(name="ispublic", type=CommandType.BOOLEAN)
-    private Boolean publicIso;
-
-    @Parameter(name="isready", type=CommandType.BOOLEAN)
-    private Boolean ready;
-
-    @Parameter(name="isofilter", type=CommandType.STRING)
-    private String isoFilter;
-
-    @Parameter(name="name", type=CommandType.STRING)
-    private String isoName;
-
-    @Parameter(name="zoneid", type=CommandType.LONG)
-    private Long zoneId;
-
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Boolean isBootable() {
-        return bootable;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public Boolean isPublic() {
-        return publicIso;
-    }
-
-    public Boolean isReady() {
-        return ready;
-    }
-
-    public String getIsoFilter() {
-        return isoFilter;
-    }
-
-    public String getIsoName() {
-        return isoName;
-    }
-
-    public Long getZoneId() {
-        return zoneId;
-    }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {

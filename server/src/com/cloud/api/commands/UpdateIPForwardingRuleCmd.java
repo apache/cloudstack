@@ -7,7 +7,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.server.Criteria;
@@ -26,68 +25,13 @@ public class UpdateIPForwardingRuleCmd extends BaseCmd {
     static {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PUBLIC_IP, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PRIVATE_IP, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PUBLIC_PORT, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PRIVATE_PORT, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PROTOCOL, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PUBLIC_IP, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PUBLIC_PORT, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VIRTUAL_MACHINE_ID, Boolean.FALSE));
     }
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="privateip", type=CommandType.STRING)
-    private String privateIp;
-
-    @Parameter(name="privateport", type=CommandType.STRING, required=true)
-    private String privatePort;
-
-    @Parameter(name="protocol", type=CommandType.STRING, required=true)
-    private String protocol;
-
-    @Parameter(name="publicip", type=CommandType.STRING, required=true)
-    private String publicIp;
-
-    @Parameter(name="publicport", type=CommandType.STRING, required=true)
-    private String publicPort;
-
-    @Parameter(name="virtualmachineid", type=CommandType.LONG)
-    private Long virtualMachineId;
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public String getPrivateIp() {
-        return privateIp;
-    }
-
-    public String getPrivatePort() {
-        return privatePort;
-    }
-
-    public String getProtocol() {
-        return protocol;
-    }
-
-    public String getPublicIp() {
-        return publicIp;
-    }
-
-    public String getPublicPort() {
-        return publicPort;
-    }
-
-    public Long getVirtualMachineId() {
-        return virtualMachineId;
-    }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     public String getName() {
         return s_name;

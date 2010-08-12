@@ -25,7 +25,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.async.executor.VolumeOperationResultObject;
 import com.cloud.serializer.SerializerHelper;
@@ -41,70 +40,13 @@ public class CreateVolumeCmd extends BaseCmd {
     static {
     	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
     	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-
     	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISK_OFFERING_ID, Boolean.FALSE));
     	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SNAPSHOT_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISK_OFFERING_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SNAPSHOT_ID, Boolean.FALSE));
     }
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="account", type=CommandType.STRING)
-    private String accountName;
-
-    @Parameter(name="diskofferingid", type=CommandType.LONG)
-    private Long diskOfferingId;
-
-    @Parameter(name="domainid", type=CommandType.LONG)
-    private Long domainId;
-
-    @Parameter(name="name", type=CommandType.STRING, required=true)
-    private String volumeName;
-
-    @Parameter(name="snapshotid", type=CommandType.LONG)
-    private Long snapshotId;
-
-    @Parameter(name="zoneid", type=CommandType.LONG)
-    private Long zoneId;
-
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDiskOfferingId() {
-        return diskOfferingId;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public String getVolumeName() {
-        return volumeName;
-    }
-
-    public Long getSnapshotId() {
-        return snapshotId;
-    }
-
-    public Long getZoneId() {
-        return zoneId;
-    }
-
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     public String getName() {
         return s_name;
@@ -218,7 +160,7 @@ public class CreateVolumeCmd extends BaseCmd {
     	    if (useSnapshot) {
     	        throw new ServerApiException(BaseCmd.CREATE_VOLUME_FROM_SNAPSHOT_ERROR, "Unable to create a volume from snapshot with id " + snapshotId + " for this account.");
     	    } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create volume: " + ex.getMessage());
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create volume in zone " + zoneId + " with disk offering " + diskOfferingId);
     	    }
     	}
     	

@@ -27,6 +27,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.event.EventState;
 import com.cloud.event.EventVO;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -52,14 +53,20 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
 	}
 
 	@Override
-	public List<EventVO> searchAllEvents(SearchCriteria<EventVO> sc, Filter filter) {
+	@DB
+	public List<EventVO> searchAllEvents(SearchCriteria sc, Filter filter) {
 	    return listBy(sc, filter);
+	}
+
+	@Override
+    public List<EventVO> search(final SearchCriteria sc, final Filter filter) {
+	    return super.search(sc, filter);
 	}
 
     @Override
     public List<EventVO> listOlderEvents(Date oldTime) {
         if (oldTime == null) return null;
-        SearchCriteria<EventVO> sc = createSearchCriteria();
+        SearchCriteria sc = createSearchCriteria();
         sc.addAnd("createDate", SearchCriteria.Op.LT, oldTime);
         return listBy(sc, null);
         
@@ -68,7 +75,7 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
     @Override
     public List<EventVO> listStartedEvents(Date minTime, Date maxTime) {
         if (minTime == null || maxTime == null) return null;
-        SearchCriteria<EventVO> sc = StartedEventsSearch.create();
+        SearchCriteria sc = StartedEventsSearch.create();
         sc.setParameters("state", EventState.Completed);
         sc.setParameters("startId", 0);
         sc.setParameters("createDate", minTime, maxTime);
@@ -77,7 +84,7 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
     
     @Override
     public EventVO findCompletedEvent(long startId) {
-        SearchCriteria<EventVO> sc = CompletedEventSearch.create();
+        SearchCriteria sc = CompletedEventSearch.create();
         sc.setParameters("state", EventState.Completed);
         sc.setParameters("startId", startId);
         return findOneBy(sc);

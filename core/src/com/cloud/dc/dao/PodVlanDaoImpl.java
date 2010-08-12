@@ -40,7 +40,7 @@ public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements G
     private final SearchBuilder<PodVlanVO> PodSearchAllocated;
     
     public List<PodVlanVO> listAllocatedVnets(long podId) {
-    	SearchCriteria<PodVlanVO> sc = PodSearchAllocated.create();
+    	SearchCriteria sc = PodSearchAllocated.create();
     	sc.setParameters("podId", podId);
     	return listActiveBy(sc);
     }
@@ -78,7 +78,7 @@ public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements G
     }
 
     public PodVlanVO take(long podId, long accountId) {
-        SearchCriteria<PodVlanVO> sc = FreeVlanSearch.create();
+        SearchCriteria sc = FreeVlanSearch.create();
         sc.setParameters("podId", podId);
         Date now = new Date();
         Transaction txn = Transaction.currentTxn();
@@ -101,7 +101,7 @@ public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements G
     }
 
     public void release(String vlan, long podId, long accountId) {
-        SearchCriteria<PodVlanVO> sc = VlanPodSearch.create();
+        SearchCriteria sc = VlanPodSearch.create();
         sc.setParameters("vlan", vlan);
         sc.setParameters("podId", podId);
         sc.setParameters("account", accountId);

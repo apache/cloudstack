@@ -53,7 +53,7 @@ public class StackMaidDaoImpl extends GenericDaoBase<StackMaidVO, Long> implemen
 
     @DB
 	public StackMaidVO popCleanupDelegate(long msid) {
-        SearchCriteria<StackMaidVO> sc = popSearch.create();
+        SearchCriteria sc = popSearch.create();
         sc.setParameters("msid", msid);
         sc.setParameters("threadId", Thread.currentThread().getId());
         
@@ -69,7 +69,7 @@ public class StackMaidDaoImpl extends GenericDaoBase<StackMaidVO, Long> implemen
 	
     @DB
 	public void clearStack(long msid) {
-        SearchCriteria<StackMaidVO> sc = clearSearch.create();
+        SearchCriteria sc = clearSearch.create();
         sc.setParameters("msid", msid);
         
         delete(sc);

@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Id: installdomp.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/installer/installdomp.sh $
+# $Id: installdomp.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.x.beta/java/scripts/installer/installdomp.sh $
 
 #set -x
 usage() {

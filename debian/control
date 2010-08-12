@@ -139,19 +139,12 @@ Description: Cloud.com Python library
  The Cloud.com Python library contains a few Python modules that the
  CloudStack uses.
 
-Package: cloud-agent-libs
-Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java
-Description: Cloud.com agent libraries
- The Cloud.com agent libraries are used by the Cloud Agent and the Cloud
- Console Proxy.
-
 Package: cloud-agent
 Provides: vmops-agent
 Conflicts: vmops-agent
 Replaces: vmops-agent
 Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), python, cloud-python (= ${source:Version}), cloud-agent-libs (= ${source:Version}), cloud-agent-scripts (= ${source:Version}), cloud-vnet (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java, libvirt0, cloud-daemonize, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin, cgroup-bin, augeas-tools, uuid-runtime, rsync, grep, iproute
+Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-python (= ${source:Version}), cloud-agent-scripts (= ${source:Version}), cloud-vnet (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java, libvirt0, cloud-daemonize, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin, cgroup-bin, augeas-tools, uuid-runtime, rsync
 Description: Cloud.com agent
  The Cloud.com agent is in charge of managing shared computing resources in
  a Cloud.com Cloud Stack-powered cloud.  Install this package if this computer
@@ -159,7 +152,7 @@ Description: Cloud.com agent
 
 Package: cloud-console-proxy
 Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-agent-libs (= ${source:Version}), python, cloud-python (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java, cloud-daemonize, sysvinit-utils, chkconfig, augeas-tools, uuid-runtime, grep, iproute
+Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-agent (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java, cloud-daemonize, sysvinit-utils, chkconfig, augeas-tools, uuid-runtime
 Description: Cloud.com console proxy
  The Cloud.com console proxy is the service in charge of granting console
  access into virtual machines managed by the Cloud.com CloudStack.

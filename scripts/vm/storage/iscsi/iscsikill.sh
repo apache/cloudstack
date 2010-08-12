@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# $Id: iscsikill.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/vm/storage/iscsi/iscsikill.sh $
+# $Id: iscsikill.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.x.beta/java/scripts/vm/storage/iscsi/iscsikill.sh $
 #
 # iscsikill.sh
 #

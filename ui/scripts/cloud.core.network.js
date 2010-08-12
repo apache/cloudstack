@@ -18,7 +18,7 @@
 
 // Version: @VERSION@
 
-function showNetworkingTab(p_domainId, p_account) {  
+function showNetworkingTab(p_domainId, p_account) {   	
     //*** Network (begin) ****************************************************************************
     activateDialog($("#dialog_acquire_public_ip").dialog({ 
 		width: 325,
@@ -29,7 +29,7 @@ function showNetworkingTab(p_domainId, p_account) {
 	
 	//*** Acquire New IP (begin) ***
 	$.ajax({
-	       data: createURL("command=listZones&available=true&response=json"+maxPageSize),
+		data: "command=listZones&available=true&response=json",
 		dataType: "json",
 		success: function(json) {
 			var zones = json.listzonesresponse.zone;				
@@ -55,7 +55,7 @@ function showNetworkingTab(p_domainId, p_account) {
 				thisDialog.dialog("close");
 				
 				$.ajax({
-				       data: createURL("command=associateIpAddress&zoneid="+zoneid+"&response=json"),
+					data: "command=associateIpAddress&zoneid="+zoneid+"&response=json",
 					dataType: "json",
 					success: function(json) {						   
 					    var items = json.associateipaddressresponse.publicipaddress;	
@@ -98,7 +98,7 @@ function showNetworkingTab(p_domainId, p_account) {
 		$("#show_last_search").hide();
         ipListContainer.empty();      				
 	    $.ajax({
-	      data: createURL(strCmd),
+		    data: strCmd,				
 		    dataType: "json",
 		    success: function(json) {					   			    
 			    var items = json.listpublicipaddressesresponse.publicipaddress;						
@@ -116,7 +116,7 @@ function showNetworkingTab(p_domainId, p_account) {
 						template.find("#ip_manage").hide();
 						
 						if(isIpManageable(items[0].domainid, items[0].account) == true) { 
-							showPfLbArea(items[0].ipaddress, items[0].domainid, items[0].account);				
+							showPfLbArea(items[0].ipaddress, items[0].domainid, items[0].account);									
 							listLoadBalancerRules();
 							refreshCreateLoadBalancerRow();    					    
 							listPortForwardingRules();
@@ -151,7 +151,7 @@ function showNetworkingTab(p_domainId, p_account) {
 	$("#submenu_content_network #admin_ip_search").autocomplete({
 		source: function(request, response) {
 			$.ajax({
-			  data: createURL("command=listPublicIpAddresses&response=json&forvirtualnetwork=true&ipaddress=" + request.term),				
+				data: "command=listPublicIpAddresses&response=json&forvirtualnetwork=true&ipaddress=" + request.term,				
 				dataType: "json",
 				success: function(json) {		
 					var items = json.listpublicipaddressesresponse.publicipaddress;		
@@ -215,7 +215,7 @@ function showNetworkingTab(p_domainId, p_account) {
     function populateDomainDropdown() {
         var domainSelect = $("#submenu_content_network #search_by_domain").empty();			
 	    $.ajax({
-		   data: createURL("command=listDomains&available=true&response=json"+maxPageSize),
+		    data: "command=listDomains&available=true&response=json",
 		    dataType: "json",
 		    success: function(json) {			        
 			    var domains = json.listdomainsresponse.domain;			 
@@ -248,7 +248,7 @@ function showNetworkingTab(p_domainId, p_account) {
 		    array1.push("&account="+p_account);	        
 	    
 	    $.ajax({
-		   data: createURL("command=listPublicIpAddresses&response=json&forvirtualnetwork=true" + array1.join("")),				
+			data: "command=listPublicIpAddresses&response=json&forvirtualnetwork=true" + array1.join(""),				
 			dataType: "json",
 			success: function(json) {					   			    
 				var items = json.listpublicipaddressesresponse.publicipaddress;						
@@ -295,7 +295,7 @@ function showNetworkingTab(p_domainId, p_account) {
 	    var ipAddress = $(this).val();		
 	    if(ipAddress != null && ipAddress.length > 0) {	            
 	        $.ajax({
-		       data: createURL("command=listPublicIpAddresses&ipaddress="+ipAddress+"&response=json"),				
+			    data: "command=listPublicIpAddresses&ipaddress="+ipAddress+"&response=json",				
 			    dataType: "json",
 			    success: function(json) {				        				   			    
 				    var items = json.listpublicipaddressesresponse.publicipaddress;		
@@ -357,11 +357,11 @@ function showNetworkingTab(p_domainId, p_account) {
         if(ipSelected == null || ipSelected.length == 0)
             return;    		
         $.ajax({
-	   data: createURL("command=listPortForwardingRules&ipaddress=" + ipSelected + "&response=json"),
+            data: "command=listPortForwardingRules&ipaddress=" + ipSelected + "&response=json",
             dataType: "json",
             success: function(json) {	                                    
-                var items = json.listportforwardingrulesresponse.portforwardingrule;      
-                portForwardingGrid.empty();                       		    		      	    		
+                var items = json.listportforwardingrulesresponse.portforwardingrule;   
+                portForwardingGrid.empty();                          		    		      	    		
                 if (items != null && items.length > 0) {				        			        
 	                for (var i = 0; i < items.length; i++) {
 		                var template = $("#port_forwarding_template").clone(true);
@@ -379,7 +379,7 @@ function showNetworkingTab(p_domainId, p_account) {
 	    createPortForwardingRow.find("#protocol").val("TCP");  		    
 
 	    $.ajax({
-		   data: createURL("command=listVirtualMachines&response=json&domainid="+ipPanel.data("ip_domainid")+"&account="+ipPanel.data("ip_account")+maxPageSize),
+		    data: "command=listVirtualMachines&response=json&domainid="+ipPanel.data("ip_domainid")+"&account="+ipPanel.data("ip_account"),
 		    dataType: "json",
 		    success: function(json) {			    
 			    var instances = json.listvirtualmachinesresponse.virtualmachine;
@@ -413,7 +413,7 @@ function showNetworkingTab(p_domainId, p_account) {
 	    var virtualMachineId = json.virtualmachineid;
 	    		    
 	    $.ajax({
-		   data: createURL("command=listVirtualMachines&response=json&domainid="+ipPanel.data("ip_domainid")+"&account="+ipPanel.data("ip_account")+maxPageSize),
+		    data: "command=listVirtualMachines&response=json&domainid="+ipPanel.data("ip_domainid")+"&account="+ipPanel.data("ip_account"),
 		    dataType: "json",
 		    success: function(json) {			    
 			    var instances = json.listvirtualmachinesresponse.virtualmachine;
@@ -438,7 +438,7 @@ function showNetworkingTab(p_domainId, p_account) {
             rowContainer.hide();                
 	              
 	        $.ajax({						
-		       data: createURL("command=deletePortForwardingRule&response=json&id="+json.id),
+	            data: "command=deletePortForwardingRule&response=json&id="+json.id,
 	            dataType: "json",
 	            success: function(json) {             
 	                template.slideUp("slow", function(){		                    
@@ -492,7 +492,7 @@ function showNetworkingTab(p_domainId, p_account) {
             array1.push("&virtualmachineid=" + virtualMachineId);
                           
             $.ajax({
-	       data: createURL("command=updatePortForwardingRule&response=json"+array1.join("")),
+				 data: "command=updatePortForwardingRule&response=json"+array1.join(""),
 				 dataType: "json",
 				 success: function(json) {					    									 
 					var jobId = json.updateportforwardingruleresponse.jobid;					        
@@ -500,7 +500,7 @@ function showNetworkingTab(p_domainId, p_account) {
 			        
                     $("body").everyTime(2000, timerKey, function() {
 					    $.ajax({
-						   data: createURL("command=queryAsyncJobResult&jobId="+jobId+"&response=json"),
+						    data: "command=queryAsyncJobResult&jobId="+jobId+"&response=json",
 						    dataType: "json",
 						    success: function(json) {										       						   
 							    var result = json.queryasyncjobresultresponse;									    
@@ -567,7 +567,7 @@ function showNetworkingTab(p_domainId, p_account) {
         array1.push("&protocol="+protocol);
         array1.push("&virtualmachineid=" + virtualMachineId);
         $.ajax({						
-	   data: createURL("command=createPortForwardingRule&response=json"+array1.join("")),
+	        data: "command=createPortForwardingRule&response=json"+array1.join(""),
 	        dataType: "json",
 	        success: function(json) {			            
 	            var items = json.createportforwardingruleresponse.portforwardingrule;	            	
@@ -600,11 +600,11 @@ function showNetworkingTab(p_domainId, p_account) {
         if(ipSelected == null || ipSelected.length == 0) 
             return;              
         $.ajax({
-	   data: createURL("command=listLoadBalancerRules&publicip=" + ipSelected + "&response=json"),
+            data: "command=listLoadBalancerRules&publicip=" + ipSelected + "&response=json",
             dataType: "json",
             success: function(json) {		                    
-                var items = json.listloadbalancerrulesresponse.loadbalancerrule;    
-                loadBalancerGrid.empty();                         		    		      	    		
+                var items = json.listloadbalancerrulesresponse.loadbalancerrule;   
+                loadBalancerGrid.empty();                          		    		      	    		
                 if (items != null && items.length > 0) {				        			        
 	                for (var i = 0; i < items.length; i++) {
 		                var template = $("#load_balancer_template").clone(true);
@@ -648,7 +648,7 @@ function showNetworkingTab(p_domainId, p_account) {
 	            vmSubgrid.empty();         
 	            $.ajax({
 				    cache: false,
-			       data: createURL("command=listLoadBalancerRuleInstances&id="+loadBalancerId+"&response=json"),
+				    data: "command=listLoadBalancerRuleInstances&id="+loadBalancerId+"&response=json",
 				    dataType: "json",
 				    success: function(json) {					        
 					    var instances = json.listloadbalancerruleinstancesresponse.loadbalancerruleinstance;						
@@ -683,7 +683,7 @@ function showNetworkingTab(p_domainId, p_account) {
             loadingContainer.show();  
             rowContainer.hide();                    
 			$.ajax({
-			       data: createURL("command=deleteLoadBalancerRule&id="+loadBalancerId+"&response=json"),
+				data: "command=deleteLoadBalancerRule&id="+loadBalancerId+"&response=json",
 				dataType: "json",
 				success: function(json) {
 					var lbJSON = json.deleteloadbalancerruleresponse;
@@ -693,7 +693,7 @@ function showNetworkingTab(p_domainId, p_account) {
 						timerKey,
 						function() {
 							$.ajax({
-							       data: createURL("command=queryAsyncJobResult&jobId="+lbJSON.jobid+"&response=json"),
+								data: "command=queryAsyncJobResult&jobId="+lbJSON.jobid+"&response=json",
 								dataType: "json",
 								success: function(json) {
 									var result = json.queryasyncjobresultresponse;
@@ -759,7 +759,7 @@ function showNetworkingTab(p_domainId, p_account) {
             array1.push("&algorithm=" + algorithm);
                                                           
             $.ajax({
-	       data: createURL("command=updateLoadBalancerRule&response=json"+array1.join("")),
+				data: "command=updateLoadBalancerRule&response=json"+array1.join(""),
 				dataType: "json",
 				success: function(json) {					    		   	    									 
 					var jobId = json.updateloadbalancerruleresponse.jobid;					        
@@ -767,7 +767,7 @@ function showNetworkingTab(p_domainId, p_account) {
 			        
                     $("body").everyTime(2000, timerKey, function() {
 					    $.ajax({
-						   data: createURL("command=queryAsyncJobResult&jobId="+jobId+"&response=json"),
+						    data: "command=queryAsyncJobResult&jobId="+jobId+"&response=json",
 						    dataType: "json",
 						    success: function(json) {										       						   
 							    var result = json.queryasyncjobresultresponse;									    
@@ -817,7 +817,7 @@ function showNetworkingTab(p_domainId, p_account) {
 			var rowContainer =  template.find("#adding_row_container").hide();
 			    	
 			$.ajax({
-			       data: createURL("command=assignToLoadBalancerRule&id="+loadBalancerId+"&virtualmachineid="+vmId+"&response=json"),
+				data: "command=assignToLoadBalancerRule&id="+loadBalancerId+"&virtualmachineid="+vmId+"&response=json",
 				dataType: "json",
 				success: function(json) {
 					var lbInstanceJSON = json.assigntoloadbalancerruleresponse;
@@ -827,7 +827,7 @@ function showNetworkingTab(p_domainId, p_account) {
 						timerKey,
 						function() {
 							$.ajax({
-							       data: createURL("command=queryAsyncJobResult&jobId="+lbInstanceJSON.jobid+"&response=json"),
+								data: "command=queryAsyncJobResult&jobId="+lbInstanceJSON.jobid+"&response=json",
 								dataType: "json",
 								success: function(json) {
 									var result = json.queryasyncjobresultresponse;
@@ -879,7 +879,7 @@ function showNetworkingTab(p_domainId, p_account) {
 		    var rowContainer = template.find("#deleting_row_container").hide();
 		    						    		
 	        $.ajax({
-		       data: createURL("command=removeFromLoadBalancerRule&id="+obj.loadBalancerId+"&virtualmachineid="+obj.vmId+"&response=json"),
+				data: "command=removeFromLoadBalancerRule&id="+obj.loadBalancerId+"&virtualmachineid="+obj.vmId+"&response=json",
 				dataType: "json",
 				success: function(json) {
 					var lbJSON = json.removefromloadbalancerruleresponse;
@@ -889,7 +889,7 @@ function showNetworkingTab(p_domainId, p_account) {
 						timerKey,
 						function() {
 							$.ajax({
-							       data: createURL("command=queryAsyncJobResult&jobId="+lbJSON.jobid+"&response=json"),
+								data: "command=queryAsyncJobResult&jobId="+lbJSON.jobid+"&response=json",
 								dataType: "json",
 								success: function(json) {
 									var result = json.queryasyncjobresultresponse;
@@ -935,7 +935,7 @@ function showNetworkingTab(p_domainId, p_account) {
         // Load the select box with the VMs that haven't been applied a LB rule to.	        
 	    $.ajax({
 		    cache: false,
-		       data: createURL("command=listLoadBalancerRuleInstances&id="+loadBalancerId+"&applied=false&response=json"),
+		    data: "command=listLoadBalancerRuleInstances&id="+loadBalancerId+"&applied=false&response=json",
 		    dataType: "json",
 		    success: function(json) {				        			        
 			    var instances = json.listloadbalancerruleinstancesresponse.loadbalancerruleinstance;
@@ -985,7 +985,7 @@ function showNetworkingTab(p_domainId, p_account) {
         array1.push("&algorithm="+algorithm);
        
         $.ajax({
-	   data: createURL("command=createLoadBalancerRule&response=json"+array1.join("")),
+			data: "command=createLoadBalancerRule&response=json"+array1.join(""),
 			dataType: "json",
 			success: function(json) {					    	    
 				var items = json.createloadbalancerruleresponse.loadbalancerrule;						
@@ -1091,7 +1091,7 @@ function showNetworkingTab(p_domainId, p_account) {
 			                $("#submenu_content_network #loading_gridtable").show();	
 			                								
 							$.ajax({
-							  data: createURL("command=disassociateIpAddress&ipAddress="+targetIp+"&response=json"),
+								data: "command=disassociateIpAddress&ipAddress="+targetIp+"&response=json",
 								dataType: "json",
 								success: function(json) {				    		
 									$("#dialog_info").html("<p>Your IP address <b>" + targetIp + "</b> has been released</p>").dialog("open");
@@ -1111,7 +1111,7 @@ function showNetworkingTab(p_domainId, p_account) {
 						                                							                                
 						                                if(ipPanel.data("ip_address") == targetIp)
                                                             ipPanel.removeData("ip_address");
-						                                  
+						                                 
 						                                if(ipListContainer.children().length == 0) { 
 					                                        $("#submenu_content_network #show_last_search").hide();
 					                                    } else {  
@@ -1148,8 +1148,6 @@ function showNetworkingTab(p_domainId, p_account) {
     function networkGroupJSONToTemplate(json, template) {	       
         (index++ % 2 == 0)? template.addClass("smallrow_even"): template.addClass("smallrow_odd");	    
         template.attr("id", "networkGroup_"+json.id).data("networkGroupId", json.id).data("domainId", json.domainid).data("account",json.account).data("networkGroupName", sanitizeXSS(json.name));	      		    				   
-	    template.find("#delete_link, #ingress_rule_link").data("parent_template_id", "networkGroup_"+json.id);
-	    
 	    template.find("#id").text(json.id);
 	    template.find("#name").text(json.name);
 	    template.find("#description").text(json.description);	      
@@ -1220,16 +1218,14 @@ function showNetworkingTab(p_domainId, p_account) {
 		return false;
 	});	
 	
-	$("#submenu_content_network_groups").find("#grid_content").bind("click", function(event) {		
-	    var link = $(event.target);			  
-	    var parentTemplateId = link.data("parent_template_id"); 
-	    var template = $(("#"+parentTemplateId));		
+	$("#network_group_template").bind("click", function(event) {
+	    var template = $(this);		
 	    var networkGroupId = template.data("networkGroupId");    		
 	    var domainId = template.data("domainId");
 	    var account = template.data("account");
 	    var networkGroupId = template.data("networkGroupId");	
 	    var networkGroupName = template.data("networkGroupName");
-	       
+	    var link = $(event.target);	    
 	    var submenuContent = $("#submenu_content_network_groups");		   
 	    switch(event.target.id) {
 	        case "delete_link":   
@@ -1247,7 +1243,7 @@ function showNetworkingTab(p_domainId, p_account) {
                 array1.push("&name="+networkGroupName);                    
                 
                 $.ajax({
-		            data: createURL("command=deleteNetworkGroup&response=json" + array1.join("")), 
+                    data: "command=deleteNetworkGroup&response=json" + array1.join(""), //uncomment this line and delete the next line when deleteNetworkGroup API is available.
                     dataType: "json",
                     success: function(json) {		                        	                                               				        
                         template.slideUp("slow", function() { $(this).remove() });
@@ -1265,24 +1261,16 @@ function showNetworkingTab(p_domainId, p_account) {
 				var expanded = link.data("expanded");
 				if (expanded == null || expanded == false) {						 					    			    
 				    $.ajax({
-					   data: createURL("command=listNetworkGroups"+"&domainid="+domainId+"&account="+account+"&networkgroupname="+networkGroupName+"&response=json"),
+	                    data: "command=listNetworkGroups"+"&domainid="+domainId+"&account="+account+"&networkgroupname="+networkGroupName+"&response=json",
 	                    dataType: "json",		                    
 	                    success: function(json) {			                        		                       
 	                        var items = json.listnetworkgroupsresponse.networkgroup[0].ingressrule;                  
 	                        var grid = template.find("#ingress_rule_grid");								
-					        if(grid.find("#network_group_ingress_rule_add_row").length==0) {
-					            var row = $("#network_group_ingress_rule_add_row").clone().show();
-	                            row.find("#network_group_ingress_rule_add_link").data("parent_template_id", parentTemplateId);
-	                            grid.append(row);
-					        }				
+					        if(grid.find("#network_group_ingress_rule_add_row").length==0)											    
+					            grid.append($("#network_group_ingress_rule_add_row").clone().show());						
 					        if (items != null && items.length > 0) {									    
 					            grid.empty();		
-					            
-					            //need to append "add ingress rule" row again after emptying grid.							           
-					            var row = $("#network_group_ingress_rule_add_row").clone().show();
-	                            row.find("#network_group_ingress_rule_add_link").data("parent_template_id", parentTemplateId);
-	                            grid.append(row);
-					            						    				    															
+					            grid.append($("#network_group_ingress_rule_add_row").clone().show()); //need to append "add ingress rule" row again after emptying grid.							    				    															
 						        for (var i = 0; i < items.length; i++) {			
 						            var newTemplate = $("#network_group_ingress_rule_template").clone(true);
 	                                ingressRuleJSONToTemplate(items[i], newTemplate).data("parentNetworkGroupId", networkGroupId).data("parentNetworkGroupDomainId", domainId).data("parentNetworkGroupAccount", account).data("parentNetworkGroupName",networkGroupName); 
@@ -1324,8 +1312,8 @@ function showNetworkingTab(p_domainId, p_account) {
     			    	var moreCriteria = [];	
     			    	moreCriteria.push("&domainid="+domainId);
                         moreCriteria.push("&account="+account);
-                        moreCriteria.push("&networkgroupname="+networkGroupName);   
-                        
+                        moreCriteria.push("&networkgroupname="+networkGroupName);        
+    			    	
     			    	var protocol = thisDialog.find("#protocol").val();
 			            if (protocol!=null && protocol.length > 0) 
 				            moreCriteria.push("&protocol="+encodeURIComponent(protocol));	
@@ -1405,7 +1393,7 @@ function showNetworkingTab(p_domainId, p_account) {
                         template.find("#ingress_rule_grid").find("#no_ingress_rule").hide();             
                         
                         $.ajax({
-			                data: createURL("command=authorizeNetworkGroupIngress"+moreCriteria.join("")+"&response=json"),
+					        data: "command=authorizeNetworkGroupIngress"+moreCriteria.join("")+"&response=json",
 					        dataType: "json",
 					        success: function(json) {					            		            				
 					            var jobId = json.authorizenetworkgroupingress.jobid; 						            	                   
@@ -1416,7 +1404,7 @@ function showNetworkingTab(p_domainId, p_account) {
 							        timerKey,
 							        function() {
 								        $.ajax({
-									       data: createURL("command=queryAsyncJobResult&jobId="+jobId+"&response=json"),
+									        data: "command=queryAsyncJobResult&jobId="+jobId+"&response=json",
 									        dataType: "json",
 									        success: function(json) {
 										        var result = json.queryasyncjobresultresponse;
@@ -1580,14 +1568,14 @@ function showNetworkingTab(p_domainId, p_account) {
                 loadingImg.show();  
                 rowContainer.hide();              
                 $.ajax({
-		   data: createURL("command=revokeNetworkGroupIngress"+moreCriteria.join("")+"&response=json"), 
+                    data: "command=revokeNetworkGroupIngress"+moreCriteria.join("")+"&response=json", 
                     dataType: "json",
                     success: function(json) {		                                                                                            				        
                         var jobId = json.revokenetworkgroupingress.jobid;	                    
                         var timerKey = "revokeNetworkGroupIngressJob"+jobId;								    
                         $("body").everyTime(2000, timerKey, function() {
 		                    $.ajax({
-					   data: createURL("command=queryAsyncJobResult&jobId="+jobId+"&response=json"), 
+			                    data: "command=queryAsyncJobResult&jobId="+jobId+"&response=json", 
 			                    dataType: "json",
 			                    success: function(json) {					                        							       						   
 				                    var result = json.queryasyncjobresultresponse;
@@ -1600,7 +1588,7 @@ function showNetworkingTab(p_domainId, p_account) {
                                                 $(this).remove();                                                                                                        
                                                 //After deleting ingress rule successfully, check if this network group has any ingress rule(s) left. Show delete link of network group if no ingress rule(s) are left.
                                                 $.ajax({
-						   data: createURL("command=listNetworkGroups&response=json&domainid="+parentNetworkGroupDomainId+"&account="+parentNetworkGroupAccount+"&networkgroupname="+parentNetworkGroupName),
+                                                    data:"command=listNetworkGroups&response=json&domainid="+parentNetworkGroupDomainId+"&account="+parentNetworkGroupAccount+"&networkgroupname="+parentNetworkGroupName,
                                                     dataType: "json",
                                                     success: function(json){                                                                                                                     
                                                         networkGroupJSONToTemplate(json.listnetworkgroupsresponse.networkgroup[0], parentNeteworkGroupTemplate);
@@ -1725,7 +1713,7 @@ function showNetworkingTab(p_domainId, p_account) {
 				thisDialog.dialog("close");
 							
 				$.ajax({						
-				       data: createURL("command=createNetworkGroup&name="+encodeURIComponent(name)+"&description="+encodeURIComponent(desc)+"&response=json"),
+					data: "command=createNetworkGroup&name="+encodeURIComponent(name)+"&description="+encodeURIComponent(desc)+"&response=json",
 					dataType: "json",
 					success: function(json) {						   
 						var items = json.createnetworkgroupresponse.networkgroup;													

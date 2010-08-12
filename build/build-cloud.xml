@@ -60,9 +60,7 @@
   <property name="dep.cache.dir" location="${target.dir}/dep-cache" />
   <property name="build.log" location="${target.dir}/ant_verbose.txt" />
 
-  <property name="proprietary.dir" location="${base.dir}/cloudstack-proprietary" />
-
-  <property name="thirdparty.dir" location="${proprietary.dir}/thirdparty" />
+  <property name="thirdparty.dir" location="${base.dir}/thirdparty" />
   <property name="deps.dir" location="${base.dir}/deps" />
 
   <!-- directories for client compilation-->
@@ -119,7 +117,6 @@
   <property name="agent.jar" value="cloud-agent.jar" />
   <property name="console-common.jar" value="cloud-console-common.jar" />
   <property name="console-proxy.jar" value="cloud-console-proxy.jar" />
-  <property name="api.jar" value="cloud-api.jar"/>
 
   <!--
 		Import information about the build version and company information
@@ -166,21 +163,11 @@
     <compile-java jar.name="${utils.jar}" top.dir="${utils.dir}" classpath="utils.classpath" />
   </target>
 
-  <property name="api.dir" location="${base.dir}/api" />
-  <property name="api.test.dir" location="${api.dir}/test/" />
-  <path id="api.classpath">
-    <path refid="thirdparty.classpath" />
-    <path refid="dist.classpath"/>
-  </path>
-  <target name="compile-api" depends="-init, compile-utils" description="Compile the utilities jar that is shared.">
-    <compile-java jar.name="${api.jar}" top.dir="${api.dir}" classpath="api.classpath" />
-  </target>
-  
   <path id="core.classpath">
     <path refid="thirdparty.classpath" />
     <path refid="dist.classpath" />
   </path>
-  <target name="compile-core" depends="-init, compile-utils, compile-api" description="Compile the core business logic.">
+  <target name="compile-core" depends="-init, compile-utils" description="Compile the core business logic.">
     <compile-java jar.name="${core.jar}" top.dir="${core.dir}" classpath="core.classpath" />
   </target>
 
@@ -222,7 +209,6 @@
       <fileset dir="${ui.user.dir}">
         <include name="**/*.html" />
         <include name="**/*.js"/>
-        <include name="**/*.jsp"/>
         <exclude name="**/.classpath" />
         <exclude name="**/.project" />
       </fileset>
@@ -235,7 +221,6 @@
         <include name="**/*"/>
         <exclude name="**/*.html" />
         <exclude name="**/*.js"/>
-        <exclude name="**/*.jsp"/>
         <exclude name="**/.classpath" />
         <exclude name="**/.project" />
       </fileset>
@@ -417,10 +402,9 @@
     <fileset dir="${target.dir}">
       <include name="**/${core.jar}" />
       <include name="**/${utils.jar}" />
-      <include name="**/${api.jar}"/>
     </fileset>
   </path>
-  <target name="compile-agent" depends="-init, compile-utils, compile-core, compile-api" description="Compile the management agent.">
+  <target name="compile-agent" depends="-init, compile-utils, compile-core" description="Compile the management agent.">
     <compile-java jar.name="${agent.jar}" top.dir="${agent.dir}" classpath="agent.classpath" />
   </target>
 

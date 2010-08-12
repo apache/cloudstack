@@ -25,11 +25,10 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.offering.ServiceOffering.GuestIpType;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.ServiceOffering.GuestIpType;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.vm.UserVmVO;
@@ -44,51 +43,15 @@ public class ListServiceOfferingsCmd extends BaseCmd {
     	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.FALSE));
     	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VIRTUAL_MACHINE_ID, Boolean.FALSE));
-
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
     }
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="id", type=CommandType.LONG)
-    private Long id;
-
-    @Parameter(name="name", type=CommandType.STRING)
-    private String serviceOfferingName;
-
-    @Parameter(name="virtualmachineid", type=CommandType.LONG)
-    private Long virtualMachineId;
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getServiceOfferingName() {
-        return serviceOfferingName;
-    }
-
-    public Long getVirtualMachineId() {
-        return virtualMachineId;
-    }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
     public String getName() {
         return s_name;
     }
-    @Override
     public List<Pair<Enum, Boolean>> getProperties() {
         return s_properties;
     }
@@ -148,7 +111,7 @@ public class ListServiceOfferingsCmd extends BaseCmd {
         {
             List<Pair<String, Object>> offeringData = new ArrayList<Pair<String, Object>>();
 
-            offeringData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.toString(offering.getId())));
+            offeringData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), offering.getId().toString()));
             offeringData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), offering.getName()));
             offeringData.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_TEXT.getName(), offering.getDisplayText()));
             offeringData.add(new Pair<String, Object>(BaseCmd.Properties.CPU_NUMBER.getName(), Integer.valueOf(offering.getCpu()).toString()));

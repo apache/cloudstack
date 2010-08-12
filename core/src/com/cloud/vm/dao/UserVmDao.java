@@ -58,14 +58,15 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long> {
      */
     boolean updateIf(UserVmVO vm, VirtualMachine.Event event, Long hostId);
     
-    /**
-     * Updates display name and group for vm; enables/disables ha
-     * @param id vm id.
-     * @param displan name, group and enable for ha
-     */
-    void updateVM(long id, String displayName, String group, boolean enable);
-    
     List<UserVmVO> findDestroyedVms(Date date);
+
+    /**
+     * Find all vms that are running and using this ip address.
+     * @param dcId datacenter id
+     * @param podId pod id
+     * @param ipAddress ip address of the storage server.
+     */
+    List<UserVmVO> findVMsUsingIpAddress(long dcId, long podId, String ipAddress);
 
 	/**
 	 * Find all vms that use a domain router

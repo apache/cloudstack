@@ -17,6 +17,8 @@
  */
 package com.cloud.storage.allocator;
 
+import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -33,9 +35,9 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.offering.ServiceOffering.GuestIpType;
+import com.cloud.service.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.ServiceOffering.GuestIpType;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
@@ -45,7 +47,6 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
-import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
@@ -73,7 +74,7 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     @Inject CapacityDao _capacityDao;
     @Inject ConfigurationDao _configDao;
     
-    protected GenericSearchBuilder<VMInstanceVO, Long> VmsOnPoolSearch;
+    protected SearchBuilder<VMInstanceVO> VmsOnPoolSearch;
 
     
     private int _hoursToSkipStoppedVMs = 24;
@@ -116,11 +117,16 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
         	
         	StoragePoolHostVO spHost = hostsInSPool.get(0);
         	
-        	SearchCriteria<Long> sc = VmsOnPoolSearch.create();
+        	SearchCriteria sc = VmsOnPoolSearch.create();
         	sc.setJoinParameters("volumeJoin", "poolId", pool.getId());
         	sc.setParameters("state", State.Expunging);
-        	List<Long> vmsOnHost = _vmInstanceDao.searchAll(sc, null);
+        	List<Object[]> results = _vmInstanceDao.searchAll(sc, null);
             
+            List<Long> vmsOnHost = new ArrayList<Long>();
+            for(Object[] row : results) {
+                vmsOnHost.add(new Long(((BigInteger)row[0]).longValue()));
+            }
+        	
         	if(s_logger.isDebugEnabled()) {
         		s_logger.debug("Found " + vmsOnHost.size() + " VM instances are alloacated at host " + spHost.getHostId() + " with local storage pool " + pool.getName());
         		for(Long vmId : vmsOnHost)
@@ -161,7 +167,7 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     		s_logger.debug("Calculated static-allocated memory for VMs on host " + hostId + ": " + usedMemory + " bytes, requesting memory: "
     			+ (so != null ? so.getRamSize()*1024L*1024L : "") + " bytes");
     	
-    	SearchCriteria<CapacityVO> sc = _capacityDao.createSearchCriteria();
+    	SearchCriteria sc = _capacityDao.createSearchCriteria();
     	sc.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, hostId);
     	sc.addAnd("capacityType", SearchCriteria.Op.EQ, CapacityVO.CAPACITY_TYPE_MEMORY);
     	List<CapacityVO> capacities = _capacityDao.search(sc, null);
@@ -279,8 +285,8 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
         _routerRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), 128);
 		_proxyRamSize = NumbersUtil.parseInt(configs.get("consoleproxy.ram.size"), 1024);
 		
-		VmsOnPoolSearch = _vmInstanceDao.createSearchBuilder(Long.class);
-        VmsOnPoolSearch.select(null, Func.DISTINCT, VmsOnPoolSearch.entity().getId());
+		VmsOnPoolSearch = _vmInstanceDao.createSearchBuilder();
+        VmsOnPoolSearch.select(Func.DISTINCT, VmsOnPoolSearch.entity().getId());
         VmsOnPoolSearch.and("removed", VmsOnPoolSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         VmsOnPoolSearch.and("state", VmsOnPoolSearch.entity().getState(), SearchCriteria.Op.NIN);
         

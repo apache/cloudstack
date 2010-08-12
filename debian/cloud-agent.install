@@ -1,3 +1,4 @@
+/usr/share/java/cloud-agent.jar
 /etc/cloud/agent/agent.properties
 /etc/cloud/agent/developer.properties.template
 /etc/cloud/agent/environment.properties

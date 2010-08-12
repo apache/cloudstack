@@ -1,5 +1,4 @@
 /**
-
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
@@ -25,14 +24,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
-import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLEncoder;
-import java.security.SecureRandom;
-import java.text.DateFormat;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -78,7 +72,6 @@ import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.DomainVO;
@@ -88,7 +81,6 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
-import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
@@ -96,7 +88,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.encoding.Base64;
-import com.cloud.utils.exception.CloudRuntimeException;
+
 
 public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
@@ -116,7 +108,7 @@ public class ApiServer implements HttpRequestHandler {
     private static List<String> s_resellerCommands = null; // AKA domain-admin
     private static List<String> s_adminCommands = null;
     private static List<String> s_readOnlyAdminCommands = null;
-
+    
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
     static {
@@ -184,7 +176,7 @@ public class ApiServer implements HttpRequestHandler {
 
         int apiPort = 8096; // default port
         ConfigurationDao configDao = ComponentLocator.getLocator(ManagementServer.Name).getDao(ConfigurationDao.class);
-        SearchCriteria<ConfigurationVO> sc = configDao.createSearchCriteria();
+        SearchCriteria sc = configDao.createSearchCriteria();
         sc.addAnd("name", SearchCriteria.Op.EQ, "integration.api.port");
         List<ConfigurationVO> values = configDao.search(sc, null);
         if ((values != null) && (values.size() > 0)) {
@@ -239,7 +231,7 @@ public class ApiServer implements HttpRequestHandler {
             }
             try {
             	// always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM
-            	UserContext.registerContext(User.UID_SYSTEM, null, null, Account.ACCOUNT_ID_SYSTEM, null, null, true);
+            	UserContext.registerContext(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, null, true);
             	
                 String responseText = handleRequest(parameterMap, true, responseType);
                 sb.append(" 200 " + ((responseText == null) ? 0 : responseText.length()));
@@ -286,7 +278,7 @@ public class ApiServer implements HttpRequestHandler {
                 }
                 response = buildErrorResponse("invalid request, no command sent", responseType);
             } else {
-                Map<String, String> paramMap = new HashMap<String, String>();
+                Map<String, Object> paramMap = new HashMap<String, Object>();
                 Set keys = params.keySet();
                 Iterator keysIter = keys.iterator();
                 while (keysIter.hasNext()) {
@@ -294,7 +286,7 @@ public class ApiServer implements HttpRequestHandler {
                     if ("command".equalsIgnoreCase(key)) {
                         continue;
                     }
-                    String[] value = (String[])params.get(key);
+                    Object[] value = (Object[])params.get(key);
                     paramMap.put(key, value[0]);
                 }
                 String cmdClassName = _apiCommands.getProperty(command[0]);
@@ -302,43 +294,8 @@ public class ApiServer implements HttpRequestHandler {
                     Class<?> cmdClass = Class.forName(cmdClassName);
                     BaseCmd cmdObj = (BaseCmd)cmdClass.newInstance();
                     cmdObj.setManagementServer(_ms);
-                    Map<String, Object> unpackedParams = cmdObj.unpackParams(paramMap, decode);
-                    Field[] fields = cmdClass.getDeclaredFields();
-                    for (Field field : fields) {
-                        Parameter parameterAnnotation = field.getAnnotation(Parameter.class);
-                        if (parameterAnnotation == null) {
-                            continue;
-                        }
-                        Object paramObj = unpackedParams.get(parameterAnnotation.name());
-                        if (paramObj == null) {
-                            if (parameterAnnotation.required()) {
-                                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to execute API command " + cmdObj.getName() + " due to missing parameter " + parameterAnnotation.name());
-                            }
-                            continue;
-                        }
-
-                        // marshall the parameter into the correct type and set the field value
-                        try {
-                            setFieldValue(field, cmdObj, paramObj, parameterAnnotation);
-                        } catch (IllegalArgumentException argEx) {
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Unable to execute API command " + cmdObj.getName() + " due to invalid value " + paramObj + " for parameter " + parameterAnnotation.name());
-                            }
-                            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to execute API command " + cmdObj.getName() + " due to invalid value " + paramObj + " for parameter " + parameterAnnotation.name());
-                        } catch (ParseException parseEx) {
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Invalid date parameter " + paramObj + " passed to command " + cmdObj.getName());
-                            }
-                            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to parse date " + paramObj + " for command " + cmdObj.getName() + ", please pass dates in the format yyyy-MM-dd");
-                        } catch (CloudRuntimeException cloudEx) {
-                            // FIXME:  Better error message?  This only happens if the API command is not executable, which typically means there was
-                            //         and IllegalAccessException setting one of the parameters.
-                            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error executing API command " + cmdObj.getName());
-                        }
-                    }
-
                     Map<String, Object> validatedParams = cmdObj.validateParams(paramMap, decode);
-
+                    
                     List<Pair<String, Object>> resultValues = cmdObj.execute(validatedParams);
                     response = cmdObj.buildResponse(resultValues, responseType);
                 } else {
@@ -441,21 +398,14 @@ public class ApiServer implements HttpRequestHandler {
             }
 
             if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-                UserContext.updateContext(user.getId(), account, account.getAccountName(), account.getId(), account.getDomainId(), null);
-
-                /*
     			requestParameters.put(BaseCmd.Properties.USER_ID.getName(), new String[] { user.getId().toString() });
                 requestParameters.put(BaseCmd.Properties.ACCOUNT.getName(), new String[] { account.getAccountName() });
                 requestParameters.put(BaseCmd.Properties.DOMAIN_ID.getName(), new String[] { account.getDomainId().toString() });
         		requestParameters.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { account });
-        		*/
     		} else {
-                UserContext.updateContext(user.getId(), account, null, null, null, null);
-                /*
     			requestParameters.put(BaseCmd.Properties.USER_ID.getName(), new String[] { user.getId().toString() });
     			requestParameters.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { account });
-    			*/
-    		}
+    		}           
 
             if (!isCommandAvailable(account.getType(), commandName)) {
         		return false;
@@ -514,7 +464,7 @@ public class ApiServer implements HttpRequestHandler {
 	    		
 	            java.util.Date date = new java.util.Date();
 	            long longDate = date.getTime();
-	            float offsetInMs = (t.getOffset(longDate));
+	            float offsetInMs = (float)(t.getOffset(longDate));
 	            offsetInHrs = offsetInMs/ (1000*60*60);
 	            s_logger.info("Timezone offset from UTC is: "+offsetInHrs);
         	}
@@ -538,36 +488,23 @@ public class ApiServer implements HttpRequestHandler {
             if (directAttachedUntaggedEnabled == null) 
             	directAttachedUntaggedEnabled = "false";
             
-            String systemVmUseLocalStorage = _ms.getConfigurationValue("system.vm.use.local.storage");
-            if (systemVmUseLocalStorage == null) 
-            	systemVmUseLocalStorage = "false";            
-            
             // set the userId and account object for everyone
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.USER_ID.getName(), userAcct.getId().toString()));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.USERNAME.getName(), userAcct.getUsername()));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.FIRSTNAME.getName(), userAcct.getFirstname()));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.LASTNAME.getName(), userAcct.getLastname()));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT_OBJ.getName(), account));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT.getName(), account.getAccountName()));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), account.getDomainId().toString()));           
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.TYPE.getName(), Short.valueOf(account.getType()).toString()));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.NETWORK_TYPE.getName(), networkType));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.HYPERVISOR_TYPE.getName(), hypervisorType));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.DIRECT_ATTACH_NETWORK_GROUPS_ENABLED.getName(), directAttachNetworkGroupsEnabled));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.DIRECT_ATTACHED_UNTAGGED_ENABLED.getName(), directAttachedUntaggedEnabled));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.SYSTEM_VM_USE_LOCAL_STORAGE.getName(), systemVmUseLocalStorage));
-            if (timezone != null) {
-            	loginParams.add(new Pair<String, Object>(BaseCmd.Properties.TIMEZONE.getName(), timezone));
-            	loginParams.add(new Pair<String, Object>(BaseCmd.Properties.TIMEZONE_OFFSET.getName(), Float.valueOf(offsetInHrs).toString()));
+            loginParams.add(new Pair<String, Object>("userId", userAcct.getId().toString()));
+            loginParams.add(new Pair<String, Object>("userName", userAcct.getUsername()));
+            loginParams.add(new Pair<String, Object>("firstName", userAcct.getFirstname()));
+            loginParams.add(new Pair<String, Object>("lastName", userAcct.getLastname()));
+            loginParams.add(new Pair<String, Object>("accountobj", account));
+            loginParams.add(new Pair<String, Object>("account", account.getAccountName()));
+            loginParams.add(new Pair<String, Object>("domainId", account.getDomainId().toString()));           
+            loginParams.add(new Pair<String, Object>("type", new Short(account.getType())));
+            loginParams.add(new Pair<String, Object>("networkType", networkType));
+            loginParams.add(new Pair<String, Object>("hypervisorType", hypervisorType));
+            loginParams.add(new Pair<String, Object>("directAttachNetworkGroupsEnabled", directAttachNetworkGroupsEnabled));
+            loginParams.add(new Pair<String, Object>("directAttachedUntaggedEnabled", directAttachedUntaggedEnabled));
+            if (timezone!=null) {
+            	loginParams.add(new Pair<String, Object>("timezone", timezone));
+            	loginParams.add(new Pair<String, Object>("timezoneOffset", offsetInHrs));
             }
-
-            // (bug 5483) generate a session key that the user must submit on every request to prevent CSRF, add that
-            //  to the login response so that session-based authenticators know to send the key back
-            SecureRandom sesssionKeyRandom = new SecureRandom();
-            byte sessionKeyBytes[] = new byte[20];
-            sesssionKeyRandom.nextBytes(sessionKeyBytes);
-            String sessionKey = Base64.encodeBytes(sessionKeyBytes);
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.SESSION_KEY.getName(), sessionKey));
 
             return loginParams;
         }
@@ -652,64 +589,6 @@ public class ApiServer implements HttpRequestHandler {
             sb.append("</description></error>");
         }
         return sb.toString();
-    }
-
-    @SuppressWarnings("unchecked")
-    private void setFieldValue(Field field, BaseCmd cmdObj, Object paramObj, Parameter annotation) throws IllegalArgumentException, ParseException {
-        try {
-            field.setAccessible(true);
-            CommandType fieldType = annotation.type();
-            switch (fieldType) {
-            case BOOLEAN:
-                field.set(cmdObj, Boolean.valueOf(paramObj.toString()));
-                break;
-            case DATE:
-                DateFormat format = BaseCmd.INPUT_FORMAT;
-                synchronized (format) {
-                    field.set(cmdObj, format.parse(paramObj.toString()));
-                }
-                break;
-            case FLOAT:
-                field.set(cmdObj, Float.valueOf(paramObj.toString()));
-                break;
-            case INTEGER:
-                field.set(cmdObj, Integer.valueOf(paramObj.toString()));
-                break;
-            case LIST:
-                List listParam = new ArrayList();
-                StringTokenizer st = new StringTokenizer(paramObj.toString(), ",");
-                while (st.hasMoreTokens()) {
-                    String token = st.nextToken();
-                    CommandType listType = annotation.collectionType();
-                    switch (listType) {
-                    case INTEGER:
-                        listParam.add(Integer.valueOf(token));
-                        break;
-                    case LONG:
-                        listParam.add(Long.valueOf(token));
-                        break;
-                    }
-                }
-                field.set(cmdObj, listParam);
-                break;
-            case LONG:
-                field.set(cmdObj, Long.valueOf(paramObj.toString()));
-                break;
-            case STRING:
-                field.set(cmdObj, paramObj.toString());
-                break;
-            case TZDATE:
-                field.set(cmdObj, DateUtil.parseTZDateString(paramObj.toString()));
-                break;
-            case MAP:
-            default:
-                field.set(cmdObj, paramObj);
-                break;
-            }
-        } catch (IllegalAccessException ex) {
-            s_logger.error("Error initializing command " + cmdObj.getName() + ", field " + field.getName() + " is not accessible.");
-            throw new CloudRuntimeException("Internal error initializing parameters for command " + cmdObj.getName() + " [field " + field.getName() + " is not accessible]");
-        }
     }
 
     // FIXME:  the following two threads are copied from http://svn.apache.org/repos/asf/httpcomponents/httpcore/trunk/httpcore/src/examples/org/apache/http/examples/ElementalHttpServer.java

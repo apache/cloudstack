@@ -1,0 +1,42 @@
+#!/bin/sh
+#
+# Copyright (c) Citrix Systems 2007-2008. All rights reserved.
+#
+# Xen, the Xen logo, XenCenter, XenMotion are trademarks or registered
+# trademarks of Citrix Systems, Inc., in the United States and other
+# countries.
+
+DOMID=$1
+shift 1
+
+#Getting the VM UUID
+export VMUUID=`/opt/xensource/bin/list_domains -domid $DOMID -minimal`
+
+#For security reasons, we only listen on locahost by default
+export VNCTERM_LISTEN="-v 0.0.0.0:1"
+
+VNCVIEWER=""
+if test `/bin/ps aux | /bin/fgrep 'X :0' | /bin/fgrep -v fgrep | /usr/bin/wc -l` -eq 1 && test $DOMID -gt 0
+then
+    VNCVIEWER="--vncviewer=FullColor=0;LowColourLevel=2;AutoSelect=0;MenuKey="
+fi
+
+export DISPLAY=":0.0"
+export HOME="/root"
+export XAUTHORITY="/root/.Xauthority"
+
+# enabling core dumps if /var/xen/vncterm is not a ramdisk, disabling otherwise
+if test "`grep -E "/var/xen/vncterm.*(tmpfs|ramfs)" /etc/mtab`"
+then
+	ulimit -Sc 0
+else
+	ulimit -Sc 67108864
+fi
+
+echo vncterm-wrapper:
+xenstore-write -s /local/domain/$DOMID/serial/0/vncterm-pid $$
+if [ -z "${XIU}" ]; then
+	exec /usr/lib/xen/bin/vncterm $VNCTERM_LISTEN $VNCVIEWER $* > /dev/null 2>&1
+else
+	exec xenstore-write -s /local/domain/$DOMID/serial/0/vnc-port 0
+fi

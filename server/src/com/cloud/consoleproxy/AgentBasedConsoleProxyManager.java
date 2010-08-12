@@ -35,7 +35,9 @@ import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -48,6 +50,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.ConsoleProxyVO;
+import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineManager;
@@ -159,8 +162,7 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
             publicIp = host.getPrivateIpAddress();
         }
         
-        // FIXME: Removed State.Running does this affect the console proxy?
-        return new ConsoleProxyVO(1l, "EmbeddedProxy", null, null, null,
+        return new ConsoleProxyVO(1l, "EmbeddedProxy", State.Running, null, null, null,
                 "02:02:02:02:02:02",
                 host.getPrivateIpAddress(),
                 "255.255.255.0",

@@ -25,10 +25,9 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.Vlan.VlanType;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.IPAddressVO;
@@ -48,70 +47,13 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd {
     static {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ALGORITHM, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DESCRIPTION, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PRIVATE_PORT, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DESCRIPTION, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PUBLIC_IP, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PUBLIC_PORT, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PRIVATE_PORT, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ALGORITHM, Boolean.TRUE));
     }
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="algorithm", type=CommandType.STRING, required=true)
-    private String algorithm;
-
-    @Parameter(name="description", type=CommandType.STRING)
-    private String description;
-
-    @Parameter(name="name", type=CommandType.STRING, required=true)
-    private String loadBalancerRuleName;
-
-    @Parameter(name="privateport", type=CommandType.STRING, required=true)
-    private String privatePort;
-
-    @Parameter(name="publicip", type=CommandType.STRING, required=true)
-    private String publicIp;
-
-    @Parameter(name="publicport", type=CommandType.STRING, required=true)
-    private String publicPort;
-
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public String getAlgorithm() {
-        return algorithm;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public String getLoadBalancerRuleName() {
-        return loadBalancerRuleName;
-    }
-
-    public String getPrivatePort() {
-        return privatePort;
-    }
-
-    public String getPublicIp() {
-        return publicIp;
-    }
-
-    public String getPublicPort() {
-        return publicPort;
-    }
-
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     public String getName() {
         return s_name;

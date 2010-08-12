@@ -27,18 +27,19 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.host.HostVO;
+import com.cloud.network.security.NetworkGroupVMMapVO;
+import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VmStats;
+import com.cloud.vm.UserVm;
 
 public class ListVMsCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMsCmd.class.getName());
@@ -47,88 +48,19 @@ public class ListVMsCmd extends BaseCmd {
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HOST_ID, Boolean.FALSE));
     	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.STATE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
-
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HOST_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
     }
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="account", type=CommandType.STRING)
-    private String accountName;
-
-    @Parameter(name="domainid", type=CommandType.LONG)
-    private Long domainId;
-
-    @Parameter(name="hostid", type=CommandType.LONG)
-    private Long hostId;
-
-    @Parameter(name="id", type=CommandType.LONG)
-    private Long id;
-
-    @Parameter(name="name", type=CommandType.STRING)
-    private String instanceName;
-
-    @Parameter(name="podid", type=CommandType.LONG)
-    private Long podId;
-
-    @Parameter(name="state", type=CommandType.STRING)
-    private String state;
-
-    @Parameter(name="zoneid", type=CommandType.LONG)
-    private Long zoneId;
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public Long getHostId() {
-        return hostId;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getInstanceName() {
-        return instanceName;
-    }
-
-    public Long getPodId() {
-        return podId;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public Long getZoneId() {
-        return zoneId;
-    }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     @Override
 	public String getName() {
@@ -204,16 +136,12 @@ public class ListVMsCmd extends BaseCmd {
         	c.addCriteria(Criteria.ID, id);
             c.addCriteria(Criteria.NAME, name);
             c.addCriteria(Criteria.STATE, state);
-            
-            if(zoneId != null)
-            	c.addCriteria(Criteria.DATACENTERID, zoneId);
+            c.addCriteria(Criteria.DATACENTERID, zoneId);
 
             // ignore these search requests if it's not an admin
             if (isAdmin == true) {
     	        c.addCriteria(Criteria.DOMAINID, domainId);
-    	        
-    	        if(podId != null)
-    	        	c.addCriteria(Criteria.PODID, podId);
+    	        c.addCriteria(Criteria.PODID, podId);
     	        c.addCriteria(Criteria.HOSTID, hostId);
             } 
         }
@@ -244,7 +172,7 @@ public class ListVMsCmd extends BaseCmd {
                 vmData.add(new Pair<String, Object>(BaseCmd.Properties.JOB_STATUS.getName(), String.valueOf(asyncJob.getStatus())));
             } 
 
-            vmData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.toString(vmInstance.getId())));
+            vmData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), vmInstance.getId().toString()));
             vmData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), vmInstance.getName()));
             vmData.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(vmInstance.getCreated())));
             vmData.add(new Pair<String, Object>(BaseCmd.Properties.IP_ADDRESS.getName(), vmInstance.getPrivateIpAddress()));
@@ -328,8 +256,6 @@ public class ListVMsCmd extends BaseCmd {
                 vmData.add(new Pair<String, Object>(BaseCmd.Properties.NETWORK_KB_WRITE.getName(), networkKbWrite));
             }
             
-            vmData.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_ID.getName(),vmInstance.getGuestOSId()));
-
             //network groups
             vmData.add(new Pair<String, Object>(BaseCmd.Properties.NETWORK_GROUP_LIST.getName(), getManagementServer().getNetworkGroupsNamesForVm(vmInstance.getId())));
             

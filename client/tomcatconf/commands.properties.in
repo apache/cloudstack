@@ -70,8 +70,6 @@ registerIso=com.cloud.api.commands.RegisterIsoCmd;15
 updateIso=com.cloud.api.commands.UpdateIsoCmd;15
 deleteIso=com.cloud.api.commands.DeleteIsoCmd;15
 copyIso=com.cloud.api.commands.CopyIsoCmd;15
-updateIsoPermissions=com.cloud.api.commands.UpdateIsoPermissionsCmd;15
-listIsoPermissions=com.cloud.api.commands.ListIsoPermissionsCmd;15
 
 #### guest OS commands
 listOsTypes=com.cloud.api.commands.ListGuestOsCmd;15
@@ -138,7 +136,6 @@ listSystemVms=com.cloud.api.commands.ListSystemVMsCmd;1
 #### configuration commands
 updateConfiguration=com.cloud.api.commands.UpdateCfgCmd;1
 listConfigurations=com.cloud.api.commands.ListCfgsByCmd;1
-addConfig=com.cloud.api.commands.AddConfigCmd;15
 
 #### pod commands
 createPod=com.cloud.api.commands.CreatePodCmd;1
@@ -195,8 +192,6 @@ createStoragePool=com.cloud.api.commands.CreateStoragePoolCmd;1
 updateStoragePool=com.cloud.api.commands.UpdateStoragePoolCmd;1
 deleteStoragePool=com.cloud.api.commands.DeletePoolCmd;1
 listClusters=com.cloud.api.commands.ListClustersCmd;1
-enableStorageMaintenance=com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;1
-cancelStorageMaintenance=com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;1
 
 #### network group commands
 createNetworkGroup=com.cloud.api.commands.CreateNetworkGroupCmd;11

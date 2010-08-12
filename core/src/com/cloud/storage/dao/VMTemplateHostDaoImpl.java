@@ -133,14 +133,14 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 
 	@Override
 	public List<VMTemplateHostVO> listByHostId(long id) {
-	    SearchCriteria<VMTemplateHostVO> sc = HostSearch.create();
+	    SearchCriteria sc = HostSearch.create();
 	    sc.setParameters("host_id", id);
 	    return listBy(sc);
 	}
 
 	@Override
 	public List<VMTemplateHostVO> listByTemplateId(long templateId) {
-	    SearchCriteria<VMTemplateHostVO> sc = TemplateSearch.create();
+	    SearchCriteria sc = TemplateSearch.create();
 	    sc.setParameters("template_id", templateId);
 	    sc.setParameters("destroyed", false);
 	    return listBy(sc);
@@ -148,7 +148,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 
 	@Override
 	public VMTemplateHostVO findByHostTemplate(long hostId, long templateId) {
-		SearchCriteria<VMTemplateHostVO> sc = HostTemplateSearch.create();
+		SearchCriteria sc = HostTemplateSearch.create();
 	    sc.setParameters("host_id", hostId);
 	    sc.setParameters("template_id", templateId);
 	    return findOneBy(sc);
@@ -156,7 +156,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 	
 	@Override
 	public List<VMTemplateHostVO> listByTemplateStatus(long templateId, VMTemplateHostVO.Status downloadState) {
-		SearchCriteria<VMTemplateHostVO> sc = TemplateStatusSearch.create();
+		SearchCriteria sc = TemplateStatusSearch.create();
 		sc.setParameters("template_id", templateId);
 		sc.setParameters("download_state", downloadState.toString());
 		return listBy(sc);
@@ -232,7 +232,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 
 	@Override
 	public List<VMTemplateHostVO> listByTemplateStates(long templateId, VMTemplateHostVO.Status... states) {
-    	SearchCriteria<VMTemplateHostVO> sc = TemplateStatesSearch.create();
+    	SearchCriteria sc = TemplateStatesSearch.create();
     	sc.setParameters("states", (Object[])states);
 		sc.setParameters("template_id", templateId);
 
@@ -241,7 +241,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 
 	@Override
 	public VMTemplateHostVO findByHostTemplatePool(long hostId, long templateId, long poolId) {
-		SearchCriteria<VMTemplateHostVO> sc = HostTemplatePoolSearch.create();
+		SearchCriteria sc = HostTemplatePoolSearch.create();
 	    sc.setParameters("host_id", hostId);
 	    sc.setParameters("template_id", templateId);
 	    sc.setParameters("pool_id", poolId);
@@ -250,7 +250,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 
 	@Override
 	public List<VMTemplateHostVO> listByHostTemplate(long hostId, long templateId) {
-		SearchCriteria<VMTemplateHostVO> sc = HostTemplateSearch.create();
+		SearchCriteria sc = HostTemplateSearch.create();
 	    sc.setParameters("host_id", hostId);
 	    sc.setParameters("template_id", templateId);
 	    return listBy(sc);
@@ -258,7 +258,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 
 	@Override
 	public List<VMTemplateHostVO> listByTemplatePool(long templateId, long poolId) {
-		SearchCriteria<VMTemplateHostVO> sc = PoolTemplateSearch.create();
+		SearchCriteria sc = PoolTemplateSearch.create();
 	    sc.setParameters("pool_id", poolId);
 	    sc.setParameters("template_id", templateId);
 	    return listBy(sc);
@@ -266,7 +266,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 	
 	@Override
 	public List<VMTemplateHostVO> listDestroyed(long hostId) {
-		SearchCriteria<VMTemplateHostVO> sc = HostDestroyedSearch.create();
+		SearchCriteria sc = HostDestroyedSearch.create();
 		sc.setParameters("host_id", hostId);
 		sc.setParameters("destroyed", true);
 		return listBy(sc);
@@ -274,7 +274,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 
 	@Override
 	public VMTemplateHostVO findByHostTemplate(long hostId, long templateId, boolean lock) {
-		SearchCriteria<VMTemplateHostVO> sc = HostTemplateSearch.create();
+		SearchCriteria sc = HostTemplateSearch.create();
 	    sc.setParameters("host_id", hostId);
 	    sc.setParameters("template_id", templateId);
 	    if (!lock)

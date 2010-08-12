@@ -26,7 +26,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.domain.DomainVO;
@@ -34,9 +33,9 @@ import com.cloud.server.Criteria;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserStatisticsVO;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.vm.State;
+import com.cloud.vm.UserVm;
 
 public class ListAccountsCmd extends BaseCmd{
 	public static final Logger s_logger = Logger.getLogger(ListAccountsCmd.class.getName());
@@ -44,81 +43,18 @@ public class ListAccountsCmd extends BaseCmd{
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_TYPE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
     	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_CLEANUP_REQUIRED, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
     	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
+    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_TYPE, Boolean.FALSE));
+    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.STATE, Boolean.FALSE));
+    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_CLEANUP_REQUIRED, Boolean.FALSE));
+    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.STATE, Boolean.FALSE));
-
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
     }
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="account", type=CommandType.STRING)
-    private String accountName;
-
-    @Parameter(name="accounttype", type=CommandType.LONG)
-    private Long accountType;
-
-    @Parameter(name="domainid", type=CommandType.LONG)
-    private Long domainId;
-
-    @Parameter(name="id", type=CommandType.LONG)
-    private Long id;
-
-    @Parameter(name="iscleanuprequired", type=CommandType.BOOLEAN)
-    private Boolean cleanupRequired;
-
-    @Parameter(name="name", type=CommandType.STRING)
-    private String searchName;
-
-    @Parameter(name="state", type=CommandType.STRING)
-    private String state;
-
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getAccountType() {
-        return accountType;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public Boolean isCleanupRequired() {
-        return cleanupRequired;
-    }
-
-    public String getSearchName() {
-        return searchName;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     public String getName() {
         return s_name;

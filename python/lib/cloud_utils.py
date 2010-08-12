@@ -859,47 +859,10 @@ def restore_etc(targetdir):
 def remove_backup(targetdir):
 	check_call( ["rm","-rf",targetdir] )
 
-def list_zonespods(host):
-	text = urllib2.urlopen('http://%s:8096/client/api?command=listPods'%host).read(-1)
-	dom = xml.dom.minidom.parseString(text) 
-	x = [ (zonename,podname)
-		for pod in dom.childNodes[0].childNodes  
-		for podname in [ x.childNodes[0].wholeText for x in pod.childNodes if x.tagName == "name" ] 
-		for zonename in  [ x.childNodes[0].wholeText for x in pod.childNodes if x.tagName == "zonename" ]
-		]
-	return x
-	
-def prompt_for_hostpods(zonespods):
-	"""Ask user to select one from those zonespods
-	Returns (zone,pod) or None if the user made the default selection."""
-	while True:
-		stderr("Type the number of the zone and pod combination this host belongs to (hit ENTER to skip this step)")
-		print "  N) ZONE, POD" 
-		print "================"
-		for n,(z,p) in enumerate(zonespods):
-			print "%3d) %s, %s"%(n,z,p)
-		print "================"
-		zoneandpod = raw_input().strip()
-		
-		if not zoneandpod:
-			# we go with default, do not touch anything, just break
-			return None
-		
-		try:
-			# if parsing fails as an int, just vomit and retry
-			zoneandpod = int(zoneandpod)
-			if zoneandpod >= len(zonespods) or zoneandpod < 0: raise ValueError, "%s out of bounds"%zoneandpod
-		except ValueError,e:
-			stderr(str(e))
-			continue # re-ask
-		
-		# oh yeah, the int represents an valid zone and pod index in the array
-		return zonespods[zoneandpod]
-	
 # this configures the agent
 
-def setup_agent_config(configfile):
-	stderr("Examining Agent configuration")
+def setup_agent_config(configfile,brname):
+	stderr("Examining agent configuration")
 	fn = configfile
 	text = file(fn).read(-1)
 	lines = [ s.strip() for s in text.splitlines() ]
@@ -907,7 +870,7 @@ def setup_agent_config(configfile):
 	confposes = dict([ (m.split("=",1)[0],n) for n,m in enumerate(lines) if "=" in m and not m.startswith("#") ])
 	
 	if not "guid" in confopts:
-		stderr("Generating GUID for this Agent")
+		stderr("Generating GUID for this agent")
 		confopts['guid'] = uuidgen().stdout.strip()
 	
 	try: host = confopts["host"]
@@ -917,56 +880,49 @@ def setup_agent_config(configfile):
 	if newhost: host = newhost
 	confopts["host"] = host
 	
+	confopts["private.network.device"] = brname
+	confopts["public.network.device"] = brname
+	
 	stderr("Querying %s for zones and pods",host)
 	
 	try:
-		x = list_zonespods(confopts['host'])
-		zoneandpod = prompt_for_hostpods(x)
-		if zoneandpod:
-			confopts["zone"],confopts["pod"] = zoneandpod
-			stderr("You selected zone %s pod %s",e,confopts["zone"],confopts["pod"])
-		else:
-			stderr("Skipped -- using the previous zone %s pod %s",confopts["zone"],confopts["pod"])
-	except (urllib2.URLError,urllib2.HTTPError),e:
-		stderr("Query failed: %s.  Defaulting to zone %s pod %s",confopts["zone"],confopts["pod"])
 
-	for opt,val in confopts.items():
-		line = "=".join([opt,val])
-		if opt not in confposes: lines.append(line)
-		else: lines[confposes[opt]] = line
+		text = urllib2.urlopen('http://%s:8096/client/api?command=listPods'%confopts["host"]).read(-1)
+		dom = xml.dom.minidom.parseString(text) 
+		x = [ (zonename,podname)
+			for pod in dom.childNodes[0].childNodes  
+			for podname in [ x.childNodes[0].wholeText for x in pod.childNodes if x.tagName == "name" ] 
+			for zonename in  [ x.childNodes[0].wholeText for x in pod.childNodes if x.tagName == "zonename" ]
+			]  
+		
+		while True:
+			
+			stderr("Type the number of the zone and pod combination this host belongs to (hit ENTER to skip this step)")
+			print "  N) ZONE, POD" 
+			print "================"
+			for n,(z,p) in enumerate(x):
+				print "%3d) %s, %s"%(n,z,p)
+			print "================"
+			zoneandpod = raw_input().strip()
+			
+			if not zoneandpod:
+				# we go with default, do not touch anything, just break
+				break
+			
+			try:
+				# if parsing fails as an int, just vomit and retry
+				zoneandpod = int(zoneandpod)
+				if zoneandpod >= len(x) or zoneandpod < 0: raise ValueError, "%s out of bounds"%zoneandpod
+			except ValueError,e:
+				stderr(str(e))
+				continue # re-ask
+			
+			# oh yeah, the int represents an valid zone and pod index in the array
+			zone,pod = x[zoneandpod]
+			confopts["zone"] = zone
+			confopts["pod"] = pod
+			break
 	
-	text = "\n".join(lines)
-	file(fn,"w").write(text)
-
-def setup_consoleproxy_config(configfile):
-	stderr("Examining Console Proxy configuration")
-	fn = configfile
-	text = file(fn).read(-1)
-	lines = [ s.strip() for s in text.splitlines() ]
-	confopts = dict([ m.split("=",1) for m in lines if "=" in m and not m.startswith("#") ])
-	confposes = dict([ (m.split("=",1)[0],n) for n,m in enumerate(lines) if "=" in m and not m.startswith("#") ])
-
-	if not "guid" in confopts:
-		stderr("Generating GUID for this Console Proxy")
-		confopts['guid'] = uuidgen().stdout.strip()
-
-	try: host = confopts["host"]
-	except KeyError: host = "localhost"
-	stderr("Please enter the host name of the management server that this console-proxy will connect to: (just hit ENTER to go with %s)",host)
-	newhost = raw_input().strip()
-	if newhost: host = newhost
-	confopts["host"] = host
-
-	stderr("Querying %s for zones and pods",host)
-	
-	try:
-		x = list_zonespods(confopts['host'])
-		zoneandpod = prompt_for_hostpods(x)
-		if zoneandpod:
-			confopts["zone"],confopts["pod"] = zoneandpod
-			stderr("You selected zone %s pod %s",confopts["zone"],confopts["pod"])
-		else:
-			stderr("Skipped -- using the previous zone %s pod %s",confopts["zone"],confopts["pod"])
 	except (urllib2.URLError,urllib2.HTTPError),e:
 		stderr("Query failed: %s.  Defaulting to zone %s pod %s",e,confopts["zone"],confopts["pod"])
 
@@ -977,6 +933,7 @@ def setup_consoleproxy_config(configfile):
 	
 	text = "\n".join(lines)
 	file(fn,"w").write(text)
+
 
 # =========================== DATABASE MIGRATION SUPPORT CODE ===================
 

@@ -18,6 +18,7 @@
 
 package com.cloud.storage.dao;
 
+import java.math.BigInteger;
 import java.util.List;
 
 import javax.ejb.Local;
@@ -25,7 +26,6 @@ import javax.ejb.Local;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
@@ -34,11 +34,11 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     
     private final SearchBuilder<SnapshotVO> VolumeIdSearch;
     private final SearchBuilder<SnapshotVO> ParentIdSearch;
-    private final GenericSearchBuilder<SnapshotVO, Long> lastSnapSearch;
+    private final SearchBuilder<SnapshotVO> lastSnapSearch;
     
     @Override
     public SnapshotVO findNextSnapshot(long snapshotId) {
-        SearchCriteria<SnapshotVO> sc = ParentIdSearch.create();
+        SearchCriteria sc = ParentIdSearch.create();
         sc.setParameters("prevSnapshotId", snapshotId);
         return findOneBy(sc);
     }
@@ -50,7 +50,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     
     @Override
     public List<SnapshotVO> listByVolumeId(Filter filter, long volumeId ) {
-        SearchCriteria<SnapshotVO> sc = VolumeIdSearch.create();
+        SearchCriteria sc = VolumeIdSearch.create();
         sc.setParameters("volumeId", volumeId);
         return listActiveBy(sc, filter);
     }
@@ -64,21 +64,22 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         ParentIdSearch.and("prevSnapshotId", ParentIdSearch.entity().getPrevSnapshotId(), SearchCriteria.Op.EQ);
         ParentIdSearch.done();
         
-        lastSnapSearch = createSearchBuilder(Long.class);
-        lastSnapSearch.select(null, SearchCriteria.Func.MAX, lastSnapSearch.entity().getId());
+        lastSnapSearch = createSearchBuilder();
+        lastSnapSearch.select(SearchCriteria.Func.MAX, lastSnapSearch.entity().getId());
         lastSnapSearch.and("volumeId", lastSnapSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         lastSnapSearch.and("snapId", lastSnapSearch.entity().getId(), SearchCriteria.Op.NEQ);
         lastSnapSearch.done();
+        
     }
 
 	@Override
 	public long getLastSnapshot(long volumeId, long snapId) {
-		SearchCriteria<Long> sc = lastSnapSearch.create();
+		SearchCriteria sc = lastSnapSearch.create();
 		sc.setParameters("volumeId", volumeId);
 		sc.setParameters("snapId", snapId);
-		List<Long> prevSnapshots = searchAll(sc, null);
-		if(prevSnapshots != null && prevSnapshots.size() > 0 && prevSnapshots.get(0) != null) {
-			return prevSnapshots.get(0);
+		List<Object[]> prevSnapshots = searchAll(sc, null);
+		if(prevSnapshots != null && prevSnapshots.size() > 0 && prevSnapshots.get(0).length > 0 && prevSnapshots.get(0)[0] != null){
+			return ((BigInteger)prevSnapshots.get(0)[0]).longValue();
 		}
 		return 0;
 	}

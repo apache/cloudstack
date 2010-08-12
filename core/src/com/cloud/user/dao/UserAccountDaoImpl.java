@@ -33,7 +33,7 @@ public class UserAccountDaoImpl extends GenericDaoBase<UserAccountVO, Long> impl
             return null;
         }
 
-        SearchCriteria<UserAccountVO> sc = createSearchCriteria();
+        SearchCriteria sc = createSearchCriteria();
         sc.addAnd("username", SearchCriteria.Op.EQ, username);
         sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
         return findOneActiveBy(sc);

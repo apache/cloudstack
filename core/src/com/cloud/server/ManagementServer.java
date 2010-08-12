@@ -42,7 +42,6 @@ import com.cloud.event.EventVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -62,12 +61,14 @@ import com.cloud.network.SecurityGroupVO;
 import com.cloud.network.security.IngressRuleVO;
 import com.cloud.network.security.NetworkGroupRulesVO;
 import com.cloud.network.security.NetworkGroupVO;
+import com.cloud.pricing.PricingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.DiskTemplateVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.InsufficientStorageCapacityException;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
@@ -86,13 +87,13 @@ import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserAccountVO;
 import com.cloud.user.UserStatisticsVO;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.UserVm;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -354,25 +355,6 @@ public interface ManagementServer {
      */
     boolean prepareForMaintenance(long hostId);
     long prepareForMaintenanceAsync(long hostId) throws InvalidParameterValueException;
-    
-    /**
-     * prepares a primary storage for maintenance. 
-     * 
-     * @param primaryStorageId id of the storage to bring down.
-     * @return true if the operation succeeds.
-     */
-    boolean preparePrimaryStorageForMaintenance(long primaryStorageId, long userId);
-    long preparePrimaryStorageForMaintenanceAsync(long primaryStorageId) throws InvalidParameterValueException;
-
-    /**
-     * cancels primary storage from maintenance. 
-     * 
-     * @param primaryStorageId id of the storage to bring up.
-     * @return true if the operation succeeds.
-     */
-    boolean cancelPrimaryStorageMaintenance(long primaryStorageId, long userId);
-    long cancelPrimaryStorageMaintenanceAsync(long primaryStorageId) throws InvalidParameterValueException;
-    
     
     /**
      * Marks the host as maintenance completed.  This actually will mark
@@ -945,6 +927,15 @@ public interface ManagementServer {
     List<VMTemplateHostVO> listTemplateHostBy(long templateId, Long zoneId);
     
     /**
+     * Locates a Pricing object by the query parameters
+     * 
+     * @param type
+     * @param id
+     * @return Pricing object
+     */
+    PricingVO findPricingByTypeAndId(String type, Long id);
+    
+    /**
      * Obtains pods that match the data center ID
      * @param dataCenterId
      * @return List of Pods
@@ -968,6 +959,18 @@ public interface ManagementServer {
     ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean useVirtualNetwork, String tags);
     
     /**
+     * Persists a pricing object
+     * @param id
+     * @param price
+     * @param priceUnit
+     * @param type
+     * @param typeId
+     * @param created
+     * @return ID of the new pricing object
+     */
+    Long createPricing(Long id, float price, String priceUnit, String type, Long typeId, Date created);
+    
+    /**
      * Updates a service offering
      * @param userId
      * @param serviceOfferingId
@@ -979,6 +982,17 @@ public interface ManagementServer {
      * @return the updated ServiceOfferingVO
      */
     ServiceOfferingVO updateServiceOffering(long userId, long serviceOfferingId, String name, String displayText, Boolean offerHA, Boolean useVirtualNetwork, String tags);
+    
+    /**
+     * Updates a pricing object
+     * @param id
+     * @param price
+     * @param priceUnit
+     * @pram type
+     * @param typeId
+     * @param created
+     */
+    // void updatePricing(Long id, float price, String priceUnit, String type, Long typeId, Date created);
     
     /**
      * Deletes a service offering
@@ -1420,19 +1434,29 @@ public interface ManagementServer {
      * Obtains a list of all guest OS.
      * @return list of GuestOS
      */
-    List<GuestOSVO> listGuestOSByCriteria(Criteria c);
+    List<GuestOSVO> listAllGuestOS();
     
     /**
      * Obtains a list of all guest OS categories.
      * @return list of GuestOSCategories
      */
-    List<GuestOSCategoryVO> listGuestOSCategoriesByCriteria(Criteria c);
+    List<GuestOSCategoryVO> listAllGuestOSCategories();
         
     /**
      * Logs out a user
      * @param userId
      */
     void logoutUser(Long userId);
+    
+    /**
+     * Updates a template pricing.
+     * @param userId
+     * @param id
+     * @param price
+     * @return if the update was successful, this method will return an empty string. if the method was not successful,
+     * the method will return a descriptive error message.
+     */
+    String updateTemplatePricing(long userId, Long id, float price);
     
     /**
      * Updates a configuration value.
@@ -1827,7 +1851,7 @@ public interface ManagementServer {
      * @param tags Comma separated string to indicate special tags for the disk offering.
      * @return the created disk offering, null if failed to create
      */
-    DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException;
+    DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, boolean mirrored, String tags) throws InvalidParameterValueException;
 
     /**
      * Delete a disk offering
@@ -1991,7 +2015,7 @@ public interface ManagementServer {
     long updateLoadBalancerRuleAsync(long userId, long accountId, long loadBalancerId, String name, String description, String privatePort, String algorithm);
 
     void assignToLoadBalancer(long userId, long loadBalancerId, List<Long> instanceIds) throws NetworkRuleConflictException, InternalErrorException, PermissionDeniedException, InvalidParameterValueException;
-    long assignToLoadBalancerAsync(/*long userId, long loadBalancerId, List<Long> instanceIds, */Map<String, String> params);
+    long assignToLoadBalancerAsync(long userId, long loadBalancerId, List<Long> instanceIds);
     boolean removeFromLoadBalancer(long userId, long loadBalancerId, List<Long> instanceIds) throws InvalidParameterValueException;
     long removeFromLoadBalancerAsync(long userId, long loadBalancerId, List<Long> instanceIds);
 
@@ -2157,20 +2181,4 @@ public interface ManagementServer {
 	public List<PreallocatedLunVO> getPreAllocatedLuns(Criteria c);
 	
 	public String getNetworkGroupsNamesForVm(long vmId);
-	
-	/**
-	 * Persists the Event as a completed event.
-	 * @return EventId of the persisted event
-	 */
-	public Long saveEvent(Long userId, Long accountId, String level, String type, String description, String params, long startEventId);
-	
-	/**
-	 * Persists the Event as a Started event.
-	 * @return EventId of the persisted event
-	 */
-	public Long saveStartedEvent(Long userId, Long accountId, String type, String description, long startEventId);
-	
-	boolean checkLocalStorageConfigVal(); 
-	
-	boolean addConfig(String instance, String component, String category, String name, String value, String description);
 }

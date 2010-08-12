@@ -22,17 +22,15 @@ public class VMOperationParam {
 	public static enum VmOp { Noop, Start, Stop, Reboot, Destroy}; //WARN: Noop may not actually be noop
 
 	private long userId;
-	private long accountId;
 	private long vmId;
 	private String isoPath;
 	private VmOp operation;
 	protected long eventId;
-	protected long childEventId;// This would be used for child events we log during the parent event. In future it can as well be a Map.
 
 	
 	public VMOperationParam() {
 	}
-	// This constructor is kept for backward compatibility. REMOVE when no longer needed.
+	
 	public VMOperationParam(long userId, long vmId, String isoPath, long eventId) {
 		this.userId = userId;
 		this.vmId = vmId;
@@ -40,14 +38,6 @@ public class VMOperationParam {
 		this.operation  = VmOp.Noop;
 		this.eventId = eventId;
 	}
-	public VMOperationParam(long userId, long accountId, long vmId, String isoPath, long eventId) {
-		this.userId = userId;
-		this.accountId = accountId;
-		this.vmId = vmId;
-		this.isoPath = isoPath;
-		this.operation  = VmOp.Noop;
-		this.eventId = eventId;
-	} 
 	
 	public long getUserId() {
 		return userId;
@@ -57,14 +47,6 @@ public class VMOperationParam {
 		this.userId = userId;
 	}
 	
-	public long getAccountId() {
-		return accountId;
-	}
-
-	public void setAccountId(long accountId) {
-		this.accountId = accountId;
-	}
-
 	public long getVmId() {
 		return vmId;
 	}
@@ -92,10 +74,4 @@ public class VMOperationParam {
     public long getEventId() {
         return eventId;
     }
-	public long getChildEventId() {
-		return childEventId;
-	}
-	public void setChildEventId(long childEventId) {
-		this.childEventId = childEventId;
-	}
 }

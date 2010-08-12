@@ -43,7 +43,7 @@ public class NetworkGroupRulesDaoImpl extends GenericDaoBase<NetworkGroupRulesVO
     public List<NetworkGroupRulesVO> listNetworkGroupRules(long accountId, String groupName) {
         Filter searchFilter = new Filter(NetworkGroupRulesVO.class, "id", true, null, null);
 
-        SearchCriteria<NetworkGroupRulesVO> sc = AccountGroupNameSearch.create();
+        SearchCriteria sc = AccountGroupNameSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("name", groupName);
 
@@ -53,7 +53,7 @@ public class NetworkGroupRulesDaoImpl extends GenericDaoBase<NetworkGroupRulesVO
     @Override
     public List<NetworkGroupRulesVO> listNetworkGroupRules(long accountId) {
         Filter searchFilter = new Filter(NetworkGroupRulesVO.class, "id", true, null, null);
-        SearchCriteria<NetworkGroupRulesVO> sc = AccountSearch.create();
+        SearchCriteria sc = AccountSearch.create();
         sc.setParameters("accountId", accountId);
 
         return listActiveBy(sc, searchFilter);
@@ -75,7 +75,7 @@ public class NetworkGroupRulesDaoImpl extends GenericDaoBase<NetworkGroupRulesVO
         }
 
         Filter searchFilter = new Filter(NetworkGroupRulesVO.class, "id", true, null, null);
-        SearchCriteria<NetworkGroupRulesVO> sc = DomainSearch.create();
+        SearchCriteria sc = DomainSearch.create();
 
         if (!recursive) {
             sc.setParameters("domainId", domainId);

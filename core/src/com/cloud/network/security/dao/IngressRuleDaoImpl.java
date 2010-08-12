@@ -71,20 +71,20 @@ public class IngressRuleDaoImpl extends GenericDaoBase<IngressRuleVO, Long> impl
     }
 
     public List<IngressRuleVO> listByNetworkGroupId(long networkGroupId) {
-        SearchCriteria<IngressRuleVO> sc = networkGroupIdSearch.create();
+        SearchCriteria sc = networkGroupIdSearch.create();
         sc.setParameters("networkGroupId", networkGroupId);
         return listActiveBy(sc);
     }
 
     public int deleteByNetworkGroup(long networkGroupId) {
-        SearchCriteria<IngressRuleVO> sc = networkGroupIdSearch.create();
+        SearchCriteria sc = networkGroupIdSearch.create();
         sc.setParameters("networkGroupId", networkGroupId);
         return delete(sc);
     }
 
 	@Override
 	public List<IngressRuleVO> listByAllowedNetworkGroupId(long networkGroupId) {
-		 SearchCriteria<IngressRuleVO> sc = allowedNetworkGroupIdSearch.create();
+		 SearchCriteria sc = allowedNetworkGroupIdSearch.create();
 		 sc.setParameters("allowedNetworkId", networkGroupId);
 		 return listActiveBy(sc);
 	}
@@ -92,7 +92,7 @@ public class IngressRuleDaoImpl extends GenericDaoBase<IngressRuleVO, Long> impl
 	@Override
 	public IngressRuleVO findByProtoPortsAndCidr(long networkGroupId, String proto, int startPort,
 			int endPort, String cidr) {
-		SearchCriteria<IngressRuleVO> sc = protoPortsAndCidrSearch.create();
+		SearchCriteria sc = protoPortsAndCidrSearch.create();
 		sc.setParameters("networkGroupId", networkGroupId);
 		sc.setParameters("proto", proto);
 		sc.setParameters("startPort", startPort);
@@ -104,7 +104,7 @@ public class IngressRuleDaoImpl extends GenericDaoBase<IngressRuleVO, Long> impl
 	@Override
 	public IngressRuleVO findByProtoPortsAndGroup(String proto, int startPort,
 			int endPort, String networkGroup) {
-		SearchCriteria<IngressRuleVO> sc = protoPortsAndNetworkGroupNameSearch.create();
+		SearchCriteria sc = protoPortsAndNetworkGroupNameSearch.create();
 		sc.setParameters("proto", proto);
 		sc.setParameters("startPort", startPort);
 		sc.setParameters("endPort", endPort);
@@ -128,7 +128,7 @@ public class IngressRuleDaoImpl extends GenericDaoBase<IngressRuleVO, Long> impl
 
 	@Override
 	public int deleteByPortProtoAndGroup(long networkGroupId, String protocol, int startPort, int endPort, Long allowedGroupId) {
-		SearchCriteria<IngressRuleVO> sc = protoPortsAndNetworkGroupIdSearch.create();
+		SearchCriteria sc = protoPortsAndNetworkGroupIdSearch.create();
 		sc.setParameters("networkGroupId", networkGroupId);
 		sc.setParameters("proto", protocol);
 		sc.setParameters("startPort", startPort);
@@ -141,7 +141,7 @@ public class IngressRuleDaoImpl extends GenericDaoBase<IngressRuleVO, Long> impl
 
 	@Override
 	public int deleteByPortProtoAndCidr(long networkGroupId, String protocol, int startPort, int endPort, String cidr) {
-		SearchCriteria<IngressRuleVO> sc = protoPortsAndCidrSearch.create();
+		SearchCriteria sc = protoPortsAndCidrSearch.create();
 		sc.setParameters("networkGroupId", networkGroupId);
 		sc.setParameters("proto", protocol);
 		sc.setParameters("startPort", startPort);
@@ -154,7 +154,7 @@ public class IngressRuleDaoImpl extends GenericDaoBase<IngressRuleVO, Long> impl
 	@Override
 	public IngressRuleVO findByProtoPortsAndAllowedGroupId(long networkGroupId, String proto,
 			int startPort, int endPort, Long allowedGroupId) {
-		SearchCriteria<IngressRuleVO> sc = protoPortsAndNetworkGroupIdSearch.create();
+		SearchCriteria sc = protoPortsAndNetworkGroupIdSearch.create();
 		sc.addAnd("networkGroupId", SearchCriteria.Op.EQ, networkGroupId);
 		sc.setParameters("proto", proto);
 		sc.setParameters("startPort", startPort);

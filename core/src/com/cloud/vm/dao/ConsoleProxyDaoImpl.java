@@ -160,7 +160,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
     		return false;
     	}
     		
-    	SearchCriteria<ConsoleProxyVO> sc = StateChangeSearch.create();
+    	SearchCriteria sc = StateChangeSearch.create();
     	sc.setParameters("id", vm.getId());
     	sc.setParameters("states", oldState);
     	sc.setParameters("host", vm.getHostId());
@@ -228,7 +228,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
     
     @Override
     public List<ConsoleProxyVO> getProxyListInStates(long dataCenterId, State... states) {
-        SearchCriteria<ConsoleProxyVO> sc = DataCenterStatusSearch.create();
+        SearchCriteria sc = DataCenterStatusSearch.create();
         sc.setParameters("states", (Object[])states);
         sc.setParameters("dc", dataCenterId);
         return listActiveBy(sc);
@@ -236,21 +236,21 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
 
     @Override
     public List<ConsoleProxyVO> getProxyListInStates(State... states) {
-        SearchCriteria<ConsoleProxyVO> sc = StateSearch.create();
+        SearchCriteria sc = StateSearch.create();
         sc.setParameters("states", (Object[])states);
         return listActiveBy(sc);
     }
     
     @Override
     public List<ConsoleProxyVO> listByHostId(long hostId) {
-        SearchCriteria<ConsoleProxyVO> sc = HostSearch.create();
+        SearchCriteria sc = HostSearch.create();
         sc.setParameters("host", hostId);
         return listActiveBy(sc);
     }
     
     @Override
     public List<ConsoleProxyVO> listUpByHostId(long hostId) {
-        SearchCriteria<ConsoleProxyVO> sc = HostUpSearch.create();
+        SearchCriteria sc = HostUpSearch.create();
         sc.setParameters("host", hostId);
         sc.setParameters("states", new Object[] {State.Destroyed, State.Stopped, State.Expunging}); 
         return listActiveBy(sc);

@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: find_bond.sh 10510 2010-07-11 10:10:03Z alex $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/vm/hypervisor/xenserver/find_bond.sh $
+# $Id: find_bond.sh 10510 2010-07-11 10:10:03Z alex $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.x.beta/java/scripts/vm/hypervisor/xenserver/find_bond.sh $
 
 #set -x
  

@@ -1,3 +1,5 @@
+<script type="text/javascript" src="scripts/cloud.core.events.js"></script>
+
 <!-- Content Panel -->
 <!-- Submenus -->
 <div class="submenu_links">
@@ -173,33 +175,26 @@
                    <p>Loading...</p>
              </div>
 		<div class="grid_header"> 
-        	<div class="grid_genheader_cell" id="event_initiated_by_header" style="width:13%;">
+        	<div class="grid_genheader_cell" style="width:13%;">
 				<div class="grid_headertitles">Initiated By</div>
-				<div class="gridsorting_arrow"></div>	
 			</div>
             <div class="grid_genheader_cell" id="event_account_header" style="width:13%;">
 				<div class="grid_headertitles">Owner Account</div>
-				<div class="gridsorting_arrow"></div>	
 			</div>
-			<div class="grid_genheader_cell" id="event_type_header" style="width:10%;">			    
-				<div class="grid_headertitles" >Type</div>	
-				<div class="gridsorting_arrow"></div>			
+			<div class="grid_genheader_cell" style="width:10%;">
+				<div class="grid_headertitles" >Type</div>
 			</div>
-			<div class="grid_genheader_cell" id="event_level_header" style="width:10%;">
+			<div class="grid_genheader_cell" style="width:10%;">
 				<div class="grid_headertitles">Level</div>
-				<div class="gridsorting_arrow"></div>	
 			</div>
-			<div class="grid_genheader_cell" id="event_description_header" style="width:30%;">
+			<div class="grid_genheader_cell" style="width:30%;">
 				<div class="grid_headertitles">Description</div>
-				<div class="gridsorting_arrow"></div>	
 			</div>
-			<div class="grid_genheader_cell" id="event_state_header" style="width:10%;">
+			<div class="grid_genheader_cell" style="width:10%;">
 				<div class="grid_headertitles">State</div>
-				<div class="gridsorting_arrow"></div>	
 			</div>			
-			<div class="grid_genheader_cell" id="event_date_header" style="width:13%;">
+			<div class="grid_genheader_cell" style="width:13%;">
 				<div class="grid_headertitles">Date</div>
-				<div class="gridsorting_arrow"></div>	
 			</div>
 		</div>
 		<div id="grid_content">
@@ -227,25 +222,26 @@
 
 <!-- Events Template -->
 <div id="event_template" style="display:none">
-	<div class="grid_smallgenrow_cell event_initiated_by_row" style="width:13%;">
+
+	<div class="grid_smallgenrow_cell" style="width:13%;">
 		<div class="netgrid_celltitles" id="event_username"></div>
 	</div>
-    <div class="grid_smallgenrow_cell event_account_row" id="event_account_container" style="width:13%;">
+    <div class="grid_smallgenrow_cell" id="event_account_container" style="width:13%;">
 		<div class="netgrid_celltitles" id="event_account"></div>
 	</div>
-	<div class="grid_smallgenrow_cell event_type_row" style="width:10%;">
+	<div class="grid_smallgenrow_cell" style="width:10%;">
 		<div class="netgrid_celltitles" id="event_type"></div>
 	</div>
-	<div class="grid_smallgenrow_cell event_level_row" style="width:10%;">
+	<div class="grid_smallgenrow_cell" style="width:10%;">
 		<div class="netgrid_celltitles" id="event_level"></div>
 	</div>
-	<div class="grid_smallgenrow_cell event_description_row" style="width:30%;">
+	<div class="grid_smallgenrow_cell" style="width:30%;">
 		<div class="netgrid_celltitles" id="event_desc"></div>
 	</div>
-	<div class="grid_smallgenrow_cell event_state_row" style="width:10%;">
+	<div class="grid_smallgenrow_cell" style="width:10%;">
 		<div class="netgrid_celltitles" id="event_state"></div>
 	</div>	
-	<div class="grid_smallgenrow_cell event_date_row" style="width:13%;">
+	<div class="grid_smallgenrow_cell" style="width:13%;">
 		<div class="netgrid_celltitles" id="event_date"></div>
 	</div>
 </div>
@@ -272,9 +268,12 @@
                     <form action="#" method="post">
                     <ol>
                         <li>
-                            <label for="filter">Type:</label>                 
+                            <label for="filter">Type:</label>
+                            
+                            
                             <select class="select" id="adv_search_type">
 								<option value=""></option>
+								
 								<option value="0">Capacity Threshold - Memory</option>
 								<option value="1">Capacity Threshold - CPU</option>
 								<option value="2">Capacity Threshold - Storage Used</option>
@@ -286,6 +285,7 @@
 								<option value="8">Monitoring - Domain Router</option>
 								<option value="9">Monitoring - Console Proxy</option>
 								<option value="10">Monitoring - Routing Host</option>
+								
 								<option value="11">Monitoring - Storage</option>
 								<option value="12">Monitoring - Usage Server</option>
 								<option value="13">Monitoring - Management Server</option>
@@ -295,6 +295,8 @@
 								<option value="17">VLAN</option>
 								<option value="18">Monitoring - Secondary Storage VM</option>							
                             </select>
+                            
+                            
                         </li>               
                     </ol>
                     </form>
@@ -323,17 +325,14 @@
                    <p>Loading...</p>
              </div>
 		<div class="grid_header">
-			<div class="grid_genheader_cell" id="alert_type_header" style="width:25%;">
+			<div class="grid_genheader_cell" style="width:25%;">
 				<div class="grid_headertitles">Type</div>
-				<div class="gridsorting_arrow"></div>	
 			</div>
-			<div class="grid_genheader_cell" id="alert_description_header" style="width:49%;">
+			<div class="grid_genheader_cell" style="width:49%;">
 				<div class="grid_headertitles">Description</div>
-				<div class="gridsorting_arrow"></div>	
 			</div>
-			<div class="grid_genheader_cell" id="alert_date_header" style="width:25%;">
+			<div class="grid_genheader_cell" style="width:25%;">
 				<div class="grid_headertitles">Sent</div>
-				<div class="gridsorting_arrow"></div>	
 			</div>
 		</div>
 		<div id="grid_content">

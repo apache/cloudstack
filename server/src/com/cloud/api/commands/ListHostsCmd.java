@@ -27,18 +27,19 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.dc.ClusterVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status.Event;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.server.Criteria;
+import com.cloud.service.ServiceOffering;
 import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.vm.UserVmVO;
+//import com.cloud.vm.HostStats;
 
 public class ListHostsCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ListHostsCmd.class.getName());
@@ -47,81 +48,16 @@ public class ListHostsCmd extends BaseCmd {
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.CLUSTER_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.STATE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TYPE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
-
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TYPE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.STATE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
     }
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="clusterid", type=CommandType.LONG)
-    private Long clusterId;
-
-    @Parameter(name="id", type=CommandType.LONG)
-    private Long id;
-
-    @Parameter(name="name", type=CommandType.STRING)
-    private String hostName;
-
-    @Parameter(name="podid", type=CommandType.LONG)
-    private Long podId;
-
-    @Parameter(name="state", type=CommandType.STRING)
-    private String state;
-
-    @Parameter(name="type", type=CommandType.STRING)
-    private String type;
-
-    @Parameter(name="zoneid", type=CommandType.LONG)
-    private Long zoneId;
-
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public Long getClusterId() {
-        return clusterId;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getHostName() {
-        return hostName;
-    }
-
-    public Long getPodId() {
-        return podId;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public Long getZoneId() {
-        return zoneId;
-    }
-
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     public String getName() {
         return s_name;
@@ -136,7 +72,6 @@ public class ListHostsCmd extends BaseCmd {
         String name = (String) params.get(BaseCmd.Properties.NAME.getName());
         Long zoneId = (Long) params.get(BaseCmd.Properties.ZONE_ID.getName());
         Long podId = (Long) params.get(BaseCmd.Properties.POD_ID.getName());
-        Long clusterId = (Long) params.get(BaseCmd.Properties.CLUSTER_ID.getName());
         String type = (String) params.get(BaseCmd.Properties.TYPE.getName());
         String state = (String) params.get(BaseCmd.Properties.STATE.getName());
         String keyword = (String) params.get(BaseCmd.Properties.KEYWORD.getName());
@@ -160,7 +95,6 @@ public class ListHostsCmd extends BaseCmd {
         c.addCriteria(Criteria.NAME, name);
         c.addCriteria(Criteria.DATACENTERID, zoneId);
         c.addCriteria(Criteria.PODID, podId);
-        c.addCriteria(Criteria.CLUSTERID, clusterId);
         c.addCriteria(Criteria.TYPE, type);
         c.addCriteria(Criteria.STATE, state);
 

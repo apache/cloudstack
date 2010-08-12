@@ -31,11 +31,11 @@ import java.util.TimerTask;
 
 import javax.ejb.Local;
 import javax.mail.Authenticator;
-import javax.mail.Message.RecipientType;
 import javax.mail.MessagingException;
 import javax.mail.PasswordAuthentication;
 import javax.mail.Session;
 import javax.mail.URLName;
+import javax.mail.Message.RecipientType;
 import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
@@ -45,6 +45,7 @@ import com.cloud.alert.dao.AlertDao;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -55,11 +56,11 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.dao.IPAddressDao;
-import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.NumbersUtil;
@@ -70,6 +71,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -118,6 +120,8 @@ public class AlertManagerImpl implements AlertManager {
     private double _publicIPCapacityThreshold = 0.75;
     private double _privateIPCapacityThreshold = 0.75;
 
+    private int _routerRamSize;
+    private int _proxyRamSize;
     private final GlobalLock m_capacityCheckLock = GlobalLock.getInternLock("capacity.check");
 
     @Override
@@ -272,6 +276,9 @@ public class AlertManagerImpl implements AlertManager {
             }
         }
 
+        _routerRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), 128);
+        _proxyRamSize = NumbersUtil.parseInt(configs.get("consoleproxy.ram.size"), ConsoleProxyManager.DEFAULT_PROXY_VM_RAMSIZE);
+
         _timer = new Timer("CapacityChecker");
 
         return true;
@@ -336,7 +343,7 @@ public class AlertManagerImpl implements AlertManager {
                 _capacityDao.clearNonStorageCapacities();
 
                 // get all hosts..
-                SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
+                SearchCriteria sc = _hostDao.createSearchCriteria();
                 sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
                 List<HostVO> hosts = _hostDao.search(sc, null);
 

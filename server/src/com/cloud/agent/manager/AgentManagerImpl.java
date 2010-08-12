@@ -105,13 +105,12 @@ import com.cloud.maint.UpgradeManager;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.IPAddressDao;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.ServerResource;
+import com.cloud.service.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VirtualMachineTemplate;
 import com.cloud.storage.Volume.StorageResourceType;
@@ -123,7 +122,6 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.user.dao.UserStatisticsDao;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -142,6 +140,7 @@ import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
 import com.cloud.vm.State;
+import com.cloud.vm.UserVm;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VmCharacteristics;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -493,7 +492,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
 
         s_logger.warn("Unable to find the server resources at " + url);
-        throw new DiscoveryException("Unable to add the host");
+        return hosts;
     }
     
     @DB
@@ -595,15 +594,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
             AgentAttache attache = _agents.get(hostId);
             handleDisconnect(attache, Status.Event.Remove, false);
-                            		
-            //now delete the host
     		_hostDao.remove(secStorageHost.getId());
-
-            //delete the templates associated with this host
-            SearchCriteria<VMTemplateHostVO> templateHostSC = _vmTemplateHostDao.createSearchCriteria();
-            templateHostSC.addAnd("hostId", SearchCriteria.Op.EQ, secStorageHost.getId());
-            _vmTemplateHostDao.remove(templateHostSC);
-            
     		txn.commit();
     		return true;
     	}catch (Throwable t) {
@@ -1301,9 +1292,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
 
     public boolean checkCIDR(Host.Type type, HostPodVO pod,  String serverPrivateIP, String serverPrivateNetmask) {
-        if (serverPrivateIP == null) {
-            return true;
-        }
         // Get the CIDR address and CIDR size
         String cidrAddress = pod.getCidrAddress();
         long cidrSize = pod.getCidrSize();
@@ -1331,9 +1319,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         if (type == Host.Type.Storage || type == Host.Type.ConsoleProxy)
             return;
 
-        if (serverPrivateIP == null) {
-            return;
-        }
         // Get the CIDR address and CIDR size
         String cidrAddress = pod.getCidrAddress();
         long cidrSize = pod.getCidrSize();
@@ -1740,7 +1725,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
     // create capacity entries if none exist for this server
     private void createCapacityEntry(final StartupCommand startup, HostVO server) {
-        SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();
+        SearchCriteria capacitySC = _capacityDao.createSearchCriteria();
         capacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, server.getId());
         capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ, server.getDataCenterId());
         capacitySC.addAnd("podId", SearchCriteria.Op.EQ, server.getPodId());

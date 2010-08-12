@@ -25,7 +25,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.domain.DomainVO;
@@ -41,86 +40,22 @@ public class ListRoutersCmd extends BaseCmd {
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     static {
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HOST_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.STATE, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HOST_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.STATE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
-
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
     }
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="account", type=CommandType.STRING)
-    private String accountName;
-
-    @Parameter(name="domainid", type=CommandType.LONG)
-    private Long domainId;
-
-    @Parameter(name="hostid", type=CommandType.LONG)
-    private Long hostId;
-
-    @Parameter(name="name", type=CommandType.STRING)
-    private String routerName;
-
-    @Parameter(name="podid", type=CommandType.LONG)
-    private Long podId;
-
-    @Parameter(name="state", type=CommandType.STRING)
-    private String state;
-
-    @Parameter(name="zoneid", type=CommandType.LONG)
-    private Long zoneId;
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public Long getHostId() {
-        return hostId;
-    }
-
-    public String getRouterName() {
-        return routerName;
-    }
-
-    public Long getPodId() {
-        return podId;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public Long getZoneId() {
-        return zoneId;
-    }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
     public String getName() {
         return s_name;
     }
-    @Override
     public List<Pair<Enum, Boolean>> getProperties() {
         return s_properties;
     }
@@ -197,7 +132,9 @@ public class ListRoutersCmd extends BaseCmd {
 
         for (DomainRouterVO router : routers) {
         	List<Pair<String, Object>> routerData = new ArrayList<Pair<String, Object>>();
-        	routerData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.toString(router.getId())));
+            if (router.getId() != null) {
+            	routerData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), router.getId().toString()));
+            }
             AsyncJobVO asyncJob = getManagementServer().findInstancePendingAsyncJob("domain_router", router.getId());
             if(asyncJob != null) {
             	routerData.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), asyncJob.getId().toString()));

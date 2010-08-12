@@ -20,10 +20,10 @@ package com.cloud.agent.api;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOffering;
 import com.cloud.storage.VolumeVO;
-import com.cloud.uservm.UserVm;
 import com.cloud.vm.DomainRouter;
+import com.cloud.vm.UserVm;
 import com.cloud.vm.UserVmVO;
 
 public class StartCommand extends AbstractStartCommand {

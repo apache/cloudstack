@@ -49,7 +49,7 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
     private final SearchBuilder<DataCenterIpAddressVO> FreePodDcIpSearch;
     
     public DataCenterIpAddressVO takeIpAddress(long dcId, long podId, long instanceId) {
-        SearchCriteria<DataCenterIpAddressVO> sc = FreeIpSearch.create();
+        SearchCriteria sc = FreeIpSearch.create();
         sc.setParameters("dc", dcId);
         sc.setParameters("pod", podId);
         
@@ -86,7 +86,7 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
     }
     
     public boolean mark(long dcId, long podId, String ip) {
-        SearchCriteria<DataCenterIpAddressVO> sc = FreePodDcIpSearch.create();
+        SearchCriteria sc = FreePodDcIpSearch.create();
         sc.setParameters("podId", podId);
         sc.setParameters("dcId", dcId);
         sc.setParameters("ipAddress", ip);
@@ -124,7 +124,7 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
     	if (s_logger.isDebugEnabled()) {
     		s_logger.debug("Releasing ip address: " + ipAddress + " data center " + dcId);
     	}
-        SearchCriteria<DataCenterIpAddressVO> sc = IpDcSearch.create();
+        SearchCriteria sc = IpDcSearch.create();
         sc.setParameters("ip", ipAddress);
         sc.setParameters("dc", dcId);
         sc.setParameters("instance", instanceId);
@@ -170,14 +170,14 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
     }
     
     public List<DataCenterIpAddressVO> listByPodIdDcId(long podId, long dcId) {
-		SearchCriteria<DataCenterIpAddressVO> sc = PodDcSearch.create();
+		SearchCriteria sc = PodDcSearch.create();
 		sc.setParameters("podId", podId);
 		sc.setParameters("dataCenterId", dcId);
 		return listBy(sc);
 	}
     
     public List<DataCenterIpAddressVO> listByPodIdDcIdIpAddress(long podId, long dcId, String ipAddress) {
-    	SearchCriteria<DataCenterIpAddressVO> sc = PodDcIpSearch.create();
+    	SearchCriteria sc = PodDcIpSearch.create();
     	sc.setParameters("dcId", dcId);
 		sc.setParameters("podId", podId);
 		sc.setParameters("ipAddress", ipAddress);

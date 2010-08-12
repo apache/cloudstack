@@ -91,6 +91,7 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
     public SecondaryStorageVmVO(
     		long id,
             String name,
+            State state,
             String guestMacAddress,
             String guestIpAddress,
             String guestNetMask, 
@@ -114,8 +115,8 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
             int ramSize,
             String guid,
             String nfsShare) {
-    	super(id, name, name, Type.SecondaryStorageVm, templateId, guestOSId,
-    			privateMacAddress, privateIpAddress, privateNetmask, dataCenterId, podId, true, hostId);
+    	super(id, name, name, state, Type.SecondaryStorageVm, templateId, guestOSId,
+    			privateMacAddress, privateIpAddress, privateNetmask, dataCenterId, podId, true, hostId, null, null);
     	this.gateway = gateway;
     	this.publicIpAddress = publicIpAddress;
     	this.publicNetmask = publicNetmask;

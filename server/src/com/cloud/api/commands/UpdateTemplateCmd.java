@@ -25,7 +25,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
@@ -38,68 +37,13 @@ public class UpdateTemplateCmd extends BaseCmd {
 
     static {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISPLAY_TEXT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.FORMAT, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISPLAY_TEXT, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.FORMAT, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.OS_TYPE_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PASSWORD_ENABLED, Boolean.FALSE));
     }
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="displaytext", type=CommandType.STRING)
-    private String displayText;
-
-    @Parameter(name="format", type=CommandType.STRING)
-    private String format;
-
-    @Parameter(name="id", type=CommandType.LONG, required=true)
-    private Long id;
-
-    @Parameter(name="name", type=CommandType.STRING)
-    private String templateName;
-
-    @Parameter(name="ostypeid", type=CommandType.LONG)
-    private Long osTypeId;
-
-    @Parameter(name="passwordenabled", type=CommandType.BOOLEAN)
-    private Boolean passwordEnabled;
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public String getDisplayText() {
-        return displayText;
-    }
-
-    public String getFormat() {
-        return format;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getTemplateName() {
-        return templateName;
-    }
-
-    public Long getOsTypeId() {
-        return osTypeId;
-    }
-
-    public Boolean isPasswordEnabled() {
-        return passwordEnabled;
-    }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# $Id: lu_share.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/zfs/iscsi/comstar/lu_share.sh $
+# $Id: lu_share.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.x.beta/java/scripts/storage/zfs/iscsi/comstar/lu_share.sh $
 # lu_share.sh -- make a logical unit (LU) available over iSCSI
 # OpenSolaris
 

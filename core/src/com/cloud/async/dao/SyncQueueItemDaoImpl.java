@@ -46,10 +46,11 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
 		
 		SearchBuilder<SyncQueueItemVO> sb = createSearchBuilder();
         sb.and("queueId", sb.entity().getQueueId(), SearchCriteria.Op.EQ);
-        sb.and("lastProcessNumber", sb.entity().getLastProcessNumber(),	SearchCriteria.Op.NULL);
+        sb.and("lastProcessNumber", sb.entity().getLastProcessNumber(),
+    		SearchCriteria.Op.NULL);
         sb.done();
         
-    	SearchCriteria<SyncQueueItemVO> sc = sb.create();
+    	SearchCriteria sc = sb.create();
     	sc.setParameters("queueId", queueId);
     	
     	Filter filter = new Filter(SyncQueueItemVO.class, "created", true, 0L, 1L);
@@ -101,7 +102,7 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
     		SearchCriteria.Op.EQ);
         sb.done();
         
-    	SearchCriteria<SyncQueueItemVO> sc = sb.create();
+    	SearchCriteria sc = sb.create();
     	sc.setParameters("lastProcessMsid", msid);
     	
     	Filter filter = new Filter(SyncQueueItemVO.class, "created", true, 0L, 1L);

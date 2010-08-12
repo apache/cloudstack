@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.host.Status;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.utils.db.GenericDao;
 /**
@@ -99,7 +98,5 @@ public interface StoragePoolDao extends GenericDao<StoragePoolVO, Long> {
     Map<String, String> getDetails(long poolId);
 
 	List<String> searchForStoragePoolDetails(long poolId, String value);
-	
-    long countBy(long podId, Status... statuses);
     
 }

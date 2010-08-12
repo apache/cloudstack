@@ -40,7 +40,7 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
 
     @Override
     public VmRulesetLogVO findByVmId(long vmId) {
-        SearchCriteria<VmRulesetLogVO> sc = VmIdSearch.create();
+        SearchCriteria sc = VmIdSearch.create();
         sc.setParameters("vmId", vmId);
         return findOneBy(sc);
     }

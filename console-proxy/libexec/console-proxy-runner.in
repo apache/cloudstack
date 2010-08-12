@@ -21,21 +21,7 @@ export CLASSPATH
 set -e
 cd "@CPLIBDIR@"
 echo Current directory is "$PWD"
-echo CLASSPATH to run the console proxy: "$CLASSPATH"
-
-export PATH=/sbin:/usr/sbin:"$PATH"
-SERVICEARGS=
-for x in private public ; do
-	configuration=`grep -q "^$x.network.device" "@CPSYSCONFDIR@"/agent.properties || true`
-	if [ -n "$CONFIGURATION" ] ; then
-		echo "Using manually-configured network device $CONFIGURATION"
-	else
-		defaultroute=`ip route | grep ^default | cut -d ' ' -f 5`
-		test -n "$defaultroute"
-		echo "Using auto-discovered network device $defaultroute which is the default route"
-		SERVICEARGS="$SERVICEARGS -D$x.network.device="$defaultroute
-	fi
-done
+echo CLASSPATH to run the agent: "$CLASSPATH"
 
 function termagent() {
     if [ "$agentpid" != "" ] ; then
@@ -52,7 +38,7 @@ function termagent() {
 
 trap termagent TERM
 while true ; do
-	java -Xms128M -Xmx384M -cp "$CLASSPATH" $SERVICEARGS "$@" com.cloud.agent.AgentShell &
+	java -Xms128M -Xmx384M -cp "$CLASSPATH" "$@" com.cloud.agent.AgentShell &
 	agentpid=$!
 	echo "Console Proxy started.  PID: $!" >&2
 	wait $agentpid

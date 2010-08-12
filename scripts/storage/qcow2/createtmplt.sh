@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# $Id: createtmplt.sh 11474 2010-08-06 05:53:02Z edison $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/qcow2/createtmplt.sh $
+# $Id: createtmplt.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.x.beta/java/scripts/storage/qcow2/createtmplt.sh $
 # createtmplt.sh -- install a template
 
 usage() {
@@ -9,6 +9,15 @@ usage() {
 
 #set -x
 
+rollback_if_needed() {
+  if [ $2 -gt 0 ]
+  then
+    printf "$3\n"
+    #back out all changes
+    rm -rf $1
+    exit 2
+fi
+}
 
 verify_cksum() {
   echo  "$1  $2" | md5sum  -c --status
@@ -69,10 +78,11 @@ create_from_file() {
   local tmpltfs=$1
   local tmpltimg=$2
   local tmpltname=$3
-
+  local volsize=$4
+  local cleanup=$5
 
   #copy the file to the disk
-  cp $tmpltimg /$tmpltfs/$tmpltname
+  mv $tmpltimg /$tmpltfs/$tmpltname
   
   if [ "$cleanup" == "true" ]
   then
@@ -111,6 +121,9 @@ do
   d)	dflag=1
 		descr="$OPTARG"
 		;;
+  h)	hflag=1
+		hvm="true"
+		;;
   u)	cleanup="true"
 		;;
   ?)	usage
@@ -119,16 +132,20 @@ do
   esac
 done
 
-if [ "$tflag$nflag$fflag" != "111" ]
+if [ "$tflag$nflag$fflag$sflag" != "1111" ]
 then
  usage
  exit 2
 fi
 
+if [ -n "$cksum" ]
+then
+  verify_cksum $cksum $tmpltimg
+fi
 
 if [ ! -d /$tmpltfs ] 
 then
-  mkdir -p /$tmpltfs
+  mkdir /$tmpltfs
   if [ $? -gt 0 ] 
   then
     printf "Failed to create user fs $tmpltfs\n" >&2
@@ -136,22 +153,52 @@ then
   fi
 fi
 
-if [ ! -f $tmpltimg ] 
+tmpltimg2=$(uncompress $tmpltimg)
+tmpltimg2=$(untar $tmpltimg2 /$tmpltfs vmi-root)
+
+if [ ! -f $tmpltimg2 ] 
 then
-  printf "root disk file $tmpltimg doesn't exist\n"
+  rollback_if_needed $tmpltfs 2 "root disk file $tmpltimg doesn't exist\n"
   exit 3
 fi
 
+# need the 'G' suffix on volume size
+if [ ${volsize:(-1)} != G ]
+then
+  volsize=${volsize}G
+fi
 
-create_from_file $tmpltfs $tmpltimg $tmpltname
+#determine source file size -- it needs to be less than or equal to volsize
+imgsize=$(ls -lh $tmpltimg2| awk -F" " '{print $5}')
+if [ ${imgsize:(-1)} == G ] 
+then
+  imgsize=${imgsize%G} #strip out the G 
+  imgsize=${imgsize%.*} #...and any decimal part
+  let imgsize=imgsize+1 # add 1 to compensate for decimal part
+  volsizetmp=${volsize%G}
+  if [ $volsizetmp -lt $imgsize ]
+  then
+    volsize=${imgsize}G  
+  fi
+fi
 
+tgtfile=${tmpltfs}/vmi-root-${tmpltname}
+
+create_from_file $tmpltfs $tmpltimg2 $tmpltname $volsize $cleanup
+
+tgtfilename=$(echo $tmpltimg2 | awk -F"/" '{print $NF}') 
 touch /$tmpltfs/template.properties
+rollback_if_needed $tmpltfs $? "Failed to create template.properties file"
 echo -n "" > /$tmpltfs/template.properties
 
 today=$(date '+%m_%d_%Y')
 echo "filename=$tmpltname" > /$tmpltfs/template.properties
 echo "snapshot.name=$today" >> /$tmpltfs/template.properties
 echo "description=$descr" >> /$tmpltfs/template.properties
+echo "checksum=$cksum" >> /$tmpltfs/template.properties
+echo "hvm=$hvm" >> /$tmpltfs/template.properties
+echo "volume.size=$volsize" >> /$tmpltfs/template.properties
+
 
 if [ "$cleanup" == "true" ]
 then

@@ -25,7 +25,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.user.Account;
@@ -40,44 +39,13 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseCmd {
     
     static {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
+    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.APPLIED, Boolean.FALSE));
     }
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="applied", type=CommandType.BOOLEAN)
-    private Boolean applied;
-
-    @Parameter(name="id", type=CommandType.LONG, required=true)
-    private Long id;
-
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public Boolean isApplied() {
-        return applied;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
     public String getName() {
         return s_name;
     }
-    @Override
     public List<Pair<Enum, Boolean>> getProperties() {
         return s_properties;
     }
@@ -121,7 +89,7 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseCmd {
         for (UserVmVO instance : instances) {
             List<Pair<String, Object>> instanceData = new ArrayList<Pair<String, Object>>();
 
-            instanceData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.toString(instance.getId())));
+            instanceData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), instance.getId().toString()));
             instanceData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), instance.getName()));
             instanceData.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_NAME.getName(), instance.getDisplayName()));
             instanceData.add(new Pair<String, Object>(BaseCmd.Properties.PRIVATE_IP.getName(), instance.getPrivateIpAddress()));

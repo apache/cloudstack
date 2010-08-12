@@ -28,7 +28,7 @@ import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.host.Host;
-import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOffering;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.vm.VmCharacteristics;

@@ -64,7 +64,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
 
     @Override
     public DataCenterVO findByName(String name) {
-    	SearchCriteria<DataCenterVO> sc = NameSearch.create();
+    	SearchCriteria sc = NameSearch.create();
     	sc.setParameters("name", name);
         return findOneActiveBy(sc);
     }

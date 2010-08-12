@@ -4,7 +4,7 @@
 # DISABLE the post-percentinstall java repacking and line number stripping
 # we need to find a way to just disable the java repacking and line number stripping, but not the autodeps
 
-%define _ver 2.1.98
+%define _ver 2.1.2.1
 %define _rel 1
 
 Name:      cloud
@@ -35,7 +35,7 @@ BuildRequires: jpackage-utils
 BuildRequires: gcc
 BuildRequires: glibc-devel
 
-%global _premium %(tar jtvmf %{SOURCE0} '*/cloudstack-proprietary/' --occurrence=1 2>/dev/null | wc -l)
+%global _premium %(tar jtvmf %{SOURCE0} '*/premium/' --occurrence=1 2>/dev/null | wc -l)
 
 %description
 This is the Cloud.com Stack, a highly-scalable elastic, open source,
@@ -190,22 +190,6 @@ Group:     System Environment/Libraries
 %description setup
 The Cloud.com setup tools let you set up your Management Server and Usage Server.
 
-%package agent-libs
-Summary:   Cloud.com agent libraries
-Requires: java >= 1.6.0
-Requires: %{name}-utils = %{version}-%{release}, %{name}-core = %{version}-%{release}, %{name}-deps = %{version}-%{release}
-Requires: commons-httpclient
-#Requires: commons-codec
-Requires: commons-collections
-Requires: commons-pool
-Requires: commons-dbcp
-Requires: jakarta-commons-logging
-Requires: jpackage-utils
-Group:     System Environment/Libraries
-%description agent-libs
-The Cloud.com agent libraries are used by the Cloud Agent and the Cloud
-Console Proxy.
-
 %package agent
 Summary:   Cloud.com agent
 Obsoletes: vmops-agent < %{version}-%{release}
@@ -213,10 +197,8 @@ Obsoletes: vmops-console < %{version}-%{release}
 Obsoletes: cloud-console < %{version}-%{release}
 Requires: java >= 1.6.0
 Requires: %{name}-utils = %{version}-%{release}, %{name}-core = %{version}-%{release}, %{name}-deps = %{version}-%{release}
-Requires: %{name}-agent-libs = %{version}-%{release}
 Requires: %{name}-agent-scripts = %{version}-%{release}
 Requires: %{name}-vnet = %{version}-%{release}
-Requires: python
 Requires: %{name}-python = %{version}-%{release}
 Requires: commons-httpclient
 #Requires: commons-codec
@@ -235,8 +217,6 @@ Requires: libcgroup
 Requires: /usr/bin/uuidgen
 Requires: augeas >= 0.7.1
 Requires: rsync
-Requires: /bin/egrep
-Requires: /sbin/ip
 Group:     System Environment/Libraries
 %description agent
 The Cloud.com agent is in charge of managing shared computing resources in
@@ -246,9 +226,7 @@ will participate in your cloud.
 %package console-proxy
 Summary:   Cloud.com console proxy
 Requires: java >= 1.6.0
-Requires: %{name}-utils = %{version}-%{release}, %{name}-core = %{version}-%{release}, %{name}-deps = %{version}-%{release}, %{name}-agent-libs = %{version}-%{release}
-Requires: python
-Requires: %{name}-python = %{version}-%{release}
+Requires: %{name}-utils = %{version}-%{release}, %{name}-core = %{version}-%{release}, %{name}-deps = %{version}-%{release}, %{name}-agent = %{version}-%{release}
 Requires: commons-httpclient
 #Requires: commons-codec
 Requires: commons-collections
@@ -261,8 +239,6 @@ Requires: /sbin/service
 Requires: /sbin/chkconfig
 Requires: /usr/bin/uuidgen
 Requires: augeas >= 0.7.1
-Requires: /bin/egrep
-Requires: /sbin/ip
 Group:     System Environment/Libraries
 %description console-proxy
 The Cloud.com console proxy is the service in charge of granting console
@@ -445,9 +421,7 @@ fi
 %files utils
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-utils.jar
-%{_javadir}/%{name}-api.jar
 %doc %{_docdir}/%{name}-%{version}/sccs-info
-%doc %{_docdir}/%{name}-%{version}/version-info
 %doc %{_docdir}/%{name}-%{version}/configure-info
 %doc README
 %doc HACKING
@@ -485,17 +459,19 @@ fi
 %{_libdir}/%{name}/agent/scripts/installer/*
 %{_libdir}/%{name}/agent/scripts/network/domr/*.sh
 %{_libdir}/%{name}/agent/scripts/storage/*.sh
+%{_libdir}/%{name}/agent/scripts/storage/zfs/*
 %{_libdir}/%{name}/agent/scripts/storage/qcow2/*
 %{_libdir}/%{name}/agent/scripts/storage/secondary/*
 %{_libdir}/%{name}/agent/scripts/util/*
 %{_libdir}/%{name}/agent/scripts/vm/*.sh
 %{_libdir}/%{name}/agent/scripts/vm/storage/nfs/*
+%{_libdir}/%{name}/agent/scripts/vm/storage/iscsi/*
 %{_libdir}/%{name}/agent/scripts/vm/network/*
 %{_libdir}/%{name}/agent/scripts/vm/hypervisor/*.sh
 %{_libdir}/%{name}/agent/scripts/vm/hypervisor/kvm/*
+%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xen/*
 %{_libdir}/%{name}/agent/vms/systemvm.zip
 %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/*
-%{_libdir}/%{name}/agent/vms/systemvm-premium.zip
 %doc README
 %doc HACKING
 %doc debian/copyright
@@ -617,15 +593,9 @@ fi
 %doc HACKING
 %doc debian/copyright
 
-%files agent-libs
-%defattr(0644,root,root,0755)
-%{_javadir}/%{name}-agent.jar
-%doc README
-%doc HACKING
-%doc debian/copyright
-
 %files agent
 %defattr(0644,root,root,0755)
+%{_javadir}/%{name}-agent.jar
 %config(noreplace) %{_sysconfdir}/%{name}/agent/agent.properties
 %config %{_sysconfdir}/%{name}/agent/developer.properties.template
 %config %{_sysconfdir}/%{name}/agent/environment.properties

@@ -1,3 +1,5 @@
+<script type="text/javascript" src="scripts/cloud.core.storage.js"></script>
+	
 <div class="submenu_links">
     <div class="submenu_links_on" id="submenu_pool">
         Primary Storage</div>
@@ -43,10 +45,6 @@
                             <label for="filter">
                                 Zone:</label>
                             <select class="select" id="adv_search_zone">
-                            </select>
-                        </li>
-                        <li><label for="filter" id="adv_search_pod_label">Pod:</label>
-                        	<select class="select" id="adv_search_pod">
                             </select>
                         </li>
                         <li>
@@ -333,19 +331,6 @@
                             <select class="select" id="adv_search_zone">
                             </select>
                         </li>
-                        <li><label for="filter">Status:</label>
-                        	<select class="select" id="adv_search_state">
-								<option value=""></option>
-								<option value="Up">Up</option>
-								<option value="Down">Down</option>
-								<option value="Disconnected">Disconnected</option>
-								<option value="Updating">Updating</option>
-								<option value="Alert">Alert</option>
-								<option value="PrepareForMaintenance">PrepareForMaintenance</option>
-								<option value="Maintenance">Maintenance</option>
-								<option value="ErrorInMaintenance">ErrorInMaintenance</option>
-                            </select>
-                        </li>
                         <li id="adv_search_domain_li" style="display: none;">
                             <label for="filter">Domain:</label>
                             <select class="select" id="adv_search_domain">
@@ -380,19 +365,20 @@
                 Loading...</p>
         </div>
         <div class="grid_header">
-			<div class="grid_genheader_cell" style="width: 6%;">
-			    <div class="grid_headertitles">
-			        Status</div>
-			</div>			
-            <div class="grid_genheader_cell" style="width: 8%;">
+            <!--
+			<div class="gridadmin_hostheader_cell0">
+			    <div class="grid_headertitles">State Bar</div>
+			</div>
+			!-->
+            <div class="grid_genheader_cell" style="width: 10%;">
                 <div class="grid_headertitles">
                     Type</div>
             </div>
             <div class="grid_genheader_cell" style="width: 10%;">
                 <div class="grid_headertitles">
                     Zone</div>
-            </div>           
-            <div class="grid_genheader_cell" style="width: 35%;">
+            </div>
+            <div class="grid_genheader_cell" style="width: 36%;">
                 <div class="grid_headertitles">
                     Name</div>
             </div>
@@ -404,7 +390,7 @@
                 <div class="grid_headertitles">
                     Version</div>
             </div>
-            <div class="grid_genheader_cell" style="width: 10%;">
+            <div class="grid_genheader_cell" style="width: 13%;">
                 <div class="grid_headertitles">
                     Last Disconnected</div>
             </div>
@@ -447,20 +433,21 @@
         </div>
     </div>
     <div id="row_container">
-		<div class="grid_smallgenrow_cell" style="width: 6%;">
-			<div class="netgrid_celltitles" id="storage_status">
-			</div>
+        <!--
+		<div class="green_statusbar" id="storage_state_bar"></div>		
+		<div class="gridadmin_hostrow_cell4">
+			<div class="grid_runningtitles" id="storage_state"></div>
 		</div>
-		
-        <div class="grid_smallgenrow_cell" style="width: 8%;">
+		!-->
+        <div class="grid_smallgenrow_cell" style="width: 10%;">
             <div class="netgrid_celltitles" id="storage_type">
             </div>
         </div>
         <div class="grid_smallgenrow_cell" style="width: 10%;">
             <div class="netgrid_celltitles" id="storage_zone">
             </div>
-        </div>       
-        <div class="grid_smallgenrow_cell" style="width: 35%;">
+        </div>
+        <div class="grid_smallgenrow_cell" style="width: 36%;">
             <div class="netgrid_celltitles" id="storage_name">
             </div>
         </div>
@@ -472,7 +459,7 @@
             <div class="netgrid_celltitles" id="storage_version">
             </div>
         </div>
-        <div class="grid_smallgenrow_cell" style="width: 10%;">
+        <div class="grid_smallgenrow_cell" style="width: 13%;">
             <div class="netgrid_celltitles" id="storage_disconnected">
             </div>
         </div>        
@@ -549,7 +536,7 @@
                             <label for="filter">
                                 Name:</label>
                             <input class="text" type="text" name="adv_search_name" id="adv_search_name" />
-                        </li>                       
+                        </li>                      
                         <li>
                             <label for="filter">
                                 Zone:</label>
@@ -557,7 +544,7 @@
                             </select>
                         </li>
                         <li id="adv_search_pod_li" style="display: none;">
-                            <label for="filter" id="adv_search_pod_label">
+                            <label for="filter">
                                 Pod:</label>
                             <select class="select" id="adv_search_pod">
                             </select>
@@ -609,7 +596,7 @@
                 <div class="grid_headertitles">
                     Name</div>
             </div>
-            <div class="grid_genheader_cell" style="width: 10%;">
+            <div class="grid_genheader_cell" style="width: 13%;">
                 <div class="grid_headertitles">
                     Type</div>
             </div>
@@ -621,10 +608,6 @@
                 <div class="grid_headertitles">
                     Instance Name</div>
             </div>
-            <div class="grid_genheader_cell" style="width: 5%;">
-                <div class="grid_headertitles">
-                    Device ID</div>
-            </div>
             <div class="grid_genheader_cell" style="width: 7%;">
                 <div class="grid_headertitles">
                     Size</div>
@@ -633,7 +616,7 @@
                 <div class="grid_headertitles">
                     State</div>
             </div>
-            <div class="grid_genheader_cell" id="volume_created_header" style="width: 8%;">
+            <div class="grid_genheader_cell" id="volume_created_header" style="width: 10%;">
                 <div class="grid_headertitles">
                     Created</div>
             </div>
@@ -701,7 +684,7 @@
             <div class="netgrid_celltitles" id="volume_name">
                 Name</div>
         </div>
-        <div class="grid_smallgenrow_cell" style="width: 10%;">
+        <div class="grid_smallgenrow_cell" style="width: 13%;">
             <div class="netgrid_celltitles" id="volume_type">
                 Type</div>
         </div>
@@ -713,10 +696,6 @@
             <div class="netgrid_celltitles" id="volume_vmname">
             </div>
         </div>
-        <div class="grid_smallgenrow_cell" style="width: 5%;">
-            <div class="netgrid_celltitles" id="volume_deviceid">
-            </div>
-        </div>
         <div class="grid_smallgenrow_cell" style="width: 7%;">
             <div class="netgrid_celltitles" id="volume_size">
                 size</div>
@@ -725,7 +704,7 @@
             <div class="netgrid_celltitles" id="volume_state">
                 state</div>
         </div>
-        <div class="grid_smallgenrow_cell" id="volume_created_container" style="width: 8%;">
+        <div class="grid_smallgenrow_cell" id="volume_created_container" style="width: 10%;">
             <div class="netgrid_celltitles" id="volume_created">
                 Created</div>
         </div>

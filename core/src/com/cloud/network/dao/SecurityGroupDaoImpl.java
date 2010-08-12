@@ -47,14 +47,14 @@ public class SecurityGroupDaoImpl extends GenericDaoBase<SecurityGroupVO, Long> 
 
     @Override
     public List<SecurityGroupVO> listByAccountId(long accountId) {
-        SearchCriteria<SecurityGroupVO> sc = AccountIdSearch.create();
+        SearchCriteria sc = AccountIdSearch.create();
         sc.setParameters("accountId", accountId);
         return listActiveBy(sc);
     }
 
     @Override
     public boolean isNameInUse(Long accountId, Long domainId, String name) {
-        SearchCriteria<SecurityGroupVO> sc = createSearchCriteria();
+        SearchCriteria sc = createSearchCriteria();
         sc.addAnd("name", SearchCriteria.Op.EQ, name);
         if (accountId != null) {
             sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
@@ -72,13 +72,13 @@ public class SecurityGroupDaoImpl extends GenericDaoBase<SecurityGroupVO, Long> 
         List<SecurityGroupVO> availableGroups = new ArrayList<SecurityGroupVO>();
         if ((accountId != null) || (domainId != null)) {
             if (accountId != null) {
-                SearchCriteria<SecurityGroupVO> sc = createSearchCriteria();
+                SearchCriteria sc = createSearchCriteria();
                 sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
                 List<SecurityGroupVO> accountGroups = listActiveBy(sc);
                 availableGroups.addAll(accountGroups);
             } else if (domainId != null) {
                 while (domainId != null) {
-                    SearchCriteria<SecurityGroupVO> sc = createSearchCriteria();
+                    SearchCriteria sc = createSearchCriteria();
                     sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
                     if (accountId != null) {
                         sc.addAnd("accountId", SearchCriteria.Op.NEQ, accountId); // we added the account specific ones above

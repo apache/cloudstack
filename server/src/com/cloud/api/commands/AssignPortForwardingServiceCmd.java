@@ -26,7 +26,6 @@ import java.util.StringTokenizer;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
@@ -46,48 +45,6 @@ public class AssignPortForwardingServiceCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PUBLIC_IP, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VIRTUAL_MACHINE_ID, Boolean.TRUE));
     }
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="id", type=CommandType.STRING)
-    private Long id;
-
-    @Parameter(name="ids", type=CommandType.LIST, collectionType=CommandType.LONG)
-    private List<Long> ids;
-
-    @Parameter(name="publicip", type=CommandType.STRING, required=true)
-    private String publicIp;
-
-    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=true)
-    private Long virtualMachineId;
-
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public Long getId() {
-        return id;
-    }
-
-    public List<Long> getIds() {
-        return ids;
-    }
-
-    public String getPublicIp() {
-        return publicIp;
-    }
-
-    public Long getVirtualMachineId() {
-        return virtualMachineId;
-    }
-
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     public String getName() {
         return s_name;

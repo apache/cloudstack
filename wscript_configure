@@ -213,15 +213,15 @@ depsclasspath = [ in_javadir(_basename(x)) for x in _glob(_join(conf.srcdir,"dep
 conf.env.DEPSCLASSPATH = pathsep.join(depsclasspath)
 
 # the MS classpath points to JARs required to run the management server
-msclasspath = [ in_javadir("%s-%s.jar"%(conf.env.PACKAGE,x)) for x in "utils api core server server-extras core-extras".split() ]
+msclasspath = [ in_javadir("%s-%s.jar"%(conf.env.PACKAGE,x)) for x in "utils core server server-extras core-extras".split() ]
 conf.env.MSCLASSPATH = pathsep.join(msclasspath)
 
 # the agent and simulator classpaths point to JARs required to run these two applications
-agentclasspath = [ in_javadir("%s-%s.jar"%(conf.env.PACKAGE,x)) for x in "utils api core server server-extras agent console-common console-proxy core-extras console-proxy-premium".split() ]
+agentclasspath = [ in_javadir("%s-%s.jar"%(conf.env.PACKAGE,x)) for x in "utils core server server-extras agent console-common console-proxy core-extras console-proxy-premium".split() ]
 conf.env.AGENTCLASSPATH = pathsep.join(agentclasspath)
 conf.env.AGENTSIMULATORCLASSPATH = pathsep.join(agentclasspath+[in_javadir("%s-agent-simulator.jar"%conf.env.PACKAGE)])
 
-usageclasspath = [ in_javadir("%s-%s.jar"%(conf.env.PACKAGE,x)) for x in "utils api core server server-extras usage core-extras".split() ]
+usageclasspath = [ in_javadir("%s-%s.jar"%(conf.env.PACKAGE,x)) for x in "utils core server server-extras usage core-extras".split() ]
 conf.env.USAGECLASSPATH = pathsep.join(usageclasspath)
 
 # the premium classpath was ELIMINATED
@@ -234,7 +234,7 @@ conf.env.USAGECLASSPATH = pathsep.join(usageclasspath)
 compilecp = []# list(srcdirs)
 # 2.a) the thirdparty/ directory in the source if on Windows / Mac
 # 2.b) the deps/ directory in the source if on Linux
-if conf.env.DISTRO in ["Windows","Mac"]:  compilecp+= _glob(_join("cloudstack-proprietary","thirdparty","*.jar"))
+if conf.env.DISTRO in ["Windows","Mac"]:  compilecp+= _glob(_join("thirdparty","*.jar"))
 else:					  compilecp+= _glob(_join("deps","*.jar"))
 # 3. the system classpath (system-installed JARs)
 compilecp+= [ conf.env.SYSTEMCLASSPATH ]

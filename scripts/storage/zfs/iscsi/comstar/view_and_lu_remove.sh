@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# $Id: view_and_lu_remove.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/zfs/iscsi/comstar/view_and_lu_remove.sh $
+# $Id: view_and_lu_remove.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.x.beta/java/scripts/storage/zfs/iscsi/comstar/view_and_lu_remove.sh $
 # view_and_lu_remove.sh -- remove views and LU's under a ZFS file system tree
 #
 # Usage:  view_and_lu_remove.sh <zfs-path>

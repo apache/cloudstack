@@ -57,10 +57,9 @@ public class DeleteSnapshotsDirCommand extends SnapshotCommand {
                                      Long   dcId,
                                      Long   accountId,
                                      Long   volumeId,
-                                     String snapshotUUID,
-                                     String snapshotName) 
+                                     String snapshotUUID) 
     {
-        super(primaryStoragePoolNameLabel, secondaryStoragePoolURL, snapshotUUID, snapshotName, dcId, accountId, volumeId);
+        super(primaryStoragePoolNameLabel, secondaryStoragePoolURL, snapshotUUID, dcId, accountId, volumeId);
     }
 
 }

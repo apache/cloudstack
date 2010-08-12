@@ -45,5 +45,4 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long> {
     boolean isAnyVolumeActivelyUsingTemplateOnPool(long templateId, long poolId);
     List<VolumeVO> listRemovedButNotDestroyed();
     List<VolumeVO> findCreatedByInstance(long id);
-    List<VolumeVO> findByPoolId(long poolId);
 }

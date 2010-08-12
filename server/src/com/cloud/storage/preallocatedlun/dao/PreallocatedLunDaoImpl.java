@@ -17,6 +17,7 @@
  */
 package com.cloud.storage.preallocatedlun.dao;
 
+import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -35,7 +36,6 @@ import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -50,9 +50,9 @@ public class PreallocatedLunDaoImpl extends GenericDaoBase<PreallocatedLunVO, Lo
     
     private final SearchBuilder<PreallocatedLunVO> TakeSearch;
     private final SearchBuilder<PreallocatedLunVO> ReleaseSearch;
-    private final GenericSearchBuilder<PreallocatedLunDetailVO, String> DetailsSearch;
-    private final GenericSearchBuilder<PreallocatedLunVO, Long> TotalSizeSearch;
-    private final GenericSearchBuilder<PreallocatedLunVO, Long> UsedSizeSearch;
+    private final SearchBuilder<PreallocatedLunDetailVO> DetailsSearch;
+    private final SearchBuilder<PreallocatedLunVO> TotalSizeSearch;
+    private final SearchBuilder<PreallocatedLunVO> UsedSizeSearch;
     private final SearchBuilder<PreallocatedLunVO> DeleteSearch;
     
     private final String TakeSqlPrefix = "SELECT ext_lun_alloc.* FROM ext_lun_alloc LEFT JOIN ext_lun_details ON ext_lun_details.ext_lun_id = ext_lun_alloc.id WHERE (ext_lun_alloc.target_iqn=?) AND (ext_lun_alloc.size>=?) AND (ext_lun_alloc.size<=?) AND ";
@@ -70,23 +70,23 @@ public class PreallocatedLunDaoImpl extends GenericDaoBase<PreallocatedLunVO, Lo
         ReleaseSearch.and("instanceId", ReleaseSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         ReleaseSearch.done();
         
-        DetailsSearch = _detailsDao.createSearchBuilder(String.class);
+        DetailsSearch = _detailsDao.createSearchBuilder();
         SearchBuilder<PreallocatedLunVO> targetSearch = createSearchBuilder();
         targetSearch.and("targetiqn", targetSearch.entity().getTargetIqn(), SearchCriteria.Op.EQ);
         DetailsSearch.join("target", targetSearch, targetSearch.entity().getId(), DetailsSearch.entity().getLunId());
-        DetailsSearch.select(null, Func.DISTINCT, DetailsSearch.entity().getTag());
+        DetailsSearch.select(Func.DISTINCT, DetailsSearch.entity().getTag());
         DetailsSearch.done();
         targetSearch.done();
         
-        TotalSizeSearch = createSearchBuilder(Long.class);
+        TotalSizeSearch = createSearchBuilder();
         TotalSizeSearch.and("target", TotalSizeSearch.entity().getTargetIqn(), SearchCriteria.Op.EQ);
-        TotalSizeSearch.select(null, Func.SUM, TotalSizeSearch.entity().getSize());
+        TotalSizeSearch.select(Func.SUM, TotalSizeSearch.entity().getSize());
         TotalSizeSearch.done();
         
-        UsedSizeSearch = createSearchBuilder(Long.class);
+        UsedSizeSearch = createSearchBuilder();
         UsedSizeSearch.and("target", UsedSizeSearch.entity().getTargetIqn(), SearchCriteria.Op.EQ);
         UsedSizeSearch.and("taken", UsedSizeSearch.entity().getTaken(), SearchCriteria.Op.NNULL);
-        UsedSizeSearch.select(null, Func.SUM, UsedSizeSearch.entity().getSize());
+        UsedSizeSearch.select(Func.SUM, UsedSizeSearch.entity().getSize());
         UsedSizeSearch.done();
         
         DeleteSearch = createSearchBuilder();
@@ -97,7 +97,7 @@ public class PreallocatedLunDaoImpl extends GenericDaoBase<PreallocatedLunVO, Lo
     
     @Override
     public boolean delete(long id) {
-    	SearchCriteria<PreallocatedLunVO> sc = DeleteSearch.create();
+    	SearchCriteria sc = DeleteSearch.create();
     	sc.setParameters("id", id);
     	
     	return delete(sc) > 0;
@@ -105,7 +105,7 @@ public class PreallocatedLunDaoImpl extends GenericDaoBase<PreallocatedLunVO, Lo
     
     @Override
     public boolean release(String targetIqn, int lunId, long instanceId) {
-        SearchCriteria<PreallocatedLunVO> sc = ReleaseSearch.create();
+        SearchCriteria sc = ReleaseSearch.create();
         sc.setParameters("lun", lunId);
         sc.setParameters("target", targetIqn);
         sc.setParameters("instanceId", instanceId);
@@ -181,35 +181,41 @@ public class PreallocatedLunDaoImpl extends GenericDaoBase<PreallocatedLunVO, Lo
     
     @Override
     public long getTotalSize(String targetIqn) {
-        SearchCriteria<Long> sc = TotalSizeSearch.create();
+        SearchCriteria sc = TotalSizeSearch.create();
         sc.setParameters("target", targetIqn);
         
-        List<Long> results = searchAll(sc, null);
-        if (results.size() == 0) {
+        List<Object[]> results = searchAll(sc, null);
+        if (results.size() == 0 || results.get(0)[0] == null) {
             return 0;
         }
         
-        return results.get(0);
+        return ((BigDecimal)(results.get(0)[0])).longValue();
     }
     
     @Override
     public long getUsedSize(String targetIqn) {
-        SearchCriteria<Long> sc = UsedSizeSearch.create();
+        SearchCriteria sc = UsedSizeSearch.create();
         sc.setParameters("target", targetIqn);
         
-        List<Long> results = searchAll(sc, null);
-        if (results.size() == 0) {
+        List<Object[]> results = searchAll(sc, null);
+        if (results.size() == 0 || results.get(0)[0] == null) {
             return 0;
         }
         
-        return results.get(0);
+        return ((BigDecimal)(results.get(0)[0])).longValue();
     }
     
     @Override
     public List<String> findDistinctTagsForTarget(String targetIqn) {
-        SearchCriteria<String> sc = DetailsSearch.create();
+        SearchCriteria sc = DetailsSearch.create();
         sc.setJoinParameters("target", "targetiqn", targetIqn);
-        return _detailsDao.searchAll(sc, null);
+        List<Object[]> results = _detailsDao.searchAll(sc);
+        List<String> tags = new ArrayList<String>(results.size());
+        for (Object[] result : results) {
+            tags.add((String)result[0]);
+        }
+        
+        return tags;
     }
 
     @Override @DB

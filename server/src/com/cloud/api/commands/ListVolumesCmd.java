@@ -25,7 +25,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.domain.DomainVO;
@@ -44,107 +43,27 @@ public class ListVolumesCmd extends BaseCmd{
 
     static {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TYPE, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VIRTUAL_MACHINE_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HOST_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TYPE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VIRTUAL_MACHINE_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
-
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
     }
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="account", type=CommandType.STRING)
-    private String accountName;
-
-    @Parameter(name="domainid", type=CommandType.LONG)
-    private Long domainId;
-
-    @Parameter(name="hostid", type=CommandType.LONG)
-    private Long hostId;
-
-    @Parameter(name="id", type=CommandType.LONG)
-    private Long id;
-
-    @Parameter(name="name", type=CommandType.STRING)
-    private String volumeName;
-
-    @Parameter(name="podid", type=CommandType.LONG)
-    private Long podId;
-
-    @Parameter(name="type", type=CommandType.STRING)
-    private String type;
-
-    @Parameter(name="virtualmachineid", type=CommandType.LONG)
-    private Long virtualMachineId;
-
-    @Parameter(name="zoneid", type=CommandType.LONG)
-    private Long zoneId;
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public Long getHostId() {
-        return hostId;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getVolumeName() {
-        return volumeName;
-    }
-
-    public Long getPodId() {
-        return podId;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public Long getVirtualMachineId() {
-        return virtualMachineId;
-    }
-
-    public Long getZoneId() {
-        return zoneId;
-    }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
     public String getName() {
         return s_name;
     }
-    @Override
     public List<Pair<Enum, Boolean>> getProperties() {
         return s_properties;
     }
 
-    @Override
     public List<Pair<String, Object>> execute(Map<String, Object> params) {
         Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
         Long id = (Long)params.get(BaseCmd.Properties.ID.getName());
@@ -253,16 +172,19 @@ public class ListVolumesCmd extends BaseCmd{
             volumeData.add(new Pair<String, Object>(BaseCmd.Properties.TYPE.getName(), volume.getVolumeType()));
             //volumeData.add(new Pair<String, Object>(BaseCmd.Properties.HOST_NAME.getName(), getManagementServer().getHostBy(volume.getHostId()).getName()));
 
-            //volume.getDeviceId() might be null	
-            if(volume.getDeviceId() != null)
-                volumeData.add(new Pair<String, Object>(BaseCmd.Properties.DEVICE_ID.getName(), Long.valueOf(volume.getDeviceId()).toString()));
-            
             Long instanceId = volume.getInstanceId();
             if (instanceId != null) {
                 VMInstanceVO vm = getManagementServer().findVMInstanceById(instanceId);
                 volumeData.add(new Pair<String, Object>(BaseCmd.Properties.VIRTUAL_MACHINE_ID.getName(), vm.getId()));
                 volumeData.add(new Pair<String, Object>(BaseCmd.Properties.VIRTUAL_MACHINE_NAME.getName(), vm.getName()));
-                volumeData.add(new Pair<String, Object>(BaseCmd.Properties.VIRTUAL_MACHINE_DISPLAYNAME.getName(), vm.getName()));
+                
+                if (vm.getDisplayName() != null) {
+                	volumeData.add(new Pair<String, Object>(BaseCmd.Properties.VIRTUAL_MACHINE_DISPLAYNAME.getName(), vm.getDisplayName()));
+        		}
+                else {
+                	volumeData.add(new Pair<String, Object>(BaseCmd.Properties.VIRTUAL_MACHINE_DISPLAYNAME.getName(), vm.getName()));
+                }
+                
                 volumeData.add(new Pair<String, Object>(BaseCmd.Properties.VIRTUAL_MACHINE_STATE.getName(), vm.getState()));
             }             
 
@@ -283,11 +205,7 @@ public class ListVolumesCmd extends BaseCmd{
 
             String storageType;
             try {
-                if(volume.getPoolId() == null){
-                    storageType = "unknown";
-                } else {
-                    storageType = getManagementServer().volumeIsOnSharedStorage(volume.getId()) ? "shared" : "local";
-                }
+                storageType = getManagementServer().volumeIsOnSharedStorage(volume.getId()) ? "shared" : "local";
             } catch (InvalidParameterValueException e) {
                 s_logger.error(e.getMessage(), e);
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Volume " + volume.getName() + " does not have a valid ID");

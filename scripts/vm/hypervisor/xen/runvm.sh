@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# $Id: runvm.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/vm/hypervisor/xen/runvm.sh $
+# $Id: runvm.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.x.beta/java/scripts/vm/hypervisor/xen/runvm.sh $
 # runvm.sh -- start a vm from a directory containing the kernel and os images
 # iscsi mode
 #

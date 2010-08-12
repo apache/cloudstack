@@ -18,8 +18,8 @@
 package com.cloud.storage.dao;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.List;
 
 import javax.ejb.Local;
 
@@ -44,7 +44,7 @@ public class StoragePoolDetailsDaoImpl extends GenericDaoBase<StoragePoolDetailV
     @Override
     public void update(long poolId, Map<String, String> details) {
         Transaction txn = Transaction.currentTxn();
-        SearchCriteria<StoragePoolDetailVO> sc = PoolSearch.create();
+        SearchCriteria sc = PoolSearch.create();
         sc.setParameters("pool", poolId);
         
         txn.start();
@@ -58,7 +58,7 @@ public class StoragePoolDetailsDaoImpl extends GenericDaoBase<StoragePoolDetailV
     
     @Override
     public Map<String, String> getDetails(long poolId) {
-    	SearchCriteria<StoragePoolDetailVO> sc = PoolSearch.create();
+    	SearchCriteria sc = PoolSearch.create();
     	sc.setParameters("pool", poolId);
     	
     	List<StoragePoolDetailVO> details = listActiveBy(sc);

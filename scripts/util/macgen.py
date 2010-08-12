@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# $Id: macgen.py 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/util/macgen.py $
+# $Id: macgen.py 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.x.beta/java/scripts/util/macgen.py $
 # macgen.py script to generate a MAC address for Red Hat Virtualization guests
 #
 import random

@@ -36,7 +36,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.ReadyCommand;
@@ -50,6 +49,7 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Status;
 import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.agent.api.MaintainCommand;
 
 /**
  *  AgentAttache provides basic commands to be implemented.

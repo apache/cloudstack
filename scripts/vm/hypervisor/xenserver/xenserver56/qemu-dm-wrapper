@@ -1,0 +1,115 @@
+#!/usr/bin/python
+#
+# Copyright (c) Citrix Systems 2007-2008. All rights reserved.
+#
+# Xen, the Xen logo, XenCenter, XenMotion are trademarks or registered
+# trademarks of Citrix Systems, Inc., in the United States and other
+# countries.
+
+import sys, os, time, resource
+
+DOMID=int(sys.argv[1])
+LOGFILE=sys.argv[2]
+
+SQUASH_VNC=False
+SDL_ENABLED=True
+SDL_ZOOM_ENABLED=True
+
+# enabling core dumps if /var/xen/qemu is not a ramdisk, disabling otherwise
+try :
+    newlimits = None
+    oldlimits = resource.getrlimit(resource.RLIMIT_CORE)
+    f = open("/etc/mtab", "r")
+    for line in f:
+        if line.find("/var/xen/qemu") is not -1:
+            if line.find("tmpfs") is not -1 or line.find("ramfs") is not -1 :
+                newlimits = (0, oldlimits[1])
+            break
+    if newlimits is None:
+        newlimits = (64 * 1024 * 1024, oldlimits[1])
+    resource.setrlimit(resource.RLIMIT_CORE, newlimits)
+    f.close()
+except:
+    pass
+
+# Check X is running -- disable SDL if it isn't:
+h = os.popen("/bin/ps aux | /bin/fgrep 'X :0' | /bin/fgrep -v fgrep | /usr/bin/wc -l")
+x_is_running = int(h.read())
+h.close()
+if not x_is_running:
+    SDL_ENABLED=False
+    SDL_ZOOM_ENABLED=False
+
+log = open(LOGFILE, "wa")
+log.write("qemu-dm-wrapper in python:\n")
+log.write("Using domid: %d\n" % DOMID)
+log.write("Core dumps size limit: %d\n" % newlimits[0])
+log.write("Arguments: %s\n" % " ".join(sys.argv[2:]))
+os.system("xenstore-write /local/domain/%d/qemu-pid %d\n" % (DOMID, os.getpid()))
+if SQUASH_VNC:
+    os.system("xenstore-write /local/domain/%d/console/vnc-port %d\n" % (DOMID, 6900+DOMID))
+
+qemu_args = sys.argv[2:]
+qemu_args.append("-monitor")
+qemu_args.append("pty")
+
+if SDL_ENABLED:
+    qemu_args.append("-nograb")
+    qemu_args.append("-sdl")
+
+if SDL_ZOOM_ENABLED:
+    h = os.popen("/usr/bin/xenstore-read /local/host/display/vm-geometry", "r")
+    geom = h.read().strip()
+    h.close()
+
+    if geom != "":
+        qemu_args.append("-geometry")
+        qemu_args.append(geom)
+
+# suppress the vnc args to qemu-dm
+if SQUASH_VNC:
+    try:
+        vnc_idx = qemu_args.index("-vnc")
+        del qemu_args[vnc_idx: vnc_idx+2]
+    except ValueError, IndexError:
+        pass
+
+    try:
+        vnc_idx = qemu_args.index("-vncunused")
+        del qemu_args[vnc_idx: vnc_idx+1]
+    except ValueError, IndexError:
+        pass
+else:
+    qemu_args.append("-vnclisten")
+    qemu_args.append("0.0.0.0:1")
+
+def vm_uuid_from_dom_id(domid):
+        # domid --> uuid
+        h = os.popen("/opt/xensource/bin/list_domains | cut -f0-2 -d'|' | egrep '(^ *%d *\|)' | cut -f 2 -d'|'" % domid, "r")
+        uuid = h.read().strip()
+        h.close()
+        return uuid
+
+qemu_env = os.environ
+if SDL_ENABLED:
+    # define qemu_env, add DISPLAY
+    qemu_env["DISPLAY"] = ":0.0"
+    # add the SDL env to set the qemu-dm window WM_CLASS, so that Ion can place the
+    # window in the correct workspace.
+    vm_uuid = vm_uuid_from_dom_id(DOMID)
+    qemu_env["SDL_VIDEO_X11_WMCLASS"] = "HVMXEN-" + vm_uuid
+    qemu_env["XAUTHORITY"] = "/root/.Xauthority"
+    qemu_env["HOME"] = "/root"
+    qemu_env["SDL_DISABLE_WAITMAPPED"] = "True"
+
+log.write("Arguments adjusted to: %s\n" % " ".join(qemu_args))
+log.write("everything else is from qemu-dm:\n")
+log.flush()
+
+# redirect stdout to append to logfile
+os.dup2(log.fileno(), 1)
+
+# redirect stderr to stdout (which now goes to the log)
+os.dup2(1, 2)
+
+os.execve("/usr/lib/xen/bin/qemu-dm", qemu_args, qemu_env)

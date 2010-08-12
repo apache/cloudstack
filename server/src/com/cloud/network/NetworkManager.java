@@ -27,7 +27,10 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.host.HostVO;
+import com.cloud.network.FirewallRuleVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.component.Manager;
@@ -64,7 +67,7 @@ public interface NetworkManager extends Manager {
      * @param offering service offering associated with this request
      * @return DomainRouterVO if created.  null if not.
      */
-    DomainRouterVO createRouter(long accountId, String ipAddress, long dcId, String domain, ServiceOfferingVO offering, long startEventId) throws ConcurrentOperationException;
+    DomainRouterVO createRouter(long accountId, String ipAddress, long dcId, String domain, ServiceOfferingVO offering) throws ConcurrentOperationException;
 
     /**
      * create a DHCP server/user data server for directly connected VMs
@@ -136,7 +139,7 @@ public interface NetworkManager extends Manager {
      * @param so service offering associated with this request
      * @return public ip address.
      */
-    public String assignSourceNatIpAddress(AccountVO account, DataCenterVO dc, String domain, ServiceOfferingVO so, long startEventId) throws ResourceAllocationException;
+    public String assignSourceNatIpAddress(AccountVO account, DataCenterVO dc, String domain, ServiceOfferingVO so) throws ResourceAllocationException;
     
     /**
      * @param fwRules list of rules to be updated
@@ -195,7 +198,7 @@ public interface NetworkManager extends Manager {
      * 
      * @throws ConcurrentOperationException if multiple starts are being attempted.
      */
-	public DomainRouterVO addVirtualMachineToGuestNetwork(UserVmVO vm, String password, long startEventId) throws ConcurrentOperationException;	
+	public DomainRouterVO addVirtualMachineToGuestNetwork(UserVmVO vm, String password) throws ConcurrentOperationException;	
 
     String createZoneVlan(DomainRouterVO router);
     

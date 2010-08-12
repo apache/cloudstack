@@ -20,7 +20,6 @@ package com.cloud.api;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -154,23 +153,16 @@ public class ApiServlet extends HttpServlet {
 
             boolean isNew = ((session == null) ? true : session.isNew());
 
-            // Initialize an empty context and we will update it after we have verified the request below,
-            // we no longer rely on web-session here, verifyRequest will populate user/account information
-            // if a API key exists
-            UserContext.registerContext(null, null, null, null, null, null, false);
+            Object accountObj = null;
             String userId = null;
-
+            String account = null;
+            String domainId = null;
+            
             if (!isNew) {
-                userId = (String)session.getAttribute(BaseCmd.Properties.USER_ID.getName());
-                String account = (String)session.getAttribute(BaseCmd.Properties.ACCOUNT.getName());
-                String domainId = (String)session.getAttribute(BaseCmd.Properties.DOMAIN_ID.getName());
-                Object accountObj = session.getAttribute(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-                String sessionKey = (String)session.getAttribute(BaseCmd.Properties.SESSION_KEY.getName());
-                String[] sessionKeyParam = (String[])params.get(BaseCmd.Properties.SESSION_KEY.getName());
-                if ((sessionKeyParam == null) || (sessionKey == null) || !sessionKey.equals(sessionKeyParam[0])) {
-                    session.invalidate();
-                    resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials");
-                }
+                userId = (String)session.getAttribute("userId");
+                account = (String)session.getAttribute("account");
+                domainId = (String)session.getAttribute("domainId");
+                accountObj = session.getAttribute("accountobj");
 
                 // Do a sanity check here to make sure the user hasn't already been deleted
                 if ((userId != null) && (account != null) && (accountObj != null) && _apiServer.verifyUser(Long.valueOf(userId))) {
@@ -179,19 +171,24 @@ public class ApiServlet extends HttpServlet {
                         s_logger.info("missing command, ignoring request...");
                         resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "no command specified");
                         return;
-                    }
-                    UserContext.updateContext(Long.valueOf(userId), accountObj, account, ((Account)accountObj).getId(), Long.valueOf(domainId), session.getId());
+                    }   
                 } else {
-                    // Invalidate the session to ensure we won't allow a request across management server restarts if the userId was serialized to the
+                    // Clear out the variables we retrieved from the session and invalidate the session.  This ensures
+                    // we won't allow a request across management server restarts if the userId was serialized to the
                     // stored session
+                    userId = null;
+                    account = null;
+                    accountObj = null;
                     session.invalidate();
-                    resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials");
-                    return;
                 }
             }
 
+            // Initialize an empty context and we will update it after we have verified the request below,
+            // we no longer rely on web-session here, verifyRequest will populate user/account information
+            // if a API key exists
+            UserContext.registerContext(null, null, null, false);
+
             if (_apiServer.verifyRequest(params, userId)) {
-                /*
             	if (accountObj != null) {
             		Account userAccount = (Account)accountObj;
             		if (userAccount.getType() == Account.ACCOUNT_TYPE_NORMAL) {
@@ -208,7 +205,6 @@ public class ApiServlet extends HttpServlet {
             	// update user context info here so that we can take information if the request is authenticated
             	// via api key mechenism
             	updateUserContext(params, session != null ? session.getId() : null);
-                */
             	try {
             		String response = _apiServer.handleRequest(params, false, responseType);
             		writeResponse(resp, response != null ? response : "", false, responseType);
@@ -216,11 +212,9 @@ public class ApiServlet extends HttpServlet {
             		resp.sendError(se.getErrorCode(), se.getDescription());
             	}
             } else {
-                if (session != null) {
-                    session.invalidate();
-                }
                 resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials and/or request signature");
             }
+
         } catch (IOException ioex) {
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("exception processing request: " + ioex);
@@ -232,8 +226,7 @@ public class ApiServlet extends HttpServlet {
             UserContext.unregisterContext();
         }
     }
-
-    /*
+    
     private void updateUserContext(Map<String, Object[]> requestParameters, String sessionId) {
     	String userIdStr = (String)(requestParameters.get(BaseCmd.Properties.USER_ID.getName())[0]);
     	Account accountObj = (Account)(requestParameters.get(BaseCmd.Properties.ACCOUNT_OBJ.getName())[0]);
@@ -248,7 +241,6 @@ public class ApiServlet extends HttpServlet {
     	
     	UserContext.updateContext(userId, accountId, sessionId);
     }
-    */
 
     // FIXME: rather than isError, we might was to pass in the status code to give more flexibility
     private void writeResponse(HttpServletResponse resp, String response, boolean isError, String responseType) {
@@ -279,33 +271,54 @@ public class ApiServlet extends HttpServlet {
     private String getLoginSuccessResponse(HttpSession session, String responseType) {
         StringBuffer sb = new StringBuffer();
         int inactiveInterval = session.getMaxInactiveInterval();
-
-        if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
+        String account = (String)session.getAttribute("account");
+        String userName = (String)session.getAttribute("userName");
+        String firstName = (String)session.getAttribute("firstName");
+        String lastName = (String)session.getAttribute("lastName");
+        String domainid = (String)session.getAttribute("domainId");        
+        String networkType = (String)session.getAttribute("networkType");
+        String hypervisorType = (String)session.getAttribute("hypervisorType");
+        String directAttachNetworkGroupsEnabled = (String)session.getAttribute("directAttachNetworkGroupsEnabled");        
+        String directAttachedUntaggedEnabled = (String)session.getAttribute("directAttachedUntaggedEnabled");
+        String timezone = (String)session.getAttribute("timezone");
+        Float timezoneOffset = (Float)session.getAttribute("timezoneOffset");
+        Short type = (Short)session.getAttribute("type");
+                
+        if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {        	
             sb.append("{ \"loginresponse\" : { ");
-            Enumeration attrNames = session.getAttributeNames();
-            if (attrNames != null) {
-                sb.append("\"timeout\" : \"" + inactiveInterval + "\"");
-                while (attrNames.hasMoreElements()) {
-                    String attrName = (String)attrNames.nextElement();
-                    Object attrObj = session.getAttribute(attrName);
-                    if (attrObj instanceof String) {
-                        sb.append(", \"" + attrName + "\" : \"" + (String)attrObj + "\"");
-                    }
-                }
+            sb.append("\"timeout\" : \"" + inactiveInterval);
+            sb.append("\",\"username\" : \"" + userName);
+            sb.append("\", \"firstname\" : \"" + firstName);
+            sb.append("\", \"lastname\" : \"" + lastName);
+            sb.append("\",\"account\" : \"" + account);
+            sb.append("\", \"domainid\" : \"" + domainid);
+            sb.append("\", \"type\" : \"" + type);
+            sb.append("\", \"networktype\" : \"" + networkType);
+            if (timezoneOffset != null) {
+                sb.append("\", \"timezoneoffset\" : \"" + timezoneOffset.toString());
+                sb.append("\", \"timezone\" : \"" + timezone);
             }
-            sb.append(" } }");
-        } else {
+            sb.append("\",\"directattachnetworkgroupsenabled\" : \"" + directAttachNetworkGroupsEnabled);
+            sb.append("\",\"directattacheduntaggedenabled\" : \"" + directAttachedUntaggedEnabled);
+            sb.append("\", \"hypervisortype\" : \"" + hypervisorType);
+            sb.append("\" } }");
+        } else {        	
             sb.append("<loginresponse>");
             sb.append("<timeout>" + inactiveInterval + "</timeout>");
-            Enumeration attrNames = session.getAttributeNames();
-            if (attrNames != null) {
-                while (attrNames.hasMoreElements()) {
-                    String attrName = (String)attrNames.nextElement();
-                    String attr = (String)session.getAttribute(attrName);
-                    sb.append("<" + attrName + ">" + attr + "</" + attrName + ">");
-                }
+            sb.append("<username>" + userName + "</username>");
+            sb.append("<firstname>" + firstName + "</firstname>");
+            sb.append("<lastname>" + lastName + "</lastname>");
+            sb.append("<account>" + account + "</account>");
+            sb.append("<domainid>" + domainid + "</domainid>");
+            sb.append("<type>"+ type + "</type>");
+            sb.append("<networktype>"+ networkType + "</networktype>");
+            if (timezoneOffset != null) {
+                sb.append("<timezoneoffset>"+ timezoneOffset.toString() + "</timezoneoffset>");
+                sb.append("<timezone>"+ timezone + "</timezone>");
             }
-
+            sb.append("<directattachnetworkgroupsenabled>" + directAttachNetworkGroupsEnabled + "</directattachnetworkgroupsenabled>");
+            sb.append("<directattacheduntaggedenabled>" + directAttachedUntaggedEnabled + "</directattacheduntaggedenabled>");
+            sb.append("<hypervisortype>" + hypervisorType + "</hypervisortype>");
             sb.append("</loginresponse>");
         }
         return sb.toString();

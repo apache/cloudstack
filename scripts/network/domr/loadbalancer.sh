@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# $Id: loadbalancer.sh 9804 2010-06-22 18:36:49Z alex $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/network/domr/loadbalancer.sh $
+# $Id: loadbalancer.sh 9804 2010-06-22 18:36:49Z alex $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.x.beta/java/scripts/network/domr/loadbalancer.sh $
 # loadbalancer.sh -- reconfigure loadbalancer rules
 #
 #

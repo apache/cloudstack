@@ -32,7 +32,6 @@ import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.serializer.GsonHelper;
-import com.cloud.server.ManagementServer;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.utils.db.DB;
@@ -50,31 +49,18 @@ public class DestroyVMExecutor extends VMOperationExecutor {
     	Gson gson = GsonHelper.getBuilder().create();
     	AsyncJobManager asyncMgr = getAsyncJobMgr();
     	AsyncJobVO job = getJob();
-    	VMOperationParam param = gson.fromJson(job.getCmdInfo(), VMOperationParam.class);
-    	ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
-		OperationResponse response;
 		
 		if(getSyncSource() == null) {
+	    	VMOperationParam param = gson.fromJson(job.getCmdInfo(), VMOperationParam.class);
 	    	asyncMgr.syncAsyncJobExecution(job.getId(), "UserVM", param.getVmId());
+	    	
+	    	// always true if it does not have sync-source
 	    	return true;
-	    	// always true if it does not have sync-source	    	
-		} else {	    	
-			managementServer.saveStartedEvent(param.getUserId(), param.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Destroying VM " +param.getVmId(), param.getEventId());
+		} else {
+	    	VMOperationParam param = gson.fromJson(job.getCmdInfo(), VMOperationParam.class);
 			asyncMgr.updateAsyncJobAttachment(job.getId(), "vm_instance", param.getVmId());
-			response = asyncMgr.getExecutorContext().getVmMgr().executeDestroyVM(this, param);
-	    	UserVmVO vm = managementServer.findUserVMInstanceById(param.getVmId());	    	
-	    	String params = "id="+vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId();
-	    	
-	    	if (OperationResponse.STATUS_SUCCEEDED == response.getResultCode() ){
-	    		managementServer.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_DESTROY, "Successfully destroyed VM instance : " + param.getVmId(), params, param.getEventId());
-	    		return true;
-	    	}else if (OperationResponse.STATUS_FAILED == response.getResultCode()){
-	    		managementServer.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_DESTROY, "Failed to stop VM instance : " + response.getResultDescription(), params, param.getEventId());
-	    		return true;
-	    	}
-	    	
+	    	return asyncMgr.getExecutorContext().getVmMgr().executeDestroyVM(this, param);
 		}
-		return false;
 	}
 	
 	@Override
@@ -83,10 +69,17 @@ public class DestroyVMExecutor extends VMOperationExecutor {
 		UserVmVO vm = listener.getVm();
 		VMOperationParam param = listener.getParam();
 		AsyncJobManager asyncMgr = getAsyncJobMgr();
-		ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
-		String params = "id="+vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId();
+		
     	if(s_logger.isDebugEnabled())
     		s_logger.debug("Execute asynchronize destroy VM command: received stop-VM answer, " + vm.getHostId() + "-" + seq);
+    	
+        EventVO event = new EventVO();
+        event.setUserId(param.getUserId());
+        event.setAccountId(vm.getAccountId());
+        event.setState(EventState.Completed);
+        event.setStartId(param.getEventId());
+        event.setType(EventTypes.EVENT_VM_STOP);
+        event.setParameters("id="+vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
     	
         boolean stopped = false;
     	if(answer != null && answer.getResult())
@@ -94,18 +87,24 @@ public class DestroyVMExecutor extends VMOperationExecutor {
 
     	try {
 	    	if(stopped) {
-	        	asyncMgr.getExecutorContext().getVmMgr().completeStopCommand(param.getUserId(), vm, Event.OperationSucceeded, param.getChildEventId());
+	        	asyncMgr.getExecutorContext().getVmMgr().completeStopCommand(param.getUserId(), vm, Event.OperationSucceeded, param.getEventId());
 	        	// completeStopCommand will log the stop event, if we log it here we will end up with duplicated stop event
 	            Transaction txn = Transaction.currentTxn();
 	            txn.start();
+	            
+		        event = new EventVO();
+		        event.setUserId(param.getUserId());
+		        event.setAccountId(vm.getAccountId());
+		        event.setType(EventTypes.EVENT_VM_DESTROY);
+		        event.setParameters("id="+vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
+	            event.setDescription("successfully destroyed VM instance : " + vm.getName());
+	            asyncMgr.getExecutorContext().getEventDao().persist(event);
 	            
 	            asyncMgr.getExecutorContext().getAccountMgr().decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
 		        if (!asyncMgr.getExecutorContext().getVmDao().updateIf(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
 		            s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm.toString());
 		            
 		            txn.rollback();
-		            managementServer.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_DESTROY,
-		            		"Failed to stop VM instance : " + vm.getName(), params, param.getEventId());
 		        	asyncMgr.completeAsyncJob(getJob().getId(),
 	            		AsyncJobResult.STATUS_FAILED, 0, "Unable to destroy the vm because it is not in the correct state");
 		        	return;
@@ -124,8 +123,7 @@ public class DestroyVMExecutor extends VMOperationExecutor {
 		        for (VolumeVO volume : volumes) {
 		        	asyncMgr.getExecutorContext().getVolumeDao().detachVolume(volume.getId());
 		        }
-		        managementServer.saveEvent(param.getUserId(), vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_DESTROY,
-	            		"Successfully destroyed VM instance : " + vm.getName(), params, param.getEventId());
+		        
 		        txn.commit();
 	        	
 	    		asyncMgr.completeAsyncJob(getJob().getId(),	AsyncJobResult.STATUS_SUCCEEDED, 0, "success");
@@ -133,11 +131,10 @@ public class DestroyVMExecutor extends VMOperationExecutor {
 	            asyncMgr.getExecutorContext().getVmDao().updateIf(vm, Event.OperationFailed, vm.getHostId());
 	            asyncMgr.completeAsyncJob(getJob().getId(),
 	        		AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, "Agent failed to stop VM: " + vm.getName());
-	            managementServer.saveEvent(param.getUserId(), vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_STOP,
-	            		"failed to stop VM instance : " + vm.getName(), params, param.getChildEventId());
-	            managementServer.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_DESTROY,
-	            		"failed to stop VM instance : " + vm.getName(), params, param.getEventId());
-	            
+	    		
+	            event.setDescription("failed to stop VM instance : " + vm.getName());
+	            event.setLevel(EventVO.LEVEL_ERROR);
+	            asyncMgr.getExecutorContext().getEventDao().persist(event);
 	    	}
     	} catch(Exception e) {
     		s_logger.error("Unexpected exception " + e.getMessage(), e);

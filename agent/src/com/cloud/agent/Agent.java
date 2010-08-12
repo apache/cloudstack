@@ -157,8 +157,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         	_shell.getPort(),
         	_shell.getWorkers(),
         	this);
-
-        // ((NioClient)_connection).setBindAddress(_shell.getPrivateIp());
+        ((NioClient)_connection).setBindAddress(_shell.getPrivateIp());
 
         s_logger.debug("Adding shutdown hook");
         Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));

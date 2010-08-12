@@ -25,7 +25,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.server.Criteria;
 import com.cloud.utils.Pair;
@@ -39,86 +38,22 @@ public class ListSystemVMsCmd extends BaseCmd  {
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
     
     static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HOST_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.STATE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SYSTEM_VM_TYPE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
-
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HOST_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.STATE, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SYSTEM_VM_TYPE, Boolean.FALSE));
     }
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="hostid", type=CommandType.LONG)
-    private Long hostId;
-
-    @Parameter(name="id", type=CommandType.LONG)
-    private Long id;
-
-    @Parameter(name="name", type=CommandType.STRING)
-    private String systemVmName;
-
-    @Parameter(name="podid", type=CommandType.LONG)
-    private Long podId;
-
-    @Parameter(name="state", type=CommandType.STRING)
-    private String state;
-
-    @Parameter(name="systemvmtype", type=CommandType.STRING)
-    private String systemVmType;
-
-    @Parameter(name="zoneid", type=CommandType.LONG)
-    private Long zoneId;
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public Long getHostId() {
-        return hostId;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getSystemVmName() {
-        return systemVmName;
-    }
-
-    public Long getPodId() {
-        return podId;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public String getSystemVmType() {
-        return systemVmType;
-    }
-
-    public Long getZoneId() {
-        return zoneId;
-    }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
     public String getName() {
         return s_name;
     }
     
-    @Override
     public List<Pair<Enum, Boolean>> getProperties() {
         return s_properties;
     }
@@ -132,7 +67,6 @@ public class ListSystemVMsCmd extends BaseCmd  {
     	String name = (String)params.get(BaseCmd.Properties.NAME.getName());
     	String state = (String)params.get(BaseCmd.Properties.STATE.getName());
     	String keyword = (String)params.get(BaseCmd.Properties.KEYWORD.getName());
-    	String type = (String)params.get(BaseCmd.Properties.SYSTEM_VM_TYPE.getName());
     	Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
         Integer pageSize = (Integer)params.get(BaseCmd.Properties.PAGESIZE.getName());
         
@@ -161,114 +95,93 @@ public class ListSystemVMsCmd extends BaseCmd  {
             c.addCriteria(Criteria.STATE, state);
         }
         
-    	List<ConsoleProxyVO> proxies = null;
-    	List<SecondaryStorageVmVO> ssVms = null;
-    	Object[] proxyDataArray = null;
-    	
-        if(type == null) //search for all vm types
-        {
-        	proxies = getManagementServer().searchForConsoleProxy(c);
-        	ssVms = getManagementServer().searchForSecondaryStorageVm(c);
-        	
-        	proxyDataArray = new Object[proxies.size() + ssVms.size()];
-        }
-        else if((type != null) && (type.equalsIgnoreCase("secondarystoragevm"))) // search for ssvm
-        {
-        	ssVms = getManagementServer().searchForSecondaryStorageVm(c);
-        	
-        	proxyDataArray = new Object[ssVms.size()];
-        }
-        else if((type != null) && (type.equalsIgnoreCase("consoleproxy"))) // search for consoleproxy
-        {
-        	proxies = getManagementServer().searchForConsoleProxy(c);
-        	
-        	proxyDataArray = new Object[proxies.size()];
-        }
-        
+        List<ConsoleProxyVO> proxies = getManagementServer().searchForConsoleProxy(c);
+        List<SecondaryStorageVmVO> ssVms = getManagementServer().searchForSecondaryStorageVm(c);
         List<Pair<String, Object>> proxiesTags = new ArrayList<Pair<String, Object>>();
-        int i = 0;
 
-        if(proxies != null && proxies.size() > 0)
-        {	        
-	        for (ConsoleProxyVO proxy : proxies) {
-	        	List<Pair<String, Object>> proxyData = new ArrayList<Pair<String, Object>>();
-	        	proxyData.add(new Pair<String, Object>(BaseCmd.Properties.SYSTEM_VM_TYPE.getName(), "consoleproxy"));
-	
-            	proxyData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.toString(proxy.getId())));
-	            
-	            AsyncJobVO asyncJob = getManagementServer().findInstancePendingAsyncJob("console_proxy", proxy.getId());
-	            if(asyncJob != null) {
-	                proxyData.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), asyncJob.getId().toString()));
-	                proxyData.add(new Pair<String, Object>(BaseCmd.Properties.JOB_STATUS.getName(), String.valueOf(asyncJob.getStatus())));
-	            } 
-	            
-	            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_ID.getName(), Long.valueOf(proxy.getDataCenterId()).toString()));
-	            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), getManagementServer().findDataCenterById(proxy.getDataCenterId()).getName()));
-	            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.DNS1.getName(), proxy.getDns1()));
-	            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.DNS2.getName(), proxy.getDns2()));
-	            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.NETWORK_DOMAIN.getName(), proxy.getDomain()));
-	            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.GATEWAY.getName(), proxy.getGateway()));
-	            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), proxy.getName()));
-	            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.POD_ID.getName(), Long.valueOf(proxy.getPodId()).toString()));
-	            if (proxy.getHostId() != null) {
-	            	proxyData.add(new Pair<String, Object>(BaseCmd.Properties.HOST_ID.getName(), proxy.getHostId().toString()));
-	            	proxyData.add(new Pair<String, Object>(BaseCmd.Properties.HOST_NAME.getName(), getManagementServer().getHostBy(proxy.getHostId()).getName()));
-	            } 
-	            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.PRIVATE_IP.getName(), proxy.getPrivateIpAddress()));
-	            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.PRIVATE_MAC_ADDRESS.getName(), proxy.getPrivateMacAddress()));
-	            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.PRIVATE_NETMASK.getName(), proxy.getPrivateNetmask()));
-	            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.PUBLIC_IP.getName(), proxy.getPublicIpAddress()));
-	            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.PUBLIC_MAC_ADDRESS.getName(), proxy.getPublicMacAddress()));
-	            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.PUBLIC_NETMASK.getName(), proxy.getPublicNetmask()));
-	            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_ID.getName(), Long.valueOf(proxy.getTemplateId()).toString()));
-	            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(proxy.getCreated())));
-	            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.ACTIVE_VIEWER_SESSIONS.getName(), 
-	            	String.valueOf(proxy.getActiveSession())));
-	            
-	            if (proxy.getState() != null) {
-	            	proxyData.add(new Pair<String, Object>(BaseCmd.Properties.STATE.getName(), proxy.getState().toString()));
-	            }
-	            
-	            proxyDataArray[i++] = proxyData;
-	        }
+        Object[] proxyDataArray = new Object[proxies.size() + ssVms.size()];
+        int i = 0;
+        
+        for (ConsoleProxyVO proxy : proxies) {
+        	List<Pair<String, Object>> proxyData = new ArrayList<Pair<String, Object>>();
+        	proxyData.add(new Pair<String, Object>(BaseCmd.Properties.SYSTEM_VM_TYPE.getName(), "consoleproxy"));
+
+            if (proxy.getId() != null) {
+            	proxyData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), proxy.getId().toString()));
+            }
+            
+            AsyncJobVO asyncJob = getManagementServer().findInstancePendingAsyncJob("console_proxy", proxy.getId());
+            if(asyncJob != null) {
+                proxyData.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), asyncJob.getId().toString()));
+                proxyData.add(new Pair<String, Object>(BaseCmd.Properties.JOB_STATUS.getName(), String.valueOf(asyncJob.getStatus())));
+            } 
+            
+            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_ID.getName(), Long.valueOf(proxy.getDataCenterId()).toString()));
+            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), getManagementServer().findDataCenterById(proxy.getDataCenterId()).getName()));
+            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.DNS1.getName(), proxy.getDns1()));
+            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.DNS2.getName(), proxy.getDns2()));
+            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.NETWORK_DOMAIN.getName(), proxy.getDomain()));
+            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.GATEWAY.getName(), proxy.getGateway()));
+            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), proxy.getName()));
+            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.POD_ID.getName(), Long.valueOf(proxy.getPodId()).toString()));
+            if (proxy.getHostId() != null) {
+            	proxyData.add(new Pair<String, Object>(BaseCmd.Properties.HOST_ID.getName(), proxy.getHostId().toString()));
+            	proxyData.add(new Pair<String, Object>(BaseCmd.Properties.HOST_NAME.getName(), getManagementServer().getHostBy(proxy.getHostId()).getName()));
+            } 
+            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.PRIVATE_IP.getName(), proxy.getPrivateIpAddress()));
+            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.PRIVATE_MAC_ADDRESS.getName(), proxy.getPrivateMacAddress()));
+            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.PRIVATE_NETMASK.getName(), proxy.getPrivateNetmask()));
+            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.PUBLIC_IP.getName(), proxy.getPublicIpAddress()));
+            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.PUBLIC_MAC_ADDRESS.getName(), proxy.getPublicMacAddress()));
+            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.PUBLIC_NETMASK.getName(), proxy.getPublicNetmask()));
+            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_ID.getName(), Long.valueOf(proxy.getTemplateId()).toString()));
+            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(proxy.getCreated())));
+            proxyData.add(new Pair<String, Object>(BaseCmd.Properties.ACTIVE_VIEWER_SESSIONS.getName(), 
+            	String.valueOf(proxy.getActiveSession())));
+            
+            if (proxy.getState() != null) {
+            	proxyData.add(new Pair<String, Object>(BaseCmd.Properties.STATE.getName(), proxy.getState().toString()));
+            }
+            
+            proxyDataArray[i++] = proxyData;
         }
         
-        if(ssVms != null && ssVms.size() > 0)
-        {
-	        for (SecondaryStorageVmVO ssVm : ssVms) {
-	        	List<Pair<String, Object>> ssvmData = new ArrayList<Pair<String, Object>>();
-	        	ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.SYSTEM_VM_TYPE.getName(), "secondarystoragevm"));
-            	ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), ssVm.getId()));
-	            
-	            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_ID.getName(), Long.valueOf(ssVm.getDataCenterId()).toString()));
-	            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), getManagementServer().findDataCenterById(ssVm.getDataCenterId()).getName()));
-	            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.DNS1.getName(), ssVm.getDns1()));
-	            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.DNS2.getName(), ssVm.getDns2()));
-	            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.NETWORK_DOMAIN.getName(), ssVm.getDomain()));
-	            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.GATEWAY.getName(), ssVm.getGateway()));
-	            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), ssVm.getName()));
-	            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.POD_ID.getName(), Long.valueOf(ssVm.getPodId()).toString()));
-	            if (ssVm.getHostId() != null) {
-	            	ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.HOST_ID.getName(), ssVm.getHostId().toString()));
-	            	ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.HOST_NAME.getName(), getManagementServer().getHostBy(ssVm.getHostId()).getName()));
-	            } 
-	            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.PRIVATE_IP.getName(), ssVm.getPrivateIpAddress()));
-	            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.PRIVATE_MAC_ADDRESS.getName(), ssVm.getPrivateMacAddress()));
-	            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.PRIVATE_NETMASK.getName(), ssVm.getPrivateNetmask()));
-	            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.PUBLIC_IP.getName(), ssVm.getPublicIpAddress()));
-	            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.PUBLIC_MAC_ADDRESS.getName(), ssVm.getPublicMacAddress()));
-	            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.PUBLIC_NETMASK.getName(), ssVm.getPublicNetmask()));
-	            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_ID.getName(), Long.valueOf(ssVm.getTemplateId()).toString()));
-	            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(ssVm.getCreated())));
-	            
-	            if (ssVm.getState() != null) {
-	            	ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.STATE.getName(), ssVm.getState().toString()));
-	            }
-	            
-	            proxyDataArray[i++] = ssvmData;
-	        }
+        
+        for (SecondaryStorageVmVO ssVm : ssVms) {
+        	List<Pair<String, Object>> ssvmData = new ArrayList<Pair<String, Object>>();
+        	ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.SYSTEM_VM_TYPE.getName(), "secondarystoragevm"));
+            if (ssVm.getId() != null) {
+            	ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), ssVm.getId().toString()));
+            }
+            
+            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_ID.getName(), Long.valueOf(ssVm.getDataCenterId()).toString()));
+            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), getManagementServer().findDataCenterById(ssVm.getDataCenterId()).getName()));
+            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.DNS1.getName(), ssVm.getDns1()));
+            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.DNS2.getName(), ssVm.getDns2()));
+            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.NETWORK_DOMAIN.getName(), ssVm.getDomain()));
+            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.GATEWAY.getName(), ssVm.getGateway()));
+            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), ssVm.getName()));
+            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.POD_ID.getName(), Long.valueOf(ssVm.getPodId()).toString()));
+            if (ssVm.getHostId() != null) {
+            	ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.HOST_ID.getName(), ssVm.getHostId().toString()));
+            	ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.HOST_NAME.getName(), getManagementServer().getHostBy(ssVm.getHostId()).getName()));
+            } 
+            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.PRIVATE_IP.getName(), ssVm.getPrivateIpAddress()));
+            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.PRIVATE_MAC_ADDRESS.getName(), ssVm.getPrivateMacAddress()));
+            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.PRIVATE_NETMASK.getName(), ssVm.getPrivateNetmask()));
+            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.PUBLIC_IP.getName(), ssVm.getPublicIpAddress()));
+            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.PUBLIC_MAC_ADDRESS.getName(), ssVm.getPublicMacAddress()));
+            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.PUBLIC_NETMASK.getName(), ssVm.getPublicNetmask()));
+            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_ID.getName(), Long.valueOf(ssVm.getTemplateId()).toString()));
+            ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(ssVm.getCreated())));
+            
+            if (ssVm.getState() != null) {
+            	ssvmData.add(new Pair<String, Object>(BaseCmd.Properties.STATE.getName(), ssVm.getState().toString()));
+            }
+            
+            proxyDataArray[i++] = ssvmData;
         }
-	    proxiesTags.add(new Pair<String, Object>("systemvm", proxyDataArray));
+        proxiesTags.add(new Pair<String, Object>("systemvm", proxyDataArray));
         return proxiesTags;
     }
 }

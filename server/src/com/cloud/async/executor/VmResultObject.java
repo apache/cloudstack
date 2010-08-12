@@ -202,11 +202,6 @@ public class VmResultObject
 		this.networkKbsWrite = networkKbsWrite;
 	}
 
-	public long isId()
-	{
-		return id;
-	}
-	
 	@Param(name="name")
 	private String name;
 

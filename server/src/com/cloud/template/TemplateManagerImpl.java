@@ -57,6 +57,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Storage.FileSystem;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -170,7 +171,7 @@ public class TemplateManagerImpl implements TemplateManager {
 	        }
         }
         
-        SearchCriteria<VMTemplateHostVO> sc = HostTemplateStatesSearch.create();
+        SearchCriteria sc = HostTemplateStatesSearch.create();
         sc.setParameters("id", templateId);
         sc.setParameters("state", Status.DOWNLOADED);
         sc.setJoinParameters("host", "dcId", pool.getDataCenterId());
@@ -354,6 +355,14 @@ public class TemplateManagerImpl implements TemplateManager {
     	if (template == null || template.getRemoved() != null) {
     		throw new InternalErrorException("Please specify a valid template.");
     	}
+        EventVO event = new EventVO();
+        event.setUserId(userId);
+        event.setAccountId(template.getAccountId());
+        event.setType(EventTypes.EVENT_TEMPLATE_DELETE);
+        event.setState(EventState.Started);
+        event.setDescription("Deleting template with Id: "+templateId);
+        event.setStartId(startEventId);
+        event = _eventDao.persist(event);
         
     	String zoneName;
     	List<HostVO> secondaryStorageHosts;

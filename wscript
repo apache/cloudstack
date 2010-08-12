@@ -3,7 +3,7 @@
 
 # the following two variables are used by the target "waf dist"
 # if you change 'em here, you need to change it also in cloud.spec, add a %changelog entry there, and add an entry in debian/changelog
-VERSION = '2.1.98'
+VERSION = '2.1.2.1'
 APPNAME = 'cloud'
 
 import shutil,os
@@ -135,41 +135,9 @@ def svninfo(*args):
 	retcode = p.wait()
 	# If the guess fails, just return nothing.
 	if retcode: return
-	# SVN available
-	rev = [ x for x in stdout.splitlines() if x.startswith('Revision') ]
-	if not rev: rev = ''
-	else: rev = "SVN " + rev[0].strip()
-	url = [ x for x in stdout.splitlines() if x.startswith('URL') ]
-	if not url: url = ''
-	else: url = "SVN " + url[0].strip()
-	return rev + "\n" + url
+	return stdout
 
-def gitinfo(*args):
-	try: p = _Popen(['git','remote','show','-n','origin']+list(args),stdin=PIPE,stdout=PIPE,stderr=PIPE)
-	except OSError,e:
-		if e.errno == 2: return '' # svn command is not installed
-		raise
-	stdout,stderr = p.communicate('')
-	retcode = p.wait()
-	# If the guess fails, just return nothing.
-	if retcode: return
-	stdout = [ s.strip() for s in stdout.splitlines() ]
-	try: url = [ s[11:] for s in stdout if s.startswith("Fetch URL") ][0]
-	except IndexError: url = [ s[5:] for s in stdout if s.startswith("URL") ][0]
-	assert url
-	
-	p = _Popen(['git','log','-1']+list(args),stdin=PIPE,stdout=PIPE,stderr=PIPE)
-	stdout,stderr = p.communicate('')
-	retcode = p.wait()
-	if retcode: return
-	# If the guess fails, just return nothing.
-	stdout = [ s.strip() for s in stdout.splitlines() ]
-	commitid = [ s.split()[1] for s in stdout if s.startswith("commit") ][0]
-	assert commitid
-	
-	return "Git Revision: %s"%commitid + "\n" + "Git URL: %s"%url
-
-def _getbuildnumber(): # FIXME implement for git
+def _getbuildnumber():
 	n = Options.options.BUILDNUMBER
 	if n:
 		# luntbuild prepends "build-" to the build number.  we work around this here:
@@ -182,10 +150,10 @@ def _getbuildnumber(): # FIXME implement for git
 		stdout = svninfo()
 		if not stdout: return ''
 		# Filter lines.
-		rev = [ x for x in stdout.splitlines() if x.startswith('SVN Revision') ]
+		rev = [ x for x in stdout.splitlines() if x.startswith('Revision') ]
 		if not rev: return ''
 		# Parse revision number.
-		rev = rev[0][14:].strip()
+		rev = rev[0][10:].strip()
 		return rev
 Utils.getbuildnumber = _getbuildnumber
 
@@ -312,7 +280,8 @@ def _install_files_filtered(self,destdir,listoffiles,**kwargs):
 	if isinstance(listoffiles,str) and '**' in listoffiles:
 		listoffiles = cwd.ant_glob(listoffiles,flat=True)
 	elif isinstance(listoffiles,str) and '*' in listoffiles:
-		listoffiles = [ n for x in listoffiles.split() for n in _glob(cwd.abspath() + os.sep + x.replace("/",os.sep))  ]
+		gl=cwd.abspath() + os.sep + listoffiles
+		listoffiles=_glob(gl)
 	listoffiles = Utils.to_list(listoffiles)[:]
 	listoffiles = [ x for x in listoffiles if not ( x.endswith("~") or x == "override" or "%soverride"%os.sep in x ) ]
 	for n,f in enumerate(listoffiles):
@@ -321,7 +290,7 @@ def _install_files_filtered(self,destdir,listoffiles,**kwargs):
 		if _isdir(f): continue
 		if f.endswith(".in"):
 			source = f ; target = f[:-3]
-			tgen = self(features='subst', source=source[len(self.path.abspath())+1:], target=target[len(self.path.abspath())+1:], name="filtered_%s"%source)
+			tgen = self(features='subst', source=source[len(self.path.abspath())+1:], target=target[len(self.path.abspath())+1:])
 			tgen.dict = self.env.get_merged_dict()
 		else:
 			source = f ; target = f
@@ -498,23 +467,19 @@ def list_targets(ctx):
 	for name in lst:
 		print(name)
 
-def decorate_dist(f):
-	def dist(appname='',version=''):
-		'''makes a tarball for redistributing the sources -- if --skip-dist is specified, does nothing'''
-		if Options.options.DONTDIST:
-			if not appname: appname=Utils.g_module.APPNAME
-			if not version: version=Utils.g_module.VERSION
-			tmp_folder=appname+'-'+version
-			if Scripting.g_gz in['gz','bz2']:
-				arch_name=tmp_folder+'.tar.'+Scripting.g_gz
-			else:
-				arch_name=tmp_folder+'.'+'zip'
-			Logs.info('New archive skipped: %s'%(arch_name))
-			return arch_name
+def dist(context):
+	'''makes a tarball for redistributing the sources -- if --skip-dist is specified, does nothing'''	
+	if Options.options.DONTDIST:
+		appname=Utils.g_module.APPNAME
+		version=Utils.g_module.VERSION
+		tmp_folder=appname+'-'+version
+		if Scripting.g_gz in['gz','bz2']:
+			arch_name=tmp_folder+'.tar.'+Scripting.g_gz
 		else:
-			return f(appname,version)
-	return dist
-Scripting.dist = decorate_dist(Scripting.dist)
+			arch_name=tmp_folder+'.'+'zip'
+		return arch_name
+	else:
+		return Scripting.dist()
 
 def dist_hook():
 	# Clean the GARBAGE that clogs our repo to the tune of 300 MB
@@ -522,16 +487,33 @@ def dist_hook():
 	# package over 90 MB in size
 	[ shutil.rmtree(f) for f in _glob(_join("*","bin")) if _isdir(f) ]
 	[ shutil.rmtree(f) for f in [ _join("build","deploy") ] if _isdir(f) ]
-	[ shutil.rmtree(f) for f in _glob(_join("cloudstack-proprietary","thirdparty","*")) if _isdir(f) ]
-	[ shutil.rmtree(f) for f in [ _join("cloudstack-proprietary","tools") ] if _isdir(f) ]
+	[ shutil.rmtree(f) for f in _glob(_join("thirdparty","*")) if _isdir(f) ]
+	[ shutil.rmtree(_join("tools",f)) for f in [
+		"bin",
+		"meld",
+		"misc",
+		"tomcat",
+		"pdfdoclet",
+		"taglets",
+	] if _exists(_join("tools",f)) ]
+
 	
 	if Options.options.OSS:
-		[ shutil.rmtree(f) for f in "cloudstack-proprietary".split() if _exists(f) ]
+		[ shutil.rmtree(f) for f in "premium usage thirdparty console-proxy-premium test agent-simulator core-premium plugins vendor".split() if _exists(f) ]
+		[ shutil.rmtree(f) for f in [ _join("build","premium") ] if _exists(f) ]
 		
-	stdout = svninfo("..") or gitinfo()
+	stdout = svninfo("..")
 	if stdout:
+		# SVN available
+		rev = [ x for x in stdout.splitlines() if x.startswith('Revision') ]
+		if not rev: rev = ''
+		else: rev = "SVN " + rev[0].strip()
+		url = [ x for x in stdout.splitlines() if x.startswith('URL') ]
+		if not url: url = ''
+		else: url = "SVN " + url[0].strip()
 		f = file("sccs-info","w")
-		f.write(stdout)
+		if rev: f.write("%s\n"%rev)
+		if url: f.write("%s\n"%url)
 		f.flush()
 		f.close()
 	else:
@@ -579,11 +561,12 @@ def rpm(context):
 	if not Options.options.blddir: outputdir = _join(context.curdir,blddir,"rpmbuild")
 	else:			   outputdir = _join(_abspath(Options.options.blddir),"rpmbuild")
 	Utils.pprint("GREEN","Building RPMs")
-	tarball = Scripting.dist()
+	if not Options.options.DONTDIST: Scripting.dist()
 	
 	#if _isdir(outputdir): shutil.rmtree(outputdir)
 	for a in ["RPMS/noarch","SRPMS","BUILD","SPECS","SOURCES"]: mkdir_p(_join(outputdir,a))
 	specfile = "%s.spec"%APPNAME
+	tarball = "%s-%s.tar.%s"%(APPNAME,VERSION,Scripting.g_gz)
 	shutil.copy(tarball,_join(outputdir,"SOURCES"))
 	checkdeps = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"--nobuild",specfile])
 	dorpm = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"-ba",specfile]+buildnumber+prerelease)
@@ -622,10 +605,11 @@ def deb(context):
 	if not Options.options.blddir: outputdir = _join(context.curdir,blddir,"debbuild")
 	else:			   outputdir = _join(_abspath(Options.options.blddir),"debbuild")
 	Utils.pprint("GREEN","Building DEBs")
-	tarball = Scripting.dist()
+	if not Options.options.DONTDIST: Scripting.dist()
 	
 	#if _isdir(outputdir): shutil.rmtree(outputdir)
 	mkdir_p(outputdir)
+	tarball = "%s-%s.tar.%s"%(APPNAME,VERSION,Scripting.g_gz)
 	f = tarfile.open(tarball,'r:bz2')
 	f.extractall(path=outputdir)
 	srcdir = "%s/%s-%s"%(outputdir,APPNAME,VERSION)

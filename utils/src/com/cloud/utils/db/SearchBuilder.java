@@ -17,7 +17,19 @@
  */
 package com.cloud.utils.db;
 
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
+
+import net.sf.cglib.proxy.Factory;
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
+
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
+import com.cloud.utils.db.SearchCriteria.Func;
+import com.cloud.utils.db.SearchCriteria.Op;
 
 /**
  * SearchBuilder is meant as a static query construct.  Often times in DAO code,
@@ -61,10 +73,258 @@ import java.util.Map;
  * 
  * @param <T> VO object.
  */
-public class SearchBuilder<T> extends GenericSearchBuilder<T, T> {
+public class SearchBuilder<T> implements MethodInterceptor {
+    protected ArrayList<Condition> _conditions;
+    protected Map<String, Attribute> _attrs;
+    protected HashMap<String, Ternary<SearchBuilder<?>, Attribute, Attribute>> _joins;
+    protected ArrayList<Pair<Func, Attribute[]>> _selects;
+    protected ArrayList<Attribute> _groupBys;
     
-    @SuppressWarnings("unchecked")
+    protected T _entity;
+    protected ArrayList<Attribute> _specifiedAttrs;
+    
     public SearchBuilder(T entity, Map<String, Attribute> attrs) {
-        super(entity, (Class<T>)entity.getClass(), attrs);
+    	_attrs = attrs;
+    	_entity = entity;
+    	_conditions = new ArrayList<Condition>();
+    	_joins = null;
+    	_specifiedAttrs = new ArrayList<Attribute>();
+    }
+    
+    public T entity() {
+    	return _entity;
+    }
+
+    @Override
+    public Object intercept(Object object, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
+        String name = method.getName();
+        if (name.startsWith("get")) {
+            String fieldName = Character.toLowerCase(name.charAt(3)) + name.substring(4);
+            set(fieldName);
+        } else if (name.startsWith("is")) {
+            String fieldName = Character.toLowerCase(name.charAt(2)) + name.substring(3);
+            set(fieldName);
+        } else {
+        	assert false : "Perhaps you need to make the method start with get or is?";
+        }
+        return methodProxy.invokeSuper(object, args);
+    }
+    
+    protected void set(String name) {
+        Attribute attr = _attrs.get(name);
+        assert (attr != null) : "Searching for a field that's not there: " + name;
+        _specifiedAttrs.add(attr);
+    }
+   
+    /**
+     * Adds an AND condition to the SearchBuilder.
+     * 
+     * @param name param name you will use later to set the values in this search condition.
+     * @param useless SearchBuilder.entity().get*() which refers to the field that you're searching on.
+     * @param op operation to apply to the field.
+     * @return this
+     */
+    public SearchBuilder<T> and(String name, Object useless, Op op) {
+        constructCondition(name, " AND ", _specifiedAttrs.get(0), op);
+        return this;
+    }
+    
+    public SearchBuilder<T> left(Op logic, String name, Object useless, Op op) {
+        assert (logic == null || logic == Op.OR || logic == Op.AND) : "You can only use logic operators for open paren";
+        constructCondition(name, (logic == null ? "" : logic.toString()) + " ( ", _specifiedAttrs.get(0), op);
+        return this;
+    }
+    
+    public SearchBuilder<T> selectField(Object useless) {
+        return select(Func.NATIVE, useless);
+    }
+    
+    public SearchBuilder<T> op(Op logic, String name, Object useless, Op op) {
+        return left(logic, name, useless, op);
+    }
+    
+    public SearchBuilder<T> openParen(Op logic, String name, Object useless, Op op) {
+        return left(logic, name, useless, op);
+    }
+    
+    public SearchBuilder<T> select(Func func, Object... useless) {
+        assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
+        
+        Pair<Func, Attribute[]> pair = new Pair<Func, Attribute[]>(func, _specifiedAttrs.toArray(new Attribute[_specifiedAttrs.size()]));
+        if (_selects == null) {
+            _selects = new ArrayList<Pair<Func, Attribute[]>>();
+        }
+        _selects.add(pair);
+        
+        _specifiedAttrs.clear();
+        
+        return this;
+    }
+    
+    public SearchBuilder<T> groupBy(Object... useless) {
+    	if(_groupBys == null) {
+    		_groupBys = new ArrayList<Attribute>();
+    	}
+    	
+    	Attribute[] attrs = _specifiedAttrs.toArray(new Attribute[_specifiedAttrs.size()]);
+    	for(Attribute attr : attrs)
+    		_groupBys.add(attr);
+    	
+        _specifiedAttrs.clear();
+        return this;
+    }
+    
+    /**
+     * Adds an OR condition to the SearchBuilder.
+     * 
+     * @param name param name you will use later to set the values in this search condition.
+     * @param useless SearchBuilder.entity().get*() which refers to the field that you're searching on.
+     * @param op operation to apply to the field.
+     * @return this
+     */
+    public SearchBuilder<T> or(String name, Object useless, Op op) {
+    	constructCondition(name, " OR ", _specifiedAttrs.get(0), op);
+        return this;
+    }
+    
+    public SearchBuilder<T> join(String name, SearchBuilder<?> builder, Object useless, Object useless2) {
+        assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
+        assert _specifiedAttrs.size() == 1 : "You didn't select the attribute.";
+        assert builder._entity != null : "SearchBuilder cannot be modified once it has been setup";
+        assert builder._specifiedAttrs.size() == 1 : "You didn't select the attribute.";
+        assert builder != this : "You can't add yourself, can you?  Really think about it!";
+        
+        Ternary<SearchBuilder<?>, Attribute, Attribute> t = new Ternary<SearchBuilder<?>, Attribute, Attribute>(builder, _specifiedAttrs.get(0), builder._specifiedAttrs.get(0));
+        if (_joins == null) {
+            _joins = new HashMap<String, Ternary<SearchBuilder<?>, Attribute, Attribute>>();
+        }
+        _joins.put(name, t);
+        
+        builder._specifiedAttrs.clear();
+        _specifiedAttrs.clear();
+        return this;
+    }
+    
+    protected void constructCondition(String conditionName, String cond, Attribute attr, Op op) {
+        assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
+        assert _specifiedAttrs.size() == 1 : "You didn't select the attribute.";
+        assert op != Op.SC : "Call join";
+        
+        Condition condition = new Condition(conditionName, cond, attr, op);
+        _conditions.add(condition);
+        _specifiedAttrs.clear();
+    }
+
+    /**
+     * creates the SearchCriteria so the actual values can be filled in.
+     * 
+     * @return SearchCriteria
+     */
+    public SearchCriteria create() {
+    	if (_entity != null) {
+    		done();
+    	}
+        return new SearchCriteria(this);
+    }
+    
+    public SearchCriteria create(String name, Object... values) {
+        SearchCriteria sc = create();
+        sc.setParameters(name, values);
+        return sc;
+    }
+    
+    public SearchBuilder<T> right() {
+        Condition condition = new Condition("rp", " ) ", null, Op.RP);
+        _conditions.add(condition);
+        return this;
+    }
+    
+    
+    public SearchBuilder<T> cp() {
+        return right();
+    }
+    
+    public SearchBuilder<T> closeParen() {
+        return right();
+    }
+    
+    /**
+     * Marks the SearchBuilder as completed in building the search conditions.
+     */
+    public synchronized void done() {
+    	if (_entity != null) {
+	    	Factory factory = (Factory)_entity;
+	    	factory.setCallback(0, null);
+	    	_entity = null;
+    	}
+    	if (_joins != null) {
+    	    for (Ternary<SearchBuilder<?>, Attribute, Attribute> join : _joins.values()) {
+    	        join.first().done();
+    	    }
+    	}
+    }
+    
+    protected static class Condition {
+        protected final String name;
+        protected final String cond;
+        protected final Op op;
+        protected final Attribute attr;
+        
+        protected Condition(String name) {
+            this(name, null, null, null);
+        }
+        
+        public Condition(String name, String cond, Attribute attr, Op op) {
+            this.name = name;
+            this.attr = attr;
+            this.cond = cond;
+            this.op = op;
+        }
+        
+        public void toSql(StringBuilder sql, Object[] params, int count) {
+            if (count > 0) {
+                sql.append(cond);
+            }
+            
+            if (op == Op.SC) {
+                sql.append(" (").append(((SearchCriteria)params[0]).getWhereClause()).append(") ");
+                return;
+            }
+            
+            if (attr == null) {
+                return;
+            }
+            
+            sql.append(attr.table).append(".").append(attr.columnName).append(op.toString());
+            if (op.getParams() == -1) {
+                for (int i = 0; i < params.length; i++) {
+                    sql.insert(sql.length() - 2, "?,");
+                }
+                sql.delete(sql.length() - 3, sql.length() - 2); // remove the last ,
+            } else if (op  == Op.EQ && (params == null || params.length == 0 || params[0] == null)) {
+            	sql.delete(sql.length() - 4, sql.length());
+            	sql.append(" IS NULL ");
+            } else if (op == Op.NEQ && (params == null || params.length == 0 || params[0] == null)) {
+            	sql.delete(sql.length() - 5, sql.length());
+            	sql.append(" IS NOT NULL ");
+            } else {
+            	assert((op.getParams() == 0 && params == null) || (params.length == op.getParams())) : "Problem with condition: " + name;
+            }
+        }
+        
+        @Override
+        public int hashCode() {
+            return name.hashCode();
+        }
+        
+        @Override
+        public boolean equals(Object obj) {
+        	if (!(obj instanceof Condition)) {
+        		return false;
+        	}
+        	
+            Condition condition = (Condition)obj;
+            return name.equals(condition.name);
+        }
     }
 }

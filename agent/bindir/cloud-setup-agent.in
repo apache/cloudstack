@@ -83,7 +83,7 @@ try:
 		stderr(str(e))
 		bail(cloud_utils.E_SETUPFAILED,"Cloud Agent setup failed")
 	
-	setup_agent_config(configfile)
+	setup_agent_config(configfile,brname)
 	stderr("Enabling and starting the Cloud Agent")
 	stop_service(servicename)
 	enable_service(servicename)

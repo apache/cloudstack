@@ -26,12 +26,14 @@ import com.cloud.host.Host;
 public class RunningHostInfoAgregator {
 	
 	public static class ZoneHostInfo {
+		public static int COMPUTING_HOST_MASK = 1;
 		public static int ROUTING_HOST_MASK = 2;
 		public static int STORAGE_HOST_MASK = 4;
-		public static int ALL_HOST_MASK = ROUTING_HOST_MASK | STORAGE_HOST_MASK;
+		public static int ALL_HOST_MASK = COMPUTING_HOST_MASK | ROUTING_HOST_MASK | STORAGE_HOST_MASK;
 		
 		private long dcId;
 		
+		// (1 << 0) : at least one computing host is running in the zone
 		// (1 << 1) : at least one routing host is running in the zone
 		// (1 << 2) : at least one storage host is running in the zone
 		private int flags = 0;
@@ -64,6 +66,7 @@ public class RunningHostInfoAgregator {
 			
 			Host.Type type = Enum.valueOf(Host.Type.class, countInfo.getHostType());
 			if(type == Host.Type.Routing) {
+				zoneInfo.setFlag(ZoneHostInfo.COMPUTING_HOST_MASK);
 				zoneInfo.setFlag(ZoneHostInfo.ROUTING_HOST_MASK);
 			} else if(type == Host.Type.Storage || type == Host.Type.SecondaryStorage) {
 				zoneInfo.setFlag(ZoneHostInfo.STORAGE_HOST_MASK);

@@ -27,7 +27,7 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.SearchCriteria;
 
 public interface EventDao extends GenericDao<EventVO, Long> {
-    public List<EventVO> searchAllEvents(SearchCriteria<EventVO> sc, Filter filter);
+    public List<EventVO> searchAllEvents(SearchCriteria sc, Filter filter);
 
     public List<EventVO> listOlderEvents(Date oldTime);
 

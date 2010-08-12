@@ -49,7 +49,7 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
     private final SearchBuilder<DataCenterLinkLocalIpAddressVO> FreePodDcIpSearch;
     
     public DataCenterLinkLocalIpAddressVO takeIpAddress(long dcId, long podId, long instanceId) {
-        SearchCriteria<DataCenterLinkLocalIpAddressVO> sc = FreeIpSearch.create();
+        SearchCriteria sc = FreeIpSearch.create();
         sc.setParameters("dc", dcId);
         sc.setParameters("pod", podId);
         
@@ -86,7 +86,7 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
     }
     
     public boolean mark(long dcId, long podId, String ip) {
-        SearchCriteria<DataCenterLinkLocalIpAddressVO> sc = FreePodDcIpSearch.create();
+        SearchCriteria sc = FreePodDcIpSearch.create();
         sc.setParameters("podId", podId);
         sc.setParameters("dcId", dcId);
         sc.setParameters("ipAddress", ip);
@@ -124,7 +124,7 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
     	if (s_logger.isDebugEnabled()) {
     		s_logger.debug("Releasing ip address: " + ipAddress + " data center " + dcId);
     	}
-        SearchCriteria<DataCenterLinkLocalIpAddressVO> sc = IpDcSearch.create();
+        SearchCriteria sc = IpDcSearch.create();
         sc.setParameters("ip", ipAddress);
         sc.setParameters("dc", dcId);
         sc.setParameters("instance", instanceId);
@@ -170,14 +170,14 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
     }
     
     public List<DataCenterLinkLocalIpAddressVO> listByPodIdDcId(long podId, long dcId) {
-		SearchCriteria<DataCenterLinkLocalIpAddressVO> sc = PodDcSearch.create();
+		SearchCriteria sc = PodDcSearch.create();
 		sc.setParameters("podId", podId);
 		sc.setParameters("dataCenterId", dcId);
 		return listBy(sc);
 	}
     
     public List<DataCenterLinkLocalIpAddressVO> listByPodIdDcIdIpAddress(long podId, long dcId, String ipAddress) {
-    	SearchCriteria<DataCenterLinkLocalIpAddressVO> sc = PodDcIpSearch.create();
+    	SearchCriteria sc = PodDcIpSearch.create();
     	sc.setParameters("dcId", dcId);
 		sc.setParameters("podId", podId);
 		sc.setParameters("ipAddress", ipAddress);

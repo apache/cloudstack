@@ -31,10 +31,8 @@ function activateDialog(dialog) {
 	
 	//bind Enter-Key-pressing event handler to the dialog 	
 	dialog.keypress(function(event) {
-	    if(event.keyCode == keycode_Enter) { 	        
-	        $('[aria-labelledby$='+dialog.attr("id")+']').find(":button:first").click();	
-	        return false; //event.preventDefault() + event.stopPropagation()
-	    }    
+	    if(event.keyCode == keycode_Enter) 	        
+	        $('[aria-labelledby$='+dialog.attr("id")+']').find(":button:first").click();	    
 	});
 }
 function removeDialogs() {
@@ -52,10 +50,6 @@ function toRole(type) {
 	} else if (type == "2") {
 		return "Domain-Admin";
 	}
-}
-
-function createURL(url) {
-  return url + "&sessionkey=" + g_sessionKey;
 }
 
 // Validation functions
@@ -217,7 +211,7 @@ $(document).ready(function() {
 				var submenuContent = $("#submenu_content_user");        
 				index = 0;	    
 				$.ajax({
-				       data: createURL("command=listUsers&response=json"),
+					data: "command=listUsers&response=json",
 					dataType: "json",
 					success: function(json) {			              	        
 						var users = json.listusersresponse.user;
@@ -237,13 +231,14 @@ $(document).ready(function() {
 				});
 			}
 			  
-			$("#submenu_user").bind("click",function(event){
+			$("#submenu_user").bind("click",function(event){	
+			 
 				$(this).toggleClass("submenu_links_on").toggleClass("submenu_links_off");
 				currentSubMenu.toggleClass("submenu_links_off").toggleClass("submenu_links_on");
 				currentSubMenu = $(this);  	
 					
 				var submenuContent = $("#submenu_content_user").show();
-				$("#submenu_content_domain, #submenu_content_api_test").hide();   		    
+				$("#submenu_content_domain").hide();   		    
 									
 				listUsers();	
 				
@@ -318,7 +313,7 @@ $(document).ready(function() {
 											
 						$.ajax({
 							type: "POST",
-						      data: createURL("command=createUser&username="+encodeURIComponent(username)+"&password="+encodeURIComponent(password)+"&email="+encodeURIComponent(email)+"&firstname="+encodeURIComponent(firstname)+"&lastname="+encodeURIComponent(lastname)+"&account="+account+"&accounttype="+accountType+"&domainid="+domainId+moreCriteria.join("")+"&response=json"),
+							data: "command=createUser&username="+encodeURIComponent(username)+"&password="+encodeURIComponent(password)+"&email="+encodeURIComponent(email)+"&firstname="+encodeURIComponent(firstname)+"&lastname="+encodeURIComponent(lastname)+"&account="+account+"&accounttype="+accountType+"&domainid="+domainId+moreCriteria.join("")+"&response=json",
 							dataType: "json",
 							async: false,
 							success: function(json) {								    					
@@ -393,7 +388,7 @@ $(document).ready(function() {
 																
 								thisDialog.dialog("close");
 								$.ajax({
-								       data: createURL("command=updateUser&id="+id+"&username="+encodeURIComponent(username)+"&email="+encodeURIComponent(email)+"&firstname="+encodeURIComponent(firstname)+"&lastname="+encodeURIComponent(lastname)+"&timezone="+encodeURIComponent(timezone)+"&response=json"),
+									data: "command=updateUser&id="+id+"&username="+encodeURIComponent(username)+"&email="+encodeURIComponent(email)+"&firstname="+encodeURIComponent(firstname)+"&lastname="+encodeURIComponent(lastname)+"&timezone="+encodeURIComponent(timezone)+"&response=json",
 									dataType: "json",
 									success: function(json) {								      						    					
 										template.find("#user_username").text(username);
@@ -430,7 +425,7 @@ $(document).ready(function() {
 																
 								thisDialog.dialog("close");
 								$.ajax({
-								       data: createURL("command=updateUser&id="+id+"&password="+password+"&response=json"),
+									data: "command=updateUser&id="+id+"&password="+password+"&response=json",
 									dataType: "json",
 									success: function(json) {							       				
 									}
@@ -445,7 +440,7 @@ $(document).ready(function() {
 							
 					case "delete_link":           
 						$.ajax({
-						       data: createURL("command=deleteUser&id="+id+"&response=json"),
+							data: "command=deleteUser&id="+id+"&response=json",
 							dataType: "json",
 							success: function(json) {						    
 								$("#user_"+id).slideUp("slow", function() { 
@@ -475,7 +470,7 @@ $(document).ready(function() {
 				var submenuContent = $("#submenu_content_domain");        
 				index = 0;	    
 				$.ajax({
-				       data: createURL("command=listDomains&response=json"),
+					data: "command=listDomains&response=json",
 					dataType: "json",
 					success: function(json) {			            	        
 						var domains = json.listdomainsresponse.domain;
@@ -496,12 +491,13 @@ $(document).ready(function() {
 			}
 			
 			$("#submenu_domain").bind("click",function(event){	
+			 
 				$(this).toggleClass("submenu_links_on").toggleClass("submenu_links_off");
 				currentSubMenu.toggleClass("submenu_links_off").toggleClass("submenu_links_on");
 				currentSubMenu = $(this);  	
 					
 				var submenuContent = $("#submenu_content_domain").show();
-				$("#submenu_content_user, #submenu_content_api_test").hide();   		    
+				$("#submenu_content_user").hide();   		    
 									
 				listDomains();
 				
@@ -548,7 +544,7 @@ $(document).ready(function() {
 						thisDialog.dialog("close");					
 								
 						$.ajax({
-						       data: createURL("command=createDomain&name="+encodeURIComponent(name)+moreCriteria.join("")+"&response=json"),
+							data: "command=createDomain&name="+encodeURIComponent(name)+moreCriteria.join("")+"&response=json",
 							dataType: "json",
 							async: false,
 							success: function(json) {	   															       
@@ -600,7 +596,7 @@ $(document).ready(function() {
 								
 								thisDialog.dialog("close");
 								$.ajax({
-								       data: createURL("command=updateDomain&id="+id+"&name="+encodeURIComponent(name)+"&response=json"),
+									data: "command=updateDomain&id="+id+"&name="+encodeURIComponent(name)+"&response=json",
 									dataType: "json",
 									success: function(json) {								      						    					
 										template.find("#domain_name").text(name);								  	
@@ -616,7 +612,7 @@ $(document).ready(function() {
 					
 					case "delete_link":           
 						$.ajax({
-						       data: createURL("command=deleteDomain&id="+id+"&response=json"),
+							data: "command=deleteDomain&id="+id+"&response=json",
 							dataType: "json",
 							success: function(json) {						    
 								$("#domain_"+id).slideUp("slow", function() { 
@@ -629,149 +625,10 @@ $(document).ready(function() {
 			});  	
 			//*** domain (end) *********************************************** 
 			
-			//*** API Test (begin) *******************************************
-			$("#submenu_api_test").bind("click",function(event){
-				$(this).toggleClass("submenu_links_on").toggleClass("submenu_links_off");
-				currentSubMenu.toggleClass("submenu_links_off").toggleClass("submenu_links_on");
-				currentSubMenu = $(this);  	
-					
-				var submenuContent = $("#submenu_content_api_test").show();
-				$("#submenu_content_domain, #submenu_content_user").hide();   												
-				
-				return false;
-			}); 
-			
-			var responseText;
-			var responseIndent = 0;
-			
-			function includingIndent(value, extraIndent) {	
-			    if(extraIndent == null)	  
-			        extraIndent = 0; 
-			    var s = [];
-			    for(var k=0; k<(responseIndent+extraIndent); k++)
-			        s.push('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;');			
-			    return (s.join('')+value);  			
-			}
-			
-			function objectToString(obj) {
-			    if(typeof obj == 'object') {
-			        responseText += ('{ <br>');  // {
-			        responseIndent ++;
-			        var i = 0;
-			        for(var p in obj) {			            
-			            if(i==0) {
-			                responseText += includingIndent('"' + p + '" : ');  
-			            }
-			            else {
-			                responseText += (', <br>')
-			                responseText += includingIndent('"' + p + '" : '); 
-			            }
-			            objectToString(obj[p]);		
-			            i++;	            
-			        }
-			        responseText += ('<br>' + includingIndent('} ', -1));
-			        responseIndent--;
-			    } else if (typeof obj == 'string') {
-			        responseText += ('"'+ obj + '"');
-			    }			
-			}
-			
-			function outputAPITestResult(res, responseType, isAppend) {
-			    if(isAppend == false) 
-			        responseText = '';    
-			    else       
-			        responseText += "<br><br>";
-			                                                      
-                if(responseType == "json") {
-                    objectToString(res);          
-                    $("#submenu_content_api_test").find("#command_response").html(responseText);    
-                }          
-                else if(responseType == "xml") {
-                    responseText = res.xml;  
-                    $("#submenu_content_api_test").find("#command_response").text(responseText);
-                }
-			}
-						
-			$("#submenu_content_api_test").find("#submit").bind("click", function(event){               
-                var cmd = $("#submenu_content_api_test").find("#command").val();   
-                var sync_async = $("#submenu_content_api_test").find("#sync_async").val(); 
-                var responseType = $("#submenu_content_api_test").find("#response_type").val(); 
-                if(sync_async == "sync") {
-                    $.ajax({   
-                        data: createURL("command="+cmd+"&response="+responseType), 
-                        dataType: responseType,
-                        success: function(res) {  
-                            outputAPITestResult(res, responseType, false);
-                        }
-                    });     
-                } else if (sync_async == "async") {
-                    $.ajax({
- 					    data: createURL("command="+cmd+"&response="+responseType), 
-					    dataType: responseType,
-					    success: function(res) {					       
-					        outputAPITestResult(res, responseType, false);
-					        var jobId = res.createvolumeresponse.jobid;					        
-					        var timerKey = "apiTest_"+jobId;
-					        $("body").everyTime(2000, timerKey, function() {
-							    $.ajax({
-								    data: createURL("command=queryAsyncJobResult&jobId="+jobId+"&response="+responseType),
-								    dataType: responseType,
-								    success: function(res) {
-					                    outputAPITestResult(res, responseType, true);	
-					                    var result = res.queryasyncjobresultresponse;
-									    if (result.jobstatus == 0) {
-										    return; //Job has not completed
-									    } else {											    
-										    $("body").stopTime(timerKey);
-										    if (result.jobstatus == 1) {
-											    // Succeeded                                           
-										    } else if (result.jobstatus == 2) {
-											    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");
-										    }
-									    }
-								    },
-								    error: function(XMLHttpResponse) {
-					                    outputAPITestResult(res, responseType, true);	
-									    handleError(XMLHttpResponse);
-									    $("body").stopTime(timerKey);	
-								    }
-							    });
-						    }, 0);						    					
-					    },
-					    error: function(XMLHttpResponse) {	
-					        outputAPITestResult(res, responseType, false);							    
-							handleError(XMLHttpResponse);							
-							
-					    }
-				    });    
-                }          
-                return false;
-            });
-			
-			$("#submenu_content_api_test").find("#sync_async").bind("change", function(event) {
-			    if($(this).val() == "sync") {
-			        $("#submenu_content_api_test").find("#command").val("listTemplates&templatefilter=self");
-			        $("#submenu_content_api_test").find("#response_type").empty().append('<option value="json">json</option><option value="xml">xml</option>');
-			    } else { //async
-			        $("#submenu_content_api_test").find("#command").val("createVolume&zoneId=10&name=volume_for_API_testing&diskOfferingId=4&accountId=1");
-			        $("#submenu_content_api_test").find("#response_type").empty().append('<option value="json">json</option>');
-			    }
-			});
-			$("#submenu_content_api_test").find("#sync_async").change();
-			
-			$("#submenu_content_api_test").find("#command").bind("keypress", function(event) {
-			    if(event.keyCode == keycode_Enter)  {
-			        $("#submenu_content_api_test").find("#submit").click();
-			        return false;
-			    }
-			});
-			
-			//*** API Test (end) ********************************************* 
-			
 			//*** shared (begin) *********************************************
 			function populateDomainField(dropDownBox) {              
 				$.ajax({
-				       data: createURL("command=listDomains&response=json"),
+					data: "command=listDomains&response=json",
 					dataType: "json",
 					success: function(json) {			           
 						var domains = json.listdomainsresponse.domain;								

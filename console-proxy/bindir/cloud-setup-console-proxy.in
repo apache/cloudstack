@@ -2,19 +2,6 @@
 
 import sys, os, subprocess, errno, re
 
-# ---- This snippet of code adds the sources path and the waf configured PYTHONDIR to the Python path ----
-# ---- We do this so cloud_utils can be looked up in the following order:
-# ---- 1) Sources directory
-# ---- 2) waf configured PYTHONDIR
-# ---- 3) System Python path
-for pythonpath in (
-		"@PYTHONDIR@",
-		os.path.join(os.path.dirname(__file__),os.path.pardir,os.path.pardir,"python","lib"),
-	):
-		if os.path.isdir(pythonpath): sys.path.insert(0,pythonpath)
-# ---- End snippet of code ----
-import cloud_utils
-
 E_GENERIC= 1
 E_NOKVM = 2
 E_NODEFROUTE = 3
@@ -131,57 +118,98 @@ CentOS = os.path.exists("/etc/centos-release") or ( os.path.exists("/etc/redhat-
 
 #--------------- procedure starts here ------------
 
-def main():
-	
-	servicename = "@PACKAGE@-console-proxy"
-	
-	stderr("Welcome to the Cloud Console Proxy setup")
-	stderr("")
+stderr("Welcome to the Cloud Console Proxy setup")
+stderr("")
 
-	try:
-		check_hostname()
-		stderr("The hostname of this machine is properly set up")
-	except CalledProcessError,e:
-		bail(E_NOFQDN,"This machine does not have an FQDN (fully-qualified domain name) for a hostname")
+try:
+	check_hostname()
+	stderr("The hostname of this machine is properly set up")
+except CalledProcessError,e:
+	bail(E_NOFQDN,"This machine does not have an FQDN (fully-qualified domain name) for a hostname")
 
+try:
+	service("@PACKAGE@-console-proxy","status")
+except CalledProcessError,e:
 	stderr("Stopping the Cloud Console Proxy")
-	cloud_utils.stop_service(servicename)
+	m = service("@PACKAGE@-console-proxy","stop")
+	print m.stdout + m.stderr
 	stderr("Cloud Console Proxy stopped")
 
-	ports = "8002".split()
-	if Fedora or CentOS:
-		try:
-			o = chkconfig("--list","iptables")
-			if ":on" in o.stdout and os.path.exists("/etc/sysconfig/iptables"):
-				stderr("Setting up firewall rules to permit traffic to Cloud services")
-				service.iptables.start() ; print o.stdout + o.stderr
-				for p in ports: iptables("-I","INPUT","1","-p","tcp","--dport",p,'-j','ACCEPT')
-				o = service.iptables.save() ; print o.stdout + o.stderr
-		except CalledProcessError,e:
-			print e.stdout+e.stderr
-			bail(E_FWRECONFIGFAILED,"Firewall rules could not be set")
-	else:
-		stderr("Setting up firewall rules to permit traffic to Cloud services")
-		try:
-			for p in ports: ufw.allow(p)
-			stderr("Rules set")
-		except CalledProcessError,e:
-			print e.stdout+e.stderr
-			bail(E_FWRECONFIGFAILED,"Firewall rules could not be set")
+stderr("Determining default route")
+routes = ip.route().stdout.splitlines()
+defaultroute = [ x for x in routes if x.startswith("default") ]
+if not defaultroute: bail(E_NODEFROUTE,"Your network configuration does not have a default route")
+dev = defaultroute[0].split()[4]
+stderr("Default route assigned to device %s"%dev)
+	
+ports = "8002".split()
+if Fedora or CentOS:
+	try:
+		o = chkconfig("--list","iptables")
+		if ":on" in o.stdout and os.path.exists("/etc/sysconfig/iptables"):
+			stderr("Setting up firewall rules to permit traffic to Cloud services")
+			service.iptables.start() ; print o.stdout + o.stderr
+			for p in ports: iptables("-I","INPUT","1","-p","tcp","--dport",p,'-j','ACCEPT')
+			o = service.iptables.save() ; print o.stdout + o.stderr
+	except CalledProcessError,e:
+		print e.stdout+e.stderr
+		bail(E_FWRECONFIGFAILED,"Firewall rules could not be set")
+else:
+	stderr("Setting up firewall rules to permit traffic to Cloud services")
+	try:
+		for p in ports: ufw.allow(p)
+		stderr("Rules set")
+	except CalledProcessError,e:
+		print e.stdout+e.stderr
+		bail(E_FWRECONFIGFAILED,"Firewall rules could not be set")
 
-		stderr("We are going to enable ufw now.  This may disrupt network connectivity and service availability.  See the ufw documentation for information on how to manage ufw firewall policies.")
-		try:
-			o = ufw.enable < "y\n" ; print o.stdout + o.stderr
-		except CalledProcessError,e:
-			print e.stdout+e.stderr
-			bail(E_FWRECONFIGFAILED,"Firewall could not be enabled")
+	stderr("We are going to enable ufw now.  This may disrupt network connectivity and service availability.  See the ufw documentation for information on how to manage ufw firewall policies.")
+	try:
+		o = ufw.enable < "y\n" ; print o.stdout + o.stderr
+	except CalledProcessError,e:
+		print e.stdout+e.stderr
+		bail(E_FWRECONFIGFAILED,"Firewall could not be enabled")
 
-	cloud_utils.setup_consoleproxy_config("@CPSYSCONFDIR@/agent.properties")
-	stderr("Enabling and starting the Cloud Console Proxy")
-	cloud_utils.enable_service(servicename)
-	stderr("Cloud Console Proxy restarted")
+stderr("Examining console-proxy configuration")
+fn = "@CPSYSCONFDIR@/agent.properties"
+text = file(fn).read(-1)
+lines = [ s.strip() for s in text.splitlines() ]
+confopts = dict([ m.split("=",1) for m in lines if "=" in m and not m.startswith("#") ])
+confposes = dict([ (m.split("=",1)[0],n) for n,m in enumerate(lines) if "=" in m and not m.startswith("#") ])
 
-if __name__ == "__main__":
-	main()
+if not "guid" in confopts:
+	stderr("Generating GUID for this console-proxy")
+	confopts['guid'] = uuidgen().stdout.strip()
+
+try: host = confopts["host"]
+except KeyError: host = "localhost"
+stderr("Please enter the host name of the management server that this console-proxy will connect to: (just hit ENTER to go with %s)",host)
+newhost = raw_input().strip()
+if newhost: host = newhost
+confopts["host"] = host
+
+confopts["private.network.device"] = dev
+confopts["public.network.device"] = dev
+
+for opt,val in confopts.items():
+	line = "=".join([opt,val])
+	if opt not in confposes: lines.append(line)
+	else: lines[confposes[opt]] = line
+
+text = "\n".join(lines)
+try:	file(fn,"w").write(text)
+except Exception: bail(E_CPRECONFIGFAILED,"Console Proxy configuration failed")
+
+stderr("")
+stderr("Cloud Console Proxy setup completed successfully")
+
+stderr("Starting the Cloud Console Proxy")
+try:
+	m = service("@PACKAGE@-console-proxy","start")
+	print m.stdout + m.stderr
+except CalledProcessError,e:
+	print e.stdout + e.stderr
+	bail(E_CPFAILEDTOSTART,"@PACKAGE@-console-proxy failed to start")
+
 
 # FIXMES: 1) nullify networkmanager on ubuntu (asking the user first) and enable the networking service permanently

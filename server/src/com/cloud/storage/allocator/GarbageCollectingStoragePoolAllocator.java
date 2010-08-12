@@ -30,7 +30,7 @@ import com.cloud.agent.api.to.DiskCharacteristicsTO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOffering;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;

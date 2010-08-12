@@ -25,8 +25,9 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.async.AsyncInstanceCreateStatus;
+import com.cloud.async.AsyncJobResult;
 import com.cloud.async.executor.CreatePrivateTemplateResultObject;
 import com.cloud.serializer.SerializerHelper;
 import com.cloud.server.Criteria;
@@ -42,104 +43,19 @@ public class CreateTemplateCmd extends BaseCmd {
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.BITS, Boolean.FALSE));
     	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISPLAY_TEXT, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_FEATURED, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_PUBLIC, Boolean.FALSE)); 
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.OS_TYPE_ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PASSWORD_ENABLED, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.REQUIRES_HVM, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SNAPSHOT_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VOLUME_ID, Boolean.FALSE));
-
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.REQUIRES_HVM, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.BITS, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PASSWORD_ENABLED, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.OS_TYPE_ID, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE)); 
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_PUBLIC, Boolean.FALSE)); 
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_FEATURED, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SNAPSHOT_ID, Boolean.FALSE));
     }
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="bits", type=CommandType.INTEGER)
-    private Integer bits;
-
-    @Parameter(name="displaytext", type=CommandType.STRING, required=true)
-    private String displayText;
-
-    @Parameter(name="isfeatured", type=CommandType.BOOLEAN)
-    private Boolean featured;
-
-    @Parameter(name="ispublic", type=CommandType.BOOLEAN)
-    private Boolean publicTemplate;
-
-    @Parameter(name="name", type=CommandType.STRING, required=true)
-    private String templateName;
-
-    @Parameter(name="ostypeid", type=CommandType.LONG, required=true)
-    private Long osTypeId;
-
-    @Parameter(name="passwordenabled", type=CommandType.BOOLEAN)
-    private Boolean passwordEnabled;
-
-    @Parameter(name="requireshvm", type=CommandType.BOOLEAN)
-    private Boolean requiresHvm;
-
-    @Parameter(name="snapshotid", type=CommandType.LONG)
-    private Long snapshotId;
-
-    @Parameter(name="volumeid", type=CommandType.LONG)
-    private Long volumeId;
-
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public Integer getBits() {
-        return bits;
-    }
-
-    public String getDisplayText() {
-        return displayText;
-    }
-
-    public Boolean isFeatured() {
-        return featured;
-    }
-
-    public Boolean isPublic() {
-        return publicTemplate;
-    }
-
-    public String getTemplateName() {
-        return templateName;
-    }
-
-    public Long getOsTypeId() {
-        return osTypeId;
-    }
-
-    public Boolean isPasswordEnabled() {
-        return passwordEnabled;
-    }
-
-    public Boolean getRequiresHvm() {
-        return requiresHvm;
-    }
-
-    public Long getSnapshotId() {
-        return snapshotId;
-    }
-
-    public Long getVolumeId() {
-        return volumeId;
-    }
-
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     public String getName() {
         return s_name;
@@ -219,14 +135,18 @@ public class CreateTemplateCmd extends BaseCmd {
         c.addCriteria(Criteria.NAME, name);
         c.addCriteria(Criteria.CREATED_BY, Long.valueOf(volume.getAccountId()));
         List<VMTemplateVO> templates = getManagementServer().searchForTemplates(c);
-        if ((templates != null) && !templates.isEmpty()) {
-            for (VMTemplateVO template : templates) {
-                if (template.getName().equalsIgnoreCase(name)) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "a private template with name " + name + " already exists for account " +
-                            volume.getAccountId() + ", please try again with a different name");
-                }
-            }
-        }
+
+//        if ((templates != null) && !templates.isEmpty()) 
+//        {
+//            for (VMTemplateVO template : templates) 
+//            {
+//                if (template.getName().equalsIgnoreCase(name)) 
+//                {
+//                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "a private template with name " + name + " already exists for account " +
+//                            volume.getAccountId() + ", please try again with a different name");
+//                }
+//            }
+//        }
         
         // If command is executed via 8096 port, set userId to the id of System account (1)
         if (userId == null) {

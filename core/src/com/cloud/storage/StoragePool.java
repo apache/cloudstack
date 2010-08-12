@@ -19,7 +19,6 @@ package com.cloud.storage;
 
 import java.util.Date;
 
-import com.cloud.host.Status;
 import com.cloud.storage.Storage.StoragePoolType;
 
 /**
@@ -96,9 +95,4 @@ public interface StoragePool  {
      * @return the storage pool represents a local storage resource
      */
     boolean isLocal();
-
-    /**
-     * @return the storage pool status
-     */
-	Status getStatus();
 }

@@ -145,8 +145,7 @@ public class ConsoleProxyViewer implements java.lang.Runnable, RfbViewer, RfbPro
 			if(rfbThread.isAlive()) {
 				dropMe = true;
 				viewerInReuse = true;
-				if(rfb != null)
-					rfb.close();
+				rfb.close();
 				
 				try {
 					rfbThread.join();
@@ -159,7 +158,8 @@ public class ConsoleProxyViewer implements java.lang.Runnable, RfbViewer, RfbPro
 		
 		dropMe = false;
 		rfbThread = new Thread(this);
-		rfbThread.setName("RFB Thread " + rfbThread.getId() + " >" + host + ":" + port);
+		rfbThread.setName("RFB Thread " + rfbThread.getId() + " >" + host + ":"
+				+ port);
 		rfbThread.start();
 
 		tileDirtyEvent = new Object();

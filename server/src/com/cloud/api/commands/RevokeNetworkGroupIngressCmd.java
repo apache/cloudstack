@@ -10,7 +10,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.user.Account;
@@ -24,103 +23,20 @@ public class RevokeNetworkGroupIngressCmd extends BaseCmd {
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.CIDR_LIST, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.END_PORT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ICMP_CODE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ICMP_TYPE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NETWORK_GROUP_NAME, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PROTOCOL, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.START_PORT, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.END_PORT, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ICMP_TYPE, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ICMP_CODE, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PROTOCOL, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NETWORK_GROUP_NAME, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.CIDR_LIST, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_NETWORK_GROUP_LIST, Boolean.FALSE));
 
     }
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="account", type=CommandType.STRING)
-    private String accountName;
-
-    @Parameter(name="cidrlist", type=CommandType.STRING)
-    private String cidrList;
-
-    @Parameter(name="domainid", type=CommandType.LONG)
-    private Long domainId;
-
-    @Parameter(name="endport", type=CommandType.INTEGER)
-    private Integer endPort;
-
-    @Parameter(name="icmpcode", type=CommandType.INTEGER)
-    private Integer icmpCode;
-
-    @Parameter(name="icmptype", type=CommandType.INTEGER)
-    private Integer icmpType;
-
-    @Parameter(name="networkgroupname", type=CommandType.STRING, required=true)
-    private String networkGroupName;
-
-    @Parameter(name="protocol", type=CommandType.STRING)
-    private String protocol;
-
-    @Parameter(name="startport", type=CommandType.INTEGER)
-    private Integer startPort;
-
-    @Parameter(name="usernetworkgrouplist", type=CommandType.MAP)
-    private Map userNetworkGroupList;
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public String getCidrList() {
-        return cidrList;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public Integer getEndPort() {
-        return endPort;
-    }
-
-    public Integer getIcmpCode() {
-        return icmpCode;
-    }
-
-    public Integer getIcmpType() {
-        return icmpType;
-    }
-
-    public String getNetworkGroupName() {
-        return networkGroupName;
-    }
-
-    public String getProtocol() {
-        return protocol;
-    }
-
-    public Integer getStartPort() {
-        return startPort;
-    }
-
-    public Map getUserNetworkGroupList() {
-        return userNetworkGroupList;
-    }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     public String getName() {
         return s_name;

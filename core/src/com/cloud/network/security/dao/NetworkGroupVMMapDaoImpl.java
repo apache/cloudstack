@@ -18,13 +18,14 @@
 
 package com.cloud.network.security.dao;
 
+import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
 
 import com.cloud.network.security.NetworkGroupVMMapVO;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.State;
@@ -35,7 +36,7 @@ public class NetworkGroupVMMapDaoImpl extends GenericDaoBase<NetworkGroupVMMapVO
     private SearchBuilder<NetworkGroupVMMapVO> ListByVmId;
     private SearchBuilder<NetworkGroupVMMapVO> ListByVmIdGroupId;
 
-    private GenericSearchBuilder<NetworkGroupVMMapVO, Long> ListVmIdByNetworkGroup;
+    private SearchBuilder<NetworkGroupVMMapVO> ListVmIdByNetworkGroup;
 
     private SearchBuilder<NetworkGroupVMMapVO> ListByIp;
     private SearchBuilder<NetworkGroupVMMapVO> ListByNetworkGroup;
@@ -47,7 +48,7 @@ public class NetworkGroupVMMapDaoImpl extends GenericDaoBase<NetworkGroupVMMapVO
         ListByIpAndVmId.and("instanceId", ListByIpAndVmId.entity().getInstanceId(), SearchCriteria.Op.EQ);
         ListByIpAndVmId.done();
 
-        ListVmIdByNetworkGroup = createSearchBuilder(Long.class);
+        ListVmIdByNetworkGroup = createSearchBuilder();
         ListVmIdByNetworkGroup.and("networkGroupId", ListVmIdByNetworkGroup.entity().getNetworkGroupId(), SearchCriteria.Op.EQ);
         ListVmIdByNetworkGroup.selectField(ListVmIdByNetworkGroup.entity().getInstanceId());
         ListVmIdByNetworkGroup.done();
@@ -76,7 +77,7 @@ public class NetworkGroupVMMapDaoImpl extends GenericDaoBase<NetworkGroupVMMapVO
     }
 
     public List<NetworkGroupVMMapVO> listByIpAndInstanceId(String ipAddress, long vmId) {
-        SearchCriteria<NetworkGroupVMMapVO> sc = ListByIpAndVmId.create();
+        SearchCriteria sc = ListByIpAndVmId.create();
         sc.setParameters("ipAddress", ipAddress);
         sc.setParameters("instanceId", vmId);
         return listActiveBy(sc);
@@ -84,35 +85,35 @@ public class NetworkGroupVMMapDaoImpl extends GenericDaoBase<NetworkGroupVMMapVO
 
     @Override
     public List<NetworkGroupVMMapVO> listByNetworkGroup(long networkGroupId) {
-        SearchCriteria<NetworkGroupVMMapVO> sc = ListByNetworkGroup.create();
+        SearchCriteria sc = ListByNetworkGroup.create();
         sc.setParameters("networkGroupId", networkGroupId);
         return listActiveBy(sc);
     }
 
     @Override
     public List<NetworkGroupVMMapVO> listByIp(String ipAddress) {
-        SearchCriteria<NetworkGroupVMMapVO> sc = ListByIp.create();
+        SearchCriteria sc = ListByIp.create();
         sc.setParameters("ipAddress", ipAddress);
         return listActiveBy(sc);
     }
 
     @Override
     public List<NetworkGroupVMMapVO> listByInstanceId(long vmId) {
-        SearchCriteria<NetworkGroupVMMapVO> sc = ListByVmId.create();
+        SearchCriteria sc = ListByVmId.create();
         sc.setParameters("instanceId", vmId);
         return listActiveBy(sc);
     }
 
     @Override
     public int deleteVM(long instanceId) {
-    	SearchCriteria<NetworkGroupVMMapVO> sc = ListByVmId.create();
+    	SearchCriteria sc = ListByVmId.create();
         sc.setParameters("instanceId", instanceId);
         return super.delete(sc);
     }
 
 	@Override
 	public List<NetworkGroupVMMapVO> listByNetworkGroup(long networkGroupId, State... vmStates) {
-		SearchCriteria<NetworkGroupVMMapVO> sc = ListByNetworkGroupAndStates.create();
+		SearchCriteria sc = ListByNetworkGroupAndStates.create();
 		sc.setParameters("networkGroupId", networkGroupId);
 		sc.setParameters("states", (Object[])vmStates);
 		return listActiveBy(sc);
@@ -120,14 +121,20 @@ public class NetworkGroupVMMapDaoImpl extends GenericDaoBase<NetworkGroupVMMapVO
 	
     @Override
     public List<Long> listVmIdsByNetworkGroup(long networkGroupId) {
-        SearchCriteria<Long> sc = ListVmIdByNetworkGroup.create();
+        SearchCriteria sc = ListVmIdByNetworkGroup.create();
         sc.setParameters("networkGroupId", networkGroupId);
-        return searchAll(sc, null);
+        List<Object[]> searchResult = this.searchAll(sc, null);
+        List<Long> result = new ArrayList<Long>(searchResult.size());
+        for (Object[] r: searchResult){
+        	result.add(((BigInteger)r[0]).longValue());
+        }
+        return result;
     }
 
 	@Override
-	public NetworkGroupVMMapVO findByVmIdGroupId(long instanceId, long networkGroupId) {
-        SearchCriteria<NetworkGroupVMMapVO> sc = ListByVmIdGroupId.create();
+	public NetworkGroupVMMapVO findByVmIdGroupId(long instanceId,
+			long networkGroupId) {
+        SearchCriteria sc = ListByVmIdGroupId.create();
         sc.setParameters("networkGroupId", networkGroupId);
         sc.setParameters("instanceId", instanceId);
 		return findOneBy(sc);

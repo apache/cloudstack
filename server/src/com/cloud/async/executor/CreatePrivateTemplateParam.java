@@ -20,11 +20,9 @@ package com.cloud.async.executor;
 
 public class CreatePrivateTemplateParam {
 	private long userId;
-	private long accountId;
 	private Long volumeId;
 	private Long snapshotId;
 	private long guestOsId;
-	private long eventId;
 	private String name;
 	private String description;
 	private Boolean requiresHvm;
@@ -36,14 +34,12 @@ public class CreatePrivateTemplateParam {
 	public CreatePrivateTemplateParam() {
 	}
 
-	public CreatePrivateTemplateParam(long userId, long accountId, Long volumeId, long guestOsId, long eventId, String name, String description, Boolean requiresHvm, Integer bits, Boolean passwordEnabled, Boolean isPublic, Boolean featured, Long snapshotId) {
+	public CreatePrivateTemplateParam(long userId, Long volumeId, long guestOsId, String name, String description, Boolean requiresHvm, Integer bits, Boolean passwordEnabled, Boolean isPublic, Boolean featured, Long snapshotId) {
 		this.userId = userId;
-		this.accountId = accountId;
 		this.name = name;
 		this.description = description;
 		this.volumeId = volumeId;
 		this.guestOsId = guestOsId;
-		this.eventId = eventId;
 		this.requiresHvm = requiresHvm;
 		this.bits = bits;
 		this.passwordEnabled = passwordEnabled;
@@ -60,14 +56,6 @@ public class CreatePrivateTemplateParam {
 		this.userId = userId;
 	}
 	
-	public long getAccountId() {
-    	return accountId;
-    }
-
-	public void setAccountId(long accountId) {
-    	this.accountId = accountId;
-    }
-
 	public long getVolumeId() {
 		return volumeId;
 	}
@@ -92,14 +80,6 @@ public class CreatePrivateTemplateParam {
 		this.guestOsId = guestOsId;
 	}
 	
-	public long getEventId() {
-    	return eventId;
-    }
-
-	public void setEventId(long eventId) {
-    	this.eventId = eventId;
-    }
-
 	public String getName() {
 		return name;
 	}

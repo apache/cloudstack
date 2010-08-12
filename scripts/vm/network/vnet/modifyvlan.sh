@@ -1,109 +1,180 @@
 #!/usr/bin/env bash
-# $Id: modifyvlan.sh 11388 2010-08-02 17:04:13Z edison $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/vm/network/vnet/modifyvlan.sh $
+# $Id: modifyvlan.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.x.beta/java/scripts/vm/network/vnet/modifyvlan.sh $
 # modifyvlan.sh -- adds and deletes VLANs from a Routing Server
 #
 #
 # set -x
 
 usage() {
-  printf "Usage: %s: -o <op>(add | delete) -v <vlan id> -p <pif> \n" 
+  printf "Usage: %s: -o <op> -v <vlan id> -g <vlan gateway> \n" 
 }
 
-VIRBR=cloudVirBr
 addVlan() {
 	local vlanId=$1
-	local pif=$2
-	local vlanDev=$pif.$vlanId
-	local vlanBr=$VIRBR$vlanId
 	
-	if [ ! -d /sys/class/net/$vlanDev ]
+	# Try to add bond1.[VLAN ID] via vconfig, if it does not already exist
+	ifconfig bond1.$vlanId > /dev/null
+	
+	if [ $? -gt 0 ]
 	then
-		vconfig add $pif $vlanId > /dev/null
+		vconfig add bond1 $vlanId
 		
 		if [ $? -gt 0 ]
 		then
-			printf "Failed to create vlan $vlanId on pif: $pif."
 			return 1
 		fi
 	fi
 	
-	# is up?
-  	ifconfig |grep -w $vlanDev > /dev/null
+	# Make ifcfg-bond1.$vlanId
+	rm /etc/sysconfig/network-scripts/ifcfg-bond1.$vlanId
+	touch /etc/sysconfig/network-scripts/ifcfg-bond1.$vlanId
+	echo "DEVICE=bond1.$vlanId" >> /etc/sysconfig/network-scripts/ifcfg-bond1.$vlanId
+	echo "ONBOOT=yes" >> /etc/sysconfig/network-scripts/ifcfg-bond1.$vlanId
+	echo "BOOTPROTO=none" >> /etc/sysconfig/network-scripts/ifcfg-bond1.$vlanId
+	echo "VLAN=yes" >> /etc/sysconfig/network-scripts/ifcfg-bond1.$vlanId
+	echo "BRIDGE=xenbr1.$vlanId" >> /etc/sysconfig/network-scripts/ifcfg-bond1.$vlanId
+	
+	# Try to add xenbr1.$vlanId over bond1.$vlanId, if it does not already exist
+	
+	ifconfig xenbr1.$vlanId > /dev/null
+	
 	if [ $? -gt 0 ]
 	then
-		ifconfig $vlanDev up > /dev/null
-	fi
-	
-	if [ ! -d /sys/class/net/$vlanBr ]
-	then
-		brctl addbr $vlanBr > /dev/null
+		brctl addbr xenbr1.$vlanId
 	
 		if [ $? -gt 0 ]
 		then
-			printf "Failed to create br: $vlanBr"
-			return 2
+			return 1
 		fi
-	fi
 	
-	#pif is eslaved into vlanBr?
-	ls /sys/class/net/$vlanBr/brif/ |grep -w "$vlanDev" > /dev/null 
-	if [ $? -gt 0 ]
-	then
-		brctl addif $vlanBr $vlanDev > /dev/null
+		brctl addif xenbr1.$vlanId bond1.$vlanId
+	
 		if [ $? -gt 0 ]
 		then
-			printf "Failed to add vlan: $vlanDev to $vlanBr"
-			return 3
+			return 1
 		fi
+		
 	fi
-	# is vlanBr up?
-	ifconfig |grep -w $vlanBr > /dev/null
+	
+	ifconfig xenbr1.$vlanId up
+	
 	if [ $? -gt 0 ]
 	then
-		ifconfig $vlanBr up
+		return 1
 	fi
+	
+	# Make ifcfg-xenbr1.$vlanId
+	rm /etc/sysconfig/network-scripts/ifcfg-xenbr1.$vlanId
+	touch /etc/sysconfig/network-scripts/ifcfg-xenbr1.$vlanId
+	echo "TYPE=bridge" >> /etc/sysconfig/network-scripts/ifcfg-xenbr1.$vlanId
+	echo "DEVICE=xenbr1.$vlanId" >> /etc/sysconfig/network-scripts/ifcfg-xenbr1.$vlanId
+	echo "ONBOOT=yes" >> /etc/sysconfig/network-scripts/ifcfg-xenbr1.$vlanId
+	echo "BOOTPROTO=none" >> /etc/sysconfig/network-scripts/ifcfg-xenbr1.$vlanId
 
 	return 0
 }
 
 deleteVlan() {
 	local vlanId=$1
-	local pif=$2
-	local vlanDev=$pif.$vlanId
-	local vlanBr=$VIRBR$vlanId
-
-	vconfig rem $vlanDev > /dev/null
 	
-	if [ $? -gt 0 ]
-	then
-		printf "Failed to del vlan: $vlanId"
-		return 1
-	fi	
-
-	ifconfig $vlanBr down
+	# Try to remove xenbr1.$vlanId
+	ifconfig xenbr1.$vlanId down
 	
 	if [ $? -gt 0 ]
 	then
 		return 1
 	fi
 	
-	brctl delbr $vlanBr
+	brctl delbr xenbr1.$vlanId
 	
 	if [ $? -gt 0 ]
 	then
-		printf "Failed to del bridge $vlanBr"
 		return 1
 	fi
+	
+	# Remove ifcfg-xenbr1.$vlanId
+	rm /etc/sysconfig/network-scripts/ifcfg-xenbr1.$vlanId
+	
+	# Try to remove bond1.$vlanId
 
+	vconfig rem bond1.$vlanId
+	
+	if [ $? -gt 0 ]
+	then
+		return 1
+	fi
+	
+	# Remove ifcfg-bond1.$vlanId
+	rm /etc/sysconfig/network-scripts/ifcfg-bond1.$vlanId
+	
 	return 0
 	
 }
 
+checkIfVlanExists() {
+	local vlanId=$1
+	
+	if [ "$vlanId" == "untagged" ]
+	then
+		# This VLAN should always exist, since the bridge is xenbr1, which is created during vsetup
+		return 0
+	fi
+	
+	ifconfig bond1.$vlanId > /dev/null
+	
+	if [ $? -gt 0 ]
+	then
+		return 1
+	fi
+	
+	ifconfig xenbr1.$vlanId > /dev/null
+	
+	if [ $? -gt 0 ]
+	then
+		return 1
+	fi
+	
+	if [ ! -f /etc/sysconfig/network-scripts/ifcfg-xenbr1.$vlanId ]
+	then
+		return 1
+	fi
+	
+	if [ ! -f /etc/sysconfig/network-scripts/ifcfg-bond1.$vlanId ]
+	then
+		return 1
+	fi
+	
+	return 0
+}
+
+arpingVlan() {
+	local vlanId=$1
+	local vlanGateway=$2
+	
+	# Change!!!
+	return 0
+	
+	success=1
+	for i in $(seq 1 3)
+	do
+		arping -I xenbr1.$vlanId $vlanGateway > /dev/null
+		
+		if [ $? -gt 0 ]
+		then
+			success=0
+			break
+		fi
+	done
+	
+	return $success
+}
+
 op=
 vlanId=
+vlanGateway=
 option=$@
 
-while getopts 'o:v:p:' OPTION
+while getopts 'o:v:g:' OPTION
 do
   case $OPTION in
   o)	oflag=1
@@ -112,8 +183,8 @@ do
   v)	vflag=1
 		vlanId="$OPTARG"
 		;;
-  p)    pflag=1
-		pif="$OPTARG"
+  g)	gflag=1
+		vlanGateway="$OPTARG"
 		;;
   ?)	usage
 		exit 2
@@ -122,7 +193,7 @@ do
 done
 
 # Check that all arguments were passed in
-if [ "$oflag$vflag$pflag" != "111" ]
+if [ "$oflag$vflag$gflag" != "111" ]
 then
 	usage
 	exit 2
@@ -130,19 +201,39 @@ fi
 
 if [ "$op" == "add" ]
 then
+	# Check if the vlan already exists, and exit with success if it does
+	checkIfVlanExists $vlanId
+	
+	if [ $? -eq 0 ]
+	then
+		exit 0
+	fi
+
 	# Add the vlan
-	addVlan $vlanId $pif
+	addVlan $vlanId
 	
 	# If the add fails then return failure
 	if [ $? -gt 0 ]
 	then
 		exit 1
 	fi
+	
+	# Ping the vlan 
+	arpingVlan $vlanId $vlanGateway
+	
+	# If the ping fails then delete the vlan and return failure. Else, return success. 
+	if [ $? -gt 0 ]
+	then
+		deleteVlan $vlanId
+		exit 1
+	else
+		exit 0
+	fi
 else 
 	if [ "$op" == "delete" ]
 	then
 		# Delete the vlan
-		deleteVlan $vlanId $pif
+		deleteVlan $vlanId
 	
 		# Always exit with success
 		exit 0

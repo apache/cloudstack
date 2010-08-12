@@ -17,7 +17,6 @@
  */
 package com.cloud.utils.db;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -26,8 +25,7 @@ import java.util.Map;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.db.GenericSearchBuilder.Condition;
-import com.cloud.utils.db.GenericSearchBuilder.Select;
+import com.cloud.utils.db.SearchBuilder.Condition;
 
 /**
  * SearchCriteria is a way for the caller to the dao code to do quick
@@ -37,7 +35,7 @@ import com.cloud.utils.db.GenericSearchBuilder.Select;
  * big joins or high performance searches, it is much better to
  * add a specific method to the dao.
  */
-public class SearchCriteria<K> {
+public class SearchCriteria {
     public enum Op {
         GT(" > ? ", 1),
         GTEQ(" >= ? ", 1),
@@ -106,10 +104,9 @@ public class SearchCriteria<K> {
     }
     
     public enum SelectType {
-        Fields,
-        Entity,
-        Single,
-        Result
+        Field,
+        All,
+        Function
     }
 
     private final Map<String, Attribute> _attrs;
@@ -117,64 +114,55 @@ public class SearchCriteria<K> {
     private ArrayList<Condition> _additionals = null;
     private final HashMap<String, Object[]> _params = new HashMap<String, Object[]>();
     private int _counter;
-    private HashMap<String, Ternary<SearchCriteria<?>, Attribute, Attribute>> _joins;
-    private final ArrayList<Select> _selects;
+    private HashMap<String, Ternary<SearchCriteria, Attribute, Attribute>> _joins;
+    private final ArrayList<Pair<Func, Attribute[]>> _selects;
     private final ArrayList<Attribute> _groupBys;
-    private final Class<K> _resultType;
-    private final SelectType _selectType;
     
-    protected SearchCriteria(GenericSearchBuilder<?, K> sb) {
+    protected SearchCriteria(SearchBuilder<?> sb) {
     	this._attrs = sb._attrs;
         this._conditions = sb._conditions;
         this._additionals = new ArrayList<Condition>();
         this._counter = 0;
         this._joins = null;
         if (sb._joins != null) {
-            _joins = new HashMap<String, Ternary<SearchCriteria<?>, Attribute, Attribute>>(sb._joins.size());
-            for (Map.Entry<String, Ternary<GenericSearchBuilder<?, ?>, Attribute, Attribute>> entry : sb._joins.entrySet()) {
-                Ternary<GenericSearchBuilder<?, ?>, Attribute, Attribute> value = entry.getValue();
-                _joins.put(entry.getKey(), new Ternary<SearchCriteria<?>, Attribute, Attribute>(value.first().create(), value.second(), value.third()));
+            _joins = new HashMap<String, Ternary<SearchCriteria, Attribute, Attribute>>(sb._joins.size());
+            for (Map.Entry<String, Ternary<SearchBuilder<?>, Attribute, Attribute>> entry : sb._joins.entrySet()) {
+                Ternary<SearchBuilder<?>, Attribute, Attribute> value = entry.getValue();
+                _joins.put(entry.getKey(), new Ternary<SearchCriteria, Attribute, Attribute>(value.first().create(), value.second(), value.third()));
             }
         }
         _selects = sb._selects;
         _groupBys = sb._groupBys;
-        _resultType = sb._resultType;
-        _selectType = sb._selectType;
     }
     
-    public SelectType getSelectType() {
-        return _selectType;
-    }
-    
-    public void getSelect(StringBuilder str, int insertAt) {
+    public SelectType getSelect(StringBuilder str, int insertAt) {
         if (_selects == null || _selects.size() == 0) {
-            return;
+            return SelectType.All;
         }
         
-        for (Select select : _selects) {
-            String func = select.func.toString() + ",";
-            if (select.attr == null) {
+        boolean selectOnly = true;
+        for (Pair<Func, Attribute[]> select : _selects) {
+            String func = select.first().toString() + ",";
+            if (select.second().length == 0) {
                 func = func.replace("@", "*");
             } else {
-                func = func.replace("@", select.attr.table + "." + select.attr.columnName);
+                for (Attribute attr : select.second()) {
+                    func = func.replaceFirst("@", attr.table + "." + attr.columnName);
+                }
             }
             str.insert(insertAt, func);
             insertAt += func.length();
-            if (select.field == null) {
-                break;
+            if (select.first() != Func.NATIVE) {
+                selectOnly = false;
             }
         }
         
         str.delete(insertAt - 1, insertAt);
+        return selectOnly ? SelectType.Field : SelectType.Function;
     }
     
-    public List<Field> getSelectFields() {
-        List<Field> fields = new ArrayList<Field>(_selects.size());
-        for (Select select : _selects) {
-            fields.add(select.field);
-        }
-        
-        return fields;
+    public int getSelectCount() {
+        return _selects == null ? 0 : _selects.size();
     }
     
     public void setParameters(String conditionName, Object... params) {
@@ -187,19 +175,19 @@ public class SearchCriteria<K> {
     }
     
     public void setJoinParameters(String joinName, String conditionName, Object... params) {
-        Ternary<SearchCriteria<?>, Attribute, Attribute> join = _joins.get(joinName);
+        Ternary<SearchCriteria, Attribute, Attribute> join = _joins.get(joinName);
         assert (join != null) : "Incorrect join name specified: " + joinName;
         join.first().setParameters(conditionName, params);
     }
     
     public void addJoinAnd(String joinName, String field, Op op, Object... values) {
-        Ternary<SearchCriteria<?>, Attribute, Attribute> join = _joins.get(joinName);
+        Ternary<SearchCriteria, Attribute, Attribute> join = _joins.get(joinName);
         assert (join != null) : "Incorrect join name specified: " + joinName;
         join.first().addAnd(field, op, values);
     }
     
     public void addJoinOr(String joinName, String field, Op op, Object... values) {
-        Ternary<SearchCriteria<?>, Attribute, Attribute> join = _joins.get(joinName);
+        Ternary<SearchCriteria, Attribute, Attribute> join = _joins.get(joinName);
         assert (join != null) : "Incorrect join name specified: " + joinName;
         join.first().addOr(field, op, values);
     }
@@ -210,10 +198,6 @@ public class SearchCriteria<K> {
     
     public List<Attribute> getGroupBy() {
     	return _groupBys;
-    }
-    
-    public Class<K> getResultType() {
-        return _resultType;
     }
     
     public void addAnd(String field, Op op, Object... values) {
@@ -256,7 +240,7 @@ public class SearchCriteria<K> {
         int i = 0;
         for (Condition condition : _conditions) {
             Object[] params = _params.get(condition.name);
-            if ((condition.op == null || condition.op.params == 0) || (params != null)) {
+            if ((condition.op.params == 0) || (params != null)) {
                 condition.toSql(sql, params, i++);
             }
         }
@@ -275,7 +259,7 @@ public class SearchCriteria<K> {
         ArrayList<Pair<Attribute, Object>> params = new ArrayList<Pair<Attribute, Object>>(_params.size());
         for (Condition condition : _conditions) {
             Object[] objs = _params.get(condition.name);
-            if (condition.op != null && condition.op.params != 0 && objs != null) {
+            if ((condition.op.params == 0) || (objs != null)) {
                 getParams(params, condition, objs);
             }
         }
@@ -290,7 +274,7 @@ public class SearchCriteria<K> {
         return params;
     }
     
-    public Collection<Ternary<SearchCriteria<?>, Attribute, Attribute>> getJoins() {
+    public Collection<Ternary<SearchCriteria, Attribute, Attribute>> getJoins() {
         return _joins != null ? _joins.values() : null;
     }
     
@@ -298,7 +282,7 @@ public class SearchCriteria<K> {
         //Object[] objs = _params.get(condition.name);
         if (condition.op == Op.SC) {
             assert (objs != null && objs.length > 0) : " Where's your search criteria object? " + condition.name;
-            params.addAll(((SearchCriteria<?>)objs[0]).getValues());
+            params.addAll(((SearchCriteria)objs[0]).getValues());
             return;
         }
         

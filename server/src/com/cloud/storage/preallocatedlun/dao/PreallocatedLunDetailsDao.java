@@ -17,8 +17,14 @@
  */
 package com.cloud.storage.preallocatedlun.dao;
 
+import java.util.List;
+
 import com.cloud.storage.preallocatedlun.PreallocatedLunDetailVO;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.SearchCriteria;
 
 public interface PreallocatedLunDetailsDao extends GenericDao<PreallocatedLunDetailVO, Long> {
+    List<Object[]> searchAll(SearchCriteria sc);
+    
+  //  List<Long> findLunIdsWithTags(String... tags);
 }

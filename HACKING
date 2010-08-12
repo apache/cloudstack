@@ -1,49 +1,24 @@
 ---------------------------------------------------------------------
-THE QUICK GUIDE TO CLOUDSTACK DEVELOPMENT
+QUICK GUIDE TO DEVELOPING, BUILDING AND INSTALLING FROM SOURCE
 ---------------------------------------------------------------------
 
 
-=== Overview of the development lifecycle ===
-
-To hack on a CloudStack component, you will generally:
-
-1. Configure the source code:
-   ./waf configure --prefix=/home/youruser/cloudstack
-   (see below, "./waf configure")
-   
-2. Build and install the CloudStack
-   ./waf install
-   (see below, "./waf install")
-   
-3. Set the CloudStack component up
-   (see below, "Running the CloudStack components from source")
-
-4. Run the CloudStack component
-   (see below, "Running the CloudStack components from source")
-
-5. Modify the source code
-
-6. Build and install the CloudStack again
-   ./waf install --preserve-config
-   (see below, "./waf install")
-   
-7. GOTO 4
-
-
-=== What is this waf thing in my development lifecycle? ===
-
-waf is a self-contained, advanced build system written by Thomas Nagy,
-in the spirit of SCons or the GNU autotools suite.
-
-* To run waf on Linux / Mac: ./waf [...commands...]
-* To run waf on Windows:     waf.bat [...commands...]
+It all starts with waf.
 
 ./waf --help should be your first discovery point to find out both the
 configure-time options and the different processes that you can run
-using waf.
+using waf.  Your second discovery point should be the files:
 
+1. wscript:  contains the processes you can run when invoking waf
+2. wscript_build: contains a manifest of *what* is built and installed
 
-=== What do the different waf commands above do? ===
+Your normal development process should be:
+
+1. ./waf configure --prefix=/some/path, ONCE
+2. ./waf, then hack, then ./waf, then hack, then ./waf
+3. ./waf install, then hack, then ./waf install
+
+In detail:
 
 1. ./waf configure --prefix=/some/path
     
@@ -54,10 +29,15 @@ using waf.
     variables and options that waf will use for compilation and
     installation, including the installation directory (PREFIX).
     
+    If you have already configured your source, and you are reconfiguring
+    it, then you *must* run ./waf clean so the source files are rebuilt
+    with the proper variables.  Otherwise, ./waf install will install
+    stale files.
+    
     For convenience reasons, if you forget to run configure, waf
     will proceed with some default configuration options.  By
     default, PREFIX is /usr/local, but you can set it e.g. to
-    /home/youruser/cloudstack if you plan to do a non-root
+    /home/yourusername/cloudstack if you plan to do a non-root
     install.  Be ware that you can later install the stack as a
     regular user, but most components need to *run* as root.
     
@@ -130,64 +110,65 @@ using waf.
 === Running the CloudStack components from source (for debugging / coding) ===
 
 It is not technically possible to run the CloudStack components from
-the source.  That, however, is fine -- each component can be run
-independently from the install directory:
+the source.  That, however, is fine -- you do not have to stop and start
+the services each time you run ./waf install.  Each component can be run
+independently:
 
 - Management Server
 
-    1) Execute ./waf install as your current user (or as root if the
+    Execute ./waf install as your current user (or as root if the
     installation path is only writable by root).
     
-    WARNING: if any CloudStack configuration files have been
-    already configured / altered, they will be *overwritten* by this
-    process.  Append --preserve-config to ./waf install to prevent this
-    from happening.  Or resort to the override method discussed
-    above (search for "override" in this document).
-
-    2) If you haven't done so yet, set up the management server database:
-    
-    - either run ./waf deploydb_kvm, or
-    - run $BINDIR/cloud-setup-databases
-    
-    3) Execute ./waf run as your current user (or as root if the
+    Then execute ./waf run as your current user (or as root if the
     installation path is only writable by root).  Alternatively,
     you can use ./waf debug and this will run with debugging enabled.
     
+    This will compile the stack, reinstall it, then run the Management
+    Server in the installed environment, as your current user, in
+    the foreground.
     
-- Agent (Linux-only):
-
-    1) Execute ./waf install as your current user (or as root if the
-    installation path is only writable by root).
-    
-    WARNING: if any CloudStack configuration files have been
-    already configured / altered, they will be *overwritten* by this
-    process.  Append --preserve-config to ./waf install to prevent this
-    from happening.  Or resort to the override method discussed
-    above (search for "override" in this document).
-
-    2) If you haven't done so yet, set the Console Proxy up:
-    
-    - run $BINDIR/cloud-setup-agent
-    
-    3) Execute $LIBEXECDIR/agent-runner as root
-    
-
-- Console Proxy (Linux-only):
-
-    1) Execute ./waf install as your current user (or as root if the
-    installation path is only writable by root).
+    NOTE: if you have not yet deployed a database to the local MySQL
+    server, you should ./waf deploydb_kvm once so the database is
+    deployed.  Failure to do that will cause the Management Server
+    to fail on startup.
     
     WARNING: if any CloudStack configuration files have been
     already configured / altered, they will be *overwritten* by this
     process.  Append --preserve-config to ./waf install to prevent this
     from happening.  Or resort to the override method discussed
     above (search for "override" in this document).
-
-    2) If you haven't done so yet, set the Console Proxy up:
     
-    - run $BINDIR/cloud-setup-console-proxy
+- Agent:
 
-    3) Execute $LIBEXECDIR/console-proxy-runner as root
+    Execute ./waf install as your current user (or as root if the
+    installation path is only writable by root).
+    
+    Then execute $LIBEXECDIR/agent-runner as root
+    
+    These steps, will compile, reinstall and run the Agent in the
+    foreground.  You must run this runner as root.
+    
+    WARNING: if any CloudStack configuration files have been
+    already configured / altered, they will be *overwritten* by this
+    process.  Append --preserve-config to ./waf install to prevent this
+    from happening.  Or resort to the override method discussed
+    above (search for "override" in this document).
+    
+- Console Proxy:
+
+    Execute ./waf install as your current user (or as root if the
+    installation path is only writable by root).
+    
+    Then execute $LIBEXECDIR/console-proxy-runner as root
+    
+    These steps, will compile, reinstall and run the Console Proxy in the
+    foreground.  You must run this runner as root.
+    
+    WARNING: if any CloudStack configuration files have been
+    already configured / altered, they will be *overwritten* by this
+    process.  Append --preserve-config to ./waf install to prevent this
+    from happening.  Or resort to the override method discussed
+    above (search for "override" in this document).
 
 
 ---------------------------------------------------------------------
@@ -217,17 +198,6 @@ other later-generation build systems:
 
 - since waf is written in Python, the entire library of the Python
   language is available to use in the build process.
-
-
-=== Hacking on the build system: what are these wscript files? ===
-
-1. wscript:  contains most commands you can run from within waf
-2. wscript_configure: contains the process that discovers the software
-                      on the system and configures the build to fit that
-2. wscript_build: contains a manifest of *what* is built and installed
-
-Refer to the waf book for general information on waf:
-   http://freehackers.org/~tnagy/wafbook/index.html
 
 
 === What happens when waf runs ===

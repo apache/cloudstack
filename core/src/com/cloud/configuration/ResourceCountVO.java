@@ -27,6 +27,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.configuration.ResourceCount.ResourceType;
+
 @Entity
 @Table(name="resource_count")
 public class ResourceCountVO implements ResourceCount {
@@ -41,19 +43,15 @@ public class ResourceCountVO implements ResourceCount {
 	private ResourceCount.ResourceType type;
 	
 	@Column(name="account_id")
-    private Long accountId;
-	
-	@Column(name="domain_id")
-    private Long domainId;
+    private long accountId;
 	
 	@Column(name="count")
 	private long count;
 	
 	public ResourceCountVO() {}
 	
-	public ResourceCountVO(Long accountId, Long domainId, ResourceCount.ResourceType type, long count) {
+	public ResourceCountVO(long accountId, ResourceCount.ResourceType type, long count) {
 		this.accountId = accountId;
-		this.domainId = domainId;
 		this.type = type;
 		this.count = count;
 	}
@@ -74,22 +72,14 @@ public class ResourceCountVO implements ResourceCount {
 		this.type = type;
 	}
 	
-	public Long getAccountId() {
+	public long getAccountId() {
 		return accountId;
 	}
 	
-	public void setAccountId(Long accountId) {
+	public void setAccountId(long accountId) {
 		this.accountId = accountId;
 	}
-
-	public Long getDomainId() {
-		return domainId;
-	}
-
-	public void setDomainId(Long domainId) {
-		this.domainId = domainId;
-	}
-
+	
 	public long getCount() {
 		return count;
 	}
@@ -97,4 +87,5 @@ public class ResourceCountVO implements ResourceCount {
 	public void setCount(long count) {
 		this.count = count;
 	}
+
 }

@@ -140,7 +140,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     }
 
     public List<FirewallRuleVO> listIPForwarding(String publicIPAddress, boolean forwarding) {
-        SearchCriteria<FirewallRuleVO> sc = FWByIPAndForwardingSearch.create();
+        SearchCriteria sc = FWByIPAndForwardingSearch.create();
         sc.setParameters("publicIpAddress", publicIPAddress);
         sc.setParameters("forwarding", forwarding);
         return listActiveBy(sc);
@@ -197,21 +197,21 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
 
     @Override
     public List<FirewallRuleVO> listIPForwarding(String publicIPAddress) {
-        SearchCriteria<FirewallRuleVO> sc = FWByIPSearch.create();
+        SearchCriteria sc = FWByIPSearch.create();
         sc.setParameters("publicIpAddress", publicIPAddress);
         return listActiveBy(sc);
     }
 
 	@Override
 	public List<FirewallRuleVO> listIPForwardingForUpdate(String publicIPAddress) {
-		SearchCriteria<FirewallRuleVO> sc = FWByIPSearch.create();
+		SearchCriteria sc = FWByIPSearch.create();
         sc.setParameters("publicIpAddress", publicIPAddress);
         return listActiveBy(sc, null);
 	}
 
 	@Override
 	public List<FirewallRuleVO> listIPForwardingForUpdate(String publicIp, boolean fwding) {
-        SearchCriteria<FirewallRuleVO> sc = FWByIPAndForwardingSearch.create();
+        SearchCriteria sc = FWByIPAndForwardingSearch.create();
         sc.setParameters("publicIpAddress", publicIp);
         sc.setParameters("forwarding", fwding);
         return search(sc, null);
@@ -220,7 +220,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
 	@Override
 	public List<FirewallRuleVO> listIPForwardingForUpdate(String publicIp,
 			String publicPort, String proto) {
-		SearchCriteria<FirewallRuleVO> sc = FWByIPPortProtoSearch.create();
+		SearchCriteria sc = FWByIPPortProtoSearch.create();
         sc.setParameters("publicIpAddress", publicIp);
         sc.setParameters("publicPort", publicPort);
         sc.setParameters("protocol", proto);
@@ -230,7 +230,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
 	@Override
 	public List<FirewallRuleVO> listLoadBalanceRulesForUpdate(String publicIp,
 			String publicPort, String algo) {
-		SearchCriteria<FirewallRuleVO> sc = FWByIPPortAlgoSearch.create();
+		SearchCriteria sc = FWByIPPortAlgoSearch.create();
         sc.setParameters("publicIpAddress", publicIp);
         sc.setParameters("publicPort", publicPort);
         sc.setParameters("algorithm", algo);
@@ -240,7 +240,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
 	@Override
 	public List<FirewallRuleVO> listIPForwarding(String publicIPAddress,
 			String port, boolean forwarding) {
-		SearchCriteria<FirewallRuleVO> sc = FWByIPPortAndForwardingSearch.create();
+		SearchCriteria sc = FWByIPPortAndForwardingSearch.create();
         sc.setParameters("publicIpAddress", publicIPAddress);
         sc.setParameters("publicPort", port);
         sc.setParameters("forwarding", forwarding);
@@ -266,7 +266,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
 
 	@Override
     public List<FirewallRuleVO> listRulesExcludingPubIpPort(String publicIpAddress, long securityGroupId) {
-        SearchCriteria<FirewallRuleVO> sc = RulesExcludingPubIpPort.create();
+        SearchCriteria sc = RulesExcludingPubIpPort.create();
         sc.setParameters("publicIpAddress", publicIpAddress);
         sc.setParameters("groupId", securityGroupId);
         sc.setParameters("forwarding", false);
@@ -275,7 +275,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
 
 	@Override
     public List<FirewallRuleVO> listBySecurityGroupId(long securityGroupId) {
-	    SearchCriteria<FirewallRuleVO> sc = FWByGroupId.create();
+	    SearchCriteria sc = FWByGroupId.create();
 	    sc.setParameters("groupId", securityGroupId);
         sc.setParameters("forwarding", Boolean.TRUE);
 	    return listActiveBy(sc);
@@ -283,7 +283,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
 
     @Override
     public List<FirewallRuleVO> listForwardingByPubAndPrivIp(boolean forwarding, String publicIPAddress, String privateIp) {
-        SearchCriteria<FirewallRuleVO> sc = FWByIPAndForwardingSearch.create();
+        SearchCriteria sc = FWByIPAndForwardingSearch.create();
         sc.setParameters("publicIpAddress", publicIPAddress);
         sc.setParameters("forwarding", forwarding);
         sc.addAnd("privateIpAddress", SearchCriteria.Op.EQ, privateIp);
@@ -292,7 +292,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
 
     @Override
     public List<FirewallRuleVO> listByLoadBalancerId(long loadBalancerId) {
-        SearchCriteria<FirewallRuleVO> sc = FWByGroupId.create();
+        SearchCriteria sc = FWByGroupId.create();
         sc.setParameters("groupId", loadBalancerId);
         sc.setParameters("forwarding", Boolean.FALSE);
         return listActiveBy(sc);
@@ -300,7 +300,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
 
     @Override
     public FirewallRuleVO findByGroupAndPrivateIp(long groupId, String privateIp, boolean forwarding) {
-        SearchCriteria<FirewallRuleVO> sc = FWByGroupAndPrivateIp.create();
+        SearchCriteria sc = FWByGroupAndPrivateIp.create();
         sc.setParameters("groupId", groupId);
         sc.setParameters("privateIpAddress", privateIp);
         sc.setParameters("forwarding", forwarding);

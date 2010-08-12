@@ -11,7 +11,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.offering.ServiceOffering.GuestIpType;
+import com.cloud.service.ServiceOffering.GuestIpType;
 import com.cloud.utils.db.GenericDao;
 
 @Entity

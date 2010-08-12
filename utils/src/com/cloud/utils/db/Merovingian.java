@@ -278,8 +278,6 @@ public class Merovingian {
     		
     		Ternary<Savepoint, Integer, Long> lock = _locks.get(key);
     		if (lock != null) {
-    			validLock = true;
-    			
         		if (lock.second() > 1) {
         			lock.second(lock.second() - 1);
         			if (s_logger.isTraceEnabled()) {
@@ -287,6 +285,8 @@ public class Merovingian {
         			}
         			return false;
         		}
+        		
+    			validLock = true;
         		
                 if (s_logger.isDebugEnabled() && !_locks.keySet().iterator().next().equals(key)) {
                     s_logger.trace("Lock: Releasing out of order for " + key);

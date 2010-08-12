@@ -81,10 +81,7 @@
 ----------------------------------*/
 
 /* states and images */
-/* When mouse is over a resizable element, a small black triangle show => which we don't want. So, comment out the following line.*/
-/*
 .ui-icon { width: 16px; height: 16px; background-image: url(images/ui-icons_222222_256x240.png); }
-*/
 .ui-widget-content .ui-icon {background-image: url(images/ui-icons_222222_256x240.png); }
 .ui-widget-header .ui-icon {background-image: url(images/ui-icons_ffffff_256x240.png); }
 .ui-state-default .ui-icon { background-image: url(images/ui-icons_ef8c08_256x240.png); }

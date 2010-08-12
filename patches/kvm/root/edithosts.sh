@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# $Id: edithosts.sh 9947 2010-06-25 19:34:24Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/patches/kvm/root/edithosts.sh $
+# $Id: edithosts.sh 9804 2010-06-22 18:36:49Z alex $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.x.beta/java/patches/kvm/root/edithosts.sh $
 # edithosts.sh -- edit the dhcphosts file on the routing domain
 # $1 : the mac address
 # $2 : the associated ip address

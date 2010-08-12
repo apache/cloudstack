@@ -53,6 +53,7 @@ import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -147,7 +148,7 @@ public class StatsCollector {
 			try {
 				s_logger.debug("HostStatsCollector is running...");
 				
-				SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
+				SearchCriteria sc = _hostDao.createSearchCriteria();
 				sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
 				sc.addAnd("type", SearchCriteria.Op.NEQ, Host.Type.Storage.toString());
 				sc.addAnd("type", SearchCriteria.Op.NEQ, Host.Type.ConsoleProxy.toString());
@@ -187,7 +188,7 @@ public class StatsCollector {
 			try {
 				s_logger.debug("VmStatsCollector is running...");
 				
-				SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
+				SearchCriteria sc = _hostDao.createSearchCriteria();
 				sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
 				sc.addAnd("type", SearchCriteria.Op.NEQ, Host.Type.Storage.toString());
 				sc.addAnd("type", SearchCriteria.Op.NEQ, Host.Type.ConsoleProxy.toString());
@@ -232,6 +233,9 @@ public class StatsCollector {
 										_VmStats.put(vmId, statsInMemory);
 									}
 								}
+								
+								
+								//_VmStats.putAll(vmStatsById);
 							}
 							
 					} catch (InternalErrorException e) {
@@ -253,7 +257,7 @@ public class StatsCollector {
 	class StorageCollector implements Runnable {
 		public void run() {
 			try {
-				SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
+				SearchCriteria sc = _hostDao.createSearchCriteria();
 				sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
 				sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.Storage.toString());
 				

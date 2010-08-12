@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.VolumeVO;
@@ -39,32 +38,6 @@ public class ListRecurringSnapshotScheduleCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SNAPSHOT_POLICY_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
     }
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="snapshotpolicyid", type=CommandType.LONG)
-    private Long snapshotPolicyId;
-
-    @Parameter(name="volumeid", type=CommandType.LONG, required=true)
-    private Long volumeId;
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public Long getSnapshotPolicyId() {
-        return snapshotPolicyId;
-    }
-
-    public Long getVolumeId() {
-        return volumeId;
-    }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     public String getName() {
         return s_name;
@@ -106,7 +79,7 @@ public class ListRecurringSnapshotScheduleCmd extends BaseCmd {
             snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), recurringSnapshotSchedule.getId().toString()));
             snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.VOLUME_ID.getName(), recurringSnapshotSchedule.getVolumeId().toString()));
             snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.SNAPSHOT_POLICY_ID.getName(), recurringSnapshotSchedule.getPolicyId().toString()));
-            snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.SCHEDULED.getName(), getDateString(recurringSnapshotSchedule.getScheduledTimestamp())));
+            snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.SCHEDULED.getName(), recurringSnapshotSchedule.getScheduledTimestamp().toString()));
             snapshotTag[i++] = snapshotData;
         }
         List<Pair<String, Object>> returnTags = new ArrayList<Pair<String, Object>>();

@@ -9,7 +9,7 @@ import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOffering;
 
 @Entity
 @Table(name="service_offering_21")

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# $Id: ipassoc_vlan.sh 9804 2010-06-22 18:36:49Z alex $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/network/domr/ipassoc_vlan.sh $
+# $Id: ipassoc_vlan.sh 9804 2010-06-22 18:36:49Z alex $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.x.beta/java/scripts/network/domr/ipassoc_vlan.sh $
 # ipassoc.sh -- associate/disassociate a public ip with an instance
 #
 #

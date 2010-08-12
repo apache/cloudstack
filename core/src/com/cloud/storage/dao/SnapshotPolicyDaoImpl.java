@@ -37,7 +37,7 @@ public class SnapshotPolicyDaoImpl extends GenericDaoBase<SnapshotPolicyVO, Long
 	
 	@Override
 	public SnapshotPolicyVO findOneByVolumeInterval(long volumeId, short interval) {
-		SearchCriteria<SnapshotPolicyVO> sc = VolumeIdIntervalSearch.create();
+		SearchCriteria sc = VolumeIdIntervalSearch.create();
         sc.setParameters("volumeId", volumeId);
         sc.setParameters("interval", interval);
 		return findOneBy(sc);
@@ -50,7 +50,7 @@ public class SnapshotPolicyDaoImpl extends GenericDaoBase<SnapshotPolicyVO, Long
 	
     @Override
     public List<SnapshotPolicyVO> listByVolumeId(long volumeId, Filter filter) {
-        SearchCriteria<SnapshotPolicyVO> sc = VolumeIdSearch.create();
+        SearchCriteria sc = VolumeIdSearch.create();
         sc.setParameters("volumeId", volumeId);
         sc.setParameters("active", true);
         return listActiveBy(sc, filter);
@@ -74,7 +74,7 @@ public class SnapshotPolicyDaoImpl extends GenericDaoBase<SnapshotPolicyVO, Long
 
     @Override
     public List<SnapshotPolicyVO> listActivePolicies() {
-        SearchCriteria<SnapshotPolicyVO> sc = ActivePolicySearch.create();
+        SearchCriteria sc = ActivePolicySearch.create();
         sc.setParameters("active", true);
         return listBy(sc);
     }	

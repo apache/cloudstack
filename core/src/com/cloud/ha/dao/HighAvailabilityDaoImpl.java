@@ -89,7 +89,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<WorkVO, Long> implem
     public WorkVO take(final long serverId) {
         final Transaction txn = Transaction.currentTxn();
         try {
-            final SearchCriteria<WorkVO> sc = TBASearch.create();
+            final SearchCriteria sc = TBASearch.create();
             sc.setParameters("time", System.currentTimeMillis() >> 10);
 
             final Filter filter = new Filter(WorkVO.class, null, true, 0l, 1l);
@@ -118,14 +118,14 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<WorkVO, Long> implem
 
     @Override
     public List<WorkVO> findPreviousHA(final long instanceId) {
-        final SearchCriteria<WorkVO> sc = PreviousInstanceSearch.create();
+        final SearchCriteria sc = PreviousInstanceSearch.create();
         sc.setParameters("instance", instanceId);
         return listBy(sc);
     }
 
     @Override
     public void cleanup(final long time) {
-        final SearchCriteria<WorkVO> sc = CleanupSearch.create();
+        final SearchCriteria sc = CleanupSearch.create();
         sc.setParameters("time", time);
         sc.setParameters("step", HighAvailabilityManager.Step.Done, HighAvailabilityManager.Step.Cancelled);
         delete(sc);
@@ -133,7 +133,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<WorkVO, Long> implem
 
     @Override
     public void deleteMigrationWorkItems(final long hostId, final WorkType type, final long serverId) {
-        final SearchCriteria<WorkVO> sc = UntakenMigrationSearch.create();
+        final SearchCriteria sc = UntakenMigrationSearch.create();
         sc.setParameters("host", hostId);
         sc.setParameters("type", type.toString());
 
@@ -148,7 +148,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<WorkVO, Long> implem
 
     @Override
     public List<WorkVO> findTakenWorkItems(WorkType type) {
-    	SearchCriteria<WorkVO> sc = TakenWorkSearch.create();
+    	SearchCriteria sc = TakenWorkSearch.create();
     	sc.setParameters("type", type);
     	sc.setParameters("step", Step.Done, Step.Cancelled, Step.Error);
     	
@@ -158,7 +158,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<WorkVO, Long> implem
     
     @Override
     public boolean delete(long instanceId, WorkType type) {
-    	SearchCriteria<WorkVO> sc = PreviousWorkSearch.create();
+    	SearchCriteria sc = PreviousWorkSearch.create();
     	sc.setParameters("instance", instanceId);
     	sc.setParameters("type", type);
     	return delete(sc) > 0;
@@ -166,7 +166,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<WorkVO, Long> implem
     
     @Override
     public boolean hasBeenScheduled(long instanceId, WorkType type) {
-    	SearchCriteria<WorkVO> sc = PreviousWorkSearch.create();
+    	SearchCriteria sc = PreviousWorkSearch.create();
     	sc.setParameters("instance", instanceId);
     	sc.setParameters("type", type);
     	return listActiveBy(sc, null).size() > 0;

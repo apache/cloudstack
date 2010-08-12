@@ -45,11 +45,17 @@ public class VMInstanceVO implements VirtualMachine {
     @Id
     @TableGenerator(name="vm_instance_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="vm_instance_seq", allocationSize=1)
     @Column(name="id", updatable=false, nullable = false)
-	private long id;
+	private Long id = null;
 
     @Column(name="name", updatable=false, nullable=false, length=255)
 	private String name = null;
 
+    @Column(name="storage_ip")
+    private String storageIp = null;
+
+    @Column(name="display_name", updatable=true, nullable=true)
+    private String displayName;
+    
     @Column(name="vnc_password", updatable=true, nullable=false, length=255)
     String vncPassword;
     
@@ -59,6 +65,9 @@ public class VMInstanceVO implements VirtualMachine {
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name="proxy_assign_time", updatable=true, nullable=true)
     Date proxyAssignTime;
+
+	@Column(name="group", updatable=true, nullable=true)
+    private String group;
 
     /**
      * Note that state is intentionally missing the setter.  Any updates to
@@ -78,6 +87,9 @@ public class VMInstanceVO implements VirtualMachine {
     @Column(name="vm_template_id", updatable=false, nullable=true, length=17)
 	private Long templateId = new Long(-1);
 
+    @Column(name="iso_id", nullable=true, length=17)
+    private Long isoId = null;
+    
     @Column(name="guest_os_id", nullable=false, length=17)
     private long guestOSId;
     
@@ -124,7 +136,25 @@ public class VMInstanceVO implements VirtualMachine {
 	
     public VMInstanceVO(long id,
                         String name,
+                        Type type,
+                        long templateId,
+                        long guestOSId,
+                        String privateMacAddress,
+                        String privateIpAddress,
+                        String privateNetmask,
+                        long dataCenterId,
+                        long podId,
+                        boolean haEnabled,
+                        Long hostId,
+                        String displayName,
+                        String group) {
+        this(id, name, name, State.Creating, type, templateId, guestOSId, privateMacAddress, privateIpAddress, privateNetmask, dataCenterId, podId, haEnabled, hostId, displayName, group);
+    }
+    
+    public VMInstanceVO(Long id,
+                        String name,
                         String instanceName,
+                        State state,
                         Type type,
                         long vmTemplateId,
                         long guestOSId,
@@ -134,7 +164,9 @@ public class VMInstanceVO implements VirtualMachine {
                         long dataCenterId,
                         long podId,
                         boolean haEnabled,
-                        Long hostId) {
+                        Long hostId,
+                        String displayName,
+                        String group) {
         super();
         this.id = id;
         this.name = name;
@@ -149,13 +181,20 @@ public class VMInstanceVO implements VirtualMachine {
         this.hostId = hostId;
         this.dataCenterId = dataCenterId;
         this.podId = podId;
+        this.state = state;
         this.type = type;
         this.haEnabled = haEnabled;
         this.instanceName = instanceName;
+        this.storageIp = null;
         this.updated = 0;
         this.updateTime = new Date();
+        if (displayName != null)
+    		this.displayName = displayName;
+        else if (type == Type.User)
+        	this.displayName = name;
+        this.group = group;
+        
 		this.vncPassword = Long.toHexString(new Random().nextLong());
-		this.state = State.Creating;
     }
 
     protected VMInstanceVO() {
@@ -174,7 +213,7 @@ public class VMInstanceVO implements VirtualMachine {
     	return updated;
     }
     
-	public long getId() {
+	public Long getId() {
 		return id;
 	}
 	
@@ -273,12 +312,22 @@ public class VMInstanceVO implements VirtualMachine {
 		this.templateId = templateId;
 	}
 
+	@Override
+	public Long getIsoId() {
+	    return isoId;
+	}
+	
 	public long getGuestOSId() {
 		return guestOSId;
 	}
 	
 	public void setGuestOSId(long guestOSId) {
 		this.guestOSId = guestOSId;
+	}
+
+    @Override
+	public void setIsoId(Long isoId) {
+	    this.isoId = isoId;
 	}
 
 	public void incrUpdated() {
@@ -318,6 +367,14 @@ public class VMInstanceVO implements VirtualMachine {
         return podId;
     }
     
+    public String getStorageIp() {
+    	return storageIp;
+    }
+    
+    public void setStorageIp(String storageIp) {
+    	this.storageIp = storageIp;
+    }
+    
     public void setPodId(long podId) {
         this.podId = podId;
     }
@@ -334,6 +391,7 @@ public class VMInstanceVO implements VirtualMachine {
         return removed != null;
     }
     
+    @Override
 	public boolean isMirroredVols() {
 		return mirroredVols;
 	}
@@ -345,6 +403,24 @@ public class VMInstanceVO implements VirtualMachine {
 	public void setMirroredVols(boolean mirroredVols) {
 		this.mirroredVols = mirroredVols;
 	}
+	
+    @Override
+    public String getDisplayName() {
+        return displayName;
+    }
+    
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+    
+    @Override
+    public String getGroup() {
+        return group;
+    }
+    
+    public void setGroup(String group) {
+        this.group = group;
+    }
 	
     @Override
 	public String toString() {

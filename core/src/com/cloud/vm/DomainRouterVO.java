@@ -96,6 +96,7 @@ public class DomainRouterVO extends VMInstanceVO implements DomainRouter {
     public DomainRouterVO(long id,
                           String name,
                           String instanceName,
+                          State state,
                           String privateMacAddress,
                           String privateIpAddress,
                           String privateNetmask,
@@ -120,7 +121,7 @@ public class DomainRouterVO extends VMInstanceVO implements DomainRouter {
                           Long hostId,
                           String dns1,
                           String dns2) {
-        super(id, name, instanceName, Type.DomainRouter, templateId, guestOSId, privateMacAddress, privateIpAddress, privateNetmask, dataCenterId, podId, true, hostId);
+        super(id, name, instanceName, state, Type.DomainRouter, templateId, guestOSId, privateMacAddress, privateIpAddress, privateNetmask, dataCenterId, podId, true, hostId, null, null);
         this.privateMacAddress = privateMacAddress;
         this.guestMacAddress = guestMacAddress;
         this.guestIpAddress = guestIpAddress;
@@ -164,7 +165,7 @@ public class DomainRouterVO extends VMInstanceVO implements DomainRouter {
                           String domain,
                           String dns1,
                           String dns2) {
-        this(id, name, name, privateMacAddress, privateIpAddress, privateNetmask, templateId, guestOSId, guestMacAddress, guestIpAddress, guestNetmask, null, accountId, domainId, publicMacAddress, publicIpAddress, publicNetMask, vlanDbId, vlanId, podId, dataCenterId, ramSize, gateway, domain, null, dns1, dns2);
+        this(id, name, name, State.Creating, privateMacAddress, privateIpAddress, privateNetmask, templateId, guestOSId, guestMacAddress, guestIpAddress, guestNetmask, null, accountId, domainId, publicMacAddress, publicIpAddress, publicNetMask, vlanDbId, vlanId, podId, dataCenterId, ramSize, gateway, domain, null, dns1, dns2);
     }
 
     public long getAccountId() {

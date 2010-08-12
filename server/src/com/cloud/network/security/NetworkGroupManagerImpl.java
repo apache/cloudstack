@@ -59,7 +59,6 @@ import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
@@ -71,6 +70,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.State;
+import com.cloud.vm.UserVm;
 import com.cloud.vm.dao.UserVmDao;
 
 @Local(value={NetworkGroupManager.class})
@@ -794,7 +794,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId());
         }
 
-        SearchCriteria<NetworkGroupRulesVO> sc = sb.create();
+        SearchCriteria sc = sb.create();
         if (accountId != null) {
             sc.setParameters("accountId", accountId);
             if (networkGroup != null) {

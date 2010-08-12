@@ -18,11 +18,14 @@
 
 package com.cloud.user;
 
+import java.util.List;
+
 import com.cloud.configuration.ResourceCount;
-import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
-import com.cloud.domain.DomainVO;
+import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.user.AccountVO;
 import com.cloud.utils.component.Manager;
 
 /**
@@ -45,18 +48,9 @@ public interface AccountManager extends Manager {
 	 * @param type
 	 * @return resource limit
 	 */
-    public long findCorrectResourceLimit(AccountVO account, ResourceType type);
-
-    /**
-     * Finds the resource limit for a specified domain and type. If the domain has an infinite limit, will check
-     * up the domain hierarchy
-     * @param account
-     * @param type
-     * @return resource limit
-     */
-    public long findCorrectResourceLimit(DomainVO domain, ResourceType type);
-
-    /**
+	public long findCorrectResourceLimit(AccountVO account, ResourceType type);
+	
+	/**
 	 * Increments the resource count
 	 * @param accountId
 	 * @param type
@@ -76,10 +70,9 @@ public interface AccountManager extends Manager {
 	 * Checks if a limit has been exceeded for an account
 	 * @param account
 	 * @param type
-	 * @param count the number of resources being allocated, count will be added to current allocation and compared against maximum allowed allocation
 	 * @return true if the limit has been exceeded
 	 */
-	public boolean resourceLimitExceeded(AccountVO account, ResourceCount.ResourceType type, long...count);
+	public boolean resourceLimitExceeded(AccountVO account, ResourceCount.ResourceType type);
 	
 	/**
 	 * Gets the count of resources for a resource type and account

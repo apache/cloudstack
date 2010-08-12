@@ -38,6 +38,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.storage.Storage;
 
 @Local(value={LaunchPermissionDao.class})
 public class LaunchPermissionDaoImpl extends GenericDaoBase<LaunchPermissionVO, Long> implements LaunchPermissionDao {
@@ -90,14 +91,14 @@ public class LaunchPermissionDaoImpl extends GenericDaoBase<LaunchPermissionVO, 
 
     @Override
     public void removeAllPermissions(long templateId) {
-        SearchCriteria<LaunchPermissionVO> sc = TemplateIdSearch.create();
+        SearchCriteria sc = TemplateIdSearch.create();
         sc.setParameters("templateId", templateId);
         delete(sc);
     }
 
     @Override
     public LaunchPermissionVO findByTemplateAndAccount(long templateId, long accountId) {
-        SearchCriteria<LaunchPermissionVO> sc = TemplateAndAccountSearch.create();
+        SearchCriteria sc = TemplateAndAccountSearch.create();
         sc.setParameters("templateId", templateId);
         sc.setParameters("accountId", accountId);
         return findOneActiveBy(sc);
@@ -151,7 +152,7 @@ public class LaunchPermissionDaoImpl extends GenericDaoBase<LaunchPermissionVO, 
 
     @Override
     public List<LaunchPermissionVO> findByTemplate(long templateId) {
-        SearchCriteria<LaunchPermissionVO> sc = TemplateIdSearch.create();
+        SearchCriteria sc = TemplateIdSearch.create();
         sc.setParameters("templateId", templateId);
         return listActiveBy(sc);
     }

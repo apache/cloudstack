@@ -150,21 +150,21 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             Map<Host, Host.Record> hosts = Host.getAllRecords(conn);
             
             if (_checkHvm) {
-            for (Map.Entry<Host, Host.Record> entry : hosts.entrySet()) {
-                Host.Record record = entry.getValue();
+                for (Map.Entry<Host, Host.Record> entry : hosts.entrySet()) {
+                    Host.Record record = entry.getValue();
                 
-                boolean support_hvm = false;
-                for ( String capability : record.capabilities ) {
-                    if(capability.contains("hvm")) {
-                       support_hvm = true;
-                       break;
+                    boolean support_hvm = false;
+                    for ( String capability : record.capabilities ) {
+                        if(capability.contains("hvm")) {
+                           support_hvm = true;
+                           break;
+                        }
                     }
-                }
-                if( !support_hvm ) {
-                    String msg = "Unable to add host " + record.address + " because it doesn't support hvm";
-                    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
-                    s_logger.debug(msg);
-                    throw new RuntimeException(msg);
+                    if( !support_hvm ) {
+                        String msg = "Unable to add host " + record.address + " because it doesn't support hvm";
+                        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
+                        s_logger.debug(msg);
+                        throw new RuntimeException(msg);
                     }
                 }
 
@@ -214,17 +214,17 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 details.put(HostInfo.HOST_OS_KERNEL_VERSION, hostKernelVer);
                 details.put(HostInfo.HYPERVISOR_VERSION, xenVersion);
 
-                if (!params.containsKey("public.network.device")) {
+                if (!params.containsKey("public.network.device") && _publicNic != null) {
                     params.put("public.network.device", _publicNic);
                     details.put("public.network.device", _publicNic);
                 }
                 
-                if (!params.containsKey("guest.network.device")) {
+                if (!params.containsKey("guest.network.device") && _guestNic != null) {
                     params.put("guest.network.device", _guestNic);
                     details.put("guest.network.device", _guestNic);
                 }
                 
-                if (!params.containsKey("private.network.device")) {
+                if (!params.containsKey("private.network.device") && _privateNic != null) {
                     params.put("private.network.device", _privateNic);
                     details.put("private.network.device", _privateNic);
                 }
@@ -345,13 +345,13 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         String poolMaster = null;
         String username = null;
         String password = null;
-        String address = null;
+        String ip = null;
         for (HostVO host : hosts) {
             _hostDao.loadDetails(host);
             username = host.getDetail("username");
             password = host.getDetail("password");
-            address = host.getDetail("url");
-            Connection hostConn = _connPool.connect(address, username, password, _wait);
+            ip = host.getDetail("url");
+            Connection hostConn = _connPool.connect(ip, username, password, _wait);
             try {
                 if (hostConn == null) {
                     continue;
@@ -395,11 +395,10 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     }
 
     protected boolean checkServer(Connection conn, long dcId, Long podId, Host host, Host.Record record) {
-        String prodBrand = record.softwareVersion.get("product_brand").trim();
-        String prodVersion = record.softwareVersion.get("product_version").trim();
+        String prodBrand = record.softwareVersion.get("product_brand");
         
-        if(!prodBrand.equals("XenCloudPlatform") || !prodVersion.equals("0.1.1")) {
-            String msg = "Only support XCP 0.1.1, but this one is " + prodBrand + " " + prodVersion;
+        if(!prodBrand.equals("XenCloudPlatform")) {
+            String msg = "Do not support product brand " + prodBrand;
             _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
             s_logger.debug(msg);
             throw new RuntimeException(msg);
@@ -438,7 +437,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
 
         value = _params.get("xen.check.hvm");
         _checkHvm = value == null ? true : Boolean.parseBoolean(value);
-        
+ 
         value = _params.get(Config.CreatePoolsInPod.key());
         _formPoolsInPod = Boolean.parseBoolean(value);
         

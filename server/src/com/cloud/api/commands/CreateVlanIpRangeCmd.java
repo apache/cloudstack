@@ -25,12 +25,12 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Vlan;
-import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.Vlan.VlanType;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
@@ -42,103 +42,18 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     static {
+    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.FOR_VIRTUAL_NETWORK, Boolean.FALSE));	
+    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VLAN, Boolean.FALSE));
+    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.GATEWAY, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NETMASK, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.END_IP, Boolean.FALSE));     
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.FOR_VIRTUAL_NETWORK, Boolean.FALSE));	
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.GATEWAY, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NETMASK, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.START_IP, Boolean.TRUE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VLAN, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.TRUE));
-
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.END_IP, Boolean.FALSE));     
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
     }
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="account", type=CommandType.STRING)
-    private String accountName;
-
-    @Parameter(name="domainid", type=CommandType.LONG)
-    private Long domainId;
-
-    @Parameter(name="endip", type=CommandType.STRING)
-    private String endIp;
-
-    @Parameter(name="forvirtualnetwork", type=CommandType.BOOLEAN)
-    private Boolean forVirtualNetwork;
-
-    @Parameter(name="gateway", type=CommandType.STRING, required=true)
-    private String gateway;
-
-    @Parameter(name="netmask", type=CommandType.STRING, required=true)
-    private String netmask;
-
-    @Parameter(name="podid", type=CommandType.LONG)
-    private Long podId;
-
-    @Parameter(name="startip", type=CommandType.STRING, required=true)
-    private String startIp;
-
-    @Parameter(name="vlan", type=CommandType.STRING)
-    private String vlan;
-
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true)
-    private Long zoneId;
-
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public String getEndIp() {
-        return endIp;
-    }
-
-    public Boolean isForVirtualNetwork() {
-        return forVirtualNetwork;
-    }
-
-    public String getGateway() {
-        return gateway;
-    }
-
-    public String getNetmask() {
-        return netmask;
-    }
-
-    public Long getPodId() {
-        return podId;
-    }
-
-    public String getStartIp() {
-        return startIp;
-    }
-
-    public String getVlan() {
-        return vlan;
-    }
-
-    public Long getZoneId() {
-        return zoneId;
-    }
-
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     public String getName() {
         return s_name;
@@ -178,7 +93,7 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     	// If an account name and domain ID are specified, look up the account
     	Long accountId = null;
     	if (accountName != null && domainId != null) {
-    		Account account = getManagementServer().findAccountByName(accountName, domainId);
+    		Account account = getManagementServer().findAccountByName(accountName, domainId);    		
     		if (account == null || account.getRemoved() != null) {
     			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid account.");
     		} else {

@@ -22,14 +22,12 @@ import java.util.List;
 
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.async.executor.DestroyVMExecutor;
-import com.cloud.async.executor.OperationResponse;
 import com.cloud.async.executor.RebootVMExecutor;
 import com.cloud.async.executor.StartVMExecutor;
 import com.cloud.async.executor.StopVMExecutor;
 import com.cloud.async.executor.VMOperationParam;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
@@ -37,13 +35,16 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.InsufficientStorageCapacityException;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.AccountVO;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.exception.ExecutionException;
+import com.cloud.vm.UserVm;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachine.Event;
 
 /**
@@ -52,7 +53,6 @@ import com.cloud.vm.VirtualMachine.Event;
  * 
  */
 public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> {
-    
     
 	static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
     /**
@@ -89,7 +89,7 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @param vmId the id of the virtual machine.
      */
     boolean destroyVirtualMachine(long userId, long vmId);
-    OperationResponse executeDestroyVM(DestroyVMExecutor executor, VMOperationParam param);
+    boolean executeDestroyVM(DestroyVMExecutor executor, VMOperationParam param);
     
     
     /**
@@ -134,7 +134,7 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @throws StorageUnavailableException 
      * @throws ConcurrentOperationException 
      */
-    UserVmVO startVirtualMachine(long userId, long vmId, String isoPath, long startEventId) throws ExecutionException, StorageUnavailableException, ConcurrentOperationException;
+    UserVmVO startVirtualMachine(long userId, long vmId, String isoPath) throws ExecutionException, StorageUnavailableException, ConcurrentOperationException;
     boolean executeStartVM(StartVMExecutor executor, VMOperationParam param);
     
     /**
@@ -147,7 +147,7 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @throws StorageUnavailableException 
      * @throws ConcurrentOperationException 
      */
-    UserVmVO startVirtualMachine(long userId, long vmId, String password, String isoPath, long startEventId) throws ExecutionException, StorageUnavailableException, ConcurrentOperationException;
+    UserVmVO startVirtualMachine(long userId, long vmId, String password, String isoPath) throws ExecutionException, StorageUnavailableException, ConcurrentOperationException;
     
     /**
      * Stops the virtual machine
@@ -156,7 +156,7 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @return true if stopped; false if problems.
      */
     boolean stopVirtualMachine(long userId, long vmId);
-    OperationResponse executeStopVM(StopVMExecutor executor, VMOperationParam param);
+    boolean executeStopVM(StopVMExecutor executor, VMOperationParam param);
     void completeStopCommand(long userId, UserVmVO vm, Event e, long startEventId);
     
 
@@ -179,7 +179,7 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
     HashMap<Long, VmStatsEntry> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds) throws InternalErrorException;
     
     boolean rebootVirtualMachine(long userId, long vmId);
-    OperationResponse executeRebootVM(RebootVMExecutor executor, VMOperationParam param);
+    boolean executeRebootVM(RebootVMExecutor executor, VMOperationParam param);
     
     boolean recoverVirtualMachine(long vmId) throws ResourceAllocationException;
 
@@ -216,5 +216,6 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @param userVm
      */
     void releaseGuestIpAddress(UserVmVO userVm);
+
 
 }

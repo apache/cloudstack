@@ -34,10 +34,7 @@
             <param name="cache.size">50</param>
             <param name="cache.time.to.live">-1</param>
         </dao>
-        <dao name="DiskOffering" class="com.cloud.storage.dao.DiskOfferingDaoImpl">
-            <param name="cache.size">50</param>
-            <param name="cache.time.to.live">-1</param>
-        </dao>
+        <dao name="DiskOffering" class="com.cloud.storage.dao.DiskOfferingDaoImpl"/>
         <dao name="host zone" class="com.cloud.dc.dao.DataCenterDaoImpl">
             <param name="cache.size">50</param>
             <param name="cache.time.to.live">-1</param>
@@ -80,6 +77,7 @@
         <dao name="Network Group Rules" class="com.cloud.network.security.dao.NetworkGroupRulesDaoImpl"/>
         <dao name="Network Group Work" class="com.cloud.network.security.dao.NetworkGroupWorkDaoImpl"/>
         <dao name="Network Group VM Ruleset log" class="com.cloud.network.security.dao.VmRulesetLogDaoImpl"/>
+        <dao name="Pricing" class="com.cloud.pricing.dao.PricingDaoImpl"/>
         <dao name="Alert" class="com.cloud.alert.dao.AlertDaoImpl"/>
         <dao name="Capacity" class="com.cloud.capacity.dao.CapacityDaoImpl"/>
         <dao name="Domain" class="com.cloud.domain.dao.DomainDaoImpl"/>
@@ -146,7 +144,6 @@
 
         <adapters key="com.cloud.resource.Discoverer">
             <adapter name="SecondaryStorage" class="com.cloud.storage.secondary.SecondaryStorageDiscoverer"/>
-            <adapter name="XenServer" class="com.cloud.hypervisor.xen.discoverer.XcpServerDiscoverer"/>
         </adapters>
 
         <manager name="Cluster Manager" class="com.cloud.cluster.DummyClusterManagerImpl">
@@ -224,7 +221,6 @@
             <param name="cache.time.to.live">-1</param>
         </dao>
         <dao name="DiskOffering configuration server" class="com.cloud.storage.dao.DiskOfferingDaoImpl"/>
-        <dao name="Snapshot policy defaults" class="com.cloud.storage.dao.SnapshotPolicyDaoImpl"/>
         <dao name="Events configuration server" class="com.cloud.event.dao.EventDaoImpl"/>
     </configuration-server>
     

@@ -27,11 +27,8 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.event.EventTypes;
-import com.cloud.event.EventVO;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.HostVO;
-import com.cloud.host.Status.Event;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.GuestOS;
@@ -70,7 +67,7 @@ public class CreatePrivateTemplateExecutor extends VolumeOperationExecutor {
 	    	
 	    	Long snapshotId = param.getSnapshotId();
 	    	Long volumeId = param.getVolumeId();
-	    	managerServer.saveStartedEvent(param.getUserId(), param.getAccountId(), EventTypes.EVENT_TEMPLATE_CREATE, "Creating Template: " +param.getName(), param.getEventId());
+	    	
 	    	// By default, assume failure
 	    	String details = "Could not create private template from ";
 	    	if (snapshotId != null) {
@@ -145,8 +142,6 @@ public class CreatePrivateTemplateExecutor extends VolumeOperationExecutor {
             				    jobStatus = AsyncJobResult.STATUS_SUCCEEDED;
             				    resultCode = 0;
             				    details = null;
-            				    String eventParams = "id="+template.getId()+"\nname=" + template.getName() +"\nsize="+volume.getSize();
-            				    managerServer.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_TEMPLATE_CREATE, "Successfully created Template " +param.getName(), eventParams ,param.getEventId());
             				    resultObject = composeResultObject(template, templateHostRef, volume.getDataCenterId());
             				} 
             				
@@ -171,7 +166,6 @@ public class CreatePrivateTemplateExecutor extends VolumeOperationExecutor {
 			
 			if (jobStatus == AsyncJobResult.STATUS_FAILED) {
 			    resultObject = details;
-			    managerServer.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_TEMPLATE_CREATE, details, "" ,param.getEventId());
 			}
 	        asyncMgr.completeAsyncJob(jobId, jobStatus, resultCode, resultObject);
 	    	return true;

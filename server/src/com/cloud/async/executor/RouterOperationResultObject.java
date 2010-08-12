@@ -68,7 +68,7 @@ public class RouterOperationResultObject {
 	@Param(name="publicnetmask")
 	private String publicNetMask;
 	
-	@Param(name="guestipaddress")
+	@Param(name="ipaddress")
 	private String guestIp;
 	
 	@Param(name="macaddress")

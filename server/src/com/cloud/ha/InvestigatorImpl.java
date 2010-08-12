@@ -175,7 +175,7 @@ public class InvestigatorImpl implements Investigator {
     }
     // Host.status is up and Host.type is routing
     private List<HostVO> findHostByPod(long podId, Long excludeHostId) {
-        SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
+        SearchCriteria sc = _hostDao.createSearchCriteria();
         sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
         sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up);
         sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.Routing);

@@ -29,7 +29,6 @@ import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.serializer.GsonHelper;
-import com.cloud.server.ManagementServer;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine.Event;
 import com.google.gson.Gson;
@@ -41,41 +40,44 @@ public class StopVMExecutor extends VMOperationExecutor {
     	Gson gson = GsonHelper.getBuilder().create();
     	AsyncJobManager asyncMgr = getAsyncJobMgr();
     	AsyncJobVO job = getJob();
-    	VMOperationParam param = gson.fromJson(job.getCmdInfo(), VMOperationParam.class);
-    	
+		
 		if(getSyncSource() == null) {
+	    	VMOperationParam param = gson.fromJson(job.getCmdInfo(), VMOperationParam.class);
 	    	asyncMgr.syncAsyncJobExecution(job.getId(), "UserVM", param.getVmId());
 	    	
 	    	// always true if it does not have sync-source
 	    	return true;
 		} else {
-			ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
-			managementServer.saveStartedEvent(param.getUserId(), param.getAccountId(), EventTypes.EVENT_VM_STOP,
-				  							"Stopping Vm with Id: "+param.getVmId(), param.getEventId());
-	    	OperationResponse response = asyncMgr.getExecutorContext().getVmMgr().executeStopVM(this, param);
-	    	UserVmVO vm = managementServer.findUserVMInstanceById(param.getVmId());
-	    	String params = "id="+vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId();
-	    	
-	    	if (OperationResponse.STATUS_SUCCEEDED == response.getResultCode() ){
-	    		managementServer.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_STOP, "Successfully stopped VM instance : " + param.getVmId(), params, param.getEventId());
-	    		return true;
-	    	}else if (OperationResponse.STATUS_FAILED == response.getResultCode()){
-	    		managementServer.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_STOP, "Failed to stop VM instance : " + response.getResultDescription(), params, param.getEventId());
-	    		return true;
-	    	}
+	    	VMOperationParam param = gson.fromJson(job.getCmdInfo(), VMOperationParam.class);
+	        EventVO event = new EventVO();
+	        event.setType(EventTypes.EVENT_VM_STOP);
+	        event.setUserId(param.getUserId());
+	        UserVmVO userVm = asyncMgr.getExecutorContext().getManagementServer().findUserVMInstanceById(param.getVmId());
+	        event.setAccountId(userVm.getAccountId());
+	        event.setState(EventState.Started);
+	        event.setStartId(param.getEventId());
+	        event.setDescription("Stopping Vm with Id: "+param.getVmId());
+	        asyncMgr.getExecutorContext().getEventDao().persist(event);
+	    	return asyncMgr.getExecutorContext().getVmMgr().executeStopVM(this, param);
 		}
-		return false;
 	}
 	
 	public void processAnswer(VMOperationListener listener, long agentId, long seq, Answer answer) {
 		
 		UserVmVO vm = listener.getVm();
 		VMOperationParam param = listener.getParam();
-		AsyncJobManager asyncMgr = getAsyncJobMgr();
-		ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
-        String params = "id="+vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId();
+		AsyncJobManager asyncMgr = getAsyncJobMgr(); 
+		
     	if(s_logger.isDebugEnabled())
     		s_logger.debug("Execute asynchronize stop VM command: received answer, " + vm.getHostId() + "-" + seq);
+    	
+        EventVO event = new EventVO();
+        event.setUserId(param.getUserId());
+        event.setAccountId(vm.getAccountId());
+        event.setType(EventTypes.EVENT_VM_STOP);
+        event.setState(EventState.Completed);
+        event.setStartId(param.getEventId());
+        event.setParameters("id="+vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
     	
         boolean stopped = false;
     	if(answer != null && answer.getResult()) 
@@ -95,8 +97,9 @@ public class StopVMExecutor extends VMOperationExecutor {
 		        		AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, "Agent failed to stop VM");
 	    		jobStatusUpdated = true;
 	    		
-	    		managementServer.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_STOP,
-	    				"Failed to stop VM instance : " + vm.getName(), params, param.getEventId());
+	            event.setDescription("failed to stop VM instance : " + vm.getName());
+	            event.setLevel(EventVO.LEVEL_ERROR);
+	            asyncMgr.getExecutorContext().getEventDao().persist(event);
 	    	}
     	} catch(Exception e) {
     		s_logger.error("Unexpected exception " + e.getMessage(), e);
@@ -107,8 +110,6 @@ public class StopVMExecutor extends VMOperationExecutor {
     	    	} else {
     	            asyncMgr.completeAsyncJob(getJob().getId(), 
     		        		AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, "Agent failed to stop VM");
-    		        managementServer.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_STOP,
-	    				"Failed to stop VM instance : " + vm.getName(), params, param.getEventId());
     	    	}
     		}
     	} finally {

@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: make_migratable.sh 9879 2010-06-24 02:41:46Z anthony $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/vm/hypervisor/xenserver/make_migratable.sh $
+# $Id: make_migratable.sh 9879 2010-06-24 02:41:46Z anthony $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.x.beta/java/scripts/vm/hypervisor/xenserver/make_migratable.sh $
 
 set -e
 

@@ -19,6 +19,9 @@
 package com.cloud.async.executor;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -26,22 +29,20 @@ import com.cloud.api.BaseCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
-import com.cloud.event.EventTypes;
-import com.cloud.event.EventVO;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.InsufficientStorageCapacityException;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
-import com.cloud.user.User;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.ExecutionException;
+import com.cloud.vm.UserVm;
 import com.google.gson.Gson;
 
 public class DeployVMExecutor extends VMOperationExecutor {
@@ -63,52 +64,44 @@ public class DeployVMExecutor extends VMOperationExecutor {
 				param.getPassword(), param.getDisplayName(), param.getGroup(), param.getUserData(), param.getNetworkGroup(), param.getEventId());
 			
     		asyncMgr.completeAsyncJob(getJob().getId(),
-        		AsyncJobResult.STATUS_SUCCEEDED, 0, composeResultObject(param.getUserId(), vm, param));
+        		AsyncJobResult.STATUS_SUCCEEDED, 0, composeResultObject(vm, param));
 			
 		} catch (ResourceAllocationException e) {
 			if(s_logger.isDebugEnabled())
 				s_logger.debug("Unable to deploy VM: " + e.getMessage());
-			saveEvent(param, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: VM_INSUFFICIENT_CAPACITY");								  
     		asyncMgr.completeAsyncJob(getJob().getId(),
         		AsyncJobResult.STATUS_FAILED, BaseCmd.VM_INSUFFICIENT_CAPACITY, e.getMessage());
 		} catch (ExecutionException e) {
 			if(s_logger.isDebugEnabled())
 				s_logger.debug("Unable to deploy VM: " + e.getMessage());
-			saveEvent(param, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: VM_HOST_LICENSE_EXPIRED");
 			asyncMgr.completeAsyncJob(getJob().getId(),AsyncJobResult.STATUS_FAILED, BaseCmd.VM_HOST_LICENSE_EXPIRED, e.getMessage());
 		} catch (InvalidParameterValueException e) {
 			if(s_logger.isDebugEnabled())
 				s_logger.debug("Unable to deploy VM: " + e.getMessage());
-			saveEvent(param, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: VM_INVALID_PARAM_ERROR");
     		asyncMgr.completeAsyncJob(getJob().getId(),
         		AsyncJobResult.STATUS_FAILED, BaseCmd.VM_INVALID_PARAM_ERROR, e.getMessage());
 		} catch (InternalErrorException e) {
 			if(s_logger.isDebugEnabled())
 				s_logger.debug("Unable to deploy VM: " + e.getMessage());
-			saveEvent(param, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: INTERNAL_ERROR");
     		asyncMgr.completeAsyncJob(getJob().getId(),
         		AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, e.getMessage());
 		} catch (InsufficientStorageCapacityException e) {
 			if(s_logger.isDebugEnabled())
 				s_logger.debug("Unable to deploy VM: " + e.getMessage());
-			saveEvent(param, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: VM_INSUFFICIENT_CAPACITY");
     		asyncMgr.completeAsyncJob(getJob().getId(),
         		AsyncJobResult.STATUS_FAILED, BaseCmd.VM_INSUFFICIENT_CAPACITY, e.getMessage());
         } catch (PermissionDeniedException e) {
             if(s_logger.isDebugEnabled())
                 s_logger.debug("Unable to deploy VM: " + e.getMessage());
-            saveEvent(param, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: ACCOUNT_ERROR");
             asyncMgr.completeAsyncJob(getJob().getId(),
                 AsyncJobResult.STATUS_FAILED, BaseCmd.ACCOUNT_ERROR, e.getMessage());
 		} catch (ConcurrentOperationException e) {
             if(s_logger.isDebugEnabled())
                 s_logger.debug("Unable to deploy VM: " + e.getMessage());
-            saveEvent(param, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: INTERNAL_ERROR");
             asyncMgr.completeAsyncJob(getJob().getId(),
                 AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, e.getMessage());
 		} catch(Exception e) {
 			s_logger.warn("Unable to deploy VM : " + e.getMessage(), e);
-			saveEvent(param, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: INTERNAL_ERROR");
     		asyncMgr.completeAsyncJob(getJob().getId(),
             		AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, e.getMessage());
 		}
@@ -127,14 +120,7 @@ public class DeployVMExecutor extends VMOperationExecutor {
     public void processTimeout(VMOperationListener listener, long agentId, long seq) {
 	}
 	
-    private long saveEvent(DeployVMParam param, String level, String type, String description){
-    	    
-    	return getAsyncJobMgr().getExecutorContext().getManagementServer().saveEvent(
-				param.getUserId(), param.getAccountId(),
-				level, type, description, null, param.getEventId());    	
-    }
-    
-	private DeployVMResultObject composeResultObject(long userId, UserVm vm, DeployVMParam param) {
+	private DeployVMResultObject composeResultObject(UserVm vm, DeployVMParam param) {
 		DeployVMResultObject resultObject = new DeployVMResultObject();
 		
 		if(vm == null)
@@ -172,15 +158,11 @@ public class DeployVMExecutor extends VMOperationExecutor {
         	resultObject.setDomain(managementServer.findDomainIdById(acct.getDomainId()).getName());
         }
         
-        User userExecutingCmd = managementServer.getUser(userId);
-        //this is for the case where the admin deploys a vm for a normal user
-        Account acctForUserExecutingCmd = managementServer.findAccountById(Long.valueOf(userExecutingCmd.getAccountId()));
-        if ((BaseCmd.isAdmin(acctForUserExecutingCmd.getType()) && (vm.getHostId() != null)) || (BaseCmd.isAdmin(acct.getType()) && (vm.getHostId() != null))) 
-        {
+        if ( BaseCmd.isAdmin(acct.getType()) && (vm.getHostId() != null)) {
         	resultObject.setHostname(managementServer.getHostBy(vm.getHostId()).getName());
         	resultObject.setHostid(vm.getHostId());
         }
-        	
+        
         String templateName = "none";
         boolean templatePasswordEnabled = false;
         String templateDisplayText = null;

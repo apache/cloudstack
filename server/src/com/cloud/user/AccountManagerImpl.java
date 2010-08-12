@@ -38,7 +38,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
 
 @Local(value={AccountManager.class})
@@ -50,9 +49,8 @@ public class AccountManagerImpl implements AccountManager {
 	private DomainDao _domainDao;
 	private UserDao _userDao;
 	private VMTemplateDao _templateDao;
-	private ResourceLimitDao _resourceLimitDao;
-	private ResourceCountDao _resourceCountDao;
-	private final GlobalLock m_resourceCountLock = GlobalLock.getInternLock("resource.count");
+	ResourceLimitDao _resourceLimitDao;
+	ResourceCountDao _resourceCountDao;
 	
 	@Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -106,54 +104,17 @@ public class AccountManagerImpl implements AccountManager {
     public boolean stop() {
         return true;
     }
-
-    @Override
+    
     public void incrementResourceCount(long accountId, ResourceType type, Long...delta) {
     	long numToIncrement = (delta.length == 0) ? 1 : delta[0].longValue();
-
-    	if (m_resourceCountLock.lock(120)) { // 2 minutes
-    	    try {
-                _resourceCountDao.updateAccountCount(accountId, type, true, numToIncrement);
-
-                // on a per-domain basis, increment the count
-                // FIXME:  can this increment be done on the database side in a custom update statement?
-                Account account = _accountDao.findById(accountId);
-                Long domainId = account.getDomainId();
-                while (domainId != null) {
-                    _resourceCountDao.updateDomainCount(domainId, type, true, numToIncrement);
-                    DomainVO domain = _domainDao.findById(domainId);
-                    domainId = domain.getParent();
-                }
-    	    } finally {
-    	        m_resourceCountLock.unlock();
-    	    }
-    	}
+    	_resourceCountDao.updateCount(accountId, type, true, numToIncrement);
     }
-
-    @Override
+    
     public void decrementResourceCount(long accountId, ResourceType type, Long...delta) {
     	long numToDecrement = (delta.length == 0) ? 1 : delta[0].longValue();
-
-        if (m_resourceCountLock.lock(120)) { // 2 minutes
-            try {
-                _resourceCountDao.updateAccountCount(accountId, type, false, numToDecrement);
-
-                // on a per-domain basis, decrement the count
-                // FIXME:  can this decrement be done on the database side in a custom update statement?
-                Account account = _accountDao.findById(accountId);
-                Long domainId = account.getDomainId();
-                while (domainId != null) {
-                    _resourceCountDao.updateDomainCount(domainId, type, false, numToDecrement);
-                    DomainVO domain = _domainDao.findById(domainId);
-                    domainId = domain.getParent();
-                }
-            } finally {
-                m_resourceCountLock.unlock();
-            }
-        }
+    	_resourceCountDao.updateCount(accountId, type, false, numToDecrement);
     }
-
-    @Override
+    
     public long findCorrectResourceLimit(AccountVO account, ResourceType type) {
     	long max = -1;
     	
@@ -164,12 +125,8 @@ public class AccountManagerImpl implements AccountManager {
 			max = limit.getMax().longValue();
 		} else {
 			// If the account has an infinite limit, check the ROOT domain
-			Long domainId = account.getDomainId();
-			while ((domainId != null) && (limit == null)) {
-				limit = _resourceLimitDao.findByDomainIdAndType(domainId, type);
-				DomainVO domain = _domainDao.findById(domainId);
-				domainId = domain.getParent();
-			}
+			Long domainId = DomainVO.ROOT_DOMAIN;
+			limit = _resourceLimitDao.findByDomainIdAndType(domainId, type);
 	
 			if (limit != null) {
 				max = limit.getMax().longValue();
@@ -178,82 +135,29 @@ public class AccountManagerImpl implements AccountManager {
 
 		return max;
     }
-
-    @Override
-    public long findCorrectResourceLimit(DomainVO domain, ResourceType type) {
-        long max = -1;
-        
-        // Check account
-        ResourceLimitVO limit = _resourceLimitDao.findByDomainIdAndType(domain.getId(), type);
-        
-        if (limit != null) {
-            max = limit.getMax().longValue();
-        } else {
-            // check domain hierarchy
-            Long domainId = domain.getParent();
-            while ((domainId != null) && (limit == null)) {
-                limit = _resourceLimitDao.findByDomainIdAndType(domainId, type);
-                DomainVO tmpDomain = _domainDao.findById(domainId);
-                domainId = tmpDomain.getParent();
-            }
     
-            if (limit != null) {
-                max = limit.getMax().longValue();
-            }
-        }
-
-        return max;
-    }
-
-    @Override
-    public boolean resourceLimitExceeded(AccountVO account, ResourceType type, long...count) {
-    	long numResources = ((count.length == 0) ? 1 : count[0]);
-
+    public boolean resourceLimitExceeded(AccountVO account, ResourceType type) {
     	// Don't place any limits on system or admin accounts
     	long accountType = account.getType();
 		if (accountType == Account.ACCOUNT_TYPE_ADMIN || accountType == Account.ACCOUNT_ID_SYSTEM) {
 			return false;
 		}
+		
+		long max = findCorrectResourceLimit(account, type);
+		
+		if (max >= 0) {
+			long potentialCount = _resourceCountDao.getCount(account.getId(), type) + 1;
+			return (potentialCount > max);
+		} else {
+			return false;
+		}
 
-        if (m_resourceCountLock.lock(120)) { // 2 minutes
-            try {
-                // Check account
-                ResourceLimitVO limit = _resourceLimitDao.findByAccountIdAndType(account.getId(), type);
-                
-                if (limit != null) {
-                    long potentialCount = _resourceCountDao.getAccountCount(account.getId(), type) + numResources;
-                    if (potentialCount > limit.getMax().longValue()) {
-                        return true;
-                    }
-                }
-
-                // check all domains in the account's domain hierarchy
-                Long domainId = account.getDomainId();
-                while (domainId != null) {
-                    ResourceLimitVO domainLimit = _resourceLimitDao.findByDomainIdAndType(domainId, type);
-                    if (domainLimit != null) {
-                        long domainCount = _resourceCountDao.getDomainCount(domainId, type);
-                        if ((domainCount + numResources) > domainLimit.getMax().longValue()) {
-                            return true;
-                        }
-                    }
-                    DomainVO domain = _domainDao.findById(domainId);
-                    domainId = domain.getParent();
-                }
-            } finally {
-                m_resourceCountLock.unlock();
-            }
-        }
-
-		return false;
     }
-
-    @Override
+    
     public long getResourceCount(AccountVO account, ResourceType type) {
-    	return _resourceCountDao.getAccountCount(account.getId(), type);
+    	return _resourceCountDao.getCount(account.getId(), type);
     }
-
-    @Override
+    
     public ResourceLimitVO updateResourceLimit(Long domainId, Long accountId, ResourceType type, Long max) throws InvalidParameterValueException  {
     	// Either a domainId or an accountId must be passed in, but not both.
         if ((domainId == null) && (accountId == null)) {
@@ -270,29 +174,12 @@ public class AccountManagerImpl implements AccountManager {
             } else if (account.getType() == Account.ACCOUNT_TYPE_ADMIN || account.getType() == Account.ACCOUNT_ID_SYSTEM) {
             	throw new InvalidParameterValueException("Please specify a non-admin account.");
             }
-
-            DomainVO domain = _domainDao.findById(account.getDomainId());
-            long parentMaximum = findCorrectResourceLimit(domain, type);
-            if ((parentMaximum >= 0) && ((max.longValue() == -1) || (max.longValue() > parentMaximum))) {
-                throw new InvalidParameterValueException("Account " + account.getAccountName() + "(id: " + accountId + ") has maximum allowed resource limit " + parentMaximum +
-                        " for " + type + ", please specify a value less that or equal to " + parentMaximum);
-            }
         } else if (domainId != null) {
         	DomainVO domain = _domainDao.findById(domainId);
             if (domain == null) {
                 throw new InvalidParameterValueException("Please specify a valid domain ID.");
             } else if (domain.getRemoved() != null) {
             	throw new InvalidParameterValueException("Please specify an active domain.");
-            }
-
-            Long parentDomainId = domain.getParent();
-            if (parentDomainId != null) {
-                DomainVO parentDomain = _domainDao.findById(parentDomainId);
-                long parentMaximum = findCorrectResourceLimit(parentDomain, type);
-                if ((parentMaximum >= 0) && (max.longValue() > parentMaximum)) {
-                    throw new InvalidParameterValueException("Domain " + domain.getName() + "(id: " + domainId + ") has maximum allowed resource limit " + parentMaximum +
-                            " for " + type + ", please specify a value less that or equal to " + parentMaximum);
-                }
             }
         }
 
@@ -303,7 +190,7 @@ public class AccountManagerImpl implements AccountManager {
 
         // Check if a limit with the specified domainId/accountId/type combo already exists
         Filter searchFilter = new Filter(ResourceLimitVO.class, null, false, null, null);
-        SearchCriteria<ResourceLimitVO> sc = _resourceLimitDao.createSearchCriteria();
+        SearchCriteria sc = _resourceLimitDao.createSearchCriteria();
 
         if (domainId != null) {
             sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
@@ -327,6 +214,7 @@ public class AccountManagerImpl implements AccountManager {
         	// Persist the new Limit
             return _resourceLimitDao.persist(new ResourceLimitVO(domainId, accountId, type, max));
         }
+        
     }
 
 }

@@ -72,7 +72,6 @@
         <include name="${agent.jar}" />
         <include name="${utils.jar}" />
         <include name="${core.jar}" />
-        <include name="${api.jar}" />
       </zipfileset>
 
       <zipfileset dir="${agent.dist.dir}" filemode="770">
@@ -134,7 +133,9 @@
         <include name="**/*" />
       </fileset>
       <lib dir="${jar.dir}">
-        <include name="cloud-*.jar" />
+        <include name="${core.jar}" />
+        <include name="${utils.jar}" />
+        <include name="${server.jar}" />
       </lib>
       <zipfileset dir="${scripts.target.dir}" prefix="WEB-INF/lib/scripts" filemode="555">
         <include name="**/*" />
@@ -164,7 +165,6 @@
         <include name="${agent.jar}" />
         <include name="${utils.jar}" />
         <include name="${core.jar}" />
-        <include name="${api.jar}" />
       </zipfileset>
       <zipfileset dir="${console-proxy.dist.dir}">
         <exclude name="**/*.sh" />
@@ -232,8 +232,7 @@
     </delete>
   </target>
 
-<!-- The following target is OBSOLETE.  If you need to add a jar file / target, go to the function def runant(target): in wscrpit_build, and list the jar file and the target in the appropriate places -->
-<target name="sendjarfiles" depends="compile-utils, compile-core, compile-server, compile-agent, compile-console-common, compile-console-proxy, build-console-viewer">
+  <target name="sendjarfiles" depends="compile-utils, compile-core, compile-server, compile-agent, compile-console-common, compile-console-proxy, build-console-viewer">
     <copy todir="${waf.artifacts}">
       <fileset dir="${target.dir}/jar"/>
     </copy>

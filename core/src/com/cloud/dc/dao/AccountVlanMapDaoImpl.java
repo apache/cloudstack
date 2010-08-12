@@ -36,21 +36,21 @@ public class AccountVlanMapDaoImpl extends GenericDaoBase<AccountVlanMapVO, Long
 	
 	@Override
 	public List<AccountVlanMapVO> listAccountVlanMapsByAccount(long accountId) {
-		SearchCriteria<AccountVlanMapVO> sc = AccountSearch.create();
+		SearchCriteria sc = AccountSearch.create();
     	sc.setParameters("accountId", accountId);
     	return listBy(sc);
 	}
 	
 	@Override
 	public List<AccountVlanMapVO> listAccountVlanMapsByVlan(long vlanDbId) {
-		SearchCriteria<AccountVlanMapVO> sc = VlanSearch.create();
+		SearchCriteria sc = VlanSearch.create();
     	sc.setParameters("vlanDbId", vlanDbId);
     	return listBy(sc);
 	}
 	
 	@Override
 	public AccountVlanMapVO findAccountVlanMap(long accountId, long vlanDbId) {
-		SearchCriteria<AccountVlanMapVO> sc = AccountVlanSearch.create();
+		SearchCriteria sc = AccountVlanSearch.create();
 		sc.setParameters("accountId", accountId);
 		sc.setParameters("vlanDbId", vlanDbId);
 		return findOneBy(sc);

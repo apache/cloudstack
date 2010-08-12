@@ -23,8 +23,6 @@ import javax.persistence.Entity;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 
-import com.cloud.uservm.UserVm;
-
 @Entity
 @Table(name="user_vm")
 @DiscriminatorValue(value="User")
@@ -55,14 +53,8 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     @Column(name="guest_netmask")
     String guestNetmask;
 
-    @Column(name="iso_id", nullable=true, length=17)
-    private Long isoId = null;
-    
     @Column(name="external_ip_address")
 	String externalIpAddress;
-    
-    @Column(name="group", updatable=true, nullable=true)
-    private String group;
 
     @Column(name="external_mac_address")
 	String externalMacAddress;
@@ -72,9 +64,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     
     @Column(name="user_data", updatable=true, nullable=true, length=2048)
     private String userData;
-    
-    @Column(name="display_name", updatable=true, nullable=true)
-    private String displayName;
 
     @Override
     public long getAccountId() {
@@ -113,12 +102,7 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
 		this.guestNetmask = guestNetmask;
 		setPrivateNetmask(guestNetmask);
 	}
-	
-    @Override
-    public Long getIsoId() {
-        return isoId;
-    }
-    
+
     @Override
     public Long getDomainRouterId() {
         return domainRouterId;
@@ -146,15 +130,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
         return vnet;
     }
     
-    @Override
-    public String getGroup() {
-        return group;
-    }
-    
-    public void setGroup(String group) {
-        this.group = group;
-    }
-    
     public UserVmVO(long id,
                     String name,
                     long templateId,
@@ -175,7 +150,7 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
                     String displayName,
                     String group,
                     String userData) {
-        super(id, name, name, Type.User, templateId, guestOSId, guestMacAddress, guestIpAddress, guestNetMask, dcId, podId, haEnabled, null);
+        super(id, name, Type.User, templateId, guestOSId, guestMacAddress, guestIpAddress, guestNetMask, dcId, podId, haEnabled, null, displayName, group);
         this.serviceOfferingId = serviceOfferingId;
         this.domainRouterId = routerId;
         this.accountId = accountId;
@@ -187,10 +162,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
         this.externalMacAddress = externalMacAddress;
         this.setUserData(userData);
         this.setExternalVlanDbId(vlanDbId);
-        this.group = group;
-        this.isoId = null;
-        this.displayName = displayName;
-        this.group = group;
     }
 
     protected UserVmVO() {
@@ -201,10 +172,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
 		return externalIpAddress;
 	}
 
-	public void setIsoId(Long id) {
-	    this.isoId = id;
-	}
-	
 	public void setExternalIpAddress(String externalIpAddress) {
 		this.externalIpAddress = externalIpAddress;
 	}
@@ -225,22 +192,11 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
 		return externalVlanDbId;
 	}
 
-    @Override
 	public void setUserData(String userData) {
 		this.userData = userData;
 	}
 
-    @Override
 	public String getUserData() {
 		return userData;
-	}
-	
-	@Override
-	public String getDisplayName() {
-	    return displayName;
-	}
-	
-	public void setDisplayName(String displayName) {
-	    this.displayName = displayName;
 	}
 }

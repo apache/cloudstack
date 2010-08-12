@@ -25,7 +25,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.async.executor.DeployVMResultObject;
 import com.cloud.dc.DataCenterVO;
@@ -45,106 +44,21 @@ public class DeployVMCmd extends BaseCmd {
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISK_OFFERING_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISPLAY_NAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.GROUP, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NETWORK_GROUP_LIST, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SERVICE_OFFERING_ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TEMPLATE_ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_DATA, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.TRUE));
-
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SERVICE_OFFERING_ID, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISK_OFFERING_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TEMPLATE_ID, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISPLAY_NAME, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.GROUP, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_DATA, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NETWORK_GROUP_LIST, Boolean.FALSE));
+
     }
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="account", type=CommandType.STRING)
-    private String accountName;
-
-    @Parameter(name="diskofferingid", type=CommandType.LONG)
-    private Long diskOfferingId;
-
-    @Parameter(name="displayname", type=CommandType.STRING)
-    private String displayName;
-
-    @Parameter(name="domainid", type=CommandType.LONG)
-    private Long domainId;
-
-    @Parameter(name="group", type=CommandType.STRING)
-    private String group;
-
-    @Parameter(name="networkgrouplist", type=CommandType.LIST, collectionType=CommandType.STRING)
-    private List<String> networkGroupList;
-
-    @Parameter(name="serviceofferingid", type=CommandType.LONG, required=true)
-    private Long serviceOfferingId;
-
-    @Parameter(name="templateid", type=CommandType.LONG, required=true)
-    private Long templateId;
-
-    @Parameter(name="userdata", type=CommandType.STRING)
-    private String userData;
-
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true)
-    private Long zoneId;
-
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDiskOfferingId() {
-        return diskOfferingId;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public String getGroup() {
-        return group;
-    }
-
-    public List<String> getNetworkGroupList() {
-        return networkGroupList;
-    }
-
-    public Long getServiceOfferingId() {
-        return serviceOfferingId;
-    }
-
-    public Long getTemplateId() {
-        return templateId;
-    }
-
-    public String getUserData() {
-        return userData;
-    }
-
-    public Long getZoneId() {
-        return zoneId;
-    }
-
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
     public String getName() {
         return s_name;
     }
@@ -153,7 +67,6 @@ public class DeployVMCmd extends BaseCmd {
     	return "virtualmachine";
     }
     
-    @Override
     public List<Pair<Enum, Boolean>> getProperties() {
         return s_properties;
     }
@@ -186,17 +99,8 @@ public class DeployVMCmd extends BaseCmd {
     	    if ((diskOffering == null) || !DiskOfferingVO.Type.Disk.equals(diskOffering.getType())) {
                 throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, "Disk offering with id " + diskOfferingId + " doesn't exist in the system");
     	    }
-    	    
-        	//if disk offering is set to use local storage, and local_storage is disabled, block vm deployment    	    
-    	    if(diskOffering.getUseLocalStorage())
-    	    {
-    	    	boolean errFlag = getManagementServer().checkLocalStorageConfigVal();
-    	    	
-    	    	if(!errFlag)
-    	    		throw new ServerApiException (BaseCmd.VM_DEPLOY_ERROR,"Please set the local storage flag to true as disk offering has local storage usage enabled");
-    	    }
     	}
-    	
+
         DataCenterVO zone = getManagementServer().findDataCenterById(zoneId);
         if (zone == null) {
         	throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, "Zone with id " + zoneId + " doesn't exist in the system");
@@ -276,8 +180,7 @@ public class DeployVMCmd extends BaseCmd {
     	}
     }
 
-	@Override
-    protected long getInstanceIdFromJobSuccessResult(String result) {
+	protected long getInstanceIdFromJobSuccessResult(String result) {
 		DeployVMResultObject resultObject = (DeployVMResultObject)SerializerHelper.fromSerializedString(result);
 		if (resultObject != null) {
 			return resultObject.getId();

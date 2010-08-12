@@ -54,7 +54,6 @@ public interface GenericDao<T, ID extends Serializable> {
     T createForUpdate();
     
     SearchBuilder<T> createSearchBuilder();
-    <K> GenericSearchBuilder<T, K> createSearchBuilder(Class<K> clazz);
     
     T createForUpdate(ID id);
     
@@ -63,7 +62,7 @@ public interface GenericDao<T, ID extends Serializable> {
      * 
      * @return SearchCriteria
      */
-    SearchCriteria<T> createSearchCriteria();
+    SearchCriteria createSearchCriteria();
     
     /**
      * lock the rows that matched the search criteria and filter.  This method needs
@@ -74,7 +73,7 @@ public interface GenericDao<T, ID extends Serializable> {
      * @param exclusive exclusive or share lock
      * @return List<T> list of entity beans
      */
-    List<T> lock(SearchCriteria<T> sc, Filter filter, boolean exclusive);
+    List<T> lock(SearchCriteria sc, Filter filter, boolean exclusive);
     
     /**
      * lock 1 of the return set.  This method needs to be run within a
@@ -83,7 +82,7 @@ public interface GenericDao<T, ID extends Serializable> {
      * @param exclusive
      * @return T if found and locked.  null if not.
      */
-    T lock(SearchCriteria<T> sc, boolean exclusive);
+    T lock(SearchCriteria sc, boolean exclusive);
     
     /**
      * Find and lock the row for update.
@@ -141,9 +140,9 @@ public interface GenericDao<T, ID extends Serializable> {
      * @param filter
      * @return list of entity beans.
      */
-    List<T> search(SearchCriteria<T> sc, Filter filter);
+    List<T> search(SearchCriteria sc, Filter filter);
     
-    List<T> searchAll(SearchCriteria<T> sc, final Filter filter, final Boolean lock, final boolean cache);
+    List<T> searchAll(SearchCriteria sc, final Filter filter, final Boolean lock, final boolean cache);
     
     /**
      * Customized search with SearchCritiria
@@ -151,7 +150,7 @@ public interface GenericDao<T, ID extends Serializable> {
      * @param filter
      * @return list of entity beans.
      */
-    public <M> List<M> searchAll(SearchCriteria<M> sc, Filter filter);
+    List<Object[]> searchAll(SearchCriteria sc, final Filter filter);
     
     /**
      * Retrieves the entire table.
@@ -195,7 +194,7 @@ public interface GenericDao<T, ID extends Serializable> {
      * @param sc
      * @return number of rows deleted
      */
-    int delete(final SearchCriteria<T> sc);
+    int delete(final SearchCriteria sc);
     
     /**
      * expunge the removed rows.
@@ -212,5 +211,5 @@ public interface GenericDao<T, ID extends Serializable> {
      */
     boolean configure(String name, Map<String, Object> params) throws ConfigurationException;
     
-    int remove(SearchCriteria<T> sc);
+    int remove(SearchCriteria sc);
 }

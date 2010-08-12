@@ -24,10 +24,10 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.server.Criteria;
 import com.cloud.user.AccountVO;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.State;
+import com.cloud.vm.UserVm;
 
 /**
  * Ensures that network firewall rules stay updated as VMs go up and down

@@ -71,7 +71,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     
     @Override
     public List<AccountVO> findCleanups() {
-    	SearchCriteria<AccountVO> sc = CleanupSearch.create();
+    	SearchCriteria sc = CleanupSearch.create();
     	sc.setParameters("cleanup", true);
     	
     	return searchAll(sc, null, null, false);
@@ -110,34 +110,34 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
 
     @Override
     public List<AccountVO> findAccountsLike(String accountName) {
-        SearchCriteria<AccountVO> sc = createSearchCriteria();
+        SearchCriteria sc = createSearchCriteria();
         sc.addAnd("accountName", SearchCriteria.Op.LIKE, "%"+accountName+"%");
         return listActiveBy(sc);
     }
 
     @Override
     public Account findActiveAccount(String accountName, Long domainId) {
-        SearchCriteria<AccountVO> sc = AccountNameSearch.create("accountName", accountName);
+        SearchCriteria sc = AccountNameSearch.create("accountName", accountName);
         sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
         return findOneActiveBy(sc);
     }
 
     @Override
     public Account findAccount(String accountName, Long domainId) {
-        SearchCriteria<AccountVO> sc = AccountNameSearch.create("accountName", accountName);
+        SearchCriteria sc = AccountNameSearch.create("accountName", accountName);
         sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
         return findOneBy(sc);
     }
     
     public Account findActiveAccountByName(String accountName) {
-    	SearchCriteria<AccountVO> sc = AccountNameSearch.create("accountName", accountName);
+    	SearchCriteria sc = AccountNameSearch.create("accountName", accountName);
         return findOneActiveBy(sc);
     }
 
     public List<AccountVO> findActiveAccounts(Long maxAccountId, Filter filter) {
         if (maxAccountId == null) return null;
 
-        SearchCriteria<AccountVO> sc = createSearchCriteria();
+        SearchCriteria sc = createSearchCriteria();
         sc.addAnd("id", SearchCriteria.Op.LTEQ, maxAccountId);
 
         return listActiveBy(sc, filter);
@@ -145,7 +145,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
 
     public List<AccountVO> findRecentlyDeletedAccounts(Long maxAccountId, Date earliestRemovedDate, Filter filter) {
         if (earliestRemovedDate == null) return null;
-        SearchCriteria<AccountVO> sc = createSearchCriteria();
+        SearchCriteria sc = createSearchCriteria();
         if (maxAccountId != null) {
             sc.addAnd("id", SearchCriteria.Op.LTEQ, maxAccountId);
         }
@@ -158,7 +158,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     public List<AccountVO> findNewAccounts(Long minAccountId, Filter filter) {
         if (minAccountId == null) return null;
 
-        SearchCriteria<AccountVO> sc = createSearchCriteria();
+        SearchCriteria sc = createSearchCriteria();
         sc.addAnd("id", SearchCriteria.Op.GT, minAccountId);
 
         return listBy(sc, filter);
@@ -166,7 +166,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
 
 	@Override
 	public List<AccountVO> findAdminAccountsForDomain(Long domain) {
-        SearchCriteria<AccountVO> sc = AccountTypeSearch.create();
+        SearchCriteria sc = AccountTypeSearch.create();
         sc.addAnd("domainId", Op.EQ,  domain);
         sc.addAnd("type", Op.IN, Account.ACCOUNT_TYPE_ADMIN, Account.ACCOUNT_TYPE_DOMAIN_ADMIN, Account.ACCOUNT_TYPE_READ_ONLY_ADMIN);
 		return null;

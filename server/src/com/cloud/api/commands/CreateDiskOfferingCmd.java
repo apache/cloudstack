@@ -25,7 +25,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.domain.DomainVO;
 import com.cloud.exception.InvalidParameterValueException;
@@ -42,61 +41,12 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISPLAY_TEXT, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISK_SIZE, Boolean.TRUE));
-//        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_MIRRORED, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_MIRRORED, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TAGS, Boolean.FALSE));
     }
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="disksize", type=CommandType.LONG, required=true)
-    private Long diskSize;
-
-    @Parameter(name="displaytext", type=CommandType.STRING, required=true)
-    private String displayText;
-
-    @Parameter(name="domainid", type=CommandType.LONG)
-    private Long domainId;
-
-    @Parameter(name="name", type=CommandType.STRING, required=true)
-    private String offeringName;
-
-    @Parameter(name="tags", type=CommandType.STRING)
-    private String tags;
-
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public Long getDiskSize() {
-        return diskSize;
-    }
-
-    public String getDisplayText() {
-        return displayText;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public String getOfferingName() {
-        return offeringName;
-    }
-
-    public String getTags() {
-        return tags;
-    }
-
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
@@ -116,19 +66,19 @@ public class CreateDiskOfferingCmd extends BaseCmd {
         String name = (String)params.get(BaseCmd.Properties.NAME.getName());
         String displayText = (String)params.get(BaseCmd.Properties.DISPLAY_TEXT.getName());
         Long numGB = (Long) params.get(BaseCmd.Properties.DISK_SIZE.getName());
-//        Boolean isMirrored = (Boolean)params.get(BaseCmd.Properties.IS_MIRRORED.getName());
+        Boolean isMirrored = (Boolean)params.get(BaseCmd.Properties.IS_MIRRORED.getName());
         String tags = (String)params.get(BaseCmd.Properties.TAGS.getName());
 
-//        if (isMirrored == null) {
-//            isMirrored = Boolean.FALSE;
-//        }
+        if (isMirrored == null) {
+            isMirrored = Boolean.FALSE;
+        }
         if (domainId == null) {
             domainId = DomainVO.ROOT_DOMAIN;
         }
 
         DiskOfferingVO diskOffering = null;
         try {
-        	diskOffering = getManagementServer().createDiskOffering(domainId.longValue(), name, displayText, numGB.intValue(),tags);
+        	diskOffering = getManagementServer().createDiskOffering(domainId.longValue(), name, displayText, numGB.intValue(), isMirrored.booleanValue(), tags);
         } catch (InvalidParameterValueException ex) {
         	throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, ex.getMessage());
         }
@@ -138,13 +88,13 @@ public class CreateDiskOfferingCmd extends BaseCmd {
         }
 
         List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.toString(diskOffering.getId())));
+        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), diskOffering.getId().toString()));
         returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), diskOffering.getDomainId()));
         returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), getManagementServer().findDomainIdById(diskOffering.getDomainId()).getName()));
         returnValues.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), diskOffering.getName()));
         returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_TEXT.getName(), diskOffering.getDisplayText()));
         returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DISK_SIZE.getName(), diskOffering.getDiskSizeInBytes()));
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.IS_MIRRORED.getName(), diskOffering.isMirrored()));
+        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.IS_MIRRORED.getName(), diskOffering.isMirrored()));
         returnValues.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), diskOffering.getCreated()));
         returnValues.add(new Pair<String, Object>(BaseCmd.Properties.TAGS.getName(), diskOffering.getTags()));
         return returnValues;

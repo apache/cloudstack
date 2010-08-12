@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# $Id: createvm.sh 10292 2010-07-07 00:24:04Z edison $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/qcow2/createvm.sh $
+# $Id: createvm.sh 10292 2010-07-07 00:24:04Z edison $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.x.beta/java/scripts/storage/qcow2/createvm.sh $
 # createvm.sh -- create a vm image 
 #
 

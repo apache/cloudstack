@@ -129,7 +129,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
     }
     
     private void checkStatusOfCurrentlyExecutingSnapshots() {
-        SearchCriteria<SnapshotScheduleVO> sc = _snapshotScheduleDao.createSearchCriteria();
+        SearchCriteria sc = _snapshotScheduleDao.createSearchCriteria();
         sc.addAnd("asyncJobId", SearchCriteria.Op.NNULL);
         List<SnapshotScheduleVO> snapshotSchedules = _snapshotScheduleDao.search(sc, null);
         for (SnapshotScheduleVO snapshotSchedule : snapshotSchedules) {
@@ -201,7 +201,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
     @DB
     public Long scheduleManualSnapshot(Long userId, Long volumeId) {
         // Check if there is another manual snapshot scheduled which hasn't been executed yet.
-        SearchCriteria<SnapshotScheduleVO> sc = _snapshotScheduleDao.createSearchCriteria();
+        SearchCriteria sc = _snapshotScheduleDao.createSearchCriteria();
         sc.addAnd("volumeId", SearchCriteria.Op.EQ, volumeId);
         sc.addAnd("policyId", SearchCriteria.Op.EQ, Snapshot.MANUAL_POLICY_ID);
         
@@ -393,7 +393,6 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         }
         else {
             TimerTask timerTask = new TimerTask() {
-                @Override
                 public void run() {
                     Date currentTimestamp = new Date();
                     poll(currentTimestamp);

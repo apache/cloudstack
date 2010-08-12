@@ -30,8 +30,9 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Local(value={ResourceLimitDao.class})
 public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> implements ResourceLimitDao {
-	private SearchBuilder<ResourceLimitVO> IdTypeSearch;
 
+	SearchBuilder<ResourceLimitVO> IdTypeSearch;
+	
 	public ResourceLimitDaoImpl () {
 		IdTypeSearch = createSearchBuilder();
 		IdTypeSearch.and("type", IdTypeSearch.entity().getType(), SearchCriteria.Op.EQ);
@@ -39,12 +40,12 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
 	    IdTypeSearch.and("accountId", IdTypeSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
 	    IdTypeSearch.done();
 	}
-
+	
 	public ResourceLimitVO findByDomainIdAndType(Long domainId, ResourceCount.ResourceType type) {
 		if (domainId == null || type == null)
 			return null;
 		
-		SearchCriteria<ResourceLimitVO> sc = IdTypeSearch.create();
+		SearchCriteria sc = IdTypeSearch.create();
 		sc.setParameters("domainId", domainId);
 		sc.setParameters("type", type);
 		
@@ -55,7 +56,7 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
 		if (domainId == null)
 			return null;
 		
-		SearchCriteria<ResourceLimitVO> sc = IdTypeSearch.create();
+		SearchCriteria sc = IdTypeSearch.create();
 		sc.setParameters("domainId", domainId);
 		
 		return listBy(sc);
@@ -65,7 +66,7 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
 		if (accountId == null || type == null)
 			return null;
 	
-		SearchCriteria<ResourceLimitVO> sc = IdTypeSearch.create();
+		SearchCriteria sc = IdTypeSearch.create();
 		sc.setParameters("accountId", accountId);
 		sc.setParameters("type", type);
 		
@@ -76,7 +77,7 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
 		if (accountId == null)
 			return null;
 	
-		SearchCriteria<ResourceLimitVO> sc = IdTypeSearch.create();
+		SearchCriteria sc = IdTypeSearch.create();
 		sc.setParameters("accountId", accountId);
 		
 		return listBy(sc);

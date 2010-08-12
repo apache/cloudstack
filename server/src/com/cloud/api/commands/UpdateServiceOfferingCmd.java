@@ -25,10 +25,9 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.offering.ServiceOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.ServiceOffering.GuestIpType;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
 
@@ -38,69 +37,14 @@ public class UpdateServiceOfferingCmd extends BaseCmd{
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISPLAY_TEXT, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISPLAY_TEXT, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.OFFER_HA, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TAGS, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USE_VIRTUAL_NETWORK, Boolean.FALSE));
-
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TAGS, Boolean.FALSE));
     }
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="displaytext", type=CommandType.STRING)
-    private String displayText;
-
-    @Parameter(name="id", type=CommandType.LONG, required=true)
-    private Long id;
-
-    @Parameter(name="name", type=CommandType.STRING)
-    private String serviceOfferingName;
-
-    @Parameter(name="offerha", type=CommandType.BOOLEAN)
-    private Boolean offerHa;
-
-    @Parameter(name="tags", type=CommandType.STRING)
-    private String tags;
-
-    @Parameter(name="usevirtualnetwork", type=CommandType.BOOLEAN)
-    private Boolean useVirtualNetwork;
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public String getDisplayText() {
-        return displayText;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getServiceOfferingName() {
-        return serviceOfferingName;
-    }
-
-    public Boolean getOfferHa() {
-        return offerHa;
-    }
-
-    public String getTags() {
-        return tags;
-    }
-
-    public Boolean getUseVirtualNetwork() {
-        return useVirtualNetwork;
-    }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {

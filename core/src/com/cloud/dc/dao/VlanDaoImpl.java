@@ -25,6 +25,8 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
@@ -53,7 +55,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
 	 	
     @Override
     public VlanVO findByZoneAndVlanId(long zoneId, String vlanId) {
-    	SearchCriteria<VlanVO> sc = ZoneVlanIdSearch.create();
+    	SearchCriteria sc = ZoneVlanIdSearch.create();
     	sc.setParameters("zoneId", zoneId);
     	sc.setParameters("vlanId", vlanId);
         return findOneActiveBy(sc);
@@ -61,7 +63,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     
     @Override
     public List<VlanVO> findByZone(long zoneId) {
-    	SearchCriteria<VlanVO> sc = ZoneSearch.create();
+    	SearchCriteria sc = ZoneSearch.create();
     	sc.setParameters("zoneId", zoneId);
     	return listBy(sc);
     }
@@ -84,7 +86,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
 
 	@Override
 	public List<VlanVO> listByZoneAndType(long zoneId, VlanType vlanType) {
-		SearchCriteria<VlanVO> sc = ZoneTypeSearch.create();
+		SearchCriteria sc = ZoneTypeSearch.create();
     	sc.setParameters("zoneId", zoneId);
     	sc.setParameters("vlanType", vlanType);
         return listBy(sc);
@@ -226,7 +228,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
 
 	@Override
 	public boolean zoneHasDirectAttachUntaggedVlans(long zoneId) {
-		SearchCriteria<VlanVO> sc = ZoneTypeAllPodsSearch.create();
+		SearchCriteria sc = ZoneTypeAllPodsSearch.create();
     	sc.setParameters("zoneId", zoneId);
     	sc.setParameters("vlanType", VlanType.DirectAttached);
     	
@@ -237,7 +239,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
 	@Override
 	public Pair<String, VlanVO> assignPodDirectAttachIpAddress(long zoneId,
 			long podId, long accountId, long domainId) {
-		SearchCriteria<VlanVO> sc = ZoneTypePodSearch.create();
+		SearchCriteria sc = ZoneTypePodSearch.create();
     	sc.setParameters("zoneId", zoneId);
     	sc.setParameters("vlanType", VlanType.DirectAttached);
     	sc.setJoinParameters("vlan", "podId", podId);

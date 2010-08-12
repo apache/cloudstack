@@ -36,13 +36,9 @@ public interface ResourceCount {
 	
 	public void setType(ResourceType type);
 	
-	public Long getAccountId();
+	public long getAccountId();
 	
-	public void setAccountId(Long accountId);
-	
-	public Long getDomainId();
-	
-	public void setDomainId(Long domainId);
+	public void setAccountId(long accountId);
 	
 	public long getCount();
 	

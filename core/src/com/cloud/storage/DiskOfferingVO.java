@@ -33,14 +33,13 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import com.cloud.offering.DiskOffering;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="disk_offering")
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="type", discriminatorType=DiscriminatorType.STRING, length=32)
-public class DiskOfferingVO implements DiskOffering {
+public class DiskOfferingVO {
     public enum Type {
         Disk,
         Service
@@ -91,11 +90,12 @@ public class DiskOfferingVO implements DiskOffering {
     public DiskOfferingVO() {
     }
 
-    public DiskOfferingVO(long domainId, String name, String displayText, long diskSize, String tags) {
+    public DiskOfferingVO(long domainId, String name, String displayText, long diskSize, boolean mirrored, String tags) {
         this.domainId = domainId;
         this.name = name;
         this.displayText = displayText;
         this.diskSize = diskSize;
+        this.mirrored = mirrored;
         this.tags = tags;
         this.recreatable = false;
         this.type = Type.Disk;
@@ -113,7 +113,7 @@ public class DiskOfferingVO implements DiskOffering {
         this.useLocalStorage = useLocalStorage;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
     

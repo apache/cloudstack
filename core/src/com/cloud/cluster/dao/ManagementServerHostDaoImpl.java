@@ -41,7 +41,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
     private final SearchBuilder<ManagementServerHostVO> MsIdSearch;
     
 	public ManagementServerHostVO findByMsid(long msid) {
-        SearchCriteria<ManagementServerHostVO> sc = MsIdSearch.create();
+        SearchCriteria sc = MsIdSearch.create();
         sc.setParameters("msid", msid);
 		
 		List<ManagementServerHostVO> l = listBy(sc);
@@ -98,7 +98,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 	    activeSearch.and("lastUpdateTime", activeSearch.entity().getLastUpdateTime(),  SearchCriteria.Op.GT);
 	    activeSearch.and("removed", activeSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
 	    
-	    SearchCriteria<ManagementServerHostVO> sc = activeSearch.create();
+	    SearchCriteria sc = activeSearch.create();
 	    sc.setParameters("lastUpdateTime", cutTime);
 	    
 	    return listBy(sc);

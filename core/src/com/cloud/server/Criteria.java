@@ -36,9 +36,7 @@ public class Criteria {
 	public static final String DATACENTERID = "dataCenterId";
 	public static final String DESCRIPTION = "description";
 	public static final String PODID = "podId";
-	public static final String CLUSTERID = "clusterId";
 	public static final String HOSTID = "hostId";
-	public static final String OSCATEGORYID = "osCategoryId";
 	public static final String PODNAME  = "podName";
 	public static final String ZONENAME = "zoneName";
 	public static final String HOSTNAME = "hostName";

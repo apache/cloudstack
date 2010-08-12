@@ -31,8 +31,7 @@ configure-stamp:
 
 
 #Architecture
-# build: build-arch build-indep
-build: build-arch
+build: build-arch build-indep
 
 build-arch: build-arch-stamp
 build-arch-stamp: configure-stamp  
@@ -41,13 +40,13 @@ build-arch-stamp: configure-stamp
 	./waf build --build-number=$(BUILDNUMBER)
 	touch $@
 
-# build-indep: build-indep-stamp
-# build-indep-stamp: configure-stamp  
-# 
-# 	# Add here commands to compile the indep part of the package.
-# 	#$(MAKE) doc
-# 	touch $@
-# 
+build-indep: build-indep-stamp
+build-indep-stamp: configure-stamp  
+
+	# Add here commands to compile the indep part of the package.
+	#$(MAKE) doc
+	touch $@
+
 clean: 
 	dh_testdir
 	dh_testroot
@@ -58,19 +57,18 @@ clean:
 
 	dh_clean 
 
-install: install-arch
-# install: install-indep install-arch
-# install-indep:
-# 	dh_testdir
-# 	dh_testroot
-# 	dh_prep -i 
-# 	dh_installdirs -i
-# 
-# 	# Add here commands to install the indep part of the package into
-# 	# debian/<package>-doc.
-# 	#INSTALLDOC#
-# 
-# 	dh_install -i
+install: install-indep install-arch
+install-indep:
+	dh_testdir
+	dh_testroot
+	dh_prep -i 
+	dh_installdirs -i
+
+	# Add here commands to install the indep part of the package into
+	# debian/<package>-doc.
+	#INSTALLDOC#
+
+	dh_install -i
 
 install-arch:
 	dh_testdir
@@ -92,7 +90,7 @@ binary-common:
 	dh_testroot
 	dh_installchangelogs 
 	dh_installdocs -A README HACKING
-#	dh_installexamples
+	dh_installexamples
 #	dh_installmenu
 #	dh_installdebconf
 #	dh_installlogrotate
@@ -116,14 +114,12 @@ binary-common:
 	dh_md5sums
 	dh_builddeb
 # Build architecture independant packages using the common target.
-# binary-indep: build-indep install-indep
-# 	$(MAKE) -f debian/rules DH_OPTIONS=-i binary-common
+binary-indep: build-indep install-indep
+	$(MAKE) -f debian/rules DH_OPTIONS=-i binary-common
 
 # Build architecture dependant packages using the common target.
 binary-arch: build-arch install-arch
 	$(MAKE) -f debian/rules DH_OPTIONS=-s binary-common
 
-# binary: binary-arch binary-indep
-binary: binary-arch
-# .PHONY: build clean binary-indep binary-arch binary install install-indep install-arch configure
-.PHONY: build clean binary-arch binary install install-arch configure
+binary: binary-arch binary-indep
+.PHONY: build clean binary-indep binary-arch binary install install-indep install-arch configure

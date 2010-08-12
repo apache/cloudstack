@@ -3564,23 +3564,6 @@ a:hover.continue_button {
 	display:inline;
 }
 
-.gridsorting_arrow {
-	width:10px;
-	height:5px;
-	float:right;
-	margin:9px 7px 0 0 ;
-	
-	padding:0;
-}
-
-.gridsorting_arrow.up {
-	background:url(../images/gridsorting_uparrow.gif) no-repeat top right;
-}
-
-.gridsorting_arrow.down {
-	background:url(../images/gridsorting_downarrow.gif) no-repeat top right;
-}
-
 .red_statusbar {
 	width:1%;
 	height:58px;

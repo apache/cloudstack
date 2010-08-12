@@ -25,10 +25,9 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
+import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.domain.DomainVO;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.Criteria;
@@ -43,52 +42,11 @@ public class UpdateResourceLimitCmd extends BaseCmd {
 
     static {
     	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
     	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.MAX, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.RESOURCE_TYPE, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.MAX, Boolean.FALSE));
     }
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="account", type=CommandType.STRING)
-    private String accountName;
-
-    @Parameter(name="domainid", type=CommandType.LONG)
-    private Long domainId;
-
-    @Parameter(name="max", type=CommandType.LONG)
-    private Long max;
-
-    @Parameter(name="resourcetype", type=CommandType.INTEGER, required=true)
-    private Integer resourceType;
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public Long getMax() {
-        return max;
-    }
-
-    public Integer getResourceType() {
-        return resourceType;
-    }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {
@@ -113,7 +71,7 @@ public class UpdateResourceLimitCmd extends BaseCmd {
         } else if (max < -1) {
         	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify either '-1' for an infinite limit, or a limit that is at least '0'.");
         }
-
+        
         // Map resource type
         ResourceType resourceType;
         try {
@@ -121,13 +79,11 @@ public class UpdateResourceLimitCmd extends BaseCmd {
         } catch (ArrayIndexOutOfBoundsException e) {
         	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid resource type.");
         }               
-
-        /*
+        
         if (accountName==null && domainId != null && !domainId.equals(DomainVO.ROOT_DOMAIN)) {
         	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Resource limits must be made for an account or the ROOT domain.");
         }
-        */
-
+        
         if (account != null) {
             if (domainId != null) {
                 if (!getManagementServer().isChildDomain(account.getDomainId(), domainId)) {
@@ -138,11 +94,6 @@ public class UpdateResourceLimitCmd extends BaseCmd {
             }                 
             
             if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-                if ((domainId != null) && (accountName == null) && domainId.equals(account.getDomainId())) {
-                    // if the admin is trying to update their own domain, disallow...
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to update resource limit for " + ((accountName == null) ? "" : "account " + accountName + " in ") + "domain " + domainId + ", permission denied");
-                }
-
             	// If there is an existing ROOT domain limit, make sure its max isn't being exceeded
             	Criteria c = new Criteria();
              	c.addCriteria(Criteria.DOMAINID, DomainVO.ROOT_DOMAIN);

@@ -19,7 +19,7 @@
 package com.cloud.async.executor;
 
 public class DeployVMParam extends VMOperationParam {
-	
+	private long accountId;
 	private long dataCenterId;
 	private long serviceOfferingId;	
 	private long templateId;
@@ -41,7 +41,7 @@ public class DeployVMParam extends VMOperationParam {
 		String displayName, String group, String userData, String [] networkGroups) {
 		
 		setUserId(userId);
-		setAccountId(accountId);
+		this.accountId = accountId;
 		this.dataCenterId = dataCenterId;
 		this.serviceOfferingId = serviceOfferingId;
 		this.templateId = templateId;
@@ -61,7 +61,7 @@ public class DeployVMParam extends VMOperationParam {
 	        String [] networkGroups, long eventId) {
 	        
 	        setUserId(userId);
-	        setAccountId(accountId);
+	        this.accountId = accountId;
 	        this.dataCenterId = dataCenterId;
 	        this.serviceOfferingId = serviceOfferingId;
 	        this.templateId = templateId;
@@ -74,6 +74,14 @@ public class DeployVMParam extends VMOperationParam {
 	        this.setNetworkGroups(networkGroups);
 	        this.eventId = eventId;
 	    }
+
+	public long getAccountId() {
+		return accountId;
+	}
+	
+	public void setAccountId(long accountId) {
+		this.accountId = accountId;
+	}
 	
 	public long getDataCenterId() {
 		return dataCenterId;

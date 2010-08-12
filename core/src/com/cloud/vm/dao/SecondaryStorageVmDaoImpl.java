@@ -100,7 +100,7 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
     		return false;
     	}
     		
-    	SearchCriteria<SecondaryStorageVmVO> sc = StateChangeSearch.create();
+    	SearchCriteria sc = StateChangeSearch.create();
     	sc.setParameters("id", vm.getId());
     	sc.setParameters("states", oldState);
     	sc.setParameters("host", vm.getHostId());
@@ -155,7 +155,7 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
     
     @Override
     public List<SecondaryStorageVmVO> getSecStorageVmListInStates(long dataCenterId, State... states) {
-        SearchCriteria<SecondaryStorageVmVO> sc = DataCenterStatusSearch.create();
+        SearchCriteria sc = DataCenterStatusSearch.create();
         sc.setParameters("states", (Object[])states);
         sc.setParameters("dc", dataCenterId);
         return listActiveBy(sc);
@@ -163,21 +163,21 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
 
     @Override
     public List<SecondaryStorageVmVO> getSecStorageVmListInStates(State... states) {
-        SearchCriteria<SecondaryStorageVmVO> sc = StateSearch.create();
+        SearchCriteria sc = StateSearch.create();
         sc.setParameters("states", (Object[])states);
         return listActiveBy(sc);
     }
     
     @Override
     public List<SecondaryStorageVmVO> listByHostId(long hostId) {
-        SearchCriteria<SecondaryStorageVmVO> sc = HostSearch.create();
+        SearchCriteria sc = HostSearch.create();
         sc.setParameters("host", hostId);
         return listActiveBy(sc);
     }
     
     @Override
     public List<SecondaryStorageVmVO> listUpByHostId(long hostId) {
-        SearchCriteria<SecondaryStorageVmVO> sc = HostUpSearch.create();
+        SearchCriteria sc = HostUpSearch.create();
         sc.setParameters("host", hostId);
         sc.setParameters("states", new Object[] {State.Destroyed, State.Stopped, State.Expunging});        
         return listActiveBy(sc);
@@ -206,7 +206,7 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
 
 	@Override
 	public List<SecondaryStorageVmVO> listByZoneId(long zoneId) {
-		SearchCriteria<SecondaryStorageVmVO> sc = ZoneSearch.create();
+		SearchCriteria sc = ZoneSearch.create();
         sc.setParameters("zone", zoneId);
         return listActiveBy(sc);
 	}

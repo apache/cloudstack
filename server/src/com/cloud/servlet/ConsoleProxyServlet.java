@@ -27,7 +27,6 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
 import com.cloud.host.HostVO;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
@@ -64,9 +63,9 @@ public class ConsoleProxyServlet extends HttpServlet {
 				return;
             }
             	
-            String userId = (String)session.getAttribute(BaseCmd.Properties.USER_ID.getName());
-            String account = (String)session.getAttribute(BaseCmd.Properties.ACCOUNT.getName());
-            Account accountObj = (Account)session.getAttribute(BaseCmd.Properties.ACCOUNT_OBJ.getName());
+            String userId = (String)session.getAttribute("userId");
+            String account = (String)session.getAttribute("account");
+            Account accountObj = (Account)session.getAttribute("accountobj");
 
             // Do a sanity check here to make sure the user hasn't already been deleted
             if ((userId == null) || (account == null) || (accountObj == null) || !verifyUser(Long.valueOf(userId))) {

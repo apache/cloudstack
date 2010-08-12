@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Id: installrtng.sh 11251 2010-07-23 23:40:44Z abhishek $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/secondary/installrtng.sh $
+# $Id: installrtng.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.x.beta/java/scripts/storage/secondary/installrtng.sh $
 usage() {
   printf "Usage: %s: -m <secondary storage mount point> -f <routing template file> [-F]\n" $(basename $0) >&2
   printf "or\n" >&2
@@ -46,8 +46,6 @@ then
   echo "mount point $mntpoint doesn't exist\n"
   exit 4
 fi
-
-mntpoint=`echo "$mntpoint" | sed 's|/*$||'`
 
 destdir=$mntpoint/template/tmpl/1/1/
 

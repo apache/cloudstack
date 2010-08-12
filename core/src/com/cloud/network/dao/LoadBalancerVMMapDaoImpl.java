@@ -31,7 +31,7 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
 
     @Override
     public void remove(long loadBalancerId) {
-        SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();
+        SearchCriteria sc = createSearchCriteria();
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
 
         delete(sc);
@@ -39,7 +39,7 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
 
     @Override
     public void remove(long loadBalancerId, List<Long> instanceIds, Boolean pending) {
-        SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();
+        SearchCriteria sc = createSearchCriteria();
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
         sc.addAnd("instanceId", SearchCriteria.Op.IN, instanceIds.toArray());
         if (pending != null) {
@@ -51,7 +51,7 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
 
     @Override
     public List<LoadBalancerVMMapVO> listByInstanceId(long instanceId) {
-        SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();
+        SearchCriteria sc = createSearchCriteria();
         sc.addAnd("instanceId", SearchCriteria.Op.EQ, instanceId);
 
         return listActiveBy(sc);
@@ -59,7 +59,7 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
 
     @Override
     public List<LoadBalancerVMMapVO> listByLoadBalancerId(long loadBalancerId) {
-        SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();
+        SearchCriteria sc = createSearchCriteria();
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
 
         return listActiveBy(sc);
@@ -67,7 +67,7 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
 
     @Override
     public List<LoadBalancerVMMapVO> listByLoadBalancerId(long loadBalancerId, boolean pending) {
-        SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();
+        SearchCriteria sc = createSearchCriteria();
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
         sc.addAnd("pending", SearchCriteria.Op.EQ, pending);
 

@@ -24,7 +24,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.component.ComponentLocator;
@@ -51,6 +51,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     protected final SearchBuilder<UserVmVO> HostRunningSearch;
     protected final SearchBuilder<UserVmVO> NameSearch;
     protected final SearchBuilder<UserVmVO> StateChangeSearch;
+    protected final SearchBuilder<UserVmVO> StorageIpSearch;
     protected final SearchBuilder<UserVmVO> GuestIpSearch;
 
     protected final SearchBuilder<UserVmVO> DestroySearch;
@@ -105,6 +106,12 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         StateChangeSearch.and("update", StateChangeSearch.entity().getUpdated(), SearchCriteria.Op.EQ);
         StateChangeSearch.done();
         
+        StorageIpSearch = createSearchBuilder();
+        StorageIpSearch.and("dc", StorageIpSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        StorageIpSearch.and("pod", StorageIpSearch.entity().getPodId(), SearchCriteria.Op.EQ);
+        StorageIpSearch.and("ip", StorageIpSearch.entity().getStorageIp(), SearchCriteria.Op.EQ);
+        StorageIpSearch.done();
+        
         GuestIpSearch = createSearchBuilder();
         GuestIpSearch.and("dc", GuestIpSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         GuestIpSearch.and("ip", GuestIpSearch.entity().getGuestIpAddress(), SearchCriteria.Op.EQ);
@@ -121,7 +128,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     }
     
     public List<UserVmVO> listByAccountAndPod(long accountId, long podId) {
-    	SearchCriteria<UserVmVO> sc = AccountPodSearch.create();
+    	SearchCriteria sc = AccountPodSearch.create();
     	sc.setParameters("account", accountId);
     	sc.setParameters("pod", podId);
     	
@@ -129,7 +136,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     }
     
     public List<UserVmVO> listByAccountAndDataCenter(long accountId, long dcId) {
-        SearchCriteria<UserVmVO> sc = AccountDataCenterSearch.create();
+        SearchCriteria sc = AccountDataCenterSearch.create();
         sc.setParameters("account", accountId);
         sc.setParameters("dc", dcId);
         
@@ -138,8 +145,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     
     @Override
     public List<UserVmVO> listBy(long routerId, State... states) {
-        SearchCriteria<UserVmVO> sc = RouterStateSearch.create();
-        SearchCriteria<UserVmVO> ssc = createSearchCriteria();
+        SearchCriteria sc = RouterStateSearch.create();
+        SearchCriteria ssc = createSearchCriteria();
         
         sc.setParameters("router", routerId);
         for (State state: states) {
@@ -150,17 +157,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     }
     
     @Override
-    public void updateVM(long id, String displayName, String group, boolean enable) {
-        UserVmVO vo = createForUpdate();
-        vo.setDisplayName(displayName);
-        vo.setGroup(group);
-        vo.setHaEnabled(enable);
-        update(id, vo);
-    }
-    
-    @Override
     public List<UserVmVO> listByRouterId(long routerId) {
-        SearchCriteria<UserVmVO> sc = RouterIdSearch.create();
+        SearchCriteria sc = RouterIdSearch.create();
         
         sc.setParameters("router", routerId);
         
@@ -186,7 +184,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     		return false;
     	}
     		
-    	SearchCriteria<UserVmVO> sc = StateChangeSearch.create();
+    	SearchCriteria sc = StateChangeSearch.create();
     	sc.setParameters("id", vm.getId());
     	sc.setParameters("states", oldState);
     	sc.setParameters("host", vm.getHostId());
@@ -219,8 +217,18 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     }
     
     @Override
+    public List<UserVmVO> findVMsUsingIpAddress(long dcId, long podId, String ipAddress) {
+    	SearchCriteria sc = StorageIpSearch.create();
+    	sc.setParameters("dc", dcId);
+    	sc.setParameters("pod", podId);
+    	sc.setParameters("ip", ipAddress);
+    	
+    	return listActiveBy(sc);
+    }
+    
+    @Override
     public List<UserVmVO> findDestroyedVms(Date date) {
-    	SearchCriteria<UserVmVO> sc = DestroySearch.create();
+    	SearchCriteria sc = DestroySearch.create();
     	sc.setParameters("state", State.Destroyed, State.Expunging);
     	sc.setParameters("updateTime", date);
     	
@@ -228,13 +236,13 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     }
     
     public List<UserVmVO> listByAccountId(long id) {
-        SearchCriteria<UserVmVO> sc = AccountSearch.create();
+        SearchCriteria sc = AccountSearch.create();
         sc.setParameters("account", id);
         return listActiveBy(sc);
     }
     
     public List<UserVmVO> listByHostId(Long id) {
-        SearchCriteria<UserVmVO> sc = HostSearch.create();
+        SearchCriteria sc = HostSearch.create();
         sc.setParameters("host", id);
         
         return listActiveBy(sc);
@@ -242,14 +250,14 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     
     @Override
     public List<UserVmVO> listUpByHostId(Long hostId) {
-        SearchCriteria<UserVmVO> sc = HostUpSearch.create();
+        SearchCriteria sc = HostUpSearch.create();
         sc.setParameters("host", hostId);
         sc.setParameters("states", new Object[] {State.Destroyed, State.Stopped, State.Expunging});
         return listActiveBy(sc);
     }
     
     public List<UserVmVO> listRunningByHostId(long hostId) {
-        SearchCriteria<UserVmVO> sc = HostRunningSearch.create();
+        SearchCriteria sc = HostRunningSearch.create();
         sc.setParameters("host", hostId);
         sc.setParameters("state", State.Running);
         
@@ -257,7 +265,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     }
     
     public UserVmVO findByName(String name) {
-        SearchCriteria<UserVmVO> sc = NameSearch.create();
+        SearchCriteria sc = NameSearch.create();
         sc.setParameters("name", name);
         return findOneBy(sc);
     }
@@ -276,7 +284,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             AccountDataCenterVirtualSearch.done();
         }
 
-        SearchCriteria<UserVmVO> sc = AccountDataCenterVirtualSearch.create();
+        SearchCriteria sc = AccountDataCenterVirtualSearch.create();
         sc.setParameters("account", accountId);
         sc.setParameters("dc", dcId);
         sc.setJoinParameters("offeringSearch", "guestIpType", ServiceOffering.GuestIpType.Virtualized);
@@ -286,7 +294,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
 	@Override
 	public List<UserVmVO> listVmsUsingGuestIpAddress(long dcId, String ipAddress) {
-    	SearchCriteria<UserVmVO> sc = GuestIpSearch.create();
+    	SearchCriteria sc = GuestIpSearch.create();
     	sc.setParameters("dc", dcId);
     	sc.setParameters("ip", ipAddress);
     	sc.setParameters("states", new Object[] {State.Destroyed,  State.Expunging});

@@ -22,11 +22,11 @@ import java.util.Set;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.host.Host;
-import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOffering;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Adapter;
+import com.cloud.vm.UserVm;
 import com.cloud.vm.VmCharacteristics;
 
 public interface HostAllocator extends Adapter {

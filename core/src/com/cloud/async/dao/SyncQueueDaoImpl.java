@@ -37,8 +37,6 @@ import com.cloud.utils.db.Transaction;
 @Local(value = { SyncQueueDao.class })
 public class SyncQueueDaoImpl extends GenericDaoBase<SyncQueueVO, Long> implements SyncQueueDao {
     private static final Logger s_logger = Logger.getLogger(SyncQueueDaoImpl.class.getName());
-    
-    SearchBuilder<SyncQueueVO> TypeIdSearch = createSearchBuilder();
 	
 	@Override
 	public void ensureQueue(String syncObjType, long syncObjId) {
@@ -63,17 +61,15 @@ public class SyncQueueDaoImpl extends GenericDaoBase<SyncQueueVO, Long> implemen
 	
 	@Override
 	public SyncQueueVO find(String syncObjType, long syncObjId) {
-    	SearchCriteria<SyncQueueVO> sc = TypeIdSearch.create();
+		
+		SearchBuilder<SyncQueueVO> sb = createSearchBuilder();
+        sb.and("syncObjType", sb.entity().getSyncObjType(), SearchCriteria.Op.EQ);
+        sb.and("syncObjId", sb.entity().getSyncObjId(), SearchCriteria.Op.EQ);
+        sb.done();
+        
+    	SearchCriteria sc = sb.create();
     	sc.setParameters("syncObjType", syncObjType);
     	sc.setParameters("syncObjId", syncObjId);
         return findOneActiveBy(sc);
-	}
-	
-	protected SyncQueueDaoImpl() {
-	    super();
-	    TypeIdSearch = createSearchBuilder();
-        TypeIdSearch.and("syncObjType", TypeIdSearch.entity().getSyncObjType(), SearchCriteria.Op.EQ);
-        TypeIdSearch.and("syncObjId", TypeIdSearch.entity().getSyncObjId(), SearchCriteria.Op.EQ);
-        TypeIdSearch.done();
 	}
 }

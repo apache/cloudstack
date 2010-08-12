@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# $Id: listvmtmplt.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/secondary/listvmtmplt.sh $
+# $Id: listvmtmplt.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.x.beta/java/scripts/storage/secondary/listvmtmplt.sh $
 # listtmplt.sh -- list templates under a directory
 
 usage() {

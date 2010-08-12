@@ -1,3 +1,5 @@
+<script type="text/javascript" src="scripts/cloud.core.configuration.js"></script>
+	
 <!-- Content Panel -->
 <!-- Submenu -->
 <div class="submenu_links">
@@ -57,17 +59,14 @@
                    <p>Loading...</p>
              </div>
 		<div class="grid_header">
-	        <div class="grid_genheader_cell" id="name_header" style="width:30%;">
+	        <div class="grid_genheader_cell" style="width:30%;">
             	<div class="grid_headertitles">Name</div>
-            	<div class="gridsorting_arrow"></div>		
             </div>
-            <div class="grid_genheader_cell" id="value_header" style="width:15%;">
+            <div class="grid_genheader_cell" style="width:15%;">
             	<div class="grid_headertitles">Value</div>
-            	<div class="gridsorting_arrow"></div>		
             </div>
-             <div class="grid_genheader_cell" id="description_header" style="width:50%;">
+             <div class="grid_genheader_cell" style="width:50%;">
             	<div class="grid_headertitles">Description</div>
-            	<div class="gridsorting_arrow"></div>		
             </div>
             <div class="grid_genheader_cell" style="width:4%;">
             	<div class="grid_headertitles">Actions</div>
@@ -135,7 +134,7 @@
 
 
 <!--Zone -->
-<div class="maincontent" style="display:block;" id="submenu_content_zones">
+<div class="maincontent" style="display:none;" id="submenu_content_zones">
 	<div id="maincontent_title">
     	<div class="maintitle_icon"> <img src="images/zonestitle_icons.gif" title="zones" /> </div>
 		<h1>Zones</h1>	
@@ -550,47 +549,35 @@
     </div>
 	<div class="grid_container">
 		<div class="grid_header">
-		    <div class="grid_genheader_cell" id="id_header" style="width:4%;">
+		    <div class="grid_genheader_cell" style="width:4%;">
             	<div class="grid_headertitles">ID</div>
-            	<div class="gridsorting_arrow"></div>		
             </div>
-            <div class="grid_genheader_cell" id="name_header" style="width:10%;">
+            <div class="grid_genheader_cell" style="width:10%;">
             	<div class="grid_headertitles">Name</div>
-            	<div class="gridsorting_arrow"></div>		
             </div>
-            <div class="grid_genheader_cell" id="displaytext_header" style="width:16%;">
+            <div class="grid_genheader_cell" style="width:16%;">
             	<div class="grid_headertitles">Display text</div>
-            	<div class="gridsorting_arrow"></div>		
             </div>
-            <div class="grid_genheader_cell" id="storagetype_header" style="width:7%;">
+            <div class="grid_genheader_cell" style="width:7%;">
             	<div class="grid_headertitles">Storage type</div>
-            	<div class="gridsorting_arrow"></div>		
             </div>
-            <div class="grid_genheader_cell" id="cpu_header" style="width:10%;">
+            <div class="grid_genheader_cell" style="width:10%;">
             	<div class="grid_headertitles">CPU</div>
-            	<!--
-            	<div class="gridsorting_arrow"></div>		
-            	-->
             </div>
-            <div class="grid_genheader_cell" id="memory_header" style="width:10%;">
+            <div class="grid_genheader_cell" style="width:10%;">
             	<div class="grid_headertitles">Memory</div>
-            	<div class="gridsorting_arrow"></div>		
             </div>
-            <div class="grid_genheader_cell" id="offerha_header" style="width:7%;">
+            <div class="grid_genheader_cell" style="width:7%;">
             	<div class="grid_headertitles">Offer HA</div>
-            	<div class="gridsorting_arrow"></div>		
             </div>
-            <div class="grid_genheader_cell" id="networktype_header" style="width:7%;">
+            <div class="grid_genheader_cell" style="width:7%;">
             	<div class="grid_headertitles">Network Type</div>
-            	<div class="gridsorting_arrow"></div>		
             </div>
-            <div class="grid_genheader_cell" id="tags_header" style="width:10%;">
+            <div class="grid_genheader_cell" style="width:10%;">
             	<div class="grid_headertitles">Tags</div>
-            	<div class="gridsorting_arrow"></div>		
             </div>
-            <div class="grid_genheader_cell" id="created_header" style="width:10%;">
+            <div class="grid_genheader_cell" style="width:10%;">
             	<div class="grid_headertitles">Created</div>
-            	<div class="gridsorting_arrow"></div>		
             </div>
             <div class="grid_genheader_cell" style="width:8%;">
             	<div class="grid_headertitles">Actions</div>
@@ -639,7 +626,7 @@
 		    <div class="netgrid_celltitles" id="service_name"></div>
 	    </div>
 	    <div class="grid_smallgenrow_cell" style="width:16%;">
-		    <div class="netgrid_celltitles" id="service_displaytext"></div>
+		    <div class="netgrid_celltitles" id="service_display"></div>
 	    </div>
 	    <div class="grid_smallgenrow_cell" style="width:7%;">
 		    <div class="netgrid_celltitles" id="service_storagetype"></div>
@@ -670,7 +657,7 @@
 <!-- END Service offerings Template -->
 
 <!-- Add Service Offering Dialog -->
-<div id="dialog_add_service" title="Add Service Offering" style="display:block">
+<div id="dialog_add_service" title="Add Service Offering" style="display:none">
 	<p>Please fill in the following data to add a new Service Offering.</p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form_acquire">

@@ -36,9 +36,9 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.HostPodDao;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.offering.ServiceOffering.GuestIpType;
+import com.cloud.service.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.ServiceOffering.GuestIpType;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.VirtualMachineTemplate;
 import com.cloud.storage.VolumeVO;
@@ -156,7 +156,7 @@ public class UserConcentratedAllocator implements PodAllocator {
     private boolean dataCenterAndPodHasEnoughCapacity(long dataCenterId, long podId, long capacityNeeded, short capacityType, long[] hostCandidate) {
         if (m_capacityCheckLock.lock(120)) { // 2 minutes
             try {
-                SearchCriteria<CapacityVO> sc = _capacityDao.createSearchCriteria();
+                SearchCriteria sc = _capacityDao.createSearchCriteria();
                 sc.addAnd("capacityType", SearchCriteria.Op.EQ, capacityType);
                 sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, dataCenterId);
                 sc.addAnd("podId", SearchCriteria.Op.EQ, podId);

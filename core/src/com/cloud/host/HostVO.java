@@ -315,6 +315,9 @@ public class HostVO implements Host {
     @Column(name="version")
     private String version;
     
+    @Column(name="sequence")
+    private long sequence;
+    
     @Column(name=GenericDao.CREATED_COLUMN)
     private Date created;
     
@@ -326,6 +329,7 @@ public class HostVO implements Host {
         this.status = Status.Up;
         this.totalMemory = 0;
         this.dom0MinMemory = 0;
+        this.sequence = 1;
     }
     
     protected HostVO() {
@@ -421,6 +425,10 @@ public class HostVO implements Host {
         this.storageUrl = url;
     }
     
+    public long getSequence() {
+    	return sequence;
+    }
+
     public void setPodId(Long podId) {
         
         this.podId = podId;

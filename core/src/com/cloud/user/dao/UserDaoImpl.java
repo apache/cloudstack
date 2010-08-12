@@ -72,42 +72,42 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
 
 	@Override
 	public UserVO getUser(String username, String password) {
-	    SearchCriteria<UserVO> sc = UsernamePasswordSearch.create();
+	    SearchCriteria sc = UsernamePasswordSearch.create();
 	    sc.setParameters("username", username);
 	    sc.setParameters("password", password);
 	    return findOneActiveBy(sc);
 	}
 	
 	public List<UserVO> listByAccount(long accountId) {
-	    SearchCriteria<UserVO> sc = AccountIdSearch.create();
+	    SearchCriteria sc = AccountIdSearch.create();
 	    sc.setParameters("account", accountId);
 	    return listActiveBy(sc, null);
 	}
 
 	@Override
 	public UserVO getUser(String username) {
-	    SearchCriteria<UserVO> sc = UsernameSearch.create();
+	    SearchCriteria sc = UsernameSearch.create();
 	    sc.setParameters("username", username);
 	    return findOneActiveBy(sc);
 	}
 
     @Override
     public UserVO getUser(long userId) {
-        SearchCriteria<UserVO> sc = UserIdSearch.create();
+        SearchCriteria sc = UserIdSearch.create();
         sc.setParameters("id", userId);
         return findOneActiveBy(sc);
     }
 
 	@Override
 	public List<UserVO> findUsersLike(String username) {
-        SearchCriteria<UserVO> sc = UsernameLikeSearch.create();
+        SearchCriteria sc = UsernameLikeSearch.create();
         sc.setParameters("username", "%" + username + "%");
         return listActiveBy(sc);
     }
 	
     @Override
     public UserVO findUserBySecretKey(String secretKey) {
-        SearchCriteria<UserVO> sc = SecretKeySearch.create();
+        SearchCriteria sc = SecretKeySearch.create();
         sc.setParameters("secretKey", secretKey);
         return findOneActiveBy(sc);
     }

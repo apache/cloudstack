@@ -28,12 +28,10 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.async.executor.VolumeOperationParam.VolumeOp;
-import com.cloud.event.EventTypes;
-import com.cloud.event.EventVO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.VolumeVO;
-import com.cloud.uservm.UserVm;
+import com.cloud.vm.UserVm;
 import com.google.gson.Gson;
 
 
@@ -53,41 +51,28 @@ public class VolumeOperationExecutor extends BaseAsyncJobExecutor {
 	    	return true;
     	} else {    		
     		VolumeOperationParam param = gson.fromJson(job.getCmdInfo(), VolumeOperationParam.class);
-            boolean success = false;
-            String eventType = null;
-            String failureDescription = "";
+    		
     		try {
+    			VolumeOp op = param.getOp();
     			VolumeVO volume = null;
-                VolumeOp op = param.getOp();
     			if (op == VolumeOp.Create) {
-    			    eventType = EventTypes.EVENT_VOLUME_CREATE;
-    			    failureDescription = "Failed to create volume";
     				volume = asyncMgr.getExecutorContext().getManagementServer().createVolume(param.getUserId(), param.getAccountId(), param.getName(), param.getZoneId(), param.getDiskOfferingId(), param.getEventId());
     				if (volume.getStatus() == AsyncInstanceCreateStatus.Corrupted) {
     					asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, "Failed to create volume.");
     				} else {
-    				    success = true;
     					asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, composeResultObject(volume, param));
     				}
     			}
     			else if (op == VolumeOp.Attach) {
-                    eventType = EventTypes.EVENT_VOLUME_ATTACH;
-                    failureDescription = "Failed to attach volume";
-
     				asyncMgr.getExecutorContext().getManagementServer().attachVolumeToVM(param.getVmId(), param.getVolumeId(), param.getDeviceId(), param.getEventId());
 
     				// get the VM instance and Volume for the result object
     				UserVm vmInstance = asyncMgr.getExecutorContext().getManagementServer().findUserVMInstanceById(param.getVmId());
     				VolumeVO vol = asyncMgr.getExecutorContext().getManagementServer().findVolumeById(param.getVolumeId());
-    				success = true;
     				asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, composeAttachResultObject(vmInstance, vol));
     			} 
     			else if (op == VolumeOp.Detach) {
-                    eventType = EventTypes.EVENT_VOLUME_DETACH;
-                    failureDescription = "Failed to detach volume";
-
     				asyncMgr.getExecutorContext().getManagementServer().detachVolumeFromVM(param.getVolumeId(), param.getEventId());
-    				success = true;
     				asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, null);
     			} else {
     				throw new Exception("Invalid Volume Operation. Valid Operations are: CreateVolume, AttachVolume, and DetachVolume.");
@@ -98,11 +83,6 @@ public class VolumeOperationExecutor extends BaseAsyncJobExecutor {
     		} catch (Exception e) {
     			s_logger.warn("Unhandled Exception executing volume operation " + param.getOp(), e);
     			asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, e.getMessage());
-    		} finally {
-    		    if(!success){
-    		        // Save completed event when operation fails
-    		        asyncMgr.getExecutorContext().getManagementServer().saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_ERROR, eventType, failureDescription, null, param.getEventId());
-    		    }
     		}
 
     		return true;

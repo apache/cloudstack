@@ -20,8 +20,10 @@ package com.cloud.storage.snapshot;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -32,6 +34,8 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotAnswer;
 import com.cloud.agent.api.BackupSnapshotCommand;
+import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
+import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.ManageSnapshotAnswer;
@@ -41,6 +45,7 @@ import com.cloud.agent.api.ValidateSnapshotCommand;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.commands.CreateSnapshotCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
+import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -48,6 +53,8 @@ import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.async.executor.SnapshotOperationParam;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
@@ -56,21 +63,30 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyRefVO;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.Snapshot.Status;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Volume.MirrorState;
+import com.cloud.storage.Volume.StorageResourceType;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
@@ -82,12 +98,15 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
@@ -215,7 +234,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         
         ImageFormat format = getImageFormat(volume.getId());
         if (format != null) {
-            if (!(format == ImageFormat.VHD || format == ImageFormat.ISO || format == ImageFormat.QCOW2)) {
+            if (!(format == ImageFormat.VHD || format == ImageFormat.ISO)) {
                 // We only create snapshots for root disks created from templates or ISOs.
                 s_logger.error("Currently, a snapshot can be taken from a Root Disk only if it is created from a 1) template in VHD format or 2) from an ISO.");
                 runSnap = false;
@@ -320,7 +339,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         VMInstanceVO vmInstance = _vmDao.findById(volume.getInstanceId());
         String vmDisplayName = "detached";
         if(vmInstance != null) {
-            vmDisplayName = vmInstance.getName();
+            vmDisplayName = vmInstance.getDisplayName();
         }
         String snapshotName = vmDisplayName + "_" + volume.getName() + "_" + timeString;
         
@@ -344,7 +363,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         txn.commit();
 
         // Send a ManageSnapshotCommand to the agent
-        ManageSnapshotCommand cmd = new ManageSnapshotCommand(ManageSnapshotCommand.CREATE_SNAPSHOT, id, volume.getPath(), snapshotName, _vmDao.findById(volume.getInstanceId()).getInstanceName());
+        ManageSnapshotCommand cmd = new ManageSnapshotCommand(ManageSnapshotCommand.CREATE_SNAPSHOT, id, volume.getPath(), snapshotName);
         String basicErrMsg = "Failed to create snapshot for volume: " + volume.getId();
         ManageSnapshotAnswer answer = (ManageSnapshotAnswer) _storageMgr.sendToHostsOnStoragePool(volume.getPoolId(), cmd, basicErrMsg, _totalRetries, _pauseInterval, _shouldBeSnapshotCapable);
 
@@ -501,6 +520,8 @@ public class SnapshotManagerImpl implements SnapshotManager {
                 // If the first snapshot of the root volume is empty, it's parent will point to the base template.
                 // So pass the template uuid as the fake previous snapshot.
                 Long templateId = volume.getTemplateId();
+                // ROOT disks are created off templates have templateIds
+                assert templateId != null;
                 Long poolId = volume.getPoolId();
                 if (templateId != null && poolId != null) {
                     VMTemplateStoragePoolVO vmTemplateStoragePoolVO =
@@ -528,7 +549,6 @@ public class SnapshotManagerImpl implements SnapshotManager {
                                       accountId,
                                       volumeId,
                                       snapshotUuid,
-                                      snapshot.getName(),
                                       prevSnapshotUuid,
                                       prevBackupUuid,
                                       firstBackupUuid,
@@ -709,7 +729,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
                 details = "Unable find template id: " + templateId + " for root disk volumeId: " + volumeId;
                 s_logger.error(details);
             }
-            else if (template.getFormat() == ImageFormat.VHD || template.getFormat() == ImageFormat.QCOW2) {
+            else if (template.getFormat() == ImageFormat.VHD) {
                 // We support creating snapshots of Root Disk created from template only in VHD format.
                 VMTemplateStoragePoolVO templateStoragePoolVO = _templatePoolDao.findByPoolTemplate(volume.getPoolId(), templateId);
                 if (templateStoragePoolVO != null) {
@@ -884,7 +904,6 @@ public class SnapshotManagerImpl implements SnapshotManager {
                                                     accountId,
                                                     volumeId,
                                                     backupOfSnapshot,
-                                                    snapshot.getName(),
                                                     backupOfNextSnapshot);
                 
                 details = "Failed to destroy snapshot id:" + snapshotId + " for volume: " + volume.getId();
@@ -1014,7 +1033,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         	// even if mostRecentSnapshot.removed() != null, we still have to explicitly remove it from the primary storage.
         	// Then deleting the volume VDI will GC the base copy and nothing will be left on primary storage.
         	String mostRecentSnapshotUuid = mostRecentSnapshot.getPath();
-        	DeleteSnapshotsDirCommand cmd = new DeleteSnapshotsDirCommand(primaryStoragePoolNameLabel, secondaryStoragePoolURL, dcId, accountId, volumeId, mostRecentSnapshotUuid, mostRecentSnapshot.getName());
+        	DeleteSnapshotsDirCommand cmd = new DeleteSnapshotsDirCommand(primaryStoragePoolNameLabel, secondaryStoragePoolURL, dcId, accountId, volumeId, mostRecentSnapshotUuid);
         	String basicErrMsg = "Failed to destroy snapshotsDir for: " + volume.getId() + " under account: " + accountId;
         	Answer answer = null;
         	Long poolId = volume.getPoolId();
@@ -1155,14 +1174,14 @@ public class SnapshotManagerImpl implements SnapshotManager {
     
     @Override
     public List<SnapshotPolicyVO> listPoliciesforSnapshot(long snapshotId) {
-        SearchCriteria<SnapshotPolicyVO> sc = PoliciesForSnapSearch.create();
+        SearchCriteria sc = PoliciesForSnapSearch.create();
         sc.setJoinParameters("policyRef", "snapshotId", snapshotId);
         return _snapshotPolicyDao.search(sc, null);
     }
 
     @Override
     public List<SnapshotVO> listSnapsforPolicy(long policyId, Filter filter) {
-        SearchCriteria<SnapshotVO> sc = PolicySnapshotSearch.create();
+        SearchCriteria sc = PolicySnapshotSearch.create();
         sc.setJoinParameters("policy", "policyId", policyId);
         return _snapshotDao.search(sc, filter);
     }
@@ -1227,7 +1246,6 @@ public class SnapshotManagerImpl implements SnapshotManager {
                                 accountId,
                                 volumeId,
                                 backupOfSnapshot,
-                                snapshot.getName(),
                                 backupOfNextSnapshot);
                     String basicErrMsg = "Failed to destroy snapshot id: " + snapshotId + " for volume id: " + volumeId;
                     Answer answer = _storageMgr.sendToHostsOnStoragePool(volume.getPoolId(), cmd, basicErrMsg, _totalRetries, _pauseInterval, _shouldBeSnapshotCapable);

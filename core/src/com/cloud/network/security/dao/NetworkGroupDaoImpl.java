@@ -60,14 +60,14 @@ public class NetworkGroupDaoImpl extends GenericDaoBase<NetworkGroupVO, Long> im
 
     @Override
     public List<NetworkGroupVO> listByAccountId(long accountId) {
-        SearchCriteria<NetworkGroupVO> sc = AccountIdSearch.create();
+        SearchCriteria sc = AccountIdSearch.create();
         sc.setParameters("accountId", accountId);
         return listActiveBy(sc);
     }
 
     @Override
     public boolean isNameInUse(Long accountId, Long domainId, String name) {
-        SearchCriteria<NetworkGroupVO> sc = createSearchCriteria();
+        SearchCriteria sc = createSearchCriteria();
         sc.addAnd("name", SearchCriteria.Op.EQ, name);
         if (accountId != null) {
             sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
@@ -85,13 +85,13 @@ public class NetworkGroupDaoImpl extends GenericDaoBase<NetworkGroupVO, Long> im
         List<NetworkGroupVO> availableGroups = new ArrayList<NetworkGroupVO>();
         if ((accountId != null) || (domainId != null)) {
             if (accountId != null) {
-                SearchCriteria<NetworkGroupVO> sc = createSearchCriteria();
+                SearchCriteria sc = createSearchCriteria();
                 sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
                 List<NetworkGroupVO> accountGroups = listActiveBy(sc);
                 availableGroups.addAll(accountGroups);
             } else if (domainId != null) {
                 while (domainId != null) {
-                    SearchCriteria<NetworkGroupVO> sc = createSearchCriteria();
+                    SearchCriteria sc = createSearchCriteria();
                     sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
                     if (accountId != null) {
                         sc.addAnd("accountId", SearchCriteria.Op.NEQ, accountId); // we added the account specific ones above
@@ -110,7 +110,7 @@ public class NetworkGroupDaoImpl extends GenericDaoBase<NetworkGroupVO, Long> im
 
 	@Override
 	public NetworkGroupVO findByAccountAndName(Long accountId, String name) {
-		SearchCriteria<NetworkGroupVO> sc = AccountIdNameSearch.create();
+		SearchCriteria sc = AccountIdNameSearch.create();
 		sc.setParameters("accountId", accountId);
 		sc.setParameters("groupName", name);
 
@@ -119,7 +119,7 @@ public class NetworkGroupDaoImpl extends GenericDaoBase<NetworkGroupVO, Long> im
 
 	@Override
 	public List<NetworkGroupVO> findByAccountAndNames(Long accountId, String... names) {
-		SearchCriteria<NetworkGroupVO> sc = AccountIdNamesSearch.create();
+		SearchCriteria sc = AccountIdNamesSearch.create();
 		sc.setParameters("accountId", accountId);
 
 		sc.setParameters("groupNames", (Object [])names);

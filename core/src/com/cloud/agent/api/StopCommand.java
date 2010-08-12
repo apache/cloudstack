@@ -17,6 +17,7 @@
  */
 package com.cloud.agent.api;
 
+import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.VirtualMachine;
 
 public class StopCommand extends RebootCommand {
@@ -26,7 +27,6 @@ public class StopCommand extends RebootCommand {
     private String vncPort=null;
     private String urlPort=null;
     private String publicConsoleProxyIpAddress=null;
-    private String privateRouterIpAddress=null;
     
     protected StopCommand() {
     }
@@ -42,17 +42,15 @@ public class StopCommand extends RebootCommand {
     public StopCommand(VirtualMachine vm, String vnet) {
         super(vm);
         this.vnet = vnet;
+        this.mirroredVolumes = vm.isMirroredVols();
     }
     
     public StopCommand(VirtualMachine vm, String vmName, String vnet) {
         super(vmName);
         this.vnet = vnet;
-    }
-    
-    public StopCommand(VirtualMachine vm, String vmName, String vnet, String privateRouterIpAddress) {
-        super(vmName);
-        this.vnet = vnet;
-        this.privateRouterIpAddress = privateRouterIpAddress;
+        if (vm != null) {
+            this.mirroredVolumes = vm.isMirroredVols();
+        }
     }
     
     public String getVnet() {
@@ -87,9 +85,5 @@ public class StopCommand extends RebootCommand {
 	public String getPublicConsoleProxyIpAddress() {
 		return this.publicConsoleProxyIpAddress;
 	}
-
-    public String getPrivateRouterIpAddress() {
-        return privateRouterIpAddress;
-    }
     
 }

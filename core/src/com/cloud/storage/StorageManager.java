@@ -272,15 +272,4 @@ public interface StorageManager extends Manager {
      */
     VolumeVO createVolumeFromSnapshot(long userId, long accountId, long snapshotId, String volumeName, long startEventId);
 
-    /**
-     * Enable maintenance for primary storage
-     * @return
-     */
-    public boolean preparePrimaryStorageForMaintenance(long primaryStorageId, long userId);
-    
-    /**
-     * Complete maintenance for primary storage
-     * @return
-     */
-    public boolean cancelPrimaryStorageForMaintenance(long primaryStorageId, long userId);
 }

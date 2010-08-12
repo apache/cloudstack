@@ -3,6 +3,7 @@ package com.cloud.migration;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.security.NoSuchAlgorithmException;
@@ -38,7 +39,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.migration.DiskOffering21VO.Type;
-import com.cloud.offering.ServiceOffering.GuestIpType;
+import com.cloud.service.ServiceOffering.GuestIpType;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -50,7 +51,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Filter;
-import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -92,21 +92,12 @@ public class Db20to21MigrationUtil {
 	protected UserVmDao _userVmDao;
 	protected DomainRouterDao _routerDao;
 	protected StoragePoolDao _poolDao;
-	
+
 	protected long _consoleProxyServiceOfferingId;
 	protected long _secStorageServiceOfferingId;
 	protected long _domRServiceOfferingId;
 	protected boolean _isPremium = false;
-	
-	protected static class DcPod {
-		long id;
-		String name;
-		long count;
-	    
-	    public DcPod() {
-	    }
-	}
-	
+
 	private void migrateZones() {
 		boolean createCluster = false;
 		String value = _configDao.getValue("xen.create.pools.in.pod");
@@ -115,43 +106,43 @@ public class Db20to21MigrationUtil {
 		} else {
 			createCluster = true;
 		}
-		
+
 		// Displaying summarize data center/pod configuration from old DB before we continue
-		GenericSearchBuilder<DataCenterVO, DcPod> sb = _dcDao.createSearchBuilder(DcPod.class);
+		SearchBuilder<DataCenterVO> sb = _dcDao.createSearchBuilder();
 		sb.selectField(sb.entity().getId());
 		sb.selectField(sb.entity().getName());
-        sb.select("count", Func.COUNT, null);
+        sb.select(Func.COUNT, (Object[])null);
         sb.groupBy(sb.entity().getId(), sb.entity().getName());
         sb.done();
-        
-        SearchCriteria<DcPod> sc = sb.create();
-        List<DcPod> results = _dcDao.searchAll(sc, (Filter)null);
+
+        SearchCriteria sc = sb.create();
+        List<Object[]> results = _dcDao.searchAll(sc, (Filter)null);
         if(results.size() > 0) {
         	System.out.println("We've found following zones are deployed in your database");
-        	for(DcPod cols : results) {
-            	System.out.println("\tid: " + cols.id + ",\tname: " + cols.name + ",\tpods in zone: " + cols.count);
+        	for(Object[] cols : results) {
+            	System.out.println("\tid: " + cols[0] + ",\tname: " + (String)cols[1] + ",\tpods in zone: " + (Long)cols[2]);
         	}
         	System.out.println("From 2.0 to 2.1, pod is required to have gateway configuration");
-        	
-        	for(DcPod cols : results) {
-        		migrateZonePods(cols.id, cols.name, createCluster);
-        		
-				s_logger.info("Set system VM guest MAC in zone" + cols.name);
-				migrateSystemVmGuestMacAndState(cols.id);
+
+        	for(Object[] cols : results) {
+        		migrateZonePods(((BigInteger)cols[0]).longValue(), (String)cols[1], createCluster);
+
+				s_logger.info("Set system VM guest MAC in zone" + (String)cols[1]);
+				migrateSystemVmGuestMacAndState(((BigInteger)cols[0]).longValue());
         	}
         } else {
         	System.out.println("We couldn't find any zone being deployed. Skip Zone/Pod migration");
         }
 	}
-	
+
 	private void migrateZonePods(long zoneId, String zoneName, boolean createCluster) {
 		SearchBuilder<HostPodVO> sb = _podDao.createSearchBuilder();
 		sb.and("zoneId", sb.entity().getDataCenterId(), Op.EQ);
 		sb.done();
-		
-		SearchCriteria<HostPodVO> sc = sb.create();
+
+		SearchCriteria sc = sb.create();
 		sc.setParameters("zoneId", zoneId);
-		
+
 		List<HostPodVO> pods = _podDao.searchAll(sc, null, false, false);
 		if(pods.size() > 0) {
 			for(HostPodVO pod : pods) {
@@ -166,40 +157,40 @@ public class Db20to21MigrationUtil {
 				_podDao.update(pod.getId(), pod);
 				if(createCluster)
 					migrateHostsInPod(zoneId, pod.getId(), pod.getName());
-				
+
 				System.out.println("Set last_host_id for VMs in pod " + pod.getName());
 				migrateVmInstanceLastHostId(zoneId, pod.getId());
-				
+
 				System.out.println("Setup link local addresses, it will take a while, please wait...");
 		    	String ipNums = _configDao.getValue("linkLocalIp.nums");
 		    	int nums = Integer.parseInt(ipNums);
 		    	if (nums > 16 || nums <= 0) {
 		    		nums = 10;
 		    	}
-		    	
+
 		    	/*local link ip address starts from 169.254.0.2 - 169.254.(nums)*/
 		    	String[] ipRanges = NetUtils.getLinkLocalIPRange(nums);
 				_dcDao.addLinkLocalPrivateIpAddress(zoneId, pod.getId(), ipRanges[0], ipRanges[1]);
 			}
 		}
 	}
-	
+
 	private void migrateHostsInPod(long zoneId, long podId, String podName) {
 		System.out.println("Creating cluster for pod " + podName);
-		
-		ClusterVO cluster = null; 
-		
+
+		ClusterVO cluster = null;
+
 		SearchBuilder<HostVO> sb = _hostDao.createSearchBuilder();
 		sb.and("dc", sb.entity().getDataCenterId(), Op.EQ);
 		sb.and("pod", sb.entity().getPodId(), Op.EQ);
 		sb.and("type", sb.entity().getType(), Op.EQ);
 		sb.done();
-		
-		SearchCriteria<HostVO> sc = sb.create();
+
+		SearchCriteria sc = sb.create();
 		sc.setParameters("dc", zoneId);
 		sc.setParameters("pod", podId);
 		sc.setParameters("type", Host.Type.Routing);
-		
+
 		// join cluster for hosts in pod
 		List<HostVO> hostsInPod = _hostDao.searchAll(sc, null, false, false);
 		if(hostsInPod.size() > 0) {
@@ -207,49 +198,49 @@ public class Db20to21MigrationUtil {
 				cluster = new ClusterVO(zoneId, podId, String.valueOf(podId));
 				cluster = _clusterDao.persist(cluster);
 			}
-			
+
 			for(HostVO host : hostsInPod) {
 				host.setClusterId(cluster.getId());
 				_hostDao.update(host.getId(), host);
-				
+
 				System.out.println("Join host " + host.getName() + " to auto-formed cluster");
 			}
 		}
-		
+
 		SearchBuilder<StoragePoolVO> sbPool = _spDao.createSearchBuilder();
 		sbPool.and("dc", sbPool.entity().getDataCenterId(), Op.EQ);
 		sbPool.and("pod", sbPool.entity().getPodId(), Op.EQ);
 		sbPool.and("poolType", sbPool.entity().getPoolType(), Op.IN);
 		sbPool.done();
-		
-		SearchCriteria<StoragePoolVO> scPool = sbPool.create();
+
+		SearchCriteria scPool = sbPool.create();
 		scPool.setParameters("dc", zoneId);
 		scPool.setParameters("pod", podId);
 		scPool.setParameters("poolType", StoragePoolType.NetworkFilesystem.toString(), StoragePoolType.IscsiLUN.toString());
-		
+
 		List<StoragePoolVO> sPoolsInPod = _spDao.searchAll(scPool, null, false, false);
 		if(sPoolsInPod.size() > 0) {
 			if(cluster == null) {
 				cluster = new ClusterVO(zoneId, podId, String.valueOf(podId));
 				cluster = _clusterDao.persist(cluster);
 			}
-			
+
 			for(StoragePoolVO spool : sPoolsInPod) {
 				spool.setClusterId(cluster.getId());
 				_spDao.update(spool.getId(), spool);
-				
+
 				System.out.println("Join host " + spool.getName() + " to auto-formed cluster");
 			}
 		}
 	}
-	
+
 	private void composeDomainPath(DomainVO domain, StringBuilder sb) {
 		if(domain.getParent() == null) {
 			sb.append("/");
 		} else {
 			DomainVO parent = _domainDao.findById(domain.getParent());
 			composeDomainPath(parent, sb);
-			
+
 			if(domain.getName().contains("/")) {
 				System.out.println("Domain " + domain.getName() + " contains invalid domain character, replace it with -");
 				sb.append(domain.getName().replace('/', '-'));
@@ -259,7 +250,7 @@ public class Db20to21MigrationUtil {
 			sb.append("/");
 		}
 	}
-	
+
 	private void migrateDomains() {
 		System.out.println("Migrating domains...");
 
@@ -268,19 +259,19 @@ public class Db20to21MigrationUtil {
 		for(DomainVO domain : domains) {
 			StringBuilder path = new StringBuilder();
 			composeDomainPath(domain, path);
-			
+
 			System.out.println("Convert domain path, domin: " + domain.getId() + ", path:" + path.toString());
-			
+
 			domain.setPath(path.toString());
 			_domainDao.update(domain.getId(), domain);
 		}
-		
+
 		System.out.println("All domains have been migrated to 2.1 format");
 	}
-	
+
 	private void migrateServiceOfferings() {
 		System.out.println("Migrating service offering...");
-		
+
 		long seq = getServiceOfferingStartSequence();
 
 		List<ServiceOffering20VO> oldServiceOfferings = _serviceOffering20Dao.listAll();
@@ -290,6 +281,7 @@ public class Db20to21MigrationUtil {
 				so20.getUseLocalStorage(), false, null);
 			so21.setId(seq++);
 			so21.setDiskSize(0);
+
 			so21 = _serviceOffering21Dao.persist(so21);
 
 			if(so20.getId().longValue() != so21.getId().longValue()) {
@@ -297,12 +289,12 @@ public class Db20to21MigrationUtil {
 				updateServiceOfferingReferences(so20.getId().longValue(), so21.getId().longValue());
 			}
 		}
-		
+
 		boolean useLocalStorage = Boolean.parseBoolean(_configDao.getValue(Config.SystemVMUseLocalStorage.key()));
-		
+
 		// create service offering for system VMs and update references
 		int proxyRamSize = NumbersUtil.parseInt(
-			_configDao.getValue(Config.ConsoleProxyRamSize.key()), 
+			_configDao.getValue(Config.ConsoleProxyRamSize.key()),
 			ConsoleProxyManager.DEFAULT_PROXY_VM_RAMSIZE);
 		ServiceOffering21VO soConsoleProxy = new ServiceOffering21VO("Fake Offering For DomP", 1,
 			proxyRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized,
@@ -311,28 +303,28 @@ public class Db20to21MigrationUtil {
 		soConsoleProxy.setUniqueName("Cloud.com-ConsoleProxy");
 		soConsoleProxy = _serviceOffering21Dao.persist(soConsoleProxy);
 		_consoleProxyServiceOfferingId = soConsoleProxy.getId();
-		
+
 		int secStorageVmRamSize = NumbersUtil.parseInt(
-			_configDao.getValue(Config.SecStorageVmRamSize.key()), 
+			_configDao.getValue(Config.SecStorageVmRamSize.key()),
 			SecondaryStorageVmManager.DEFAULT_SS_VM_RAMSIZE);
-		ServiceOffering21VO soSecondaryVm = new ServiceOffering21VO("Fake Offering For Secondary Storage VM", 1, 
+		ServiceOffering21VO soSecondaryVm = new ServiceOffering21VO("Fake Offering For Secondary Storage VM", 1,
 			secStorageVmRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, useLocalStorage, true, null);
 		soSecondaryVm.setId(seq++);
 		soSecondaryVm.setUniqueName("Cloud.com-SecondaryStorage");
 		soSecondaryVm = _serviceOffering21Dao.persist(soSecondaryVm);
 		_secStorageServiceOfferingId = soSecondaryVm.getId();
-		
+
         int routerRamSize = NumbersUtil.parseInt(_configDao.getValue("router.ram.size"), 128);
-        ServiceOffering21VO soDomainRouter = new ServiceOffering21VO("Fake Offering For DomR", 1, 
+        ServiceOffering21VO soDomainRouter = new ServiceOffering21VO("Fake Offering For DomR", 1,
         	routerRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, useLocalStorage, true, null);
         soDomainRouter.setId(seq++);
         soDomainRouter.setUniqueName("Cloud.Com-SoftwareRouter");
         soDomainRouter = _serviceOffering21Dao.persist(soDomainRouter);
 		_domRServiceOfferingId = soDomainRouter.getId();
-		
+
 		System.out.println("Service offering has been migrated to 2.1 format");
 	}
-	
+
 	private long getServiceOfferingStartSequence() {
 		Transaction txn = Transaction.open(Transaction.CLOUD_DB);
 		long seq = 0;
@@ -343,13 +335,13 @@ public class Db20to21MigrationUtil {
             rs.next();
             seq = rs.getLong(1);
             pstmt.close();
-            
+
             pstmt = txn.prepareAutoCloseStatement("SELECT max(id) FROM disk_offering");
             rs = pstmt.executeQuery();
             rs.next();
             seq += rs.getLong(1);
             pstmt.close();
-            
+
             seq += 100;			// add a gap
             return seq;
 		} catch (SQLException e) {
@@ -357,10 +349,10 @@ public class Db20to21MigrationUtil {
 		} finally {
 			txn.close();
 		}
-		
+
 		return 10000;
 	}
-	
+
 	private void updateConsoleProxyServiceOfferingReferences(long serviceOfferingId) {
 		Transaction txn = Transaction.open(Transaction.CLOUD_DB);
 		try {
@@ -368,7 +360,7 @@ public class Db20to21MigrationUtil {
             pstmt = txn.prepareAutoCloseStatement(
             		"UPDATE volumes SET disk_offering_id=? WHERE instance_id IN (SELECT id FROM vm_instance WHERE type='ConsoleProxy')");
             pstmt.setLong(1, serviceOfferingId);
-            
+
             int rows = pstmt.executeUpdate();
             s_logger.info("Update volumes for console proxy service offering change, affected rows: " + rows);
 		} catch (SQLException e) {
@@ -385,7 +377,7 @@ public class Db20to21MigrationUtil {
             pstmt = txn.prepareAutoCloseStatement(
             		"UPDATE volumes SET disk_offering_id=? WHERE instance_id IN (SELECT id FROM vm_instance WHERE type='SecondaryStorageVm')");
             pstmt.setLong(1, serviceOfferingId);
-            
+
             int rows = pstmt.executeUpdate();
             s_logger.info("Update volumes for secondary storage service offering change, affected rows: " + rows);
 		} catch (SQLException e) {
@@ -394,7 +386,7 @@ public class Db20to21MigrationUtil {
 			txn.close();
 		}
 	}
-	
+
 	private void updateDomainRouterServiceOfferingReferences(long serviceOfferingId) {
 		Transaction txn = Transaction.open(Transaction.CLOUD_DB);
 		try {
@@ -402,7 +394,7 @@ public class Db20to21MigrationUtil {
             pstmt = txn.prepareAutoCloseStatement(
             		"UPDATE volumes SET disk_offering_id=? WHERE instance_id IN (SELECT id FROM vm_instance WHERE type='DomainRouter')");
             pstmt.setLong(1, serviceOfferingId);
-            
+
             int rows = pstmt.executeUpdate();
             s_logger.info("Update volumes for secondary storage service offering change, affected rows: " + rows);
 		} catch (SQLException e) {
@@ -411,73 +403,73 @@ public class Db20to21MigrationUtil {
 			txn.close();
 		}
 	}
-	
+
 	private void updateServiceOfferingReferences(long oldServiceOfferingId, long newServiceOfferingId) {
 		Transaction txn = Transaction.open(Transaction.CLOUD_DB);
 		try {
 	        PreparedStatement pstmt = null;
             pstmt = txn.prepareAutoCloseStatement("UPDATE user_vm SET service_offering_id=? WHERE service_offering_id=?");
-            
+
             pstmt.setLong(1, newServiceOfferingId);
             pstmt.setLong(2, oldServiceOfferingId);
-            
+
             int rows = pstmt.executeUpdate();
             s_logger.info("Update user_vm for service offering change (" + oldServiceOfferingId + "->" + newServiceOfferingId + "), affected rows: " + rows);
-	            
+
 		} catch (SQLException e) {
 			s_logger.error("Unhandled exception: ", e);
 		} finally {
 			txn.close();
 		}
 	}
-	
+
 	private void migrateDiskOfferings() {
 		System.out.println("Migrating disk offering...");
-		
+
 		List<DiskOffering20VO> oldDiskOfferings = _diskOffering20Dao.listAll();
 		long maxDiskOfferingId = _domRServiceOfferingId;
-		maxDiskOfferingId += 100;		
-		
+		maxDiskOfferingId += 100;
+
 		for(DiskOffering20VO do20 : oldDiskOfferings) {
-			DiskOffering21VO do21 = new DiskOffering21VO(do20.getDomainId(), do20.getName(), do20.getDisplayText(), do20.getDiskSize(), 
+			DiskOffering21VO do21 = new DiskOffering21VO(do20.getDomainId(), do20.getName(), do20.getDisplayText(), do20.getDiskSize(),
 				do20.getMirrored(), null);
 			do21.setType(Type.Disk);
 			do21.setId(maxDiskOfferingId++);
-			
+
 			do21 = _diskOffering21Dao.persist(do21);
 			if(do20.getId().longValue() != do21.getId().longValue()) {
 				updateDiskOfferingReferences(do20.getId().longValue(), do21.getId().longValue());
 			}
 		}
-		
+
 		FixupNullDiskOfferingInVolumes();
-		
+
 		System.out.println("Disk offering has been migrated to 2.1 format");
 	}
-	
+
 	private void FixupNullDiskOfferingInVolumes() {
 		System.out.println("Fixup NULL disk_offering_id references in volumes table ...");
-		
-		SearchCriteria<DiskOffering21VO> scDiskOffering = _diskOffering21Dao.createSearchCriteria();
-		List<DiskOffering21VO> offeringList = _diskOffering21Dao.searchAll(scDiskOffering, 
+
+		SearchCriteria scDiskOffering = _diskOffering21Dao.createSearchCriteria();
+		List<DiskOffering21VO> offeringList = _diskOffering21Dao.searchAll(scDiskOffering,
 			new Filter(DiskOffering21VO.class, "diskSize", true, null, null), false, false);
-		
+
 		for(DiskOffering21VO offering : offeringList) {
 			s_logger.info("Disk offering name: " + offering.getName() + ", disk size: " + offering.getDiskSizeInBytes());
 		}
-		
+
 		SearchBuilder<VolumeVO> sb = _volumeDao.createSearchBuilder();
 		sb.and("diskOfferingId", sb.entity().getDiskOfferingId(), Op.NULL);
 		sb.done();
-		
-		SearchCriteria<VolumeVO> sc = sb.create();
+
+		SearchCriteria sc = sb.create();
 		List<VolumeVO> volumes = _volumeDao.searchAll(sc, null, false, false);
-		
+
 		if(volumes.size() > 0) {
 			for(VolumeVO vol : volumes) {
 				if(vol.getInstanceId() != null) {
 					VMInstanceVO vmInstance = _vmInstanceDao.findById(vol.getInstanceId());
-					
+
 					if(vmInstance.getType() == VirtualMachine.Type.User) {
 						// if the volume is for user VM, we can retrieve the information from service_offering_id
 						UserVmVO  userVm = _userVmDao.findById(vol.getInstanceId());
@@ -507,34 +499,34 @@ public class Db20to21MigrationUtil {
 							break;
 						}
 					}
-					
+
 					if(!found) {
 						System.out.println("volume: " + vol.getId() + " disck_offering_id is fixed to " + offeringList.get(offeringList.size() - 1).getId());
 						vol.setDiskOfferingId(offeringList.get(offeringList.size() - 1).getId());
 					}
 				}
-				
+
 				_volumeDao.update(vol.getId(), vol);
 			}
 		}
-		
+
 		System.out.println("Disk offering fixup is done");
 	}
-	
+
 	private void updateDiskOfferingReferences(long oldDiskOfferingId, long newDiskOfferingId) {
 		Transaction txn = Transaction.open(Transaction.CLOUD_DB);
 		try {
 	        PreparedStatement pstmt = null;
             pstmt = txn.prepareAutoCloseStatement("UPDATE vm_disk SET disk_offering_id=? WHERE disk_offering_id=?");
-            
+
             pstmt.setLong(1, newDiskOfferingId);
             pstmt.setLong(2, oldDiskOfferingId);
-            
+
             int rows = pstmt.executeUpdate();
             pstmt.close();
-            
+
             s_logger.info("Update vm_disk for disk offering change (" + oldDiskOfferingId + "->" + newDiskOfferingId + "), affected rows: " + rows);
-            
+
             pstmt = txn.prepareAutoCloseStatement("UPDATE volumes SET disk_offering_id=? WHERE disk_offering_id=?");
             pstmt.setLong(1, newDiskOfferingId);
             pstmt.setLong(2, oldDiskOfferingId);
@@ -547,89 +539,89 @@ public class Db20to21MigrationUtil {
 			txn.close();
 		}
 	}
-	
+
 	private void migrateSystemVmGuestMacAndState(long zoneId) {
 		// for console proxy VMs
 		SearchBuilder<ConsoleProxyVO> sb = _consoleProxyDao.createSearchBuilder();
 		sb.and("zoneId", sb.entity().getDataCenterId(), Op.EQ);
 		sb.done();
-		
-		SearchCriteria<ConsoleProxyVO> sc = sb.create();
+
+		SearchCriteria sc = sb.create();
 		sc.setParameters("zoneId", zoneId);
-		
+
 		List<ConsoleProxyVO> proxies =_consoleProxyDao.searchAll(sc, null, false, false);
 		for(ConsoleProxyVO proxy : proxies) {
 			String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(zoneId, (1L << 31));
 			String guestMacAddress = macAddresses[0];
-			
+
 			proxy.setGuestMacAddress(guestMacAddress);
 			if(proxy.getState() == State.Running || proxy.getState() == State.Starting) {
 				System.out.println("System VM " + proxy.getName() + " is in active state, mark it to Stopping state for migration");
 				proxy.setState(State.Stopping);
 			}
-			
+
 			String guestIpAddress = _dcDao.allocateLinkLocalPrivateIpAddress(proxy.getDataCenterId(), proxy.getPodId(), proxy.getId());
 			proxy.setGuestIpAddress(guestIpAddress);
 			proxy.setGuestNetmask("255.255.0.0");
-			
+
 			System.out.println("Assign link loal address to proxy " + proxy.getName() + ", link local address: " + guestIpAddress);
 			_consoleProxyDao.update(proxy.getId(), proxy);
 		}
-		
+
 		// for secondary storage VMs
 		SearchBuilder<SecondaryStorageVmVO> sb2 = _secStorageVmDao.createSearchBuilder();
 		sb2.and("zoneId", sb2.entity().getDataCenterId(), Op.EQ);
 		sb2.done();
-		
-		SearchCriteria<SecondaryStorageVmVO> sc2 = sb2.create();
+
+		SearchCriteria sc2 = sb2.create();
 		sc2.setParameters("zoneId", zoneId);
-		
+
 		List<SecondaryStorageVmVO> secStorageVms =_secStorageVmDao.searchAll(sc2, null, false, false);
 		for(SecondaryStorageVmVO secStorageVm : secStorageVms) {
 			String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(zoneId, (1L << 31));
 			String guestMacAddress = macAddresses[0];
-			
+
 			secStorageVm.setGuestMacAddress(guestMacAddress);
 			if(secStorageVm.getState() == State.Running || secStorageVm.getState() == State.Starting) {
 				System.out.println("System VM " + secStorageVm.getName() + " is in active state, mark it to Stopping state for migration");
 				secStorageVm.setState(State.Stopping);
 			}
-			
+
 			String guestIpAddress = _dcDao.allocateLinkLocalPrivateIpAddress(secStorageVm.getDataCenterId(), secStorageVm.getPodId(), secStorageVm.getId());
 			secStorageVm.setGuestIpAddress(guestIpAddress);
 			secStorageVm.setGuestNetmask("255.255.0.0");
-			
+
 			System.out.println("Assign link loal address to secondary storage VM " + secStorageVm.getName() + ", link local address: " + guestIpAddress);
 			_secStorageVmDao.update(secStorageVm.getId(), secStorageVm);
 		}
-		
+
 		// for Domain Router VMs
-		// Although we can list those we are interested, but just too lazy, list all of them and check their states. 
+		// Although we can list those we are interested, but just too lazy, list all of them and check their states.
 		SearchBuilder<DomainRouterVO> sb3 = _routerDao.createSearchBuilder();
 		sb3.and("zoneId", sb3.entity().getDataCenterId(), Op.EQ);
 		sb3.done();
-		
-		SearchCriteria<DomainRouterVO> sc3 = sb3.create();
+
+		SearchCriteria sc3 = sb3.create();
 		sc3.setParameters("zoneId", zoneId);
 		List<DomainRouterVO> domRs = _routerDao.searchAll(sc3, null, false, false);
 		for(DomainRouterVO router :  domRs) {
 			if(router.getState() == State.Running || router.getState() == State.Starting) {
 				router.setState(State.Stopping);
-				
+
 				System.out.println("System VM " + router.getName() + " is in active state, mark it to Stopping state for migration");
 				_routerDao.update(router.getId(), router);
 			}
 		}
 	}
-	
+
 	private void migrateVmInstanceLastHostId(long zoneId, long podId) {
 		SearchBuilder<VMInstanceVO> sb = _vmInstanceDao.createSearchBuilder();
 		sb.and("zoneId", sb.entity().getDataCenterId(), Op.EQ);
 		sb.and("podId", sb.entity().getPodId(), Op.EQ);
 		sb.done();
-		
+
 		Random rand = new Random();
-		SearchCriteria<VMInstanceVO> sc = sb.create();
+		SearchCriteria sc = sb.create();
 		sc.setParameters("zoneId", zoneId);
 		sc.setParameters("podId", podId);
 		List<VMInstanceVO> vmInstances = _vmInstanceDao.searchAll(sc, null, false, false);
@@ -646,91 +638,91 @@ public class Db20to21MigrationUtil {
 			_vmInstanceDao.update(vm.getId(), vm);
 		}
 	}
-	
+
 	private List<HostVO> getHostsInPod(long zoneId, long podId) {
 		SearchBuilder<HostVO> sb = _hostDao.createSearchBuilder();
 		sb.and("zoneId", sb.entity().getDataCenterId(), Op.EQ);
 		sb.and("podId", sb.entity().getPodId(), Op.EQ);
 		sb.and("type", sb.entity().getType(), Op.EQ);
 		sb.done();
-		
-		SearchCriteria<HostVO> sc = sb.create();
+
+		SearchCriteria sc = sb.create();
 		sc.setParameters("zoneId", zoneId);
 		sc.setParameters("podId", podId);
 		sc.setParameters("type", Host.Type.Routing.toString());
-		
+
 		return _hostDao.searchAll(sc, null, false, false);
 	}
-	
+
 	private void migrateVolumDeviceIds() {
 		System.out.println("Migrating device_id for volumes, this may take a while, please wait...");
-		SearchCriteria<VMInstanceVO> sc = _vmInstanceDao.createSearchCriteria();
+		SearchCriteria sc = _vmInstanceDao.createSearchCriteria();
 		List<VMInstanceVO> vmInstances = _vmInstanceDao.searchAll(sc, null, false, false);
-		
+
 		long deviceId = 1;
 		for(VMInstanceVO vm: vmInstances) {
 			SearchBuilder<VolumeVO> sb = _volumeDao.createSearchBuilder();
 			sb.and("instanceId", sb.entity().getInstanceId(), Op.EQ);
 			sb.done();
-			
-			SearchCriteria<VolumeVO> sc2 = sb.create();
+
+			SearchCriteria sc2 = sb.create();
 			sc2.setParameters("instanceId", vm.getId());
-			
+
 			List<VolumeVO> volumes = _volumeDao.searchAll(sc2, null, false, false);
 			deviceId = 1;	// reset for each VM iteration
 			for(VolumeVO vol : volumes) {
 				if(vol.getVolumeType() == VolumeType.ROOT) {
 					System.out.println("Setting root volume device id to zero, vol: " + vol.getName() + ", instance: " + vm.getName());
-					
+
 					vol.setDeviceId(0L);
 				} else if(vol.getVolumeType() == VolumeType.DATADISK) {
 					System.out.println("Setting data volume device id, vol: " + vol.getName() + ", instance: " + vm.getName() + ", device id: " + deviceId);
-					
+
 					vol.setDeviceId(deviceId);
-					
+
 					// don't use device ID 3
 					if(++deviceId == 3)
 						deviceId++;
 				} else {
 					System.out.println("Unsupported volume type found for volume: " + vol.getName());
 				}
-				
+
 				_volumeDao.update(vol.getId(), vol);
 			}
 		}
-		
+
 		System.out.println("Migrating device_id for volumes done");
 	}
-	
+
 	private void migrateVolumePoolType() {
 		System.out.println("Migrating pool type for volumes...");
-		
-		SearchCriteria<VolumeVO> sc = _volumeDao.createSearchCriteria();
+
+		SearchCriteria sc = _volumeDao.createSearchCriteria();
 		List<VolumeVO> volumes = _volumeDao.searchAll(sc, null, false, false);
 		for(VolumeVO vol : volumes) {
 			if(vol.getPoolId() != null) {
 				StoragePoolVO pool = _poolDao.findById(vol.getPoolId());
 				if(pool != null) {
 					vol.setPoolType(pool.getPoolType());
-					
+
 					_volumeDao.update(vol.getId(), vol);
 				} else {
 					System.out.println("Unable to determine pool type for volume: " + vol.getName());
 				}
 			}
 		}
-		
+
 		System.out.println("Migrating pool type for volumes done");
 	}
-	
+
 	private void migrateConfiguration() {
 		System.out.println("Migrating 2.1 configuration variables...");
-		
+
 		System.out.print("Are you migrating from 2.0 Premium Edition? (yes/no): ");
 		String answer = readInput();
 		if(answer != null && answer.equalsIgnoreCase("yes"))
 			_isPremium = true;
-		
+
 		// Save default Configuration Table values
 		List<String> categories = Config.getCategories();
 		for (String category : categories) {
@@ -738,16 +730,16 @@ public class Db20to21MigrationUtil {
 			if (!_isPremium && category.equals("Premium")) {
 				continue;
 			}
-			
+
 			List<Config> configs = Config.getConfigs(category);
 			for (Config c : configs) {
 				String name = c.key();
-				
+
 				// If the value is already in the table, don't reinsert it
 				if (_configDao.getValue(name) != null) {
 					continue;
 				}
-				
+
 				String instance = "DEFAULT";
 				String component = c.getComponent();
 				String value = c.getDefaultValue();
@@ -755,7 +747,7 @@ public class Db20to21MigrationUtil {
 				ConfigurationVO configVO = new ConfigurationVO(category, instance, component, name, value, description);
 				_configDao.persist(configVO);
 			}
-			
+
 			// If this is a premium environment, set the network type to be "vlan"
 			if (_isPremium) {
 				_configDao.update("network.type", "vlan");
@@ -764,76 +756,76 @@ public class Db20to21MigrationUtil {
 				_configDao.update("secstorage.encrypt.copy", "true");
 				_configDao.update("secstorage.secure.copy.cert", "realhostip");
 			}
-			
+
 			boolean externalIpAlloator = Boolean.parseBoolean(_configDao.getValue("direct.attach.network.externalIpAllocator.enabled"));
 			String hyperVisor = _configDao.getValue("hypervisor.type");
 			if (hyperVisor.equalsIgnoreCase("KVM") && !externalIpAlloator) {
 				/*For KVM, it's enabled by default*/
 				_configDao.update("direct.attach.network.externalIpAllocator.enabled", "true");
 			}
-			
+
 			// Save the mount parent to the configuration table
 			String mountParent = getMountParent();
 			if (mountParent != null) {
 				_configDao.update("mount.parent", mountParent);
 			}
-			
+
 			if(_configDao.getValue("host") == null) {
 				String hostIpAdr = getHost();
 				if (hostIpAdr != null) {
 					_configDao.update("host", hostIpAdr);
 				}
 			}
-	
+
 	        // generate a single sign-on key
 	        updateSSOKey();
 		}
-		
+
 		System.out.println("Migrating 2.1 configuration done");
 	}
 
 	private String getEthDevice() {
 		String defaultRoute = Script.runSimpleBashScript("/sbin/route | grep default");
-		
+
 		if (defaultRoute == null) {
 			return null;
 		}
-		
+
 		String[] defaultRouteList = defaultRoute.split("\\s+");
-		
+
 		if (defaultRouteList.length != 8) {
 			return null;
 		}
-		
+
 		return defaultRouteList[7];
 	}
-	
+
 	protected String getHost() {
 		NetworkInterface nic = null;
 		String pubNic = getEthDevice();
-		
+
 		if (pubNic == null) {
 			return null;
 		}
-		
+
 		try {
 			nic = NetworkInterface.getByName(pubNic);
 		} catch (final SocketException e) {
 			return null;
 		}
-		
+
 		String[] info = NetUtils.getNetworkParams(nic);
 		return info[0];
 	}
-	
+
 	private String getMountParent() {
 		return getEnvironmentProperty("mount.parent");
 	}
-	
+
 	private String getEnvironmentProperty(String name) {
 		try {
 			final File propsFile = PropertiesUtil.findConfigFile("environment.properties");
-			
+
 			if (propsFile == null) {
 				return null;
 			} else {
@@ -847,7 +839,7 @@ public class Db20to21MigrationUtil {
 			return null;
 		}
 	}
-	
+
 	private void updateSSOKey() {
         try {
             String encodedKey = null;
@@ -862,10 +854,10 @@ public class Db20to21MigrationUtil {
             s_logger.error("error generating sso key", ex);
         }
 	}
-	
+
 	private void doMigration() {
 		setupComponents();
-		
+
 		migrateZones();
 		migrateDomains();
 		migrateServiceOfferings();
@@ -873,16 +865,16 @@ public class Db20to21MigrationUtil {
 		migrateVolumDeviceIds();
 		migrateVolumePoolType();
 		migrateConfiguration();
-		
+
 		// update disk_offering_id for system VMs. As of the id-space collision for servercie_offering_ids
 		// before and after migration, this should be done in the last step
 		updateConsoleProxyServiceOfferingReferences(_consoleProxyServiceOfferingId);
 		updateSecondaryStorageServiceOfferingReferences(_secStorageServiceOfferingId);
         updateDomainRouterServiceOfferingReferences(_domRServiceOfferingId);
-        
+
 		System.out.println("Migration done");
 	}
-	
+
 	private String readInput() {
 		try {
 			Scanner in = new Scanner(System.in);
@@ -892,11 +884,11 @@ public class Db20to21MigrationUtil {
 			return "";
 		}
 	}
-	
+
 	private void setupComponents() {
 		ComponentLocator.getLocator("migration", "migration-components.xml", "log4j-cloud.xml");
 		ComponentLocator locator = ComponentLocator.getCurrentLocator();
-		
+
 		_configDao = locator.getDao(ConfigurationDao.class);
 		_podDao = locator.getDao(HostPodDao.class);
 		_dcDao = locator.getDao(DataCenterDao.class);
@@ -916,7 +908,7 @@ public class Db20to21MigrationUtil {
 		_routerDao = locator.getDao(DomainRouterDao.class);
 		_poolDao = locator.getDao(StoragePoolDao.class);
 	}
-	
+
 	public static void main(String[] args) {
         File file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
 
@@ -926,7 +918,7 @@ public class Db20to21MigrationUtil {
 		} else {
 			System.out.println("Configure log4j with default properties");
 		}
-		
+
 		new Db20to21MigrationUtil().doMigration();
 		System.exit(0);
 	}

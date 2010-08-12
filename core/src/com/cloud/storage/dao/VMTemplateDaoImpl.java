@@ -72,42 +72,42 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
     
     public List<VMTemplateVO> listByPublic() {
-    	SearchCriteria<VMTemplateVO> sc = PublicSearch.create();
+    	SearchCriteria sc = PublicSearch.create();
     	sc.setParameters("public", 1);
 	    return listActiveBy(sc);
 	}
     
 	@Override
 	public VMTemplateVO findByName(String templateName) {
-		SearchCriteria<VMTemplateVO> sc = UniqueNameSearch.create();
+		SearchCriteria sc = UniqueNameSearch.create();
 		sc.setParameters("uniqueName", templateName);
 		return findOneBy(sc);
 	}
 
 	@Override
 	public VMTemplateVO findByTemplateName(String templateName) {
-		SearchCriteria<VMTemplateVO> sc = NameSearch.create();
+		SearchCriteria sc = NameSearch.create();
 		sc.setParameters("name", templateName);
 		return findOneBy(sc);
 	}
 	
 	@Override
 	public VMTemplateVO findRoutingTemplate() {
-		SearchCriteria<VMTemplateVO> sc = UniqueNameSearch.create();
+		SearchCriteria sc = UniqueNameSearch.create();
 		sc.setParameters("uniqueName", routerTmpltName);
 		return findOneBy(sc);
 	}
 	
 	@Override
 	public VMTemplateVO findConsoleProxyTemplate() {
-		SearchCriteria<VMTemplateVO> sc = UniqueNameSearch.create();
+		SearchCriteria sc = UniqueNameSearch.create();
 		sc.setParameters("uniqueName", consoleProxyTmpltName);
 		return findOneBy(sc);
 	}
 	
 	@Override
 	public List<VMTemplateVO> listReadyTemplates() {
-		SearchCriteria<VMTemplateVO> sc = createSearchCriteria();
+		SearchCriteria sc = createSearchCriteria();
 		sc.addAnd("ready", SearchCriteria.Op.EQ, true);
 		sc.addAnd("format", SearchCriteria.Op.NEQ, Storage.ImageFormat.ISO);
 		return listBy(sc);
@@ -115,7 +115,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	
 	@Override
 	public List<VMTemplateVO> findIsosByIdAndPath(Long domainId, Long accountId, String path) {
-		SearchCriteria<VMTemplateVO> sc = createSearchCriteria();
+		SearchCriteria sc = createSearchCriteria();
 		sc.addAnd("iso", SearchCriteria.Op.EQ, true);
 		if (domainId != null)
 			sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
@@ -128,7 +128,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
 	@Override
 	public List<VMTemplateVO> listByAccountId(long accountId) {
-        SearchCriteria<VMTemplateVO> sc = AccountIdSearch.create();
+        SearchCriteria sc = AccountIdSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("publicTemplate", false);
         return listActiveBy(sc);

@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -40,7 +39,6 @@ import javax.naming.ConfigurationException;
 import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
 import javax.persistence.EmbeddedId;
-import javax.persistence.EntityExistsException;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.TableGenerator;
@@ -57,7 +55,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.db.SearchCriteria.SelectType;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -98,8 +95,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     private final static Logger s_logger = Logger.getLogger(GenericDaoBase.class);
     
     protected final static TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
-    
-    protected final static Map<Class<?>, GenericDao<?, ?>> s_daoMaps = new HashMap<Class<?>, GenericDao<?, ?>>(71);
 
     protected Class<T> _entityBeanType;
     protected String _table;
@@ -151,21 +146,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
 
     protected String _name;
     
-    protected static GenericDao<?, ?> getDao(Class<?> entityType) {
-        GenericDao<?, ?> dao = s_daoMaps.get(entityType);
-        assert dao != null : "Unable to find DAO for " + entityType + ".  Are you sure you waited for the DAO to be initialized before asking for it?";
-        return dao;
-    }
-    
-    @SuppressWarnings("unchecked")
-    public <J> GenericSearchBuilder<T, J> createSearchBuilder(Class<J> resultType) {
-        final T entity = (T)_enhancer.create();
-        final Factory factory = (Factory)entity;
-        GenericSearchBuilder<T, J> builder = new GenericSearchBuilder<T, J>(entity, resultType, _allAttributes);
-        factory.setCallback(0, builder);
-        return builder;
-    }
-    
     @SuppressWarnings("unchecked")
     protected GenericDaoBase() {
         Type t = getClass().getGenericSuperclass();
@@ -175,8 +155,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             _entityBeanType = (Class<T>)((ParameterizedType)((Class<?>)t).getGenericSuperclass()).getActualTypeArguments()[0];
             
         }
-        
-        s_daoMaps.put(_entityBeanType, this);
         _table = DbUtil.getTableName(_entityBeanType);
 
         final SqlGenerator generator = new SqlGenerator(_entityBeanType);
@@ -263,19 +241,19 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @Override @DB(txn=false)
-    public List<T> lock(final SearchCriteria<T> sc, final Filter filter, final boolean exclusive) {
+    public List<T> lock(final SearchCriteria sc, final Filter filter, final boolean exclusive) {
         return search(sc, filter, exclusive, false);
     }
 
     @Override @DB(txn=false)
-    public T lock(final SearchCriteria<T> sc, final boolean exclusive) {
+    public T lock(final SearchCriteria sc, final boolean exclusive) {
         final Filter filter = new Filter(1);
         final List<T> beans = search(sc, filter, exclusive, true);
         return beans.isEmpty() ? null : beans.get(0);
     }
 
     @DB(txn=false)
-    protected List<T> search(SearchCriteria<T> sc, final Filter filter, final Boolean lock, final boolean cache) {
+    protected List<T> search(SearchCriteria sc, final Filter filter, final Boolean lock, final boolean cache) {
         if (_removed != null) {
             if (sc == null) {
                 sc = createSearchCriteria();
@@ -285,7 +263,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         return searchAll(sc, filter, lock, cache);
     }
 
-    public List<T> searchAll(SearchCriteria<T> sc, final Filter filter, final Boolean lock, final boolean cache) {
+    public List<T> searchAll(SearchCriteria sc, final Filter filter, final Boolean lock, final boolean cache) {
         String clause = sc != null ? sc.getWhereClause() : null;
         if (clause != null && clause.length() == 0) {
         	clause = null;
@@ -296,7 +274,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             str.append(clause);
         }
 
-        Collection<Ternary<SearchCriteria<?>, Attribute, Attribute>> joins = null;
+        Collection<Ternary<SearchCriteria, Attribute, Attribute>> joins = null;
         if (sc != null) {
             joins = sc.getJoins();
             if (joins != null) {
@@ -326,7 +304,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
 	            }
             }
             if (joins != null) {
-                for (Ternary<SearchCriteria<?>, Attribute, Attribute> join : joins) {
+                for (Ternary<SearchCriteria, Attribute, Attribute> join : joins) {
                     for (final Pair<Attribute, Object> value : join.first().getValues()) {
                         prepareAttribute(++i, pstmt, value.first(), value.second());
                     }
@@ -350,8 +328,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         }
     }
     
-    @Override @SuppressWarnings("unchecked") @DB
-    public <M> List<M> searchAll(SearchCriteria<M> sc, final Filter filter) {
+    public List<Object[]> searchAll(SearchCriteria sc, final Filter filter) {
         String clause = sc != null ? sc.getWhereClause() : null;
         if (clause != null && clause.length() == 0) {
             clause = null;
@@ -362,7 +339,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             str.append(clause);
         }
 
-        Collection<Ternary<SearchCriteria<?>, Attribute, Attribute>> joins = null;
+        Collection<Ternary<SearchCriteria, Attribute, Attribute>> joins = null;
         if (sc != null) {
             joins = sc.getJoins();
             if (joins != null) {
@@ -387,7 +364,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                 }
             }
             if (joins != null) {
-                for (Ternary<SearchCriteria<?>, Attribute, Attribute> join : joins) {
+                for (Ternary<SearchCriteria, Attribute, Attribute> join : joins) {
                     for (final Pair<Attribute, Object> value : join.first().getValues()) {
                         prepareAttribute(++i, pstmt, value.first(), value.second());
                     }
@@ -397,24 +374,17 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                 }
             }
             ResultSet rs = pstmt.executeQuery();
-            SelectType st = sc.getSelectType();
-            ResultSetMetaData md = rs.getMetaData();
-            ArrayList<M> results = new ArrayList<M>();
-            List<Field> fields = sc.getSelectFields();
+            ArrayList<Object[]> results = new ArrayList<Object[]>();
+            int size = sc.getSelectCount();
+            
             while (rs.next()) {
-                if (st == SelectType.Entity) {
-                    results.add((M)toEntityBean(rs, false));
-                } else if (st == SelectType.Fields || st == SelectType.Result) {
-                    M m = sc.getResultType().newInstance();
-                    for (int j = 1; j <= fields.size(); j++) {
-                        setField(m, fields.get(j - 1), rs, j);
-                    }
-                    results.add(m);
-                } else if (st == SelectType.Single) {
-                    results.add(getObject(sc.getResultType(), rs, 1));
+                Object[] objs = new Object[size];
+                for (int j = 0; j < size; j++) {
+                    objs[j] = rs.getObject(j + 1);
                 }
+                results.add(objs);
             }
-
+            
             return results;
         } catch (final SQLException e) {
             throw new CloudRuntimeException("DB Exception on: " + pstmt.toString(), e);
@@ -424,196 +394,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
     
     @DB(txn=false)
-    protected void setField(Object entity, Field field, ResultSet rs, int index) throws SQLException {
-        try {
-            final Class<?> type = field.getType();
-            if (type == String.class) {
-                field.set(entity, rs.getString(index));
-            } else if (type == int.class) {
-                field.set(entity, rs.getInt(index));
-            } else if (type == Integer.class) {
-                if (rs.getObject(index) == null) {
-                    field.set(entity, null);
-                } else {
-                    field.set(entity, rs.getInt(index));
-                }
-            } else if (type == long.class) {
-                field.setLong(entity, rs.getLong(index));
-            } else if (type == Long.class) {
-                if (rs.getObject(index) == null) {
-                    field.set(entity, null);
-                } else {
-                    field.set(entity, rs.getLong(index));
-                }
-            } else if (type == Date.class) {
-                final Object data = rs.getDate(index);
-                if (data == null) {
-                    field.set(entity, null);
-                    return;
-                }
-                field.set(entity, DateUtil.parseDateString(s_gmtTimeZone, rs.getString(index)));
-            } else if (type == short.class) {
-                field.setShort(entity, rs.getShort(index));
-            } else if (type == Short.class) {
-                if (rs.getObject(index) == null) {
-                    field.set(entity, null);
-                } else {
-                    field.set(entity, rs.getShort(index));
-                }
-            } else if (type == boolean.class) {
-                field.setBoolean(entity, rs.getBoolean(index));
-            } else if (type == Boolean.class) {
-                if (rs.getObject(index) == null) {
-                    field.set(entity, null);
-                } else {
-                    field.set(entity, rs.getBoolean(index));
-                }
-            } else if (type == float.class) {
-                field.setFloat(entity, rs.getFloat(index));
-            } else if (type == Float.class) {
-                if (rs.getObject(index) == null) {
-                    field.set(entity, null);
-                } else {
-                    field.set(entity, rs.getFloat(index));
-                }
-            } else if (type == double.class) {
-                field.setDouble(entity, rs.getDouble(index));
-            } else if (type == Double.class) {
-                if (rs.getObject(index) == null) {
-                    field.set(entity, null);
-                } else {
-                    field.set(entity, rs.getDouble(index));
-                }
-            } else if (type == byte.class) {
-                field.setByte(entity, rs.getByte(index));
-            } else if (type == Byte.class) {
-                if (rs.getObject(index) == null) {
-                    field.set(entity, null);
-                } else {
-                    field.set(entity, rs.getByte(index));
-                }
-            } else if (type == Calendar.class) {
-                final Object data = rs.getDate(index);
-                if (data == null) {
-                    field.set(entity, null);
-                    return;
-                }
-                final Calendar cal = Calendar.getInstance();
-                cal.setTime(DateUtil.parseDateString(s_gmtTimeZone, rs.getString(index)));
-                field.set(entity, cal);
-            } else if (type.isEnum()) {
-                final Enumerated enumerated = field.getAnnotation(Enumerated.class);
-                final EnumType enumType = (enumerated == null) ? EnumType.STRING : enumerated.value();
-
-                final Enum[] enums =  (Enum[])field.getType().getEnumConstants();
-                for (final Enum e : enums) {
-                    if ((enumType == EnumType.STRING && e.name().equalsIgnoreCase(rs.getString(index))) ||
-                        (enumType == EnumType.ORDINAL && e.ordinal() == rs.getInt(index))) {
-                        field.set(entity, e);
-                        return;
-                    }
-                }
-            } else if (type == byte[].class) {
-                field.set(entity, rs.getBytes(index));
-            } else {
-                field.set(entity, rs.getObject(index));
-            }
-        } catch (final IllegalAccessException e) {
-            throw new CloudRuntimeException("Yikes! ", e);
-        }
-    }
-    
-    @DB(txn=false) @SuppressWarnings("unchecked")
-    protected <M> M getObject(Class<M> type, ResultSet rs, int index) throws SQLException {
-        if (type == String.class) {
-            return (M)rs.getString(index);
-        } else if (type == int.class) {
-            return (M)new Integer(rs.getInt(index));
-        } else if (type == Integer.class) {
-            if (rs.getObject(index) == null) {
-                return null;
-            } else {
-                return (M)new Integer(rs.getInt(index));
-            }
-        } else if (type == long.class) {
-            return (M)new Long(rs.getLong(index));
-        } else if (type == Long.class) {
-            if (rs.getObject(index) == null) {
-                return null;
-            } else {
-                return (M)new Long(rs.getLong(index));
-            }
-        } else if (type == Date.class) {
-            final Object data = rs.getDate(index);
-            if (data == null) {
-                return null;
-            } else {
-                return (M)DateUtil.parseDateString(s_gmtTimeZone, rs.getString(index));
-            }
-        } else if (type == short.class) {
-            return (M)new Short(rs.getShort(index));
-        } else if (type == Short.class) {
-            if (rs.getObject(index) == null) {
-                return null;
-            } else {
-                return (M)new Short(rs.getShort(index));
-            }
-        } else if (type == boolean.class) {
-            return (M)new Boolean(rs.getBoolean(index));
-        } else if (type == Boolean.class) {
-            if (rs.getObject(index) == null) {
-                return null;
-            } else {
-                return (M)new Boolean(rs.getBoolean(index));
-            }
-        } else if (type == float.class) {
-            return (M)new Float(rs.getFloat(index));
-        } else if (type == Float.class) {
-            if (rs.getObject(index) == null) {
-                return null;
-            } else {
-                return (M)new Float(rs.getFloat(index));
-            }
-        } else if (type == double.class) {
-            return (M)new Double(rs.getDouble(index));
-        } else if (type == Double.class) {
-            if (rs.getObject(index) == null) {
-                return null;
-            } else {
-                return (M)new Double(rs.getDouble(index));
-            }
-        } else if (type == byte.class) {
-            return (M)new Byte(rs.getByte(index));
-        } else if (type == Byte.class) {
-            if (rs.getObject(index) == null) {
-                return null;
-            } else {
-                return (M)new Byte(rs.getByte(index));
-            }
-        } else if (type == Calendar.class) {
-            final Object data = rs.getDate(index);
-            if (data == null) {
-                return null;
-            } else {
-                final Calendar cal = Calendar.getInstance();
-                cal.setTime(DateUtil.parseDateString(s_gmtTimeZone, rs.getString(index)));
-                return (M)cal;
-            }
-        } else if (type == byte[].class) {
-            return (M)rs.getBytes(index);
-        } else {
-            return (M)rs.getObject(index);
-        }
-    }
-    
-    @DB(txn=false)
-    protected int addJoinAttributes(int count, PreparedStatement pstmt, List<Ternary<SearchCriteria<?>, Attribute, Attribute>> joins) throws SQLException {
-        for (Ternary<SearchCriteria<?>, Attribute, Attribute> join : joins) {
+    protected int addJoinAttributes(int count, PreparedStatement pstmt, List<Ternary<SearchCriteria, Attribute, Attribute>> joins) throws SQLException {
+        for (Ternary<SearchCriteria, Attribute, Attribute> join : joins) {
             for (final Pair<Attribute, Object> value : join.first().getValues()) {
                 prepareAttribute(++count, pstmt, value.first(), value.second());
             }
         }
-        for (Ternary<SearchCriteria<?>, Attribute, Attribute> join : joins) {
+        for (Ternary<SearchCriteria, Attribute, Attribute> join : joins) {
             if (join.first().getJoins() != null) {
                 count = addJoinAttributes(count, pstmt, joins);
             }
@@ -636,7 +423,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     //   @Override
-    public int update(final UpdateBuilder ub, final SearchCriteria<?> sc, Integer rows) {
+    public int update(final UpdateBuilder ub, final SearchCriteria sc, Integer rows) {
         StringBuilder sql = null;
         PreparedStatement pstmt = s_initStmt;
         final Transaction txn = Transaction.currentTxn();
@@ -664,7 +451,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                 prepareAttribute(i++, pstmt, value.first(), value.third());
             }
             
-            for (Pair<Attribute, Object> value : sc.getValues()) {
+            for (final Pair<Attribute, Object> value : sc.getValues()) {
             	prepareAttribute(i++, pstmt, value.first(), value.second());
             }
             
@@ -673,12 +460,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             ub.clear();
             return result;
         } catch (final SQLException e) {
-            if (e.getSQLState().equals("23000")) {
-                throw new EntityExistsException("Entity already exists ", e);
-            }
             final String sqlStr = pstmt.toString();
             throw new CloudRuntimeException("DB Exception on: " + sqlStr, e);
-        } 
+        } catch (final Throwable e) {
+            final String sqlStr = pstmt.toString();
+            throw new CloudRuntimeException("Caught: " + sqlStr, e);
+        }
     }
     
     @DB(txn=false)
@@ -711,7 +498,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         return _entityBeanType;
     }
 
-    protected T findOneBy(final SearchCriteria<T> sc) {
+    protected T findOneBy(final SearchCriteria sc) {
         Filter filter = new Filter(1);
         List<T> results = searchAll(sc, filter, null, false);
         assert results.size() <= 1 : "Didn't the limiting worked?";
@@ -719,7 +506,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @DB(txn=false)
-    protected T findOneActiveBy(final SearchCriteria<T> sc) {
+    protected T findOneActiveBy(final SearchCriteria sc) {
         if (_removed != null) {
             sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
         }
@@ -727,7 +514,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @DB(txn=false)
-    protected List<T> listActiveBy(final SearchCriteria<T> sc, final Filter filter) {
+    protected List<T> listActiveBy(final SearchCriteria sc, final Filter filter) {
         if (_removed != null) {
             sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
         }
@@ -735,17 +522,17 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @DB(txn=false)
-    protected List<T> listActiveBy(final SearchCriteria<T> sc) {
+    protected List<T> listActiveBy(final SearchCriteria sc) {
         return listActiveBy(sc, null);
     }
 
     @DB(txn=false)
-    protected List<T> listBy(final SearchCriteria<T> sc, final Filter filter) {
+    protected List<T> listBy(final SearchCriteria sc, final Filter filter) {
         return searchAll(sc, filter, null, false);
     }
 
     @DB(txn=false)
-    protected List<T> listBy(final SearchCriteria<T> sc) {
+    protected List<T> listBy(final SearchCriteria sc) {
         return listBy(sc, null);
     }
 
@@ -832,7 +619,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @DB(txn=false)
-    protected void addGroupBy(final StringBuilder sql, SearchCriteria<?> sc) {
+    protected void addGroupBy(final StringBuilder sql, SearchCriteria sc) {
     	List<Attribute> groupBys = sc.getGroupBy();
     	if(groupBys != null) {
     		sql.append(" GROUP BY ");
@@ -941,7 +728,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     // FIXME: Does not work for joins.
-    public int delete(final SearchCriteria<T> sc) {
+    public int delete(final SearchCriteria sc) {
         final StringBuilder str = new StringBuilder("DELETE FROM ");
         str.append(_table);
         str.append(" WHERE ");
@@ -969,7 +756,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @DB(txn=false)
-    protected StringBuilder createPartialSelectSql(SearchCriteria<?> sc, final boolean whereClause) {
+    protected StringBuilder createPartialSelectSql(SearchCriteria sc, final boolean whereClause) {
         StringBuilder sql = new StringBuilder(_partialSelectSql.first());
         if (sc != null && !sc.isSelectAll()) {
             sql.delete(7, sql.indexOf(" FROM"));
@@ -984,7 +771,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
     
     @DB(txn=false)
-    protected void addJoins(StringBuilder str, Collection<Ternary<SearchCriteria<?>, Attribute, Attribute>> joins) {
+    protected void addJoins(StringBuilder str, Collection<Ternary<SearchCriteria, Attribute, Attribute>> joins) {
         int fromIndex = str.lastIndexOf("FROM") + 5;
         if (str.lastIndexOf("WHERE") == -1) {
             str.append(" WHERE ");
@@ -992,13 +779,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             str.append(" AND ");
         }
         
-        for (Ternary<SearchCriteria<?>, Attribute, Attribute> join : joins) {
+        for (Ternary<SearchCriteria, Attribute, Attribute> join : joins) {
             str.insert(fromIndex, join.third().table + ", ");
             str.append(join.second().table).append(".").append(join.second().columnName).append("=").append(join.third().table).append(".").append(join.third().columnName);
             str.append(" AND (").append(join.first().getWhereClause()).append(") AND ");
         }
         
-        for (Ternary<SearchCriteria<?>, Attribute, Attribute> join : joins) {
+        for (Ternary<SearchCriteria, Attribute, Attribute> join : joins) {
             if (join.first().getJoins() != null) {
                 addJoins(str, join.first().getJoins());
             }
@@ -1008,7 +795,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @Override @DB(txn=false)
-    public List<T> search(final SearchCriteria<T> sc, final Filter filter) {
+    public List<T> search(final SearchCriteria sc, final Filter filter) {
         return search(sc, filter, null, false);
     }
 
@@ -1022,13 +809,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @DB(txn=false)
-    public int update(final T entity, final SearchCriteria<T> sc, Integer rows) {
+    public int update(final T entity, final SearchCriteria sc, Integer rows) {
         final UpdateBuilder ub = getUpdateBuilder(entity);
         return update(ub, sc, rows);
     }
     
     @DB(txn=false)
-    public int update(final T entity, final SearchCriteria<T> sc) {
+    public int update(final T entity, final SearchCriteria sc) {
         final UpdateBuilder ub = getUpdateBuilder(entity);
         return update(ub, sc, null);
     }
@@ -1088,12 +875,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             }
             txn.commit();
         } catch (final SQLException e) {
-            if (e.getSQLState().equals("23000")) {
-                throw new EntityExistsException("Entity already exists: ", e);
-            } else {
-                final String sqlStr = pstmt.toString();
-                throw new CloudRuntimeException("DB Exception on: " + sqlStr, e);
-            }
+            final String sqlStr = pstmt.toString();
+            throw new CloudRuntimeException("DB Exception on: " + sqlStr, e);
         }
         
         return _idField != null ? findById(id) : null;
@@ -1252,7 +1035,114 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     protected void setField(final Object entity, final ResultSet rs, ResultSetMetaData meta, final int index) throws SQLException {
         Attribute attr = _allColumns.get(new Pair<String, String>(meta.getTableName(index), meta.getColumnName(index)));
         assert (attr != null) : "How come I can't find " + meta.getCatalogName(index) + "." + meta.getColumnName(index);
-        setField(entity, attr.field, rs, index);
+        try {
+            final Class<?> type = attr.field.getType();
+            if (type == String.class) {
+                attr.field.set(entity, rs.getString(index));
+            } else if (type == int.class) {
+                attr.field.set(entity, rs.getInt(index));
+            } else if (type == Integer.class) {
+                if (rs.getObject(index) == null) {
+                    attr.field.set(entity, null);
+                } else {
+                    attr.field.set(entity, rs.getInt(index));
+                }
+            } else if (type == long.class) {
+                attr.field.setLong(entity, rs.getLong(index));
+            } else if (type == Long.class) {
+                if (rs.getObject(index) == null) {
+                    attr.field.set(entity, null);
+                } else {
+                    attr.field.set(entity, rs.getLong(index));
+                }
+            } else if (type == Date.class) {
+                final Object data = rs.getDate(index);
+                if (data == null) {
+                    attr.field.set(entity, null);
+                    return;
+                }
+                if (attr.is(Attribute.Flag.Date)) {
+                    attr.field.set(entity, DateUtil.parseDateString(s_gmtTimeZone, rs.getString(index)));
+                } else if (attr.is(Attribute.Flag.TimeStamp)) {
+            		attr.field.set(entity, DateUtil.parseDateString(s_gmtTimeZone, rs.getString(index)));
+                } else if (attr.is(Attribute.Flag.Time)) {
+                    attr.field.set(entity, DateUtil.parseDateString(s_gmtTimeZone, rs.getString(index)));
+                }
+            } else if (type == short.class) {
+                attr.field.setShort(entity, rs.getShort(index));
+            } else if (type == Short.class) {
+                if (rs.getObject(index) == null) {
+                    attr.field.set(entity, null);
+                } else {
+                    attr.field.set(entity, rs.getShort(index));
+                }
+            } else if (type == boolean.class) {
+                attr.field.setBoolean(entity, rs.getBoolean(index));
+            } else if (type == Boolean.class) {
+                if (rs.getObject(index) == null) {
+                    attr.field.set(entity, null);
+                } else {
+                    attr.field.set(entity, rs.getBoolean(index));
+                }
+            } else if (type == float.class) {
+                attr.field.setFloat(entity, rs.getFloat(index));
+            } else if (type == Float.class) {
+                if (rs.getObject(index) == null) {
+                    attr.field.set(entity, null);
+                } else {
+                    attr.field.set(entity, rs.getFloat(index));
+                }
+            } else if (type == double.class) {
+                attr.field.setDouble(entity, rs.getDouble(index));
+            } else if (type == Double.class) {
+                if (rs.getObject(index) == null) {
+                    attr.field.set(entity, null);
+                } else {
+                    attr.field.set(entity, rs.getDouble(index));
+                }
+            } else if (type == byte.class) {
+                attr.field.setByte(entity, rs.getByte(index));
+            } else if (type == Byte.class) {
+                if (rs.getObject(index) == null) {
+                    attr.field.set(entity, null);
+                } else {
+                    attr.field.set(entity, rs.getByte(index));
+                }
+            } else if (type == Calendar.class) {
+                final Object data = rs.getDate(index);
+                if (data == null) {
+                    attr.field.set(entity, null);
+                    return;
+                }
+                final Calendar cal = Calendar.getInstance();
+                if (attr.is(Attribute.Flag.Date)) {
+                    cal.setTime(DateUtil.parseDateString(s_gmtTimeZone, rs.getString(index)));
+                } else if (attr.is(Attribute.Flag.TimeStamp)) {
+                    cal.setTime(DateUtil.parseDateString(s_gmtTimeZone, rs.getString(index)));
+                } else if (attr.is(Attribute.Flag.Time)) {
+                    cal.setTime(DateUtil.parseDateString(s_gmtTimeZone, rs.getString(index)));
+                }
+                attr.field.set(entity, cal);
+            } else if (type.isEnum()) {
+                final Enumerated enumerated = attr.field.getAnnotation(Enumerated.class);
+                final EnumType enumType = (enumerated == null) ? EnumType.STRING : enumerated.value();
+
+                final Enum[] enums =  (Enum[])attr.field.getType().getEnumConstants();
+                for (final Enum e : enums) {
+                    if ((enumType == EnumType.STRING && e.name().equalsIgnoreCase(rs.getString(index))) ||
+                            (enumType == EnumType.ORDINAL && e.ordinal() == rs.getInt(index))) {
+                        attr.field.set(entity, e);
+                        return;
+                    }
+                }
+            } else if (type == byte[].class) {
+                attr.field.set(entity, rs.getBytes(index));
+            } else {
+                attr.field.set(entity, rs.getObject(index));
+            }
+        } catch (final IllegalAccessException e) {
+            throw new CloudRuntimeException("Yikes! ", e);
+        }
     }
 
     @Override
@@ -1286,7 +1176,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @Override
-    public int remove(SearchCriteria<T> sc) {
+    public int remove(SearchCriteria sc) {
         if (_removeSql == null) {
             return delete(sc);
         }
@@ -1355,7 +1245,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
     
     @Override @DB(txn=false)
-    public SearchCriteria<T> createSearchCriteria() {
+    public SearchCriteria createSearchCriteria() {
     	SearchBuilder<T> builder = createSearchBuilder();
     	return builder.create();
     }

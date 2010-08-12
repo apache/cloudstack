@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Id: dhcp_entry.sh 9804 2010-06-22 18:36:49Z alex $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/network/domr/dhcp_entry.sh $
+# $Id: dhcp_entry.sh 9804 2010-06-22 18:36:49Z alex $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.x.beta/java/scripts/network/domr/dhcp_entry.sh $
 # dhcp_entry.sh -- add dhcp entry on domr
 #
 # @VERSION@

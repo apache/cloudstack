@@ -59,7 +59,7 @@ public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long
     
     @Override
     public UserStatisticsVO findBy(long accountId, long dcId) {
-        SearchCriteria<UserStatisticsVO> sc = UserDcSearch.create();
+        SearchCriteria sc = UserDcSearch.create();
         sc.setParameters("account", accountId);
         sc.setParameters("dc", dcId);
         return findOneActiveBy(sc);
@@ -67,7 +67,7 @@ public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long
 
     @Override
     public UserStatisticsVO lock(long accountId, long dcId) {
-        SearchCriteria<UserStatisticsVO> sc = UserDcSearch.create();
+        SearchCriteria sc = UserDcSearch.create();
         sc.setParameters("account", accountId);
         sc.setParameters("dc", dcId);
         return lock(sc, true);
@@ -75,7 +75,7 @@ public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long
 
     @Override
     public List<UserStatisticsVO> listBy(long accountId) {
-        SearchCriteria<UserStatisticsVO> sc = UserSearch.create();
+        SearchCriteria sc = UserSearch.create();
         sc.setParameters("account", accountId);
         return search(sc, null);
     }

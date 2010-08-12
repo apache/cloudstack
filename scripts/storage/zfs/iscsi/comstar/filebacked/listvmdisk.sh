@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# $Id: listvmdisk.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/zfs/iscsi/comstar/filebacked/listvmdisk.sh $
+# $Id: listvmdisk.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/branches/2.1.x.beta/java/scripts/storage/zfs/iscsi/comstar/filebacked/listvmdisk.sh $
 # listvmdisk.sh -- list disks of a VM (iscsi mode)
 # OpenSolaris
 # Bugs: does not handle hexadecimal numbers. Decimal only!

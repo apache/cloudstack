@@ -20,9 +20,11 @@ package com.cloud.dc.dao;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Date;
+import java.util.Formatter;
 import java.util.List;
 
 import com.cloud.dc.DataCenterVnetVO;
+import com.cloud.exception.InternalErrorException;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -41,13 +43,13 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     private final SearchBuilder<DataCenterVnetVO> DcSearchAllocated;
     
     public List<DataCenterVnetVO> listAllocatedVnets(long dcId) {
-    	SearchCriteria<DataCenterVnetVO> sc = DcSearchAllocated.create();
+    	SearchCriteria sc = DcSearchAllocated.create();
     	sc.setParameters("dc", dcId);
     	return listActiveBy(sc);
     }
     
     public List<DataCenterVnetVO> findVnet(long dcId, String vnet) {
-    	SearchCriteria<DataCenterVnetVO> sc = VnetDcSearch.create();;
+    	SearchCriteria sc = VnetDcSearch.create();;
     	sc.setParameters("dc", dcId);
     	sc.setParameters("vnet", vnet);
     	return listActiveBy(sc);
@@ -86,7 +88,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     }
 
     public DataCenterVnetVO take(long dcId, long accountId) {
-        SearchCriteria<DataCenterVnetVO> sc = FreeVnetSearch.create();
+        SearchCriteria sc = FreeVnetSearch.create();
         sc.setParameters("dc", dcId);
         Date now = new Date();
         Transaction txn = Transaction.currentTxn();
@@ -109,7 +111,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     }
 
     public void release(String vnet, long dcId, long accountId) {
-        SearchCriteria<DataCenterVnetVO> sc = VnetDcSearchAllocated.create();
+        SearchCriteria sc = VnetDcSearchAllocated.create();
         sc.setParameters("vnet", vnet);
         sc.setParameters("dc", dcId);
         sc.setParameters("account", accountId);

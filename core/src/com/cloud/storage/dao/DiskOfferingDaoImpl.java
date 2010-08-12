@@ -50,20 +50,20 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
 
     @Override
     public List<DiskOfferingVO> listByDomainId(long domainId) {
-        SearchCriteria<DiskOfferingVO> sc = DomainIdSearch.create();
+        SearchCriteria sc = DomainIdSearch.create();
         sc.setParameters("domainId", domainId);
         // FIXME:  this should not be exact match, but instead should find all available disk offerings from parent domains
         return listActiveBy(sc);
     }
     
     @Override
-    public List<DiskOfferingVO> searchAll(SearchCriteria<DiskOfferingVO> sc, final Filter filter, final Boolean lock, final boolean cache) {
+    public List<DiskOfferingVO> searchAll(SearchCriteria sc, final Filter filter, final Boolean lock, final boolean cache) {
         sc.addAnd(_typeAttr, Op.EQ, Type.Disk);
         return super.searchAll(sc, filter, lock, cache);
     }
     
     @Override
-    public <K> List<K> searchAll(SearchCriteria<K> sc, final Filter filter) {
+    public List<Object[]> searchAll(SearchCriteria sc, final Filter filter) {
         sc.addAnd(_typeAttr, Op.EQ, Type.Disk);
         return super.searchAll(sc, filter);
     }

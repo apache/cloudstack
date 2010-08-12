@@ -56,7 +56,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
 	}
 	
 	public AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId) {
-        SearchCriteria<AsyncJobVO> sc = pendingAsyncJobSearch.create();
+        SearchCriteria sc = pendingAsyncJobSearch.create();
         sc.setParameters("instanceType", instanceType);
         sc.setParameters("instanceId", instanceId);
         sc.setParameters("status", AsyncJobResult.STATUS_IN_PROGRESS);
@@ -73,7 +73,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
 	}
 	
 	public List<AsyncJobVO> getExpiredJobs(Date cutTime, int limit) {
-		SearchCriteria<AsyncJobVO> sc = expiringAsyncJobSearch.create();
+		SearchCriteria sc = expiringAsyncJobSearch.create();
 		sc.setParameters("created", cutTime);
 		Filter filter = new Filter(AsyncJobVO.class, "created", true, 0L, (long)limit);
 		return listBy(sc, filter);

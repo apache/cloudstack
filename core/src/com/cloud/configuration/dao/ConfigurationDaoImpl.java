@@ -58,7 +58,7 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
         if (_configs == null) {
             _configs = new HashMap<String, String>();
 
-            SearchCriteria<ConfigurationVO> sc = InstanceSearch.create();
+            SearchCriteria sc = InstanceSearch.create();
             sc.setParameters("instance", "DEFAULT");
 
             List<ConfigurationVO> configurations = listBy(sc);
@@ -124,7 +124,7 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     
     @Override
     public String getValue(String name) {
-    	SearchCriteria<ConfigurationVO> sc = NameSearch.create();
+    	SearchCriteria sc = NameSearch.create();
         sc.setParameters("name", name);
         List<ConfigurationVO> configurations = listBy(sc);
         

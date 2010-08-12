@@ -87,7 +87,7 @@ public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, 
 
     @Override
     public NetworkGroupWorkVO findByVmId(long vmId, boolean taken) {
-        SearchCriteria<NetworkGroupWorkVO> sc = taken?VmIdTakenSearch.create():VmIdUnTakenSearch.create();
+        SearchCriteria sc = taken?VmIdTakenSearch.create():VmIdUnTakenSearch.create();
         sc.setParameters("vmId", vmId);
         return findOneBy(sc);
     }
@@ -96,7 +96,7 @@ public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, 
 	public NetworkGroupWorkVO take(long serverId) {
 		final Transaction txn = Transaction.currentTxn();
         try {
-            final SearchCriteria<NetworkGroupWorkVO> sc = UntakenWorkSearch.create();
+            final SearchCriteria sc = UntakenWorkSearch.create();
             sc.setParameters("step", Step.Scheduled);
 
             final Filter filter = new Filter(NetworkGroupWorkVO.class, null, true, 0l, 1l);//FIXME: order desc by update time?
@@ -138,7 +138,7 @@ public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, 
 	public void updateStep(Long vmId, Long logSequenceNumber, Step step) {
 		final Transaction txn = Transaction.currentTxn();
 		txn.start();
-        SearchCriteria<NetworkGroupWorkVO> sc = VmIdSeqNumSearch.create();
+        SearchCriteria sc = VmIdSeqNumSearch.create();
         sc.setParameters("vmId", vmId);
         sc.setParameters("seqno", logSequenceNumber);
         
@@ -158,7 +158,7 @@ public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, 
 
 	@Override
 	public NetworkGroupWorkVO findByVmIdStep(long vmId, Step step) {
-        SearchCriteria<NetworkGroupWorkVO> sc = VmIdStepSearch.create();
+        SearchCriteria sc = VmIdStepSearch.create();
         sc.setParameters("vmId", vmId);
         sc.setParameters("step", step);
         return findOneBy(sc);
@@ -183,7 +183,7 @@ public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, 
 
 	@Override
 	public int deleteFinishedWork(Date timeBefore) {
-		final SearchCriteria<NetworkGroupWorkVO> sc = CleanupSearch.create();
+		final SearchCriteria sc = CleanupSearch.create();
 		sc.setParameters("taken", timeBefore);
 		sc.setParameters("step", Step.Done);
 
@@ -192,7 +192,7 @@ public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, 
 
 	@Override
 	public List<NetworkGroupWorkVO> findUnfinishedWork(Date timeBefore) {
-		final SearchCriteria<NetworkGroupWorkVO> sc = CleanupSearch.create();
+		final SearchCriteria sc = CleanupSearch.create();
 		sc.setParameters("taken", timeBefore);
 		sc.setParameters("step", Step.Processing);
 

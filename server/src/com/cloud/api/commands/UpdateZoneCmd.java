@@ -25,7 +25,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
-import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.user.User;
@@ -38,85 +37,16 @@ public class UpdateZoneCmd extends BaseCmd {
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     static {
+    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DNS1, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DNS2, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.GUEST_CIDR_ADDRESS, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.INTERNAL_DNS1, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.INTERNAL_DNS2, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VNET, Boolean.FALSE));
-
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.GUEST_CIDR_ADDRESS, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
     }
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="dns1", type=CommandType.STRING)
-    private String dns1;
-
-    @Parameter(name="dns2", type=CommandType.STRING)
-    private String dns2;
-
-    @Parameter(name="guestcidraddress", type=CommandType.STRING)
-    private String guestCidrAddress;
-
-    @Parameter(name="id", type=CommandType.LONG, required=true)
-    private Long id;
-
-    @Parameter(name="internaldns1", type=CommandType.STRING)
-    private String internalDns1;
-
-    @Parameter(name="internaldns2", type=CommandType.STRING)
-    private String internalDns2;
-
-    @Parameter(name="name", type=CommandType.STRING)
-    private String zoneName;
-
-    @Parameter(name="vnet", type=CommandType.STRING)
-    private String vnet;
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public String getDns1() {
-        return dns1;
-    }
-
-    public String getDns2() {
-        return dns2;
-    }
-
-    public String getGuestCidrAddress() {
-        return guestCidrAddress;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getInternalDns1() {
-        return internalDns1;
-    }
-
-    public String getInternalDns2() {
-        return internalDns2;
-    }
-
-    public String getZoneName() {
-        return zoneName;
-    }
-
-    public String getVnet() {
-        return vnet;
-    }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
 
     @Override
     public String getName() {

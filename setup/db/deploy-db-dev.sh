@@ -39,6 +39,21 @@ PATHSEP=':'
 if [[ $OSTYPE == "cygwin" ]] ; then
   export CATALINA_HOME=`cygpath -m $CATALINA_HOME`
   PATHSEP=';'
+else
+  mysql="mysql"
+  service mysql status > /dev/null 2>/dev/null
+  if [ $? -eq 1 ]; then
+    mysql="mysqld"
+    service mysqld status > /dev/null 2>/dev/null
+    if [ $? -ne 0 ]; then
+      printf "Unable to find mysql daemon\n"
+      exit 7
+    fi
+  fi
+
+  echo "Starting mysql"
+  service $mysql start > /dev/null 2>/dev/null
+
 fi
 
 echo "Recreating Database."
@@ -64,8 +79,6 @@ fi
 
 CP=./
 
-CP=${CP}$PATHSEP$CATALINA_HOME/conf
-
 for file in $CATALINA_HOME/webapps/client/WEB-INF/lib/*.jar
 do
   CP=${CP}$PATHSEP$file
@@ -75,7 +88,7 @@ for file in $CATALINA_HOME/lib/*.jar; do
   CP=${CP}$PATHSEP$file
 done
 
-echo CP is $CP
+#echo CP is $CP
 
 java -cp $CP com.cloud.test.DatabaseConfig $*
 

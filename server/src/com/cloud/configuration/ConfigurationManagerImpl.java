@@ -52,8 +52,8 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.dao.IPAddressDao;
-import com.cloud.offering.ServiceOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.ServiceOffering.GuestIpType;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -123,10 +123,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
     
     public void updateConfiguration(long userId, String name, String value) throws InvalidParameterValueException, InternalErrorException {
-    	if (value != null && (value.trim().isEmpty() || value.equals("null"))) {
-    		value = null;
-    	}
-    	
     	String validationMsg = validateConfigurationValue(name, value);
     	
     	if (validationMsg != null) {
@@ -143,10 +139,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
     
     private String validateConfigurationValue(String name, String value) {
-    	if (value == null) {
-    		return null;
-    	}
-    	
     	Config c = Config.getConfig(name);
     	value = value.trim();
     	
@@ -704,9 +696,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     		internalDns1 = zone.getInternalDns1();
     	}
 
-    	if(guestCidr == null)
-    		guestCidr = zone.getGuestNetworkCidr();    	
-    	
     	boolean checkForDuplicates = !newZoneName.equals(oldZoneName);
     	checkZoneParameters(newZoneName, dns1, dns2, internalDns1, internalDns2, checkForDuplicates);
 
@@ -715,7 +704,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	zone.setDns2(dns2);
     	zone.setInternalDns1(internalDns1);
     	zone.setInternalDns2(internalDns2);
-    	zone.setGuestNetworkCidr(guestCidr);
+    	
+    	if(guestCidr != null)
+    		zone.setGuestNetworkCidr(guestCidr);
     	
     	if (vnetRange != null) {
     		zone.setVnet(vnetRange);
@@ -891,10 +882,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     }
     
-    public DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags) {
+    public DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, boolean mirrored, String tags) {
     	long diskSize = numGibibytes * 1024;
     	tags = cleanupTags(tags);
-		DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize,tags);
+		DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize, mirrored, tags);
 		return _diskOfferingDao.persist(newDiskOffering);
     }
     
@@ -928,7 +919,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 	    	{
 	    		if(_configDao.getValue("xen.public.network.device") == null || _configDao.getValue("xen.public.network.device").equals(""))
 	    		{
-	    			throw new InternalErrorException("For adding an untagged IP range, please set up xen.public.network.device");
+	    			throw new InternalErrorException("For adding an untagged vlan, please set up xen.public.network.device");
 	    		}
 	    	}
 	    	
@@ -941,17 +932,17 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	//remove this
     	if (vlanType.equals(VlanType.VirtualNetwork)) {
     		if (!(accountId == null && podId == null) && false) {
-    			throw new InvalidParameterValueException("IP ranges for the virtual network must be zone-wide.");
+    			throw new InvalidParameterValueException("VLANs for the virtual network must be zone-wide.");
     		}
     	} else if (vlanType.equals(VlanType.DirectAttached)) {
     		if (!((accountId != null && podId == null) || (accountId == null && podId != null))) {
-    			throw new InvalidParameterValueException("Direct Attached IP ranges must either be pod-wide, or for one account.");
+    			throw new InvalidParameterValueException("Direct Attached VLANs must either be pod-wide, or for one account.");
     		}
     		
     		if (accountId != null) {
     			// VLANs for an account must be tagged
         		if (vlanId.equals(Vlan.UNTAGGED)) {
-        			throw new InvalidParameterValueException("Direct Attached IP ranges for an account must be tagged.");
+        			throw new InvalidParameterValueException("Direct Attached VLANs for an account must be tagged.");
         		}
         		
         		// Check that the account ID is valid
@@ -964,7 +955,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         		List<HostPodVO> podsInZone = _podDao.listByDataCenterId(zone.getId());
         		for (HostPodVO pod : podsInZone) {
         			if (_podVlanMapDao.listPodVlanMapsByPod(pod.getId()).size() > 0) {
-        				throw new InvalidParameterValueException("Zone " + zone.getName() + " already has pod-wide IP ranges. A zone may contain either pod-wide IP ranges or account-wide IP ranges, but not both.");
+        				throw new InvalidParameterValueException("Zone " + zone.getName() + " already has pod VLANs. A zone may contain either pod VLANs or account VLANs, but not both.");
         			}
         		}
         		
@@ -973,13 +964,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         		for (AccountVlanMapVO accountVlanMap : accountVlanMaps) {
         			VlanVO vlan = _vlanDao.findById(accountVlanMap.getVlanDbId());
         			if (vlan.getDataCenterId() == zone.getId().longValue()) {
-        				throw new InvalidParameterValueException("The account " + account.getAccountName() + " is already assigned to an IP range in zone " + zone.getName() + ".");
+        				throw new InvalidParameterValueException("The account " + account.getAccountName() + " is already assigned to the VLAN with ID " + vlan.getVlanId() + " in zone " + zone.getName() + ".");
         			}
         		}
     		} else if (podId != null) {
     			// Pod-wide VLANs must be untagged
         		if (!vlanId.equals(Vlan.UNTAGGED)) {
-        			throw new InvalidParameterValueException("Direct Attached IP ranges for a pod must be untagged.");
+        			throw new InvalidParameterValueException("Direct Attached VLANs for a pod must be untagged.");
         		}
         		
         		// Check that the pod ID is valid
@@ -993,13 +984,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         		for (AccountVlanMapVO accountVlanMap : accountVlanMaps) {
         			VlanVO vlan = _vlanDao.findById(accountVlanMap.getVlanDbId());
         			if (vlan.getDataCenterId() == zone.getId().longValue()) {
-        				throw new InvalidParameterValueException("Zone " + zone.getName() + " already has account-wide IP ranges. A zone may contain either pod-wide IP ranges or account-wide IP ranges, but not both.");
+        				throw new InvalidParameterValueException("Zone " + zone.getName() + " already has account VLANs. A zone may contain either pod VLANs or account VLANs, but not both.");
         			}
         		}
         				
     		}
     	} else {
-    		throw new InvalidParameterValueException("Please specify a valid IP range type. Valid types are: " + VlanType.values().toString());
+    		throw new InvalidParameterValueException("Please specify a valid VLAN type. Valid types are: " + VlanType.values().toString());
     	}
 
     	// Make sure the gateway is valid
@@ -1031,7 +1022,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		String guestSubnet = NetUtils.getCidrSubNet(guestIpNetwork, cidrSizeToUse);
 		
 		if (newVlanSubnet.equals(guestSubnet)) {
-			throw new InvalidParameterValueException("The new IP range you have specified has the same subnet as the guest network in zone: " + zone.getName() + ". Please specify a different gateway/netmask.");
+			throw new InvalidParameterValueException("The new VLAN you have specified has the same subnet as the guest network in zone: " + zone.getName() + ". Please specify a different gateway/netmask.");
 		}
 		
 		// Check if there are any errors with the IP range
@@ -1053,16 +1044,16 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 			}
 			
 			if (!vlanId.equals(vlan.getVlanId()) && newVlanSubnet.equals(otherVlanSubnet)) {
-				throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanId() + " in zone " + zone.getName() + " has the same subnet. Please specify a different gateway/netmask.");
+				throw new InvalidParameterValueException("The VLAN with ID " + vlan.getVlanId() + " in zone " + zone.getName() + " has the same subnet. Please specify a different gateway/netmask.");
 			}
 			
 			if (vlanId.equals(vlan.getVlanId()) && newVlanSubnet.equals(otherVlanSubnet)) {
 				if (NetUtils.ipRangesOverlap(startIP, endIP, otherVlanStartIP, otherVlanEndIP)) {
-					throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanId() + " already has IPs that overlap with the new range. Please specify a different start IP/end IP.");
+					throw new InvalidParameterValueException("The VLAN with ID " + vlan.getVlanId() + " already has IPs that overlap with the new range. Please specify a different start IP/end IP.");
 				}
 				
 				if (!vlanGateway.equals(otherVlanGateway)) {
-					throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanId() + " has already been added with gateway " + otherVlanGateway + ". Please specify a different tag.");
+					throw new InvalidParameterValueException("The VLAN with ID " + vlan.getVlanId() + " has already been added with gateway " + otherVlanGateway + ". Please specify a different VLAN ID.");
 				}
 			}
 		}
@@ -1103,7 +1094,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 			_podVlanMapDao.persist(podVlanMapVO);
 		}
 		
-		String eventMsg = "Successfully created new IP range (tag = " + vlanId + ", gateway = " + vlanGateway + ", netmask = " + vlanNetmask + ", start IP = " + startIP;
+		String eventMsg = "Successfully created new VLAN (tag = " + vlanId + ", gateway = " + vlanGateway + ", netmask = " + vlanNetmask + ", start IP = " + startIP;
 		if (endIP != null) {
 			eventMsg += ", end IP = " + endIP;
 		}
@@ -1120,17 +1111,17 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     public boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId) throws InvalidParameterValueException {
     	VlanVO vlan = _vlanDao.findById(vlanDbId);
     	if (vlan == null) {
-    		throw new InvalidParameterValueException("Please specify a valid IP range id.");
+    		throw new InvalidParameterValueException("Please specify a valid VLAN id.");
     	}
     	
     	// Check if the VLAN has any allocated public IPs
     	if (_publicIpAddressDao.countIPs(vlan.getDataCenterId(), vlanDbId, true) > 0) {
-    		throw new InvalidParameterValueException("The IP range can't be deleted because it has allocated public IP addresses.");
+    		throw new InvalidParameterValueException("The VLAN can't be deleted because it has allocated public IP addresses.");
     	}
     	
     	// Check if the VLAN is being used by any domain router
     	if (_domrDao.listByVlanDbId(vlanDbId).size() > 0) {
-    		throw new InvalidParameterValueException("The IP range can't be deleted because it is being used by a domain router.");
+    		throw new InvalidParameterValueException("The VLAN can't be deleted because it is being used by a domain router.");
     	}
     	
     	Long accountId = null;
@@ -1158,7 +1149,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 			String[] ipRange = vlan.getIpRange().split("\\-");
 			String startIP = ipRange[0];
 			String endIP = (ipRange.length > 1) ? ipRange[1] : null;
-			String eventMsg = "Successfully deleted IP range (tag = " + vlan.getVlanId() + ", gateway = " + vlan.getVlanGateway() + ", netmask = " + vlan.getVlanNetmask() + ", start IP = " + startIP;
+			String eventMsg = "Successfully deleted VLAN (tag = " + vlan.getVlanId() + ", gateway = " + vlan.getVlanGateway() + ", netmask = " + vlan.getVlanNetmask() + ", start IP = " + startIP;
 			if (endIP != null) {
 				eventMsg += ", end IP = " + endIP;
 			}
@@ -1415,19 +1406,19 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		
 		// Check that the IPs that are being added are compatible with the VLAN's gateway and netmask
 		if (vlanNetmask == null) {
-			throw new InvalidParameterValueException("Please ensure that your IP range's netmask is specified");
+			throw new InvalidParameterValueException("Please ensure that your VLAN's netmask is specified");
 		}
 		
 		if (endIP != null && !NetUtils.sameSubnet(startIP, endIP, vlanNetmask)) {
-			throw new InvalidParameterValueException("Please ensure that your start IP and end IP are in the same subnet, as per the IP range's netmask.");
+			throw new InvalidParameterValueException("Please ensure that your start IP and end IP are in the same subnet, as per the VLAN's netmask.");
 		}
 		
 		if (!NetUtils.sameSubnet(startIP, vlanGateway, vlanNetmask)) {
-			throw new InvalidParameterValueException("Please ensure that your start IP is in the same subnet as your IP range's gateway, as per the IP range's netmask.");
+			throw new InvalidParameterValueException("Please ensure that your start IP is in the same subnet as your VLAN's gateway, as per the VLAN's netmask.");
 		}
 		
 		if (endIP != null && !NetUtils.sameSubnet(endIP, vlanGateway, vlanNetmask)) {
-			throw new InvalidParameterValueException("Please ensure that your end IP is in the same subnet as your IP range's gateway, as per the IP range's netmask.");
+			throw new InvalidParameterValueException("Please ensure that your end IP is in the same subnet as your VLAN's gateway, as per the VLAN's netmask.");
 		}
 	}
 	
@@ -1600,8 +1591,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     			logParams += ", ";
     		}
     		
-    		String[] valList = param.split("\\=");
-    		String val = (valList.length < 2) ? "null" : valList[1];
+    		String val = param.split("\\=")[1];
     		if (val.equals("null")) {
     			continue;
     		}
@@ -1637,22 +1627,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	if (ipRanges == null)
     		throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "may be wrong, should be 1~16");
     	return ipRanges;
-    }
+    }           
 
-	@Override
-	public boolean addConfig(String instance, String component,String category, String name, String value, String description) 
-	{
-		try
-		{
-			ConfigurationVO entity = new ConfigurationVO(category, instance, component, name, value, description);
-			_configDao.persist(entity);
-			s_logger.info("Successfully added configuration value into db: category:"+category+" instance:"+instance+" component:"+component+" name:"+name+" value:"+value);
-			return true;
-		}
-		catch(Exception ex)
-		{
-			s_logger.error("Unable to add the new config entry:",ex);
-			return false;
-		}
-	}           
 }

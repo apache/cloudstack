@@ -248,37 +248,23 @@ public class LibvirtVMDef {
 				return _bus;
 			}
 		}
-		enum diskFmtType {
-			RAW("raw"),
-			QCOW2("qcow2");
-			String _fmtType;
-			diskFmtType(String fmt) {
-				_fmtType = fmt;
-			}
-			@Override
-            public String toString() {
-				return _fmtType;
-			}
-		}
 		
 		private deviceType _deviceType; /*floppy, disk, cdrom*/
 		private diskType _diskType;
 		private String _sourcePath;
 		private String _diskLabel;
 		private diskBus _bus;
-		private diskFmtType _diskFmtType; /*qcow2, raw etc.*/
 		private boolean _readonly = false;
 		private boolean _shareable = false;
 		private boolean _deferAttach = false;
 		public void setDeviceType(deviceType deviceType) {
 			_deviceType = deviceType;
 		}
-		public void defFileBasedDisk(String filePath, String diskLabel, diskBus bus, diskFmtType diskFmtType) {
+		public void defFileBasedDisk(String filePath, String diskLabel, diskBus bus) {
 			_diskType = diskType.FILE;
 			_deviceType = deviceType.DISK;
 			_sourcePath = filePath;
 			_diskLabel = diskLabel;
-			_diskFmtType = diskFmtType;
 			_bus = bus;
 
 		}
@@ -316,7 +302,6 @@ public class LibvirtVMDef {
 			}
 			diskBuilder.append(" type='" + _diskType + "'");
 			diskBuilder.append(">\n");
-			diskBuilder.append("<driver name='qemu'" + " type='" + _diskFmtType + "'/>\n");
 			if (_diskType == diskType.FILE) {
 				diskBuilder.append("<source ");
 				if (_sourcePath != null) {
@@ -611,14 +596,14 @@ public class LibvirtVMDef {
 		vm.addComp(term);
 		
 		devicesDef devices = new devicesDef();
-		devices.setEmulatorPath("/usr/bin/cloud-qemu-system-x86_64");
+		devices.setEmulatorPath("/usr/bin/qemu-kvm");
 		
 		diskDef hda = new diskDef();
-		hda.defFileBasedDisk("/path/to/hda1", "hda", diskDef.diskBus.IDE, diskDef.diskFmtType.QCOW2);
+		hda.defFileBasedDisk("/path/to/hda1", "hda", diskDef.diskBus.IDE);
 		devices.addDevice(hda);
 		
 		diskDef hdb = new diskDef();
-		hdb.defFileBasedDisk("/path/to/hda2", "hdb",  diskDef.diskBus.IDE, diskDef.diskFmtType.QCOW2);
+		hdb.defFileBasedDisk("/path/to/hda2", "hdb",  diskDef.diskBus.IDE);
 		devices.addDevice(hdb);
 		
 		interfaceDef pubNic = new interfaceDef();

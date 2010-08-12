@@ -1,3 +1,5 @@
+<script type="text/javascript" src="scripts/cloud.core.templates.js"></script>
+
 <div class="submenu_links">		
     <div class="submenu_links_on" id="submenu_template">Template</div>
     <div class="submenu_links_off" id="submenu_iso">ISO</div>       
@@ -5,7 +7,7 @@
 
 
 <!-- *** Template (begin) *** -->
-<div class="maincontent" id="submenu_content_template" style="display:block;">
+<div class="maincontent" id="submenu_content_template" style="display:none;">
 	<div id="maincontent_title">
     	<div class="maintitle_icon"> <img src="images/templatestitle_icons.gif" title="templates" /> </div>
 		<h1>Templates</h1>
@@ -146,8 +148,7 @@
 		    <div class="netgrid_celltitles">
 			    <div class="tempbiticons"><img src="images/password_selectedicon.gif" id="template_password"/></div>	
 			    <div class="tempbiticons"><img src="images/public_selectedicon.gif"   id="template_public"/></div>		
-                <div class="tempbiticons"><img src="images/featured_selectedicon.gif" id="template_featured"/></div>    
-                <div class="tempbiticons"><img src="images/crosszone_selectedicon.gif" id="template_crosszones"/></div>	            				
+                <div class="tempbiticons"><img src="images/featured_selectedicon.gif" id="template_featured"/></div>                				
 		    </div>
 	    </div>
 	    <div class="grid_smallgenrow_cell" style="width:7%;" >
@@ -188,19 +189,14 @@
 					<label>Display Text:</label>
 					<input class="text" type="text" id="edit_template_display_text" style="width:250px"/>
 					<div id="edit_template_display_text_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
-				</li>				
-				<li>
-					<label>OS Type:</label>
-					<select class="select" id="edit_template_os_type">
-					</select>
-				</li>					
+				</li>
 				<li>
 					<label>Password Enabled?:</label>
 					<select class="select" id="edit_template_password">						
 						<option value="false">No</option>
 						<option value="true">Yes</option>
 					</select>
-				</li>				
+				</li>
 				<li>
 					<label>Public?:</label>
 					<select class="select" id="edit_template_public">
@@ -324,7 +320,7 @@
 
 
 <!-- *** ISO (begin) *** -->
-<div class="maincontent" id="submenu_content_iso" style="display:block;">
+<div class="maincontent" id="submenu_content_iso" style="display:none;">
 	<div id="maincontent_title">
     	<div class="maintitle_icon"> <img src="images/isotitle_icons.gif" title="templates" /> </div>
 		<h1>ISO</h1>

@@ -29,6 +29,7 @@ import com.cloud.host.Host.Type;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.ConsoleProxyVO;
+import com.cloud.vm.State;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.ConsoleProxyDao;
 
@@ -47,7 +48,7 @@ public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager imp
     
     @Override
     public ConsoleProxyVO assignProxy(long dataCenterId, long userVmId) {
-        ConsoleProxyVO proxy =  new ConsoleProxyVO(1l, "EmbeddedProxy", null, null, null,
+        ConsoleProxyVO proxy =  new ConsoleProxyVO(1l, "EmbeddedProxy", State.Running, null, null, null,
                 "02:02:02:02:02:02",
                 "127.0.0.1",
                 "255.255.255.0",

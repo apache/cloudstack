@@ -49,8 +49,8 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import com.cloud.offering.ServiceOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.ServiceOffering.GuestIpType;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
@@ -768,7 +768,7 @@ public class DatabaseConfig {
         String name = _currentObjectParams.get("name");
         String displayText = _currentObjectParams.get("displayText");
         int diskSpace = Integer.parseInt(_currentObjectParams.get("diskSpace"));
-//        boolean mirroring = Boolean.parseBoolean(_currentObjectParams.get("mirrored"));
+        boolean mirroring = Boolean.parseBoolean(_currentObjectParams.get("mirrored"));
         String tags = _currentObjectParams.get("tags");
         
         if (tags != null && tags.length() > 0) {
@@ -780,7 +780,8 @@ public class DatabaseConfig {
             newTags.delete(newTags.length() - 1, newTags.length());
             tags = newTags.toString();
         }
-        DiskOfferingVO diskOffering = new DiskOfferingVO(domainId, name, displayText, diskSpace, tags);
+        
+        DiskOfferingVO diskOffering = new DiskOfferingVO(domainId, name, displayText, diskSpace, mirroring, tags);
         DiskOfferingDaoImpl offering = ComponentLocator.inject(DiskOfferingDaoImpl.class);
         try {
             offering.persist(diskOffering);

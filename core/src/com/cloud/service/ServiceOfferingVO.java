@@ -27,7 +27,6 @@ import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.DiskOfferingVO;
 
 @Entity

@@ -25,13 +25,9 @@ import com.cloud.api.BaseCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
-import com.cloud.event.EventTypes;
-import com.cloud.event.EventVO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
-import com.cloud.user.Account;
-import com.cloud.user.User;
 import com.cloud.vm.DomainRouter;
 import com.google.gson.Gson;
 
@@ -49,14 +45,11 @@ public class StartRouterExecutor extends VMOperationExecutor {
 	    	asyncMgr.syncAsyncJobExecution(job.getId(), "Router", param.getVmId());
 			return true;
 		} else {
-		    boolean success = false;
 	    	try {
 	    		DomainRouter router = managementServer.startRouter(param.getVmId(), param.getEventId());
-	    		if(router != null){
-	    		    success = true;
+	    		if(router != null)
 	    			asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, 
 						RouterExecutorHelper.composeResultObject(managementServer, router));
-	    		}
 	    		else
 	    			asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, 
 						"operation failed");
@@ -67,11 +60,6 @@ public class StartRouterExecutor extends VMOperationExecutor {
 				s_logger.warn("Unable to start router " + param.getVmId() + ":" + e.getMessage(), e);
 				asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, 
 					e.getMessage());
-			} finally {
-			    if(!success){
-                    // Save completed event when operation fails
-                    asyncMgr.getExecutorContext().getManagementServer().saveEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_START, "Failed to start router", null, param.getEventId());
-			    }
 			}
 	    	return true;
 		}

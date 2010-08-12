@@ -51,10 +51,9 @@ public class CreateVolumeFromSnapshotCommand extends SnapshotCommand {
                                            Long   accountId,
                                            Long   volumeId,
                                            String backedUpSnapshotUuid,
-                                           String backedUpSnapshotName,
                                            String templatePath) 
     {
-        super(primaryStoragePoolNameLabel, secondaryStoragePoolURL, backedUpSnapshotUuid, backedUpSnapshotName, dcId, accountId, volumeId);
+        super(primaryStoragePoolNameLabel, secondaryStoragePoolURL, backedUpSnapshotUuid, dcId, accountId, volumeId);
         this.templatePath = templatePath;
     }
 
