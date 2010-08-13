@@ -91,22 +91,7 @@ public class VhdProcessor implements Processor {
             }
         }
         
-        boolean findKnownCreator = false;
-        for (int i = 0; i < citrix_creator_app.length; i++) {
-        	if (Arrays.equals(creatorApp, citrix_creator_app[i])) {
-        		findKnownCreator = true;
-        		break;
-        	}
-        }
-        if (!findKnownCreator) {
-        	/*Only support VHD image created by citrix xenserver, and xenconverter*/
-        	String readableCreator = "";
-        	for (int j = 0; j < creatorApp.length; j++) {
-        		readableCreator += (char)creatorApp[j];
-        	}
-        	throw new InternalErrorException("Image creator is:" + readableCreator +", is not supported");
-        }
-		
+        //imageSignatureCheck(creatorApp);
         
         long templateSize = NumbersUtil.bytesToLong(currentSize);
         info.virtualSize = templateSize;
@@ -138,5 +123,23 @@ public class VhdProcessor implements Processor {
     @Override
     public boolean stop() {
         return true;
+    }
+    
+    private void imageSignatureCheck(byte[] creatorApp) throws InternalErrorException {
+    	boolean findKnownCreator = false;
+    	for (int i = 0; i < citrix_creator_app.length; i++) {
+    		if (Arrays.equals(creatorApp, citrix_creator_app[i])) {
+    			findKnownCreator = true;
+    			break;
+    		}
+    	}
+    	if (!findKnownCreator) {
+    		/*Only support VHD image created by citrix xenserver, and xenconverter*/
+    		String readableCreator = "";
+    		for (int j = 0; j < creatorApp.length; j++) {
+    			readableCreator += (char)creatorApp[j];
+    		}
+    		throw new InternalErrorException("Image creator is:" + readableCreator +", is not supported");
+    	}
     }
 }
