@@ -72,6 +72,7 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VMTemplateHostVO;
@@ -2184,4 +2185,7 @@ public interface ManagementServer {
 	boolean addConfig(String instance, String component, String category, String name, String value, String description);
 	
 	boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException;
+	
+	boolean checkIfMaintenable(long hostId);
+
 }

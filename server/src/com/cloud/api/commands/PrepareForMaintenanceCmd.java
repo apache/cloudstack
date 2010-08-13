@@ -28,6 +28,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.HostVO;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.Pair;
 
 public class PrepareForMaintenanceCmd extends BaseCmd {
@@ -62,6 +63,15 @@ public class PrepareForMaintenanceCmd extends BaseCmd {
     		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Host with id " + hostId.toString() + " doesn't exist");
     	}
         
+    	//if this is the only host in the pool, you cannot enable maintenance on this host
+    	boolean maintenable = getManagementServer().checkIfMaintenable(host.getId());
+    	
+    	if(!maintenable)
+    	{
+    		s_logger.warn("Unable to schedule host maintenance -- there is no host to take over as master in the pool");
+    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to schedule host maintenance -- there is no host to take over as master in the pool");
+    	}
+    	
     	long jobId = 0;
     	try {
     		jobId = getManagementServer().prepareForMaintenanceAsync(hostId);
@@ -70,7 +80,7 @@ public class PrepareForMaintenanceCmd extends BaseCmd {
     	}
     	
         if(jobId == 0) {
-        	s_logger.warn("Unable to schedule async-job for PrepareForMaintenance comamnd");
+        	s_logger.warn("Unable to schedule async-job for PrepareForMaintenance command");
         } else {
 	        if(s_logger.isDebugEnabled())
 	        	s_logger.debug("PrepareForMaintenance command has been accepted, job id: " + jobId);

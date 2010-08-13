@@ -763,7 +763,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             Map<Host, Host.Record> hostMap = Host.getAllRecords(conn);
             if (hostMap.size() == 1) {
                 s_logger.debug("There's no one to take over as master");
-                return new MaintainAnswer(cmd, "Only master in the pool");
+                return new MaintainAnswer(cmd,false, "Only master in the pool");
             }
             Host newMaster = null;
             Host.Record newMasterRecord = null;
