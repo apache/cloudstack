@@ -585,7 +585,7 @@ def rpm(context):
 	
 	if _exists(sourcedir): shutil.rmtree(sourcedir)
 	for a in ["RPMS/noarch","SRPMS","BUILD","SPECS","SOURCES"]: mkdir_p(_join(outputdir,a))
-	os.link(tarball,_join(sourcedir,tarball))
+	shutil.copy(tarball,_join(sourcedir,tarball))
 
 	specfile = "%s.spec"%APPNAME
 	checkdeps = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"--nobuild",specfile])
