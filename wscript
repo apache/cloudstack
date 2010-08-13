@@ -592,10 +592,11 @@ def rpm(context):
 	Utils.pprint("GREEN","Building RPMs")
 	tarball = Scripting.dist()
 	
-	#if _isdir(outputdir): shutil.rmtree(outputdir)
+	shutil.rmtree(_join(outputdir,"SOURCES"))
 	for a in ["RPMS/noarch","SRPMS","BUILD","SPECS","SOURCES"]: mkdir_p(_join(outputdir,a))
+	os.link(tarball,_join(outputdir,"SOURCES",tarball))
+
 	specfile = "%s.spec"%APPNAME
-	shutil.copy(tarball,_join(outputdir,"SOURCES"))
 	checkdeps = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"--nobuild",specfile])
 	dorpm = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"-ba",specfile]+buildnumber+prerelease)
 	try: checkdeps()
@@ -635,8 +636,9 @@ def deb(context):
 	Utils.pprint("GREEN","Building DEBs")
 	tarball = Scripting.dist()
 	
-	#if _isdir(outputdir): shutil.rmtree(outputdir)
+	shutil.rmtree(outputdir)
 	mkdir_p(outputdir)
+
 	f = tarfile.open(tarball,'r:bz2')
 	f.extractall(path=outputdir)
 	srcdir = "%s/%s-%s"%(outputdir,APPNAME,VERSION)
@@ -653,7 +655,6 @@ def deb(context):
 		Utils.pprint("YELLOW","Dependencies might be missing.  Trying to auto-install them...")
 		installdebdeps(context)
 	dodeb()
-	shutil.rmtree(srcdir)
 
 def uninstallrpms(context):
 	"""uninstalls any Cloud Stack RPMs on this system"""
