@@ -70,6 +70,7 @@ import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
+import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
@@ -1203,6 +1204,23 @@ public class ManagementServerImpl implements ManagementServer {
         AccountVO acctForUpdate = _accountDao.createForUpdate();
         acctForUpdate.setState(Account.ACCOUNT_STATE_ENABLED);
         success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
+        return success;
+    }
+    	
+    
+    @Override
+    public boolean enableAccount(EnableAccountCmd cmd) throws InvalidParameterValueException{
+    	String accountName = cmd.getAccountName();
+    	Long domainId = cmd.getDomainId();
+        boolean success = false;
+        Account account = _accountDao.findActiveAccount(accountName, domainId);
+
+        //Check if account exists
+        if (account == null) {
+        	s_logger.error("Unable to find account " + accountName + " in domain " + domainId);
+    		throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+        }
+        success = enableAccount(account.getId());
         return success;
     }
 

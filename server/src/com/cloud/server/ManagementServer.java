@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.alert.AlertVO;
+import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
@@ -210,6 +211,14 @@ public interface ManagementServer {
      * @return true if enable was successful, false otherwise
      */
     boolean enableAccount(long accountId);
+    
+    
+    /**
+     * Enables an account by accountId
+     * @param accountId
+     * @return true if enable was successful, false otherwise
+     */
+    boolean enableAccount(EnableAccountCmd cmd) throws InvalidParameterValueException;
 
     /**
      * Locks an account by accountId.  A locked account cannot access the API, but will still have running VMs/IP addresses allocated/etc.
