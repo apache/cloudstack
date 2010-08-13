@@ -47,7 +47,7 @@ public class VhdProcessor implements Processor {
     private int vhd_footer_creator_app_offset = 28;
     private int vhd_footer_creator_ver_offset = 32;
     private int vhd_footer_current_size_offset = 48;
-    private byte[] citrix_creator_app = {0x74, 0x61, 0x70, 0x00}; /*"tap "*/
+    private byte[][] citrix_creator_app = {{0x74, 0x61, 0x70, 0x00},{0x43, 0x54, 0x58, 0x53}}; /*"tap ", and "CTXS"*/
 
     @Override
     public FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException {
@@ -91,10 +91,22 @@ public class VhdProcessor implements Processor {
             }
         }
         
-        if (!Arrays.equals(creatorApp, citrix_creator_app)) {
-        	/*Only support VHD image created by citrix xenserver*/
-        	throw new InternalErrorException("Image creator is:" + creatorApp.toString() +", is not supported");
+        boolean findKnownCreator = false;
+        for (int i = 0; i < citrix_creator_app.length; i++) {
+        	if (Arrays.equals(creatorApp, citrix_creator_app[i])) {
+        		findKnownCreator = true;
+        		break;
+        	}
         }
+        if (!findKnownCreator) {
+        	/*Only support VHD image created by citrix xenserver, and xenconverter*/
+        	String readableCreator = "";
+        	for (int j = 0; j < creatorApp.length; j++) {
+        		readableCreator += (char)creatorApp[j];
+        	}
+        	throw new InternalErrorException("Image creator is:" + readableCreator +", is not supported");
+        }
+		
         
         long templateSize = NumbersUtil.bytesToLong(currentSize);
         info.virtualSize = templateSize;
