@@ -5796,14 +5796,16 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             if (checkSR(sr)) {
                 return sr;
             }
+            throw new CloudRuntimeException("Check this SR failed");
+        } else {
+	
+	        if (pool.getPoolType() == StoragePoolType.NetworkFilesystem)
+	            return getNfsSR(pool);
+	        else if (pool.getPoolType() == StoragePoolType.IscsiLUN)
+	            return getIscsiSR(conn, pool);
+	        else
+	            throw new CloudRuntimeException("The pool type: " + pool.getPoolType().name() + " is not supported.");
         }
-
-        if (pool.getPoolType() == StoragePoolType.NetworkFilesystem)
-            return getNfsSR(pool);
-        else if (pool.getPoolType() == StoragePoolType.IscsiLUN)
-            return getIscsiSR(conn, pool);
-        else
-            throw new CloudRuntimeException("The pool type: " + pool.getPoolType().name() + " is not supported.");
 
     }
 
