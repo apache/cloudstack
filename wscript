@@ -579,11 +579,13 @@ def rpm(context):
 	if not Options.options.blddir: outputdir = _join(context.curdir,blddir,"rpmbuild")
 	else:			   outputdir = _join(_abspath(Options.options.blddir),"rpmbuild")
 	Utils.pprint("GREEN","Building RPMs")
+
 	tarball = Scripting.dist()
+	sourcedir = _join(outputdir,"SOURCES")
 	
-	shutil.rmtree(_join(outputdir,"SOURCES"))
+	if _exists(sourcedir): shutil.rmtree(sourcedir)
 	for a in ["RPMS/noarch","SRPMS","BUILD","SPECS","SOURCES"]: mkdir_p(_join(outputdir,a))
-	os.link(tarball,_join(outputdir,"SOURCES",tarball))
+	os.link(tarball,_join(sourcedir,tarball))
 
 	specfile = "%s.spec"%APPNAME
 	checkdeps = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"--nobuild",specfile])
@@ -623,14 +625,15 @@ def deb(context):
 	if not Options.options.blddir: outputdir = _join(context.curdir,blddir,"debbuild")
 	else:			   outputdir = _join(_abspath(Options.options.blddir),"debbuild")
 	Utils.pprint("GREEN","Building DEBs")
-	tarball = Scripting.dist()
-	
-	shutil.rmtree(outputdir)
+
+	tarball = Scripting.dist()	
+	srcdir = "%s/%s-%s"%(outputdir,APPNAME,VERSION)
+
+	if _exists(srcdir): shutil.rmtree(srcdir)
 	mkdir_p(outputdir)
 
 	f = tarfile.open(tarball,'r:bz2')
 	f.extractall(path=outputdir)
-	srcdir = "%s/%s-%s"%(outputdir,APPNAME,VERSION)
 	if tempchangelog:
 		f = file(_join(srcdir,"debian","changelog"),"w")
 		f.write(tempchangelog)
