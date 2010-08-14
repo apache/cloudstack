@@ -14,6 +14,7 @@ for pythonpath in (
 		if os.path.isdir(pythonpath): sys.path.insert(0,pythonpath)
 # ---- End snippet of code ----
 import cloud_utils
+from cloud_utils import stderr
 
 E_GENERIC= 1
 E_NOKVM = 2
@@ -26,13 +27,6 @@ E_FWRECONFIGFAILED = 8
 E_CPRECONFIGFAILED = 9
 E_CPFAILEDTOSTART = 10
 E_NOFQDN = 11
-
-
-def stderr(msgfmt,*args):
-	msgfmt += "\n"
-	if args: sys.stderr.write(msgfmt%args)
-	else: sys.stderr.write(msgfmt)
-	sys.stderr.flush()
 
 def bail(errno=E_GENERIC,message=None,*args):
 	if message: stderr(message,*args)
@@ -133,10 +127,11 @@ CentOS = os.path.exists("/etc/centos-release") or ( os.path.exists("/etc/redhat-
 
 def main():
 	# parse cmd line	
-	opts, args = getopt.getopt(sys.argv[1:], "", ["host=", "zone=", "pod="])
+	opts, args = getopt.getopt(sys.argv[1:], "a", ["host=", "zone=", "pod="])
 	host=None
 	zone=None
 	pod=None
+    	autoMode=False
 	do_check_kvm = True	
 	for opt, arg in opts:
 		if opt == "--host":
@@ -148,8 +143,13 @@ def main():
 		elif opt == "--pod":
 		        if arg != "":
 				pod = arg
+        	elif opt == "-a":
+            		autoMode=True
 	servicename = "@PACKAGE@-console-proxy"
 	
+	if autoMode:
+		cloud_utils.setLogFile("/var/log/cloud/setupConsoleProxy.log")
+
 	stderr("Welcome to the Cloud Console Proxy setup")
 	stderr("")
 

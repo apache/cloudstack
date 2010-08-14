@@ -100,6 +100,7 @@ import com.cloud.host.Status.Event;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
 import com.cloud.maid.StackMaid;
 import com.cloud.maint.UpgradeManager;
 import com.cloud.network.IPAddressVO;
@@ -460,11 +461,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         if (server == null) {
             return null;
         }
-
+        
         long id = server.getId();
 
         AgentAttache attache = createAttache(id, server, resource);
-        notifyMonitorsOfConnection(attache, startup);
+        if (!resource.IsRemoteAgent())
+        	notifyMonitorsOfConnection(attache, startup);
         return attache;
     }
 
@@ -1550,7 +1552,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
     protected AgentAttache createAttache(long id, HostVO server, ServerResource resource) {
         s_logger.debug("Adding directly connect host for " + id);
-        if (resource instanceof DummySecondaryStorageResource) {
+        if (resource instanceof DummySecondaryStorageResource || resource instanceof KvmDummyResourceBase) {
         	return new DummyAttache(id, false);
         }
         final DirectAgentAttache attache = new DirectAgentAttache(id, resource, server.getStatus() == Status.Maintenance
