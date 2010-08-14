@@ -23,7 +23,7 @@ import com.cloud.resource.ServerResource;
 import com.cloud.storage.resource.StoragePoolResource;
 
 public class VmwareResource implements StoragePoolResource, ServerResource {
-
+	private boolean _isRemoteAgent = false;
 	@Override
 	public DownloadAnswer execute(PrimaryStorageDownloadCommand cmd) {
 		// TODO Auto-generated method stub
@@ -119,4 +119,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource {
 		// TODO Auto-generated method stub
 		return false;
 	}
+	
+	public boolean IsRemoteAgent() {
+    	return _isRemoteAgent;
+    }
+    
+    public void setRemoteAgent(boolean remote) {
+    	_isRemoteAgent = remote;
+    }
 }

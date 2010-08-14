@@ -223,6 +223,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     protected String _guestNetworkName;
     protected int _wait;
     protected IAgentControl _agentControl;
+    protected boolean _isRemoteAgent = false;
 
     protected final XenServerHost _host = new XenServerHost();
 
@@ -6072,6 +6073,13 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         _agentControl = agentControl;
     }
 
+    public boolean IsRemoteAgent() {
+    	return _isRemoteAgent;
+    }
+    
+    public void setRemoteAgent(boolean remote) {
+    	_isRemoteAgent = remote;
+    }
 
     
     protected Answer execute(PoolEjectCommand cmd) {

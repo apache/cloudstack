@@ -40,5 +40,5 @@ public interface Discoverer extends Adapter {
      */
     Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI uri, String username, String password) throws DiscoveryException;
 
-	void postDiscovery(List<HostVO> hosts, long msId);
+	void postDiscovery(List<HostVO> hosts, long msId)  throws DiscoveryException;
 }

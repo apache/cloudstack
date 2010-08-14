@@ -45,9 +45,11 @@ elif os.path.exists("/etc/redhat-release") and not os.path.exists("/etc/fedora-r
 elif os.path.exists("/etc/legal") and "Ubuntu" in file("/etc/legal").read(-1): distro = Ubuntu
 else: distro = Unknown
 
-
+logFileName=None
 # ==================  LIBRARY UTILITY CODE=============
-
+def setLogFile(logFile):
+	global logFileName
+	logFileName=logFile
 def read_properties(propfile):
 	if not hasattr(propfile,"read"): propfile = file(propfile)
 	properties = propfile.read().splitlines()
@@ -63,9 +65,10 @@ def read_properties(propfile):
 def stderr(msgfmt,*args):
 	"""Print a message to stderr, optionally interpolating the arguments into it"""
 	msgfmt += "\n"
+	if logFileName != None:
+		sys.stderr = open(logFileName, 'a+')
 	if args: sys.stderr.write(msgfmt%args)
 	else: sys.stderr.write(msgfmt)
-	sys.stderr.flush()
 
 def exit(errno=E_GENERIC,message=None,*args):
 	"""Exit with an error status code, printing a message to stderr if specified"""
@@ -907,7 +910,7 @@ def prompt_for_hostpods(zonespods):
 	
 # this configures the agent
 
-def setup_agent_config(configfile, host, zone, pod):
+def setup_agent_config(configfile, host, zone, pod, guid):
 	stderr("Examining Agent configuration")
 	fn = configfile
 	text = file(fn).read(-1)
@@ -915,9 +918,12 @@ def setup_agent_config(configfile, host, zone, pod):
 	confopts = dict([ m.split("=",1) for m in lines if "=" in m and not m.startswith("#") ])
 	confposes = dict([ (m.split("=",1)[0],n) for n,m in enumerate(lines) if "=" in m and not m.startswith("#") ])
 	
-	if not "guid" in confopts:
-		stderr("Generating GUID for this Agent")
-		confopts['guid'] = uuidgen().stdout.strip()
+	if guid != None:
+		confopts['guid'] = guid
+	else:
+		if not "guid" in confopts:
+			stderr("Generating GUID for this Agent")
+			confopts['guid'] = uuidgen().stdout.strip()
 	
 	if host == None:
 		try: host = confopts["host"]
