@@ -230,6 +230,7 @@ def discover_ant_targets_and_properties(files):
 	propsinpropfiles = [ l.strip().split("=",1) for f in files if f.endswith(".properties") for l in file(f).readlines() if "=" in l and not l.startswith("#") ]
 	props = dict( propsinxml + propsinpropfiles )
 	props["base.dir"] = '.'
+	props["p.base.dir"] = '.'
 
 	result = []
 	for name,target in targets.items():
