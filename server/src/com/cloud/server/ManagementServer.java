@@ -26,7 +26,11 @@ import java.util.Map;
 
 import com.cloud.alert.AlertVO;
 import com.cloud.api.commands.EnableAccountCmd;
+import com.cloud.api.commands.EnableUserCmd;
+import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
+import com.cloud.api.commands.UpdateDomainCmd;
+import com.cloud.api.commands.UpdateTemplateCmd;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.capacity.CapacityVO;
@@ -203,15 +207,7 @@ public interface ManagementServer {
      * @return true if disable was successful, false otherwise
      */
     boolean disableAccount(long accountId);
-    long disableAccountAsync(long accountId);
-
-    /**
-     * Enables an account by accountId
-     * @param accountId
-     * @return true if enable was successful, false otherwise
-     */
-    boolean enableAccount(long accountId);
-    
+    long disableAccountAsync(long accountId); 
     
     /**
      * Enables an account by accountId
@@ -241,7 +237,7 @@ public interface ManagementServer {
      * @param userId
      * @return true if enable was successful, false otherwise
      */
-    boolean enableUser(long userId);
+    boolean enableUser(EnableUserCmd cmd) throws InvalidParameterValueException;
 
     /**
      * Locks a user by userId.  A locked user cannot access the API, but will still have running VMs/IP addresses allocated/etc.
@@ -1020,12 +1016,12 @@ public interface ManagementServer {
      */
     HostPodVO editPod(long userId, long podId, String newPodName, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException;
     
-    /**
-     * Deletes a pod from the database
-     * @param userId
-     * @param podId
-     */
-    void deletePod(long userId, long podId) throws InvalidParameterValueException, InternalErrorException;
+//    /**
+//     * Deletes a pod from the database
+//     * @param userId
+//     * @param podId
+//     */
+//    void deletePod(long userId, long podId) throws InvalidParameterValueException, InternalErrorException;
     
     /**
      * Adds a new zone to the database
@@ -1171,7 +1167,7 @@ public interface ManagementServer {
      * @param Boolean bootable
      * @return success/failure
      */
-    boolean updateTemplate(Long id, String name, String displayText, String format, Long guestOsId, Boolean passwordEnabled, Boolean bootable) throws InvalidParameterValueException;
+    boolean updateTemplate(UpdateTemplateCmd cmd) throws InvalidParameterValueException;
     
     /**
      * Creates a template by downloading to all zones
@@ -1550,7 +1546,7 @@ public interface ManagementServer {
      * @param domainId the id of the domain to be updated
      * @param domainName the new name of the domain
      */
-    void updateDomain(Long domainId, String domainName);
+    void updateDomain(UpdateDomainCmd cmd) throws InvalidParameterValueException;
 
     /**
      * find the domain Id associated with the given account
@@ -2048,7 +2044,7 @@ public interface ManagementServer {
 	 * @param userId -- id for the user
 	 * @return -- ArrayList of <CloudId+Signature>
 	 */
-    ArrayList<String> getCloudIdentifierResponse(long userId);
+    ArrayList<String> getCloudIdentifierResponse(GetCloudIdentifierCmd cmd) throws InvalidParameterValueException;
     
     /**
      * check if a network security group name in the given account/domain is in use

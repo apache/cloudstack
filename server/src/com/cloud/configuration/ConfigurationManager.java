@@ -22,6 +22,7 @@ import java.util.List;
 import com.cloud.api.commands.AddConfigCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.DeleteDiskOfferingCmd;
+import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
 import com.cloud.api.commands.UpdateZoneCmd;
@@ -154,7 +155,7 @@ public interface ConfigurationManager extends Manager {
      * @param userId
      * @param podId
      */
-	void deletePod(long userId,long podId) throws InvalidParameterValueException, InternalErrorException;
+	void deletePod(DeletePodCmd cmd) throws InvalidParameterValueException, InternalErrorException;
 	
 	/**
 	 * Creates a new zone

@@ -18,29 +18,18 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.dc.HostPodVO;
-import com.cloud.user.User;
-import com.cloud.utils.Pair;
 
+@Implementation(method="deletePod", manager=Manager.ConfigManager)
 public class DeletePodCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePodCmd.class.getName());
 
     private static final String s_name = "deletepodresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -58,7 +47,6 @@ public class DeletePodCmd extends BaseCmd {
         return id;
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -66,35 +54,32 @@ public class DeletePodCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-    	Long podId = (Long) params.get(BaseCmd.Properties.ID.getName());
-    	Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-    	
-    	if (userId == null) {
-            userId = Long.valueOf(User.UID_SYSTEM);
-        }
-    	
-    	//verify parameters
-    	HostPodVO pod = getManagementServer().findHostPodById(podId);
-    	if (pod == null) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find pod by id " + podId);
-    	}
-
-        try {
-             getManagementServer().deletePod(userId, podId);
-        } catch (Exception ex) {
-            s_logger.error("Exception deleting pod", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        }
-
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), "true"));
-        
-        return returnValues;
-    }
+//    @Override
+//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
+//    	Long podId = (Long) params.get(BaseCmd.Properties.ID.getName());
+//    	Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
+//    	
+//    	if (userId == null) {
+//            userId = Long.valueOf(User.UID_SYSTEM);
+//        }
+//    	
+//    	//verify parameters
+//    	HostPodVO pod = getManagementServer().findHostPodById(podId);
+//    	if (pod == null) {
+//    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find pod by id " + podId);
+//    	}
+//
+//        try {
+//             getManagementServer().deletePod(userId, podId);
+//        } catch (Exception ex) {
+//            s_logger.error("Exception deleting pod", ex);
+//            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+//        }
+//
+//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
+//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), "true"));
+//        
+//        return returnValues;
+//    }
 }

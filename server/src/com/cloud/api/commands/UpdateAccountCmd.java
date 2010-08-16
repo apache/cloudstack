@@ -18,26 +18,18 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.Manager;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
 @Implementation(method="updateAccount", manager=Manager.ManagementServer)
 public class UpdateAccountCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(UpdateAccountCmd.class.getName());
     private static final String s_name = "updateaccountresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
+ 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////

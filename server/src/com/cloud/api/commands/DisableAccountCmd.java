@@ -18,28 +18,21 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
+
+@Implementation(method="disableAccount", manager=Manager.ManagementServer)
 public class DisableAccountCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(DisableAccountCmd.class.getName());
     private static final String s_name = "disableaccountresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.TRUE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -79,36 +72,36 @@ public class DisableAccountCmd extends BaseCmd {
         return s_properties;
     }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Account adminAccount = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        Long domainId = (Long)params.get(BaseCmd.Properties.DOMAIN_ID.getName());
-        String accountName = (String)params.get(BaseCmd.Properties.ACCOUNT.getName());
-
-        if ((adminAccount != null) && !getManagementServer().isChildDomain(adminAccount.getDomainId(), domainId)) {
-            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Failed to disable account " + accountName + " in domain " + domainId + ", permission denied.");
-        }
-
-        Account account = getManagementServer().findActiveAccount(accountName, domainId);
-        if (account == null) {
-            throw new ServerApiException (BaseCmd.PARAM_ERROR, "Unable to find active account with name " + accountName + " in domain " + domainId);
-        }
-
-        // don't allow modify system account
-        if (account.getId().longValue() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "can not disable system account");
-        }
-
-        long jobId = getManagementServer().disableAccountAsync(account.getId().longValue());
-        if (jobId == 0) {
-        	s_logger.warn("Unable to schedule async-job for DisableAccount comamnd");
-        } else {
-	        if (s_logger.isDebugEnabled())
-	        	s_logger.debug("DisableAccount command has been accepted, job id: " + jobId);
-        }
-
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-        return returnValues;
-    }
+//    @Override
+//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
+//        Account adminAccount = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
+//        Long domainId = (Long)params.get(BaseCmd.Properties.DOMAIN_ID.getName());
+//        String accountName = (String)params.get(BaseCmd.Properties.ACCOUNT.getName());
+//
+//        if ((adminAccount != null) && !getManagementServer().isChildDomain(adminAccount.getDomainId(), domainId)) {
+//            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Failed to disable account " + accountName + " in domain " + domainId + ", permission denied.");
+//        }
+//
+//        Account account = getManagementServer().findActiveAccount(accountName, domainId);
+//        if (account == null) {
+//            throw new ServerApiException (BaseCmd.PARAM_ERROR, "Unable to find active account with name " + accountName + " in domain " + domainId);
+//        }
+//
+//        // don't allow modify system account
+//        if (account.getId().longValue() == Account.ACCOUNT_ID_SYSTEM) {
+//            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "can not disable system account");
+//        }
+//
+//        long jobId = getManagementServer().disableAccountAsync(account.getId().longValue());
+//        if (jobId == 0) {
+//        	s_logger.warn("Unable to schedule async-job for DisableAccount comamnd");
+//        } else {
+//	        if (s_logger.isDebugEnabled())
+//	        	s_logger.debug("DisableAccount command has been accepted, job id: " + jobId);
+//        }
+//
+//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
+//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
+//        return returnValues;
+//    }
 }

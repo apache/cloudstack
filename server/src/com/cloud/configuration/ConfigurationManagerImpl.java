@@ -36,6 +36,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AddConfigCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.DeleteDiskOfferingCmd;
+import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
 import com.cloud.api.commands.UpdateZoneCmd;
@@ -161,7 +162,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
     
     public void updateConfiguration(UpdateCfgCmd cmd) throws InvalidParameterValueException, InternalErrorException{
-    	long userId = UserContext.current().getUserId();
+    	Long userId = UserContext.current().getUserId();
     	String name = cmd.getName();
     	String value = cmd.getValue();
     	updateConfiguration (userId, name, value);
@@ -365,7 +366,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
     
     @DB
-    public void deletePod(long userId, long podId) throws InvalidParameterValueException, InternalErrorException {
+    public void deletePod(DeletePodCmd cmd) throws InvalidParameterValueException, InternalErrorException {
+    	Long podId = cmd.getId();
+    	Long userId = 1L;
+    	
+    	if (UserContext.current() != null)
+    		userId = UserContext.current().getUserId();
+    	
     	// Make sure the pod exists
     	if (!validPod(podId)) {
     		throw new InvalidParameterValueException("A pod with ID: " + podId + " does not exist.");

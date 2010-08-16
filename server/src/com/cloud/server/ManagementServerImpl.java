@@ -58,6 +58,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.AuthorizeNetworkGroupIngressCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
@@ -71,6 +72,8 @@ import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.EnableAccountCmd;
+import com.cloud.api.commands.EnableUserCmd;
+import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
@@ -78,6 +81,8 @@ import com.cloud.api.commands.StartRouterCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
 import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
+import com.cloud.api.commands.UpdateDomainCmd;
+import com.cloud.api.commands.UpdateTemplateCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobExecutor;
@@ -1044,17 +1049,31 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean enableUser(long userId) {
+    public boolean enableUser(EnableUserCmd cmd) throws InvalidParameterValueException{
+    	Long userId = cmd.getId();
+    	Account adminAccount = (Account)UserContext.current().getAccountObject();
         boolean success = false;
+        
+        //Check if user exists in the system
+        User user = findUserById(userId);
+        if ((user == null) || (user.getRemoved() != null))
+        	throw new InvalidParameterValueException("Unable to find active user by id " + userId);
+        
+        // If the user is a System user, return an error
+        Account account = findAccountById(user.getAccountId());
+        if ((account != null) && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
+        	throw new InvalidParameterValueException("User id : " + userId + " is a system user, enabling is not allowed");
+        }
+
+        if ((adminAccount != null) && !isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
+        	throw new InvalidParameterValueException("Failed to enable user " + userId + ", permission denied.");
+        }
+        
         success = doSetUserStatus(userId, Account.ACCOUNT_STATE_ENABLED);
 
         // make sure the account is enabled too
-        UserVO user = _userDao.findById(userId);
-        if (user != null) {
-            success = (success && enableAccount(user.getAccountId()));
-        } else {
-            s_logger.warn("Unable to find user with id: " + userId);
-        }
+        success = (success && enableAccount(user.getAccountId()));
+        
         return success;
     }
 
@@ -1198,7 +1217,6 @@ public class ManagementServerImpl implements ManagementServer {
         return success;
     }
 
-    @Override
     public boolean enableAccount(long accountId) {
         boolean success = false;
         AccountVO acctForUpdate = _accountDao.createForUpdate();
@@ -4270,10 +4288,10 @@ public class ManagementServerImpl implements ManagementServer {
         return _configMgr.editPod(userId, podId, newPodName, gateway, cidr, startIp, endIp);
     }
 
-    @Override
-    public void deletePod(long userId, long podId) throws InvalidParameterValueException, InternalErrorException {
-        _configMgr.deletePod(userId, podId);
-    }
+//    @Override
+//    public void deletePod(long userId, long podId) throws InvalidParameterValueException, InternalErrorException {
+//        _configMgr.deletePod(userId, podId);
+//    }
 
     @Override
     public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange,String guestCidr) throws InvalidParameterValueException, InternalErrorException {
@@ -4716,13 +4734,49 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean updateTemplate(Long id, String name, String displayText, String format, Long guestOSId, Boolean passwordEnabled, Boolean bootable) throws InvalidParameterValueException {
+    public boolean updateTemplate(UpdateTemplateCmd cmd) throws InvalidParameterValueException {
+    	Long id = cmd.getId();
+    	String name = cmd.getName();
+    	String displayText = cmd.getDisplayText();
+    	String format = cmd.getFormat();
+    	Long guestOSId = cmd.getOsTypeId();
+    	Boolean passwordEnabled = cmd.isPasswordEnabled();
+    	Boolean bootable = cmd.isBootable();
+    	Account account= (Account)UserContext.current().getAccountObject();
+    	
+    	//verify that template exists
+    	VMTemplateVO template = findTemplateById(id);
+    	if (template == null) {
+    		throw new InvalidParameterValueException("unable to find template with id " + id);
+    	}
+    	
+        //Don't allow to modify system template
+        if (id == Long.valueOf(1)) {
+        	throw new InvalidParameterValueException("Unable to update template with id " + id);
+        }
+    	
+    	//do a permission check
+        if (account != null) {
+            Long templateOwner = template.getAccountId();
+            if (!BaseCmd.isAdmin(account.getType())) {
+                if ((templateOwner == null) || (account.getId().longValue() != templateOwner.longValue())) {
+                    throw new InvalidParameterValueException("Unable to modify template with id " + id);
+                }
+            } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                Long templateOwnerDomainId = findDomainIdByAccountId(templateOwner);
+                if (!isChildDomain(account.getDomainId(), templateOwnerDomainId)) {
+                    throw new InvalidParameterValueException("Unable to modify template with id " + id);
+                }
+            }
+        }
+        
+
     	boolean updateNeeded = !(name == null && displayText == null && format == null && guestOSId == null && passwordEnabled == null && bootable == null);
     	if (!updateNeeded) {
     		return true;
     	}
     	
-    	VMTemplateVO template = _templateDao.createForUpdate(id);
+    	template = _templateDao.createForUpdate(id);
     	
     	if (name != null) {
     		template.setName(name);
@@ -6299,16 +6353,39 @@ public class ManagementServerImpl implements ManagementServer {
         return success && deleteDomainSuccess;
     }
 
-    public void updateDomain(Long domainId, String domainName) {
+    public void updateDomain(UpdateDomainCmd cmd) throws InvalidParameterValueException{
+    	Long domainId = cmd.getId();
+    	String domainName = cmd.getName();
+    	
+        //check if domain exists in the system
+    	DomainVO domain = findDomainIdById(domainId);
+    	if (domain == null) {
+    		throw new InvalidParameterValueException("Unable to find domain " + domainId);
+    	} else if (domain.getParent() == null) {
+            //check if domain is ROOT domain - and deny to edit it
+    		throw new InvalidParameterValueException("ROOT domain can not be edited");
+    	}
+
+    	// check permissions
+    	Account account = (Account)UserContext.current().getAccountObject();
+    	if ((account != null) && !isChildDomain(account.getDomainId(), domain.getId())) {
+            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to update domain " + domainId + ", permission denied");
+    	}
+
+    	if (domainName == null) {
+    		domainName = domain.getName();
+    	}
+    	
+    	
         SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
         sc.addAnd("name", SearchCriteria.Op.EQ, domainName);
         List<DomainVO> domains = _domainDao.search(sc, null);
         if ((domains == null) || domains.isEmpty()) {
             _domainDao.update(domainId, domainName);
-            DomainVO domain = _domainDao.findById(domainId);
+            domain = _domainDao.findById(domainId);
             EventUtils.saveEvent(new Long(1), domain.getOwner(), EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_UPDATE, "Domain, " + domainName + " was updated");
         } else {
-            DomainVO domain = _domainDao.findById(domainId);
+            domain = _domainDao.findById(domainId);
             EventUtils.saveEvent(new Long(1), domain.getOwner(), EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_UPDATE, "Failed to update domain " + domain.getName() + " with name " + domainName + ", name in use.");
         }
     }
@@ -8020,8 +8097,14 @@ public class ManagementServerImpl implements ManagementServer {
 		return null;
 	}
         
-    public ArrayList<String> getCloudIdentifierResponse(long userId)
-    {
+    public ArrayList<String> getCloudIdentifierResponse(GetCloudIdentifierCmd cmd) throws InvalidParameterValueException{
+    	Long userId = cmd.getUserId();
+    	
+    	//verify that user exists
+        User user = findUserById(userId);
+        if ((user == null) || (user.getRemoved() != null))
+        	throw new InvalidParameterValueException("Unable to find active user by id " + userId);
+    	
     	Criteria c = new Criteria ();
     	c.addCriteria(Criteria.NAME, "cloud.identifier");
 
@@ -8037,7 +8120,7 @@ public class ManagementServerImpl implements ManagementServer {
     	String signature = "";
     	try {
         	//get the user obj to get his secret key
-        	User user = getUser(userId);
+        	user = getUser(userId);
         	String secretKey = user.getSecretKey();
         	String input = cloudIdentifier;
     		signature = signRequest(input, secretKey);

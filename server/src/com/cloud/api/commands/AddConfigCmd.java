@@ -21,16 +21,13 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.Manager;
-import com.cloud.configuration.ConfigurationVO;
-import com.cloud.storage.DiskOfferingVO;
 
 @Implementation(method="addConfig", manager=Manager.ConfigManager)
 public class AddConfigCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddConfigCmd.class.getName());
-
     private static final String s_name = "addconfigresponse";
 
     /////////////////////////////////////////////////////
