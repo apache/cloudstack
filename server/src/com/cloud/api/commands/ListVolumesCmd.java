@@ -218,11 +218,8 @@ public class ListVolumesCmd extends BaseCmd{
             volumeData.add(new Pair<String, Object>(BaseCmd.Properties.STORAGE_TYPE.getName(), storageType));
             
             volumeData.add(new Pair<String, Object>(BaseCmd.Properties.DISK_OFFERING_ID.getName(),volume.getDiskOfferingId()));
-            if(volume.getDiskOfferingId()!=null)
-            {
-            	volumeData.add(new Pair<String, Object>(BaseCmd.Properties.DISK_OFFERING_NAME.getName(),getManagementServer().findDiskOfferingById(volume.getDiskOfferingId()).getName()));
-            	volumeData.add(new Pair<String, Object>(BaseCmd.Properties.DISK_OFFERING_DISPLAY_TEXT.getName(),getManagementServer().findDiskOfferingById(volume.getDiskOfferingId()).getDisplayText()));
-            }
+        	volumeData.add(new Pair<String, Object>(BaseCmd.Properties.DISK_OFFERING_NAME.getName(),getManagementServer().findDiskOfferingById(volume.getDiskOfferingId()).getName()));
+        	volumeData.add(new Pair<String, Object>(BaseCmd.Properties.DISK_OFFERING_DISPLAY_TEXT.getName(),getManagementServer().findDiskOfferingById(volume.getDiskOfferingId()).getDisplayText()));
             Long poolId = volume.getPoolId();
             String poolName = (poolId == null) ? "none" : getManagementServer().findPoolById(poolId).getName();
             volumeData.add(new Pair<String, Object>(BaseCmd.Properties.STORAGE.getName(), poolName));

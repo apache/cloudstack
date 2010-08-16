@@ -17,6 +17,8 @@
  */
 package com.cloud.vm;
 
+import java.util.List;
+
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
@@ -31,7 +33,7 @@ public interface VmManager {
             NetworkOfferingVO[] networkOfferings, 
             DiskOfferingVO[] diskOffering);
     
-    void create(VMInstanceVO vm);
+    void create(VmCharacteristics vm, List<DiskCharacteristics> disks, List<NetworkCharacteristics> networks);
     
     void start();
     

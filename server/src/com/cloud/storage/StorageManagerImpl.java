@@ -55,7 +55,6 @@ import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
-import com.cloud.agent.api.to.DiskCharacteristicsTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
@@ -64,7 +63,6 @@ import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
-import com.cloud.async.executor.VMOperationParam;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
@@ -91,9 +89,9 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
+import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.Host.Type;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -104,7 +102,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume.MirrorState;
-import com.cloud.storage.Volume.StorageResourceType;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.allocator.StoragePoolAllocator;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -122,6 +119,7 @@ import com.cloud.storage.snapshot.SnapshotScheduler;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
@@ -138,7 +136,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
-import com.cloud.vm.ConsoleProxyVO;
+import com.cloud.vm.DiskCharacteristics;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
@@ -227,6 +225,39 @@ public class StorageManagerImpl implements StorageManager {
         return true;
     }
     
+    protected void setDeviceId(VolumeVO vol) {
+        //TODO: Need to figure out what to do here.
+        vol.setDeviceId(1l);
+    }
+
+    @DB
+    public List<VolumeVO> allocate(DiskCharacteristics rootDisk, List<DiskCharacteristics> dataDisks, VMInstanceVO vm, DataCenterVO dc, AccountVO account) {
+        ArrayList<VolumeVO> vols = new ArrayList<VolumeVO>(dataDisks.size() + 1);
+        VolumeVO dataVol = null;
+        VolumeVO rootVol = null;
+        long deviceId = 0;
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        rootVol = new VolumeVO(VolumeType.ROOT, rootDisk.getName(), dc.getId(), account.getDomainId(), account.getId(), rootDisk.getDiskOfferingId(), rootDisk.getSize());
+        if (rootDisk.getTemplateId() != null) {
+            rootVol.setTemplateId(rootDisk.getTemplateId());
+        }
+        rootVol.setInstanceId(vm.getId());
+        rootVol.setDeviceId(deviceId++);
+        rootVol = _volsDao.persist(rootVol);
+        vols.add(rootVol);
+        for (DiskCharacteristics dataDisk : dataDisks) {
+            dataVol = new VolumeVO(VolumeType.DATADISK, dataDisk.getName(), dc.getId(), account.getDomainId(), account.getId(), dataDisk.getDiskOfferingId(), dataDisk.getSize());
+            dataVol.setDeviceId(deviceId++);
+            dataVol = _volsDao.persist(dataVol);
+            dataVol.setInstanceId(vm.getId());
+            vols.add(dataVol);
+        }
+        txn.commit();
+        
+        return vols;
+    }
+    
     public List<VolumeVO> prepare(VMInstanceVO vm, HostVO host) {
         List<VolumeVO> vols = _volsDao.findCreatedByInstance(vm.getId());
         List<VolumeVO> recreateVols = new ArrayList<VolumeVO>(vols.size());
@@ -259,9 +290,7 @@ public class StorageManagerImpl implements StorageManager {
             DataCenterVO dc = _dcDao.findById(create.getDataCenterId());
             HostPodVO pod = _podDao.findById(host.getPodId());
             DiskOfferingVO diskOffering = null;
-            if (vol.getDiskOfferingId() != null) {
-                diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
-            }
+            diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
             ServiceOfferingVO offering;
             if (vm instanceof UserVmVO) {
                 offering = _offeringDao.findById(((UserVmVO)vm).getServiceOfferingId());
@@ -333,7 +362,7 @@ public class StorageManagerImpl implements StorageManager {
         return unshare(vm, vols, host) ? vols : null;
     }
 
-    protected StoragePoolVO findStoragePool(DiskCharacteristicsTO dskCh, final DataCenterVO dc, HostPodVO pod, Long clusterId, final ServiceOffering offering, final VMInstanceVO vm, final VMTemplateVO template, final Set<StoragePool> avoid) {
+    protected StoragePoolVO findStoragePool(DiskCharacteristics dskCh, final DataCenterVO dc, HostPodVO pod, Long clusterId, final ServiceOffering offering, final VMInstanceVO vm, final VMTemplateVO template, final Set<StoragePool> avoid) {
         Enumeration<StoragePoolAllocator> en = _storagePoolAllocators.enumeration();
         while (en.hasMoreElements()) {
             final StoragePoolAllocator allocator = en.nextElement();
@@ -385,7 +414,7 @@ public class StorageManagerImpl implements StorageManager {
         return answers[0];
     }
     
-    protected DiskCharacteristicsTO createDiskCharacteristics(VolumeVO volume, VMTemplateVO template, DataCenterVO dc, DiskOfferingVO diskOffering) {
+    protected DiskCharacteristics createDiskCharacteristics(VolumeVO volume, VMTemplateVO template, DataCenterVO dc, DiskOfferingVO diskOffering) {
         if (volume.getVolumeType() == VolumeType.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
             SearchCriteria<VMTemplateHostVO> sc = HostTemplateStatesSearch.create();
             sc.setParameters("id", template.getId());
@@ -398,9 +427,9 @@ public class StorageManagerImpl implements StorageManager {
             }
             VMTemplateHostVO ss = sss.get(0);
         
-            return new DiskCharacteristicsTO(volume.getVolumeType(), volume.getName(), diskOffering, ss.getSize());
+            return new DiskCharacteristics(volume.getVolumeType(), volume.getName(), diskOffering.getId(), ss.getSize(), diskOffering.getTagsArray(), diskOffering.getUseLocalStorage(), diskOffering.isRecreatable(), Storage.ImageFormat.ISO != template.getFormat() ? template.getId() : null);
         } else {
-            return new DiskCharacteristicsTO(volume.getVolumeType(), volume.getName(), diskOffering);
+            return new DiskCharacteristics(volume.getVolumeType(), volume.getName(), diskOffering.getId(), diskOffering.getDiskSizeInBytes(), diskOffering.getTagsArray(), diskOffering.getUseLocalStorage(), diskOffering.isRecreatable(), null);
         }
     }
     
@@ -436,7 +465,7 @@ public class StorageManagerImpl implements StorageManager {
             volume.setDiskOfferingId(diskOffering.getId());
         }
         volume.setSize(originalVolumeSize);
-        volume.setStorageResourceType(StorageResourceType.STORAGE_POOL);
+        volume.setStorageResourceType(Storage.StorageResourceType.STORAGE_POOL);
         volume.setInstanceId(null);
         volume.setUpdated(new Date());
         volume.setStatus(AsyncInstanceCreateStatus.Creating);
@@ -462,7 +491,7 @@ public class StorageManagerImpl implements StorageManager {
         String volumeUUID = null;
         String details = null;
         
-        DiskCharacteristicsTO dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
+        DiskCharacteristics dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
         
         
         // Determine what pod to store the volume in
@@ -617,9 +646,7 @@ public class StorageManagerImpl implements StorageManager {
         if(originalVolume.getTemplateId() != null){
             templateId = originalVolume.getTemplateId();
         }
-        if(originalVolume.getDiskOfferingId() != null){
-            diskOfferingId = originalVolume.getDiskOfferingId();
-        }
+        diskOfferingId = originalVolume.getDiskOfferingId();
         long sizeMB = createdVolume.getSize()/(1024*1024);
 
         String poolName = _storagePoolDao.findById(createdVolume.getPoolId()).getName();
@@ -690,7 +717,7 @@ public class StorageManagerImpl implements StorageManager {
         StoragePoolVO pool = null;
         final HashSet<StoragePool> avoidPools = new HashSet<StoragePool>(avoids);
        
-        DiskCharacteristicsTO dskCh = null;
+        DiskCharacteristics dskCh = null;
         if (volume.getVolumeType() == VolumeType.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
             dskCh = createDiskCharacteristics(volume, template, dc, offering);
         } else {
@@ -1439,7 +1466,7 @@ public class StorageManagerImpl implements StorageManager {
     public VolumeVO moveVolume(VolumeVO volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId) throws InternalErrorException {
     	// Find a destination storage pool with the specified criteria
     	DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
-    	DiskCharacteristicsTO dskCh = new DiskCharacteristicsTO(volume.getVolumeType(), volume.getName(), diskOffering);
+    	DiskCharacteristics dskCh = new DiskCharacteristics(volume.getVolumeType(), volume.getName(), diskOffering.getId(), diskOffering.getDiskSizeInBytes(), diskOffering.getTagsArray(), diskOffering.getUseLocalStorage(), diskOffering.isRecreatable(), null);
     	DataCenterVO destPoolDataCenter = _dcDao.findById(destPoolDcId);
     	HostPodVO destPoolPod = _podDao.findById(destPoolPodId);
         StoragePoolVO destPool = findStoragePool(dskCh, destPoolDataCenter, destPoolPod, destPoolClusterId, null, null, null, new HashSet<StoragePool>());
@@ -1523,7 +1550,7 @@ public class StorageManagerImpl implements StorageManager {
 	        volume.setDomainId(account.getDomainId().longValue());
 	        volume.setMirrorState(MirrorState.NOT_MIRRORED);
 	        volume.setDiskOfferingId(diskOffering.getId());
-	        volume.setStorageResourceType(StorageResourceType.STORAGE_POOL);
+	        volume.setStorageResourceType(Storage.StorageResourceType.STORAGE_POOL);
 	        volume.setInstanceId(null);
 	        volume.setUpdated(new Date());
 	        volume.setStatus(AsyncInstanceCreateStatus.Creating);

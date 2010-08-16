@@ -29,7 +29,7 @@ import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.storage.Volume.StorageResourceType;
+import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.component.Inject;
@@ -72,7 +72,7 @@ public class LocalStoragePoolListener implements Listener {
         
         StartupStorageCommand ssCmd = (StartupStorageCommand)cmd;
         
-        if (ssCmd.getResourceType() != StorageResourceType.STORAGE_POOL) {
+        if (ssCmd.getResourceType() != Storage.StorageResourceType.STORAGE_POOL) {
             return true;
         }
         

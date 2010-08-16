@@ -27,6 +27,18 @@
   <target name="run" depends="start-tomcat"/>
   <target name="stop" depends="stop-tomcat"/>
   <target name="debug" depends="debug-tomcat"/>
+
+  <target name="setup">
+	<mkdir dir="${build.dir}/override"/>   
+    <copy todir="${build.dir}/override">
+	  <fileset dir="${build.dir}">
+	    <include name="build-cloud.properties"/>
+	    <include name="replace.properties"/>
+	  </fileset>
+	</copy>  
+    <loadproperties srcfile="${build.dir}/override/replace.properties" resource="propertyresource"/>
+    <!-- propertyfile file="${build.dir}/override/replace.properties"/ -->
+  </target>
   
   <target name="debug-suspend">
     <java jar="${tomcat.home}/bin/bootstrap.jar" fork="true">
@@ -86,22 +98,10 @@
   <target name="unzip-usage" if="usagezip.uptodate">
     <unzip src="${deploy.work.dir}/usage.zip" dest="${deploy.work.dir}/usage"/>
   </target>
-  <!--
-  <target name="deploy-db">
-    <property file="
-    <sql
-        driver="com.mysql.jdbc.Driver"
-        url="jdbc:database-url"
-        userid="cloud"
-        password="cloud"
-        src="data.sql"
-    />
-  </target>
--->
+    
   <target name="deploy-server" depends="deploy-common" >
     <copy todir="${server.deploy.to.dir}/webapps/client/WEB-INF/lib/vms" file="${dist.dir}/systemvm.zip" />
   </target>
-
 
   <target name="deploy-common" > 
     <condition property="zip.uptodate">

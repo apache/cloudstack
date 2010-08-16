@@ -42,7 +42,7 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
-import com.cloud.storage.Volume;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.template.TemplateInfo;
 
@@ -102,7 +102,7 @@ public class DummySecondaryStorageResource extends ServerResourceBase implements
         	StoragePoolType.NetworkFilesystem, 1024*1024*1024*100L,
         	new HashMap<String, TemplateInfo>());
         
-        cmd.setResourceType(Volume.StorageResourceType.SECONDARY_STORAGE);
+        cmd.setResourceType(Storage.StorageResourceType.SECONDARY_STORAGE);
         cmd.setIqn(null);
         cmd.setNfsShare(_guid);
         

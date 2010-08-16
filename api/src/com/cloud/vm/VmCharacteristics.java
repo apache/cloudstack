@@ -22,12 +22,12 @@ import java.util.Map;
 import com.cloud.hypervisor.Hypervisor;
 
 public class VmCharacteristics {
+    long id;
     int core;
     int speed; // in mhz
     long ram; // in bytes
     Hypervisor.Type hypervisorType;
     VirtualMachine.Type type;
-    
     Map<String, String> params;
     
     public VmCharacteristics(VirtualMachine.Type type) {
@@ -38,9 +38,6 @@ public class VmCharacteristics {
         return type;
     }
     
-    
-    public VmCharacteristics() {
-    }
     
     public int getCores() {
         return core;
@@ -58,11 +55,15 @@ public class VmCharacteristics {
         return hypervisorType;
     }
     
-    public VmCharacteristics(int core, int speed, long ram, Hypervisor.Type type, Map<String, String> params) {
+    public VmCharacteristics(long id, int core, int speed, long ram, Hypervisor.Type type, Map<String, String> params) {
         this.core = core;
         this.speed = speed;
         this.ram = ram;
         this.hypervisorType = type;
         this.params = params;
+        this.id = id;
+    }
+    
+    protected VmCharacteristics() {
     }
 }

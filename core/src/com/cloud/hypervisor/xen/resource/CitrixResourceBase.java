@@ -141,18 +141,18 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ShareAnswer;
 import com.cloud.agent.api.storage.ShareCommand;
-import com.cloud.agent.api.to.DiskCharacteristicsTO;
 import com.cloud.agent.api.to.StoragePoolTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ServerResource;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.Volume.StorageResourceType;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.resource.StoragePoolResource;
@@ -165,6 +165,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.ConsoleProxyVO;
+import com.cloud.vm.DiskCharacteristics;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
@@ -1119,8 +1120,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
     }
 
-    protected StorageResourceType getStorageResourceType() {
-        return StorageResourceType.STORAGE_POOL;
+    protected Storage.StorageResourceType getStorageResourceType() {
+        return Storage.StorageResourceType.STORAGE_POOL;
     }
 
     protected CheckHealthAnswer execute(CheckHealthCommand cmd) {
@@ -3423,7 +3424,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             StartupStorageCommand cmd = new StartupStorageCommand();
             cmd.setPoolInfo(pInfo);
             cmd.setGuid(_host.uuid);
-            cmd.setResourceType(StorageResourceType.STORAGE_POOL);
+            cmd.setResourceType(Storage.StorageResourceType.STORAGE_POOL);
             return cmd;
         } catch (XenAPIException e) {
             String msg = "build startupstoragecommand err in host:" + _host.uuid + e.toString();
@@ -4263,7 +4264,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
     public CreateAnswer execute(CreateCommand cmd) {
         StoragePoolTO pool = cmd.getPool();
-        DiskCharacteristicsTO dskch = cmd.getDiskCharacteristics();
+        DiskCharacteristics dskch = cmd.getDiskCharacteristics();
 
         VDI vdi = null;
         Connection conn = getConnection();
@@ -4293,7 +4294,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             vdir = vdi.getRecord(conn);
             s_logger.debug("Succesfully created VDI for " + cmd + ".  Uuid = " + vdir.uuid);
 
-            VolumeTO vol = new VolumeTO(cmd.getVolumeId(), dskch.getType(), StorageResourceType.STORAGE_POOL, pool.getType(), vdir.nameLabel, pool.getPath(), vdir.uuid,
+            VolumeTO vol = new VolumeTO(cmd.getVolumeId(), dskch.getType(), Storage.StorageResourceType.STORAGE_POOL, pool.getType(), vdir.nameLabel, pool.getPath(), vdir.uuid,
                     vdir.virtualSize);
             return new CreateAnswer(cmd, vol);
         } catch (Exception e) {

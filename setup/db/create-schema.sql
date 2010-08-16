@@ -222,7 +222,7 @@ CREATE TABLE `cloud`.`volumes` (
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center this volume belongs to',
   `iscsi_name` varchar(255) COMMENT 'iscsi target name',
   `host_ip` varchar(15)  COMMENT 'host ip address for convenience',
-  `volume_type` varchar(64) COMMENT 'root, swap or data',
+  `volume_type` varchar(64) NOT NULL COMMENT 'root, swap or data',
   `resource_type` varchar(64) COMMENT 'pool-based or host-based',
   `pool_type` varchar(64) COMMENT 'type of the pool',
   `mirror_state` varchar(64) COMMENT 'not_mirrored, active or defunct',
@@ -236,6 +236,7 @@ CREATE TABLE `cloud`.`volumes` (
   `updated` datetime COMMENT 'Date updated for attach/detach',
   `removed` datetime COMMENT 'Date removed.  not null if removed',
   `status` varchar(32) COMMENT 'Async API volume creation status',
+  `state` varchar(32) COMMENT 'State machine',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

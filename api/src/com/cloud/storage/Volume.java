@@ -17,16 +17,23 @@
  */
 package com.cloud.storage;
 
-import com.cloud.async.AsyncInstanceCreateStatus;
 
 public interface Volume {
 	enum VolumeType {UNKNOWN, ROOT, SWAP, DATADISK};
 	
 	enum MirrorState {NOT_MIRRORED, ACTIVE, DEFUNCT};
 	
-	enum StorageResourceType {STORAGE_POOL, STORAGE_HOST, SECONDARY_STORAGE};
-
-    /**
+	enum State {
+	    Allocated,
+	    Creating,
+	    Created,
+	    Corrupted,
+	    ToBeDestroyed,
+	    Expunging,
+	    Destroyed
+	}
+	
+	/**
      * @return the volume name
      */
     String getName();
@@ -69,12 +76,9 @@ public interface Volume {
     
     VolumeType getVolumeType();
     
-    StorageResourceType getStorageResourceType();
+    Storage.StorageResourceType getStorageResourceType();
     
 	Long getPoolId();
 	
-    public AsyncInstanceCreateStatus getStatus();
-	
-	public void setStatus(AsyncInstanceCreateStatus status);
-	
+	State getState();
 }

@@ -26,7 +26,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.to.DiskCharacteristicsTO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -35,6 +34,7 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.vm.DiskCharacteristics;
 import com.cloud.vm.VMInstanceVO;
 
 @Local(value=StoragePoolAllocator.class)
@@ -48,7 +48,7 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
     boolean _storagePoolCleanupEnabled;
     
     @Override
-    public boolean allocatorIsCorrectType(DiskCharacteristicsTO dskCh, VMInstanceVO vm, ServiceOffering offering) {
+    public boolean allocatorIsCorrectType(DiskCharacteristics dskCh, VMInstanceVO vm, ServiceOffering offering) {
     	return true;
     }
     
@@ -61,7 +61,7 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
     }
     
     @Override
-    public StoragePool allocateToPool(DiskCharacteristicsTO dskCh,
+    public StoragePool allocateToPool(DiskCharacteristics dskCh,
                                       ServiceOffering offering,
                                       DataCenterVO dc,
                                       HostPodVO pod,

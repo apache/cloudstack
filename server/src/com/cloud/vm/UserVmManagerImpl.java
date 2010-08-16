@@ -1767,9 +1767,7 @@ public class UserVmManagerImpl implements UserVmManager {
             if(volume.getTemplateId() !=null){
                 templateId = volume.getTemplateId();
             }
-            if(volume.getDiskOfferingId() !=null){
-                diskOfferingId = volume.getDiskOfferingId();
-            }
+            diskOfferingId = volume.getDiskOfferingId();
             long sizeMB = volume.getSize()/(1024*1024);
             String eventParams = "id=" + volume.getId() +"\ndoId="+diskOfferingId+"\ntId="+templateId+"\ndcId="+volume.getDataCenterId()+"\nsize="+sizeMB;
             EventVO volEvent = new EventVO();

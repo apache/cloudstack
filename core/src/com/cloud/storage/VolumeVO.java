@@ -96,7 +96,7 @@ public class VolumeVO implements Volume {
     String hostip;
 
     @Column(name="disk_offering_id")
-    Long diskOfferingId;
+    long diskOfferingId;
 
     @Expose
     @Column(name="mirror_vol")
@@ -129,7 +129,7 @@ public class VolumeVO implements Volume {
     @Expose
     @Column(name="resource_type")
     @Enumerated(EnumType.STRING)
-	StorageResourceType storageResourceType;
+	Storage.StorageResourceType storageResourceType;
     
     @Expose
     @Column(name="status", updatable = true, nullable=false)
@@ -142,6 +142,10 @@ public class VolumeVO implements Volume {
 
     @Column(name="recreatable")
     boolean recreatable;
+    
+    @Column(name="state")
+    @Enumerated(value=EnumType.STRING)
+    private State state;
     
     /**
      * Constructor for data disk.
@@ -167,8 +171,23 @@ public class VolumeVO implements Volume {
         this.templateId = null;
         this.mirrorState = MirrorState.NOT_MIRRORED;
         this.mirrorVolume = null;
-        this.storageResourceType = StorageResourceType.STORAGE_POOL;
+        this.storageResourceType = Storage.StorageResourceType.STORAGE_POOL;
         this.poolType = null;
+    }
+ 
+    // Real Constructor
+    public VolumeVO(VolumeType type, String name, long dcId, long domainId, long accountId, long diskOfferingId, long size) {
+        this.volumeType = type;
+        this.name = name;
+        this.dataCenterId = dcId;
+        this.accountId = accountId;
+        this.domainId = domainId;
+        this.size = size;
+        this.mirrorVolume = null;
+        this.mirrorState = MirrorState.NOT_MIRRORED;
+        this.diskOfferingId = diskOfferingId;
+        this.status = AsyncInstanceCreateStatus.Creating;
+        this.state = State.Allocated;
     }
 
     /**
@@ -371,11 +390,11 @@ public class VolumeVO implements Volume {
 		this.mirrorState = mirrorState;
 	}
 
-	public Long getDiskOfferingId() {
+	public long getDiskOfferingId() {
 		return diskOfferingId;
 	}
 
-	public void setDiskOfferingId(Long diskOfferingId) {
+	public void setDiskOfferingId(long diskOfferingId) {
 		this.diskOfferingId = diskOfferingId;
 	}
 
@@ -404,11 +423,11 @@ public class VolumeVO implements Volume {
 	}
 
 	@Override
-	public StorageResourceType getStorageResourceType() {
+	public Storage.StorageResourceType getStorageResourceType() {
 		return storageResourceType;
 	}
 
-	public void setStorageResourceType(StorageResourceType storageResourceType2) {
+	public void setStorageResourceType(Storage.StorageResourceType storageResourceType2) {
 		this.storageResourceType = storageResourceType2;
 	}
 
@@ -420,12 +439,10 @@ public class VolumeVO implements Volume {
 		this.poolId = poolId;
 	}
 	
-	@Override
     public AsyncInstanceCreateStatus getStatus() {
 		return status;
 	}
 	
-	@Override
 	public void setStatus(AsyncInstanceCreateStatus status) {
 		this.status = status;
 	}
@@ -433,6 +450,10 @@ public class VolumeVO implements Volume {
 	public Date getUpdated() {
         return updated;
     }
+	
+	public State getState() {
+	    return state;
+	}
 
     public void setUpdated(Date updated) {
         this.updated = updated;

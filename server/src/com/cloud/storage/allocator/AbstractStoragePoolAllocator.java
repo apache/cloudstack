@@ -27,7 +27,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.to.DiskCharacteristicsTO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -56,6 +55,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
+import com.cloud.vm.DiskCharacteristics;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 
@@ -100,7 +100,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         return true;
     }
     
-    abstract boolean allocatorIsCorrectType(DiskCharacteristicsTO dskCh, VMInstanceVO vm, ServiceOffering offering);
+    abstract boolean allocatorIsCorrectType(DiskCharacteristics dskCh, VMInstanceVO vm, ServiceOffering offering);
     
 	protected boolean templateAvailable(long templateId, long poolId) {
     	VMTemplateStorageResourceAssoc thvo = _templatePoolDao.findByPoolTemplate(poolId, templateId);
@@ -114,7 +114,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     	}
     }
 	
-	protected boolean localStorageAllocationNeeded(DiskCharacteristicsTO dskCh, VMInstanceVO vm, ServiceOffering offering) {
+	protected boolean localStorageAllocationNeeded(DiskCharacteristics dskCh, VMInstanceVO vm, ServiceOffering offering) {
 		if (vm == null) {
     		// We are finding a pool for a volume, so we need a shared storage allocator
     		return false;
@@ -128,12 +128,12 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     	}
 	}
 	
-	protected boolean poolIsCorrectType(DiskCharacteristicsTO dskCh, StoragePool pool, VMInstanceVO vm, ServiceOffering offering) {
+	protected boolean poolIsCorrectType(DiskCharacteristics dskCh, StoragePool pool, VMInstanceVO vm, ServiceOffering offering) {
 		boolean localStorageAllocationNeeded = localStorageAllocationNeeded(dskCh, vm, offering);
 		return ((!localStorageAllocationNeeded && pool.getPoolType().isShared()) || (localStorageAllocationNeeded && !pool.getPoolType().isShared()));
 	}
 	
-	protected boolean checkPool(Set<? extends StoragePool> avoid, StoragePoolVO pool, DiskCharacteristicsTO dskCh, VMTemplateVO template, List<VMTemplateStoragePoolVO> templatesInPool, ServiceOffering offering,
+	protected boolean checkPool(Set<? extends StoragePool> avoid, StoragePoolVO pool, DiskCharacteristics dskCh, VMTemplateVO template, List<VMTemplateStoragePoolVO> templatesInPool, ServiceOffering offering,
 			VMInstanceVO vm, StatsCollector sc) {
 		if (avoid.contains(pool)) {
 			return false;

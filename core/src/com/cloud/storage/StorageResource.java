@@ -304,7 +304,7 @@ public abstract class StorageResource extends ServerResourceBase implements Serv
     protected abstract Answer execute(DestroyCommand cmd) ;
     protected abstract UpgradeDiskAnswer execute(final UpgradeDiskCommand cmd);
 	protected abstract String  delete(String imagePath, String extra);
-    protected abstract Volume.StorageResourceType getStorageResourceType();
+    protected abstract Storage.StorageResourceType getStorageResourceType();
     protected abstract void configureFolders(String name,  Map<String, Object> params) throws ConfigurationException ;
 
 

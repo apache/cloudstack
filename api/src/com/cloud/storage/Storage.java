@@ -18,7 +18,7 @@
 package com.cloud.storage;
 
 public class Storage {
-    public enum ImageFormat {
+    public static enum ImageFormat {
         QCOW2(true, true, false),
         RAW(false, false, false),
         VHD(true, true, true),
@@ -51,7 +51,7 @@ public class Storage {
         }
     }
     
-    public enum FileSystem {
+    public static enum FileSystem {
         Unknown,
         ext3,
         ntfs,
@@ -66,7 +66,7 @@ public class Storage {
         hfsp
     }
     
-    public enum StoragePoolType {
+    public static enum StoragePoolType {
         Filesystem(false), //local directory
         NetworkFilesystem(true), //NFS or CIFS
         IscsiLUN(true), //shared LUN, with a clusterfs overlay
@@ -84,4 +84,6 @@ public class Storage {
             return shared;
         }
     }
+
+    public static enum StorageResourceType {STORAGE_POOL, STORAGE_HOST, SECONDARY_STORAGE}
 }

@@ -86,7 +86,6 @@ public class DiskOfferingVO implements DiskOffering {
     
     @Column(name="use_local_storage")
     private boolean useLocalStorage;
-
     
     public DiskOfferingVO() {
     }

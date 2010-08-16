@@ -110,11 +110,12 @@ import com.cloud.resource.Discoverer;
 import com.cloud.resource.ServerResource;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VirtualMachineTemplate;
-import com.cloud.storage.Volume.StorageResourceType;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -1403,7 +1404,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         if (startup instanceof StartupStorageCommand) {
 
             StartupStorageCommand ssCmd = ((StartupStorageCommand) startup);
-            if (ssCmd.getResourceType() == StorageResourceType.SECONDARY_STORAGE) {
+            if (ssCmd.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE) {
                 type = Host.Type.SecondaryStorage;
                 if (resource != null && resource instanceof DummySecondaryStorageResource){
                 	resource = null;
@@ -1755,7 +1756,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
         if (startup instanceof StartupStorageCommand) {
             StartupStorageCommand ssCmd = (StartupStorageCommand) startup;
-            if (ssCmd.getResourceType() == StorageResourceType.STORAGE_HOST) {
+            if (ssCmd.getResourceType() == Storage.StorageResourceType.STORAGE_HOST) {
                 CapacityVO capacity = new CapacityVO(server.getId(), server.getDataCenterId(), server.getPodId(), 0L, server.getTotalSize(),
                         CapacityVO.CAPACITY_TYPE_STORAGE);
                 _capacityDao.persist(capacity);

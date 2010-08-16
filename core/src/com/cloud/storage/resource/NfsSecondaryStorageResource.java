@@ -52,8 +52,8 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StorageLayer;
-import com.cloud.storage.Volume;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.template.DownloadManager;
 import com.cloud.storage.template.DownloadManagerImpl;
@@ -600,7 +600,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         
         final StartupStorageCommand cmd = new StartupStorageCommand(_parent, StoragePoolType.NetworkFilesystem, getTotalSize(), new HashMap<String, TemplateInfo>());
         
-        cmd.setResourceType(Volume.StorageResourceType.SECONDARY_STORAGE);
+        cmd.setResourceType(Storage.StorageResourceType.SECONDARY_STORAGE);
         cmd.setIqn(null);
         
         fillNetworkInformation(cmd);

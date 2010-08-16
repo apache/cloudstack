@@ -25,7 +25,6 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.to.DiskCharacteristicsTO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.offering.ServiceOffering;
@@ -33,6 +32,7 @@ import com.cloud.server.StatsCollector;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.vm.DiskCharacteristics;
 import com.cloud.vm.VMInstanceVO;
 
 @Local(value=StoragePoolAllocator.class)
@@ -40,12 +40,12 @@ public class RandomStoragePoolAllocator extends AbstractStoragePoolAllocator {
     private static final Logger s_logger = Logger.getLogger(RandomStoragePoolAllocator.class);
     
     @Override
-    public boolean allocatorIsCorrectType(DiskCharacteristicsTO dskCh, VMInstanceVO vm, ServiceOffering offering) {
+    public boolean allocatorIsCorrectType(DiskCharacteristics dskCh, VMInstanceVO vm, ServiceOffering offering) {
     	return true;
     }
     
     @Override
-    public StoragePool allocateToPool(DiskCharacteristicsTO dskCh, ServiceOffering offering,
+    public StoragePool allocateToPool(DiskCharacteristics dskCh, ServiceOffering offering,
 			 DataCenterVO dc, HostPodVO pod, Long clusterId, VMInstanceVO vm,
 			VMTemplateVO template, Set<? extends StoragePool> avoid) {
     	

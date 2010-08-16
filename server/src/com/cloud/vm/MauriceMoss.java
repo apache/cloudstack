@@ -17,6 +17,8 @@
  */
 package com.cloud.vm;
 
+import java.util.List;
+
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
@@ -27,41 +29,27 @@ public class MauriceMoss implements VmManager {
     public VMInstanceVO allocate(VMInstanceVO vm, ServiceOfferingVO serviceOffering, NetworkOfferingVO[] networkOfferings, DiskOfferingVO[] diskOffering) {
         return null;
     }
-
-    /* (non-Javadoc)
-     * @see com.cloud.vm.VmManager#create(com.cloud.vm.VMInstanceVO)
-     */
     @Override
-    public void create(VMInstanceVO vm) {
+    public void create(VmCharacteristics vm, List<DiskCharacteristics> disks, List<NetworkCharacteristics> networks) {
         // TODO Auto-generated method stub
 
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.vm.VmManager#destroy()
-     */
     @Override
     public void destroy() {
         // TODO Auto-generated method stub
 
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.vm.VmManager#start()
-     */
     @Override
     public void start() {
         // TODO Auto-generated method stub
 
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.vm.VmManager#stop()
-     */
     @Override
     public void stop() {
         // TODO Auto-generated method stub
-
     }
 
 }

@@ -27,7 +27,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.to.DiskCharacteristicsTO;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -49,6 +48,7 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
+import com.cloud.vm.DiskCharacteristics;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -83,12 +83,12 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     
     
     @Override
-    public boolean allocatorIsCorrectType(DiskCharacteristicsTO dskCh, VMInstanceVO vm, ServiceOffering offering) {
+    public boolean allocatorIsCorrectType(DiskCharacteristics dskCh, VMInstanceVO vm, ServiceOffering offering) {
     	return localStorageAllocationNeeded(dskCh, vm, offering);
     }
     
     @Override
-    public StoragePool allocateToPool(DiskCharacteristicsTO dskCh,
+    public StoragePool allocateToPool(DiskCharacteristics dskCh,
                                       ServiceOffering offering,
                                       DataCenterVO dc,
                                       HostPodVO pod,

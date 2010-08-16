@@ -136,7 +136,6 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.CreatePrivateTemplateCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
-import com.cloud.agent.api.to.DiskCharacteristicsTO;
 import com.cloud.agent.api.to.StoragePoolTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.resource.computing.LibvirtStoragePoolDef.poolType;
@@ -160,13 +159,14 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.NetworkEnums.RouterPrivateIpStrategy;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.Volume.StorageResourceType;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.QCOW2Processor;
@@ -182,6 +182,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.ConsoleProxyVO;
+import com.cloud.vm.DiskCharacteristics;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.State;
 import com.cloud.vm.VirtualMachineName;
@@ -1162,13 +1163,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		}
 	}
 	
-	protected StorageResourceType getStorageResourceType() {
-		return StorageResourceType.STORAGE_POOL;
+	protected Storage.StorageResourceType getStorageResourceType() {
+		return Storage.StorageResourceType.STORAGE_POOL;
 	}
 
     protected Answer execute(CreateCommand cmd) {
     	  StoragePoolTO pool = cmd.getPool();
-          DiskCharacteristicsTO dskch = cmd.getDiskCharacteristics();
+          DiskCharacteristics dskch = cmd.getDiskCharacteristics();
           StorageVol tmplVol = null;
           StoragePool primaryPool = null;
           StorageVol vol = null;
