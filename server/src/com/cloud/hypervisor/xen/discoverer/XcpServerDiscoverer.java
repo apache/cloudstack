@@ -450,7 +450,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     }
 
     @Override
-    public void postDiscovery(List<HostVO> hosts, long msId) {
+    public void postDiscovery(List<HostVO> hosts, long msId)  throws DiscoveryException{
         //do nothing
     }
 

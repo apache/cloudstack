@@ -590,12 +590,15 @@ def rpm(context):
 	if not Options.options.blddir: outputdir = _join(context.curdir,blddir,"rpmbuild")
 	else:			   outputdir = _join(_abspath(Options.options.blddir),"rpmbuild")
 	Utils.pprint("GREEN","Building RPMs")
+
 	tarball = Scripting.dist()
+	sourcedir = _join(outputdir,"SOURCES")
 	
-	#if _isdir(outputdir): shutil.rmtree(outputdir)
+	if _exists(sourcedir): shutil.rmtree(sourcedir)
 	for a in ["RPMS/noarch","SRPMS","BUILD","SPECS","SOURCES"]: mkdir_p(_join(outputdir,a))
+	shutil.copy(tarball,_join(sourcedir,tarball))
+
 	specfile = "%s.spec"%APPNAME
-	shutil.copy(tarball,_join(outputdir,"SOURCES"))
 	checkdeps = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"--nobuild",specfile])
 	dorpm = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"-ba",specfile]+buildnumber+prerelease)
 	try: checkdeps()
@@ -633,13 +636,15 @@ def deb(context):
 	if not Options.options.blddir: outputdir = _join(context.curdir,blddir,"debbuild")
 	else:			   outputdir = _join(_abspath(Options.options.blddir),"debbuild")
 	Utils.pprint("GREEN","Building DEBs")
-	tarball = Scripting.dist()
-	
-	#if _isdir(outputdir): shutil.rmtree(outputdir)
+
+	tarball = Scripting.dist()	
+	srcdir = "%s/%s-%s"%(outputdir,APPNAME,VERSION)
+
+	if _exists(srcdir): shutil.rmtree(srcdir)
 	mkdir_p(outputdir)
+
 	f = tarfile.open(tarball,'r:bz2')
 	f.extractall(path=outputdir)
-	srcdir = "%s/%s-%s"%(outputdir,APPNAME,VERSION)
 	if tempchangelog:
 		f = file(_join(srcdir,"debian","changelog"),"w")
 		f.write(tempchangelog)
@@ -653,7 +658,6 @@ def deb(context):
 		Utils.pprint("YELLOW","Dependencies might be missing.  Trying to auto-install them...")
 		installdebdeps(context)
 	dodeb()
-	shutil.rmtree(srcdir)
 
 def uninstallrpms(context):
 	"""uninstalls any Cloud Stack RPMs on this system"""

@@ -37,16 +37,14 @@ backupdir = "@SHAREDSTATEDIR@/@AGENTPATH@/etcbackup"
 
 #=================== the magic happens here ====================
 
-stderr("Welcome to the Cloud Agent setup")
-stderr("")
 
 try:
 # parse cmd line	
-	opts, args = getopt.getopt(sys.argv[1:], "a", ["host=", "zone=", "pod=", "no-kvm"])
+	opts, args = getopt.getopt(sys.argv[1:], "a", ["host=", "zone=", "pod=", "no-kvm", "guid="])
 	host=None
 	zone=None
 	pod=None
-	stderr(str(opts))
+	guid=None
     	autoMode=False
 	do_check_kvm = True	
 	for opt, arg in opts:
@@ -59,11 +57,19 @@ try:
 		elif opt == "--pod":
 			if arg != "":
 				pod = arg
+		elif opt == "--guid":
+			if arg != "":
+				guid = arg
 		elif opt == "--no-kvm":
 			do_check_kvm = False
         	elif opt == "-a":
             		autoMode=True
 		
+	if autoMode:
+		cloud_utils.setLogFile("/var/log/cloud/setupAgent.log")
+	
+	stderr("Welcome to the Cloud Agent setup")
+	stderr("")
 	# pre-flight checks for things that the administrator must fix
 	try:
 		for f,n in cloud_utils.preflight_checks(
@@ -106,7 +112,7 @@ try:
 		stderr(str(e))
 		bail(cloud_utils.E_SETUPFAILED,"Cloud Agent setup failed")
 	
-	setup_agent_config(configfile, host, zone, pod)
+	setup_agent_config(configfile, host, zone, pod, guid)
 	stderr("Enabling and starting the Cloud Agent")
 	stop_service(servicename)
 	enable_service(servicename)

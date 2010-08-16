@@ -224,6 +224,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     protected String _guestNetworkName;
     protected int _wait;
     protected IAgentControl _agentControl;
+    protected boolean _isRemoteAgent = false;
 
     protected final XenServerHost _host = new XenServerHost();
 
@@ -764,7 +765,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             Map<Host, Host.Record> hostMap = Host.getAllRecords(conn);
             if (hostMap.size() == 1) {
                 s_logger.debug("There's no one to take over as master");
-                return new MaintainAnswer(cmd, "Only master in the pool");
+                return new MaintainAnswer(cmd,false, "Only master in the pool");
             }
             Host newMaster = null;
             Host.Record newMasterRecord = null;
@@ -1324,7 +1325,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
                 if (param.contains("cpu")) {
                     vmStatsAnswer.setNumCPUs(vmStatsAnswer.getNumCPUs() + 1);
-                    vmStatsAnswer.setCPUUtilization(vmStatsAnswer.getCPUUtilization() + getDataAverage(dataNode, col, numRows));
+                    vmStatsAnswer.setCPUUtilization((vmStatsAnswer.getCPUUtilization() + getDataAverage(dataNode, col, numRows))*100);
                 } else if (param.equals("vif_0_rx")) {
                     vmStatsAnswer.setNetworkReadKBs(getDataAverage(dataNode, col, numRows));
                 } else if (param.equals("vif_0_tx")) {
@@ -5797,14 +5798,16 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             if (checkSR(sr)) {
                 return sr;
             }
+            throw new CloudRuntimeException("Check this SR failed");
+        } else {
+	
+	        if (pool.getPoolType() == StoragePoolType.NetworkFilesystem)
+	            return getNfsSR(pool);
+	        else if (pool.getPoolType() == StoragePoolType.IscsiLUN)
+	            return getIscsiSR(conn, pool);
+	        else
+	            throw new CloudRuntimeException("The pool type: " + pool.getPoolType().name() + " is not supported.");
         }
-
-        if (pool.getPoolType() == StoragePoolType.NetworkFilesystem)
-            return getNfsSR(pool);
-        else if (pool.getPoolType() == StoragePoolType.IscsiLUN)
-            return getIscsiSR(conn, pool);
-        else
-            throw new CloudRuntimeException("The pool type: " + pool.getPoolType().name() + " is not supported.");
 
     }
 
@@ -6073,6 +6076,13 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         _agentControl = agentControl;
     }
 
+    public boolean IsRemoteAgent() {
+    	return _isRemoteAgent;
+    }
+    
+    public void setRemoteAgent(boolean remote) {
+    	_isRemoteAgent = remote;
+    }
 
     
     protected Answer execute(PoolEjectCommand cmd) {

@@ -191,6 +191,7 @@ import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VMTemplateHostVO;
@@ -210,6 +211,7 @@ import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -319,6 +321,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final GuestOSDao _guestOSDao;
     private final GuestOSCategoryDao _guestOSCategoryDao;
     private final StoragePoolDao _poolDao;
+    private final StoragePoolHostDao _poolHostDao;
     private final StorageManager _storageMgr;
     private final UserVmDao _vmDao;
 
@@ -415,6 +418,7 @@ public class ManagementServerImpl implements ManagementServer {
         _guestOSDao = locator.getDao(GuestOSDao.class);
         _guestOSCategoryDao = locator.getDao(GuestOSCategoryDao.class);
         _poolDao = locator.getDao(StoragePoolDao.class);
+        _poolHostDao = locator.getDao(StoragePoolHostDao.class);
         _vmDao = locator.getDao(UserVmDao.class);
 
         _configs = _configDao.getConfiguration();
@@ -8544,5 +8548,29 @@ public class ManagementServerImpl implements ManagementServer {
 
 		return true;
 	}
+
+	@Override
+	public boolean checkIfMaintenable(long hostId) {
+
+		//get the poolhostref record
+		List<StoragePoolHostVO> poolHostRecordSet = _poolHostDao.listByHostId(hostId);
+		
+		if(poolHostRecordSet!=null)
+		{
+			//the above list has only 1 record
+			StoragePoolHostVO poolHostRecord = poolHostRecordSet.get(0);
+			
+			//get the poolId and get hosts associated in that pool
+			List<StoragePoolHostVO> hostsInPool = _poolHostDao.listByPoolId(poolHostRecord.getPoolId());
+			
+			if(hostsInPool!=null && hostsInPool.size()>1)
+			{
+				return true; //since there are other hosts to take over as master in this pool
+			}
+		}
+		return false;
+	}
+
+
 }
 
