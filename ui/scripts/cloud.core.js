@@ -17,6 +17,8 @@
  */
 
 // Version: @VERSION@
+
+// global variables
 var g_mySession = null;
 var g_role = null; // roles - root, domain-admin, ro-admin, user
 var g_username = null;
@@ -25,7 +27,6 @@ var g_domainid = null;
 var g_enableLogging = false; 
 var g_timezoneoffset = null;
 var g_timezone = null;
-
 
 // capabilities
 var g_networkType = "vnet"; // vnet, vlan, direct
@@ -42,6 +43,7 @@ function getDirectAttachUntaggedEnabled() { return g_directAttachedUntaggedEnabl
 
 //keyboard keycode
 var keycode_Enter = 13;
+
 
 //XMLHttpResponse.status
 var ERROR_ACCESS_DENIED_DUE_TO_UNAUTHORIZED = 401;
