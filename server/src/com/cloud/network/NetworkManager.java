@@ -22,6 +22,7 @@ import java.util.Map;
 
 import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
 import com.cloud.api.commands.CreateIPForwardingRuleCmd;
+import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.VlanVO;
@@ -165,11 +166,18 @@ public interface NetworkManager extends Manager {
     public List<FirewallRuleVO> updateFirewallRules(String publicIpAddress, List<FirewallRuleVO> fwRules, DomainRouterVO router);
 
     /**
-     * Create a port forwarding rule from the giving ipAddress/port to the given virtual machine/port.
+     * Create a port forwarding rule from the given ipAddress/port to the given virtual machine/port.
      * @param cmd the command specifying the ip address, public port, protocol, private port, and virtual machine id.
      * @return the newly created FirewallRuleVO if successful, null otherwise.
      */
-    public FirewallRuleVO createPortForwardingRule(CreateIPForwardingRuleCmd cmd) throws InvalidParameterValueException;
+    public FirewallRuleVO createPortForwardingRule(CreateIPForwardingRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, NetworkRuleConflictException;
+
+    /**
+     * Create a load balancer rule from the given ipAddress/port to the given private port
+     * @param cmd the command specifying the ip address, public port, protocol, private port, and algorithm
+     * @return the newly created LoadBalancerVO if successful, null otherwise
+     */
+    public LoadBalancerVO createLoadBalancerRule(CreateLoadBalancerRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 
     /**
      * Associates or disassociates a list of public IP address for a router.

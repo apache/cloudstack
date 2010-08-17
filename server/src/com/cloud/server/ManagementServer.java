@@ -1266,18 +1266,6 @@ public interface ManagementServer {
     List<FirewallRuleVO> listIPForwarding(String publicIPAddress, boolean forwarding);
 
     /**
-     * Create a single port forwarding rule from the given ip address and port to the vm's guest IP address and private port with the given protocol.
-     * @param userId the id of the user performing the action (could be an admin's ID if performing on behalf of a user)
-     * @param ipAddressVO
-     * @param userVM
-     * @param publicPort
-     * @param privatePort
-     * @param protocol
-     * @return
-     */
-    FirewallRuleVO createPortForwardingRule(long userId, IPAddressVO ipAddressVO, UserVmVO userVM, String publicPort, String privatePort, String protocol) throws NetworkRuleConflictException;
-
-    /**
      * Update an existing port forwarding rule on the given public IP / public port for the given protocol
      * @param userId id of the user performing the action
      * @param publicIp ip address of the forwarding rule to update
@@ -1931,7 +1919,6 @@ public interface ManagementServer {
     LoadBalancerVO findLoadBalancerById(long loadBalancerId);
     List<UserVmVO> listLoadBalancerInstances(long loadBalancerId, boolean applied);
     List<LoadBalancerVO> searchForLoadBalancers(Criteria c);
-    LoadBalancerVO createLoadBalancer(Long userId, Long accountId, String name, String description, String ipAddress, String publicPort, String privatePort, String algorithm) throws InvalidParameterValueException, PermissionDeniedException;
     boolean deleteLoadBalancer(long userId, long loadBalancerId);
     long deleteLoadBalancerAsync(long userId, long loadBalancerId);
 
@@ -2092,8 +2079,6 @@ public interface ManagementServer {
 	 */
 	long revokeNetworkGroupIngressAsync(Long accountId, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups);
 	boolean revokeNetworkGroupIngress(AccountVO account, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups);
-
-	NetworkGroupVO createNetworkGroup(String name, String description, Long domainId, Long accountId, String accountName);
 
 	/**
 	 * Delete an empty network group.  If the group is not empty an error is returned.
