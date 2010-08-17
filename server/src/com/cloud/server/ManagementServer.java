@@ -732,8 +732,8 @@ public interface ManagementServer {
      * @param serviceOfferingId
      * @return success/failure
      */
-    boolean upgradeVirtualMachine(long userId, long vmId, long serviceOfferingId, long startEventId);
-    long upgradeVirtualMachineAsync(long userId, long vmId, long serviceOfferingId) throws InvalidParameterValueException;
+//    boolean upgradeVirtualMachine(long userId, long vmId, long serviceOfferingId, long startEventId);
+//    long upgradeVirtualMachineAsync(long userId, long vmId, long serviceOfferingId) throws InvalidParameterValueException;
     
     
     /**

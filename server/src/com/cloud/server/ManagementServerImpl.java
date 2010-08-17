@@ -2611,6 +2611,7 @@ public class ManagementServerImpl implements ManagementServer {
         return _vmMgr.recoverVirtualMachine(vmId);
     }
 
+    /*
     @Override
     public boolean upgradeVirtualMachine(long userId, long vmId, long serviceOfferingId,long startEventId) {
         UserVmVO userVm = _userVmDao.findById(vmId);
@@ -2701,6 +2702,7 @@ public class ManagementServerImpl implements ManagementServer {
         
         return _asyncMgr.submitAsyncJob(job, true);
     }
+*/
 
     @Override
     public void updateVirtualMachine(long vmId, String displayName, String group, boolean enable, Long userId, long accountId) {
