@@ -25,7 +25,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.BaseCmd.Manager;
 
-@Implementation(method="updateTemplatePermissions", manager=Manager.StorageManager)
+@Implementation(method="updateStoragePool", manager=Manager.StorageManager)
 public class UpdateStoragePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateStoragePoolCmd.class.getName());
 
