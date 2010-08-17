@@ -16,7 +16,7 @@
  * 
  */
 
-// Version: 1.9.1.452
+// Version: @VERSION@
 
 function showStorageTab(domainId, targetTab) {      
     var currentSubMenu;
@@ -531,7 +531,8 @@ function showStorageTab(domainId, targetTab) {
 	                         
 	                         var name = thisDialog.find("#name").val();	 
 	                         var displayText = thisDialog.find("#display_text").val();	 
-	                         var osTypeId = thisDialog.find("#os_type").val(); 	                                           
+	                         var osTypeId = thisDialog.find("#os_type").val(); 	  
+	                         var password = thisDialog.find("#password").val();	                                         
 	                         thisDialog.dialog("close");	
 	                         		     	                                                         	                                                  						
 							 var loadingImg = template.find(".adding_loading");							
@@ -541,7 +542,7 @@ function showStorageTab(domainId, targetTab) {
 				             rowContainer.hide(); 	                                  
 	                                                    
 	                         $.ajax({
-					                 data: createURL("command=createTemplate&snapshotid="+snapshotId+"&name="+name+"&displaytext="+displayText+"&ostypeid="+osTypeId+"&response=json"),
+					                 data: createURL("command=createTemplate&snapshotid="+snapshotId+"&name="+name+"&displaytext="+displayText+"&ostypeid="+osTypeId+"&passwordEnabled="+password+"&response=json"),
 						         dataType: "json",
 						         success: function(json) {							            					           								 
 							        var jobId = json.createtemplateresponse.jobid;					        
@@ -1596,7 +1597,8 @@ function showStorageTab(domainId, targetTab) {
 	                         
 	                         var name = thisDialog.find("#name").val();	 
 	                         var displayText = thisDialog.find("#display_text").val();	 
-	                         var osTypeId = thisDialog.find("#os_type").val(); 	                                           
+	                         var osTypeId = thisDialog.find("#os_type").val(); 	
+	                         var password = thisDialog.find("#password").val();		                                           
 	                         thisDialog.dialog("close");	
 	                         		     	                                                         	                                                  						
 							 var loadingImg = template.find(".adding_loading");							
@@ -1606,7 +1608,7 @@ function showStorageTab(domainId, targetTab) {
 				             rowContainer.hide(); 	                                  
 	                                                    
 	                         $.ajax({
-					                 data: createURL("command=createTemplate&snapshotid="+snapshotId+"&name="+name+"&displaytext="+displayText+"&ostypeid="+osTypeId+"&response=json"),
+					                 data: createURL("command=createTemplate&snapshotid="+snapshotId+"&name="+name+"&displaytext="+displayText+"&ostypeid="+osTypeId+"&passwordEnabled="+password+"&response=json"),
 						         dataType: "json",
 						         success: function(json) {							            					           								 
 							        var jobId = json.createtemplateresponse.jobid;					        
