@@ -2941,9 +2941,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
     
     private String getHypervisorPath() {
-    	File f =new File("/usr/bin/cloud-qemu-kvm");
+    	File f =new File("/usr/bin/cloud-qemu-system-x86_64");
     	if (f.exists()) {
-    		return "/usr/bin/cloud-qemu-kvm";
+    		return "/usr/bin/cloud-qemu-system-x86_64";
     	} else {
     		if (_conn == null)
     			return null;
