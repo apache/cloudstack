@@ -32,6 +32,7 @@ import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateTemplateCmd;
+import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
@@ -1784,7 +1785,7 @@ public interface ManagementServer {
      * @throws PermissionDeniedException
      * @throws InternalErrorException
      */
-    boolean updateTemplatePermissions(long templateId, String operation, Boolean isPublic, Boolean isFeatured, List<String> accountNames) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException;
+//    boolean updateTemplatePermissions(long templateId, String operation, Boolean isPublic, Boolean isFeatured, List<String> accountNames) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException;
 
     /**
      * List the permissions on a template.  This will return a list of account names that have been granted permission to launch instances from the template.
@@ -2141,4 +2142,5 @@ public interface ManagementServer {
 	
 	boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException;
 	boolean updateUser(UpdateUserCmd cmd) throws InvalidParameterValueException;
+	boolean updateTemplatePermissions(UpdateTemplateOrIsoPermissionsCmd cmd)throws InvalidParameterValueException, PermissionDeniedException,InternalErrorException;
 }

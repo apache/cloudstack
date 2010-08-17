@@ -38,6 +38,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -84,6 +85,7 @@ import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateTemplateCmd;
+import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.async.AsyncInstanceCreateStatus;
@@ -6750,26 +6752,91 @@ public class ManagementServerImpl implements ManagementServer {
     public List<DiskOfferingVO> findPrivateDiskOffering() {
         return _diskOfferingDao.findPrivateDiskOffering();
     }
+    
+    protected boolean templateIsCorrectType(VMTemplateVO template) {
+    	return true;
+    }
+    
+    protected String getMediaType() {
+    	return "templateOrIso";
+    }
+    
+	public static boolean isAdmin(short accountType) {
+	    return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
+	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
+	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
+	}
 
     @Override
     @DB
-    public boolean updateTemplatePermissions(long templateId, String operation, Boolean isPublic, Boolean isFeatured, List<String> accountNames) throws InvalidParameterValueException,
+    public boolean updateTemplatePermissions(UpdateTemplateOrIsoPermissionsCmd cmd) throws InvalidParameterValueException,
             PermissionDeniedException, InternalErrorException {
         Transaction txn = Transaction.currentTxn();
-        VMTemplateVO template = _templateDao.findById(templateId);
-        if (template == null) {
-            throw new InvalidParameterValueException("Unable to find template with id " + templateId);
+        
+        //Input validation
+        Long id = cmd.getId();
+        Account account = (Account) UserContext.current().getAccountObject();
+        List<String> accountNames = cmd.getAccountNames();
+        Long userId = UserContext.current().getUserId();
+        Boolean isFeatured = cmd.isFeatured();
+        Boolean isPublic = cmd.isPublic();
+        String operation = cmd.getOperation();
+        
+        Boolean publishTemplateResult = Boolean.FALSE;
+
+        VMTemplateVO template = _templateDao.findById(id);
+        
+        if (template == null || !templateIsCorrectType(template)) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "unable to find " + getMediaType() + " with id " + id);
+        }
+
+        if (account != null) 
+        {
+            if (!isAdmin(account.getType()) && (template.getAccountId() != account.getId())) {
+                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to update permissions for " + getMediaType() + " with id " + id);
+            } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                Long templateOwnerDomainId = findDomainIdByAccountId(template.getAccountId());
+                if (!isChildDomain(account.getDomainId(), templateOwnerDomainId)) {
+                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to update permissions for " + getMediaType() + " with id " + id);
+                }
+            }
+        }
+
+        // If the template is removed throw an error.
+        if (template.getRemoved() != null){
+        	s_logger.error("unable to update permissions for " + getMediaType() + " with id " + id + " as it is removed  ");
+        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to update permissions for " + getMediaType() + " with id " + id + " as it is removed ");
+        }
+        
+        if (id == Long.valueOf(1)) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to update permissions for " + getMediaType() + " with id " + id);
+        }
+        
+        boolean isAdmin = ((account == null) || isAdmin(account.getType()));
+        boolean allowPublicUserTemplates = Boolean.parseBoolean(getConfigurationValue("allow.public.user.templates"));        
+        if (!isAdmin && !allowPublicUserTemplates && isPublic != null && isPublic) {
+        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Only private " + getMediaType() + "s can be created.");
+        }
+
+//        // package up the accountNames as a list
+//        List<String> accountNameList = new ArrayList<String>();
+        if (accountNames != null) 
+        {
+            if ((operation == null) || (!operation.equalsIgnoreCase("add") && !operation.equalsIgnoreCase("remove") && !operation.equalsIgnoreCase("reset"))) 
+            {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid operation on accounts, the operation must be either 'add' or 'remove' in order to modify launch permissions." +
+                        "  Given operation is: '" + operation + "'");
+            }
+//            StringTokenizer st = new StringTokenizer(accountNames, ",");
+//            while (st.hasMoreTokens()) {
+//                accountNameList.add(st.nextToken());
+//            }
         }
 
         Long accountId = template.getAccountId();
         if (accountId == null) {
             // if there is no owner of the template then it's probably already a public template (or domain private template) so publishing to individual users is irrelevant
             throw new InvalidParameterValueException("Update template permissions is an invalid operation on template " + template.getName());
-        }
-
-        Account account = _accountDao.findById(accountId);
-        if (account == null) {
-            throw new PermissionDeniedException("Unable to verify owner of template " + template.getName());
         }
 
         VMTemplateVO updatedTemplate = _templateDao.createForUpdate();
@@ -6793,9 +6860,9 @@ public class ManagementServerImpl implements ManagementServer {
                     if (permittedAccount.getId().longValue() == account.getId().longValue()) {
                         continue; // don't grant permission to the template owner, they implicitly have permission
                     }
-                    LaunchPermissionVO existingPermission = _launchPermissionDao.findByTemplateAndAccount(templateId, permittedAccount.getId().longValue());
+                    LaunchPermissionVO existingPermission = _launchPermissionDao.findByTemplateAndAccount(id, permittedAccount.getId().longValue());
                     if (existingPermission == null) {
-                        LaunchPermissionVO launchPermission = new LaunchPermissionVO(templateId, permittedAccount.getId().longValue());
+                        LaunchPermissionVO launchPermission = new LaunchPermissionVO(id, permittedAccount.getId().longValue());
                         _launchPermissionDao.persist(launchPermission);
                     }
                 } else {
@@ -6814,7 +6881,7 @@ public class ManagementServerImpl implements ManagementServer {
                         accountIds.add(permittedAccount.getId());
                     }
                 }
-                _launchPermissionDao.removePermissions(templateId, accountIds);
+                _launchPermissionDao.removePermissions(id, accountIds);
             } catch (CloudRuntimeException ex) {
                 throw new InternalErrorException("Internal error removing launch permissions for template " + template.getName());
             }
@@ -6825,7 +6892,7 @@ public class ManagementServerImpl implements ManagementServer {
             updatedTemplate.setPublicTemplate(false);
             updatedTemplate.setFeatured(false);
             _templateDao.update(template.getId(), updatedTemplate);
-            _launchPermissionDao.removeAllPermissions(templateId);
+            _launchPermissionDao.removeAllPermissions(id);
         }
         return true;
     }
