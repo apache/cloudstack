@@ -1189,10 +1189,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         			  s_logger.debug(result);
         			  return new CreateAnswer(cmd, result);
         		  }
+        		  
+        		  vol = createVolume(primaryPool, tmplVol);
 
-        		  LibvirtStorageVolumeDef volDef = new LibvirtStorageVolumeDef(UUID.randomUUID().toString(), tmplVol.getInfo().capacity, volFormat.QCOW2, tmplVol.getPath(), volFormat.QCOW2);
-        		  s_logger.debug(volDef.toString());
-        		  vol = primaryPool.storageVolCreateXML(volDef.toString(), 0);
         		  if (vol == null) {
         			  return new Answer(cmd, false, " Can't create storage volume on storage pool");
         		  }
@@ -3499,6 +3498,22 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		return vol;
     	} else {
     		return destPool.storageVolCreateXMLFrom(destVol.toString(), srcVol, 0);
+    	}
+    }
+    
+    private StorageVol createVolume(StoragePool destPool, StorageVol tmplVol) throws LibvirtException {
+    	if (isCentosHost()) {
+    		LibvirtStorageVolumeDef volDef = new LibvirtStorageVolumeDef(UUID.randomUUID().toString(), tmplVol.getInfo().capacity, volFormat.QCOW2, null, null);
+    		s_logger.debug(volDef.toString());
+    		StorageVol vol = destPool.storageVolCreateXML(volDef.toString(), 0);
+    		
+    		/*create qcow2 image based on the name*/
+    		Script.runSimpleBashScript("qemu-img create -f qcow2 -b  " + tmplVol.getPath() + " " + vol.getPath() );
+    		return vol;
+    	} else {
+    		LibvirtStorageVolumeDef volDef = new LibvirtStorageVolumeDef(UUID.randomUUID().toString(), tmplVol.getInfo().capacity, volFormat.QCOW2, tmplVol.getPath(), volFormat.QCOW2);
+    		s_logger.debug(volDef.toString());
+    		return destPool.storageVolCreateXML(volDef.toString(), 0);
     	}
     }
     
