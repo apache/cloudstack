@@ -97,8 +97,19 @@ public abstract class BaseCmd {
     public static final DateFormat INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
     private static final DateFormat _outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
 
+    private Object _responseObject = null;
+
     public abstract String getName();
     public abstract String getResponse();
+
+    public Object getResponseObject() {
+        return _responseObject;
+    }
+
+    public void setResponseObject(Object responseObject) {
+        _responseObject = responseObject;
+    }
+
 
     public String getDateString(Date date) {
         if (date == null) {

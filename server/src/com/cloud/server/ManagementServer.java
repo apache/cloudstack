@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.alert.AlertVO;
+import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
@@ -35,14 +36,14 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.configuration.ConfigurationVO;
-import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventVO;
 import com.cloud.exception.ConcurrentOperationException;
@@ -1525,13 +1526,9 @@ public interface ManagementServer {
 
 	/**
 	 * create a new domain
-	 * @param id
-	 * @param domain name
-	 * @param ownerId
-	 * @param parentId
-	 * 
+	 * @param command - the create command defining the name to use and the id of the parent domain under which to create the new domain.
 	 */
-	DomainVO createDomain(String name, Long ownerId, Long parentId);
+    DomainVO createDomain(CreateDomainCmd command) throws InvalidParameterValueException, PermissionDeniedException;
 
 	/**
      * delete a domain with the given domainId

@@ -64,6 +64,7 @@ import com.cloud.api.commands.AuthorizeNetworkGroupIngressCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
 import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
 import com.cloud.api.commands.CopyTemplateCmd;
+import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
@@ -6247,9 +6248,31 @@ public class ManagementServerImpl implements ManagementServer {
 
         return _domainDao.search(sc, searchFilter);
 	}
-	
+
     @Override
-    public DomainVO createDomain(String name, Long ownerId, Long parentId) {
+    public DomainVO createDomain(CreateDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        String name = cmd.getDomainName();
+        Long parentId = cmd.getParentDomainId();
+        Long ownerId = UserContext.current().getAccountId();
+        Account account = (Account)UserContext.current().getAccountObject();
+
+        if (ownerId == null) {
+            ownerId = Long.valueOf(1);
+        }
+
+        if (parentId == null) {
+            parentId = Long.valueOf(DomainVO.ROOT_DOMAIN);
+        }
+
+        DomainVO parentDomain = _domainDao.findById(parentId);
+        if (parentDomain == null) {
+            throw new InvalidParameterValueException("Unable to create domain " + name + ", parent domain " + parentId + " not found.");
+        }
+
+        if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), parentId)) {
+            throw new PermissionDeniedException("Unable to create domain " + name + ", permission denied.");
+        }
+
         SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
         sc.addAnd("name", SearchCriteria.Op.EQ, name);
         sc.addAnd("parent", SearchCriteria.Op.EQ, parentId);
