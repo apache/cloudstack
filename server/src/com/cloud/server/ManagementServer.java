@@ -2032,16 +2032,6 @@ public interface ManagementServer {
 	 */
     ArrayList<String> getCloudIdentifierResponse(GetCloudIdentifierCmd cmd) throws InvalidParameterValueException;
     
-    /**
-     * check if a network security group name in the given account/domain is in use
-     *      - if accountId is specified, look only for the account
-     *      - otherwise look for the name in domain-level security groups (accountId is null)
-     * @param domainId id of the domain in which to search for security groups
-     * @param accountId id of the account in which to search for security groups
-     * @param name name of the security group to look for
-     * @return true if the security group name is found, false otherwise
-     */
-    boolean isNetworkSecurityGroupNameInUse(Long domainId, Long accountId, String name);
     NetworkGroupVO findNetworkGroupByName(Long accountId, String groupName);
 
     /**

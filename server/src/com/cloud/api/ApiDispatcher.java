@@ -15,6 +15,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageManager;
 import com.cloud.utils.DateUtil;
@@ -30,6 +31,7 @@ public class ApiDispatcher {
 
     private ConfigurationManager _configMgr;
     private ManagementServer _mgmtServer;
+    private NetworkGroupManager _networkGroupMgr;
     private NetworkManager _networkMgr;
     private StorageManager _storageMgr;
     private UserVmManager _userVmMgr;
@@ -38,6 +40,7 @@ public class ApiDispatcher {
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
         _mgmtServer = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
         _configMgr = locator.getManager(ConfigurationManager.class);
+        _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
         _networkMgr = locator.getManager(NetworkManager.class);
         _storageMgr = locator.getManager(StorageManager.class);
         _userVmMgr = locator.getManager(UserVmManager.class);
@@ -86,6 +89,9 @@ public class ApiDispatcher {
         case ConfigManager:
             mgr = _configMgr;
             break;
+        case NetworkGroupManager:
+            mgr = _networkGroupMgr;
+            break;
         case NetworkManager:
             mgr = _networkMgr;
             break;
@@ -115,7 +121,7 @@ public class ApiDispatcher {
         }
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private void setFieldValue(Field field, BaseCmd cmdObj, Object paramObj, Parameter annotation) throws IllegalArgumentException, ParseException {
         try {
             field.setAccessible(true);
