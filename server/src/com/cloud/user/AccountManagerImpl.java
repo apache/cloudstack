@@ -52,7 +52,7 @@ public class AccountManagerImpl implements AccountManager {
 	@Inject private VMTemplateDao _templateDao;
 	@Inject private ResourceLimitDao _resourceLimitDao;
 	@Inject private ResourceCountDao _resourceCountDao;
-	@Inject private final GlobalLock m_resourceCountLock = GlobalLock.getInternLock("resource.count");
+	private final GlobalLock m_resourceCountLock = GlobalLock.getInternLock("resource.count");
 	
 	AccountVO _systemAccount;
 	

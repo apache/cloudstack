@@ -41,7 +41,7 @@ import com.google.gson.annotations.Expose;
 public class VolumeVO implements Volume {
     @Id
     @TableGenerator(name="volume_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="volume_seq", allocationSize=1)
-    @GeneratedValue(strategy=GenerationType.SEQUENCE)
+    @GeneratedValue(strategy=GenerationType.TABLE)
     @Column(name="id")
     long id;
     

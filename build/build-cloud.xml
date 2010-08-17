@@ -252,25 +252,45 @@
     <copy todir="${server.dist.dir}/lib">
       <fileset dir="${thirdparty.dir}">
         <include name="mysql-connector-java-5.1.7-bin.jar" />
-	<include name="cglib-nodep-2.2.jar" />
-	<include name="gson-1.3.jar" />
-	<include name="log4j-1.2.15.jar" />
-	<include name="apache-log4j-extras-1.0.jar" />
-	<include name="ehcache-1.5.0.jar" />
-	<include name="commons-logging-1.1.1.jar" />
-	<include name="commons-dbcp-1.2.2.jar" />
-	<include name="commons-pool-1.4.jar" />
-	<include name="backport-util-concurrent-3.0.jar" />
-	<include name="httpcore-4.0.jar" />
-	<include name="commons-httpclient-3.1.jar" />
-	<include name="commons-codec-1.4.jar" />
-	<include name="email.jar" />
-	<include name="xmlrpc-client-3.1.3.jar" />
-	<include name="xmlrpc-common-3.1.3.jar" />
-	<include name="xenserver-5.5.0-1.jar" />
-	<include name="ws-commons-util-1.0.2.jar" />
-	<include name="trilead-ssh2-build213.jar" />
+		<include name="cglib-nodep-2.2.jar" />
+		<include name="gson-1.3.jar" />
+		<include name="log4j-1.2.15.jar" />
+		<include name="apache-log4j-extras-1.0.jar" />
+		<include name="ehcache-1.5.0.jar" />
+		<include name="commons-logging-1.1.1.jar" />
+		<include name="commons-dbcp-1.2.2.jar" />
+		<include name="commons-pool-1.4.jar" />
+		<include name="backport-util-concurrent-3.0.jar" />
+		<include name="httpcore-4.0.jar" />
+		<include name="commons-httpclient-3.1.jar" />
+		<include name="commons-codec-1.4.jar" />
+		<include name="email.jar" />
+		<include name="xmlrpc-client-3.1.3.jar" />
+		<include name="xmlrpc-common-3.1.3.jar" />
+		<include name="xenserver-5.5.0-1.jar" />
+		<include name="ws-commons-util-1.0.2.jar" />
+		<include name="trilead-ssh2-build213.jar" />
       </fileset>
+	  <fileset dir="${thirdparty.dir}/vmware">
+		<include name="apputils.jar" />
+		<include name="vim.jar" />
+		<include name="vim25.jar" />
+	  </fileset>
+  	  <fileset dir="${thirdparty.dir}/vmware/lib">
+  		<include name="activation.jar" />
+  		<include name="axis.jar" />
+  		<include name="jaxen-core.jar" />
+  		<include name="jaxen-jdom.jar" />
+  		<include name="jaxrpc.jar" />
+  		<include name="jdom.jar" />
+  		<include name="mailapi.jar" />
+  		<include name="saxpath.jar" />
+  		<include name="smtp.jar" />
+  		<include name="wbem.jar" />
+  		<include name="xalan.jar" />
+  		<include name="xerces.jar" />
+  		<include name="xml-apis.jar" />
+	  </fileset>
     </copy>
 
     <copy overwrite="true" todir="${server.dist.dir}/conf">

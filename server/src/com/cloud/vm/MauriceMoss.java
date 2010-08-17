@@ -36,9 +36,14 @@ public class MauriceMoss implements VmManager {
     @Inject private NetworkManager _networkMgr;
 
     @Override
-    public VMInstanceVO allocate(VMInstanceVO vm, ServiceOfferingVO serviceOffering, List<NetworkOfferingVO> networkOfferings, List<DiskOfferingVO> diskOffering, DataCenterVO dc, AccountVO account) {
-        _storageMgr.allocateTemplatedVm(vm, template, rootOffering, dataOffering, size, dc, account)
-        return null;
+    public VMInstanceVO allocate(VMInstanceVO vm, 
+            ServiceOfferingVO serviceOffering, 
+            NetworkOfferingVO[] networkOfferings, 
+            DiskOfferingVO[] diskOffering,
+            DataCenterVO dc,
+            AccountVO account) {
+    	
+    	return null;
     }
     
     @Override
