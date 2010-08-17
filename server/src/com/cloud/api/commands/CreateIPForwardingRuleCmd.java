@@ -25,8 +25,10 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.Manager;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
@@ -35,6 +37,7 @@ import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.vm.UserVmVO;
 
+@Implementation(method="createPortForwardingRule", manager=Manager.NetworkManager)
 public class CreateIPForwardingRuleCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateIPForwardingRuleCmd.class.getName());
 
@@ -104,9 +107,9 @@ public class CreateIPForwardingRuleCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
+
     @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
+    public String getResponse() {
     }
 
     @Override

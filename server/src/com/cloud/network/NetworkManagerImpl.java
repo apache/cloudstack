@@ -55,7 +55,10 @@ import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRuleCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.alert.AlertManager;
+import com.cloud.api.BaseCmd;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
+import com.cloud.api.commands.CreateIPForwardingRuleCmd;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -1532,6 +1535,33 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             }
         }
         return result;
+    }
+
+    @Override
+    public FirewallRuleVO createPortForwardingRule(CreateIPForwardingRuleCmd cmd) throws InvalidParameterValueException {
+        // validate IP Address exists
+        IPAddressVO ipAddress = _ipAddressDao.findById(cmd.getIpAddress());
+        if (ipAddress == null) {
+            throw new InvalidParameterValueException("Unable to create port forwarding rule on address " + ipAddress + ", invalid IP address specified.");
+        }
+
+        // validate user VM exists
+        UserVmVO userVM = _vmDao.findById(cmd.getVirtualMachineId());
+        if (userVM == null) {
+            throw new InvalidParameterValueException("Unable to create port forwarding rule on address " + ipAddress + ", invalid virtual machine id specified (" + cmd.getVirtualMachineId() + ").");
+        }
+
+        // validate that IP address and userVM belong to the same account
+        if ((ipAddress.getAccountId() == null) || (ipAddress.getAccountId().longValue() != userVM.getAccountId())) {
+            throw new InvalidParameterValueException("Unable to create port forwarding rule, IP address " + ipAddress + " owner is not the same as owner of virtual machine " + userVM.toString()); 
+        }
+
+        // validate that userVM is in the same availability zone as the IP address
+        if (ipAddress.getDataCenterId() != userVM.getDataCenterId()) {
+            throw new InvalidParameterValueException("Unable to create port forwarding rule, IP address " + ipAddress + " is not in the same availability zone as virtual machine " + userVM.toString());
+        }
+
+        
     }
 
     @Override
