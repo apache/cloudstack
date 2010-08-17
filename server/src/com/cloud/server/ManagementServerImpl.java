@@ -369,7 +369,8 @@ public class ManagementServerImpl implements ManagementServer {
 
     private boolean _isHypervisorSnapshotCapable = false;
 
-
+    private final int _maxVolumeSizeInGb;
+    
     protected ManagementServerImpl() {
         ComponentLocator locator = ComponentLocator.getLocator(Name);
         _lunDao = locator.getDao(PreallocatedLunDao.class);
@@ -463,6 +464,11 @@ public class ManagementServerImpl implements ManagementServer {
 
         // Parse the max number of UserVMs and public IPs from server-setup.xml,
         // and set them in the right places
+        
+        String maxVolumeSizeInGbString = _configs.get("max.volume.size.gb");
+        int maxVolumeSizeGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2000);
+
+        _maxVolumeSizeInGb = maxVolumeSizeGb;
 
         _routerRamSize = NumbersUtil.parseInt(_configs.get("router.ram.size"),NetworkManager.DEFAULT_ROUTER_VM_RAMSIZE);
         _proxyRamSize = NumbersUtil.parseInt(_configs.get("consoleproxy.ram.size"), ConsoleProxyManager.DEFAULT_PROXY_VM_RAMSIZE);
