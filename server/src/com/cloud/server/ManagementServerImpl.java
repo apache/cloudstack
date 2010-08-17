@@ -84,6 +84,7 @@ import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateTemplateCmd;
+import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobExecutor;
@@ -1273,14 +1274,68 @@ public class ManagementServerImpl implements ManagementServer {
 
 
     @Override
-    public boolean updateUser(long userId, String username, String password, String firstname, String lastname, String email, String timezone, String apiKey, String secretKey) throws InvalidParameterValueException{
-        UserVO user = _userDao.findById(userId);
+    public boolean updateUser(UpdateUserCmd cmd) throws InvalidParameterValueException
+    {
+        Long id = cmd.getId();
+        String apiKey = cmd.getApiKey();
+        String firstName = cmd.getFirstname();
+    	String email = cmd.getEmail();
+    	String lastName = cmd.getLastname();
+    	String password = cmd.getPassword();
+    	String secretKey = cmd.getSecretKey();
+    	String timeZone = cmd.getTimezone();
+    	String userName = cmd.getUsername();
+    	
+        //Input validation
+    	UserVO user = _userDao.getUser(id);
+    	
+        if (user == null) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find user by id");
+        }
+
+        if((apiKey == null && secretKey != null) || (apiKey != null && secretKey == null))
+        {
+        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please provide an api key/secret key pair");
+        }
+        
+        // If the account is an admin type, return an error.  We do not allow this
+        Account account = (Account)UserContext.current().getAccountObject();
+        
+        if (account != null && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
+        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "user id : " + id + " is system account, update is not allowed");
+        }
+
+        if (firstName == null) { 
+        	firstName = user.getFirstname();
+        }
+        if (lastName == null) { 
+        	lastName = user.getLastname(); 
+        }
+        if (userName == null) { 
+        	userName = user.getUsername();  
+        }
+        if (password == null) { 
+        	password = user.getPassword();
+        }
+        if (email == null) {
+        	email = user.getEmail();
+        }
+        if (timeZone == null) {
+        	timeZone = user.getTimezone();
+        }
+        if (apiKey == null) {
+        	apiKey = user.getApiKey();
+        }
+        if (secretKey == null) {
+        	secretKey = user.getSecretKey();
+        }
+
         Long accountId = user.getAccountId();
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("updating user with id: " + userId);
+            s_logger.debug("updating user with id: " + id);
         }
-        UserAccount userAccount = _userAccountDao.findById(userId);
+        UserAccount userAccount = _userAccountDao.findById(id);
         try
         {
         	//check if the apiKey and secretKey are globally unique
@@ -1292,8 +1347,8 @@ public class ManagementServerImpl implements ManagementServer {
         		{
         			User usr = apiKeyOwner.first();
         			
-        			if(usr.getId() != userId)
-            			throw new InvalidParameterValueException("The api key:"+apiKey+" exists in the system for user id:"+userId+" ,please provide a unique key");
+        			if(usr.getId() != id)
+            			throw new InvalidParameterValueException("The api key:"+apiKey+" exists in the system for user id:"+id+" ,please provide a unique key");
         			else
         			{
         				//allow the updation to take place
@@ -1303,12 +1358,12 @@ public class ManagementServerImpl implements ManagementServer {
         	}
 
         	
-            _userDao.update(userId, username, password, firstname, lastname, email, accountId, timezone, apiKey, secretKey);
-            EventUtils.saveEvent(new Long(1), Long.valueOf(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_UPDATE, "User, " + username + " for accountId = "
-                    + accountId + " domainId = " + userAccount.getDomainId() + " and timezone = "+timezone + " was updated.");
+            _userDao.update(id, userName, password, firstName, lastName, email, accountId, timeZone, apiKey, secretKey);
+            EventUtils.saveEvent(new Long(1), Long.valueOf(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_UPDATE, "User, " + userName + " for accountId = "
+                    + accountId + " domainId = " + userAccount.getDomainId() + " and timezone = "+timeZone + " was updated.");
         } catch (Throwable th) {
             s_logger.error("error updating user", th);
-            EventUtils.saveEvent(Long.valueOf(1), Long.valueOf(1), EventVO.LEVEL_ERROR, EventTypes.EVENT_USER_UPDATE, "Error updating user, " + username
+            EventUtils.saveEvent(Long.valueOf(1), Long.valueOf(1), EventVO.LEVEL_ERROR, EventTypes.EVENT_USER_UPDATE, "Error updating user, " + userName
                     + " for accountId = " + accountId + " and domainId = " + userAccount.getDomainId());
             return false;
         }

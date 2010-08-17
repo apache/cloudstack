@@ -32,6 +32,7 @@ import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateTemplateCmd;
+import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.capacity.CapacityVO;
@@ -298,7 +299,7 @@ public interface ManagementServer {
      * @return true if update was successful, false otherwise
      * @throws InvalidParameterValueException
      */
-    boolean updateUser(long userId, String username, String password, String firstname, String lastname, String email, String timezone, String apiKey, String secretKey) throws InvalidParameterValueException;
+//    boolean updateUser(long userId, String username, String password, String firstname, String lastname, String email, String timezone, String apiKey, String secretKey) throws InvalidParameterValueException;
 
     /**
      * Locate a user by their apiKey
@@ -2139,4 +2140,5 @@ public interface ManagementServer {
 //	boolean addConfig(String instance, String component, String category, String name, String value, String description);
 	
 	boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException;
+	boolean updateUser(UpdateUserCmd cmd) throws InvalidParameterValueException;
 }

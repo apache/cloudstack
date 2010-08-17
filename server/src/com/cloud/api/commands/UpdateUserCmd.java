@@ -25,30 +25,20 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.Manager;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
 
+@Implementation(method="updateUser", manager=Manager.UserVmManager)
 public class UpdateUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateUserCmd.class.getName());
 
     private static final String s_name = "updateuserresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.API_KEY, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.EMAIL, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.FIRSTNAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.LASTNAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PASSWORD, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SECRET_KEY, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TIMEZONE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USERNAME, Boolean.FALSE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -128,75 +118,12 @@ public class UpdateUserCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
-
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long userId = (Long)params.get(BaseCmd.Properties.ID.getName());
-        String username = (String)params.get(BaseCmd.Properties.USERNAME.getName());
-        String password = (String)params.get(BaseCmd.Properties.PASSWORD.getName());
-        String firstname = (String)params.get(BaseCmd.Properties.FIRSTNAME.getName());
-        String lastname = (String)params.get(BaseCmd.Properties.LASTNAME.getName());
-        String email = (String)params.get(BaseCmd.Properties.EMAIL.getName());
-        String timezone = (String)params.get(BaseCmd.Properties.TIMEZONE.getName());
-        String apiKey = (String)params.get(BaseCmd.Properties.API_KEY.getName());
-        String secretKey = (String)params.get(BaseCmd.Properties.SECRET_KEY.getName());
-        //check if the user exists in the system
-        User user = getManagementServer().getUser(userId.longValue());
-        if (user == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find user by id");
-        }
-
-        if((apiKey == null && secretKey != null) || (apiKey != null && secretKey == null))
-        {
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please provide an api key/secret key pair");
-        }
-        
-        // If the account is an admin type, return an error.  We do not allow this
-        Account account = getManagementServer().findAccountById(user.getAccountId());
-        if (account != null && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
-        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "user id : " + userId + " is system account, update is not allowed");
-        }
-
-        if (firstname == null) { 
-        	firstname = user.getFirstname();
-        }
-        if (lastname == null) { 
-        	lastname = user.getLastname(); 
-        }
-        if (username == null) { 
-        	username = user.getUsername();  
-        }
-        if (password == null) { 
-        	password = user.getPassword();
-        }
-        if (email == null) {
-        	email = user.getEmail();
-        }
-        if (timezone == null) {
-        	timezone = user.getTimezone();
-        }
-        if (apiKey == null) {
-        	apiKey = user.getApiKey();
-        }
-        if (secretKey == null) {
-        	secretKey = user.getSecretKey();
-        }
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        boolean success = false;
-		try {
-			success = getManagementServer().updateUser(user.getId(), username, password, firstname, lastname, email, timezone, apiKey, secretKey);
-		} catch (InvalidParameterValueException e) 
-		{
-			throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
-		}
-        if (success) {
-           returnValues.add(new Pair<String,Object> (BaseCmd.Properties.SUCCESS.getName(), Boolean.valueOf(success).toString()));
-        } else {
-        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "failed to update user");
-        }
-        return returnValues;
-    }
+   
+	@Override
+	public String getResponse() {
+		// TODO Auto-generated method stub
+		
+		//response returned is true or false, based on which you can throw an error
+		return null;
+	}
 }

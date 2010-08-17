@@ -18,27 +18,19 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.response.UpgradeVmResponse;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 import com.cloud.vm.UserVmVO;
 
 @Implementation(method="updateVirtualMachine", manager=Manager.UserVmManager)
 public class UpdateVMCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(UpdateVMCmd.class.getName());
     private static final String s_name = "updatevirtualmachineresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
