@@ -1,14 +1,15 @@
 build/build.number
-bin
+bin/
 cloudstack-proprietary
 .lock-wscript
 artifacts
 .waf-*
 waf-*
 target
-override
+override/
 .metadata
 dist
 *~
 *.bak
 cloud-*.tar.bz2
+*.log
