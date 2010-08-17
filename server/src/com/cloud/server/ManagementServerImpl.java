@@ -6760,10 +6760,6 @@ public class ManagementServerImpl implements ManagementServer {
     	return true;
     }
     
-    protected String getMediaType() {
-    	return "templateOrIso";
-    }
-    
 	public static boolean isAdmin(short accountType) {
 	    return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
 	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
@@ -6784,47 +6780,62 @@ public class ManagementServerImpl implements ManagementServer {
         Boolean isFeatured = cmd.isFeatured();
         Boolean isPublic = cmd.isPublic();
         String operation = cmd.getOperation();
-        Boolean isTemplate = true; //by default template; false => iso
         String mediaType = "";
 
         VMTemplateVO template = _templateDao.findById(id);
         
         if (template == null || !templateIsCorrectType(template)) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "unable to find " + getMediaType() + " with id " + id);
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "unable to find " + mediaType + " with id " + id);
         }
 
         if(cmd instanceof UpdateTemplatePermissionsCmd)
+        {
         	mediaType = "template";
-        
+        	if(template.getFormat().equals(ImageFormat.ISO))
+        	{
+        		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Please provide a valid template");
+        	}
+        }
         if(cmd instanceof UpdateIsoPermissionsCmd)
+        {
         	mediaType = "iso";
-        	
+        	if(!template.getFormat().equals(ImageFormat.ISO))
+        	{
+        		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Please provide a valid iso");
+        	}
+        }
+        
         if (account != null) 
         {
             if (!isAdmin(account.getType()) && (template.getAccountId() != account.getId())) {
-                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to update permissions for " + getMediaType() + " with id " + id);
+                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to update permissions for " + mediaType + " with id " + id);
             } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
                 Long templateOwnerDomainId = findDomainIdByAccountId(template.getAccountId());
                 if (!isChildDomain(account.getDomainId(), templateOwnerDomainId)) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to update permissions for " + getMediaType() + " with id " + id);
+                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to update permissions for " + mediaType + " with id " + id);
                 }
             }
         }
 
+        // If command is executed via 8096 port, set userId to the id of System account (1)
+        if (userId == null) {
+            userId = Long.valueOf(User.UID_SYSTEM);
+        }
+        
         // If the template is removed throw an error.
         if (template.getRemoved() != null){
-        	s_logger.error("unable to update permissions for " + getMediaType() + " with id " + id + " as it is removed  ");
-        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to update permissions for " + getMediaType() + " with id " + id + " as it is removed ");
+        	s_logger.error("unable to update permissions for " + mediaType + " with id " + id + " as it is removed  ");
+        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to update permissions for " + mediaType + " with id " + id + " as it is removed ");
         }
         
         if (id == Long.valueOf(1)) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to update permissions for " + getMediaType() + " with id " + id);
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to update permissions for " + mediaType + " with id " + id);
         }
         
         boolean isAdmin = ((account == null) || isAdmin(account.getType()));
         boolean allowPublicUserTemplates = Boolean.parseBoolean(getConfigurationValue("allow.public.user.templates"));        
         if (!isAdmin && !allowPublicUserTemplates && isPublic != null && isPublic) {
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Only private " + getMediaType() + "s can be created.");
+        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Only private " + mediaType + "s can be created.");
         }
 
 //        // package up the accountNames as a list
