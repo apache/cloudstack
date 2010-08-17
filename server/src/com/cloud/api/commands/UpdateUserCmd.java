@@ -34,7 +34,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
 
-@Implementation(method="updateUser", manager=Manager.UserVmManager)
+@Implementation(method="updateUser", manager=Manager.ManagementServer)
 public class UpdateUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateUserCmd.class.getName());
 
