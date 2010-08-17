@@ -25,17 +25,20 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.Manager;
 import com.cloud.offering.ServiceOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
 
-public class UpdateServiceOfferingCmd extends BaseCmd{
+@Implementation(method="updateServiceOffering", manager=Manager.ConfigManager)
+public class UpdateServiceOfferingCmd extends BaseCmd
+{
     public static final Logger s_logger = Logger.getLogger(UpdateServiceOfferingCmd.class.getName());
     private static final String s_name = "updateserviceofferingresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     static {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISPLAY_TEXT, Boolean.FALSE));
