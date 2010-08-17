@@ -1093,6 +1093,9 @@ public class UserVmManagerImpl implements UserVmManager {
     }
     
     @Override
+    /*
+     * TODO: cleanup eventually - Refactored API call
+     */
     public boolean upgradeVirtualMachine(UpgradeVMCmd cmd) throws ServerApiException, InvalidParameterValueException
     {
         Long virtualMachineId = cmd.getId();
