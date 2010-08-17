@@ -24,6 +24,7 @@ import java.util.Map;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.exception.InternalErrorException;
@@ -260,7 +261,7 @@ public interface StorageManager extends Manager {
      * @param poolId ID of the storage pool to be updated
      * @param tags Tags that will be added to the storage pool
      */
-    StoragePoolVO updateStoragePool(long poolId, String tags) throws IllegalArgumentException;
+//    StoragePoolVO updateStoragePool(long poolId, String tags) throws IllegalArgumentException;
 
 	/**
 	 * Find all of the storage pools needed for this vm.
@@ -288,4 +289,6 @@ public interface StorageManager extends Manager {
      * @return
      */
     public boolean cancelPrimaryStorageForMaintenance(long primaryStorageId, long userId);
+
+	public StoragePoolVO updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException;
 }

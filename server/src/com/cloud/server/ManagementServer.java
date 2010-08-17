@@ -753,7 +753,7 @@ public interface ManagementServer {
      * @param poolId ID of the storage pool to be updated
      * @param tags Tags that will be added to the storage pool
      */
-    StoragePoolVO updateStoragePool(long poolId, String tags);
+//    StoragePoolVO updateStoragePool(long poolId, String tags);
     
     /**
      * Starts a Domain Router

@@ -2770,10 +2770,10 @@ public class ManagementServerImpl implements ManagementServer {
     }
 */
     
-    @Override
-    public StoragePoolVO updateStoragePool(long poolId, String tags) throws IllegalArgumentException {
-    	return _storageMgr.updateStoragePool(poolId, tags);
-    }
+//    @Override
+//    public StoragePoolVO updateStoragePool(long poolId, String tags) throws IllegalArgumentException {
+//    	return _storageMgr.updateStoragePool(poolId, tags);
+//    }
 
     @Override
     public DomainRouter startRouter(long routerId, long startEventId) throws InternalErrorException {

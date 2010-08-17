@@ -59,6 +59,7 @@ import com.cloud.agent.api.to.DiskCharacteristicsTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
@@ -1306,14 +1307,19 @@ public class StorageManagerImpl implements StorageManager {
     }
     
     @Override
-    public StoragePoolVO updateStoragePool(long poolId, String tags) throws IllegalArgumentException {
-    	StoragePoolVO pool = _storagePoolDao.findById(poolId);
+    public StoragePoolVO updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException 
+    {
+    	//Input validation
+    	Long id = cmd.getId();
+    	String tags = cmd.getTags();
+    	
+    	StoragePoolVO pool = _storagePoolDao.findById(id);
     	if (pool == null) {
-    		throw new IllegalArgumentException("Unable to find storage pool with ID: " + poolId);
+    		throw new IllegalArgumentException("Unable to find storage pool with ID: " + id);
     	}
     	
     	if (tags != null) {
-    		Map<String, String> details = _storagePoolDao.getDetails(poolId);
+    		Map<String, String> details = _storagePoolDao.getDetails(id);
     		String[] tagsList = tags.split(",");
     		for (String tag : tagsList) {
     			tag = tag.trim();
@@ -1322,7 +1328,7 @@ public class StorageManagerImpl implements StorageManager {
     			}
     		}
     		
-    		_storagePoolDao.updateDetails(poolId, details);
+    		_storagePoolDao.updateDetails(id, details);
     	}
     	
     	return pool;
