@@ -2709,30 +2709,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job, true);
     }
 */
-
-    @Override
-    public void updateVirtualMachine(long vmId, String displayName, String group, boolean enable, Long userId, long accountId) {
-        UserVmVO vm = _userVmDao.findById(vmId);
-        if (vm == null) {
-            throw new CloudRuntimeException("Unable to find virual machine with id " + vmId);
-        }
-
-        boolean haEnabled = vm.isHaEnabled();
-        _userVmDao.updateVM(vmId, displayName, group, enable);
-        if (haEnabled != enable) {
-            String description = null;
-            String type = null;
-            if (enable) {
-                description = "Successfully enabled HA for virtual machine " + vm.getName();
-                type = EventTypes.EVENT_VM_ENABLE_HA;
-            } else {
-                description = "Successfully disabled HA for virtual machine " + vm.getName();
-                type = EventTypes.EVENT_VM_DISABLE_HA;
-            }
-            // create a event for the change in HA Enabled flag
-            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, type, description, null);
-        }
-    }
     
     @Override
     public StoragePoolVO updateStoragePool(long poolId, String tags) throws IllegalArgumentException {

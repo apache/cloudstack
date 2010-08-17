@@ -66,6 +66,7 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
@@ -1110,22 +1111,7 @@ public class UserVmManagerImpl implements UserVmManager {
         	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + virtualMachineId);
         }       
 
-        if (account != null) 
-        {
-            if (!isAdmin(account.getType()) && (account.getId().longValue() != vmInstance.getAccountId())) 
-            {
-                throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + virtualMachineId + " for this account");
-            } 
-            else if (_domainDao.isChildDomain(account.getDomainId(),vmInstance.getDomainId())) 
-            {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid virtual machine id (" + virtualMachineId + ") given, unable to upgrade virtual machine.");
-            }
-        }
-
-        // If command is executed via 8096 port, set userId to the id of System account (1)
-        if (userId == null) {
-            userId = Long.valueOf(User.UID_SYSTEM);
-        }                         
+        userId = accountAndUserValidation(virtualMachineId, account, userId,vmInstance);                         
             
         // Check that the specified service offering ID is valid
         ServiceOfferingVO newServiceOffering = _offeringDao.findById(serviceOfferingId);
@@ -1184,6 +1170,27 @@ public class UserVmManagerImpl implements UserVmManager {
             return _vmDao.update(vmInstance.getId(), vmInstance);
             
     }
+
+	private Long accountAndUserValidation(Long virtualMachineId,Account account, Long userId, UserVmVO vmInstance) throws ServerApiException
+	{
+		if (account != null) 
+        {
+            if (!isAdmin(account.getType()) && (account.getId().longValue() != vmInstance.getAccountId())) 
+            {
+                throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + virtualMachineId + " for this account");
+            } 
+            else if (_domainDao.isChildDomain(account.getDomainId(),vmInstance.getDomainId())) 
+            {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid virtual machine id (" + virtualMachineId + ") given, unable to upgrade virtual machine.");
+            }
+        }
+
+        // If command is executed via 8096 port, set userId to the id of System account (1)
+        if (userId == null) {
+            userId = Long.valueOf(User.UID_SYSTEM);
+        }
+		return userId;
+	}
 
     @Override
     public HashMap<Long, VmStatsEntry> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds) throws InternalErrorException {
@@ -3044,4 +3051,74 @@ public class UserVmManagerImpl implements UserVmManager {
 	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
 	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
 	}
+	
+    @Override
+    public void updateVirtualMachine(UpdateVMCmd cmd) 
+    {
+
+        String displayName = cmd.getDisplayName();
+        String group = cmd.getGroup();
+        Boolean ha = cmd.getHaEnable();
+        Long id = cmd.getId();
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long userId = UserContext.current().getUserId();
+    
+        //Input validation
+        UserVmVO vmInstance = null;
+        
+        // Verify input parameters
+        try 
+        {
+        	vmInstance = _userVmDao.findById(id.longValue());
+        } 
+        catch (Exception ex1) 
+        {
+        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "unable to find virtual machine by id");
+        }
+
+        if (vmInstance == null) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find virtual machine with id " + id);
+        }
+
+        userId = accountAndUserValidation(id, account, userId,vmInstance);  
+        
+        if (group == null) {
+    		group = vmInstance.getGroup();
+    	}
+
+    	if (displayName == null) {
+    		displayName = vmInstance.getDisplayName();
+    	}
+    	
+    	if (ha == null) {
+    		ha = vmInstance.isHaEnabled();
+    	}
+
+    	long accountId = vmInstance.getAccountId();
+
+        
+        UserVmVO vm = _userVmDao.findById(id);
+        if (vm == null) {
+            throw new CloudRuntimeException("Unable to find virual machine with id " + id);
+        }
+
+        boolean haEnabled = vm.isHaEnabled();
+        _userVmDao.updateVM(id, displayName, group, ha);
+        if (haEnabled != ha) {
+            String description = null;
+            String type = null;
+            if (ha) 
+            {
+                description = "Successfully enabled HA for virtual machine " + vm.getName();
+                type = EventTypes.EVENT_VM_ENABLE_HA;
+            } 
+            else 
+            {
+                description = "Successfully disabled HA for virtual machine " + vm.getName();
+                type = EventTypes.EVENT_VM_DISABLE_HA;
+            }
+            // create a event for the change in HA Enabled flag
+            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, type, description, null);
+        }
+    }
 }

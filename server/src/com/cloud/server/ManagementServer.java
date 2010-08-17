@@ -744,7 +744,7 @@ public interface ManagementServer {
      * @param userId - id of user performing the update on the virtual machine
      * @param accountId - id of the account that owns the virtual machine
      */
-    void updateVirtualMachine(long vmId, String displayName, String group, boolean enable, Long userId, long accountId);
+//    void updateVirtualMachine(long vmId, String displayName, String group, boolean enable, Long userId, long accountId);
 
     /**
      * Updates a storage pool.

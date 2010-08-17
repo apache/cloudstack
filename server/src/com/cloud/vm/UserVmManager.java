@@ -22,6 +22,7 @@ import java.util.List;
 
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.async.executor.DestroyVMExecutor;
 import com.cloud.async.executor.OperationResponse;
@@ -221,5 +222,7 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @param userVm
      */
     void releaseGuestIpAddress(UserVmVO userVm);
+
+	void updateVirtualMachine(UpdateVMCmd cmd);
 
 }
