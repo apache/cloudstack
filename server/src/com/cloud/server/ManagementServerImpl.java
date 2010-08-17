@@ -84,8 +84,10 @@ import com.cloud.api.commands.StartSystemVMCmd;
 import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
+import com.cloud.api.commands.UpdateIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateTemplateCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
+import com.cloud.api.commands.UpdateTemplatePermissionsCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.async.AsyncInstanceCreateStatus;
@@ -281,6 +283,7 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
+import com.sun.org.apache.bcel.internal.generic.INSTANCEOF;
 
 public class ManagementServerImpl implements ManagementServer {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
@@ -6781,8 +6784,8 @@ public class ManagementServerImpl implements ManagementServer {
         Boolean isFeatured = cmd.isFeatured();
         Boolean isPublic = cmd.isPublic();
         String operation = cmd.getOperation();
-        
-        Boolean publishTemplateResult = Boolean.FALSE;
+        Boolean isTemplate = true; //by default template; false => iso
+        String mediaType = "";
 
         VMTemplateVO template = _templateDao.findById(id);
         
@@ -6790,6 +6793,12 @@ public class ManagementServerImpl implements ManagementServer {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "unable to find " + getMediaType() + " with id " + id);
         }
 
+        if(cmd instanceof UpdateTemplatePermissionsCmd)
+        	mediaType = "template";
+        
+        if(cmd instanceof UpdateIsoPermissionsCmd)
+        	mediaType = "iso";
+        	
         if (account != null) 
         {
             if (!isAdmin(account.getType()) && (template.getAccountId() != account.getId())) {
