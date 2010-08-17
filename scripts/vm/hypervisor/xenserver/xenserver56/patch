@@ -20,6 +20,7 @@ vmops=..,0755,/etc/xapi.d/plugins
 vmopsSnapshot=..,0755,/etc/xapi.d/plugins
 systemvm-premium.zip=../../../../../vms,0755,/opt/xensource/bin
 hostvmstats.py=..,0755,/opt/xensource/sm
+xs_cleanup.sh=..,0755,/opt/xensource/bin
 network_info.sh=..,0755,/opt/xensource/bin
 prepsystemvm.sh=..,0755,/opt/xensource/bin
 setupxenserver.sh=..,0755,/opt/xensource/bin
