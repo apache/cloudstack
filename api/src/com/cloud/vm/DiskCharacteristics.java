@@ -34,11 +34,12 @@ public class DiskCharacteristics {
     private boolean recreatable;
     private long diskOfferingId;
     private Long templateId;
+    private long volumeId;
     
     protected DiskCharacteristics() {
     }
     
-    public DiskCharacteristics(Volume.VolumeType type, String name, long diskOfferingId, long size, String[] tags, boolean useLocalStorage, boolean recreatable, Long templateId) {
+    public DiskCharacteristics(long volumeId, Volume.VolumeType type, String name, long diskOfferingId, long size, String[] tags, boolean useLocalStorage, boolean recreatable, Long templateId) {
         this.type = type;
         this.name = name;
         this.size = size;
@@ -47,6 +48,7 @@ public class DiskCharacteristics {
         this.recreatable = recreatable;
         this.diskOfferingId = diskOfferingId;
         this.templateId = templateId;
+        this.volumeId = volumeId;
     }
 
     /**
@@ -54,6 +56,13 @@ public class DiskCharacteristics {
      */
     public long getSize() {
         return size;
+    }
+    
+    /**
+     * @return id of the volume backing up this disk characteristics
+     */
+    public long getVolumeId() {
+        return volumeId;
     }
     
     /**

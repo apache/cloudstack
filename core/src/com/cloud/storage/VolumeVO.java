@@ -27,6 +27,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
@@ -39,9 +40,10 @@ import com.google.gson.annotations.Expose;
 @Table(name="volumes")
 public class VolumeVO implements Volume {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @TableGenerator(name="volume_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="volume_seq", allocationSize=1)
+    @GeneratedValue(strategy=GenerationType.SEQUENCE)
     @Column(name="id")
-    Long id;
+    long id;
     
     @Expose
     @Column(name="name")
@@ -176,7 +178,8 @@ public class VolumeVO implements Volume {
     }
  
     // Real Constructor
-    public VolumeVO(VolumeType type, String name, long dcId, long domainId, long accountId, long diskOfferingId, long size) {
+    public VolumeVO(long id, VolumeType type, String name, long dcId, long domainId, long accountId, long diskOfferingId, long size) {
+        this.id = id;
         this.volumeType = type;
         this.name = name;
         this.dataCenterId = dcId;
@@ -233,7 +236,7 @@ public class VolumeVO implements Volume {
 		return iscsiName;
 	}
 
-	public Long getId() {
+	public long getId() {
         return id;
 	}
 	
@@ -310,10 +313,6 @@ public class VolumeVO implements Volume {
 		return volumeType;
 	}
 	
-	public void setId(Long id) {
-		this.id = id;
-	}
-
 	public void setName(String name) {
 		this.name = name;
 	}

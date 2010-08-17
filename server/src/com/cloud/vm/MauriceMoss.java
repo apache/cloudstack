@@ -19,16 +19,28 @@ package com.cloud.vm;
 
 import java.util.List;
 
+import javax.ejb.Local;
+
+import com.cloud.dc.DataCenterVO;
+import com.cloud.network.NetworkManager;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.StorageManager;
+import com.cloud.user.AccountVO;
+import com.cloud.utils.component.Inject;
 
+@Local(value=VmManager.class)
 public class MauriceMoss implements VmManager {
+    @Inject private StorageManager _storageMgr;
+    @Inject private NetworkManager _networkMgr;
 
     @Override
-    public VMInstanceVO allocate(VMInstanceVO vm, ServiceOfferingVO serviceOffering, NetworkOfferingVO[] networkOfferings, DiskOfferingVO[] diskOffering) {
+    public VMInstanceVO allocate(VMInstanceVO vm, ServiceOfferingVO serviceOffering, List<NetworkOfferingVO> networkOfferings, List<DiskOfferingVO> diskOffering, DataCenterVO dc, AccountVO account) {
+        _storageMgr.allocateTemplatedVm(vm, template, rootOffering, dataOffering, size, dc, account)
         return null;
     }
+    
     @Override
     public void create(VmCharacteristics vm, List<DiskCharacteristics> disks, List<NetworkCharacteristics> networks) {
         // TODO Auto-generated method stub
@@ -51,5 +63,7 @@ public class MauriceMoss implements VmManager {
     public void stop() {
         // TODO Auto-generated method stub
     }
-
+    
+    protected MauriceMoss() {
+    }
 }

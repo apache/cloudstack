@@ -26,8 +26,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.domain.DomainVO;
@@ -36,7 +36,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
@@ -46,49 +46,24 @@ public class AccountManagerImpl implements AccountManager {
 	public static final Logger s_logger = Logger.getLogger(AccountManagerImpl.class.getName());
 	
 	private String _name;
-	private AccountDao _accountDao;
-	private DomainDao _domainDao;
-	private UserDao _userDao;
-	private VMTemplateDao _templateDao;
-	private ResourceLimitDao _resourceLimitDao;
-	private ResourceCountDao _resourceCountDao;
-	private final GlobalLock m_resourceCountLock = GlobalLock.getInternLock("resource.count");
+	@Inject private AccountDao _accountDao;
+	@Inject private DomainDao _domainDao;
+	@Inject private UserDao _userDao;
+	@Inject private VMTemplateDao _templateDao;
+	@Inject private ResourceLimitDao _resourceLimitDao;
+	@Inject private ResourceCountDao _resourceCountDao;
+	@Inject private final GlobalLock m_resourceCountLock = GlobalLock.getInternLock("resource.count");
+	
+	AccountVO _systemAccount;
 	
 	@Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
     	_name = name;
-    	final ComponentLocator locator = ComponentLocator.getCurrentLocator();
     	
-    	_accountDao = locator.getDao(AccountDao.class);
-        if (_accountDao == null) {
-            throw new ConfigurationException("Unable to get the account dao.");
-        }
-        
-        _domainDao = locator.getDao(DomainDao.class);
-        if (_domainDao == null) {
-        	throw new ConfigurationException("Unable to get the domain dao.");
-        }
-        
-        _userDao = locator.getDao(UserDao.class);
-        if (_userDao == null) {
-            throw new ConfigurationException("Unable to get the user dao.");
-        }
-        
-        _templateDao = locator.getDao(VMTemplateDao.class);
-        if (_templateDao == null) {
-        	throw new ConfigurationException("Unable to get the template dao.");
-        }
-        
-        _resourceLimitDao = locator.getDao(ResourceLimitDao.class);
-        if (_resourceLimitDao == null) {
-            throw new ConfigurationException("Unable to get " + ResourceLimitDao.class.getName());
-        }
-        
-        _resourceCountDao = locator.getDao(ResourceCountDao.class);
-        if (_resourceCountDao == null) {
-            throw new ConfigurationException("Unable to get " + ResourceCountDao.class.getName());
-        }
-    	
+    	_systemAccount = _accountDao.findById(AccountVO.ACCOUNT_ID_SYSTEM);
+    	if (_systemAccount == null) {
+    	    throw new ConfigurationException("Unable to find the system account using " + AccountVO.ACCOUNT_ID_SYSTEM);
+    	}
     	return true;
     }
 	
@@ -327,6 +302,11 @@ public class AccountManagerImpl implements AccountManager {
         	// Persist the new Limit
             return _resourceLimitDao.persist(new ResourceLimitVO(domainId, accountId, type, max));
         }
+    }
+    
+    @Override
+    public AccountVO getSystemAccount() {
+        return _systemAccount;
     }
 
 }

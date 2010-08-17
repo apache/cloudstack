@@ -100,4 +100,6 @@ public interface AccountManager extends Manager {
 	 */
 	public ResourceLimitVO updateResourceLimit(Long domainId, Long accountId, ResourceType type, Long max) throws InvalidParameterValueException;
 	
+	AccountVO getSystemAccount();
+	
 }

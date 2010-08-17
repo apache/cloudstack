@@ -225,11 +225,6 @@ public class StorageManagerImpl implements StorageManager {
         return true;
     }
     
-    protected void setDeviceId(VolumeVO vol) {
-        //TODO: Need to figure out what to do here.
-        vol.setDeviceId(1l);
-    }
-
     @DB
     public List<VolumeVO> allocate(DiskCharacteristics rootDisk, List<DiskCharacteristics> dataDisks, VMInstanceVO vm, DataCenterVO dc, AccountVO account) {
         ArrayList<VolumeVO> vols = new ArrayList<VolumeVO>(dataDisks.size() + 1);
@@ -238,7 +233,7 @@ public class StorageManagerImpl implements StorageManager {
         long deviceId = 0;
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        rootVol = new VolumeVO(VolumeType.ROOT, rootDisk.getName(), dc.getId(), account.getDomainId(), account.getId(), rootDisk.getDiskOfferingId(), rootDisk.getSize());
+        rootVol = new VolumeVO(rootDisk.getVolumeId(), VolumeType.ROOT, rootDisk.getName(), dc.getId(), account.getDomainId(), account.getId(), rootDisk.getDiskOfferingId(), rootDisk.getSize());
         if (rootDisk.getTemplateId() != null) {
             rootVol.setTemplateId(rootDisk.getTemplateId());
         }
@@ -247,15 +242,50 @@ public class StorageManagerImpl implements StorageManager {
         rootVol = _volsDao.persist(rootVol);
         vols.add(rootVol);
         for (DiskCharacteristics dataDisk : dataDisks) {
-            dataVol = new VolumeVO(VolumeType.DATADISK, dataDisk.getName(), dc.getId(), account.getDomainId(), account.getId(), dataDisk.getDiskOfferingId(), dataDisk.getSize());
+            dataVol = new VolumeVO(dataDisk.getVolumeId(), VolumeType.DATADISK, dataDisk.getName(), dc.getId(), account.getDomainId(), account.getId(), dataDisk.getDiskOfferingId(), dataDisk.getSize());
             dataVol.setDeviceId(deviceId++);
-            dataVol = _volsDao.persist(dataVol);
             dataVol.setInstanceId(vm.getId());
+            dataVol = _volsDao.persist(dataVol);
             vols.add(dataVol);
         }
         txn.commit();
         
         return vols;
+    }
+    
+    @Override
+    public List<VolumeVO> allocateTemplatedVm(VMInstanceVO vm, VMTemplateVO template, DiskOfferingVO rootOffering, DiskOfferingVO diskOffering, Long size, DataCenterVO dc, AccountVO account) {
+        assert (template.getFormat() != ImageFormat.ISO) : "You can't create user vm based on ISO with this format";
+        
+        DiskCharacteristics rootDisk = null;
+        List<DiskCharacteristics> dataDisks = new ArrayList<DiskCharacteristics>(diskOffering != null ? 1 : 0);
+        
+        long rootId = _volsDao.getNextInSequence(Long.class, "volume_seq");
+
+        rootDisk = new DiskCharacteristics(rootId, VolumeType.ROOT, "ROOT-" + vm.getId() + " rootId", rootOffering.getId(), 0, rootOffering.getTagsArray(), rootOffering.getUseLocalStorage(), rootOffering.isRecreatable(), template.getId());
+        if (diskOffering != null) {
+            long dataId = _volsDao.getNextInSequence(Long.class, "volume_seq");
+            dataDisks.add(new DiskCharacteristics(dataId, VolumeType.DATADISK, "DATA-" + vm.getId() + "-" + dataId, diskOffering.getId(), size != null ? size : diskOffering.getDiskSizeInBytes(), diskOffering.getTagsArray(), diskOffering.getUseLocalStorage(), diskOffering.isRecreatable(), null));
+        }
+        
+        return allocate(rootDisk, dataDisks, vm, dc, account);
+    }
+    
+    @Override
+    public VolumeVO allocateIsoInstalledVm(VMInstanceVO vm, VMTemplateVO template, DiskOfferingVO rootOffering, Long size, DataCenterVO dc, AccountVO account) {
+        assert (template.getFormat() == ImageFormat.ISO) : "The template has to be ISO";
+        
+        long rootId = _volsDao.getNextInSequence(Long.class, "volume_seq");
+        DiskCharacteristics rootDisk = new DiskCharacteristics(rootId, VolumeType.ROOT, "ROOT-" + vm.getId() + "-" + rootId, rootOffering.getId(), size != null ? size : rootOffering.getDiskSizeInBytes(), rootOffering.getTagsArray(), rootOffering.getUseLocalStorage(), rootOffering.isRecreatable(), null);
+        List<VolumeVO> vols = allocate(rootDisk, null, vm, dc, account);
+        return vols.get(0);
+    }
+    
+    
+    @Override
+    public VolumeVO allocateSystemVm(VMInstanceVO vm, VMTemplateVO template, DiskOfferingVO rootOffering, DataCenterVO dc) {
+        List<VolumeVO> vols = allocateTemplatedVm(vm, template, rootOffering, null, null, dc, _accountMgr.getSystemAccount());
+        return vols.get(0);
     }
     
     public List<VolumeVO> prepare(VMInstanceVO vm, HostVO host) {
@@ -427,9 +457,9 @@ public class StorageManagerImpl implements StorageManager {
             }
             VMTemplateHostVO ss = sss.get(0);
         
-            return new DiskCharacteristics(volume.getVolumeType(), volume.getName(), diskOffering.getId(), ss.getSize(), diskOffering.getTagsArray(), diskOffering.getUseLocalStorage(), diskOffering.isRecreatable(), Storage.ImageFormat.ISO != template.getFormat() ? template.getId() : null);
+            return new DiskCharacteristics(volume.getId(), volume.getVolumeType(), volume.getName(), diskOffering.getId(), ss.getSize(), diskOffering.getTagsArray(), diskOffering.getUseLocalStorage(), diskOffering.isRecreatable(), Storage.ImageFormat.ISO != template.getFormat() ? template.getId() : null);
         } else {
-            return new DiskCharacteristics(volume.getVolumeType(), volume.getName(), diskOffering.getId(), diskOffering.getDiskSizeInBytes(), diskOffering.getTagsArray(), diskOffering.getUseLocalStorage(), diskOffering.isRecreatable(), null);
+            return new DiskCharacteristics(volume.getId(), volume.getVolumeType(), volume.getName(), diskOffering.getId(), diskOffering.getDiskSizeInBytes(), diskOffering.getTagsArray(), diskOffering.getUseLocalStorage(), diskOffering.isRecreatable(), null);
         }
     }
     
@@ -1466,7 +1496,7 @@ public class StorageManagerImpl implements StorageManager {
     public VolumeVO moveVolume(VolumeVO volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId) throws InternalErrorException {
     	// Find a destination storage pool with the specified criteria
     	DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
-    	DiskCharacteristics dskCh = new DiskCharacteristics(volume.getVolumeType(), volume.getName(), diskOffering.getId(), diskOffering.getDiskSizeInBytes(), diskOffering.getTagsArray(), diskOffering.getUseLocalStorage(), diskOffering.isRecreatable(), null);
+    	DiskCharacteristics dskCh = new DiskCharacteristics(volume.getId(), volume.getVolumeType(), volume.getName(), diskOffering.getId(), diskOffering.getDiskSizeInBytes(), diskOffering.getTagsArray(), diskOffering.getUseLocalStorage(), diskOffering.isRecreatable(), null);
     	DataCenterVO destPoolDataCenter = _dcDao.findById(destPoolDcId);
     	HostPodVO destPoolPod = _podDao.findById(destPoolPodId);
         StoragePoolVO destPool = findStoragePool(dskCh, destPoolDataCenter, destPoolPod, destPoolClusterId, null, null, null, new HashSet<StoragePool>());

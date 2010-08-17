@@ -19,9 +19,11 @@ package com.cloud.vm;
 
 import java.util.List;
 
+import com.cloud.dc.DataCenterVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.user.AccountVO;
 
 /**
  * Manages allocating resources to vms.
@@ -31,7 +33,9 @@ public interface VmManager {
     VMInstanceVO allocate(VMInstanceVO vm, 
             ServiceOfferingVO serviceOffering, 
             NetworkOfferingVO[] networkOfferings, 
-            DiskOfferingVO[] diskOffering);
+            DiskOfferingVO[] diskOffering,
+            DataCenterVO dc,
+            AccountVO account);
     
     void create(VmCharacteristics vm, List<DiskCharacteristics> disks, List<NetworkCharacteristics> networks);
     
