@@ -594,8 +594,11 @@ function showHostsTab() {
 			    isValid &= validateString("Host name", dialogBox.find("#host_hostname"), dialogBox.find("#host_hostname_errormsg"));
 			    isValid &= validateString("User name", dialogBox.find("#host_username"), dialogBox.find("#host_username_errormsg"));
 			    isValid &= validateString("Password", dialogBox.find("#host_password"), dialogBox.find("#host_password_errormsg"));						
-			    if(clusterRadio == "new_cluster_radio")
-			        isValid &= validateString("Cluster name", dialogBox.find("#new_cluster_name"), dialogBox.find("#new_cluster_name_errormsg"));					
+			    //xenserver supports cluster. kvm doesn't support cluster.
+				if (getHypervisorType() != "kvm") { 
+			        if(clusterRadio == "new_cluster_radio")
+			            isValid &= validateString("Cluster name", dialogBox.find("#new_cluster_name"), dialogBox.find("#new_cluster_name_errormsg"));		
+			    }			
 			    if (!isValid) return;
 				
 			    var array1 = [];
