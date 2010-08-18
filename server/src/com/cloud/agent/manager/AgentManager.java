@@ -17,13 +17,14 @@
  */
 package com.cloud.agent.manager;
 
-import java.net.URI;
 import java.util.List;
 import java.util.Set;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.api.commands.AddHostCmd;
+import com.cloud.api.commands.AddHostOrStorageCmd;
 import com.cloud.api.commands.DeleteHostCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -220,5 +221,5 @@ public interface AgentManager extends Manager {
     public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException;
     public boolean reconnect(final long hostId) throws AgentUnavailableException;
     
-    public List<HostVO> discoverHosts(long dcId, Long podId, Long clusterId, URI url, String username, String password) throws DiscoveryException;
+    public List<HostVO> discoverHosts(AddHostOrStorageCmd cmd) throws DiscoveryException, InvalidParameterValueException;
 }

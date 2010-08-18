@@ -86,6 +86,7 @@ import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateTemplateCmd;
+import com.cloud.api.commands.UpdateTemplateOrIsoCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateTemplatePermissionsCmd;
 import com.cloud.api.commands.UpdateUserCmd;
@@ -112,15 +113,15 @@ import com.cloud.async.executor.ResetVMPasswordParam;
 import com.cloud.async.executor.SecurityGroupParam;
 import com.cloud.async.executor.UpdateLoadBalancerParam;
 import com.cloud.async.executor.VMOperationParam;
-import com.cloud.async.executor.VolumeOperationParam;
 import com.cloud.async.executor.VMOperationParam.VmOp;
+import com.cloud.async.executor.VolumeOperationParam;
 import com.cloud.async.executor.VolumeOperationParam.VolumeOp;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
-import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.consoleproxy.ConsoleProxyManager;
@@ -130,8 +131,8 @@ import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -197,22 +198,22 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.FileSystem;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Snapshot.SnapshotType;
-import com.cloud.storage.Storage.FileSystem;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.DiskTemplateDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -222,9 +223,9 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -246,12 +247,12 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -506,17 +507,17 @@ public class ManagementServerImpl implements ManagementServer {
         return _configs;
     }
 
-    @Override
-    public List<? extends Host> discoverHosts(long dcId, Long podId, Long clusterId, String url, String username, String password) throws IllegalArgumentException, DiscoveryException {
-        URI uri;
-        try {
-            uri = new URI(url);
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Unable to convert the url" + url, e);
-        }
-        // TODO: parameter checks.
-        return _agentMgr.discoverHosts(dcId, podId, clusterId, uri, username, password);
-    }
+//    @Override
+//    public List<? extends Host> discoverHosts(long dcId, Long podId, Long clusterId, String url, String username, String password) throws IllegalArgumentException, DiscoveryException {
+//        URI uri;
+//        try {
+//            uri = new URI(url);
+//        } catch (URISyntaxException e) {
+//            throw new IllegalArgumentException("Unable to convert the url" + url, e);
+//        }
+//        // TODO: parameter checks.
+//        return _agentMgr.discoverHosts(dcId, podId, clusterId, uri, username, password);
+//    }
 
     @Override
     public StorageStats getStorageStatistics(long hostId) {
@@ -4639,7 +4640,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean updateTemplate(UpdateTemplateCmd cmd) throws InvalidParameterValueException {
+    public boolean updateTemplate(UpdateTemplateOrIsoCmd cmd) throws InvalidParameterValueException {
     	Long id = cmd.getId();
     	String name = cmd.getName();
     	String displayText = cmd.getDisplayText();
@@ -7607,25 +7608,19 @@ public class ManagementServerImpl implements ManagementServer {
         return _clusterDao.listByPodId(podId);
     }
     
-    @Override
-    public ClusterVO createCluster(long dcId, long podId, String name) {
-        ClusterVO cluster = new ClusterVO(dcId, podId, name);
-        try {
-            cluster = _clusterDao.persist(cluster);
-        } catch (Exception e) {
-            cluster = _clusterDao.findBy(name, podId);
-            if (cluster == null) {
-                throw new CloudRuntimeException("Unable to create cluster " + name + " in pod " + podId + " and data center " + dcId, e);
-            }
-        }
-        return cluster;
-    }
-
-    @Override
-    public boolean deletePool(Long id)
-    {
-        return _storageMgr.deletePool(id);
-    }
+//    @Override
+//    public ClusterVO createCluster(long dcId, long podId, String name) {
+//        ClusterVO cluster = new ClusterVO(dcId, podId, name);
+//        try {
+//            cluster = _clusterDao.persist(cluster);
+//        } catch (Exception e) {
+//            cluster = _clusterDao.findBy(name, podId);
+//            if (cluster == null) {
+//                throw new CloudRuntimeException("Unable to create cluster " + name + " in pod " + podId + " and data center " + dcId, e);
+//            }
+//        }
+//        return cluster;
+//    }
 
     @Override
     public List<? extends StoragePoolVO> searchForStoragePools(Criteria c) {

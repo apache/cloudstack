@@ -34,6 +34,7 @@ import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateTemplateCmd;
+import com.cloud.api.commands.UpdateTemplateOrIsoCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.async.AsyncJobResult;
@@ -137,7 +138,7 @@ public interface ManagementServer {
 	ClusterVO findClusterById(long clusterId);
     List<ClusterVO> listClusterByPodId(long podId);
     
-    ClusterVO createCluster(long dcId, long podId, String name);
+//    ClusterVO createCluster(long dcId, long podId, String name);
 
     /**
      * Creates a new user, does not encrypt the password
@@ -272,18 +273,18 @@ public interface ManagementServer {
     boolean unregisterPreallocatedLun(long id) throws IllegalArgumentException;
     
 
-    /**
-     * Discovers new hosts given an url to locate the resource.
-     * @param dcId id of the data center
-     * @param podid id of the pod
-     * @param clusterId id of the cluster
-     * @param url url to use
-     * @param username username to use to login
-     * @param password password to use to login
-     * @return true if hosts were found; false if not.
-     * @throws IllegalArgumentException
-     */
-    List<? extends Host> discoverHosts(long dcId, Long podId, Long clusterId, String url, String username, String password) throws IllegalArgumentException, DiscoveryException;
+//    /**
+//     * Discovers new hosts given an url to locate the resource.
+//     * @param dcId id of the data center
+//     * @param podid id of the pod
+//     * @param clusterId id of the cluster
+//     * @param url url to use
+//     * @param username username to use to login
+//     * @param password password to use to login
+//     * @return true if hosts were found; false if not.
+//     * @throws IllegalArgumentException
+//     */
+//    List<? extends Host> discoverHosts(long dcId, Long podId, Long clusterId, String url, String username, String password) throws IllegalArgumentException, DiscoveryException;
 
     String updateAdminPassword(long userId, String oldPassword, String newPassword);
 
@@ -1152,7 +1153,7 @@ public interface ManagementServer {
      * @param cmd
      * @return success/failure
      */
-    boolean updateTemplate(UpdateTemplateCmd cmd) throws InvalidParameterValueException;
+    boolean updateTemplate(UpdateTemplateOrIsoCmd cmd) throws InvalidParameterValueException;
     
     /**
      * Creates a template by downloading to all zones
@@ -2001,13 +2002,6 @@ public interface ManagementServer {
     
     
 	List<SecondaryStorageVmVO> searchForSecondaryStorageVm(Criteria c);
-	
-	/**
-	 * Deletes a pool based on the pool id
-	 * @param id -- pool id
-	 * @return -- status of the operation
-	 */
-	boolean deletePool(Long id);
     
 	/**
 	 * Returns back a SHA1 signed response

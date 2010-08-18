@@ -59,6 +59,8 @@ import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.manager.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.DeletePoolCmd;
 import com.cloud.api.commands.StopVMCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.async.AsyncInstanceCreateStatus;
@@ -1336,14 +1338,21 @@ public class StorageManagerImpl implements StorageManager {
     }
 
     @DB
-    public boolean deletePool(long id) {
+    public boolean deletePool(DeletePoolCmd command) throws InvalidParameterValueException{
+    	Long id = command.getId();
         boolean deleteFlag = false;
+        
+        
+    	//verify parameters
+    	StoragePoolVO sPool = _storagePoolDao.findById(id);
+    	if (sPool == null) {
+    		throw new InvalidParameterValueException("Unable to find pool by id " + id);
+    	}
+    	
+    	if (sPool.getPoolType().equals(StoragePoolType.LVM)) {
+    		throw new InvalidParameterValueException("Unable to delete local storage id: " + id);
+    	}
 
-        // get the pool to delete
-        StoragePoolVO sPool = _storagePoolDao.findById(id);
-
-        if (sPool == null)
-            return false;
 
         // for the given pool id, find all records in the storage_pool_host_ref
         List<StoragePoolHostVO> hostPoolRecords = _storagePoolHostDao.listByPoolId(id);

@@ -26,60 +26,20 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 
 @Implementation(method="updateTemplate", manager=Manager.ManagementServer)
-public class UpdateIsoCmd extends BaseCmd {
+public class UpdateIsoCmd extends UpdateTemplateOrIsoCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIsoCmd.class.getName());
     private static final String s_name = "updateisoresponse";
 
     /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="bootable", type=CommandType.BOOLEAN)
-    private Boolean bootable;
-
-    @Parameter(name="displaytext", type=CommandType.STRING)
-    private String displayText;
-
-    @Parameter(name="id", type=CommandType.LONG, required=true)
-    private Long id;
-
-    @Parameter(name="name", type=CommandType.STRING)
-    private String isoName;
-
-    @Parameter(name="ostypeid", type=CommandType.LONG)
-    private Long osTypeId;
-
-    /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public Boolean isBootable() {
-        return bootable;
+    
+    public Boolean isPasswordEnabled() {
+        return null;
     }
-
-    public String getDisplayText() {
-        return displayText;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String isoName() {
-        return isoName;
-    }
-
-    public Long getOsTypeId() {
-        return osTypeId;
-    }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
-    public String getName() {
-        return s_name;
+    
+    public String getFormat() {
+        return null;
     }
 
 //    @Override

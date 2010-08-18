@@ -24,10 +24,12 @@ import java.util.Map;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.api.commands.DeletePoolCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.StorageUnavailableException;
@@ -254,7 +256,7 @@ public interface StorageManager extends Manager {
 	 * Delete the storage pool
 	 * @param id -- id associated
 	 */
-	boolean deletePool(long id);
+	boolean deletePool(DeletePoolCmd cmd) throws InvalidParameterValueException;
 	
 	/**
      * Updates a storage pool.

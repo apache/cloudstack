@@ -26,72 +26,18 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 
 @Implementation(method="updateTemplate", manager=Manager.ManagementServer)
-public class UpdateTemplateCmd extends BaseCmd {
+public class UpdateTemplateCmd extends UpdateTemplateOrIsoCmd {
 	public static final Logger s_logger = Logger.getLogger(UpdateTemplateCmd.class.getName());
     private static final String s_name = "updatetemplateresponse";
 
     /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="displaytext", type=CommandType.STRING)
-    private String displayText;
-
-    @Parameter(name="format", type=CommandType.STRING)
-    private String format;
-
-    @Parameter(name="id", type=CommandType.LONG, required=true)
-    private Long id;
-
-    @Parameter(name="name", type=CommandType.STRING)
-    private String templateName;
-
-    @Parameter(name="ostypeid", type=CommandType.LONG)
-    private Long osTypeId;
-
-    @Parameter(name="passwordenabled", type=CommandType.BOOLEAN)
-    private Boolean passwordEnabled;
-
-    /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public String getDisplayText() {
-        return displayText;
-    }
-
-    public String getFormat() {
-        return format;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getTemplateName() {
-        return templateName;
-    }
-
-    public Long getOsTypeId() {
-        return osTypeId;
-    }
-
-    public Boolean isPasswordEnabled() {
-        return passwordEnabled;
-    }
     
     public Boolean isBootable() {
-        return true;
+        return null;
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
-    public String getName() {
-        return s_name;
-    }
 
 //    @Override
 //    public List<Pair<String, Object>> execute(Map<String, Object> params) {
