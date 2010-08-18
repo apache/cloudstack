@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.storage.GuestOS;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
@@ -104,9 +105,25 @@ public class UpdateTemplateCmd extends BaseCmd {
             templateData.add(new Pair<String, Object>(BaseCmd.Properties.IS_PUBLIC.getName(), Boolean.valueOf(updatedTemplate.isPublicTemplate()).toString()));
             templateData.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(updatedTemplate.getCreated())));
             templateData.add(new Pair<String, Object>(BaseCmd.Properties.FORMAT.getName(), updatedTemplate.getFormat()));
-            templateData.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_ID.getName(), updatedTemplate.getGuestOSId()));
+            GuestOS os = getManagementServer().findGuestOSById(updatedTemplate.getGuestOSId());
+            if (os != null) {
+            	templateData.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_ID.getName(), os.getId()));
+                templateData.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_NAME.getName(), os.getDisplayName()));
+            } else {
+            	templateData.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_ID.getName(), -1));
+                templateData.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_NAME.getName(), ""));
+            }            
             templateData.add(new Pair<String, Object>(BaseCmd.Properties.PASSWORD_ENABLED.getName(), updatedTemplate.getEnablePassword()));
-            templateData.add(new Pair<String, Object>(BaseCmd.Properties.CROSS_ZONES.getName(), Boolean.valueOf(updatedTemplate.isCrossZones()).toString()));
+            templateData.add(new Pair<String, Object>(BaseCmd.Properties.CROSS_ZONES.getName(), Boolean.valueOf(updatedTemplate.isCrossZones()).toString()));            
+            templateData.add(new Pair<String, Object>(BaseCmd.Properties.IS_FEATURED.getName(), Boolean.valueOf(updatedTemplate.isFeatured()).toString()));
+            
+            // add account ID and name
+            Account owner = getManagementServer().findAccountById(updatedTemplate.getAccountId());
+            if (owner != null) {
+                templateData.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT.getName(), owner.getAccountName()));
+                templateData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), owner.getDomainId()));
+                templateData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), getManagementServer().findDomainIdById(owner.getDomainId()).getName()));
+            } 
             return templateData;
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "internal error updating template");
