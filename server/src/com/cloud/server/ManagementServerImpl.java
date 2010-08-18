@@ -2571,10 +2571,10 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job);
     }
 
-    @Override
-    public UserVm startVirtualMachine(long userId, long vmId, String isoPath) throws InternalErrorException, ExecutionException, StorageUnavailableException, ConcurrentOperationException {
-        return _vmMgr.startVirtualMachine(userId, vmId, isoPath, 0);
-    }
+//    @Override
+//    public UserVm startVirtualMachine(long userId, long vmId, String isoPath) throws InternalErrorException, ExecutionException, StorageUnavailableException, ConcurrentOperationException {
+//        return _vmMgr.startVirtualMachine(userId, vmId, isoPath, 0);
+//    }
 
     @Override
     public long startVirtualMachineAsync(long userId, long vmId, String isoPath) {
@@ -2595,10 +2595,10 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job, true);
     }
 
-    @Override
-    public boolean stopVirtualMachine(long userId, long vmId) {
-        return _vmMgr.stopVirtualMachine(userId, vmId);
-    }
+//    @Override
+//    public boolean stopVirtualMachine(long userId, long vmId) {
+//        return _vmMgr.stopVirtualMachine(userId, vmId);
+//    }
 
     @Override
     public long stopVirtualMachineAsync(long userId, long vmId) {
@@ -7940,16 +7940,37 @@ public class ManagementServerImpl implements ManagementServer {
 	}
 
 	@Override
+	public VMInstanceVO startSystemVM(StartSystemVMCmd cmd) throws InternalErrorException {
+		
+		//verify input
+		Long id = cmd.getId();
+
+		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(id, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
+        if (systemVm == null) {
+        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + id);
+        }
+		
+		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
+			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_START, "Starting console proxy with Id: "+id);
+			return startConsoleProxy(id, eventId);
+		} else {
+			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_START, "Starting secondary storage Vm Id: "+id);
+			return startSecondaryStorageVm(id, eventId);
+		}
+	}
+
+
+
+	@Override
 	public boolean stopSystemVM(StopSystemVmCmd cmd) {
 		Long id = cmd.getId();
 		
-	    // verify parameters
-        VMInstanceVO systemVM = findSystemVMById(id);
-        if (systemVM == null) {
+	    // verify parameters      
+		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(id, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
+        if (systemVm == null) {
         	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + id);
         }
         
-		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(id, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
 		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
 			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_STOP, "stopping console proxy with Id: "+id);
 			return stopConsoleProxy(id, eventId);
@@ -7989,16 +8010,6 @@ public class ManagementServerImpl implements ManagementServer {
 		}
 	}
 	
-	@Override
-	public VMInstanceVO startSystemVM(long instanceId, long startEventId) throws InternalErrorException {
-		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(instanceId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
-		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
-			return startConsoleProxy(instanceId, startEventId);
-		} else {
-			return startSecondaryStorageVm(instanceId, startEventId);
-		}
-	}
-
 	@Override
 	public boolean rebootSystemVM(long instanceId, long startEventId)  {
 		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(instanceId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);

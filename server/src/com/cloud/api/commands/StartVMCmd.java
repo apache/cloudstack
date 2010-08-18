@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -35,7 +36,7 @@ import com.cloud.utils.Pair;
 import com.cloud.vm.UserVmVO;
 
 @Implementation(method="startVirtualMachine", manager=Manager.UserVmManager)
-public class StartVMCmd extends BaseCmd {
+public class StartVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StartVMCmd.class.getName());
 
     private static final String s_name = "startvirtualmachineresponse";

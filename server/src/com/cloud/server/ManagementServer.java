@@ -29,6 +29,7 @@ import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
+import com.cloud.api.commands.StartSystemVMCmd;
 import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
@@ -675,7 +676,7 @@ public interface ManagementServer {
      * @throws StorageUnavailableException
      * @throws ConcurrentOperationException
      */
-    UserVm startVirtualMachine(long userId, long vmId, String isoPath) throws InternalErrorException, ExecutionException, StorageUnavailableException, ConcurrentOperationException;
+    //UserVm startVirtualMachine(long userId, long vmId, String isoPath) throws InternalErrorException, ExecutionException, StorageUnavailableException, ConcurrentOperationException;
     long startVirtualMachineAsync(long userId, long vmId, String isoPath);
     
     /**
@@ -685,7 +686,7 @@ public interface ManagementServer {
      * @param vmId
      * @return true if successfully stopped, false otherwise
      */
-    boolean stopVirtualMachine(long userId, long vmId);
+    //boolean stopVirtualMachine(long userId, long vmId);
     long stopVirtualMachineAsync(long userId, long vmId);
     
     /**
@@ -1461,7 +1462,7 @@ public interface ManagementServer {
 	ConsoleProxyVO findConsoleProxyById(long instanceId);
 	VMInstanceVO findSystemVMById(long instanceId);
 	boolean stopSystemVM(StopSystemVmCmd cmd);
-	VMInstanceVO startSystemVM(long instanceId, long startEventId) throws InternalErrorException;
+	VMInstanceVO startSystemVM(StartSystemVMCmd cmd) throws InternalErrorException;
 	long startSystemVmAsync(long instanceId);
 	long stopSystemVmAsync(long instanceId);
 	long rebootSystemVmAsync(long longValue);

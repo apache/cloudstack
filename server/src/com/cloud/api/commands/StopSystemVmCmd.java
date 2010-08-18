@@ -20,20 +20,17 @@ package com.cloud.api.commands;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.utils.Pair;
-import com.cloud.vm.VMInstanceVO;
 
 @Implementation(method="stopSystemVM", manager=Manager.ManagementServer)
-public class StopSystemVmCmd extends BaseCmd {
+public class StopSystemVmCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(StopSystemVmCmd.class.getName());
 
     private static final String s_name = "stopsystemvmresponse";

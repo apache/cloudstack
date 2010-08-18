@@ -18,27 +18,18 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.utils.Pair;
-import com.cloud.vm.VMInstanceVO;
+import com.cloud.api.BaseCmd.Manager;
 
-public class StartSystemVMCmd extends BaseCmd {
+@Implementation(method="stopSystemVM", manager=Manager.ManagementServer)
+public class StartSystemVMCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(StartSystemVMCmd.class.getName());
 
     private static final String s_name = "startsystemvmresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-    }
     
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -66,30 +57,32 @@ public class StartSystemVMCmd extends BaseCmd {
     public static String getResultObjectName() {
     	return "systemvm"; 
     }
-    
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-	    Long sysvmId = (Long)params.get(BaseCmd.Properties.ID.getName());
-	    
-	    // verify parameters
-        VMInstanceVO sysVm = getManagementServer().findSystemVMById(sysvmId);
-        if (sysVm == null) {
-        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + sysvmId);
-        }
+//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
+//	    Long sysvmId = (Long)params.get(BaseCmd.Properties.ID.getName());
+//	    
+//	    // verify parameters
+//        VMInstanceVO sysVm = getManagementServer().findSystemVMById(sysvmId);
+//        if (sysVm == null) {
+//        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + sysvmId);
+//        }
+//
+//	    long jobId = getManagementServer().startSystemVmAsync(sysvmId.longValue());
+//        if(jobId == 0) {
+//        	s_logger.warn("Unable to schedule async-job for StartSystemVM comamnd");
+//        } else {
+//	        if(s_logger.isDebugEnabled())
+//	        	s_logger.debug("StartSystemVM command has been accepted, job id: " + jobId);
+//        }
+//	    
+//	    List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
+//	    returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
+//	    return returnValues;
+//    }
 
-	    long jobId = getManagementServer().startSystemVmAsync(sysvmId.longValue());
-        if(jobId == 0) {
-        	s_logger.warn("Unable to schedule async-job for StartSystemVM comamnd");
-        } else {
-	        if(s_logger.isDebugEnabled())
-	        	s_logger.debug("StartSystemVM command has been accepted, job id: " + jobId);
-        }
-	    
-	    List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-	    returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-	    return returnValues;
-    }
+	@Override
+	public String getResponse() {
+		// TODO COnstruct response based on executor
+		return null;
+	}
 }
