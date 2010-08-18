@@ -38,7 +38,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -89,7 +88,6 @@ import com.cloud.api.commands.UpdateTemplateCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateTemplatePermissionsCmd;
 import com.cloud.api.commands.UpdateUserCmd;
-import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
@@ -112,17 +110,16 @@ import com.cloud.async.executor.NetworkGroupIngressParam;
 import com.cloud.async.executor.ResetVMPasswordParam;
 import com.cloud.async.executor.SecurityGroupParam;
 import com.cloud.async.executor.UpdateLoadBalancerParam;
-import com.cloud.async.executor.UpgradeVMParam;
 import com.cloud.async.executor.VMOperationParam;
-import com.cloud.async.executor.VMOperationParam.VmOp;
 import com.cloud.async.executor.VolumeOperationParam;
+import com.cloud.async.executor.VMOperationParam.VmOp;
 import com.cloud.async.executor.VolumeOperationParam.VolumeOp;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
-import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
+import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.consoleproxy.ConsoleProxyManager;
@@ -132,8 +129,8 @@ import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -199,22 +196,22 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
-import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.FileSystem;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Snapshot.SnapshotType;
+import com.cloud.storage.Storage.FileSystem;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.DiskTemplateDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -224,9 +221,9 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -248,12 +245,12 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -283,7 +280,6 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
-import com.sun.org.apache.bcel.internal.generic.INSTANCEOF;
 
 public class ManagementServerImpl implements ManagementServer {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
@@ -4474,10 +4470,10 @@ public class ManagementServerImpl implements ManagementServer {
         return null;
     }
 
-    @Override
-    public ResourceLimitVO updateResourceLimit(Long domainId, Long accountId, ResourceType type, Long max) throws InvalidParameterValueException {
-        return _accountMgr.updateResourceLimit(domainId, accountId, type, max);
-    }
+//    @Override
+//    public ResourceLimitVO updateResourceLimit(Long domainId, Long accountId, ResourceType type, Long max) throws InvalidParameterValueException {
+//        return _accountMgr.updateResourceLimit(domainId, accountId, type, max);
+//    }
 
     @Override
     public boolean deleteLimit(Long limitId) {
@@ -4493,117 +4489,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _resourceLimitDao.findById(limitId);
     }
 
-    @Override
-    public List<ResourceLimitVO> searchForLimits(Criteria c) {
-        Long domainId = (Long) c.getCriteria(Criteria.DOMAINID);
-        Long accountId = (Long) c.getCriteria(Criteria.ACCOUNTID);
-        ResourceType type = (ResourceType) c.getCriteria(Criteria.TYPE);
-        
-        // For 2.0, we are just limiting the scope to having an user retrieve
-        // limits for himself and if limits don't exist, use the ROOT domain's limits.
-        // - Will
-        List<ResourceLimitVO> limits = new ArrayList<ResourceLimitVO>();
-        
-
-        if(accountId!=null && domainId!=null)
-        {
-	        //if domainId==1 and account belongs to admin
-	        //return all records for resource limits (bug 3778)
-	        
-	        if(domainId==1)
-	        {
-	        	AccountVO account = _accountDao.findById(accountId);
-	        	
-	        	if(account!=null && account.getType()==1)
-	        	{
-	        		//account belongs to admin
-	        		//return all limits
-	        		limits = _resourceLimitDao.listAll();
-	        		return limits;
-	        	}
-	        }
-	
-	        //if account belongs to system, accountid=1,domainid=1
-	        //return all the records for resource limits (bug:3778)
-	        if(accountId==1 && domainId==1)
-	        {
-	        	limits = _resourceLimitDao.listAll();
-	        	return limits;
-	        }
-        }
-        
-        if (accountId != null) {
-        	SearchBuilder<ResourceLimitVO> sb = _resourceLimitDao.createSearchBuilder();
-        	sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
-        	sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
-
-        	SearchCriteria<ResourceLimitVO> sc = sb.create();
-
-        	if (accountId != null) {
-        		sc.setParameters("accountId", accountId);
-        	}
-
-        	if (type != null) {
-        		sc.setParameters("type", type);
-        	}
-        	
-        	// Listing all limits for an account
-        	if (type == null) {
-        		//List<ResourceLimitVO> userLimits = _resourceLimitDao.search(sc, searchFilter);
-        		List<ResourceLimitVO> userLimits = _resourceLimitDao.listByAccountId(accountId);
-	        	List<ResourceLimitVO> rootLimits = _resourceLimitDao.listByDomainId(DomainVO.ROOT_DOMAIN);
-	        	ResourceType resourceTypes[] = ResourceType.values();
-        	
-	        	for (ResourceType resourceType: resourceTypes) {
-	        		boolean found = false;
-	        		for (ResourceLimitVO userLimit : userLimits) {
-	        			if (userLimit.getType() == resourceType) {
-	        				limits.add(userLimit);
-	        				found = true;
-	        				break;
-	        			}
-	        		}
-	        		if (!found) {
-	        			// Check the ROOT domain
-	        			for (ResourceLimitVO rootLimit : rootLimits) {
-	        				if (rootLimit.getType() == resourceType) {
-	        					limits.add(rootLimit);
-	        					found = true;
-	        					break;
-	        				}
-	        			}
-	        		}
-	        		if (!found) {
-	        			limits.add(new ResourceLimitVO(domainId, accountId, resourceType, -1L));
-	        		}
-	        	}
-        	} else {
-        		AccountVO account = _accountDao.findById(accountId);
-        		limits.add(new ResourceLimitVO(null, accountId, type, _accountMgr.findCorrectResourceLimit(account, type)));
-        	}
-        } else if (domainId != null) {
-        	if (type == null) {
-        		ResourceType resourceTypes[] = ResourceType.values();
-        		List<ResourceLimitVO> domainLimits = _resourceLimitDao.listByDomainId(domainId);
-        		for (ResourceType resourceType: resourceTypes) {
-	        		boolean found = false;
-	        		for (ResourceLimitVO domainLimit : domainLimits) {
-	        			if (domainLimit.getType() == resourceType) {
-	        				limits.add(domainLimit);
-	        				found = true;
-	        				break;
-	        			}
-	        		}
-	        		if (!found) {
-	        			limits.add(new ResourceLimitVO(domainId, null, resourceType, -1L));
-	        		}
-        		}
-        	} else {
-        		limits.add(_resourceLimitDao.findByDomainIdAndType(domainId, type));
-        	}
-        }
-        return limits;
-    }
 
     @Override
     public long findCorrectResourceLimit(ResourceType type, long accountId) {

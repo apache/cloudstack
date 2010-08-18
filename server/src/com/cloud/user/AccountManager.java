@@ -18,11 +18,15 @@
 
 package com.cloud.user;
 
+import java.util.List;
+
+import com.cloud.api.commands.UpdateResourceLimitCmd;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.server.Criteria;
 import com.cloud.utils.component.Manager;
 
 /**
@@ -98,6 +102,10 @@ public interface AccountManager extends Manager {
 	 * @return
 	 * @throws InvalidParameterValueException
 	 */
-	public ResourceLimitVO updateResourceLimit(Long domainId, Long accountId, ResourceType type, Long max) throws InvalidParameterValueException;
+//	public ResourceLimitVO updateResourceLimit(Long domainId, Long accountId, ResourceType type, Long max) throws InvalidParameterValueException;
+
+	List<ResourceLimitVO> searchForLimits(Criteria c);
+
+	ResourceLimitVO updateResourceLimit(UpdateResourceLimitCmd cmd) throws InvalidParameterValueException;
 	
 }

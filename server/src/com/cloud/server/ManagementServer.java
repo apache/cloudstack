@@ -1635,7 +1635,7 @@ public interface ManagementServer {
 	 * @return
 	 * @throws InvalidParameterValueException
 	 */
-    ResourceLimitVO updateResourceLimit(Long domainId, Long accountId, ResourceType type, Long max) throws InvalidParameterValueException;
+//    ResourceLimitVO updateResourceLimit(Long domainId, Long accountId, ResourceType type, Long max) throws InvalidParameterValueException;
     
     /**
      * Deletes a Limit
@@ -1658,7 +1658,7 @@ public interface ManagementServer {
      * @param type
      * @return a list of Limits
      */
-    List<ResourceLimitVO> searchForLimits(Criteria c);
+//    List<ResourceLimitVO> searchForLimits(Criteria c);
     
     /**
 	 * Finds the correct limit for an account. I.e. if an account's limit is not present, it will check the account's domain, and as a last resort use the global limit.
