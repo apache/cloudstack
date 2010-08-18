@@ -221,6 +221,9 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 
         final long accountId = account.getId();
         
+        // use a dedicated account object for locking test, so that when we get SQL exception
+        // we won't be misled to release an actually un-owned lock
+        AccountVO lockedAccount = null;
         Transaction txn = Transaction.currentTxn();
         try {
         	final EventVO event = new EventVO();
@@ -230,8 +233,8 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             
             txn.start();
 
-        	account = _accountDao.acquire(accountId);
-            if (account == null) {
+            lockedAccount = _accountDao.acquire(accountId);
+            if (lockedAccount == null) {
                 s_logger.warn("Unable to lock account " + accountId);
                 return null;
             }
@@ -339,7 +342,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             txn.commit();
             return null;
         } finally {
-        	if (account != null) {
+        	if (lockedAccount != null) {
         		if(s_logger.isDebugEnabled())
         			s_logger.debug("Releasing lock account " + accountId);
         		
