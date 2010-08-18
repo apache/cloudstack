@@ -25,42 +25,34 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 
-@Implementation(method="discoverHosts", manager=Manager.ManagementServer)
-public class AddSecondaryStorageCmd extends BaseCmd {
+@Implementation(method="discoverHosts", manager=Manager.AgentManager)
+public class AddSecondaryStorageCmd extends AddHostOrStorageCmd {
     public static final Logger s_logger = Logger.getLogger(AddSecondaryStorageCmd.class.getName());
     private static final String s_name = "addsecondarystorageresponse";
-
+     
+   
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name="url", type=CommandType.STRING, required=true)
-    private String url;
-
-    @Parameter(name="zoneid", type=CommandType.LONG)
-    private Long zoneId;
-
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public String getUrl() {
-        return url;
+    
+    public Long getClusterId() {
+        return null;
+    }
+    
+    public String getClusterName() {
+        return null;
     }
 
-    public Long getZoneId() {
-        return zoneId;
+    public String getPassword() {
+        return null;
     }
 
+    public Long getPodId() {
+        return null;
+    }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
-    public String getName() {
-        return s_name;
+    public String getUsername() {
+        return null;
     }
 
     /*

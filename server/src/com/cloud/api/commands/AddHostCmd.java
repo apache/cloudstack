@@ -25,79 +25,12 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 
-@Implementation(method="discoverHosts", manager=Manager.ManagementServer)
-public class AddHostCmd extends BaseCmd {
+@Implementation(method="discoverHosts", manager=Manager.AgentManager)
+public class AddHostCmd extends AddHostOrStorageCmd {
     public static final Logger s_logger = Logger.getLogger(AddHostCmd.class.getName());
     private static final String s_name = "addhostresponse";
-
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
-
-    @Parameter(name="clusterid", type=CommandType.LONG)
-    private Long clusterId;
-
-    @Parameter(name="clustername", type=CommandType.STRING)
-    private String clusterName;
-
-    @Parameter(name="password", type=CommandType.STRING, required=true)
-    private String password;
-
-    @Parameter(name="podid", type=CommandType.LONG)
-    private Long podId;
-
-    @Parameter(name="url", type=CommandType.STRING, required=true)
-    private String url;
-
-    @Parameter(name="username", type=CommandType.STRING, required=true)
-    private String username;
-
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true)
-    private Long zoneId;
-
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public Long getClusterId() {
-        return clusterId;
-    }
-
-    public String getClusterName() {
-        return clusterName;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public Long getPodId() {
-        return podId;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public Long getZoneId() {
-        return zoneId;
-    }
-
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
-    public String getName() {
-        return s_name;
-    }
-
+    
+    
     /*
     @Override
     public List<Pair<String, Object>> execute(Map<String, Object> params)

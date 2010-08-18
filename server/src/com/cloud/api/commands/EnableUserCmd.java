@@ -58,10 +58,6 @@ public class EnableUserCmd extends BaseCmd {
         return s_name;
     }
 
-    @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
 //    @Override
 //    public List<Pair<String, Object>> execute(Map<String, Object> params) {

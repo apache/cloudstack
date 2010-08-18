@@ -20,6 +20,7 @@ package com.cloud.agent.manager;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -69,8 +70,8 @@ import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.agent.transport.UpgradeResponse;
 import com.cloud.alert.AlertManager;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.AddHostCmd;
+import com.cloud.api.commands.AddHostOrStorageCmd;
 import com.cloud.api.commands.DeleteHostCmd;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -95,10 +96,10 @@ import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
+import com.cloud.host.Host.Type;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.Host.Type;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
@@ -472,13 +473,85 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
 
     @Override
-    public List<HostVO> discoverHosts(long dcId, Long podId, Long clusterId, URI url, String username, String password) throws IllegalArgumentException, DiscoveryException {
+    public List<HostVO> discoverHosts(AddHostOrStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+    	Long dcId = cmd.getZoneId();
+    	Long podId = cmd.getPodId();
+    	Long clusterId = cmd.getClusterId();
+    	String clusterName = cmd.getName();
+    	String url = cmd.getUrl();
+    	String username = cmd.getUsername();
+    	String password = cmd.getPassword();
+    	URI uri = null;
+    	
+        //Check if the zone exists in the system
+        if (_dcDao.findById(dcId) == null ){
+        	throw new InvalidParameterValueException("Can't find zone by id " + dcId);
+        }
+        
+        //Check if the pod exists in the system
+        if (podId != null) {
+            if (_podDao.findById(podId) == null ){
+                throw new InvalidParameterValueException("Can't find pod by id " + podId);
+            }
+            //check if pod belongs to the zone
+            HostPodVO pod = _podDao.findById(podId);
+            if (!Long.valueOf(pod.getDataCenterId()).equals(dcId)) {
+            	throw new InvalidParameterValueException("Pod " + podId + " doesn't belong to the zone " + dcId);
+            }
+        }
+        
+        // Deny to add a secondary storage multiple times for the same zone
+        if ((username == null) && (_hostDao.findSecondaryStorageHost(dcId) != null)) {
+        	throw new InvalidParameterValueException("A secondary storage host already exists in the specified zone");
+        }
+        
+        //Verify cluster information and create a new cluster if needed
+        if (clusterName != null && clusterId != null) {
+            throw new InvalidParameterValueException("Can't specify cluster by both id and name");
+        }
+        
+        if ((clusterName != null || clusterId != null) && podId == null) {
+            throw new InvalidParameterValueException("Can't specify cluster without specifying the pod");
+        }
+        
+        if (clusterId != null) {
+            if (_clusterDao.findById(clusterId) == null) {
+                throw new InvalidParameterValueException("Can't find cluster by id " + clusterId);
+            }
+        }
+        
+        if (clusterName != null) {      
+            ClusterVO cluster = new ClusterVO(dcId, podId, clusterName);
+            try {
+                cluster = _clusterDao.persist(cluster);
+            } catch (Exception e) {
+                cluster = _clusterDao.findBy(clusterName, podId);
+                if (cluster == null) {
+                    throw new CloudRuntimeException("Unable to create cluster " + clusterName + " in pod " + podId + " and data center " + dcId, e);
+                }
+            }
+            clusterId = cluster.getId();
+        }
+        
+        try {
+    		uri = new URI(url);
+    		if (uri.getScheme() == null)
+    			throw new InvalidParameterValueException("uri.scheme is null " + url + ", add nfs:// as a prefix");
+    		else if (uri.getScheme().equalsIgnoreCase("nfs")) {
+    			if (uri.getHost() == null || uri.getHost().equalsIgnoreCase("") || uri.getPath() == null || uri.getPath().equalsIgnoreCase("")) {
+    				throw new InvalidParameterValueException("Your host and/or path is wrong.  Make sure it's of the format nfs://hostname/path");
+    			}
+    		}
+    	} catch (URISyntaxException e) {
+			throw new InvalidParameterValueException(url + " is not a valid uri");
+    	}
+    	
         List<HostVO> hosts = new ArrayList<HostVO>();
         s_logger.info("Trying to add a new host at " + url + " in data center " + dcId);
         Enumeration<Discoverer> en = _discoverers.enumeration();
         while (en.hasMoreElements()) {
             Discoverer discoverer = en.nextElement();
-            Map<? extends ServerResource, Map<String, String>> resources = discoverer.find(dcId, podId, clusterId, url, username, password);
+            Map<? extends ServerResource, Map<String, String>> resources = discoverer.find(dcId, podId, clusterId, uri, username, password);
             if (resources != null) {
                 for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
                     ServerResource resource = entry.getKey();
