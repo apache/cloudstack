@@ -81,6 +81,7 @@ import com.cloud.api.commands.ReconnectHostCmd;
 import com.cloud.api.commands.StartRouterCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
 import com.cloud.api.commands.StartVMCmd;
+import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateIsoPermissionsCmd;
@@ -7934,12 +7935,22 @@ public class ManagementServerImpl implements ManagementServer {
 	}
 
 	@Override
-	public boolean stopSystemVM(long instanceId, long startEventId) {
-		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(instanceId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
+	public boolean stopSystemVM(StopSystemVmCmd cmd) {
+		Long id = cmd.getId();
+		
+	    // verify parameters
+        VMInstanceVO systemVM = findSystemVMById(id);
+        if (systemVM == null) {
+        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + id);
+        }
+        
+		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(id, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
 		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
-			return stopConsoleProxy(instanceId, startEventId);
+			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_STOP, "stopping console proxy with Id: "+id);
+			return stopConsoleProxy(id, eventId);
 		} else {
-			return stopSecondaryStorageVm(instanceId, startEventId);
+			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_STOP, "stopping secondary storage Vm Id: "+id);
+			return stopSecondaryStorageVm(id, eventId);
 		}
 	}
 

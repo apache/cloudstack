@@ -66,6 +66,8 @@ import com.cloud.agent.manager.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.StartVMCmd;
+import com.cloud.api.commands.StopVMCmd;
 import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.async.AsyncJobExecutor;
@@ -914,8 +916,9 @@ public class UserVmManagerImpl implements UserVmManager {
     }
 
     @Override
-    public boolean stopVirtualMachine(long userId, long vmId) {
-        if (s_logger.isDebugEnabled()) {
+    public boolean stopVirtualMachine(long userId, long vmId, long eventId) {
+        boolean status = false;
+    	if (s_logger.isDebugEnabled()) {
             s_logger.debug("Stopping vm=" + vmId);
         }
 
@@ -926,8 +929,21 @@ public class UserVmManagerImpl implements UserVmManager {
         	}
     		return true;
         }
+
+        EventUtils.saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_STOP, "stopping Vm with Id: "+vmId, eventId);
         
-        return stop(userId, vm, 0);
+        status = stop(userId, vm, 0);
+        
+        if(status)
+        {
+        	EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_STOP, "Successfully stopped VM instance : " + vmId);
+        	return status;
+        }
+        else
+        {
+        	EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_STOP, "Error stopping VM instance : " + vmId);
+        	return status;
+        }
     }
     
     @Override
@@ -3121,4 +3137,54 @@ public class UserVmManagerImpl implements UserVmManager {
             EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, type, description, null);
         }
     }
+
+	@Override
+	public boolean stopVirtualMachine(StopVMCmd cmd) throws ServerApiException{
+		
+		//Input validation
+		Account account = (Account)UserContext.current().getAccountObject();
+		Long userId = UserContext.current().getUserId();
+		Long id = cmd.getId();
+		
+        //if account is removed, return error
+        if(account!=null && account.getRemoved() != null)
+        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account " + account.getId()+" is removed");
+        		
+        UserVmVO vmInstance = _userVmDao.findById(id.longValue());
+        if (vmInstance == null) {
+        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + id);
+        }
+        
+        long eventId = EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_STOP, "stopping Vm with Id: "+id);
+        
+        userId = accountAndUserValidation(id, account, userId, vmInstance);
+   
+        return stopVirtualMachine(userId, id, eventId);
+	}
+
+	@Override
+	public UserVmVO startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException {
+		//Input validation
+		Account account = (Account)UserContext.current().getAccountObject();
+		Long userId = UserContext.current().getUserId();
+		Long id = cmd.getId();
+		
+        //if account is removed, return error
+        if(account!=null && account.getRemoved() != null)
+        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account " + account.getId()+" is removed");
+        		
+        UserVmVO vmInstance = _userVmDao.findById(id.longValue());
+        if (vmInstance == null) {
+        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + id);
+        }
+
+        long eventId = EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_START, "Starting Vm with Id: "+id);
+        
+        userId = accountAndUserValidation(id, account, userId, vmInstance);
+        
+        return startVirtualMachine(userId, id, null, null, eventId);
+		
+	}
+	
+	
 }

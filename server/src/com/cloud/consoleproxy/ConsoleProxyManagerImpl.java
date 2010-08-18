@@ -1965,7 +1965,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager,
 			return stop(proxy, startEventId);
 		} catch (AgentUnavailableException e) {
 			if (s_logger.isDebugEnabled())
-				s_logger.debug("Stopping console proxy " + proxy.getName() + " faled : exception " + e.toString());
+				s_logger.debug("Stopping console proxy " + proxy.getName() + " failed : exception " + e.toString());
 			return false;
 		}
 	}

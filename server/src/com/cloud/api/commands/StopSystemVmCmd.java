@@ -25,20 +25,19 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.Manager;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VMInstanceVO;
 
+@Implementation(method="stopSystemVM", manager=Manager.ManagementServer)
 public class StopSystemVmCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(StopSystemVmCmd.class.getName());
 
     private static final String s_name = "stopsystemvmresponse";
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -63,29 +62,31 @@ public class StopSystemVmCmd extends BaseCmd {
         return s_name;
     }
     
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
+//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
+//	    Long sysVmId = (Long)params.get(BaseCmd.Properties.ID.getName());
+//	    
+//	    // verify parameters
+//        VMInstanceVO systemVM = getManagementServer().findSystemVMById(sysVmId);
+//        if (systemVM == null) {
+//        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + sysVmId);
+//        }
+//        
+//	    long jobId = getManagementServer().stopSystemVmAsync(sysVmId.longValue());
+//        if(jobId == 0) {
+//        	s_logger.warn("Unable to schedule async-job for StopSystemVM comamnd");
+//        } else {
+//	        if(s_logger.isDebugEnabled())
+//	        	s_logger.debug("StopSystemVM command has been accepted, job id: " + jobId);
+//        }
+//	    
+//	    List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
+//	    returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
+//	    return returnValues;
+//    }
 
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-	    Long sysVmId = (Long)params.get(BaseCmd.Properties.ID.getName());
-	    
-	    // verify parameters
-        VMInstanceVO systemVM = getManagementServer().findSystemVMById(sysVmId);
-        if (systemVM == null) {
-        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + sysVmId);
-        }
-        
-	    long jobId = getManagementServer().stopSystemVmAsync(sysVmId.longValue());
-        if(jobId == 0) {
-        	s_logger.warn("Unable to schedule async-job for StopSystemVM comamnd");
-        } else {
-	        if(s_logger.isDebugEnabled())
-	        	s_logger.debug("StopSystemVM command has been accepted, job id: " + jobId);
-        }
-	    
-	    List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-	    returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-	    return returnValues;
-    }
+	@Override
+	public String getResponse() {
+		// TODO Construct the response object (refer executor)
+		return null;
+	}
 }
