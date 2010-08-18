@@ -22,6 +22,7 @@ import java.util.List;
 
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.StopVMCmd;
 import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
@@ -155,6 +156,7 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @throws ConcurrentOperationException 
      */
     UserVmVO startVirtualMachine(long userId, long vmId, String password, String isoPath, long startEventId) throws ExecutionException, StorageUnavailableException, ConcurrentOperationException;
+    UserVmVO startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException;
     
     /**
      * Stops the virtual machine
