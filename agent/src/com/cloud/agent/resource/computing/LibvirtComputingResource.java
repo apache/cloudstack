@@ -3097,7 +3097,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		brName = setVnetBrName(vnetId);
     		String vnetDev = "vtap" + vnetId;
     		createVnet(vnetId, _pifs.first());
-    		vnetNic.defBridgeNet(brName, vnetDev, guestMac, interfaceDef.nicModel.VIRTIO);
+    		vnetNic.defBridgeNet(brName, null, guestMac, interfaceDef.nicModel.VIRTIO);
     	}
     	nics.add(vnetNic);    	
     	
@@ -3113,7 +3113,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		brName = setVnetBrName(vnetId);
     		String vnetDev = "vtap" + vnetId;
     		createVnet(vnetId, _pifs.second());
-    		pubNic.defBridgeNet(brName, vnetDev, pubMac, interfaceDef.nicModel.VIRTIO); 		
+    		pubNic.defBridgeNet(brName, null, pubMac, interfaceDef.nicModel.VIRTIO); 		
     	}
 		nics.add(pubNic);
 		return nics;
