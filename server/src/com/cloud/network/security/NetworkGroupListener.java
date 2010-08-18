@@ -23,7 +23,6 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
@@ -32,6 +31,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.NetworkIngressRuleAnswer;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.manager.AgentManager;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.network.security.NetworkGroupWorkVO.Step;

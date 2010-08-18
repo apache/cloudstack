@@ -31,7 +31,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
@@ -54,6 +53,7 @@ import com.cloud.agent.api.routing.LoadBalancerCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRuleCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
+import com.cloud.agent.manager.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
 import com.cloud.async.AsyncJobExecutor;

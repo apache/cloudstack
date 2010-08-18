@@ -51,9 +51,9 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.manager.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
@@ -2860,9 +2860,9 @@ public class ManagementServerImpl implements ManagementServer {
     	_agentMgr.updateHost(hostId, guestOSCategoryId);
     }
     
-    public boolean deleteHost(long hostId) {
-        return _agentMgr.deleteHost(hostId);
-    }
+//    public boolean deleteHost(long hostId) {
+//        return _agentMgr.deleteHost(hostId);
+//    }
 
     @Override
     public long getId() {

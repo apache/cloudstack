@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import com.cloud.agent.AgentManager;
+import com.cloud.agent.manager.AgentManager;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.server.ManagementServer;

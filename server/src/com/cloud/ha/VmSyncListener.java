@@ -21,7 +21,6 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
@@ -30,6 +29,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.manager.AgentManager;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;

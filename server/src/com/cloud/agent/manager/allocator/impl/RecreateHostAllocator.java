@@ -25,7 +25,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
+import com.cloud.agent.manager.AgentManager;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;

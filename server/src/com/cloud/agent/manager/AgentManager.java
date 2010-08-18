@@ -15,20 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.agent;
+package com.cloud.agent.manager;
 
 import java.net.URI;
 import java.util.List;
 import java.util.Set;
 
+import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.api.commands.DeleteHostCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
@@ -168,6 +171,14 @@ public interface AgentManager extends Manager {
      * @param true if deleted, false otherwise
      */
     boolean deleteHost(long hostId);
+    
+	/**
+     * Deletes a host
+     * 
+     * @param cmd
+     * @param true if deleted, false otherwise
+     */
+    boolean deleteHost(DeleteHostCmd cmd) throws InvalidParameterValueException; 
 	
 	/**
 	 * Find a pod based on the user id, template, and data center.

@@ -40,7 +40,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
@@ -70,6 +69,9 @@ import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.agent.transport.UpgradeResponse;
 import com.cloud.alert.AlertManager;
+import com.cloud.api.BaseCmd;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.DeleteHostCmd;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -87,6 +89,7 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.ha.HighAvailabilityManager;
@@ -566,6 +569,24 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             return false;
         }
     }
+    
+    public boolean deleteHost(DeleteHostCmd cmd) throws InvalidParameterValueException{
+    	Long id = cmd.getId();
+    	
+    	//Verify that host exists
+    	HostVO host = _hostDao.findById(id);
+    	if (host == null) {
+    		throw new InvalidParameterValueException("Host with id " + id.toString() + " doesn't exist");
+    	}
+    	
+    	if (deleteHost(id)) {
+    		return true;
+    	}
+    	else {
+    		return false;
+    	}
+    }
+    
 
     @DB
     protected boolean deleteSecondaryStorageHost(HostVO secStorageHost) {

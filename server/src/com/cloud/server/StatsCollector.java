@@ -31,13 +31,13 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetFileStatsCommand;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.agent.manager.AgentManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.exception.AgentUnavailableException;

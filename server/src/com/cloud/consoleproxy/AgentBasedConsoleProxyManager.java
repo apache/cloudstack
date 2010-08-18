@@ -25,7 +25,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ConsoleAccessAuthenticationAnswer;
@@ -35,6 +34,7 @@ import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.manager.AgentManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
