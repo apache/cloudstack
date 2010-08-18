@@ -167,6 +167,7 @@ public enum Status {
         s_fsm.addTransition(Status.Disconnected, Event.Ping, Status.Up);
         s_fsm.addTransition(Status.Disconnected, Event.ManagementServerDown, Status.Disconnected);
         s_fsm.addTransition(Status.Disconnected, Event.WaitedTooLong, Status.Alert);
+        s_fsm.addTransition(Status.Disconnected, Event.Remove, Status.Removed);
         s_fsm.addTransition(Status.Down, Event.MaintenanceRequested, Status.PrepareForMaintenance);
         s_fsm.addTransition(Status.Down, Event.AgentConnected, Status.Connecting);
         s_fsm.addTransition(Status.Down, Event.Remove, Status.Removed);
