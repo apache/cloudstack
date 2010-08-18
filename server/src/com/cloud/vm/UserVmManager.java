@@ -22,6 +22,7 @@ import java.util.List;
 
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.StopVMCmd;
 import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.async.executor.DestroyVMExecutor;
@@ -159,9 +160,11 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * Stops the virtual machine
      * @param userId the id of the user performing the action
      * @param vmId
+     * @param eventId -- id of the scheduled event for stopping vm
      * @return true if stopped; false if problems.
      */
-    boolean stopVirtualMachine(long userId, long vmId);
+    boolean stopVirtualMachine(long userId, long vmId, long eventId);
+    boolean stopVirtualMachine(StopVMCmd cmd) throws ServerApiException;
     OperationResponse executeStopVM(StopVMExecutor executor, VMOperationParam param);
     void completeStopCommand(long userId, UserVmVO vm, Event e, long startEventId);
     

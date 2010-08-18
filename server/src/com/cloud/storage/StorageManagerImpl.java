@@ -59,6 +59,7 @@ import com.cloud.agent.api.to.DiskCharacteristicsTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.commands.StopVMCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobExecutor;
@@ -1940,8 +1941,10 @@ public class StorageManagerImpl implements StorageManager {
         			//if the instance is of type uservm, call the user vm manager
         			if(vmInstance.getType().equals(VirtualMachine.Type.User))
         			{
+        				//create a dummy event
+        				long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_VM_STOP, "stopping user vm with Id: "+vmInstance.getId());
         				
-        				if(!_userVmMgr.stopVirtualMachine(userId, vmInstance.getId()))
+        				if(!_userVmMgr.stopVirtualMachine(userId, vmInstance.getId(),eventId))
         				{
         					s_logger.warn("There was an error stopping the user vm id: "+vmInstance.getId()+" ,cannot enable storage maintenance");
         	            	primaryStorage.setStatus(Status.ErrorInMaintenance);
