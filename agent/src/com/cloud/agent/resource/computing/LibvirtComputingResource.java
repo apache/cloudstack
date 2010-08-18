@@ -2360,7 +2360,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			Iterator<Map.Entry<String, String>> itr = entrySet.iterator();
 			while (itr.hasNext()) {
 				Map.Entry<String, String> entry = itr.next();
-				if (entry.getValue().equalsIgnoreCase(sourceFile)) {
+				if ((entry.getValue() != null) && (entry.getValue().equalsIgnoreCase(sourceFile))) {
 					diskDev = entry.getKey();
 					break;
 				}
