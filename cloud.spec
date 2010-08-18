@@ -233,7 +233,7 @@ Requires: /sbin/service
 Requires: /sbin/chkconfig
 Requires: kvm
 %if "%{fedora}" != ""
-Requires: cloud-qemu-system-x86
+Requires: cloud-qemu-system-x86_64
 %endif
 Requires: libcgroup
 Requires: /usr/bin/uuidgen
