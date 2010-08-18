@@ -17,12 +17,14 @@
  */
 package com.cloud.uservm;
 
+import com.cloud.domain.PartOf;
+import com.cloud.user.OwnedBy;
 import com.cloud.vm.VirtualMachine;
 
 /**
  * This represents one running virtual machine instance.
  */
-public interface UserVm extends VirtualMachine {
+public interface UserVm extends VirtualMachine, OwnedBy, PartOf {
     
     /**
      * @return service offering id
@@ -39,11 +41,6 @@ public interface UserVm extends VirtualMachine {
      */
     String getVnet();
     
-    /**
-     * @return the account this vm instance belongs to.
-     */
-    long getAccountId();
-
     /**
      * @return the domain this vm instance belongs to.
      */

@@ -297,7 +297,7 @@ public class ConsoleProxyServlet extends HttpServlet {
         {
         case User :
         	userVm = _ms.findUserVMInstanceById(vmId);
-        	if(userVm.getAccountId() != accountObj.getId().longValue() && accountObj.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        	if(userVm.getAccountId() != accountObj.getId() && accountObj.getType() != Account.ACCOUNT_TYPE_ADMIN) {
         		if(s_logger.isDebugEnabled())
 	        		s_logger.debug("VM access is denied. VM owner account " + userVm.getAccountId() 
 	        			+ " does not match the account id in session " + accountObj.getId());
@@ -411,7 +411,7 @@ public class ConsoleProxyServlet extends HttpServlet {
             if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
     			requestParameters.put(BaseCmd.Properties.USER_ID.getName(), new String[] { user.getId().toString() });
                 requestParameters.put(BaseCmd.Properties.ACCOUNT.getName(), new String[] { account.getAccountName() });
-                requestParameters.put(BaseCmd.Properties.DOMAIN_ID.getName(), new String[] { account.getDomainId().toString() });
+                requestParameters.put(BaseCmd.Properties.DOMAIN_ID.getName(), new String[] { Long.toString(account.getDomainId()) });
         		requestParameters.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { account });
     		} else {
     			requestParameters.put(BaseCmd.Properties.USER_ID.getName(), new String[] { user.getId().toString() });

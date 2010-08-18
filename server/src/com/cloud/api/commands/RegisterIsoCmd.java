@@ -27,11 +27,11 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Storage.FileSystem;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
@@ -86,7 +86,7 @@ public class RegisterIsoCmd extends BaseCmd {
         
         long accountId = 1L; // default to system account
         if (account != null) {
-            accountId = account.getId().longValue();
+            accountId = account.getId();
         }
         
         Account accountObj;

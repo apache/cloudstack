@@ -66,7 +66,7 @@ public class DisassociateIPAddrCmd extends BaseCmd {
         Long accountId = accountByIp.getId();
         if (account != null) {
             if (!isAdmin(account.getType())) {
-                if (account.getId().longValue() != accountId.longValue()) {
+                if (account.getId() != accountId.longValue()) {
                     throw new ServerApiException(BaseCmd.PARAM_ERROR, "account " + account.getAccountName() + " doesn't own ip address " + ipAddress);
                 }
             } else if (!getManagementServer().isChildDomain(account.getDomainId(), accountByIp.getDomainId())) {

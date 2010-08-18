@@ -165,7 +165,7 @@ public class CreateVolumeCmd extends BaseCmd {
                     if (!getManagementServer().isChildDomain(account.getDomainId(), snapshotOwner.getDomainId())) {
                         throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to create volume from snapshot with id " + snapshotId + ", permission denied.");
                     }
-                } else if (account.getId().longValue() != snapshotCheck.getAccountId()) {
+                } else if (account.getId() != snapshotCheck.getAccountId()) {
                     throw new ServerApiException(BaseCmd.SNAPSHOT_INVALID_PARAM_ERROR, "unable to find a snapshot with id " + snapshotId + " for this account");
                 }
             }

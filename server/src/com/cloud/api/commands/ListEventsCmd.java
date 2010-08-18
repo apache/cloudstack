@@ -165,7 +165,7 @@ public class ListEventsCmd extends BaseCmd {
             Account acct = getManagementServer().findAccountById(Long.valueOf(event.getAccountId()));
             if (acct != null) {
             	eventData.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT.getName(), acct.getAccountName()));
-            	eventData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), acct.getDomainId().toString()));
+            	eventData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), Long.toString(acct.getDomainId())));
             	eventData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), getManagementServer().findDomainIdById(acct.getDomainId()).getName()));
             }
             if (event.getCreateDate() != null) {

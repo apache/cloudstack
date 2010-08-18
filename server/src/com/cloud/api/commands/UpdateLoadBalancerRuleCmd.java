@@ -63,7 +63,7 @@ public class UpdateLoadBalancerRuleCmd extends BaseCmd {
         Long accountId = lbOwner.getId();
         if (account != null) {
             if (!isAdmin(account.getType())) {
-                if (account.getId().longValue() != accountId.longValue()) {
+                if (account.getId() != accountId.longValue()) {
                     throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to update load balancer rule, permission denied");
                 }
             } else if (!getManagementServer().isChildDomain(account.getDomainId(), lbOwner.getDomainId())) {

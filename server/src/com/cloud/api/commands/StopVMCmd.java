@@ -63,7 +63,7 @@ public class StopVMCmd extends BaseCmd {
         }
 
         if (account != null) {
-            if (!isAdmin(account.getType()) && (account.getId().longValue() != vmInstance.getAccountId())) {
+            if (!isAdmin(account.getType()) && (account.getId() != vmInstance.getAccountId())) {
                 throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId + " for this account");
             } else if (!getManagementServer().isChildDomain(account.getDomainId(), vmInstance.getDomainId())) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid virtual machine id (" + vmId + ") given, unable to sop virtual machine.");

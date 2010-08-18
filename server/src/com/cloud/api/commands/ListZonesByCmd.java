@@ -62,7 +62,7 @@ public class ListZonesByCmd extends BaseCmd {
         	if (available != null && available) {
         		dataCenters = getManagementServer().listDataCenters();
         	} else {
-        		dataCenters = getManagementServer().listDataCentersBy(account.getId().longValue());
+        		dataCenters = getManagementServer().listDataCentersBy(account.getId());
         	}
         } else {
         	// available is kinda useless in this case because we can't exactly list by

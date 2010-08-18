@@ -63,11 +63,11 @@ public class LockAccountCmd extends BaseCmd {
         }
 
         // don't allow modify system account
-        if (account.getId().longValue() == Account.ACCOUNT_ID_SYSTEM) {
+        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "can not lock system account");
         }
 
-        boolean success = getManagementServer().lockAccount(account.getId().longValue());
+        boolean success = getManagementServer().lockAccount(account.getId());
         List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
         returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), Boolean.valueOf(success).toString()));
         return returnValues;

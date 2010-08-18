@@ -35,7 +35,7 @@ public class AccountVO implements Account {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    private Long id = null;
+    private long id;
 
     @Column(name="account_name")
     private String accountName = null;
@@ -44,7 +44,7 @@ public class AccountVO implements Account {
     private short type = ACCOUNT_TYPE_NORMAL;
 
     @Column(name="domain_id")
-    private Long domainId = null;
+    private long domainId;
 
     @Column(name="state")
     private String state;
@@ -56,7 +56,7 @@ public class AccountVO implements Account {
     private boolean needsCleanup = false;
 
     public AccountVO() {}
-    public AccountVO(Long id) {
+    public AccountVO(long id) {
         this.id = id;
     }
     
@@ -68,7 +68,8 @@ public class AccountVO implements Account {
     	return needsCleanup;
     }
 
-    public Long getId() {
+    @Override
+    public long getId() {
         return id;
     }
 
@@ -85,10 +86,11 @@ public class AccountVO implements Account {
         this.type = type;
     }
 
-    public Long getDomainId() {
+    public long getDomainId() {
         return domainId;
     }
-    public void setDomainId(Long domainId) {
+    
+    public void setDomainId(long domainId) {
         this.domainId = domainId;
     }
 

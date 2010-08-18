@@ -73,7 +73,7 @@ public class UpdateIsoCmd extends BaseCmd {
         if (account != null) {
             Long isoOwner = iso.getAccountId();
             if (!isAdmin(account.getType())) {
-                if ((isoOwner == null) || (account.getId().longValue() != isoOwner.longValue())) {
+                if ((isoOwner == null) || (account.getId() != isoOwner.longValue())) {
                     throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to modify ISO with id " + isoId);
                 }
             } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {

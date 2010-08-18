@@ -92,7 +92,7 @@ public class RemoveFromLoadBalancerRuleCmd extends BaseCmd {
         if (loadBalancer == null) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find load balancer rule with id " + loadBalancerId);
         } else if (account != null) {
-            if (!isAdmin(account.getType()) && (loadBalancer.getAccountId() != account.getId().longValue())) {
+            if (!isAdmin(account.getType()) && (loadBalancer.getAccountId() != account.getId())) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "Account " + account.getAccountName() + " does not own load balancer rule " + loadBalancer.getName() +
                         " (id:" + loadBalancer.getId() + ")");
             } else if (!getManagementServer().isChildDomain(account.getDomainId(), loadBalancer.getDomainId())) {

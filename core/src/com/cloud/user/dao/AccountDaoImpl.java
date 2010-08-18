@@ -36,8 +36,8 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 
 @Local(value={AccountDao.class})
 public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements AccountDao {
@@ -94,7 +94,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
                 u.setSecretKey(rs.getString(4));
                 u.setState(rs.getString(5));
 
-                Account a = new AccountVO(rs.getLong(6));
+                AccountVO a = new AccountVO(rs.getLong(6));
                 a.setAccountName(rs.getString(7));
                 a.setType(rs.getShort(8));
                 a.setDomainId(rs.getLong(9));

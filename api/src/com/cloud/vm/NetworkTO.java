@@ -15,12 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.agent.api.to;
+package com.cloud.vm;
 
 /**
  * Transfer object to transfer network settings.
  */
 public class NetworkTO {
+    private String uuid;
     private String ip;
     private String netmask;
     private String gateway;

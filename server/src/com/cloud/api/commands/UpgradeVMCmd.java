@@ -27,7 +27,6 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
@@ -71,7 +70,7 @@ public class UpgradeVMCmd extends BaseCmd {
         }       
 
         if (account != null) {
-            if (!isAdmin(account.getType()) && (account.getId().longValue() != vmInstance.getAccountId())) {
+            if (!isAdmin(account.getType()) && (account.getId() != vmInstance.getAccountId())) {
                 throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + virtualMachineId + " for this account");
             } else if (!getManagementServer().isChildDomain(account.getDomainId(), vmInstance.getDomainId())) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid virtual machine id (" + virtualMachineId + ") given, unable to upgrade virtual machine.");

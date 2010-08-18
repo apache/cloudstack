@@ -18,6 +18,7 @@
 package com.cloud.vm;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.ejb.Local;
 
@@ -35,15 +36,25 @@ public class MauriceMoss implements VmManager {
     @Inject private StorageManager _storageMgr;
     @Inject private NetworkManager _networkMgr;
 
-    @Override
     public VMInstanceVO allocate(VMInstanceVO vm, 
-            ServiceOfferingVO serviceOffering, 
-            NetworkOfferingVO[] networkOfferings, 
-            DiskOfferingVO[] diskOffering,
+            ServiceOfferingVO serviceOffering,
+            Long rootSize,
+            List<NetworkOfferingVO> networkOfferings, 
+            Map<DiskOfferingVO, Long> diskOfferings,
             DataCenterVO dc,
-            AccountVO account) {
-    	
-    	return null;
+            AccountVO owner) {
+        return null;
+    }
+
+    public VMInstanceVO allocate(VMInstanceVO vm,
+    ServiceOfferingVO serviceOffering,
+    Long rootSize,
+    List<NetworkOfferingVO> networkOfferings,
+    DiskOfferingVO dataOffering,
+    Long dataSize,
+    DataCenterVO dc,
+    AccountVO owner) {
+        return null;
     }
     
     @Override

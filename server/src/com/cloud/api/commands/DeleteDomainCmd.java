@@ -26,7 +26,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
-import com.cloud.domain.DomainVO;
+import com.cloud.domain.Domain;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
@@ -61,12 +61,12 @@ public class DeleteDomainCmd extends BaseCmd{
             account = getManagementServer().findAccountById(Long.valueOf(1L));
         }
 
-        if ((domainId.longValue() == DomainVO.ROOT_DOMAIN) || !getManagementServer().isChildDomain(account.getDomainId(), domainId)) {
+        if ((domainId.longValue() == Domain.ROOT_DOMAIN) || !getManagementServer().isChildDomain(account.getDomainId(), domainId)) {
             throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to delete domain " + domainId + ", permission denied.");
         }
 
         // check if domain exists in the system
-        DomainVO domain = getManagementServer().findDomainIdById(domainId);
+        Domain domain = getManagementServer().findDomainIdById(domainId);
     	if (domain == null) {
     		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find domain " + domainId);
     	}

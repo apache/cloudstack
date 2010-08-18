@@ -105,7 +105,7 @@ public class RegisterTemplateCmd extends BaseCmd {
                 
         long accountId = 1L; // default to system account
         if (account != null) {
-            accountId = account.getId().longValue();
+            accountId = account.getId();
         }
         
         Account accountObj;

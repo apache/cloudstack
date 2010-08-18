@@ -31,8 +31,8 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.host.HostVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.user.Account;
@@ -196,7 +196,7 @@ public class ListTemplatesCmd extends BaseCmd {
                 templateData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), datacenter.getName()));
         	                
                 // If the user is an admin, add the template download status
-                if (isAdmin || account.getId().longValue() == template.getAccountId()) {
+                if (isAdmin || account.getId() == template.getAccountId()) {
                     // add download status
                     if (templateHostRef.getDownloadState()!=Status.DOWNLOADED) {
                         String templateStatus = "Processing";

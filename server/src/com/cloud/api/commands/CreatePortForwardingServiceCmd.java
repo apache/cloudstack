@@ -107,7 +107,7 @@ public class CreatePortForwardingServiceCmd extends BaseCmd {
         List<Pair<String, Object>> embeddedObject = new ArrayList<Pair<String, Object>>();
         
         List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), securityGroup.getId().toString()));
+        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.toString(securityGroup.getId())));
         returnValues.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), securityGroup.getName()));
         returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DESCRIPTION.getName(), securityGroup.getDescription()));
         

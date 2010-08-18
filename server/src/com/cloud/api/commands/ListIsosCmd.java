@@ -33,8 +33,8 @@ import com.cloud.domain.DomainVO;
 import com.cloud.host.HostVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
@@ -216,7 +216,7 @@ public class ListIsosCmd extends BaseCmd {
                 isoData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), datacenter.getName()));
         	                
                 // If the user is an admin, add the template download status
-                if (isAdmin || account.getId().longValue() == iso.getAccountId()) {
+                if (isAdmin || account.getId() == iso.getAccountId()) {
                 	// add download status
                 	if (isoHost.getDownloadState()!=Status.DOWNLOADED) {
                 		String isoStatus = "Processing";

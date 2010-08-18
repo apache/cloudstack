@@ -22,7 +22,7 @@ import java.util.Set;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.VirtualMachineTemplate;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapter;
 

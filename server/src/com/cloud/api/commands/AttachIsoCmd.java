@@ -73,10 +73,10 @@ public class AttachIsoCmd extends BaseCmd {
 
     	if (account != null) {
     	    if (!isAdmin(account.getType())) {
-                if (account.getId().longValue() != vmInstanceCheck.getAccountId()) {
+                if (account.getId() != vmInstanceCheck.getAccountId()) {
                     throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to attach ISO " + iso.getName() + " to virtual machine " + vmInstanceCheck.getName() + " for this account");
                 }
-                if (!iso.isPublicTemplate() && (account.getId().longValue() != iso.getAccountId()) && (!iso.getName().startsWith("xs-tools"))) {
+                if (!iso.isPublicTemplate() && (account.getId() != iso.getAccountId()) && (!iso.getName().startsWith("xs-tools"))) {
                     throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to attach ISO " + iso.getName() + " to virtual machine " + vmInstanceCheck.getName() + " for this account");
                 }
     	    } else {

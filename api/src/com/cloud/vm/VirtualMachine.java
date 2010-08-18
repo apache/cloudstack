@@ -23,7 +23,7 @@ import java.util.Date;
  * VirtualMachine describes the properties held by a virtual machine 
  *
  */
-public interface VirtualMachine {
+public interface VirtualMachine extends RunningOn {
     public enum Event {
     	CreateRequested,
     	StartRequested,
@@ -99,11 +99,6 @@ public interface VirtualMachine {
      * @return data center id.
      */
     public long getDataCenterId();
-    
-    /**
-     * @return id of the host it is running on.  If not running, returns null.
-     */
-    public Long getHostId();
     
     /**
      * @return id of the host it was assigned last time.

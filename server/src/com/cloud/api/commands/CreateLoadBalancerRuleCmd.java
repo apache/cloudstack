@@ -26,8 +26,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.IPAddressVO;
@@ -102,7 +102,7 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd {
         Long accountId = accountByIp.getId();
         if (account != null) {
             if (!isAdmin(account.getType())) {
-                if (account.getId().longValue() != accountId.longValue()) {
+                if (account.getId() != accountId.longValue()) {
                     throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to create load balancer rule, account " + account.getAccountName() + " doesn't own ip address " + publicIP);
                 }
             } else if (!getManagementServer().isChildDomain(account.getDomainId(), accountByIp.getDomainId())) {

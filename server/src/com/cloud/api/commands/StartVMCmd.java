@@ -72,7 +72,7 @@ public class StartVMCmd extends BaseCmd {
         }
 
         if (account != null) {
-            if (!isAdmin(account.getType()) && (account.getId().longValue() != vmInstanceCheck.getAccountId())) {
+            if (!isAdmin(account.getType()) && (account.getId() != vmInstanceCheck.getAccountId())) {
                 throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId + " for this account");
             } else if (!getManagementServer().isChildDomain(account.getDomainId(), vmInstanceCheck.getDomainId())) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid virtual machine id (" + vmId + ") given, unable to start virtual machine.");

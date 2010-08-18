@@ -94,7 +94,7 @@ public class ListServiceOfferingsCmd extends BaseCmd {
             	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
             }
         	if ((account != null) && !isAdmin(account.getType())) {
-                if (account.getId().longValue() != vmInstance.getAccountId()) {
+                if (account.getId() != vmInstance.getAccountId()) {
                     throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId + " for this account");
                 }
             }

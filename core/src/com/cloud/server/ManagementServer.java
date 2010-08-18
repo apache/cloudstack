@@ -29,15 +29,15 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.configuration.ConfigurationVO;
-import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
-import com.cloud.domain.DomainVO;
+import com.cloud.dc.VlanVO;
+import com.cloud.domain.Domain;
 import com.cloud.event.EventVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.DiscoveryException;
@@ -72,7 +72,6 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VMTemplateHostVO;
@@ -1521,9 +1520,9 @@ public interface ManagementServer {
 	 * in a Criteria object.
 	 * @return list of domains owned by the given user
 	 */
-	List<DomainVO> searchForDomains(Criteria c);
+	List<? extends Domain> searchForDomains(Criteria c);
 	
-	List<DomainVO> searchForDomainChildren(Criteria c);
+	List<? extends Domain> searchForDomainChildren(Criteria c);
 
 	/**
 	 * create a new domain
@@ -1533,7 +1532,7 @@ public interface ManagementServer {
 	 * @param parentId
 	 * 
 	 */
-	DomainVO createDomain(String name, Long ownerId, Long parentId);
+	Domain createDomain(String name, Long ownerId, Long parentId);
 
 	/**
      * delete a domain with the given domainId
@@ -1560,14 +1559,14 @@ public interface ManagementServer {
      * find the domain by id
      * @param domainId the id of the domainId
      */
-    DomainVO findDomainIdById(Long domainId);
+    Domain findDomainIdById(Long domainId);
 
     /**
      * find the domain by its path
      * @param domainPath the path to use to lookup a domain
-     * @return domainVO the domain with the matching path, or null if no domain with the given path exists
+     * @return Domain the domain with the matching path, or null if no domain with the given path exists
      */
-    DomainVO findDomainByPath(String domainPath);
+    Domain findDomainByPath(String domainPath);
 
     /**
      * Finds accounts with account identifiers similar to the parameter

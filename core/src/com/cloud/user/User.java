@@ -20,7 +20,7 @@ package com.cloud.user;
 
 import java.util.Date;
 
-public interface User {
+public interface User extends OwnedBy {
 	public static final long UID_SYSTEM = 1; 
 	
 	public Long getId();
@@ -44,8 +44,6 @@ public interface User {
 	public String getLastname();
 	
 	public void setLastname(String lastname);
-
-	public long getAccountId();
 
 	public void setAccountId(long accountId);
 

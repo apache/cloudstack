@@ -17,8 +17,12 @@
  */
 package com.cloud.storage;
 
+import com.cloud.domain.PartOf;
+import com.cloud.template.BasedOn;
+import com.cloud.user.OwnedBy;
 
-public interface Volume {
+
+public interface Volume extends PartOf, OwnedBy, BasedOn {
 	enum VolumeType {UNKNOWN, ROOT, SWAP, DATADISK};
 	
 	enum MirrorState {NOT_MIRRORED, ACTIVE, DEFUNCT};
@@ -37,16 +41,6 @@ public interface Volume {
      * @return the volume name
      */
     String getName();
-    
-    /**
-     * @return owner's account id
-     */
-    long getAccountId();
-
-    /**
-     * @return id of the owning account's domain
-     */
-    long getDomainId();
     
     /**
      * @return total size of the partition

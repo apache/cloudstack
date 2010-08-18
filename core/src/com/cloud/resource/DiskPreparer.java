@@ -18,7 +18,7 @@
 package com.cloud.resource;
 
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.VirtualMachineTemplate.BootloaderType;
+import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.component.Adapter;
 
 /**

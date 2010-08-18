@@ -72,8 +72,8 @@ import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Vlan;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -136,14 +136,14 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouter;
+import com.cloud.vm.DomainRouter.Role;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
-import com.cloud.vm.DomainRouter.Role;
-import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -588,7 +588,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                             guestIpAddress,
                             guestNetmask,
                             accountId,
-                            account.getDomainId().longValue(),
+                            account.getDomainId(),
                             publicMacAddress,
                             publicIpAddress,
                             vlanNetmask,

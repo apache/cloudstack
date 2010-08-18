@@ -185,7 +185,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         	String accountId = null;
         	if (account != null) {
         		accountType = account.getType();
-        		accountId = account.getId().toString();
+        		accountId = Long.toString(account.getId());
         	} else {
         		accountType = Account.ACCOUNT_TYPE_ADMIN;
         	}

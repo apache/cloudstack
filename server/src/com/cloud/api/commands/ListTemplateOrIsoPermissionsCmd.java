@@ -8,7 +8,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
-import com.cloud.domain.DomainVO;
+import com.cloud.domain.Domain;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
@@ -86,9 +86,9 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseCmd {
         	if (account.getType() == Account.ACCOUNT_TYPE_NORMAL && template.getAccountId() != accountId) {
         		throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to list permissions for " + getMediaType() + " with id " + id);
         	} else if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-        		DomainVO accountDomain = getManagementServer().findDomainIdById(account.getDomainId());
+        		Domain accountDomain = getManagementServer().findDomainIdById(account.getDomainId());
         		Account templateAccount = getManagementServer().findAccountById(template.getAccountId());
-        		DomainVO templateDomain = getManagementServer().findDomainIdById(templateAccount.getDomainId());        			
+        		Domain templateDomain = getManagementServer().findDomainIdById(templateAccount.getDomainId());        			
             	if (!templateDomain.getPath().contains(accountDomain.getPath())) {
             		throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to list permissions for " + getMediaType() + " with id " + id);
             	}

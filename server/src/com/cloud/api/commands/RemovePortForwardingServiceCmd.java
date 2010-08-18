@@ -66,7 +66,7 @@ public class RemovePortForwardingServiceCmd extends BaseCmd {
         if (securityG == null) {
         	throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a port forwarding service with id " + securityGroupId);
         } else if (account != null) {
-            if (!isAdmin(account.getType()) && (account.getId().longValue() != securityG.getAccountId())) {
+            if (!isAdmin(account.getType()) && (account.getId() != securityG.getAccountId())) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a port forwarding service with id " + securityGroupId + " for this account");
             } else if (!getManagementServer().isChildDomain(account.getDomainId(), securityG.getDomainId())) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid port forwarding service id (" + securityGroupId + ") given, unable to remove port forwarding service.");
@@ -78,7 +78,7 @@ public class RemovePortForwardingServiceCmd extends BaseCmd {
         	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
         }
         if (account != null) {
-            if (!isAdmin(account.getType()) && (account.getId().longValue() != vmInstance.getAccountId())) {
+            if (!isAdmin(account.getType()) && (account.getId() != vmInstance.getAccountId())) {
                 throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId + " for this account");
             } else if (!getManagementServer().isChildDomain(account.getDomainId(), vmInstance.getDomainId())) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid virtual machine id (" + vmId + ") given, unable to remove port forwarding service.");
@@ -96,7 +96,7 @@ public class RemovePortForwardingServiceCmd extends BaseCmd {
 
         Long accountId = ipAddrAccount.getId();
         if ((account != null) && !isAdmin(account.getType())) {
-            if (account.getId().longValue() != accountId) {
+            if (account.getId() != accountId) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "account " + account.getAccountName() + " doesn't own ip address " + publicIp);
             }
         }

@@ -137,7 +137,6 @@ import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VirtualMachineTemplate.BootloaderType;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeVO;
@@ -151,6 +150,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
@@ -1444,7 +1444,7 @@ public class UserVmManagerImpl implements UserVmManager {
 
             while ((pod = _agentMgr.findPod(template, offering, dc, account.getId(), podsToAvoid)) != null) {
                 if (vm == null) {
-                    vm = new UserVmVO(vmId, name, template.getId(), guestOSId, accountId, account.getDomainId().longValue(),
+                    vm = new UserVmVO(vmId, name, template.getId(), guestOSId, accountId, account.getDomainId(),
                     		serviceOfferingId, null, null, router.getGuestNetmask(),
                     		null,null,null,
                     		routerId, pod.first().getId(), dataCenterId,
@@ -2651,7 +2651,7 @@ public class UserVmManagerImpl implements UserVmManager {
                 	}
                 	routerId = router.getId();
                 }
-                String guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId().longValue(), guestVlan.getId(), false);
+                String guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), guestVlan.getId(), false);
                 if (guestIp == null) {
                 	s_logger.debug("No guest IP available in pod id=" + pod.first().getId());
                 	avoids.add(pod.first().getId());
@@ -2662,7 +2662,7 @@ public class UserVmManagerImpl implements UserVmManager {
                 String externalMacAddress = macAddresses[1];
                 Long externalVlanDbId = null;
             
-	            vm = new UserVmVO(vmId, name, templateId, guestOSId, accountId, account.getDomainId().longValue(),
+	            vm = new UserVmVO(vmId, name, templateId, guestOSId, accountId, account.getDomainId(),
 	            		serviceOfferingId, guestMacAddress, guestIp, guestVlan.getVlanNetmask(),
 	            		null, externalMacAddress, externalVlanDbId,
 	            		routerId, pod.first().getId(), dataCenterId,
@@ -2820,7 +2820,7 @@ public class UserVmManagerImpl implements UserVmManager {
                 	publicIpAddr = publicIp.ipaddr;
                 	publicIpNetMask = publicIp.netMask;
                 }
-	            vm = new UserVmVO(vmId, name, templateId, guestOSId, accountId, account.getDomainId().longValue(),
+	            vm = new UserVmVO(vmId, name, templateId, guestOSId, accountId, account.getDomainId(),
 	            		serviceOfferingId, guestMacAddress, publicIpAddr, publicIpNetMask,
 	            		null, externalMacAddress, null,
 	            		routerId, pod.first().getId(), dataCenterId,
