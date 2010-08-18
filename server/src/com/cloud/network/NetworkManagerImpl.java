@@ -844,7 +844,9 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 	                    vnet = _dcDao.allocateVnet(router.getDataCenterId(), router.getAccountId());
 	                }
 	                vnetAllocated = true;
-	                routerMacAddress = getRouterMacForVnet(dc, vnet);
+	                if(vnet != null){
+	                    routerMacAddress = getRouterMacForVnet(dc, vnet);
+	                }
 	            } else if (router.getRole() == Role.DHCP_USERDATA) {
 	            	if (!Vlan.UNTAGGED.equals(router.getVlanId())) {
 	            		vnet = router.getVlanId().trim();
