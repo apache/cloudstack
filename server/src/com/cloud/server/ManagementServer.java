@@ -214,7 +214,7 @@ public interface ManagementServer {
     
     /**
      * Enables an account by accountId
-     * @param accountId
+     * @param cmd
      * @return true if enable was successful, false otherwise
      */
     boolean enableAccount(EnableAccountCmd cmd) throws InvalidParameterValueException;
@@ -227,17 +227,16 @@ public interface ManagementServer {
     boolean lockAccount(long accountId);
 
     /**
-     * Updates an account name by accountId
-     * @param accountId
-     * @param accountName
+     * Updates an account name
+     * @param cmd
      * @return true if update was successful, false otherwise
      */
     
     boolean updateAccount(UpdateAccountCmd cmd) throws InvalidParameterValueException;
 
     /**
-     * Enables a user by userId
-     * @param userId
+     * Enables a user
+     * @param cmd
      * @return true if enable was successful, false otherwise
      */
     boolean enableUser(EnableUserCmd cmd) throws InvalidParameterValueException;
@@ -851,13 +850,13 @@ public interface ManagementServer {
      */
     void updateHost(long hostId, long guestOSCategoryId) throws InvalidParameterValueException;
     
-    /**
-     * Deletes a host
-     * 
-     * @param hostId
-     * @param true if deleted, false otherwise
-     */
-    boolean deleteHost(long hostId);
+//    /**
+//     * Deletes a host
+//     * 
+//     * @param hostId
+//     * @param true if deleted, false otherwise
+//     */
+//    boolean deleteHost(long hostId);
     
     /**
      * Retrieves all Events between the start and end date specified
@@ -1147,14 +1146,8 @@ public interface ManagementServer {
     VlanVO findVlanById(long vlanDbId);
     
     /**
-     * Creates a new template with the specified parameters
-     * @param id
-     * @param name
-     * @param displayText
-     * @param String format
-     * @param Long guestOsId
-     * @param Boolean passwordEnabled
-     * @param Boolean bootable
+     * Creates a new template
+     * @param cmd
      * @return success/failure
      */
     boolean updateTemplate(UpdateTemplateCmd cmd) throws InvalidParameterValueException;
@@ -1540,6 +1533,8 @@ public interface ManagementServer {
      * @return domainVO the domain with the matching path, or null if no domain with the given path exists
      */
     DomainVO findDomainByPath(String domainPath);
+    
+    
 
     /**
      * Finds accounts with account identifiers similar to the parameter

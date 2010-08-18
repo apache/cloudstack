@@ -1,4 +1,5 @@
 build/build.number
+build.number
 bin
 cloudstack-proprietary
 .lock-wscript

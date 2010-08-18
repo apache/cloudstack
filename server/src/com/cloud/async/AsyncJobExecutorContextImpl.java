@@ -23,7 +23,7 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.AgentManager;
+import com.cloud.agent.manager.AgentManager;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.event.dao.EventDao;
 import com.cloud.network.NetworkManager;

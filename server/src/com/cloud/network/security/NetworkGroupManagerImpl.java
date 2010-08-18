@@ -37,10 +37,10 @@ import javax.naming.ConfigurationException;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.NetworkIngressRulesCmd;
 import com.cloud.agent.api.NetworkIngressRulesCmd.IpPortAndProto;
+import com.cloud.agent.manager.AgentManager;
 import com.cloud.api.commands.CreateNetworkGroupCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.DomainVO;
