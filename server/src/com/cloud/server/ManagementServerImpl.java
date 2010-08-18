@@ -64,6 +64,7 @@ import com.cloud.api.commands.AuthorizeNetworkGroupIngressCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
 import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
 import com.cloud.api.commands.CopyTemplateCmd;
+import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
@@ -82,8 +83,11 @@ import com.cloud.api.commands.StartSystemVMCmd;
 import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
+import com.cloud.api.commands.UpdateIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateTemplateCmd;
-import com.cloud.api.commands.UpgradeVMCmd;
+import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
+import com.cloud.api.commands.UpdateTemplatePermissionsCmd;
+import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
@@ -106,17 +110,16 @@ import com.cloud.async.executor.NetworkGroupIngressParam;
 import com.cloud.async.executor.ResetVMPasswordParam;
 import com.cloud.async.executor.SecurityGroupParam;
 import com.cloud.async.executor.UpdateLoadBalancerParam;
-import com.cloud.async.executor.UpgradeVMParam;
 import com.cloud.async.executor.VMOperationParam;
-import com.cloud.async.executor.VMOperationParam.VmOp;
 import com.cloud.async.executor.VolumeOperationParam;
+import com.cloud.async.executor.VMOperationParam.VmOp;
 import com.cloud.async.executor.VolumeOperationParam.VolumeOp;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
-import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
+import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.consoleproxy.ConsoleProxyManager;
@@ -126,8 +129,8 @@ import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -193,22 +196,22 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
-import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.FileSystem;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Snapshot.SnapshotType;
+import com.cloud.storage.Storage.FileSystem;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.DiskTemplateDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -218,9 +221,9 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -242,12 +245,12 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -368,7 +371,8 @@ public class ManagementServerImpl implements ManagementServer {
 
     private boolean _isHypervisorSnapshotCapable = false;
 
-
+    private final int _maxVolumeSizeInGb;
+    
     protected ManagementServerImpl() {
         ComponentLocator locator = ComponentLocator.getLocator(Name);
         _lunDao = locator.getDao(PreallocatedLunDao.class);
@@ -462,6 +466,11 @@ public class ManagementServerImpl implements ManagementServer {
 
         // Parse the max number of UserVMs and public IPs from server-setup.xml,
         // and set them in the right places
+        
+        String maxVolumeSizeInGbString = _configs.get("max.volume.size.gb");
+        int maxVolumeSizeGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2000);
+
+        _maxVolumeSizeInGb = maxVolumeSizeGb;
 
         _routerRamSize = NumbersUtil.parseInt(_configs.get("router.ram.size"),NetworkManager.DEFAULT_ROUTER_VM_RAMSIZE);
         _proxyRamSize = NumbersUtil.parseInt(_configs.get("consoleproxy.ram.size"), ConsoleProxyManager.DEFAULT_PROXY_VM_RAMSIZE);
@@ -1266,14 +1275,68 @@ public class ManagementServerImpl implements ManagementServer {
 
 
     @Override
-    public boolean updateUser(long userId, String username, String password, String firstname, String lastname, String email, String timezone, String apiKey, String secretKey) throws InvalidParameterValueException{
-        UserVO user = _userDao.findById(userId);
+    public boolean updateUser(UpdateUserCmd cmd) throws InvalidParameterValueException
+    {
+        Long id = cmd.getId();
+        String apiKey = cmd.getApiKey();
+        String firstName = cmd.getFirstname();
+    	String email = cmd.getEmail();
+    	String lastName = cmd.getLastname();
+    	String password = cmd.getPassword();
+    	String secretKey = cmd.getSecretKey();
+    	String timeZone = cmd.getTimezone();
+    	String userName = cmd.getUsername();
+    	
+        //Input validation
+    	UserVO user = _userDao.getUser(id);
+    	
+        if (user == null) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find user by id");
+        }
+
+        if((apiKey == null && secretKey != null) || (apiKey != null && secretKey == null))
+        {
+        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please provide an api key/secret key pair");
+        }
+        
+        // If the account is an admin type, return an error.  We do not allow this
+        Account account = (Account)UserContext.current().getAccountObject();
+        
+        if (account != null && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
+        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "user id : " + id + " is system account, update is not allowed");
+        }
+
+        if (firstName == null) { 
+        	firstName = user.getFirstname();
+        }
+        if (lastName == null) { 
+        	lastName = user.getLastname(); 
+        }
+        if (userName == null) { 
+        	userName = user.getUsername();  
+        }
+        if (password == null) { 
+        	password = user.getPassword();
+        }
+        if (email == null) {
+        	email = user.getEmail();
+        }
+        if (timeZone == null) {
+        	timeZone = user.getTimezone();
+        }
+        if (apiKey == null) {
+        	apiKey = user.getApiKey();
+        }
+        if (secretKey == null) {
+        	secretKey = user.getSecretKey();
+        }
+
         Long accountId = user.getAccountId();
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("updating user with id: " + userId);
+            s_logger.debug("updating user with id: " + id);
         }
-        UserAccount userAccount = _userAccountDao.findById(userId);
+        UserAccount userAccount = _userAccountDao.findById(id);
         try
         {
         	//check if the apiKey and secretKey are globally unique
@@ -1285,8 +1348,8 @@ public class ManagementServerImpl implements ManagementServer {
         		{
         			User usr = apiKeyOwner.first();
         			
-        			if(usr.getId() != userId)
-            			throw new InvalidParameterValueException("The api key:"+apiKey+" exists in the system for user id:"+userId+" ,please provide a unique key");
+        			if(usr.getId() != id)
+            			throw new InvalidParameterValueException("The api key:"+apiKey+" exists in the system for user id:"+id+" ,please provide a unique key");
         			else
         			{
         				//allow the updation to take place
@@ -1296,12 +1359,12 @@ public class ManagementServerImpl implements ManagementServer {
         	}
 
         	
-            _userDao.update(userId, username, password, firstname, lastname, email, accountId, timezone, apiKey, secretKey);
-            EventUtils.saveEvent(new Long(1), Long.valueOf(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_UPDATE, "User, " + username + " for accountId = "
-                    + accountId + " domainId = " + userAccount.getDomainId() + " and timezone = "+timezone + " was updated.");
+            _userDao.update(id, userName, password, firstName, lastName, email, accountId, timeZone, apiKey, secretKey);
+            EventUtils.saveEvent(new Long(1), Long.valueOf(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_UPDATE, "User, " + userName + " for accountId = "
+                    + accountId + " domainId = " + userAccount.getDomainId() + " and timezone = "+timeZone + " was updated.");
         } catch (Throwable th) {
             s_logger.error("error updating user", th);
-            EventUtils.saveEvent(Long.valueOf(1), Long.valueOf(1), EventVO.LEVEL_ERROR, EventTypes.EVENT_USER_UPDATE, "Error updating user, " + username
+            EventUtils.saveEvent(Long.valueOf(1), Long.valueOf(1), EventVO.LEVEL_ERROR, EventTypes.EVENT_USER_UPDATE, "Error updating user, " + userName
                     + " for accountId = " + accountId + " and domainId = " + userAccount.getDomainId());
             return false;
         }
@@ -2610,6 +2673,7 @@ public class ManagementServerImpl implements ManagementServer {
         return _vmMgr.recoverVirtualMachine(vmId);
     }
 
+    /*
     @Override
     public boolean upgradeVirtualMachine(long userId, long vmId, long serviceOfferingId,long startEventId) {
         UserVmVO userVm = _userVmDao.findById(vmId);
@@ -2700,35 +2764,12 @@ public class ManagementServerImpl implements ManagementServer {
         
         return _asyncMgr.submitAsyncJob(job, true);
     }
-
-    @Override
-    public void updateVirtualMachine(long vmId, String displayName, String group, boolean enable, Long userId, long accountId) {
-        UserVmVO vm = _userVmDao.findById(vmId);
-        if (vm == null) {
-            throw new CloudRuntimeException("Unable to find virual machine with id " + vmId);
-        }
-
-        boolean haEnabled = vm.isHaEnabled();
-        _userVmDao.updateVM(vmId, displayName, group, enable);
-        if (haEnabled != enable) {
-            String description = null;
-            String type = null;
-            if (enable) {
-                description = "Successfully enabled HA for virtual machine " + vm.getName();
-                type = EventTypes.EVENT_VM_ENABLE_HA;
-            } else {
-                description = "Successfully disabled HA for virtual machine " + vm.getName();
-                type = EventTypes.EVENT_VM_DISABLE_HA;
-            }
-            // create a event for the change in HA Enabled flag
-            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, type, description, null);
-        }
-    }
+*/
     
-    @Override
-    public StoragePoolVO updateStoragePool(long poolId, String tags) throws IllegalArgumentException {
-    	return _storageMgr.updateStoragePool(poolId, tags);
-    }
+//    @Override
+//    public StoragePoolVO updateStoragePool(long poolId, String tags) throws IllegalArgumentException {
+//    	return _storageMgr.updateStoragePool(poolId, tags);
+//    }
 
     @Override
     public DomainRouter startRouter(long routerId, long startEventId) throws InternalErrorException {
@@ -4273,35 +4314,9 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public ServiceOfferingVO updateServiceOffering(long userId, long serviceOfferingId, String name, String displayText, Boolean offerHA, Boolean useVirtualNetwork, String tags) {
-    	return _configMgr.updateServiceOffering(userId, serviceOfferingId, name, displayText, offerHA, useVirtualNetwork, tags);
-    }
-    
-
-    @Override
-    public HostPodVO createPod(long userId, String podName, Long zoneId, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException {
-        return _configMgr.createPod(userId, podName, zoneId, gateway, cidr, startIp, endIp);
-    }
-
-    @Override
-    public HostPodVO editPod(long userId, long podId, String newPodName, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException {
-        return _configMgr.editPod(userId, podId, newPodName, gateway, cidr, startIp, endIp);
-    }
-
-//    @Override
-//    public void deletePod(long userId, long podId) throws InvalidParameterValueException, InternalErrorException {
-//        _configMgr.deletePod(userId, podId);
-//    }
-
-    @Override
     public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange,String guestCidr) throws InvalidParameterValueException, InternalErrorException {
         return _configMgr.createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr);
     }
-
-//    @Override
-//    public DataCenterVO editZone(long userId, Long zoneId, String newZoneName, String dns1, String dns2, String dns3, String dns4, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException {
-//        return _configMgr.editZone(userId, zoneId, newZoneName, dns1, dns2, dns3, dns4, vnetRange, guestCidr);
-//    }
 
     @Override
     public void deleteZone(long userId, Long zoneId) throws InvalidParameterValueException, InternalErrorException {
@@ -4429,10 +4444,10 @@ public class ManagementServerImpl implements ManagementServer {
         return null;
     }
 
-    @Override
-    public ResourceLimitVO updateResourceLimit(Long domainId, Long accountId, ResourceType type, Long max) throws InvalidParameterValueException {
-        return _accountMgr.updateResourceLimit(domainId, accountId, type, max);
-    }
+//    @Override
+//    public ResourceLimitVO updateResourceLimit(Long domainId, Long accountId, ResourceType type, Long max) throws InvalidParameterValueException {
+//        return _accountMgr.updateResourceLimit(domainId, accountId, type, max);
+//    }
 
     @Override
     public boolean deleteLimit(Long limitId) {
@@ -4448,117 +4463,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _resourceLimitDao.findById(limitId);
     }
 
-    @Override
-    public List<ResourceLimitVO> searchForLimits(Criteria c) {
-        Long domainId = (Long) c.getCriteria(Criteria.DOMAINID);
-        Long accountId = (Long) c.getCriteria(Criteria.ACCOUNTID);
-        ResourceType type = (ResourceType) c.getCriteria(Criteria.TYPE);
-        
-        // For 2.0, we are just limiting the scope to having an user retrieve
-        // limits for himself and if limits don't exist, use the ROOT domain's limits.
-        // - Will
-        List<ResourceLimitVO> limits = new ArrayList<ResourceLimitVO>();
-        
-
-        if(accountId!=null && domainId!=null)
-        {
-	        //if domainId==1 and account belongs to admin
-	        //return all records for resource limits (bug 3778)
-	        
-	        if(domainId==1)
-	        {
-	        	AccountVO account = _accountDao.findById(accountId);
-	        	
-	        	if(account!=null && account.getType()==1)
-	        	{
-	        		//account belongs to admin
-	        		//return all limits
-	        		limits = _resourceLimitDao.listAll();
-	        		return limits;
-	        	}
-	        }
-	
-	        //if account belongs to system, accountid=1,domainid=1
-	        //return all the records for resource limits (bug:3778)
-	        if(accountId==1 && domainId==1)
-	        {
-	        	limits = _resourceLimitDao.listAll();
-	        	return limits;
-	        }
-        }
-        
-        if (accountId != null) {
-        	SearchBuilder<ResourceLimitVO> sb = _resourceLimitDao.createSearchBuilder();
-        	sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
-        	sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
-
-        	SearchCriteria<ResourceLimitVO> sc = sb.create();
-
-        	if (accountId != null) {
-        		sc.setParameters("accountId", accountId);
-        	}
-
-        	if (type != null) {
-        		sc.setParameters("type", type);
-        	}
-        	
-        	// Listing all limits for an account
-        	if (type == null) {
-        		//List<ResourceLimitVO> userLimits = _resourceLimitDao.search(sc, searchFilter);
-        		List<ResourceLimitVO> userLimits = _resourceLimitDao.listByAccountId(accountId);
-	        	List<ResourceLimitVO> rootLimits = _resourceLimitDao.listByDomainId(DomainVO.ROOT_DOMAIN);
-	        	ResourceType resourceTypes[] = ResourceType.values();
-        	
-	        	for (ResourceType resourceType: resourceTypes) {
-	        		boolean found = false;
-	        		for (ResourceLimitVO userLimit : userLimits) {
-	        			if (userLimit.getType() == resourceType) {
-	        				limits.add(userLimit);
-	        				found = true;
-	        				break;
-	        			}
-	        		}
-	        		if (!found) {
-	        			// Check the ROOT domain
-	        			for (ResourceLimitVO rootLimit : rootLimits) {
-	        				if (rootLimit.getType() == resourceType) {
-	        					limits.add(rootLimit);
-	        					found = true;
-	        					break;
-	        				}
-	        			}
-	        		}
-	        		if (!found) {
-	        			limits.add(new ResourceLimitVO(domainId, accountId, resourceType, -1L));
-	        		}
-	        	}
-        	} else {
-        		AccountVO account = _accountDao.findById(accountId);
-        		limits.add(new ResourceLimitVO(null, accountId, type, _accountMgr.findCorrectResourceLimit(account, type)));
-        	}
-        } else if (domainId != null) {
-        	if (type == null) {
-        		ResourceType resourceTypes[] = ResourceType.values();
-        		List<ResourceLimitVO> domainLimits = _resourceLimitDao.listByDomainId(domainId);
-        		for (ResourceType resourceType: resourceTypes) {
-	        		boolean found = false;
-	        		for (ResourceLimitVO domainLimit : domainLimits) {
-	        			if (domainLimit.getType() == resourceType) {
-	        				limits.add(domainLimit);
-	        				found = true;
-	        				break;
-	        			}
-	        		}
-	        		if (!found) {
-	        			limits.add(new ResourceLimitVO(domainId, null, resourceType, -1L));
-	        		}
-        		}
-        	} else {
-        		limits.add(_resourceLimitDao.findByDomainIdAndType(domainId, type));
-        	}
-        }
-        return limits;
-    }
 
     @Override
     public long findCorrectResourceLimit(ResourceType type, long accountId) {
@@ -5118,11 +5022,6 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public List<FirewallRuleVO> listIPForwarding(String publicIPAddress, boolean forwarding) {
         return _firewallRulesDao.listIPForwarding(publicIPAddress, forwarding);
-    }
-
-    @Override
-    public FirewallRuleVO createPortForwardingRule(long userId, IPAddressVO ipAddressVO, UserVmVO userVM, String publicPort, String privatePort, String protocol) throws NetworkRuleConflictException {
-        return createFirewallRule(userId, ipAddressVO.getAddress(), userVM, publicPort, privatePort, protocol, null);
     }
 
     @Override
@@ -6247,9 +6146,31 @@ public class ManagementServerImpl implements ManagementServer {
 
         return _domainDao.search(sc, searchFilter);
 	}
-	
+
     @Override
-    public DomainVO createDomain(String name, Long ownerId, Long parentId) {
+    public DomainVO createDomain(CreateDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        String name = cmd.getDomainName();
+        Long parentId = cmd.getParentDomainId();
+        Long ownerId = UserContext.current().getAccountId();
+        Account account = (Account)UserContext.current().getAccountObject();
+
+        if (ownerId == null) {
+            ownerId = Long.valueOf(1);
+        }
+
+        if (parentId == null) {
+            parentId = Long.valueOf(DomainVO.ROOT_DOMAIN);
+        }
+
+        DomainVO parentDomain = _domainDao.findById(parentId);
+        if (parentDomain == null) {
+            throw new InvalidParameterValueException("Unable to create domain " + name + ", parent domain " + parentId + " not found.");
+        }
+
+        if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), parentId)) {
+            throw new PermissionDeniedException("Unable to create domain " + name + ", permission denied.");
+        }
+
         SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
         sc.addAnd("name", SearchCriteria.Op.EQ, name);
         sc.addAnd("parent", SearchCriteria.Op.EQ, parentId);
@@ -6688,26 +6609,108 @@ public class ManagementServerImpl implements ManagementServer {
     public List<DiskOfferingVO> findPrivateDiskOffering() {
         return _diskOfferingDao.findPrivateDiskOffering();
     }
+    
+    protected boolean templateIsCorrectType(VMTemplateVO template) {
+    	return true;
+    }
+    
+	public static boolean isAdmin(short accountType) {
+	    return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
+	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
+	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
+	}
 
     @Override
     @DB
-    public boolean updateTemplatePermissions(long templateId, String operation, Boolean isPublic, Boolean isFeatured, List<String> accountNames) throws InvalidParameterValueException,
+    public boolean updateTemplatePermissions(UpdateTemplateOrIsoPermissionsCmd cmd) throws InvalidParameterValueException,
             PermissionDeniedException, InternalErrorException {
         Transaction txn = Transaction.currentTxn();
-        VMTemplateVO template = _templateDao.findById(templateId);
-        if (template == null) {
-            throw new InvalidParameterValueException("Unable to find template with id " + templateId);
+        
+        //Input validation
+        Long id = cmd.getId();
+        Account account = (Account) UserContext.current().getAccountObject();
+        List<String> accountNames = cmd.getAccountNames();
+        Long userId = UserContext.current().getUserId();
+        Boolean isFeatured = cmd.isFeatured();
+        Boolean isPublic = cmd.isPublic();
+        String operation = cmd.getOperation();
+        String mediaType = "";
+
+        VMTemplateVO template = _templateDao.findById(id);
+        
+        if (template == null || !templateIsCorrectType(template)) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "unable to find " + mediaType + " with id " + id);
+        }
+
+        if(cmd instanceof UpdateTemplatePermissionsCmd)
+        {
+        	mediaType = "template";
+        	if(template.getFormat().equals(ImageFormat.ISO))
+        	{
+        		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Please provide a valid template");
+        	}
+        }
+        if(cmd instanceof UpdateIsoPermissionsCmd)
+        {
+        	mediaType = "iso";
+        	if(!template.getFormat().equals(ImageFormat.ISO))
+        	{
+        		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Please provide a valid iso");
+        	}
+        }
+        
+        if (account != null) 
+        {
+            if (!isAdmin(account.getType()) && (template.getAccountId() != account.getId())) {
+                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to update permissions for " + mediaType + " with id " + id);
+            } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                Long templateOwnerDomainId = findDomainIdByAccountId(template.getAccountId());
+                if (!isChildDomain(account.getDomainId(), templateOwnerDomainId)) {
+                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to update permissions for " + mediaType + " with id " + id);
+                }
+            }
+        }
+
+        // If command is executed via 8096 port, set userId to the id of System account (1)
+        if (userId == null) {
+            userId = Long.valueOf(User.UID_SYSTEM);
+        }
+        
+        // If the template is removed throw an error.
+        if (template.getRemoved() != null){
+        	s_logger.error("unable to update permissions for " + mediaType + " with id " + id + " as it is removed  ");
+        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to update permissions for " + mediaType + " with id " + id + " as it is removed ");
+        }
+        
+        if (id == Long.valueOf(1)) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to update permissions for " + mediaType + " with id " + id);
+        }
+        
+        boolean isAdmin = ((account == null) || isAdmin(account.getType()));
+        boolean allowPublicUserTemplates = Boolean.parseBoolean(getConfigurationValue("allow.public.user.templates"));        
+        if (!isAdmin && !allowPublicUserTemplates && isPublic != null && isPublic) {
+        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Only private " + mediaType + "s can be created.");
+        }
+
+//        // package up the accountNames as a list
+//        List<String> accountNameList = new ArrayList<String>();
+        if (accountNames != null) 
+        {
+            if ((operation == null) || (!operation.equalsIgnoreCase("add") && !operation.equalsIgnoreCase("remove") && !operation.equalsIgnoreCase("reset"))) 
+            {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid operation on accounts, the operation must be either 'add' or 'remove' in order to modify launch permissions." +
+                        "  Given operation is: '" + operation + "'");
+            }
+//            StringTokenizer st = new StringTokenizer(accountNames, ",");
+//            while (st.hasMoreTokens()) {
+//                accountNameList.add(st.nextToken());
+//            }
         }
 
         Long accountId = template.getAccountId();
         if (accountId == null) {
             // if there is no owner of the template then it's probably already a public template (or domain private template) so publishing to individual users is irrelevant
             throw new InvalidParameterValueException("Update template permissions is an invalid operation on template " + template.getName());
-        }
-
-        Account account = _accountDao.findById(accountId);
-        if (account == null) {
-            throw new PermissionDeniedException("Unable to verify owner of template " + template.getName());
         }
 
         VMTemplateVO updatedTemplate = _templateDao.createForUpdate();
@@ -6731,9 +6734,9 @@ public class ManagementServerImpl implements ManagementServer {
                     if (permittedAccount.getId().longValue() == account.getId().longValue()) {
                         continue; // don't grant permission to the template owner, they implicitly have permission
                     }
-                    LaunchPermissionVO existingPermission = _launchPermissionDao.findByTemplateAndAccount(templateId, permittedAccount.getId().longValue());
+                    LaunchPermissionVO existingPermission = _launchPermissionDao.findByTemplateAndAccount(id, permittedAccount.getId().longValue());
                     if (existingPermission == null) {
-                        LaunchPermissionVO launchPermission = new LaunchPermissionVO(templateId, permittedAccount.getId().longValue());
+                        LaunchPermissionVO launchPermission = new LaunchPermissionVO(id, permittedAccount.getId().longValue());
                         _launchPermissionDao.persist(launchPermission);
                     }
                 } else {
@@ -6752,7 +6755,7 @@ public class ManagementServerImpl implements ManagementServer {
                         accountIds.add(permittedAccount.getId());
                     }
                 }
-                _launchPermissionDao.removePermissions(templateId, accountIds);
+                _launchPermissionDao.removePermissions(id, accountIds);
             } catch (CloudRuntimeException ex) {
                 throw new InternalErrorException("Internal error removing launch permissions for template " + template.getName());
             }
@@ -6763,7 +6766,7 @@ public class ManagementServerImpl implements ManagementServer {
             updatedTemplate.setPublicTemplate(false);
             updatedTemplate.setFeatured(false);
             _templateDao.update(template.getId(), updatedTemplate);
-            _launchPermissionDao.removeAllPermissions(templateId);
+            _launchPermissionDao.removeAllPermissions(id);
         }
         return true;
     }
@@ -7083,86 +7086,6 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public LoadBalancerVO findLoadBalancerById(long loadBalancerId) {
         return _loadBalancerDao.findById(Long.valueOf(loadBalancerId));
-    }
-
-    @Override
-    @DB
-    public LoadBalancerVO createLoadBalancer(Long userId, Long accountId, String name, String description, String ipAddress, String publicPort, String privatePort, String algorithm)
-            throws InvalidParameterValueException, PermissionDeniedException {
-        if (accountId == null) {
-            throw new InvalidParameterValueException("accountId not specified");
-        }
-        if (!NetUtils.isValidIp(ipAddress)) {
-            throw new InvalidParameterValueException("invalid ip address");
-        }
-        if (!NetUtils.isValidPort(publicPort)) {
-            throw new InvalidParameterValueException("publicPort is an invalid value");
-        }
-        if (!NetUtils.isValidPort(privatePort)) {
-            throw new InvalidParameterValueException("privatePort is an invalid value");
-        }
-        if ((algorithm == null) || !NetUtils.isValidAlgorithm(algorithm)) {
-            throw new InvalidParameterValueException("Invalid algorithm");
-        }
-
-        boolean locked = false;
-        try {
-            LoadBalancerVO exitingLB = _loadBalancerDao.findByIpAddressAndPublicPort(ipAddress, publicPort);
-            if (exitingLB != null) {
-                throw new InvalidParameterValueException("IP Address/public port already load balanced by an existing load balancer rule");
-            }
-
-            List<FirewallRuleVO> existingFwRules = _firewallRulesDao.listIPForwarding(ipAddress, publicPort, true);
-            if ((existingFwRules != null) && !existingFwRules.isEmpty()) {
-                FirewallRuleVO existingFwRule = existingFwRules.get(0);
-                String securityGroupName = null;
-                if (existingFwRule.getGroupId() != null) {
-                    long groupId = existingFwRule.getGroupId();
-                    SecurityGroupVO securityGroup = _securityGroupDao.findById(groupId);
-                    securityGroupName = securityGroup.getName();
-                }
-                throw new InvalidParameterValueException("IP Address (" + ipAddress + ") and port (" + publicPort + ") already in use" +
-                        ((securityGroupName == null) ? "" : " by port forwarding service " + securityGroupName));
-            }
-
-            IPAddressVO addr = _publicIpAddressDao.acquire(ipAddress);
-
-            if (addr == null) {
-                throw new PermissionDeniedException("User does not own ip address " + ipAddress);
-            }
-
-            locked = true;
-            if ((addr.getAllocated() == null) || !accountId.equals(addr.getAccountId())) {
-                throw new PermissionDeniedException("User does not own ip address " + ipAddress);
-            }
-
-            LoadBalancerVO loadBalancer = new LoadBalancerVO(name, description, accountId.longValue(), ipAddress, publicPort, privatePort, algorithm);
-            loadBalancer = _loadBalancerDao.persist(loadBalancer);
-            Long id = loadBalancer.getId();
-
-            // Save off information for the event that the security group was applied
-            EventVO event = new EventVO();
-            event.setUserId(userId);
-            event.setAccountId(accountId);
-            event.setType(EventTypes.EVENT_LOAD_BALANCER_CREATE);
-
-            if (id == null) {
-                event.setDescription("Failed to create load balancer " + loadBalancer.getName() + " on ip address " + ipAddress + "[" + publicPort + "->" + privatePort + "]");
-                event.setLevel(EventVO.LEVEL_ERROR);
-            } else {
-                event.setDescription("Successfully created load balancer " + loadBalancer.getName() + " on ip address " + ipAddress + "[" + publicPort + "->" + privatePort + "]");
-                String params = "id="+loadBalancer.getId()+"\ndcId="+addr.getDataCenterId();
-                event.setParameters(params);
-                event.setLevel(EventVO.LEVEL_INFO);
-            }
-            _eventDao.persist(event);
-
-            return _loadBalancerDao.findById(id);
-        } finally {
-            if (locked) {
-                _publicIpAddressDao.release(ipAddress);
-            }
-        }
     }
 
     /*
@@ -8148,15 +8071,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
 	@Override
-	public boolean isNetworkSecurityGroupNameInUse(Long domainId, Long accountId, String name) {
-		if (domainId == null) {
-            domainId = DomainVO.ROOT_DOMAIN;
-        }
-		_networkGroupMgr.createDefaultNetworkGroup(accountId);
-        return _networkSecurityGroupDao.isNameInUse(accountId, domainId, name);
-	}
-
-	@Override
 	public List<IngressRuleVO> authorizeNetworkGroupIngress(AccountVO account, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups) {
 		return _networkGroupMgr.authorizeNetworkGroupIngress(account, groupName, protocol, startPort, endPort, cidrList, authorizedGroups);
 	}
@@ -8202,11 +8116,6 @@ public class ManagementServerImpl implements ManagementServer {
         job.setCmdInfo(gson.toJson(param));
         return _asyncMgr.submitAsyncJob(job);
 	}
-
-    @Override
-    public NetworkGroupVO createNetworkGroup(String name, String description, Long domainId, Long accountId, String accountName) {
-    	return _networkGroupMgr.createNetworkGroup(name, description, domainId, accountId, accountName);
-    }
 
     @Override
     public void deleteNetworkGroup(Long groupId, Long accountId) throws ResourceInUseException, PermissionDeniedException {

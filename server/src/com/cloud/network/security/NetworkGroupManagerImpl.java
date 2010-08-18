@@ -41,10 +41,12 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.NetworkIngressRulesCmd;
 import com.cloud.agent.api.NetworkIngressRulesCmd.IpPortAndProto;
 import com.cloud.agent.manager.AgentManager;
+import com.cloud.api.commands.CreateNetworkGroupCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.network.security.NetworkGroupWorkVO.Step;
@@ -58,6 +60,7 @@ import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
+import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
@@ -537,7 +540,66 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 		}
 		
 	}
-	
+
+	@Override
+    public NetworkGroupVO createNetworkGroup(CreateNetworkGroupCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
+        if (!_enabled) {
+            return null;
+        }
+
+        String accountName = cmd.getAccountName();
+	    Long domainId = cmd.getDomainId();
+	    Long accountId = null;
+
+	    Account account = (Account)UserContext.current().getAccountObject();
+        if (account != null) {
+            if ((account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
+                if ((domainId != null) && (accountName != null)) {
+                    if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                        throw new PermissionDeniedException("Unable to create network group in domain " + domainId + ", permission denied.");
+                    }
+
+                    Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                    if (userAccount == null) {
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId + ", failed to create network group " + cmd.getNetworkGroupName());
+                    }
+
+                    accountId = userAccount.getId();
+                } else {
+                    // the admin must be creating a network group for himself/herself
+                    if (account != null) {
+                        accountId = account.getId();
+                        domainId = account.getDomainId();
+                        accountName = account.getAccountName();
+                    }
+                }
+            } else {
+                accountId = account.getId();
+                domainId = account.getDomainId();
+                accountName = account.getAccountName();
+            }
+        }
+
+        // if no account exists in the context, it's a system level command, look up the account
+        if (accountId == null) {
+            if ((accountName != null) && (domainId != null)) {
+                Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                if (userAccount != null) {
+                    accountId = userAccount.getId();
+                } else {
+                    throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId + ", failed to create network group " + cmd.getNetworkGroupName());
+                }
+            } else {
+                throw new InvalidParameterValueException("Missing account information (account: " + accountName + ", domain: " + domainId + "), failed to create network group " + cmd.getNetworkGroupName());
+            }
+        }
+
+        if (_networkGroupDao.isNameInUse(accountId, domainId, cmd.getNetworkGroupName())) {
+            throw new InvalidParameterValueException("Unable to create network group, a group with name " + cmd.getNetworkGroupName() + " already exisits.");
+        }
+
+        return createNetworkGroup(cmd.getNetworkGroupName(), cmd.getDescription(), domainId, accountId, accountName);
+	}
 
 	@DB
 	@Override
@@ -629,8 +691,9 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 	
 	@DB
 	public void work() {
-
-		s_logger.trace("Checking the database");
+	    if (s_logger.isTraceEnabled()) {
+	        s_logger.trace("Checking the database");
+	    }
 		final NetworkGroupWorkVO work = _workDao.take(_serverId);
 		if (work == null) {
 			return;
@@ -800,7 +863,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
             if (networkGroup != null) {
                 sc.setParameters("name", networkGroup);
             } else if (keyword != null) {
-                SearchCriteria ssc = _networkGroupRulesDao.createSearchCriteria();
+                SearchCriteria<NetworkGroupRulesVO> ssc = _networkGroupRulesDao.createSearchCriteria();
                 ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
                 ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
                 sc.addAnd("name", SearchCriteria.Op.SC, ssc);

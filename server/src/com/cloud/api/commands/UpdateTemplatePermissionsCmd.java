@@ -20,23 +20,17 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.api.Implementation;
+import com.cloud.api.BaseCmd.Manager;
 
+@Implementation(method="updateTemplatePermissions", manager=Manager.ManagementServer)
 public class UpdateTemplatePermissionsCmd extends UpdateTemplateOrIsoPermissionsCmd {
     protected String getResponseName() {
     	return "updatetemplatepermissionsresponse";
     }
-    
-	protected String getMediaType() {
-    	return "template";
-    }
-	
+    	
 	protected Logger getLogger() {
 		return Logger.getLogger(UpdateTemplatePermissionsCmd.class.getName());    
-	}
-	
-	protected boolean templateIsCorrectType(VMTemplateVO template) {
-		return !template.getFormat().equals(ImageFormat.ISO);
-	}
+	}	
+
 }

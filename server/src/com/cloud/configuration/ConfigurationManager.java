@@ -21,10 +21,13 @@ import java.util.List;
 
 import com.cloud.api.commands.AddConfigCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
+import com.cloud.api.commands.CreatePodCmd;
 import com.cloud.api.commands.DeleteDiskOfferingCmd;
 import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
+import com.cloud.api.commands.UpdatePodCmd;
+import com.cloud.api.commands.UpdateServiceOfferingCmd;
 import com.cloud.api.commands.UpdateZoneCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -86,7 +89,8 @@ public interface ConfigurationManager extends Manager {
 	 * @param tags
 	 * @return updated service offering
 	 */
-	ServiceOfferingVO updateServiceOffering(long serviceOfferingId, long userId, String name, String displayText, Boolean offerHA, Boolean useVirtualNetwork, String tags);
+//	ServiceOfferingVO updateServiceOffering(long serviceOfferingId, long userId, String name, String displayText, Boolean offerHA, Boolean useVirtualNetwork, String tags);
+	ServiceOfferingVO updateServiceOffering(UpdateServiceOfferingCmd cmd);
 	
 	/**
 	 * Updates a disk offering
@@ -137,7 +141,16 @@ public interface ConfigurationManager extends Manager {
 	 * @return Pod
 	 */
 	HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException;
-	
+
+	/**
+	 * Creates a new pod based on the parameters specified in the command object
+	 * @param cmd the command object that specifies the name, zone, gateway, cidr, and ip range for the pod
+	 * @return the new pod if successful, null otherwise
+	 * @throws InvalidParameterValueException
+	 * @throws InternalErrorException
+	 */
+	HostPodVO createPod(CreatePodCmd cmd) throws InvalidParameterValueException, InternalErrorException;
+
 	/**
      * Edits a pod in the database. Will not allow you to edit pods that are being used anywhere in the system.
      * @param userId
@@ -147,9 +160,11 @@ public interface ConfigurationManager extends Manager {
 	 * @param startIp
 	 * @param endIp
      * @return Pod
+	 * @throws InternalErrorException 
+	 * @throws InvalidParameterValueException 
      */
-	HostPodVO editPod(long userId, long podId, String newPodName, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException;
-	
+//	HostPodVO editPod(long userId, long podId, String newPodName, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException;
+	HostPodVO editPod(UpdatePodCmd cmd) throws InvalidParameterValueException, InternalErrorException;
 	 /**
      * Deletes a pod from the database. Will not allow you to delete pods that are being used anywhere in the system.
      * @param userId

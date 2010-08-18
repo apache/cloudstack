@@ -20,6 +20,8 @@ package com.cloud.network.security;
 import java.util.HashMap;
 import java.util.List;
 
+import com.cloud.api.commands.CreateNetworkGroupCmd;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.server.Criteria;
@@ -45,6 +47,13 @@ public interface NetworkGroupManager extends Manager {
 			String [] cidrList, List<NetworkGroupVO> authorizedGroups);
 	
 	public NetworkGroupVO createNetworkGroup(String name, String description, Long domainId, Long accountId, String accountName);
+
+	/**
+	 * Create a network group with the given name and description
+	 * @param command the command specifying the name and description
+	 * @return the created network group if successful, null otherwise
+	 */
+	public NetworkGroupVO createNetworkGroup(CreateNetworkGroupCmd command) throws PermissionDeniedException, InvalidParameterValueException;
 	
 	public NetworkGroupVO createDefaultNetworkGroup( Long accountId);
 	

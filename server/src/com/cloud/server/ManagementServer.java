@@ -25,24 +25,27 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.alert.AlertVO;
+import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateTemplateCmd;
+import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
+import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.configuration.ConfigurationVO;
-import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventVO;
 import com.cloud.exception.ConcurrentOperationException;
@@ -296,7 +299,7 @@ public interface ManagementServer {
      * @return true if update was successful, false otherwise
      * @throws InvalidParameterValueException
      */
-    boolean updateUser(long userId, String username, String password, String firstname, String lastname, String email, String timezone, String apiKey, String secretKey) throws InvalidParameterValueException;
+//    boolean updateUser(long userId, String username, String password, String firstname, String lastname, String email, String timezone, String apiKey, String secretKey) throws InvalidParameterValueException;
 
     /**
      * Locate a user by their apiKey
@@ -730,8 +733,8 @@ public interface ManagementServer {
      * @param serviceOfferingId
      * @return success/failure
      */
-    boolean upgradeVirtualMachine(long userId, long vmId, long serviceOfferingId, long startEventId);
-    long upgradeVirtualMachineAsync(long userId, long vmId, long serviceOfferingId) throws InvalidParameterValueException;
+//    boolean upgradeVirtualMachine(long userId, long vmId, long serviceOfferingId, long startEventId);
+//    long upgradeVirtualMachineAsync(long userId, long vmId, long serviceOfferingId) throws InvalidParameterValueException;
     
     
     /**
@@ -742,14 +745,14 @@ public interface ManagementServer {
      * @param userId - id of user performing the update on the virtual machine
      * @param accountId - id of the account that owns the virtual machine
      */
-    void updateVirtualMachine(long vmId, String displayName, String group, boolean enable, Long userId, long accountId);
+//    void updateVirtualMachine(long vmId, String displayName, String group, boolean enable, Long userId, long accountId);
 
     /**
      * Updates a storage pool.
      * @param poolId ID of the storage pool to be updated
      * @param tags Tags that will be added to the storage pool
      */
-    StoragePoolVO updateStoragePool(long poolId, String tags);
+//    StoragePoolVO updateStoragePool(long poolId, String tags);
     
     /**
      * Starts a Domain Router
@@ -987,20 +990,7 @@ public interface ManagementServer {
      * @param tags tags for the service offering. if null, no change will be made. if empty string, all tags will be removed.
      * @return the updated ServiceOfferingVO
      */
-    ServiceOfferingVO updateServiceOffering(long userId, long serviceOfferingId, String name, String displayText, Boolean offerHA, Boolean useVirtualNetwork, String tags);
-    
-    /**
-     * Adds a new pod to the database
-     * @param userId
-     * @param podName
-     * @param zoneId
-     * @param gateway
-     * @param cidr
-     * @param startIp
-     * @param endIp
-     * @return Pod
-     */
-    HostPodVO createPod(long userId, String podName, Long zoneId, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException;
+//    ServiceOfferingVO updateServiceOffering(long userId, long serviceOfferingId, String name, String displayText, Boolean offerHA, Boolean useVirtualNetwork, String tags);
     
     /**
      * Edits a pod in the database
@@ -1013,7 +1003,7 @@ public interface ManagementServer {
      * @param endIp
      * @return Pod
      */
-    HostPodVO editPod(long userId, long podId, String newPodName, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException;
+//    HostPodVO editPod(long userId, long podId, String newPodName, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException;
     
 //    /**
 //     * Deletes a pod from the database
@@ -1254,18 +1244,6 @@ public interface ManagementServer {
      * @return
      */
     List<FirewallRuleVO> listIPForwarding(String publicIPAddress, boolean forwarding);
-
-    /**
-     * Create a single port forwarding rule from the given ip address and port to the vm's guest IP address and private port with the given protocol.
-     * @param userId the id of the user performing the action (could be an admin's ID if performing on behalf of a user)
-     * @param ipAddressVO
-     * @param userVM
-     * @param publicPort
-     * @param privatePort
-     * @param protocol
-     * @return
-     */
-    FirewallRuleVO createPortForwardingRule(long userId, IPAddressVO ipAddressVO, UserVmVO userVM, String publicPort, String privatePort, String protocol) throws NetworkRuleConflictException;
 
     /**
      * Update an existing port forwarding rule on the given public IP / public port for the given protocol
@@ -1518,13 +1496,9 @@ public interface ManagementServer {
 
 	/**
 	 * create a new domain
-	 * @param id
-	 * @param domain name
-	 * @param ownerId
-	 * @param parentId
-	 * 
+	 * @param command - the create command defining the name to use and the id of the parent domain under which to create the new domain.
 	 */
-	DomainVO createDomain(String name, Long ownerId, Long parentId);
+    DomainVO createDomain(CreateDomainCmd command) throws InvalidParameterValueException, PermissionDeniedException;
 
 	/**
      * delete a domain with the given domainId
@@ -1631,7 +1605,7 @@ public interface ManagementServer {
 	 * @return
 	 * @throws InvalidParameterValueException
 	 */
-    ResourceLimitVO updateResourceLimit(Long domainId, Long accountId, ResourceType type, Long max) throws InvalidParameterValueException;
+//    ResourceLimitVO updateResourceLimit(Long domainId, Long accountId, ResourceType type, Long max) throws InvalidParameterValueException;
     
     /**
      * Deletes a Limit
@@ -1654,7 +1628,7 @@ public interface ManagementServer {
      * @param type
      * @return a list of Limits
      */
-    List<ResourceLimitVO> searchForLimits(Criteria c);
+//    List<ResourceLimitVO> searchForLimits(Criteria c);
     
     /**
 	 * Finds the correct limit for an account. I.e. if an account's limit is not present, it will check the account's domain, and as a last resort use the global limit.
@@ -1781,7 +1755,7 @@ public interface ManagementServer {
      * @throws PermissionDeniedException
      * @throws InternalErrorException
      */
-    boolean updateTemplatePermissions(long templateId, String operation, Boolean isPublic, Boolean isFeatured, List<String> accountNames) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException;
+//    boolean updateTemplatePermissions(long templateId, String operation, Boolean isPublic, Boolean isFeatured, List<String> accountNames) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException;
 
     /**
      * List the permissions on a template.  This will return a list of account names that have been granted permission to launch instances from the template.
@@ -1927,7 +1901,6 @@ public interface ManagementServer {
     LoadBalancerVO findLoadBalancerById(long loadBalancerId);
     List<UserVmVO> listLoadBalancerInstances(long loadBalancerId, boolean applied);
     List<LoadBalancerVO> searchForLoadBalancers(Criteria c);
-    LoadBalancerVO createLoadBalancer(Long userId, Long accountId, String name, String description, String ipAddress, String publicPort, String privatePort, String algorithm) throws InvalidParameterValueException, PermissionDeniedException;
     boolean deleteLoadBalancer(long userId, long loadBalancerId);
     long deleteLoadBalancerAsync(long userId, long loadBalancerId);
 
@@ -2041,16 +2014,6 @@ public interface ManagementServer {
 	 */
     ArrayList<String> getCloudIdentifierResponse(GetCloudIdentifierCmd cmd) throws InvalidParameterValueException;
     
-    /**
-     * check if a network security group name in the given account/domain is in use
-     *      - if accountId is specified, look only for the account
-     *      - otherwise look for the name in domain-level security groups (accountId is null)
-     * @param domainId id of the domain in which to search for security groups
-     * @param accountId id of the account in which to search for security groups
-     * @param name name of the security group to look for
-     * @return true if the security group name is found, false otherwise
-     */
-    boolean isNetworkSecurityGroupNameInUse(Long domainId, Long accountId, String name);
     NetworkGroupVO findNetworkGroupByName(Long accountId, String groupName);
 
     /**
@@ -2088,8 +2051,6 @@ public interface ManagementServer {
 	 */
 	long revokeNetworkGroupIngressAsync(Long accountId, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups);
 	boolean revokeNetworkGroupIngress(AccountVO account, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups);
-
-	NetworkGroupVO createNetworkGroup(String name, String description, Long domainId, Long accountId, String accountName);
 
 	/**
 	 * Delete an empty network group.  If the group is not empty an error is returned.
@@ -2137,4 +2098,6 @@ public interface ManagementServer {
 //	boolean addConfig(String instance, String component, String category, String name, String value, String description);
 	
 	boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException;
+	boolean updateUser(UpdateUserCmd cmd) throws InvalidParameterValueException;
+	boolean updateTemplatePermissions(UpdateTemplateOrIsoPermissionsCmd cmd)throws InvalidParameterValueException, PermissionDeniedException,InternalErrorException;
 }

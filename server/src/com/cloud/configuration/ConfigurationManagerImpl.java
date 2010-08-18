@@ -35,10 +35,13 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AddConfigCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
+import com.cloud.api.commands.CreatePodCmd;
 import com.cloud.api.commands.DeleteDiskOfferingCmd;
 import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
+import com.cloud.api.commands.UpdatePodCmd;
+import com.cloud.api.commands.UpdateServiceOfferingCmd;
 import com.cloud.api.commands.UpdateZoneCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.AccountVlanMapVO;
@@ -66,6 +69,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
@@ -73,6 +77,7 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -102,6 +107,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 	@Inject AccountDao _accountDao;
 	@Inject EventDao _eventDao;
 	@Inject UserDao _userDao;
+	@Inject DataCenterDao _dcDao;
+	@Inject HostPodDao _hostPodDao;
 	public boolean _premium;
 
 	private int _maxVolumeSizeInGb;
@@ -392,25 +399,54 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
     
     @DB
-    public HostPodVO editPod(long userId, long podId, String newPodName, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException {
+    public HostPodVO editPod(UpdatePodCmd cmd) throws InvalidParameterValueException, InternalErrorException 
+    {
+    	
+    	//Input validation
+    	String cidr = cmd.getCidr();
+    	String startIp = cmd.getStartIp();
+    	String endIp = cmd.getEndIp();
+    	String gateway = cmd.getGateway();
+    	Long id = cmd.getId();
+    	String name = cmd.getName();
+    	Long userId = UserContext.current().getUserId();
+
+    	if (userId == null) {
+            userId = Long.valueOf(User.UID_SYSTEM);
+        }
+    	
+    	//verify parameters
+    	HostPodVO pod = _hostPodDao.findById(id);;
+    	if (pod == null) {
+    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find pod by id " + id);
+    	}
+    	
+    	long zoneId = pod.getDataCenterId();
+    	DataCenterVO zone = _dcDao.findById(zoneId);
+    	if (zone == null) {
+    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find zone by id " + zoneId);
+    	}
+    	
+    	if (endIp != null && startIp == null) {
+    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "If an end IP is specified, a start IP must be specified.");
+    	}
+    	
     	// Make sure the pod exists
-    	if (!validPod(podId)) {
-    		throw new InvalidParameterValueException("A pod with ID: " + podId + " does not exist.");
+    	if (!validPod(id)) {
+    		throw new InvalidParameterValueException("A pod with ID: " + id + " does not exist.");
     	}
     	
     	// If the gateway, CIDR, private IP range is being updated, check if the pod has allocated private IP addresses
     	if (gateway!= null || cidr != null || startIp != null || endIp != null) {
-    		if (podHasAllocatedPrivateIPs(podId)) {
+    		if (podHasAllocatedPrivateIPs(id)) {
     			throw new InternalErrorException("The specified pod has allocated private IP addresses, so its CIDR and IP address range cannot be changed.");
     		}
     	}
     	
-    	HostPodVO pod = _podDao.findById(podId);
     	String oldPodName = pod.getName();
-    	long zoneId = pod.getDataCenterId();
     	
-    	if (newPodName == null) {
-    		newPodName = oldPodName;
+    	if (name == null) {
+    		name = oldPodName;
     	}
     	
     	if (gateway == null) {
@@ -421,8 +457,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     		cidr = pod.getCidrAddress() + "/" + pod.getCidrSize();
     	}
     	
-    	boolean checkForDuplicates = !oldPodName.equals(newPodName);
-    	checkPodAttributes(podId, newPodName, pod.getDataCenterId(), gateway, cidr, startIp, endIp, checkForDuplicates);
+    	boolean checkForDuplicates = !oldPodName.equals(name);
+    	checkPodAttributes(id, name, pod.getDataCenterId(), gateway, cidr, startIp, endIp, checkForDuplicates);
     	
     	String cidrAddress = getCidrAddress(cidr);
     	long cidrSize = getCidrSize(cidr);
@@ -451,14 +487,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 				ipRange = pod.getDescription();
 			}
 			
-	    	pod.setName(newPodName);
+	    	pod.setName(name);
 	    	pod.setDataCenterId(zoneId);
 	    	pod.setGateway(gateway);
 	    	pod.setCidrAddress(cidrAddress);
 	    	pod.setCidrSize(cidrSize);
 	    	pod.setDescription(ipRange);
 	    	
-	    	if (!_podDao.update(podId, pod)) {
+	    	if (!_podDao.update(id, pod)) {
 	    		throw new InternalErrorException("Failed to edit pod. Please contact Cloud Support.");
 	    	}
     	
@@ -469,13 +505,39 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 			throw new InternalErrorException("Failed to edit pod. Please contact Cloud Support.");
 		}
 		
-		DataCenterVO zone = _zoneDao.findById(zoneId);
-		saveConfigurationEvent(userId, null, EventTypes.EVENT_POD_EDIT, "Successfully edited pod. New pod name is: " + newPodName + " and new zone name is: " + zone.getName() + ".", "podId=" + pod.getId(), "dcId=" + zone.getId(), "gateway=" + gateway, "cidr=" + cidr, "startIp=" + startIp, "endIp=" + endIp);
+		saveConfigurationEvent(userId, null, EventTypes.EVENT_POD_EDIT, "Successfully edited pod. New pod name is: " + name + " and new zone name is: " + zone.getName() + ".", "podId=" + pod.getId(), "dcId=" + zone.getId(), "gateway=" + gateway, "cidr=" + cidr, "startIp=" + startIp, "endIp=" + endIp);
 		
 		return pod;
     }
-    
-    @DB
+
+    @Override
+    public HostPodVO createPod(CreatePodCmd cmd) throws InvalidParameterValueException, InternalErrorException {
+        String cidr = cmd.getCidr();
+        String endIp = cmd.getEndIp();
+        String gateway = cmd.getGateway();
+        String name = cmd.getPodName();
+        String startIp = cmd.getStartIp();
+        Long zoneId = cmd.getZoneId();
+
+        //verify input parameters
+        DataCenterVO zone = _zoneDao.findById(zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Failed to create pod " + name + " -- unable to find zone " + zoneId);
+        }
+
+        if (endIp != null && startIp == null) {
+            throw new InvalidParameterValueException("Failed to create pod " + name + " -- if an end IP is specified, a start IP must be specified.");
+        }
+
+        Long userId = UserContext.current().getUserId();
+        if (userId == null) {
+            userId = Long.valueOf(User.UID_SYSTEM);
+        }
+
+        return createPod(userId.longValue(), name, zoneId, gateway, cidr, startIp, endIp);
+    }
+
+    @Override @DB
     public HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException {
     	checkPodAttributes(-1, podName, zoneId, gateway, cidr, startIp, endIp, true);
 		
@@ -752,7 +814,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     	
     	//5. Reached here, hence editable   	
-    	DataCenterVO zoneHandle = _zoneDao.findById(zoneId);
     	String oldZoneName = zone.getName();
     	
     	if (zoneName == null) {
@@ -869,13 +930,32 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     }
     
-    public ServiceOfferingVO updateServiceOffering(long userId, long serviceOfferingId, String name, String displayText, Boolean offerHA, Boolean useVirtualNetwork, String tags) {
-    	boolean updateNeeded = (name != null || displayText != null || offerHA != null || useVirtualNetwork != null || tags != null);
-    	if (!updateNeeded) {
-    		return _serviceOfferingDao.findById(serviceOfferingId);
+    public ServiceOfferingVO updateServiceOffering(UpdateServiceOfferingCmd cmd) {
+
+    	String displayText = cmd.getDisplayText();
+    	Long id = cmd.getId();
+    	String name = cmd.getName();
+    	Boolean ha = cmd.getOfferHa();
+    	String tags = cmd.getTags();
+    	Boolean useVirtualNetwork = cmd.getUseVirtualNetwork();
+    	Long userId = UserContext.current().getUserId();
+
+        if (userId == null) {
+            userId = Long.valueOf(User.UID_SYSTEM);
+        }
+        
+        // Verify input parameters
+        ServiceOfferingVO offeringHandle = _serviceOfferingDao.findById(id);;
+    	if (offeringHandle == null) {
+    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find service offering " + id);
     	}
     	
-        ServiceOfferingVO offering = _serviceOfferingDao.createForUpdate(serviceOfferingId);
+    	boolean updateNeeded = (name != null || displayText != null || ha != null || useVirtualNetwork != null || tags != null);
+    	if (!updateNeeded) {
+    		return _serviceOfferingDao.findById(id);
+    	}
+    	
+        ServiceOfferingVO offering = _serviceOfferingDao.createForUpdate(id);
         
         if (name != null) {
         	offering.setName(name);
@@ -885,8 +965,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         	offering.setDisplayText(displayText);
         }
         
-	    if (offerHA != null) {
-	    	offering.setOfferHA(offerHA);
+	    if (ha != null) {
+	    	offering.setOfferHA(ha);
         }
 	    
         if (useVirtualNetwork != null) {
@@ -902,8 +982,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         	}     	
         }
         
-        if (_serviceOfferingDao.update(serviceOfferingId, offering)) {
-        	offering = _serviceOfferingDao.findById(serviceOfferingId);
+        if (_serviceOfferingDao.update(id, offering)) {
+        	offering = _serviceOfferingDao.findById(id);
     		saveConfigurationEvent(userId, null, EventTypes.EVENT_SERVICE_OFFERING_EDIT, "Successfully updated service offering with name: " + offering.getName() + ".", "soId=" + offering.getId(), "name=" + offering.getName(),
     				"displayText=" + offering.getDisplayText(), "offerHA=" + offering.getOfferHA(), "useVirtualNetwork=" + (offering.getGuestIpType() == GuestIpType.Virtualized), "tags=" + offering.getTags());
         	return offering;
@@ -1014,8 +1094,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     }
 
-
-    
     public String changePrivateIPRange(boolean add, long podId, String startIP, String endIP) throws InvalidParameterValueException {
     	checkPrivateIpRangeErrors(podId, startIP, endIP);
     	
@@ -1777,5 +1855,5 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 			s_logger.error("Unable to add the new config entry:",ex);
 			return false;
 		}
-	}           
+	}   
 }

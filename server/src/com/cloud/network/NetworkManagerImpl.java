@@ -18,6 +18,7 @@
 package com.cloud.network;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +57,8 @@ import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.manager.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
+import com.cloud.api.commands.CreateIPForwardingRuleCmd;
+import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -100,6 +103,7 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
+import com.cloud.network.dao.SecurityGroupDao;
 import com.cloud.network.dao.SecurityGroupVMMapDao;
 import com.cloud.offering.ServiceOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
@@ -186,6 +190,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     @Inject ConfigurationManager _configMgr;
     @Inject AsyncJobManager _asyncMgr;
     @Inject StoragePoolDao _storagePoolDao = null;
+    @Inject SecurityGroupDao _securityGroupDao = null;
     @Inject ServiceOfferingDao _serviceOfferingDao = null;
     @Inject UserStatisticsDao _statsDao;
 
@@ -1359,9 +1364,11 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         if (answers.length != ipAddrList.size()) {
             return false;
         }
-        
-        for (int i1=0; i1 < answers.length; i1++) {
-            Answer ans = answers[i1];
+
+        // FIXME:  this used to be a loop for all answers, but then we always returned the
+        //         first one in the array, so what should really be done here?
+        if (answers.length > 0) {
+            Answer ans = answers[0];
             return ans.getResult();
         }
 
@@ -1532,6 +1539,121 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             }
         }
         return result;
+    }
+
+    @Override
+    public FirewallRuleVO createPortForwardingRule(CreateIPForwardingRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, NetworkRuleConflictException {
+        // validate IP Address exists
+        IPAddressVO ipAddress = _ipAddressDao.findById(cmd.getIpAddress());
+        if (ipAddress == null) {
+            throw new InvalidParameterValueException("Unable to create port forwarding rule on address " + ipAddress + ", invalid IP address specified.");
+        }
+
+        // validate user VM exists
+        UserVmVO userVM = _vmDao.findById(cmd.getVirtualMachineId());
+        if (userVM == null) {
+            throw new InvalidParameterValueException("Unable to create port forwarding rule on address " + ipAddress + ", invalid virtual machine id specified (" + cmd.getVirtualMachineId() + ").");
+        }
+
+        // validate that IP address and userVM belong to the same account
+        if ((ipAddress.getAccountId() == null) || (ipAddress.getAccountId().longValue() != userVM.getAccountId())) {
+            throw new InvalidParameterValueException("Unable to create port forwarding rule, IP address " + ipAddress + " owner is not the same as owner of virtual machine " + userVM.toString()); 
+        }
+
+        // validate that userVM is in the same availability zone as the IP address
+        if (ipAddress.getDataCenterId() != userVM.getDataCenterId()) {
+            throw new InvalidParameterValueException("Unable to create port forwarding rule, IP address " + ipAddress + " is not in the same availability zone as virtual machine " + userVM.toString());
+        }
+
+        // if an admin account was passed in, or no account was passed in, make sure we honor the accountName/domainId parameters
+        Account account = (Account)UserContext.current().getAccountObject();
+        if (account != null) {
+            if ((account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
+                if (!_domainDao.isChildDomain(account.getDomainId(), userVM.getDomainId())) {
+                    throw new PermissionDeniedException("Unable to create port forwarding rule, IP address " + ipAddress + " to virtual machine " + cmd.getVirtualMachineId() + ", permission denied.");
+                }
+            } else if (account.getId().longValue() != userVM.getAccountId()) {
+                throw new PermissionDeniedException("Unable to create port forwarding rule, IP address " + ipAddress + " to virtual machine " + cmd.getVirtualMachineId() + ", permission denied.");
+            }
+        }
+
+        // set up some local variables
+        String protocol = cmd.getProtocol();
+        String publicPort = cmd.getPublicPort();
+        String privatePort = cmd.getPrivatePort();
+
+        // sanity check that the vm can be applied to the load balancer
+        ServiceOfferingVO offering = _serviceOfferingDao.findById(userVM.getServiceOfferingId());
+        if ((offering == null) || !GuestIpType.Virtualized.equals(offering.getGuestIpType())) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Unable to create port forwarding rule (" + protocol + ":" + publicPort + "->" + privatePort + ") for virtual machine " + userVM.toString() + ", bad network type (" + ((offering == null) ? "null" : offering.getGuestIpType()) + ")");
+            }
+
+            throw new IllegalArgumentException("Unable to create port forwarding rule (" + protocol + ":" + publicPort + "->" + privatePort + ") for virtual machine " + userVM.toString() + ", bad network type (" + ((offering == null) ? "null" : offering.getGuestIpType()) + ")");
+        }
+
+        // check for ip address/port conflicts by checking existing forwarding and load balancing rules
+        List<FirewallRuleVO> existingRulesOnPubIp = _rulesDao.listIPForwarding(ipAddress.getAddress());
+        Map<String, Pair<String, String>> mappedPublicPorts = new HashMap<String, Pair<String, String>>();
+
+        if (existingRulesOnPubIp != null) {
+            for (FirewallRuleVO fwRule : existingRulesOnPubIp) {
+                mappedPublicPorts.put(fwRule.getPublicPort(), new Pair<String, String>(fwRule.getPrivateIpAddress(), fwRule.getPrivatePort()));
+            }
+        }
+
+        Pair<String, String> privateIpPort = mappedPublicPorts.get(publicPort);
+        if (privateIpPort != null) {
+            if (privateIpPort.first().equals(userVM.getGuestIpAddress()) && privateIpPort.second().equals(privatePort)) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("skipping the creating of firewall rule " + ipAddress + ":" + publicPort + " to " + userVM.getGuestIpAddress() + ":" + privatePort + "; rule already exists.");
+                }
+                return null; // already mapped
+            } else {
+                // FIXME:  Will we need to refactor this for both assign port forwarding service and create port forwarding rule?
+//                throw new NetworkRuleConflictException("An existing port forwarding service rule for " + ipAddress + ":" + publicPort
+//                        + " already exists, found while trying to create mapping to " + userVM.getGuestIpAddress() + ":" + privatePort + ((securityGroupId == null) ? "." : " from port forwarding service "
+//                        + securityGroupId.toString() + "."));
+                throw new NetworkRuleConflictException("An existing port forwarding service rule for " + ipAddress + ":" + publicPort
+                        + " already exists, found while trying to create mapping to " + userVM.getGuestIpAddress() + ":" + privatePort + ".");
+            }
+        }
+
+        FirewallRuleVO newFwRule = new FirewallRuleVO();
+        newFwRule.setEnabled(true);
+        newFwRule.setForwarding(true);
+        newFwRule.setPrivatePort(privatePort);
+        newFwRule.setProtocol(protocol);
+        newFwRule.setPublicPort(publicPort);
+        newFwRule.setPublicIpAddress(ipAddress.getAddress());
+        newFwRule.setPrivateIpAddress(userVM.getGuestIpAddress());
+//        newFwRule.setGroupId(securityGroupId);
+        newFwRule.setGroupId(null);
+
+        // In 1.0 the rules were always persisted when a user created a rule.  When the rules get sent down
+        // the stopOnError parameter is set to false, so the agent will apply all rules that it can.  That
+        // behavior is preserved here by persisting the rule before sending it to the agent.
+        _rulesDao.persist(newFwRule);
+
+        boolean success = updateFirewallRule(newFwRule, null, null);
+
+        // Save and create the event
+        String description;
+        String ruleName = "ip forwarding";
+        String level = EventVO.LEVEL_INFO;
+
+        if (success == true) {
+            description = "created new " + ruleName + " rule [" + newFwRule.getPublicIpAddress() + ":" + newFwRule.getPublicPort() + "]->["
+                    + newFwRule.getPrivateIpAddress() + ":" + newFwRule.getPrivatePort() + "]" + " " + newFwRule.getProtocol();
+        } else {
+            level = EventVO.LEVEL_ERROR;
+            description = "failed to create new " + ruleName + " rule [" + newFwRule.getPublicIpAddress() + ":" + newFwRule.getPublicPort() + "]->["
+                    + newFwRule.getPrivateIpAddress() + ":" + newFwRule.getPrivatePort() + "]" + " " + newFwRule.getProtocol();
+        }
+
+        EventUtils.saveEvent(UserContext.current().getUserId(), userVM.getAccountId(), level, EventTypes.EVENT_NET_RULE_ADD, description);
+
+        return newFwRule;
     }
 
     @Override
@@ -1761,6 +1883,121 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                 throw (InternalErrorException) e;
             }
             s_logger.warn("ManagementServer error", e);
+        }
+    }
+
+    @Override
+    public LoadBalancerVO createLoadBalancerRule(CreateLoadBalancerRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        String publicIp = cmd.getPublicIp();
+
+        // make sure ip address exists
+        IPAddressVO ipAddr = _ipAddressDao.findById(cmd.getPublicIp());
+        if (ipAddr == null) {
+            throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address " + publicIp);
+        }
+
+        VlanVO vlan = _vlanDao.findById(ipAddr.getVlanDbId());
+        if (vlan != null) {
+            if (!VlanType.VirtualNetwork.equals(vlan.getVlanType())) {
+                throw new InvalidParameterValueException("Unable to create load balancer rule for IP address " + publicIp + ", only VirtualNetwork type IP addresses can be used for load balancers.");
+            }
+        } // else ERROR?
+
+        // Verify input parameters
+        if ((ipAddr.getAccountId() == null) || (ipAddr.getAllocated() == null)) {
+            throw new InvalidParameterValueException("Unable to create load balancer rule, cannot find account owner for ip " + publicIp);
+        }
+
+        Account account = (Account)UserContext.current().getAccountObject();
+        if (account != null) {
+            if ((account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
+                if (!_domainDao.isChildDomain(account.getDomainId(), ipAddr.getDomainId())) {
+                    throw new PermissionDeniedException("Unable to create load balancer rule on IP address " + publicIp + ", permission denied.");
+                }
+            } else if (account.getId().longValue() != ipAddr.getAccountId().longValue()) {
+                throw new PermissionDeniedException("Unable to create load balancer rule, account " + account.getAccountName() + " doesn't own ip address " + publicIp);
+            }
+        }
+
+        String loadBalancerName = cmd.getLoadBalancerRuleName();
+        LoadBalancerVO existingLB = _loadBalancerDao.findByAccountAndName(ipAddr.getAccountId(), loadBalancerName);
+        if (existingLB != null) {
+            throw new InvalidParameterValueException("Unable to create load balancer rule, an existing load balancer rule with name " + loadBalancerName + " already exists.");
+        }
+
+        // validate params
+        String publicPort = cmd.getPublicPort();
+        String privatePort = cmd.getPrivatePort();
+        String algorithm = cmd.getAlgorithm();
+
+        if (!NetUtils.isValidPort(publicPort)) {
+            throw new InvalidParameterValueException("publicPort is an invalid value");
+        }
+        if (!NetUtils.isValidPort(privatePort)) {
+            throw new InvalidParameterValueException("privatePort is an invalid value");
+        }
+        if ((algorithm == null) || !NetUtils.isValidAlgorithm(algorithm)) {
+            throw new InvalidParameterValueException("Invalid algorithm");
+        }
+
+        boolean locked = false;
+        try {
+            LoadBalancerVO exitingLB = _loadBalancerDao.findByIpAddressAndPublicPort(publicIp, publicPort);
+            if (exitingLB != null) {
+                throw new InvalidParameterValueException("IP Address/public port already load balanced by an existing load balancer rule");
+            }
+
+            List<FirewallRuleVO> existingFwRules = _rulesDao.listIPForwarding(publicIp, publicPort, true);
+            if ((existingFwRules != null) && !existingFwRules.isEmpty()) {
+                FirewallRuleVO existingFwRule = existingFwRules.get(0);
+                String securityGroupName = null;
+                if (existingFwRule.getGroupId() != null) {
+                    long groupId = existingFwRule.getGroupId();
+                    SecurityGroupVO securityGroup = _securityGroupDao.findById(groupId);
+                    securityGroupName = securityGroup.getName();
+                }
+                throw new InvalidParameterValueException("IP Address (" + publicIp + ") and port (" + publicPort + ") already in use" +
+                        ((securityGroupName == null) ? "" : " by port forwarding service " + securityGroupName));
+            }
+
+            ipAddr = _ipAddressDao.acquire(publicIp);
+            if (ipAddr == null) {
+                throw new PermissionDeniedException("User does not own ip address " + publicIp);
+            }
+
+            locked = true;
+
+            LoadBalancerVO loadBalancer = new LoadBalancerVO(loadBalancerName, cmd.getDescription(), ipAddr.getAccountId(), publicIp, publicPort, privatePort, algorithm);
+            loadBalancer = _loadBalancerDao.persist(loadBalancer);
+            Long id = loadBalancer.getId();
+
+            // Save off information for the event that the security group was applied
+            Long userId = UserContext.current().getUserId();
+            if (userId == null) {
+                userId = Long.valueOf(User.UID_SYSTEM);
+            }
+
+            EventVO event = new EventVO();
+            event.setUserId(userId);
+            event.setAccountId(ipAddr.getAccountId());
+            event.setType(EventTypes.EVENT_LOAD_BALANCER_CREATE);
+
+            if (id == null) {
+                event.setDescription("Failed to create load balancer " + loadBalancer.getName() + " on ip address " + publicIp + "[" + publicPort + "->" + privatePort + "]");
+                event.setLevel(EventVO.LEVEL_ERROR);
+            } else {
+                event.setDescription("Successfully created load balancer " + loadBalancer.getName() + " on ip address " + publicIp + "[" + publicPort + "->" + privatePort + "]");
+                String params = "id="+loadBalancer.getId()+"\ndcId="+ipAddr.getDataCenterId();
+                event.setParameters(params);
+                event.setLevel(EventVO.LEVEL_INFO);
+            }
+            _eventDao.persist(event);
+
+            return _loadBalancerDao.findById(id);
+        } finally {
+            if (locked) {
+                _ipAddressDao.release(publicIp);
+            }
         }
     }
 
