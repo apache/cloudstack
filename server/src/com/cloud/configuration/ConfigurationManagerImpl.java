@@ -39,6 +39,7 @@ import com.cloud.api.commands.DeleteDiskOfferingCmd;
 import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
+import com.cloud.api.commands.UpdateServiceOfferingCmd;
 import com.cloud.api.commands.UpdateZoneCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.AccountVlanMapVO;
@@ -66,6 +67,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
@@ -73,6 +75,7 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -869,13 +872,32 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     }
     
-    public ServiceOfferingVO updateServiceOffering(long userId, long serviceOfferingId, String name, String displayText, Boolean offerHA, Boolean useVirtualNetwork, String tags) {
-    	boolean updateNeeded = (name != null || displayText != null || offerHA != null || useVirtualNetwork != null || tags != null);
-    	if (!updateNeeded) {
-    		return _serviceOfferingDao.findById(serviceOfferingId);
+    public ServiceOfferingVO updateServiceOffering(UpdateServiceOfferingCmd cmd) {
+
+    	String displayText = cmd.getDisplayText();
+    	Long id = cmd.getId();
+    	String name = cmd.getName();
+    	Boolean ha = cmd.getOfferHa();
+    	String tags = cmd.getTags();
+    	Boolean useVirtualNetwork = cmd.getUseVirtualNetwork();
+    	Long userId = UserContext.current().getUserId();
+
+        if (userId == null) {
+            userId = Long.valueOf(User.UID_SYSTEM);
+        }
+        
+        // Verify input parameters
+        ServiceOfferingVO offeringHandle = _serviceOfferingDao.findById(id);;
+    	if (offeringHandle == null) {
+    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find service offering " + id);
     	}
     	
-        ServiceOfferingVO offering = _serviceOfferingDao.createForUpdate(serviceOfferingId);
+    	boolean updateNeeded = (name != null || displayText != null || ha != null || useVirtualNetwork != null || tags != null);
+    	if (!updateNeeded) {
+    		return _serviceOfferingDao.findById(id);
+    	}
+    	
+        ServiceOfferingVO offering = _serviceOfferingDao.createForUpdate(id);
         
         if (name != null) {
         	offering.setName(name);
@@ -885,8 +907,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         	offering.setDisplayText(displayText);
         }
         
-	    if (offerHA != null) {
-	    	offering.setOfferHA(offerHA);
+	    if (ha != null) {
+	    	offering.setOfferHA(ha);
         }
 	    
         if (useVirtualNetwork != null) {
@@ -902,8 +924,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         	}     	
         }
         
-        if (_serviceOfferingDao.update(serviceOfferingId, offering)) {
-        	offering = _serviceOfferingDao.findById(serviceOfferingId);
+        if (_serviceOfferingDao.update(id, offering)) {
+        	offering = _serviceOfferingDao.findById(id);
     		saveConfigurationEvent(userId, null, EventTypes.EVENT_SERVICE_OFFERING_EDIT, "Successfully updated service offering with name: " + offering.getName() + ".", "soId=" + offering.getId(), "name=" + offering.getName(),
     				"displayText=" + offering.getDisplayText(), "offerHA=" + offering.getOfferHA(), "useVirtualNetwork=" + (offering.getGuestIpType() == GuestIpType.Virtualized), "tags=" + offering.getTags());
         	return offering;
@@ -1777,5 +1799,5 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 			s_logger.error("Unable to add the new config entry:",ex);
 			return false;
 		}
-	}           
+	}   
 }

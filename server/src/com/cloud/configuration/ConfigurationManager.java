@@ -25,6 +25,7 @@ import com.cloud.api.commands.DeleteDiskOfferingCmd;
 import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
+import com.cloud.api.commands.UpdateServiceOfferingCmd;
 import com.cloud.api.commands.UpdateZoneCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -86,7 +87,8 @@ public interface ConfigurationManager extends Manager {
 	 * @param tags
 	 * @return updated service offering
 	 */
-	ServiceOfferingVO updateServiceOffering(long serviceOfferingId, long userId, String name, String displayText, Boolean offerHA, Boolean useVirtualNetwork, String tags);
+//	ServiceOfferingVO updateServiceOffering(long serviceOfferingId, long userId, String name, String displayText, Boolean offerHA, Boolean useVirtualNetwork, String tags);
+	ServiceOfferingVO updateServiceOffering(UpdateServiceOfferingCmd cmd);
 	
 	/**
 	 * Updates a disk offering
