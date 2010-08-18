@@ -994,19 +994,6 @@ public interface ManagementServer {
 //    ServiceOfferingVO updateServiceOffering(long userId, long serviceOfferingId, String name, String displayText, Boolean offerHA, Boolean useVirtualNetwork, String tags);
     
     /**
-     * Adds a new pod to the database
-     * @param userId
-     * @param podName
-     * @param zoneId
-     * @param gateway
-     * @param cidr
-     * @param startIp
-     * @param endIp
-     * @return Pod
-     */
-    HostPodVO createPod(long userId, String podName, Long zoneId, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException;
-    
-    /**
      * Edits a pod in the database
      * @param userId
      * @param podId

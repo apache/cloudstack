@@ -38,7 +38,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -89,7 +88,6 @@ import com.cloud.api.commands.UpdateTemplateCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateTemplatePermissionsCmd;
 import com.cloud.api.commands.UpdateUserCmd;
-import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
@@ -282,7 +280,6 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
-import com.sun.org.apache.bcel.internal.generic.INSTANCEOF;
 
 public class ManagementServerImpl implements ManagementServer {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
@@ -4316,36 +4313,10 @@ public class ManagementServerImpl implements ManagementServer {
         return _configMgr.createServiceOffering(userId, name, cpu, ramSize, speed, displayText, localStorageRequired, offerHA, useVirtualNetwork, tags);
     }
     
-//    @Override
-//    public ServiceOfferingVO updateServiceOffering(long userId, long serviceOfferingId, String name, String displayText, Boolean offerHA, Boolean useVirtualNetwork, String tags) {
-//    	return _configMgr.updateServiceOffering(userId, serviceOfferingId, name, displayText, offerHA, useVirtualNetwork, tags);
-//    }
-    
-
-    @Override
-    public HostPodVO createPod(long userId, String podName, Long zoneId, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException {
-        return _configMgr.createPod(userId, podName, zoneId, gateway, cidr, startIp, endIp);
-    }
-
-//    @Override
-//    public HostPodVO editPod(long userId, long podId, String newPodName, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException {
-//        return _configMgr.editPod(userId, podId, newPodName, gateway, cidr, startIp, endIp);
-//    }
-
-//    @Override
-//    public void deletePod(long userId, long podId) throws InvalidParameterValueException, InternalErrorException {
-//        _configMgr.deletePod(userId, podId);
-//    }
-
     @Override
     public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange,String guestCidr) throws InvalidParameterValueException, InternalErrorException {
         return _configMgr.createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr);
     }
-
-//    @Override
-//    public DataCenterVO editZone(long userId, Long zoneId, String newZoneName, String dns1, String dns2, String dns3, String dns4, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException {
-//        return _configMgr.editZone(userId, zoneId, newZoneName, dns1, dns2, dns3, dns4, vnetRange, guestCidr);
-//    }
 
     @Override
     public void deleteZone(long userId, Long zoneId) throws InvalidParameterValueException, InternalErrorException {
