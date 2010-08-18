@@ -29,6 +29,7 @@ import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
+import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
 import com.cloud.api.commands.UpdateTemplateCmd;
@@ -1459,7 +1460,7 @@ public interface ManagementServer {
 	String getConsoleAccessUrlRoot(long vmId);
 	ConsoleProxyVO findConsoleProxyById(long instanceId);
 	VMInstanceVO findSystemVMById(long instanceId);
-	boolean stopSystemVM(long instanceId, long startEventId);
+	boolean stopSystemVM(StopSystemVmCmd cmd);
 	VMInstanceVO startSystemVM(long instanceId, long startEventId) throws InternalErrorException;
 	long startSystemVmAsync(long instanceId);
 	long stopSystemVmAsync(long instanceId);
