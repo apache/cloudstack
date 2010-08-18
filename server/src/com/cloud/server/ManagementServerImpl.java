@@ -65,6 +65,7 @@ import com.cloud.api.commands.CancelMaintenanceCmd;
 import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
 import com.cloud.api.commands.CopyTemplateCmd;
 import com.cloud.api.commands.CreateDomainCmd;
+import com.cloud.api.commands.CreatePortForwardingServiceCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
@@ -3457,79 +3458,6 @@ public class ManagementServerImpl implements ManagementServer {
         return newFwRule;
     }
 
-    @DB
-    protected NetworkRuleConfigVO createNetworkRuleConfig(long userId, long securityGroupId, String port, String privatePort, String protocol, String algorithm)
-            throws NetworkRuleConflictException {
-        if (protocol == null) {
-            protocol = "TCP";
-        }
-
-        Long ruleId = null;
-        Transaction txn = Transaction.currentTxn();
-        try {
-            List<NetworkRuleConfigVO> existingRules = _networkRuleConfigDao.listBySecurityGroupId(securityGroupId);
-            for (NetworkRuleConfigVO existingRule : existingRules) {
-                if (existingRule.getPublicPort().equals(port) && existingRule.getProtocol().equals(protocol)) {
-                    throw new NetworkRuleConflictException("port conflict, port forwarding service contains a rule on public port " + port + " for protocol " + protocol);
-                }
-            }
-
-            txn.start();
-            NetworkRuleConfigVO netRule = new NetworkRuleConfigVO(securityGroupId, port, privatePort, protocol);
-            netRule.setCreateStatus(AsyncInstanceCreateStatus.Creating);
-            netRule = _networkRuleConfigDao.persist(netRule);
-            ruleId = netRule.getId();
-            txn.commit();
-
-            // check if we are within context of async-execution
-            AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-            if (asyncExecutor != null) {
-                AsyncJobVO job = asyncExecutor.getJob();
-
-                if (s_logger.isInfoEnabled())
-                    s_logger.info("Created a new port forwarding service rule instance " + ruleId + ", update async job-" + job.getId() + " progress status");
-
-                _asyncMgr.updateAsyncJobAttachment(job.getId(), "network_rule_config", ruleId);
-                _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, ruleId);
-            }
-
-            txn.start();
-            if (ruleId != null) {
-                List<SecurityGroupVMMapVO> sgMappings = _securityGroupVMMapDao.listBySecurityGroup(securityGroupId);
-                if ((sgMappings != null) && !sgMappings.isEmpty()) {
-                    for (SecurityGroupVMMapVO sgMapping : sgMappings) {
-                        UserVm userVm = _userVmDao.findById(sgMapping.getInstanceId());
-                        createFirewallRule(userId, sgMapping.getIpAddress(), userVm, netRule.getPublicPort(), netRule.getPrivatePort(), netRule.getProtocol(), Long.valueOf(securityGroupId));
-                    }
-                }
-
-                NetworkRuleConfigVO rule = _networkRuleConfigDao.findById(ruleId);
-                rule.setCreateStatus(AsyncInstanceCreateStatus.Created);
-                _networkRuleConfigDao.update(ruleId, rule);
-            }
-
-            txn.commit();
-        } catch (Exception ex) {
-            txn.rollback();
-
-            if (ruleId != null) {
-                txn.start();
-                NetworkRuleConfigVO rule = _networkRuleConfigDao.findById(ruleId);
-                rule.setCreateStatus(AsyncInstanceCreateStatus.Corrupted);
-                _networkRuleConfigDao.update(ruleId, rule);
-                txn.commit();
-            }
-
-            if (ex instanceof NetworkRuleConflictException) {
-                throw (NetworkRuleConflictException) ex;
-            }
-            s_logger.error("Unexpected exception creating port forwarding service rule (pfServiceId:" + securityGroupId + ",port:" + port + ",privatePort:" + privatePort + ",protocol:" + protocol + ")",
-                    ex);
-        }
-
-        return _networkRuleConfigDao.findById(ruleId);
-    }
-
     @Override
     public boolean deleteNetworkRuleConfig(long userId, long networkRuleId) {
         try {
@@ -5790,10 +5718,18 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public NetworkRuleConfigVO createOrUpdateRule(long userId, long securityGroupId, String address, String port, String privateIpAddress, String privatePort, String protocol,
-            String algorithm) throws InvalidParameterValueException, PermissionDeniedException, NetworkRuleConflictException, InternalErrorException {
+    public NetworkRuleConfigVO createPortForwardingServiceRule(CreatePortForwardingServiceRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, NetworkRuleConflictException, InternalErrorException {
         NetworkRuleConfigVO rule = null;
         try {
+            Long securityGroupId = cmd.getPortForwardingServiceId();
+            String port = cmd.getPublicPort();
+            String privatePort = cmd.getPrivatePort();
+            String protocol = cmd.getProtocol();
+            Long userId = UserContext.current().getUserId();
+            if (userId == null) {
+                userId = Long.valueOf(User.UID_SYSTEM);
+            }
+
             SecurityGroupVO sg = _securityGroupDao.findById(Long.valueOf(securityGroupId));
             if (sg == null) {
                 throw new InvalidParameterValueException("port forwarding service " + securityGroupId + " does not exist");
@@ -5808,13 +5744,48 @@ public class ManagementServerImpl implements ManagementServer {
                 if (!NetUtils.isValidProto(protocol)) {
                     throw new InvalidParameterValueException("Invalid protocol");
                 }
+            } else {
+                protocol = "TCP";
             }
-            if (algorithm != null) {
-                if (!NetUtils.isValidAlgorithm(algorithm)) {
-                    throw new InvalidParameterValueException("Invalid algorithm");
+
+            // validate permissions
+            Account account = (Account)UserContext.current().getAccountObject();
+            if (account != null) {
+                if (isAdmin(account.getType())) {
+                    if (!_domainDao.isChildDomain(account.getDomainId(), sg.getDomainId())) {
+                        throw new PermissionDeniedException("Unable to find rules for port forwarding service id = " + securityGroupId + ", permission denied.");
+                    }
+                } else if (account.getId().longValue() != sg.getAccountId().longValue()) {
+                    throw new PermissionDeniedException("Invalid port forwarding service (" + securityGroupId + ") given, unable to create rule.");
                 }
             }
-            rule = createNetworkRuleConfig(userId, securityGroupId, port, privatePort, protocol, algorithm);
+
+            List<NetworkRuleConfigVO> existingRules = _networkRuleConfigDao.listBySecurityGroupId(securityGroupId);
+            for (NetworkRuleConfigVO existingRule : existingRules) {
+                if (existingRule.getPublicPort().equals(port) && existingRule.getProtocol().equals(protocol)) {
+                    throw new NetworkRuleConflictException("port conflict, port forwarding service contains a rule on public port " + port + " for protocol " + protocol);
+                }
+            }
+
+            NetworkRuleConfigVO netRule = new NetworkRuleConfigVO(securityGroupId, port, privatePort, protocol);
+            netRule.setCreateStatus(AsyncInstanceCreateStatus.Creating);
+            rule = _networkRuleConfigDao.persist(netRule);
+
+            /* FIXME:  async job needs to be hooked up...
+            // check if we are within context of async-execution
+            AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
+            if (asyncExecutor != null) {
+                AsyncJobVO job = asyncExecutor.getJob();
+
+                if (s_logger.isInfoEnabled())
+                    s_logger.info("Created a new port forwarding service rule instance " + rule.getId() + ", update async job-" + job.getId() + " progress status");
+
+                _asyncMgr.updateAsyncJobAttachment(job.getId(), "network_rule_config", rule.getId());
+                _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, rule.getId());
+            }
+            */
+
+//            rule = createNetworkRuleConfig(userId, securityGroupId, port, privatePort, protocol);
         } catch (Exception e) {
             if (e instanceof NetworkRuleConflictException) {
                 throw (NetworkRuleConflictException) e;
@@ -5833,21 +5804,34 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public long createOrUpdateRuleAsync(boolean isForwarding, long userId, long accountId, Long domainId, long securityGroupId, String address, String port,
-            String privateIpAddress, String privatePort, String protocol, String algorithm) {
+    public NetworkRuleConfigVO applyPortForwardingServiceRule(Long ruleId) throws NetworkRuleConflictException {
+        NetworkRuleConfigVO netRule = null;
+        if (ruleId != null) {
+            Long userId = UserContext.current().getUserId();
+            if (userId == null) {
+                userId = User.UID_SYSTEM;
+            }
 
-        CreateOrUpdateRuleParam param = new CreateOrUpdateRuleParam(isForwarding, userId, accountId, address, port, privateIpAddress, privatePort, protocol, algorithm, domainId,
-                securityGroupId);
-        Gson gson = GsonHelper.getBuilder().create();
+            netRule = _networkRuleConfigDao.findById(ruleId);
+            List<SecurityGroupVMMapVO> sgMappings = _securityGroupVMMapDao.listBySecurityGroup(netRule.getSecurityGroupId());
+            if ((sgMappings != null) && !sgMappings.isEmpty()) {
+                try {
+                    for (SecurityGroupVMMapVO sgMapping : sgMappings) {
+                        UserVm userVm = _userVmDao.findById(sgMapping.getInstanceId());
+                        createFirewallRule(userId, sgMapping.getIpAddress(), userVm, netRule.getPublicPort(), netRule.getPrivatePort(), netRule.getProtocol(), netRule.getSecurityGroupId());
+                    }
+                } catch (NetworkRuleConflictException ex) {
+                    netRule.setCreateStatus(AsyncInstanceCreateStatus.Corrupted);
+                    _networkRuleConfigDao.update(ruleId, netRule);
+                    throw ex;
+                }
+            }
 
-        AsyncJobVO job = new AsyncJobVO();
-    	job.setUserId(UserContext.current().getUserId());
-    	job.setAccountId(accountId);
-        job.setCmd("CreateOrUpdateRule");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(CreatePortForwardingServiceRuleCmd.getResultObjectName());
-        
-        return _asyncMgr.submitAsyncJob(job);
+            netRule.setCreateStatus(AsyncInstanceCreateStatus.Created);
+            _networkRuleConfigDao.update(ruleId, netRule);
+        }
+
+        return netRule;
     }
 
     public void deleteRule(long ruleId, long userId, long accountId) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException {
@@ -6889,8 +6873,48 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public SecurityGroupVO createSecurityGroup(String name, String description, Long domainId, Long accountId) {
-        SecurityGroupVO group = new SecurityGroupVO(name, description, domainId, accountId);
+    public SecurityGroupVO createPortForwardingService(CreatePortForwardingServiceCmd cmd) throws InvalidParameterValueException {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
+        Long accountId = null;
+        String portForwardingServiceName = cmd.getPortForwardingServiceName();
+
+        if (account != null) {
+            if (isAdmin(account.getType())) {
+                if ((accountName != null) && (domainId != null)) {
+                    if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                        throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to create port forwarding service in domain " + domainId + ", permission denied.");
+                    }
+
+                    Account userAccount = findActiveAccount(accountName, domainId);
+                    if (userAccount != null) {
+                        accountId = userAccount.getId();
+                    } else {
+                        throw new InvalidParameterValueException("Unable to create port forwarding service " + portForwardingServiceName + ", could not find account " + accountName + " in domain " + domainId);
+                    }
+                } else {
+                    // the admin must be creating the security group
+                    if (account != null) {
+                        accountId = account.getId();
+                        domainId = account.getDomainId();
+                    }
+                }
+            } else {
+                accountId = account.getId();
+                domainId = account.getDomainId();
+            }
+        }
+
+        if (accountId == null) {
+            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to create port forwarding service, no account specified.");
+        }
+
+        if (isSecurityGroupNameInUse(domainId, accountId, portForwardingServiceName)) {
+            throw new InvalidParameterValueException("Unable to create port forwarding service, a service with name " + portForwardingServiceName + " already exisits.");
+        }
+
+        SecurityGroupVO group = new SecurityGroupVO(portForwardingServiceName, cmd.getDescription(), domainId, accountId);
         return _securityGroupDao.persist(group);
     }
 

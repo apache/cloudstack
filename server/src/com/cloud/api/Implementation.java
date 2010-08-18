@@ -11,6 +11,7 @@ import com.cloud.api.BaseCmd.Manager;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({TYPE})
 public @interface Implementation {
+    String createMethod() default "";
     String method() default "";
     Manager manager() default Manager.ManagementServer;
 }

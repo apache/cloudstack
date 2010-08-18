@@ -1,9 +1,8 @@
 package com.cloud.api;
 
 public abstract class BaseAsyncCreateCmd extends BaseAsyncCmd {
+    @Parameter(name="portforwardingserviceid")
     private Long id;
-
-    public abstract Object createObject();
 
     public Long getId() {
         return id;

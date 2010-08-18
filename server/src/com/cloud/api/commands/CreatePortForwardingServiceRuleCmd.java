@@ -18,36 +18,20 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseAsyncCreateCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.async.executor.CreateOrUpdateRuleResultObject;
-import com.cloud.network.SecurityGroupVO;
+import com.cloud.api.response.PortForwardingServiceRuleResponse;
+import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.serializer.SerializerHelper;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
-public class CreatePortForwardingServiceRuleCmd extends BaseCmd {
+@Implementation(createMethod="createPortForwardingServiceRule", method="applyPortForwardingServiceRule")
+public class CreatePortForwardingServiceRuleCmd extends BaseAsyncCreateCmd {
 	public static final Logger s_logger = Logger.getLogger(CreatePortForwardingServiceRuleCmd.class.getName());
 
     private static final String s_name = "createportforwardingserviceruleresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PORT_FORWARDING_SERVICE_ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PRIVATE_PORT, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PROTOCOL, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PUBLIC_PORT, Boolean.TRUE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -91,6 +75,7 @@ public class CreatePortForwardingServiceRuleCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
@@ -98,64 +83,18 @@ public class CreatePortForwardingServiceRuleCmd extends BaseCmd {
     public static String getResultObjectName() {
     	return "portforwardingservicerule";
     }
-    
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
     @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-        String publicPort = (String)params.get(BaseCmd.Properties.PUBLIC_PORT.getName());
-        String privatePort = (String)params.get(BaseCmd.Properties.PRIVATE_PORT.getName());
-        String protocol = (String)params.get(BaseCmd.Properties.PROTOCOL.getName());
-        Long securityGroupId = (Long)params.get(BaseCmd.Properties.PORT_FORWARDING_SERVICE_ID.getName());
+    public String getResponse() {
+        NetworkRuleConfigVO netRule = (NetworkRuleConfigVO)getResponseObject();
 
-        SecurityGroupVO sg = getManagementServer().findSecurityGroupById(securityGroupId);
-        if (sg == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find port forwarding service with id " + securityGroupId);
-        }
+        PortForwardingServiceRuleResponse response = new PortForwardingServiceRuleResponse();
+        response.setRuleId(netRule.getId());
+        response.setPortForwardingServiceId(netRule.getSecurityGroupId());
+        response.setPrivatePort(netRule.getPrivatePort());
+        response.setProtocol(netRule.getProtocol());
+        response.setPublicPort(netRule.getPublicPort());
 
-        if (account != null) {
-            if (isAdmin(account.getType())) {
-                if (!getManagementServer().isChildDomain(account.getDomainId(), sg.getDomainId())) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find rules for port forwarding service id = " + securityGroupId + ", permission denied.");
-                }
-            } else if (account.getId().longValue() != sg.getAccountId().longValue()) {
-                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Invalid port forwarding service (" + securityGroupId + ") given, unable to create rule.");
-            }
-        }
-
-        // If command is executed via 8096 port, set userId to the id of System account (1)
-        if (userId == null) {
-            userId = Long.valueOf(1);
-        }
-
-        long jobId = getManagementServer().createOrUpdateRuleAsync(true, userId.longValue(), sg.getAccountId().longValue(), null, securityGroupId, null, publicPort, null, privatePort, protocol, null);
-        long ruleId = 0;
-
-        if (jobId == 0) {
-            s_logger.warn("Unable to schedule async-job for CreatePortForwardingServiceRuleCmd command");
-        } else {
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("CreatePortForwardingServiceRuleCmd command has been accepted, job id: " + jobId);
-            
-            ruleId = waitInstanceCreation(jobId);
-        }
-
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId)));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.RULE_ID.getName(), Long.valueOf(ruleId))); 
-        return returnValues;
+        return SerializerHelper.toSerializedString(response);
     }
-    
-	protected long getInstanceIdFromJobSuccessResult(String result) {
-		CreateOrUpdateRuleResultObject resultObject = (CreateOrUpdateRuleResultObject)SerializerHelper.fromSerializedString(result);
-		if(resultObject != null) {
-			return resultObject.getRuleId();
-		}
-
-		return 0;
-	}
 }

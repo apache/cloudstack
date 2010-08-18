@@ -26,6 +26,8 @@ import java.util.Map;
 
 import com.cloud.alert.AlertVO;
 import com.cloud.api.commands.CreateDomainCmd;
+import com.cloud.api.commands.CreatePortForwardingServiceCmd;
+import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
@@ -1409,36 +1411,27 @@ public interface ManagementServer {
      * @param userId
      */
     void logoutUser(Long userId);
-    
-    /**
-     * Updates a configuration value.
-     * @param userId
-     * @param name
-     * @param value
-  	 * @return
-     */
-//    void updateConfiguration(long userId, String name, String value) throws InvalidParameterValueException, InternalErrorException;
-	
+
 	/**
-	 * Creates or updates an IP forwarding or load balancer rule.
-	 * @param isForwarding if true, an IP forwarding rule will be created/updated, else a load balancer rule will be created/updated
-	 * @param address
-	 * @param port
-	 * @param privateIPAddress
-	 * @param privatePort
-	 * @param protocol
-	 * @return the rule if it was successfully created
+	 * Creates a network rule as part of a port forwarding service.  If this port forwarding service has been applied to any virtual
+	 * machines, the network rules will get sent to the router.
+     * @param cmd the command describing the port forwarding service the rule belongs to, the public port, the private port, and the protocol
+     * @return a new network rule that is part of the port forwarding service if successful, null otherwise
      * @throws InvalidParameterValueException
      * @throws PermissionDeniedException
      * @throws NetworkRuleConflictException
      * @throws InternalErrorException
-	 */
-	NetworkRuleConfigVO createOrUpdateRule(long userId, long securityGroupId, String address, String port, String privateIpAddress, String privatePort, String protocol, String algorithm)
-	throws InvalidParameterValueException, PermissionDeniedException, NetworkRuleConflictException, InternalErrorException;
-	long createOrUpdateRuleAsync(boolean isForwarding, long userId, long accountId, Long domainId, long securityGroupId, String address,
-			String port, String privateIpAddress, String privatePort, String protocol, String algorithm);
-	
-	/**
+     */
+    NetworkRuleConfigVO createPortForwardingServiceRule(CreatePortForwardingServiceRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, NetworkRuleConflictException, InternalErrorException;
+
+    /**
+     * Apply a port forwarding service rule to all VMs that have the port forwarding service applied
+     * @param ruleId the id of the created rule to apply
+     * @return the updated rule if successful, null otherwise
+     */
+    NetworkRuleConfigVO applyPortForwardingServiceRule(Long ruleId) throws NetworkRuleConflictException;
+
+    /**
 	 * Deletes an IP forwarding or load balancer rule
 	 * @param ruleId
 	 * @param userId
@@ -1873,7 +1866,7 @@ public interface ManagementServer {
      * @param accountId owner of the security group, can be null for domain level security groups
      * @return
      */
-    SecurityGroupVO createSecurityGroup(String name, String description, Long domainId, Long accountId);
+    SecurityGroupVO createPortForwardingService(CreatePortForwardingServiceCmd cmd) throws InvalidParameterValueException;
 
     /**
      * Delete a security group.  If the group is being actively used, it cannot be deleted.
