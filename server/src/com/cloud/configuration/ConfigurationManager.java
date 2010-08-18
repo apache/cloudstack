@@ -21,6 +21,7 @@ import java.util.List;
 
 import com.cloud.api.commands.AddConfigCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
+import com.cloud.api.commands.CreatePodCmd;
 import com.cloud.api.commands.DeleteDiskOfferingCmd;
 import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
@@ -140,7 +141,16 @@ public interface ConfigurationManager extends Manager {
 	 * @return Pod
 	 */
 	HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException;
-	
+
+	/**
+	 * Creates a new pod based on the parameters specified in the command object
+	 * @param cmd the command object that specifies the name, zone, gateway, cidr, and ip range for the pod
+	 * @return the new pod if successful, null otherwise
+	 * @throws InvalidParameterValueException
+	 * @throws InternalErrorException
+	 */
+	HostPodVO createPod(CreatePodCmd cmd) throws InvalidParameterValueException, InternalErrorException;
+
 	/**
      * Edits a pod in the database. Will not allow you to edit pods that are being used anywhere in the system.
      * @param userId

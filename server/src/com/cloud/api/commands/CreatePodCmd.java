@@ -18,36 +18,21 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.dc.DataCenterVO;
+import com.cloud.api.response.PodResponse;
 import com.cloud.dc.HostPodVO;
-import com.cloud.user.User;
-import com.cloud.utils.Pair;
+import com.cloud.serializer.SerializerHelper;
 
+@Implementation(method="createPod", manager=Manager.ConfigManager)
 public class CreatePodCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreatePodCmd.class.getName());
 
     private static final String s_name = "createpodresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.CIDR, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.END_IP, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.GATEWAY, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.START_IP, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.TRUE));
-
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -108,57 +93,22 @@ public class CreatePodCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
     @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-    	String podName = (String) params.get(BaseCmd.Properties.NAME.getName());
-    	Long zoneId = (Long) params.get(BaseCmd.Properties.ZONE_ID.getName());
-    	String gateway = (String) params.get(BaseCmd.Properties.GATEWAY.getName());
-    	String cidr = (String) params.get(BaseCmd.Properties.CIDR.getName());
-    	String startIp = (String) params.get(BaseCmd.Properties.START_IP.getName());
-    	String endIp = (String) params.get(BaseCmd.Properties.END_IP.getName());
-    	Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-    	
-    	if (userId == null) {
-            userId = Long.valueOf(User.UID_SYSTEM);
-        }
-    	
-    	//verify input parameters
-    	DataCenterVO zone = getManagementServer().findDataCenterById(zoneId);
-    	if (zone == null) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find zone by id " + zoneId);
-    	}
+    public String getResponse() {
+        HostPodVO pod = (HostPodVO)getResponseObject();
 
-    	if (endIp != null && startIp == null) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "If an end IP is specified, a start IP must be specified.");
-    	}
-    	
-    	HostPodVO pod = null;
-        try {
-             pod = getManagementServer().createPod(userId, podName, zoneId, gateway, cidr, startIp, endIp);
-        } catch (Exception ex) {
-            s_logger.error("Exception creating pod", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        }
+        PodResponse response = new PodResponse();
+        response.setId(pod.getId());
+        response.setCidr(pod.getCidrAddress() + "/" + pod.getCidrSize());
+        // TODO: implement
+//        response.setEndIp(pod.getEndIp());
+//      response.setStartIp(pod.getStartIp());
+//      response.setZoneName(pod.getZoneName());
+        response.setGateway(pod.getGateway());
+        response.setName(pod.getName());
+        response.setZoneId(pod.getDataCenterId());
 
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        
-        if (pod == null) {
-        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create pod; internal error.");
-        } else {
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), pod.getId()));
-    		returnValues.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), podName));
-    		returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_ID.getName(), zoneId));
-    		returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), zone.getName()));
-    		returnValues.add(new Pair<String, Object>(BaseCmd.Properties.GATEWAY.getName(), pod.getGateway()));
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.CIDR.getName(), cidr));
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.START_IP.getName(), startIp));
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.END_IP.getName(), endIp != null ? endIp : ""));
-        }
-        
-        return returnValues;
+        return SerializerHelper.toSerializedString(response);
     }
 }

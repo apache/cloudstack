@@ -35,6 +35,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AddConfigCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
+import com.cloud.api.commands.CreatePodCmd;
 import com.cloud.api.commands.DeleteDiskOfferingCmd;
 import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
@@ -508,8 +509,35 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		
 		return pod;
     }
-    
-    @DB
+
+    @Override
+    public HostPodVO createPod(CreatePodCmd cmd) throws InvalidParameterValueException, InternalErrorException {
+        String cidr = cmd.getCidr();
+        String endIp = cmd.getEndIp();
+        String gateway = cmd.getGateway();
+        String name = cmd.getPodName();
+        String startIp = cmd.getStartIp();
+        Long zoneId = cmd.getZoneId();
+
+        //verify input parameters
+        DataCenterVO zone = _zoneDao.findById(zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Failed to create pod " + name + " -- unable to find zone " + zoneId);
+        }
+
+        if (endIp != null && startIp == null) {
+            throw new InvalidParameterValueException("Failed to create pod " + name + " -- if an end IP is specified, a start IP must be specified.");
+        }
+
+        Long userId = UserContext.current().getUserId();
+        if (userId == null) {
+            userId = Long.valueOf(User.UID_SYSTEM);
+        }
+
+        return createPod(userId.longValue(), name, zoneId, gateway, cidr, startIp, endIp);
+    }
+
+    @Override @DB
     public HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException {
     	checkPodAttributes(-1, podName, zoneId, gateway, cidr, startIp, endIp, true);
 		
@@ -786,7 +814,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     	
     	//5. Reached here, hence editable   	
-    	DataCenterVO zoneHandle = _zoneDao.findById(zoneId);
     	String oldZoneName = zone.getName();
     	
     	if (zoneName == null) {
@@ -1067,8 +1094,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     }
 
-
-    
     public String changePrivateIPRange(boolean add, long podId, String startIP, String endIP) throws InvalidParameterValueException {
     	checkPrivateIpRangeErrors(podId, startIP, endIP);
     	

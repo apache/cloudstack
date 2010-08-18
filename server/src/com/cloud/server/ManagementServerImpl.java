@@ -4313,36 +4313,10 @@ public class ManagementServerImpl implements ManagementServer {
         return _configMgr.createServiceOffering(userId, name, cpu, ramSize, speed, displayText, localStorageRequired, offerHA, useVirtualNetwork, tags);
     }
     
-//    @Override
-//    public ServiceOfferingVO updateServiceOffering(long userId, long serviceOfferingId, String name, String displayText, Boolean offerHA, Boolean useVirtualNetwork, String tags) {
-//    	return _configMgr.updateServiceOffering(userId, serviceOfferingId, name, displayText, offerHA, useVirtualNetwork, tags);
-//    }
-    
-
-    @Override
-    public HostPodVO createPod(long userId, String podName, Long zoneId, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException {
-        return _configMgr.createPod(userId, podName, zoneId, gateway, cidr, startIp, endIp);
-    }
-
-//    @Override
-//    public HostPodVO editPod(long userId, long podId, String newPodName, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException {
-//        return _configMgr.editPod(userId, podId, newPodName, gateway, cidr, startIp, endIp);
-//    }
-
-//    @Override
-//    public void deletePod(long userId, long podId) throws InvalidParameterValueException, InternalErrorException {
-//        _configMgr.deletePod(userId, podId);
-//    }
-
     @Override
     public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange,String guestCidr) throws InvalidParameterValueException, InternalErrorException {
         return _configMgr.createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr);
     }
-
-//    @Override
-//    public DataCenterVO editZone(long userId, Long zoneId, String newZoneName, String dns1, String dns2, String dns3, String dns4, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException {
-//        return _configMgr.editZone(userId, zoneId, newZoneName, dns1, dns2, dns3, dns4, vnetRange, guestCidr);
-//    }
 
     @Override
     public void deleteZone(long userId, Long zoneId) throws InvalidParameterValueException, InternalErrorException {
@@ -5048,11 +5022,6 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public List<FirewallRuleVO> listIPForwarding(String publicIPAddress, boolean forwarding) {
         return _firewallRulesDao.listIPForwarding(publicIPAddress, forwarding);
-    }
-
-    @Override
-    public FirewallRuleVO createPortForwardingRule(long userId, IPAddressVO ipAddressVO, UserVmVO userVM, String publicPort, String privatePort, String protocol) throws NetworkRuleConflictException {
-        return createFirewallRule(userId, ipAddressVO.getAddress(), userVM, publicPort, privatePort, protocol, null);
     }
 
     @Override
@@ -7119,86 +7088,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _loadBalancerDao.findById(Long.valueOf(loadBalancerId));
     }
 
-    @Override
-    @DB
-    public LoadBalancerVO createLoadBalancer(Long userId, Long accountId, String name, String description, String ipAddress, String publicPort, String privatePort, String algorithm)
-            throws InvalidParameterValueException, PermissionDeniedException {
-        if (accountId == null) {
-            throw new InvalidParameterValueException("accountId not specified");
-        }
-        if (!NetUtils.isValidIp(ipAddress)) {
-            throw new InvalidParameterValueException("invalid ip address");
-        }
-        if (!NetUtils.isValidPort(publicPort)) {
-            throw new InvalidParameterValueException("publicPort is an invalid value");
-        }
-        if (!NetUtils.isValidPort(privatePort)) {
-            throw new InvalidParameterValueException("privatePort is an invalid value");
-        }
-        if ((algorithm == null) || !NetUtils.isValidAlgorithm(algorithm)) {
-            throw new InvalidParameterValueException("Invalid algorithm");
-        }
-
-        boolean locked = false;
-        try {
-            LoadBalancerVO exitingLB = _loadBalancerDao.findByIpAddressAndPublicPort(ipAddress, publicPort);
-            if (exitingLB != null) {
-                throw new InvalidParameterValueException("IP Address/public port already load balanced by an existing load balancer rule");
-            }
-
-            List<FirewallRuleVO> existingFwRules = _firewallRulesDao.listIPForwarding(ipAddress, publicPort, true);
-            if ((existingFwRules != null) && !existingFwRules.isEmpty()) {
-                FirewallRuleVO existingFwRule = existingFwRules.get(0);
-                String securityGroupName = null;
-                if (existingFwRule.getGroupId() != null) {
-                    long groupId = existingFwRule.getGroupId();
-                    SecurityGroupVO securityGroup = _securityGroupDao.findById(groupId);
-                    securityGroupName = securityGroup.getName();
-                }
-                throw new InvalidParameterValueException("IP Address (" + ipAddress + ") and port (" + publicPort + ") already in use" +
-                        ((securityGroupName == null) ? "" : " by port forwarding service " + securityGroupName));
-            }
-
-            IPAddressVO addr = _publicIpAddressDao.acquire(ipAddress);
-
-            if (addr == null) {
-                throw new PermissionDeniedException("User does not own ip address " + ipAddress);
-            }
-
-            locked = true;
-            if ((addr.getAllocated() == null) || !accountId.equals(addr.getAccountId())) {
-                throw new PermissionDeniedException("User does not own ip address " + ipAddress);
-            }
-
-            LoadBalancerVO loadBalancer = new LoadBalancerVO(name, description, accountId.longValue(), ipAddress, publicPort, privatePort, algorithm);
-            loadBalancer = _loadBalancerDao.persist(loadBalancer);
-            Long id = loadBalancer.getId();
-
-            // Save off information for the event that the security group was applied
-            EventVO event = new EventVO();
-            event.setUserId(userId);
-            event.setAccountId(accountId);
-            event.setType(EventTypes.EVENT_LOAD_BALANCER_CREATE);
-
-            if (id == null) {
-                event.setDescription("Failed to create load balancer " + loadBalancer.getName() + " on ip address " + ipAddress + "[" + publicPort + "->" + privatePort + "]");
-                event.setLevel(EventVO.LEVEL_ERROR);
-            } else {
-                event.setDescription("Successfully created load balancer " + loadBalancer.getName() + " on ip address " + ipAddress + "[" + publicPort + "->" + privatePort + "]");
-                String params = "id="+loadBalancer.getId()+"\ndcId="+addr.getDataCenterId();
-                event.setParameters(params);
-                event.setLevel(EventVO.LEVEL_INFO);
-            }
-            _eventDao.persist(event);
-
-            return _loadBalancerDao.findById(id);
-        } finally {
-            if (locked) {
-                _publicIpAddressDao.release(ipAddress);
-            }
-        }
-    }
-
     /*
     @Override @DB
     public long assignToLoadBalancerAsync(long userId, long loadBalancerId, List<Long> instanceIds, Map<String, String> params) {
@@ -8182,15 +8071,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
 	@Override
-	public boolean isNetworkSecurityGroupNameInUse(Long domainId, Long accountId, String name) {
-		if (domainId == null) {
-            domainId = DomainVO.ROOT_DOMAIN;
-        }
-		_networkGroupMgr.createDefaultNetworkGroup(accountId);
-        return _networkSecurityGroupDao.isNameInUse(accountId, domainId, name);
-	}
-
-	@Override
 	public List<IngressRuleVO> authorizeNetworkGroupIngress(AccountVO account, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups) {
 		return _networkGroupMgr.authorizeNetworkGroupIngress(account, groupName, protocol, startPort, endPort, cidrList, authorizedGroups);
 	}
@@ -8236,11 +8116,6 @@ public class ManagementServerImpl implements ManagementServer {
         job.setCmdInfo(gson.toJson(param));
         return _asyncMgr.submitAsyncJob(job);
 	}
-
-    @Override
-    public NetworkGroupVO createNetworkGroup(String name, String description, Long domainId, Long accountId, String accountName) {
-    	return _networkGroupMgr.createNetworkGroup(name, description, domainId, accountId, accountName);
-    }
 
     @Override
     public void deleteNetworkGroup(Long groupId, Long accountId) throws ResourceInUseException, PermissionDeniedException {
