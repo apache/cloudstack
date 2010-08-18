@@ -25,6 +25,7 @@ import com.cloud.api.commands.DeleteDiskOfferingCmd;
 import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
+import com.cloud.api.commands.UpdatePodCmd;
 import com.cloud.api.commands.UpdateServiceOfferingCmd;
 import com.cloud.api.commands.UpdateZoneCmd;
 import com.cloud.dc.DataCenterVO;
@@ -149,9 +150,11 @@ public interface ConfigurationManager extends Manager {
 	 * @param startIp
 	 * @param endIp
      * @return Pod
+	 * @throws InternalErrorException 
+	 * @throws InvalidParameterValueException 
      */
-	HostPodVO editPod(long userId, long podId, String newPodName, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException;
-	
+//	HostPodVO editPod(long userId, long podId, String newPodName, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException;
+	HostPodVO editPod(UpdatePodCmd cmd) throws InvalidParameterValueException, InternalErrorException;
 	 /**
      * Deletes a pod from the database. Will not allow you to delete pods that are being used anywhere in the system.
      * @param userId

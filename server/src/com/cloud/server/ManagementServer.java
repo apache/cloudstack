@@ -991,7 +991,7 @@ public interface ManagementServer {
      * @param tags tags for the service offering. if null, no change will be made. if empty string, all tags will be removed.
      * @return the updated ServiceOfferingVO
      */
-    ServiceOfferingVO updateServiceOffering(long userId, long serviceOfferingId, String name, String displayText, Boolean offerHA, Boolean useVirtualNetwork, String tags);
+//    ServiceOfferingVO updateServiceOffering(long userId, long serviceOfferingId, String name, String displayText, Boolean offerHA, Boolean useVirtualNetwork, String tags);
     
     /**
      * Adds a new pod to the database
@@ -1017,7 +1017,7 @@ public interface ManagementServer {
      * @param endIp
      * @return Pod
      */
-    HostPodVO editPod(long userId, long podId, String newPodName, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException;
+//    HostPodVO editPod(long userId, long podId, String newPodName, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException;
     
 //    /**
 //     * Deletes a pod from the database

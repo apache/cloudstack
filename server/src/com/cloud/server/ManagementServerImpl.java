@@ -4328,10 +4328,10 @@ public class ManagementServerImpl implements ManagementServer {
         return _configMgr.createPod(userId, podName, zoneId, gateway, cidr, startIp, endIp);
     }
 
-    @Override
-    public HostPodVO editPod(long userId, long podId, String newPodName, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException {
-        return _configMgr.editPod(userId, podId, newPodName, gateway, cidr, startIp, endIp);
-    }
+//    @Override
+//    public HostPodVO editPod(long userId, long podId, String newPodName, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException {
+//        return _configMgr.editPod(userId, podId, newPodName, gateway, cidr, startIp, endIp);
+//    }
 
 //    @Override
 //    public void deletePod(long userId, long podId) throws InvalidParameterValueException, InternalErrorException {
