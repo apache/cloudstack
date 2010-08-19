@@ -22,6 +22,7 @@ import java.util.List;
 import com.cloud.api.commands.AddConfigCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.CreatePodCmd;
+import com.cloud.api.commands.CreateServiceOfferingCmd;
 import com.cloud.api.commands.DeleteDiskOfferingCmd;
 import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
@@ -61,8 +62,7 @@ public interface ConfigurationManager extends Manager {
 	 * @param value
 	 */
 	void updateConfiguration(UpdateCfgCmd cmd) throws InvalidParameterValueException, InternalErrorException;
-	
-	
+
 	/**
 	 * Creates a new service offering
 	 * @param id
@@ -77,7 +77,14 @@ public interface ConfigurationManager extends Manager {
 	 * @return ID
 	 */
 	ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean useVirtualNetwork, String tags);
-	
+
+	/**
+	 * Create a service offering through the API
+	 * @param cmd the command object that specifies the name, number of cpu cores, amount of RAM, etc. for the service offering
+	 * @return the newly created service offering if successful, null otherwise
+	 */
+    ServiceOfferingVO createServiceOffering(CreateServiceOfferingCmd cmd) throws InvalidParameterValueException;
+
 	/**
 	 * Updates a service offering
 	 * @param serviceOfferingId

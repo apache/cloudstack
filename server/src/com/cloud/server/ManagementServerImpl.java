@@ -4239,11 +4239,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean useVirtualNetwork, String tags) {
-        return _configMgr.createServiceOffering(userId, name, cpu, ramSize, speed, displayText, localStorageRequired, offerHA, useVirtualNetwork, tags);
-    }
-    
-    @Override
     public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange,String guestCidr) throws InvalidParameterValueException, InternalErrorException {
         return _configMgr.createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr);
     }

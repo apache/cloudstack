@@ -36,6 +36,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AddConfigCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.CreatePodCmd;
+import com.cloud.api.commands.CreateServiceOfferingCmd;
 import com.cloud.api.commands.DeleteDiskOfferingCmd;
 import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
@@ -69,7 +70,6 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
@@ -77,7 +77,6 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -911,7 +910,66 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	
 		return zone;
     }
-    
+
+    @Override
+    public ServiceOfferingVO createServiceOffering(CreateServiceOfferingCmd cmd) throws InvalidParameterValueException {
+        Long userId = UserContext.current().getUserId();
+        if (userId == null) {
+            userId = User.UID_SYSTEM;
+        }
+
+        String name = cmd.getServiceOfferingName();
+        if ((name == null) || (name.length() == 0)) {
+            throw new InvalidParameterValueException("Failed to create service offering: specify the name that has non-zero length");
+        }
+
+        String displayText = cmd.getDisplayText();
+        if ((displayText == null) || (displayText.length() == 0)) {
+            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the display text that has non-zero length");
+        }
+
+        Long cpuNumber = cmd.getCpuNumber();
+        if ((cpuNumber == null) || (cpuNumber.intValue() <= 0) || (cpuNumber.intValue() > 2147483647)) {
+            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the cpu number value between 1 and 2147483647");
+        }
+
+        Long cpuSpeed = cmd.getCpuSpeed();
+        if ((cpuSpeed == null) || (cpuSpeed.intValue() <= 0) || (cpuSpeed.intValue() > 2147483647)) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Failed to create service offering " + name + ": specify the cpu speed value between 1 and 2147483647");
+        }
+
+        Long memory = cmd.getMemory();
+        if ((memory == null) || (memory.intValue() <= 0) || (memory.intValue() > 2147483647)) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Failed to create service offering " + name + ": specify the memory value between 1 and 2147483647");
+        }
+
+        boolean localStorageRequired = false;
+        String storageType = cmd.getStorageType();
+        if (storageType == null) {
+            localStorageRequired = false;
+        } else if (storageType.equals("local")) {
+            localStorageRequired = true;
+        } else if (storageType.equals("shared")) {
+            localStorageRequired = false;
+        } else {
+            throw new InvalidParameterValueException("Invalid storage type " + storageType + " specified, valid types are: 'local' and 'shared'");
+        }
+
+        Boolean offerHA = cmd.getOfferHa();
+        if (offerHA == null) {
+            offerHA = false;
+        }
+
+        Boolean useVirtualNetwork = cmd.getUseVirtualNetwork();
+        if (useVirtualNetwork == null) {
+            useVirtualNetwork = Boolean.TRUE;
+        }
+
+        return createServiceOffering(userId, cmd.getServiceOfferingName(), cpuSpeed.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(),
+                localStorageRequired, offerHA, useVirtualNetwork, cmd.getTags());
+    }
+
+    @Override
     public ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean useVirtualNetwork, String tags) {
     	String networkRateStr = _configDao.getValue("network.throttling.rate");
     	String multicastRateStr = _configDao.getValue("multicast.throttling.rate");

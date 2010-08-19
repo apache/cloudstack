@@ -967,56 +967,7 @@ public interface ManagementServer {
      * @return List of Pods
      */
     List<HostPodVO> listPods(long dataCenterId);
-    
-    /**
-     * Creates a new service offering
-     * @param userId
-     * @param name
-     * @param cpu
-     * @param ramSize
-     * @param speed
-     * @param diskSpace
-     * @param displayText
-     * @param localStorageRequired
-     * @param offerHA
-     * @param useVirtualNetwork
-     * @return the new ServiceOfferingVO
-     */
-    ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean useVirtualNetwork, String tags);
-    
-    /**
-     * Updates a service offering
-     * @param userId
-     * @param serviceOfferingId
-     * @param name
-     * @param displayText
-     * @param offerHA
-     * @param useVirtualNetwork
-     * @param tags tags for the service offering. if null, no change will be made. if empty string, all tags will be removed.
-     * @return the updated ServiceOfferingVO
-     */
-//    ServiceOfferingVO updateServiceOffering(long userId, long serviceOfferingId, String name, String displayText, Boolean offerHA, Boolean useVirtualNetwork, String tags);
-    
-    /**
-     * Edits a pod in the database
-     * @param userId
-     * @param podId
-     * @param newPodName
-     * @param gateway
-     * @param cidr
-     * @param startIp
-     * @param endIp
-     * @return Pod
-     */
-//    HostPodVO editPod(long userId, long podId, String newPodName, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException;
-    
-//    /**
-//     * Deletes a pod from the database
-//     * @param userId
-//     * @param podId
-//     */
-//    void deletePod(long userId, long podId) throws InvalidParameterValueException, InternalErrorException;
-    
+
     /**
      * Adds a new zone to the database
      * @param userId
@@ -1030,21 +981,6 @@ public interface ManagementServer {
      * @return Zone
      */
     DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String dns3, String dns4, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException;
-    
-//    /**
-//     * Edits a zone in the database
-//     * @param userId
-//     * @param zoneId
-//     * @param newZoneName
-//     * @param dns1
-//     * @param dns2
-//     * @param dns3
-//     * @param dns4
-//     * @param vnetRange range of the vnet to add to the zone.
-//     * @param guestNetworkCidr
-//     * @return Zone
-//     */
-//    DataCenterVO editZone(long userId, Long zoneId, String newZoneName, String dns1, String dns2, String dns3, String dns4, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException;
     
     /**
      * Deletes a zone from the database
@@ -1063,8 +999,6 @@ public interface ManagementServer {
      * @throws InvalidParameterValueException if unable to add private ip range
      */
     String changePrivateIPRange(boolean add, Long podId, String startIP, String endIP) throws InvalidParameterValueException;
-    
-    // List<UserVO> searchUsers(String name);
     
     /**
      * Finds users with usernames similar to the parameter
