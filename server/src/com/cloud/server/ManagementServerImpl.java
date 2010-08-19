@@ -79,6 +79,7 @@ import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
+import com.cloud.api.commands.RemovePortForwardingServiceCmd;
 import com.cloud.api.commands.StartRouterCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
 import com.cloud.api.commands.StartVMCmd;
@@ -3198,6 +3199,74 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job);
     }
 
+    @Override
+    public void removeSecurityGroup(RemovePortForwardingServiceCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
+    	
+    	Account account = (Account)UserContext.current().getAccountObject();
+        Long userId = UserContext.current().getUserId();
+        Long securityGroupId = cmd.getId();
+        String publicIp = cmd.getPublicIp();
+        Long vmId = cmd.getVirtualMachineId();
+        
+        //verify input parameters
+        SecurityGroupVO securityG = _securityGroupDao.findById(securityGroupId);
+        if (securityG == null) {
+        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a port forwarding service with id " + securityGroupId);
+        } else if (account != null) {
+            if (!isAdmin(account.getType()) && (account.getId().longValue() != securityG.getAccountId())) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a port forwarding service with id " + securityGroupId + " for this account");
+            } else if (!isChildDomain(account.getDomainId(), securityG.getDomainId())) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid port forwarding service id (" + securityGroupId + ") given, unable to remove port forwarding service.");
+            }
+        }
+        
+        UserVmVO vmInstance = findUserVMInstanceById(vmId.longValue());
+        if (vmInstance == null) {
+        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
+        }
+        if (account != null) {
+            if (!isAdmin(account.getType()) && (account.getId().longValue() != vmInstance.getAccountId())) {
+                throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId + " for this account");
+            } else if (!isChildDomain(account.getDomainId(), vmInstance.getDomainId())) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid virtual machine id (" + vmId + ") given, unable to remove port forwarding service.");
+            }
+        }
+
+        Account ipAddrAccount = findAccountByIpAddress(publicIp);
+        if (ipAddrAccount == null) {
+            if (account == null) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find ip address " + publicIp);
+            } else {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "account " + account.getAccountName() + " doesn't own ip address " + publicIp);
+            }
+        }
+
+        Long accountId = ipAddrAccount.getId();
+        if ((account != null) && !isAdmin(account.getType())) {
+            if (account.getId().longValue() != accountId) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "account " + account.getAccountName() + " doesn't own ip address " + publicIp);
+            }
+        }
+
+        if (userId == null) {
+            userId = Long.valueOf(1);
+        }
+
+        long eventId = EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_REMOVE, "removing security groups for Vm with Id: "+vmId);
+
+        /*TODO : ASK KRIS AS TO WHAT DO WE DO WITH THIS PART IN THE EXECUTOR CODE
+        UserVmVO userVm = userVmDao.findById(param.getInstanceId());
+        if(userVm == null)
+        	return null;
+        
+        if (userVm.getDomainRouterId() == null) {
+        	return null;
+        } else
+        	return routerDao.findById(userVm.getDomainRouterId());
+	    */
+        removeSecurityGroup(userId, securityGroupId, publicIp, vmId, eventId);
+    }
+    
     @Override
     @DB
     public void removeSecurityGroup(long userId, long securityGroupId, String publicIp, long vmId, long startEventId) throws InvalidParameterValueException, PermissionDeniedException {
