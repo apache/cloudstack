@@ -7264,105 +7264,107 @@ public class ManagementServerImpl implements ManagementServer {
     }
     */
 
-    @Override @DB
-    public boolean removeFromLoadBalancer(long userId, long loadBalancerId, List<Long> instanceIds) throws InvalidParameterValueException {
-        Transaction txn = Transaction.currentTxn();
-        LoadBalancerVO loadBalancerLock = null;
-        boolean success = true;
-        try {
-            LoadBalancerVO loadBalancer = _loadBalancerDao.findById(loadBalancerId);
-            if (loadBalancer == null) {
-                return false;
-            }
+//    @Override @DB
+//    public boolean removeFromLoadBalancer(long userId, long loadBalancerId, List<Long> instanceIds) throws InvalidParameterValueException {
+//
+//    	Transaction txn = Transaction.currentTxn();
+//        LoadBalancerVO loadBalancerLock = null;
+//        boolean success = true;
+//        try {
+//            LoadBalancerVO loadBalancer = _loadBalancerDao.findById(loadBalancerId);
+//            if (loadBalancer == null) {
+//                return false;
+//            }
+//
+//            IPAddressVO ipAddress = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
+//            if (ipAddress == null) {
+//                return false;
+//            }
+//
+//            DomainRouterVO router = _routerDao.findBy(ipAddress.getAccountId(), ipAddress.getDataCenterId());
+//            if (router == null) {
+//                return false;
+//            }
+//
+//            txn.start();
+//            for (Long instanceId : instanceIds) {
+//                UserVm userVm = _userVmDao.findById(instanceId);
+//                if (userVm == null) {
+//                    s_logger.warn("Unable to find virtual machine with id " + instanceId);
+//                    throw new InvalidParameterValueException("Unable to find virtual machine with id " + instanceId);
+//                }
+//                FirewallRuleVO fwRule = _firewallRulesDao.findByGroupAndPrivateIp(loadBalancerId, userVm.getGuestIpAddress(), false);
+//                if (fwRule != null) {
+//                    fwRule.setEnabled(false);
+//                    _firewallRulesDao.update(fwRule.getId(), fwRule);
+//                }
+//            }
+//
+//            List<FirewallRuleVO> allLbRules = new ArrayList<FirewallRuleVO>();
+//            IPAddressVO ipAddr = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
+//            List<IPAddressVO> ipAddrs = _networkMgr.listPublicIpAddressesInVirtualNetwork(loadBalancer.getAccountId(), ipAddr.getDataCenterId(), null);
+//            for (IPAddressVO ipv : ipAddrs) {
+//                List<FirewallRuleVO> rules = _firewallRulesDao.listIPForwarding(ipv.getAddress(), false);
+//                allLbRules.addAll(rules);
+//            }
+//
+//            _networkMgr.updateFirewallRules(loadBalancer.getIpAddress(), allLbRules, router);
+//
+//            // firewall rules are updated, lock the load balancer as mappings are updated
+//            loadBalancerLock = _loadBalancerDao.acquire(loadBalancerId);
+//            if (loadBalancerLock == null) {
+//                s_logger.warn("removeFromLoadBalancer: failed to lock load balancer " + loadBalancerId + ", deleting mappings anyway...");
+//            }
+//
+//            // remove all the loadBalancer->VM mappings
+//            _loadBalancerVMMapDao.remove(loadBalancerId, instanceIds, Boolean.FALSE);
+//
+//            // Save and create the event
+//            String description;
+//            String type = EventTypes.EVENT_NET_RULE_DELETE;
+//            String level = EventVO.LEVEL_INFO;
+//            Account account = _accountDao.findById(loadBalancer.getAccountId());
+//
+//            for (FirewallRuleVO updatedRule : allLbRules) {
+//                if (!updatedRule.isEnabled()) {
+//                    _firewallRulesDao.remove(updatedRule.getId());
+//
+//                    description = "deleted load balancer rule [" + updatedRule.getPublicIpAddress() + ":" + updatedRule.getPublicPort() + "]->["
+//                            + updatedRule.getPrivateIpAddress() + ":" + updatedRule.getPrivatePort() + "]" + " " + updatedRule.getProtocol();
+//
+//                    EventUtils.saveEvent(userId, account.getId(), level, type, description);
+//                }
+//            }
+//            txn.commit();
+//        } catch (Exception ex) {
+//            s_logger.warn("Failed to delete load balancing rule with exception: ", ex);
+//            success = false;
+//            txn.rollback();
+//        } finally {
+//            if (loadBalancerLock != null) {
+//                _loadBalancerDao.release(loadBalancerId);
+//            }
+//        }
+//        return success;
+//    }
 
-            IPAddressVO ipAddress = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
-            if (ipAddress == null) {
-                return false;
-            }
-
-            DomainRouterVO router = _routerDao.findBy(ipAddress.getAccountId(), ipAddress.getDataCenterId());
-            if (router == null) {
-                return false;
-            }
-
-            txn.start();
-            for (Long instanceId : instanceIds) {
-                UserVm userVm = _userVmDao.findById(instanceId);
-                if (userVm == null) {
-                    s_logger.warn("Unable to find virtual machine with id " + instanceId);
-                    throw new InvalidParameterValueException("Unable to find virtual machine with id " + instanceId);
-                }
-                FirewallRuleVO fwRule = _firewallRulesDao.findByGroupAndPrivateIp(loadBalancerId, userVm.getGuestIpAddress(), false);
-                if (fwRule != null) {
-                    fwRule.setEnabled(false);
-                    _firewallRulesDao.update(fwRule.getId(), fwRule);
-                }
-            }
-
-            List<FirewallRuleVO> allLbRules = new ArrayList<FirewallRuleVO>();
-            IPAddressVO ipAddr = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
-            List<IPAddressVO> ipAddrs = _networkMgr.listPublicIpAddressesInVirtualNetwork(loadBalancer.getAccountId(), ipAddr.getDataCenterId(), null);
-            for (IPAddressVO ipv : ipAddrs) {
-                List<FirewallRuleVO> rules = _firewallRulesDao.listIPForwarding(ipv.getAddress(), false);
-                allLbRules.addAll(rules);
-            }
-
-            _networkMgr.updateFirewallRules(loadBalancer.getIpAddress(), allLbRules, router);
-
-            // firewall rules are updated, lock the load balancer as mappings are updated
-            loadBalancerLock = _loadBalancerDao.acquire(loadBalancerId);
-            if (loadBalancerLock == null) {
-                s_logger.warn("removeFromLoadBalancer: failed to lock load balancer " + loadBalancerId + ", deleting mappings anyway...");
-            }
-
-            // remove all the loadBalancer->VM mappings
-            _loadBalancerVMMapDao.remove(loadBalancerId, instanceIds, Boolean.FALSE);
-
-            // Save and create the event
-            String description;
-            String type = EventTypes.EVENT_NET_RULE_DELETE;
-            String level = EventVO.LEVEL_INFO;
-            Account account = _accountDao.findById(loadBalancer.getAccountId());
-
-            for (FirewallRuleVO updatedRule : allLbRules) {
-                if (!updatedRule.isEnabled()) {
-                    _firewallRulesDao.remove(updatedRule.getId());
-
-                    description = "deleted load balancer rule [" + updatedRule.getPublicIpAddress() + ":" + updatedRule.getPublicPort() + "]->["
-                            + updatedRule.getPrivateIpAddress() + ":" + updatedRule.getPrivatePort() + "]" + " " + updatedRule.getProtocol();
-
-                    EventUtils.saveEvent(userId, account.getId(), level, type, description);
-                }
-            }
-            txn.commit();
-        } catch (Exception ex) {
-            s_logger.warn("Failed to delete load balancing rule with exception: ", ex);
-            success = false;
-            txn.rollback();
-        } finally {
-            if (loadBalancerLock != null) {
-                _loadBalancerDao.release(loadBalancerId);
-            }
-        }
-        return success;
-    }
-
-    @Override
-    public long removeFromLoadBalancerAsync(long userId, long loadBalancerId, List<Long> instanceIds) {
-        LoadBalancerVO loadBalancer = _loadBalancerDao.findById(loadBalancerId);
-        IPAddressVO ipAddress = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
-        DomainRouterVO router = _routerDao.findBy(loadBalancer.getAccountId(), ipAddress.getDataCenterId());
-        LoadBalancerParam param = new LoadBalancerParam(userId, router.getId(), loadBalancerId, instanceIds);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-    	job.setUserId(UserContext.current().getUserId());
-    	job.setAccountId(loadBalancer.getAccountId());
-        job.setCmd("RemoveFromLoadBalancer");
-        job.setCmdInfo(gson.toJson(param));
-        
-        return _asyncMgr.submitAsyncJob(job, true);
-    }
+    
+//    @Override
+//    public long removeFromLoadBalancerAsync(long userId, long loadBalancerId, List<Long> instanceIds) {
+//        LoadBalancerVO loadBalancer = _loadBalancerDao.findById(loadBalancerId);
+//        IPAddressVO ipAddress = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
+//        DomainRouterVO router = _routerDao.findBy(loadBalancer.getAccountId(), ipAddress.getDataCenterId());
+//        LoadBalancerParam param = new LoadBalancerParam(userId, router.getId(), loadBalancerId, instanceIds);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//    	job.setUserId(UserContext.current().getUserId());
+//    	job.setAccountId(loadBalancer.getAccountId());
+//        job.setCmd("RemoveFromLoadBalancer");
+//        job.setCmdInfo(gson.toJson(param));
+//        
+//        return _asyncMgr.submitAsyncJob(job, true);
+//    }
 
     @Override @DB
     public boolean deleteLoadBalancer(long userId, long loadBalancerId) {

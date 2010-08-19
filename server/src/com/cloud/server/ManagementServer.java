@@ -1869,8 +1869,8 @@ public interface ManagementServer {
 
 //    void assignToLoadBalancer(long userId, long loadBalancerId, List<Long> instanceIds) throws NetworkRuleConflictException, InternalErrorException, PermissionDeniedException, InvalidParameterValueException;
 //    long assignToLoadBalancerAsync(long userId, long loadBalancerId, List<Long> instanceIds, Map<String, String> params);
-    boolean removeFromLoadBalancer(long userId, long loadBalancerId, List<Long> instanceIds) throws InvalidParameterValueException;
-    long removeFromLoadBalancerAsync(long userId, long loadBalancerId, List<Long> instanceIds);
+//    boolean removeFromLoadBalancer(long userId, long loadBalancerId, List<Long> instanceIds) throws InvalidParameterValueException;
+//    long removeFromLoadBalancerAsync(long userId, long loadBalancerId, List<Long> instanceIds);
 
     String[] getApiConfig();
     StoragePoolVO findPoolById(Long id);

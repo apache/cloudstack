@@ -23,6 +23,7 @@ import java.util.Map;
 import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
 import com.cloud.api.commands.CreateIPForwardingRuleCmd;
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
+import com.cloud.api.commands.RemoveFromLoadBalancerRuleCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.VlanVO;
@@ -199,6 +200,8 @@ public interface NetworkManager extends Manager {
                                                                        PermissionDeniedException,
                                                                        InvalidParameterValueException;
 
+    public boolean removeFromLoadBalancer(RemoveFromLoadBalancerRuleCmd cmd) throws InvalidParameterValueException;
+    
     /**
      * Add a DHCP entry on the domr dhcp server
      * @param routerHostId - the host id of the domr
