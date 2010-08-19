@@ -124,7 +124,7 @@ public class TemplateManagerImpl implements TemplateManager {
     
 
     @Override
-    public Long create(RegisterTemplateCmd cmd) throws InvalidParameterValueException, URISyntaxException, ResourceAllocationException{
+    public Long registerTemplate(RegisterTemplateCmd cmd) throws InvalidParameterValueException, URISyntaxException, ResourceAllocationException{
     	
         Account account = (Account)UserContext.current().getAccountObject();
         Long userId = UserContext.current().getUserId();
