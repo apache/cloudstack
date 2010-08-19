@@ -26,8 +26,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
-import com.cloud.async.AsyncInstanceCreateStatus;
-import com.cloud.async.AsyncJobResult;
 import com.cloud.async.executor.CreatePrivateTemplateResultObject;
 import com.cloud.serializer.SerializerHelper;
 import com.cloud.server.Criteria;
@@ -111,7 +109,7 @@ public class CreateTemplateCmd extends BaseCmd {
 
         boolean isAdmin = ((account == null) || isAdmin(account.getType()));
         if (!isAdmin) {
-            if (account.getId().longValue() != volume.getAccountId()) {
+            if (account.getId() != volume.getAccountId()) {
             	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to find a volume with id " + volumeId + " for this account");
             }
         } else if ((account != null) && !getManagementServer().isChildDomain(account.getDomainId(), volume.getDomainId())) {

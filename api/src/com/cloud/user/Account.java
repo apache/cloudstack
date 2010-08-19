@@ -20,7 +20,22 @@ package com.cloud.user;
 
 import java.util.Date;
 
-public interface Account {
+import com.cloud.domain.PartOf;
+
+public interface Account extends PartOf {
+    public enum Type {
+        Normal,
+        Admin,
+        DomainAdmin,
+        CustomerCare
+    }
+    
+    public enum State {
+        Disabled,
+        Enabled,
+        Locked
+    }
+    
     public static final short ACCOUNT_TYPE_NORMAL = 0;
     public static final short ACCOUNT_TYPE_ADMIN = 1;
     public static final short ACCOUNT_TYPE_DOMAIN_ADMIN = 2;
@@ -32,14 +47,12 @@ public interface Account {
 
     public static final long ACCOUNT_ID_SYSTEM = 1; 
 
-    public Long getId();
+    public long getId();
     public String getAccountName();
     public void setAccountName(String accountId);
     public short getType();
-    public void setType(short type);
     public String getState();
     public void setState(String state);
-    public Long getDomainId();
-    public void setDomainId(Long domainId);
+    public long getDomainId();
     public Date getRemoved();
 }

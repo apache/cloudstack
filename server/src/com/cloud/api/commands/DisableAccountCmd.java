@@ -66,11 +66,11 @@ public class DisableAccountCmd extends BaseCmd {
         }
 
         // don't allow modify system account
-        if (account.getId().longValue() == Account.ACCOUNT_ID_SYSTEM) {
+        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "can not disable system account");
         }
 
-        long jobId = getManagementServer().disableAccountAsync(account.getId().longValue());
+        long jobId = getManagementServer().disableAccountAsync(account.getId());
         if (jobId == 0) {
         	s_logger.warn("Unable to schedule async-job for DisableAccount comamnd");
         } else {

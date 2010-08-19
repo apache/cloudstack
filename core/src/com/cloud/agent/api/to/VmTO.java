@@ -17,6 +17,7 @@
  */
 package com.cloud.agent.api.to;
 
+import com.cloud.vm.NetworkTO;
 import com.cloud.vm.VMInstanceVO;
 
 public class VmTO {

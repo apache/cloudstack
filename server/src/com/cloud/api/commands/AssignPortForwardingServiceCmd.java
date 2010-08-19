@@ -98,7 +98,7 @@ public class AssignPortForwardingServiceCmd extends BaseCmd {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to apply port forwarding services " + StringUtils.join(sgIdList, ",") + " to instance " + vmId + ".  Invalid list of port forwarding services for the given instance.");
         }
         if (account != null) {
-            if (!isAdmin(account.getType()) && (account.getId().longValue() != validatedAccountId.longValue())) {
+            if (!isAdmin(account.getType()) && (account.getId() != validatedAccountId.longValue())) {
                 throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Permission denied applying port forwarding services " + StringUtils.join(sgIdList, ",") + " to instance " + vmId + ".");
             } else {
                 Account validatedAccount = getManagementServer().findAccountById(validatedAccountId);

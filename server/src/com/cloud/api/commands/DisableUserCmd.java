@@ -65,7 +65,7 @@ public class DisableUserCmd extends BaseCmd {
 
         // If the user is a System user, return an error.  We do not allow this
         Account account = getManagementServer().findAccountById(user.getAccountId());
-        if ((account != null) && (account.getId().longValue() == Account.ACCOUNT_ID_SYSTEM)) {
+        if ((account != null) && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
         	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "user id : " + id + " is a system user, disabling is not allowed");
         }
 

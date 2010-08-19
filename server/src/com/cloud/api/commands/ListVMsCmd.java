@@ -185,7 +185,7 @@ public class ListVMsCmd extends BaseCmd {
             Account acct = getManagementServer().findAccountById(Long.valueOf(vmInstance.getAccountId()));
             if (acct != null) {
                 vmData.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT.getName(), acct.getAccountName()));
-                vmData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), acct.getDomainId().toString()));
+                vmData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), Long.toString(acct.getDomainId())));
                 vmData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), getManagementServer().findDomainIdById(acct.getDomainId()).getName()));
             }
             vmData.add(new Pair<String, Object>(BaseCmd.Properties.HA_ENABLE.getName(), Boolean.valueOf(vmInstance.isHaEnabled()).toString()));

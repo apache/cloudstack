@@ -65,7 +65,7 @@ public class ListRecurringSnapshotScheduleCmd extends BaseCmd {
                 if (!getManagementServer().isChildDomain(account.getDomainId(), userAccount.getDomainId())) {
                     throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid volume id (" + volumeId + ") given, unable to list snapshots.");
                 }
-            } else if (account.getId().longValue() != volAcctId) {
+            } else if (account.getId() != volAcctId) {
                 throw new ServerApiException(BaseCmd.SNAPSHOT_INVALID_PARAM_ERROR, "account " + account.getAccountName() + " does not own volume id " + volAcctId);
             }
         }

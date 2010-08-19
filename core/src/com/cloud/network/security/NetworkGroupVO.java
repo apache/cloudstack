@@ -23,17 +23,18 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.PrimaryKeyJoinColumn;
-import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
+
+import com.cloud.domain.PartOf;
+import com.cloud.user.OwnedBy;
 
 @Entity
 @Table(name=("network_group"))
-public class NetworkGroupVO {
+public class NetworkGroupVO implements PartOf, OwnedBy {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    private Long id;
+    private long id;
 
     @Column(name="name")
     private String name;
@@ -42,17 +43,17 @@ public class NetworkGroupVO {
     private String description;
 
     @Column(name="domain_id")
-    private Long domainId;
+    private long domainId;
 
     @Column(name="account_id")
-    private Long accountId;
+    private long accountId;
     
     @Column(name="account_name")
     private String accountName = null;
 
     public NetworkGroupVO() {}
 
-    public NetworkGroupVO(String name, String description, Long domainId, Long accountId, String accountName) {
+    public NetworkGroupVO(String name, String description, long domainId, long accountId, String accountName) {
         this.name = name;
         this.description = description;
         this.domainId = domainId;
@@ -60,7 +61,7 @@ public class NetworkGroupVO {
         this.accountName = accountName;
     }
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
 
@@ -72,11 +73,11 @@ public class NetworkGroupVO {
         return description;
     }
 
-    public Long getDomainId() {
+    public long getDomainId() {
         return domainId;
     }
 
-    public Long getAccountId() {
+    public long getAccountId() {
         return accountId;
     }
     

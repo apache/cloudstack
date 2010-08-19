@@ -67,13 +67,13 @@ public class EnableAccountCmd extends BaseCmd {
         }
 
         // don't allow modify system account
-        if (account.getId().longValue() == Account.ACCOUNT_ID_SYSTEM) {
+        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "can not enable system account");
         }
 
         boolean success = true;
         try {
-            success = getManagementServer().enableAccount(account.getId().longValue());
+            success = getManagementServer().enableAccount(account.getId());
         } catch (Exception ex) {
             s_logger.error("error enabling account " + accountName + " in domain " + domainId, ex);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error enabling account " + accountName + " in domain " + domainId);

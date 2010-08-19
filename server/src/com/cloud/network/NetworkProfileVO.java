@@ -29,6 +29,7 @@ import javax.persistence.Table;
 import com.cloud.network.Network.BroadcastDomainType;
 import com.cloud.network.Network.Mode;
 import com.cloud.network.Network.TrafficType;
+import com.cloud.user.OwnedBy;
 
 /**
  * NetworkProfileVO contains information about a specific network.
@@ -36,7 +37,7 @@ import com.cloud.network.Network.TrafficType;
  */
 @Entity
 @Table(name="network_profile")
-public class NetworkProfileVO {
+public class NetworkProfileVO implements OwnedBy {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     long id;
@@ -81,6 +82,7 @@ public class NetworkProfileVO {
         this.mode = mode;
     }
 
+    @Override
     public long getAccountId() {
         return accountId;
     }

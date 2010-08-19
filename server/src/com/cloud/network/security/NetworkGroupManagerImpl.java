@@ -105,7 +105,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 			Comparator<NetworkGroupVO> {
 		@Override
 		public int compare(NetworkGroupVO o1, NetworkGroupVO o2) {
-			return o1.getId().compareTo(o2.getId());
+			return o1.getId() == o2.getId() ? 0 : o1.getId() < o2.getId() ? -1 : 1;
 		}
 	}
 

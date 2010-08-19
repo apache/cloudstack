@@ -77,7 +77,7 @@ public class ListPortForwardingRulesCmd extends BaseCmd {
             }
         } else {
             if (account != null) {
-                if ((ipAddressVO.getAccountId() == null) || (account.getId().longValue() != ipAddressVO.getAccountId().longValue())) {
+                if ((ipAddressVO.getAccountId() == null) || (account.getId() != ipAddressVO.getAccountId().longValue())) {
                     throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to list port forwarding rules for address " + ipAddress + ", permission denied for account " + account.getId());
                 }
                 addrOwner = account;

@@ -101,15 +101,15 @@ import com.cloud.async.executor.SecurityGroupParam;
 import com.cloud.async.executor.UpdateLoadBalancerParam;
 import com.cloud.async.executor.UpgradeVMParam;
 import com.cloud.async.executor.VMOperationParam;
-import com.cloud.async.executor.VolumeOperationParam;
 import com.cloud.async.executor.VMOperationParam.VmOp;
+import com.cloud.async.executor.VolumeOperationParam;
 import com.cloud.async.executor.VolumeOperationParam.VolumeOp;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
-import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.consoleproxy.ConsoleProxyManager;
@@ -119,8 +119,8 @@ import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -128,6 +128,7 @@ import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventState;
@@ -186,10 +187,13 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.FileSystem;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
@@ -197,12 +201,9 @@ import com.cloud.storage.StorageStats;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Snapshot.SnapshotType;
-import com.cloud.storage.Storage.FileSystem;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.DiskTemplateDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -213,9 +214,9 @@ import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -237,12 +238,12 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -979,7 +980,7 @@ public class ManagementServerImpl implements ManagementServer {
                     _securityGroupVMMapDao.delete(sc);
 
                     // now clean the network rules and security groups themselves
-                    _networkRuleConfigDao.deleteBySecurityGroup(securityGroup.getId().longValue());
+                    _networkRuleConfigDao.deleteBySecurityGroup(securityGroup.getId());
                     _securityGroupDao.remove(securityGroup.getId());
                 }
             }
@@ -1450,7 +1451,7 @@ public class ManagementServerImpl implements ManagementServer {
 		        txn.start();
 		        List<String> ipAddrsList = new ArrayList<String>();
 		     	for (VlanVO vlan : vlansForAccount){
-		     		ipAddrsList.addAll(_publicIpAddressDao.assignAcccountSpecificIps(accountId, account.getDomainId().longValue(), vlan.getId(), false));
+		     		ipAddrsList.addAll(_publicIpAddressDao.assignAcccountSpecificIps(accountId, account.getDomainId(), vlan.getId(), false));
 		     				     		
 		     		long size = ipAddrsList.size();
 		     		_accountMgr.incrementResourceCount(accountId, ResourceType.public_ip, size);
@@ -2472,7 +2473,7 @@ public class ManagementServerImpl implements ManagementServer {
             if (!BaseCmd.isAdmin(account.getType()) && ((templateOwner == null) || (templateOwner.longValue() != accountId))) {
                 // since the current account is not the owner of the template, check the launch permissions table to see if the
                 // account can launch a VM from this template
-                LaunchPermissionVO permission = _launchPermissionDao.findByTemplateAndAccount(templateId, account.getId().longValue());
+                LaunchPermissionVO permission = _launchPermissionDao.findByTemplateAndAccount(templateId, account.getId());
                 if (permission == null) {
                     throw new PermissionDeniedException("Account " + account.getAccountName() + " does not have permission to launch instances from template " + template.getName());
                 }
@@ -3570,7 +3571,7 @@ public class ManagementServerImpl implements ManagementServer {
             SecurityGroupVO sg = _securityGroupDao.findById(netRule.getSecurityGroupId());
             if (account != null) {
                 if (!BaseCmd.isAdmin(account.getType())) {
-                    if ((sg.getAccountId() == null) || (sg.getAccountId().longValue() != account.getId().longValue())) {
+                    if ((sg.getAccountId() != account.getId())) {
                         throw new PermissionDeniedException("Unable to delete port forwarding service rule " + networkRuleId + "; account: " + account.getAccountName() + " is not the owner");
                     }
                 } else if (!isChildDomain(account.getDomainId(), sg.getDomainId())) {
@@ -3578,7 +3579,7 @@ public class ManagementServerImpl implements ManagementServer {
                 }
             }
             if (sg != null) {
-                accountId = sg.getAccountId().longValue();
+                accountId = sg.getAccountId();
             }
         } else {
             return 0L;  // failed to delete due to netRule not found
@@ -6183,7 +6184,7 @@ public class ManagementServerImpl implements ManagementServer {
         return _consoleProxyDao.findById(instanceId);
     }
 
-    public List<DomainVO> searchForDomains(Criteria c) {
+    public List<? extends Domain> searchForDomains(Criteria c) {
         Filter searchFilter = new Filter(DomainVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
         Long domainId = (Long) c.getCriteria(Criteria.ID);
         String domainName = (String) c.getCriteria(Criteria.NAME);
@@ -6222,7 +6223,7 @@ public class ManagementServerImpl implements ManagementServer {
         return _domainDao.search(sc, searchFilter);
     }
 
-    public List<DomainVO> searchForDomainChildren(Criteria c) {
+    public List<? extends Domain> searchForDomainChildren(Criteria c) {
         Filter searchFilter = new Filter(DomainVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
         Long domainId = (Long) c.getCriteria(Criteria.ID);
         String domainName = (String) c.getCriteria(Criteria.NAME);
@@ -6323,7 +6324,7 @@ public class ManagementServerImpl implements ManagementServer {
 
             // cleanup sub-domains first
             for (DomainVO domain : domains) {
-                success = (success && cleanupDomain(domain.getId(), domain.getOwner()));
+                success = (success && cleanupDomain(domain.getId(), domain.getAccountId()));
             }
         }
 
@@ -6360,10 +6361,10 @@ public class ManagementServerImpl implements ManagementServer {
         if ((domains == null) || domains.isEmpty()) {
             _domainDao.update(domainId, domainName);
             DomainVO domain = _domainDao.findById(domainId);
-            saveEvent(new Long(1), domain.getOwner(), EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_UPDATE, "Domain, " + domainName + " was updated");
+            saveEvent(new Long(1), domain.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_UPDATE, "Domain, " + domainName + " was updated");
         } else {
             DomainVO domain = _domainDao.findById(domainId);
-            saveEvent(new Long(1), domain.getOwner(), EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_UPDATE, "Failed to update domain " + domain.getName() + " with name " + domainName + ", name in use.");
+            saveEvent(new Long(1), domain.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_UPDATE, "Failed to update domain " + domain.getName() + " with name " + domainName + ", name in use.");
         }
     }
 
@@ -6705,12 +6706,12 @@ public class ManagementServerImpl implements ManagementServer {
             for (String accountName : accountNames) {
                 Account permittedAccount = _accountDao.findActiveAccount(accountName, domainId);
                 if (permittedAccount != null) {
-                    if (permittedAccount.getId().longValue() == account.getId().longValue()) {
+                    if (permittedAccount.getId() == account.getId()) {
                         continue; // don't grant permission to the template owner, they implicitly have permission
                     }
-                    LaunchPermissionVO existingPermission = _launchPermissionDao.findByTemplateAndAccount(templateId, permittedAccount.getId().longValue());
+                    LaunchPermissionVO existingPermission = _launchPermissionDao.findByTemplateAndAccount(templateId, permittedAccount.getId());
                     if (existingPermission == null) {
-                        LaunchPermissionVO launchPermission = new LaunchPermissionVO(templateId, permittedAccount.getId().longValue());
+                        LaunchPermissionVO launchPermission = new LaunchPermissionVO(templateId, permittedAccount.getId());
                         _launchPermissionDao.persist(launchPermission);
                     }
                 } else {

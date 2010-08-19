@@ -37,6 +37,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.db.GenericDao;
 import com.google.gson.annotations.Expose;
 import com.cloud.storage.Storage;
+import com.cloud.template.VirtualMachineTemplate;
 
 @Entity
 @Table(name="vm_template")

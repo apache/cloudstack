@@ -98,6 +98,9 @@ CREATE TABLE `cloud`.`nics` (
   `network_profile_id` bigint unsigned NOT NULL COMMENT 'network id',  
   `vlan` varchar(64) COMMENT 'Virtualized network identifier',
   `state` varchar(32) NOT NULL COMMENT 'state of the creation',
+  `name` varchar(64) COMMENT 'Name of the component that reserved the ip address',
+  `reservation_id` varchar(64) COMMENT 'id for the reservation',
+  `device_id` int(10) COMMENT 'device id for the network when plugged into the virtual machine',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -837,8 +840,8 @@ CREATE TABLE `cloud`.`security_group` (
   `id` bigint unsigned NOT NULL auto_increment,
   `name` varchar(255) NOT NULL,
   `description` varchar(4096) NULL,
-  `domain_id` bigint unsigned NULL,
-  `account_id` bigint unsigned NULL,
+  `domain_id` bigint unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

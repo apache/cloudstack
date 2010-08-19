@@ -9,30 +9,12 @@ import com.cloud.network.Network.Mode;
 public class NetworkCharacteristics {
     long id;
     BroadcastDomainType type;
-    String ip4Address;
-    String netmask;
-    String gateway;
+    String cidr;
     Mode mode;
-    String[] dns;
+    long vmId;
     
     public BroadcastDomainType getType() {
         return type;
-    }
-
-    public String[] getDns() {
-        return dns;
-    }
-
-    public String getIp4Address() {
-        return ip4Address;
-    }
-
-    public String getNetmask() {
-        return netmask;
-    }
-
-    public String getGateway() {
-        return gateway;
     }
 
     public Mode getMode() {
@@ -42,17 +24,19 @@ public class NetworkCharacteristics {
     public long getNetworkId() {
         return id;
     }
+    
+    public long getVirtualMachineId() {
+        return vmId;
+    }
 
     public NetworkCharacteristics() {
     }
 
-    public NetworkCharacteristics(long id, BroadcastDomainType type, String ip4Address, String netmask, String gateway, Mode mode, String[] dns) {
+    public NetworkCharacteristics(long id, BroadcastDomainType type, String cidr, Mode mode, long vmId) {
         this.id = id;
         this.type = type;
-        this.ip4Address = ip4Address;
-        this.netmask = netmask;
-        this.gateway = gateway;
+        this.cidr = cidr;
         this.mode = mode;
-        this.dns = dns;
+        this.vmId = vmId;
     }
 }

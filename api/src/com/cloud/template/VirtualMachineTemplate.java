@@ -1,7 +1,7 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
  * 
- * This software is licensed under the GNU General Public License v3 or later.  
+ * This software is licensed under the GNU General Public License v3 or later.
  * 
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,12 +15,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.deploy;
+package com.cloud.template;
 
-/**
- * Describes how a VM should be deployed.
- *
- */
-public interface DeploymentStrategy {
+import com.cloud.storage.Storage.FileSystem;
 
+public interface VirtualMachineTemplate  {
+    
+    public static enum BootloaderType { PyGrub, HVM, External };
+    
+    /**
+     * @return id.
+     */
+    Long getId();
+    
+    /**
+     * @return public or private template
+     */
+    boolean isPublicTemplate();
+    
+    /**
+     * @return name
+     */
+    String getName();
+   
+    /**
+     * @return the file system for this template.
+     */
+    FileSystem getFileSystem();
+    
 }

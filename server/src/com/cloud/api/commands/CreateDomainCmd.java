@@ -26,7 +26,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
-import com.cloud.domain.DomainVO;
+import com.cloud.domain.Domain;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
@@ -63,9 +63,9 @@ public class CreateDomainCmd extends BaseCmd {
         }
 
         if (parentDomainId == null){
-        	parentDomainId = DomainVO.ROOT_DOMAIN;
+        	parentDomainId = Domain.ROOT_DOMAIN;
         } else {
-        	DomainVO parentDomain = null;
+        	Domain parentDomain = null;
             parentDomain = getManagementServer().findDomainIdById(parentDomainId);
         	if (parentDomain == null) {
         		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find parent domain " + parentDomainId);
@@ -76,7 +76,7 @@ public class CreateDomainCmd extends BaseCmd {
             throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Invalid parent domain " + parentDomainId + ", unable to create domain " + name);
         }
 
-        DomainVO domain = null;
+        Domain domain = null;
         try {
             domain = getManagementServer().createDomain(name, account.getId(), parentDomainId);
         } catch (IllegalArgumentException illArgEx) {
@@ -96,7 +96,7 @@ public class CreateDomainCmd extends BaseCmd {
         } else {
             returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), domain.getId()));
             returnValues.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), domain.getName()));
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.LEVEL.getName(), domain.getLevel().toString()));
+            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.LEVEL.getName(), Integer.toString(domain.getLevel())));
             returnValues.add(new Pair<String, Object>(BaseCmd.Properties.PARENT_DOMAIN_ID.getName(), domain.getParent().toString()));
             returnValues.add(new Pair<String, Object>(BaseCmd.Properties.PARENT_DOMAIN_NAME.getName(), 
         			getManagementServer().findDomainIdById(domain.getParent()).getName()));

@@ -103,7 +103,7 @@ public class UpdateIPForwardingRuleCmd extends BaseCmd {
                 if (!getManagementServer().isChildDomain(account.getDomainId(), ipAddressVO.getDomainId())) {
                     throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to update port forwarding rule on IP address " + publicIp + ", permission denied.");
                 }
-            } else if (account.getId().longValue() != ipAddressVO.getAccountId()) {
+            } else if (account.getId() != ipAddressVO.getAccountId()) {
                 throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to update port forwarding rule on IP address " + publicIp + ", permission denied.");
             }
         }

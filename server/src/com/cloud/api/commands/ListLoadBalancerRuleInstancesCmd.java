@@ -74,7 +74,7 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseCmd {
                 if (!getManagementServer().isChildDomain(account.getDomainId(), userAccount.getDomainId())) {
                     throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid load balancer rule id (" + loadBalancerId + ") given, unable to list instances.");
                 }
-            } else if (account.getId().longValue() != lbAcctId) {
+            } else if (account.getId() != lbAcctId) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "account " + account.getAccountName() + " does not own load balancer rule " + loadBalancer.getName());
             }
         }

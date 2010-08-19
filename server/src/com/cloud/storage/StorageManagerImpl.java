@@ -489,7 +489,7 @@ public class StorageManagerImpl implements StorageManager {
         volume.setDataCenterId(dc.getId());
         volume.setPodId(null);
         volume.setAccountId(accountId);
-        volume.setDomainId(account.getDomainId().longValue());
+        volume.setDomainId(account.getDomainId());
         volume.setMirrorState(MirrorState.NOT_MIRRORED);
         if (diskOffering != null) {
             volume.setDiskOfferingId(diskOffering.getId());
@@ -573,7 +573,7 @@ public class StorageManagerImpl implements StorageManager {
             createdVolume.setPoolType(pool.getPoolType());
             createdVolume.setFolder(volumeFolder);
             createdVolume.setPath(volumeUUID);
-            createdVolume.setDomainId(account.getDomainId().longValue());
+            createdVolume.setDomainId(account.getDomainId());
         } else {
             createdVolume.setStatus(AsyncInstanceCreateStatus.Corrupted);
             createdVolume.setDestroyed(true);
@@ -1577,14 +1577,14 @@ public class StorageManagerImpl implements StorageManager {
 	        volume.setDataCenterId(dc.getId());
 	        volume.setPodId(null);
 	        volume.setAccountId(accountId);
-	        volume.setDomainId(account.getDomainId().longValue());
+	        volume.setDomainId(account.getDomainId());
 	        volume.setMirrorState(MirrorState.NOT_MIRRORED);
 	        volume.setDiskOfferingId(diskOffering.getId());
 	        volume.setStorageResourceType(Storage.StorageResourceType.STORAGE_POOL);
 	        volume.setInstanceId(null);
 	        volume.setUpdated(new Date());
 	        volume.setStatus(AsyncInstanceCreateStatus.Creating);
-	        volume.setDomainId(account.getDomainId().longValue());
+	        volume.setDomainId(account.getDomainId());
 	        volume = _volsDao.persist(volume);
 	
 	        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();

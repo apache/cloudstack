@@ -68,7 +68,7 @@ public class DeletePortForwardingServiceCmd extends BaseCmd {
 
         if (account != null) {
             if (!isAdmin(account.getType())) {
-                if (account.getId().longValue() != sg.getAccountId()) {
+                if (account.getId() != sg.getAccountId()) {
                     throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to find a port forwarding service with id " + id + " for this account");
                 }
             } else if (!getManagementServer().isChildDomain(account.getDomainId(), sg.getDomainId())) {

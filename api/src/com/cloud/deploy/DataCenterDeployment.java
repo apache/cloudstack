@@ -17,12 +17,13 @@
  */
 package com.cloud.deploy;
 
-public class DataCenterDeployment implements DeploymentStrategy {
+public class DataCenterDeployment implements DeploymentPlan {
     long _dcId;
     public DataCenterDeployment(long dataCenterId) {
         _dcId = dataCenterId;
     }
     
+    @Override
     public long getDataCenterId() {
         return _dcId;
     }

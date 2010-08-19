@@ -74,7 +74,7 @@ public class DeleteIsoCmd extends BaseCmd {
 
         if (account != null) {
             if (!isAdmin(account.getType())) {
-                if (iso.getAccountId() != account.getId().longValue()) {
+                if (iso.getAccountId() != account.getId()) {
                     throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to delete ISO with id " + isoId);
                 }
             } else {

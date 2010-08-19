@@ -23,6 +23,7 @@ package com.cloud.vm;
  */
 public interface Nic {
     enum State {
+        Allocated,
         AcquireIp,
         IpAcquired,
     }
@@ -47,4 +48,6 @@ public interface Nic {
      * @return the vm instance id that this nic belongs to.
      */
     long getInstanceId();
+    
+    long getDeviceId();
 }

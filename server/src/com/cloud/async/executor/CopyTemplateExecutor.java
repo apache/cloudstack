@@ -27,14 +27,13 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.domain.DomainVO;
+import com.cloud.domain.Domain;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 import com.google.gson.Gson;
 
 public class CopyTemplateExecutor extends BaseAsyncJobExecutor {
@@ -58,7 +57,7 @@ public class CopyTemplateExecutor extends BaseAsyncJobExecutor {
 				VMTemplateHostVO templateHostRef = managementServer.findTemplateHostRef(param.getTemplateId(), destZone.getId());
 				long guestOsId = template.getGuestOSId();
 		        Account owner = managementServer.findAccountById(template.getAccountId());
-		        DomainVO domain = managementServer.findDomainIdById(owner.getDomainId());
+		        Domain domain = managementServer.findDomainIdById(owner.getDomainId());
 		        String guestOSName = managementServer.findGuestOSById(guestOsId).getName();
 				asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, composeResultObject(template, templateHostRef, destZone,guestOSName, owner, domain));
 			} else {
@@ -82,7 +81,7 @@ public class CopyTemplateExecutor extends BaseAsyncJobExecutor {
 	public void processTimeout(VMOperationListener listener, long agentId, long seq) {
 	}
 	
-	private CopyTemplateResultObject composeResultObject(VMTemplateVO template, VMTemplateHostVO templateHostRef, DataCenterVO destZone, String guestOSName, Account owner, DomainVO domain) {
+	private CopyTemplateResultObject composeResultObject(VMTemplateVO template, VMTemplateHostVO templateHostRef, DataCenterVO destZone, String guestOSName, Account owner, Domain domain) {
 		CopyTemplateResultObject resultObject = new CopyTemplateResultObject();
 		
 		
@@ -92,7 +91,7 @@ public class CopyTemplateExecutor extends BaseAsyncJobExecutor {
 		if(owner.getType() == Account.ACCOUNT_TYPE_ADMIN)
 			isAdmin = true;
 		
-		if (isAdmin || owner.getId().longValue() == template.getAccountId()) {
+		if (isAdmin || owner.getId() == template.getAccountId()) {
             // add download status
             if (templateHostRef.getDownloadState()!=Status.DOWNLOADED) {
                 String templateStatus = "Processing";

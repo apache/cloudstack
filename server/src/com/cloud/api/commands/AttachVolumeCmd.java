@@ -90,10 +90,10 @@ public class AttachVolumeCmd extends BaseCmd {
     	// If the account is not an admin, check that the volume and the virtual machine are owned by the account that was passed in
     	if (account != null) {
     	    if (!isAdmin(account.getType())) {
-                if (account.getId().longValue() != volume.getAccountId())
+                if (account.getId() != volume.getAccountId())
                     throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
 
-                if (account.getId().longValue() != vm.getAccountId())
+                if (account.getId() != vm.getAccountId())
                     throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find VM with ID: " + vmId + " for account: " + account.getAccountName());
     	    } else {
     	        if (!getManagementServer().isChildDomain(account.getDomainId(), volume.getDomainId()) ||

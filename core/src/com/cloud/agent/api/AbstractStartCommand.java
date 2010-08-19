@@ -21,7 +21,7 @@ package com.cloud.agent.api;
 import java.util.List;
 
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.VirtualMachineTemplate.BootloaderType;
+import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 
 public abstract class AbstractStartCommand extends Command {
 	

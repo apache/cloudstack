@@ -877,7 +877,7 @@ public abstract class BaseCmd {
         Account account = getAccount(params);
         if (account != null) {
             if (!isAdmin(account.getType())) {
-                if (account.getId().longValue() != targetAccountId) {
+                if (account.getId() != targetAccountId) {
                     throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find a " + targetDesc + " with id " + targetId + " for this account");
                 }
             } else if (!getManagementServer().isChildDomain(account.getDomainId(), targetDomainId)) {

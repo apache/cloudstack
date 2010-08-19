@@ -66,7 +66,7 @@ public class DetachIsoCmd extends BaseCmd {
 
         if (account != null) {
             if (!isAdmin(account.getType())) {
-                if (account.getId().longValue() != vmInstanceCheck.getAccountId()) {
+                if (account.getId() != vmInstanceCheck.getAccountId()) {
                     throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to detach ISO from virtual machine " + vmInstanceCheck.getName() + " for this account");
                 }
             } else if (!getManagementServer().isChildDomain(account.getDomainId(), vmInstanceCheck.getDomainId())) {

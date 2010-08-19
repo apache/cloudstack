@@ -95,7 +95,7 @@ public class ListNetworkGroupsCmd extends BaseCmd {
 
                 if (account != null) {
                     // check that the user is the owner of the VM (admin case was already verified
-                    if (account.getId().longValue() != userVM.getAccountId()) {
+                    if (account.getId() != userVM.getAccountId()) {
                         throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to list network groups for virtual machine instance " + vmId + "; permission denied.");
                     }
                 }

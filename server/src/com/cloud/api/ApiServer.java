@@ -76,6 +76,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.maid.StackMaid;
 import com.cloud.server.ManagementServer;
@@ -402,7 +403,7 @@ public class ApiServer implements HttpRequestHandler {
             if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
     			requestParameters.put(BaseCmd.Properties.USER_ID.getName(), new String[] { user.getId().toString() });
                 requestParameters.put(BaseCmd.Properties.ACCOUNT.getName(), new String[] { account.getAccountName() });
-                requestParameters.put(BaseCmd.Properties.DOMAIN_ID.getName(), new String[] { account.getDomainId().toString() });
+                requestParameters.put(BaseCmd.Properties.DOMAIN_ID.getName(), new String[] { Long.toString(account.getDomainId()) });
         		requestParameters.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { account });
     		} else {
     			requestParameters.put(BaseCmd.Properties.USER_ID.getName(), new String[] { user.getId().toString() });
@@ -446,7 +447,7 @@ public class ApiServer implements HttpRequestHandler {
         	if (domainPath == null || domainPath.trim().length() == 0) {
         		domainId = DomainVO.ROOT_DOMAIN;
         	} else {
-                DomainVO domainObj = _ms.findDomainByPath(domainPath);
+                Domain domainObj = _ms.findDomainByPath(domainPath);
         		if (domainObj != null) {
         			domainId = domainObj.getId();
         		} else { // if an unknown path is passed in, fail the login call
@@ -501,7 +502,7 @@ public class ApiServer implements HttpRequestHandler {
             loginParams.add(new Pair<String, Object>(BaseCmd.Properties.LASTNAME.getName(), userAcct.getLastname()));
             loginParams.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT_OBJ.getName(), account));
             loginParams.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT.getName(), account.getAccountName()));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), account.getDomainId().toString()));           
+            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), Long.toString(account.getDomainId())));           
             loginParams.add(new Pair<String, Object>(BaseCmd.Properties.TYPE.getName(), Short.valueOf(account.getType()).toString()));
             loginParams.add(new Pair<String, Object>(BaseCmd.Properties.NETWORK_TYPE.getName(), networkType));
             loginParams.add(new Pair<String, Object>(BaseCmd.Properties.HYPERVISOR_TYPE.getName(), hypervisorType));

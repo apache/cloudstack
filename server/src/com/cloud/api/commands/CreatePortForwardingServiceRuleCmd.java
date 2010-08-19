@@ -78,7 +78,7 @@ public class CreatePortForwardingServiceRuleCmd extends BaseCmd {
                 if (!getManagementServer().isChildDomain(account.getDomainId(), sg.getDomainId())) {
                     throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find rules for port forwarding service id = " + securityGroupId + ", permission denied.");
                 }
-            } else if (account.getId().longValue() != sg.getAccountId().longValue()) {
+            } else if (account.getId() != sg.getAccountId()) {
                 throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Invalid port forwarding service (" + securityGroupId + ") given, unable to create rule.");
             }
         }
@@ -88,7 +88,7 @@ public class CreatePortForwardingServiceRuleCmd extends BaseCmd {
             userId = Long.valueOf(1);
         }
 
-        long jobId = getManagementServer().createOrUpdateRuleAsync(true, userId.longValue(), sg.getAccountId().longValue(), null, securityGroupId, null, publicPort, null, privatePort, protocol, null);
+        long jobId = getManagementServer().createOrUpdateRuleAsync(true, userId.longValue(), sg.getAccountId(), null, securityGroupId, null, publicPort, null, privatePort, protocol, null);
         long ruleId = 0;
 
         if (jobId == 0) {

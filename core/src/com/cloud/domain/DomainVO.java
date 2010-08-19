@@ -31,13 +31,11 @@ import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="domain")
-public class DomainVO {
-    public static final long ROOT_DOMAIN = 1L;
-    
+public class DomainVO implements Domain {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    private Long id = null;
+    private long id;
 
     @Column(name="parent")
     private Long parent = null;
@@ -46,13 +44,13 @@ public class DomainVO {
     private String name = null;
 
     @Column(name="owner")
-    private Long owner = null;
+    private long accountId;
     
     @Column(name="path")
     private String path = null;
     
     @Column(name="level")
-    private Integer level = null;
+    private int level;
 
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
@@ -65,15 +63,15 @@ public class DomainVO {
 
     public DomainVO() {}
 
-    public DomainVO(String name, Long owner, Long parentId) {
+    public DomainVO(String name, long owner, Long parentId) {
     	this.parent = parentId;
         this.name = name;
-        this.owner = owner;
+        this.accountId = owner;
         this.path ="";
         this.level = 0;
     }
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
 
@@ -100,8 +98,8 @@ public class DomainVO {
         this.name = name;
     }
 
-    public Long getOwner() {
-        return owner;
+    public long getAccountId() {
+        return accountId;
     }
     
     public Date getRemoved() {
@@ -116,11 +114,11 @@ public class DomainVO {
     	this.path = path;
     }
     
-    public Integer getLevel() {
+    public int getLevel() {
     	return level; 
     }
     
-    public void setLevel(Integer level) {
+    public void setLevel(int level) {
     	this.level = level;
     }
     

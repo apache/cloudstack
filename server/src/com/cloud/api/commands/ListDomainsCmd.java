@@ -26,7 +26,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
-import com.cloud.domain.DomainVO;
+import com.cloud.domain.Domain;
 import com.cloud.server.Criteria;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
@@ -95,16 +95,16 @@ public class ListDomainsCmd extends BaseCmd {
             c.addCriteria(Criteria.LEVEL, level);
         }
         
-        List<DomainVO> domains = getManagementServer().searchForDomains(c);
+        List<? extends Domain> domains = getManagementServer().searchForDomains(c);
         
         List<Pair<String, Object>> domainTags = new ArrayList<Pair<String, Object>>();
         Object[] dTag = new Object[domains.size()];
         int i = 0;
-        for (DomainVO domain : domains) {
+        for (Domain domain : domains) {
             List<Pair<String, Object>> domainData = new ArrayList<Pair<String, Object>>();
             domainData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.valueOf(domain.getId()).toString()));
             domainData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), domain.getName()));
-            domainData.add(new Pair<String, Object>(BaseCmd.Properties.LEVEL.getName(), domain.getLevel().toString()));
+            domainData.add(new Pair<String, Object>(BaseCmd.Properties.LEVEL.getName(), Integer.toString(domain.getLevel())));
             
             if (domain.getParent() != null){
             	domainData.add(new Pair<String, Object>(BaseCmd.Properties.PARENT_DOMAIN_ID.getName(), domain.getParent().toString()));

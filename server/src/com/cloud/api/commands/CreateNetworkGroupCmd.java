@@ -110,7 +110,7 @@ public class CreateNetworkGroupCmd extends BaseCmd {
         List<Pair<String, Object>> embeddedObject = new ArrayList<Pair<String, Object>>();
         
         List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), networkGroup.getId().toString()));
+        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.toString(networkGroup.getId())));
         returnValues.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), networkGroup.getName()));
         returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DESCRIPTION.getName(), networkGroup.getDescription()));
         

@@ -27,15 +27,18 @@ import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
 
+import com.cloud.domain.PartOf;
+import com.cloud.user.OwnedBy;
+
 @Entity
 @Table(name=("security_group"))
 @SecondaryTable(name="account",
         pkJoinColumns={@PrimaryKeyJoinColumn(name="account_id", referencedColumnName="id")})
-public class SecurityGroupVO {
+public class SecurityGroupVO implements PartOf, OwnedBy {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    private Long id;
+    private long id;
 
     @Column(name="name")
     private String name;
@@ -44,24 +47,24 @@ public class SecurityGroupVO {
     private String description;
 
     @Column(name="domain_id")
-    private Long domainId;
+    private long domainId;
 
     @Column(name="account_id")
-    private Long accountId;
+    private long accountId;
     
     @Column(name="account_name", table="account", insertable=false, updatable=false)
     private String accountName = null;
 
     public SecurityGroupVO() {}
 
-    public SecurityGroupVO(String name, String description, Long domainId, Long accountId) {
+    public SecurityGroupVO(String name, String description, long domainId, long accountId) {
         this.name = name;
         this.description = description;
         this.domainId = domainId;
         this.accountId = accountId;
     }
 
-    public Long getId() {
+    public long getId() {
         return id;
     }
 
@@ -73,11 +76,11 @@ public class SecurityGroupVO {
         return description;
     }
 
-    public Long getDomainId() {
+    public long getDomainId() {
         return domainId;
     }
 
-    public Long getAccountId() {
+    public long getAccountId() {
         return accountId;
     }
     

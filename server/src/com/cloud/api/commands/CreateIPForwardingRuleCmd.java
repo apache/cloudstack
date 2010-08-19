@@ -98,7 +98,7 @@ public class CreateIPForwardingRuleCmd extends BaseCmd {
                 if (!getManagementServer().isChildDomain(account.getDomainId(), vmOwner.getDomainId())) {
                     throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to create port forwarding rule, IP address " + ipAddress + " to virtual machine " + vmId + ", permission denied.");
                 }
-            } else if (account.getId().longValue() != userVM.getAccountId()) {
+            } else if (account.getId() != userVM.getAccountId()) {
                 throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to create port forwarding rule, IP address " + ipAddress + " to virtual machine " + vmId + ", permission denied.");
             }
         }

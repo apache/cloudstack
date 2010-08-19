@@ -85,7 +85,7 @@ public class ListPortForwardingServiceRulesCmd extends BaseCmd {
         if ((groupId != null) && (accountId != null)) {
             SecurityGroupVO sg = getManagementServer().findSecurityGroupById(groupId);
             if (sg != null) {
-                if ((sg.getAccountId() != null) && sg.getAccountId().longValue() != accountId.longValue()) {
+                if (sg.getAccountId() != accountId.longValue()) {
                     throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to list port forwarding service rules, account " + accountId + " does not own port forwarding service " + groupId);
                 }
             } else {

@@ -72,8 +72,8 @@ import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Vlan;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -136,14 +136,14 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouter;
+import com.cloud.vm.DomainRouter.Role;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
-import com.cloud.vm.DomainRouter.Role;
-import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -588,7 +588,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                             guestIpAddress,
                             guestNetmask,
                             accountId,
-                            account.getDomainId().longValue(),
+                            account.getDomainId(),
                             publicMacAddress,
                             publicIpAddress,
                             vlanNetmask,
@@ -794,6 +794,8 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         	s_logger.debug("Lock on router " + routerId + " is acquired");
         
         boolean started = false;
+        String vnet = null;
+        boolean vnetAllocated = false;
         try {
 	        final State state = router.getState();
 	        if (state == State.Running) {
@@ -847,8 +849,6 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 	            throw new ConcurrentOperationException("Someone else is starting the router: " + router.toString());
 	        }
 	
-	        String vnet = null;
-	        boolean vnetAllocated = false;
 	        final boolean mirroredVols = router.isMirroredVols();
 	        try {
 	            event = new EventVO();
@@ -862,6 +862,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 	                for (final UserVmVO vm : vms) {
 	                    if (vm.getVnet() != null) {
 	                        vnet = vm.getVnet();
+	                        break;
 	                    }
 	                }
 	            }
@@ -880,7 +881,9 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 	                    vnet = _dcDao.allocateVnet(router.getDataCenterId(), router.getAccountId());
 	                }
 	                vnetAllocated = true;
-	                routerMacAddress = getRouterMacForVnet(dc, vnet);
+	                if(vnet != null){
+	                    routerMacAddress = getRouterMacForVnet(dc, vnet);
+	                }
 	            } else if (router.getRole() == Role.DHCP_USERDATA) {
 	            	if (!Vlan.UNTAGGED.equals(router.getVlanId())) {
 	            		vnet = router.getVlanId().trim();
@@ -1000,28 +1003,6 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 	            return _routerDao.findById(routerId);
 	        } catch (final Throwable th) {
 	        	
-	        	Transaction txn = Transaction.currentTxn();
-        		if (!started) {
-		        	txn.start();
-		            if (vnetAllocated == true && vnet != null) {
-		                _dcDao.releaseVnet(vnet, router.getDataCenterId(), router.getAccountId());
-		            }
-		
-		            router.setVnet(null);
-		            String privateIpAddress = router.getPrivateIpAddress();
-		            
-		            router.setPrivateIpAddress(null);
-		            
-		            if (privateIpAddress != null) {
-		            	_dcDao.releasePrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
-		            }
-		            
-		
-		            if (_routerDao.updateIf(router, Event.OperationFailed, null)) {
-			            txn.commit();
-		            }
-        		}
-		
 	            if (th instanceof ExecutionException) {
 	                s_logger.error("Error while starting router due to " + th.getMessage());
 	            } else if (th instanceof ConcurrentOperationException) {
@@ -1034,13 +1015,28 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 	            return null;
 	        }
         } finally {
-        	if (router != null) {
-        		
-                if(s_logger.isDebugEnabled())
-                	s_logger.debug("Releasing lock on router " + routerId);
-        		_routerDao.release(routerId);
-        	}
-        	if (!started){
+            
+            if (!started){
+                Transaction txn = Transaction.currentTxn();
+                txn.start();
+                if (vnetAllocated == true && vnet != null) {
+                    _dcDao.releaseVnet(vnet, router.getDataCenterId(), router.getAccountId());
+                }
+
+                router.setVnet(null);
+                String privateIpAddress = router.getPrivateIpAddress();
+
+                router.setPrivateIpAddress(null);
+
+                if (privateIpAddress != null) {
+                    _dcDao.releasePrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
+                }
+
+
+                if (_routerDao.updateIf(router, Event.OperationFailed, null)) {
+                    txn.commit();
+                }
+                
                 EventVO event = new EventVO();
                 event.setUserId(1L);
                 event.setAccountId(router.getAccountId());
@@ -1049,7 +1045,14 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                 event.setLevel(EventVO.LEVEL_ERROR);
                 event.setStartId(startEventId);
                 _eventDao.persist(event);
+            }
+            
+        	if (router != null) {
+                if(s_logger.isDebugEnabled())
+                	s_logger.debug("Releasing lock on router " + routerId);
+        		_routerDao.release(routerId);
         	}
+
         }
     }
 

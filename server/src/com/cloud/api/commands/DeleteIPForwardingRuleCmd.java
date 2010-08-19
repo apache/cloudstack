@@ -85,13 +85,13 @@ public class DeleteIPForwardingRuleCmd extends BaseCmd {
                 if (!getManagementServer().isChildDomain(account.getDomainId(), ruleOwner.getDomainId())) {
                     throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to delete port forwarding rule " + ruleId + ", permission denied.");
                 }
-            } else if (account.getId().longValue() != ruleOwner.getId().longValue()) {
+            } else if (account.getId() != ruleOwner.getId()) {
                 throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to delete port forwarding rule " + ruleId + ", permission denied.");
             }
         }
 
         try {
-            getManagementServer().deleteRule(ruleId.longValue(), userId.longValue(), ruleOwner.getId().longValue());
+            getManagementServer().deleteRule(ruleId.longValue(), userId.longValue(), ruleOwner.getId());
         } catch (InvalidParameterValueException ex1) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to delete port forwarding rule " + ruleId + ", internal error.");
         } catch (PermissionDeniedException ex2) {

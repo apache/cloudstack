@@ -30,9 +30,9 @@ import com.cloud.async.AsyncJobVO;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.Criteria;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
@@ -141,7 +141,7 @@ public class ListSnapshotsCmd extends BaseCmd {
             Account acct = getManagementServer().findAccountById(Long.valueOf(snapshot.getAccountId()));
             if (acct != null) {
                 snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT.getName(), acct.getAccountName()));
-                snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), acct.getDomainId().toString()));
+                snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), Long.toString(acct.getDomainId())));
                 snapshotData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), getManagementServer().findDomainIdById(acct.getDomainId()).getName()));
             }
             volumeId = snapshot.getVolumeId();

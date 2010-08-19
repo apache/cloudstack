@@ -28,8 +28,8 @@ import org.apache.log4j.Logger;
 import com.cloud.resource.DiskPreparer;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.VirtualMachineTemplate.BootloaderType;
 import com.cloud.storage.Volume.VolumeType;
+import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.script.Script;
 

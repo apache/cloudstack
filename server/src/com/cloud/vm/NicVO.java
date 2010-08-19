@@ -69,6 +69,15 @@ public class NicVO implements Nic {
     @Column(name="state")
     @Enumerated(value=EnumType.STRING)
     State state;
+    
+    @Column(name="name")
+    String conciergeName;
+    
+    @Column(name="reservation_id")
+    String reservationId;
+    
+    @Column(name="device_id")
+    int deviceId;
 
     @Override
     public String getIp4Address() {
@@ -102,5 +111,30 @@ public class NicVO implements Nic {
     @Override
     public long getNetworkProfileId() {
         return networkProfileId;
+    }
+    
+    @Override
+    public long getDeviceId() {
+        return deviceId;
+    }
+    
+    public String getConciergeName() {
+        return conciergeName;
+    }
+    
+    public String getReservationId() {
+        return reservationId;
+    }
+    
+    public void setReservationId(String id) {
+        this.reservationId = id;
+    }
+    
+    public void setConciergeName(String conciergeName) {
+        this.conciergeName = conciergeName;
+    }
+    
+    public void setDeviceId(int deviceId) {
+        this.deviceId = deviceId;
     }
 }

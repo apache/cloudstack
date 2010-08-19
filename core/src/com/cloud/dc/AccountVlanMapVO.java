@@ -25,9 +25,11 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.user.OwnedBy;
+
 @Entity
 @Table(name="account_vlan_map")
-public class AccountVlanMapVO {
+public class AccountVlanMapVO implements OwnedBy {
 	    
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -52,7 +54,8 @@ public class AccountVlanMapVO {
 	public Long getId() {
 		return id;
 	}
-	
+
+	@Override
 	public long getAccountId() {
 		return accountId;
 	}

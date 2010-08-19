@@ -211,7 +211,7 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
             DomainVO d1 = domainPair.get(0);
             DomainVO d2 = domainPair.get(1);
 
-            if (d1.getId().equals(parentId)) {
+            if (d1.getId() == parentId) {
                 result = d2.getPath().startsWith(d1.getPath());
             } else {
                 result = d1.getPath().startsWith(d2.getPath());

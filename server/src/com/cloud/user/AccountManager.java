@@ -102,4 +102,6 @@ public interface AccountManager extends Manager {
 	
 	AccountVO getSystemAccount();
 	
+	
+	
 }

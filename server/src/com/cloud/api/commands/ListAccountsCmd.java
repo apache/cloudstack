@@ -28,7 +28,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.configuration.ResourceCount.ResourceType;
-import com.cloud.domain.DomainVO;
+import com.cloud.domain.Domain;
 import com.cloud.server.Criteria;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
@@ -84,7 +84,7 @@ public class ListAccountsCmd extends BaseCmd{
         	isAdmin = true;
         	if (domainId == null) {
                 // default domainId to the admin's domain
-                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+                domainId = ((account == null) ? Domain.ROOT_DOMAIN : account.getDomainId());
         	} else if (account != null) {
         	    if (!getManagementServer().isChildDomain(account.getDomainId(), domainId)) {
         	        throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid domain id (" + domainId + ") given, unable to list accounts");
@@ -135,8 +135,8 @@ public class ListAccountsCmd extends BaseCmd{
                 accountData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.valueOf(accountO.getId()).toString()));
                 accountData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), accountO.getAccountName()));
                 accountData.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT_TYPE.getName(), Short.valueOf(accountO.getType()).toString()));
-                DomainVO domain = getManagementServer().findDomainIdById(accountO.getDomainId());
-                accountData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), domain.getId().toString()));
+                Domain domain = getManagementServer().findDomainIdById(accountO.getDomainId());
+                accountData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), Long.toString(domain.getId())));
                 accountData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), domain.getName()));
 
                 //get network stat
