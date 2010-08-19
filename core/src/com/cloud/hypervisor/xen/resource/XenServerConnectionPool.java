@@ -269,7 +269,7 @@ public class XenServerConnectionPool {
             try {
                 slaveConn = new Connection(new URL("http://" + slaveAddress), wait);
                 if (slaveConn != null) {
-                    Session slaveSession = Session.slaveLocalLoginWithPassword(slaveConn, username, password);
+                    Session.slaveLocalLoginWithPassword(slaveConn, username, password);
                     Pool.Record slavePoolr = getPoolRecord(slaveConn);
                     String possibleMaster = slavePoolr.master.getAddress(slaveConn);
                     Integer c = count.get(possibleMaster);
@@ -280,7 +280,7 @@ public class XenServerConnectionPool {
                     }
                     count.put(possibleMaster, c);
                     try {
-                        slaveSession.logout(slaveConn);
+                        Session.logout(slaveConn);
                     } catch (Exception e) {
                         s_logger.debug("client session logout: " + e.getMessage());
                     }
