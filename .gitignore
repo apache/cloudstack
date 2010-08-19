@@ -13,3 +13,5 @@ dist
 *~
 *.bak
 cloud-*.tar.bz2
+*.pyc
+build.number
