@@ -81,7 +81,6 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     protected String _privateNic;
     protected String _storageNic1;
     protected String _storageNic2;
-    protected boolean _formPoolsInPod;
     protected int _wait;
     protected XenServerConnectionPool _connPool;
     protected String _increase;
@@ -132,19 +131,6 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             String cluster = null;
             if (clusterId != null) {
                 cluster = Long.toString(clusterId);
-            } else if (_formPoolsInPod) {
-                if (podId != null) {
-                    List<ClusterVO> clusters = _clusterDao.listByPodId(podId);
-                    if (clusters.size() > 1) {
-                        throw new DiscoveryException("There are more than one cluster in the pod and we don't know which to add to.");
-                    } else if (clusters.size() == 1) {
-                        clusterId = clusters.get(0).getId();
-                        cluster = Long.toString(clusterId);
-                    } else {
-                        Map<Pool, Pool.Record> pools = Pool.getAllRecords(conn);
-                        cluster = pools.values().iterator().next().uuid;
-                    }
-                }
             }
             
             Map<Host, Host.Record> hosts = Host.getAllRecords(conn);
@@ -300,7 +286,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         if ( resources.size() == 0 ) {
             return false;
         }
-        if (clusterId == null && !_formPoolsInPod) {
+        if (clusterId == null ) {
             if (resources.size() > 1) {
                 s_logger.warn("There's no cluster specified but we found a pool of xenservers " + resources.size());
                 throw new DiscoveryException("There's no cluster specified but we found a pool of xenservers " + resources.size());
@@ -437,9 +423,6 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
 
         value = _params.get("xen.check.hvm");
         _checkHvm = value == null ? true : Boolean.parseBoolean(value);
- 
-        value = _params.get(Config.CreatePoolsInPod.key());
-        _formPoolsInPod = Boolean.parseBoolean(value);
         
         _connPool = XenServerConnectionPool.getInstance();
         
