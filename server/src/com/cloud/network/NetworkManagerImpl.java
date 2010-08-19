@@ -221,6 +221,9 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 
         final long accountId = account.getId();
         
+        // use a dedicated account object for locking test, so that when we get SQL exception
+        // we won't be misled to release an actually un-owned lock
+        AccountVO lockedAccount = null;
         Transaction txn = Transaction.currentTxn();
         try {
         	final EventVO event = new EventVO();
@@ -230,8 +233,8 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             
             txn.start();
 
-        	account = _accountDao.acquire(accountId);
-            if (account == null) {
+            lockedAccount = _accountDao.acquire(accountId);
+            if (lockedAccount == null) {
                 s_logger.warn("Unable to lock account " + accountId);
                 return null;
             }
@@ -339,7 +342,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             txn.commit();
             return null;
         } finally {
-        	if (account != null) {
+        	if (lockedAccount != null) {
         		if(s_logger.isDebugEnabled())
         			s_logger.debug("Releasing lock account " + accountId);
         		
@@ -767,6 +770,9 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         if(s_logger.isDebugEnabled())
         	s_logger.debug("Lock on router " + routerId + " is acquired");
         
+        boolean started = false;
+        String vnet = null;
+        boolean vnetAllocated = false;
         try {
 	        final State state = router.getState();
 	        if (state == State.Running) {
@@ -813,10 +819,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 	            throw new ConcurrentOperationException("Someone else is starting the router: " + router.toString());
 	        }
 	
-	        String vnet = null;
-	        boolean vnetAllocated = false;
 	        final boolean mirroredVols = router.isMirroredVols();
-	        boolean started = false;
 	        try {
 	            event = new EventVO();
 	            event.setUserId(1L);
@@ -829,6 +832,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 	                for (final UserVmVO vm : vms) {
 	                    if (vm.getVnet() != null) {
 	                        vnet = vm.getVnet();
+	                        break;
 	                    }
 	                }
 	            }
@@ -841,7 +845,9 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 	                    vnet = _dcDao.allocateVnet(router.getDataCenterId(), router.getAccountId());
 	                }
 	                vnetAllocated = true;
-	                routerMacAddress = getRouterMacForVnet(dc, vnet);
+	                if(vnet != null){
+	                    routerMacAddress = getRouterMacForVnet(dc, vnet);
+	                }
 	            } else if (router.getRole() == Role.DHCP_USERDATA) {
 	            	if (!Vlan.UNTAGGED.equals(router.getVlanId())) {
 	            		vnet = router.getVlanId().trim();
@@ -964,28 +970,6 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 	            return _routerDao.findById(routerId);
 	        } catch (final Throwable th) {
 	        	
-	        	Transaction txn = Transaction.currentTxn();
-        		if (!started) {
-		        	txn.start();
-		            if (vnetAllocated == true && vnet != null) {
-		                _dcDao.releaseVnet(vnet, router.getDataCenterId(), router.getAccountId());
-		            }
-		
-		            router.setVnet(null);
-		            String privateIpAddress = router.getPrivateIpAddress();
-		            
-		            router.setPrivateIpAddress(null);
-		            
-		            if (privateIpAddress != null) {
-		            	_dcDao.releasePrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
-		            }
-		            
-		
-		            if (_routerDao.updateIf(router, Event.OperationFailed, null)) {
-			            txn.commit();
-		            }
-        		}
-		
 	            if (th instanceof ExecutionException) {
 	                s_logger.error("Error while starting router due to " + th.getMessage());
 	            } else if (th instanceof ConcurrentOperationException) {
@@ -998,8 +982,30 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 	            return null;
 	        }
         } finally {
+            
+            if (!started){
+                Transaction txn = Transaction.currentTxn();
+                txn.start();
+                if (vnetAllocated == true && vnet != null) {
+                    _dcDao.releaseVnet(vnet, router.getDataCenterId(), router.getAccountId());
+                }
+
+                router.setVnet(null);
+                String privateIpAddress = router.getPrivateIpAddress();
+
+                router.setPrivateIpAddress(null);
+
+                if (privateIpAddress != null) {
+                    _dcDao.releasePrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
+                }
+
+
+                if (_routerDao.updateIf(router, Event.OperationFailed, null)) {
+                    txn.commit();
+                }
+            }
+            
         	if (router != null) {
-        		
                 if(s_logger.isDebugEnabled())
                 	s_logger.debug("Releasing lock on router " + routerId);
         		_routerDao.release(routerId);

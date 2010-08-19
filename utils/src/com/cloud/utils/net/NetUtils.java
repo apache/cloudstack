@@ -668,7 +668,15 @@ public class NetUtils {
     		return null;
     	}
     	/*reserve gateway*/
-    	return getIpRangeFromCidr(getLinkLocalGateway(), 32 - size);
+    	String[] range = getIpRangeFromCidr(getLinkLocalGateway(), 32 - size);
+    	 
+    	if (range[0].equalsIgnoreCase(getLinkLocalGateway())) {
+    		/*remove the gateway*/
+    		long ip = ip2Long(range[0]);
+    		ip += 1;
+    		range[0] = long2Ip(ip);
+    	}
+    	return range;
     }
     
     public static String getLinkLocalIpEnd() {

@@ -75,6 +75,13 @@ public class AddHostCmd extends BaseCmd {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "Can't specify cluster by both id and name");
         }
         
+        if (clusterName == null && clusterId == null) {  
+               // Stand alone, assign a name to it
+               String[] stringarray = url.split("//");
+               String address = stringarray[stringarray.length - 1];
+               clusterName = "Standalone-" + address; 
+        }
+        
         if ((clusterName != null || clusterId != null) && podId == null) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "Can't specify cluster without specifying the pod");
         }

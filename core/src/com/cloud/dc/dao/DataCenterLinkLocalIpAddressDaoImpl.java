@@ -52,6 +52,7 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
         SearchCriteria sc = FreeIpSearch.create();
         sc.setParameters("dc", dcId);
         sc.setParameters("pod", podId);
+        sc.setParameters("ipAddr", NetUtils.getLinkLocalGateway());  /*explicitly removing the gateway*/
         
         Transaction txn = Transaction.currentTxn();
         try {
@@ -141,6 +142,7 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
         FreeIpSearch = createSearchBuilder();
         FreeIpSearch.and("dc", FreeIpSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         FreeIpSearch.and("pod", FreeIpSearch.entity().getPodId(), SearchCriteria.Op.EQ);
+        FreeIpSearch.and("ipAddr", FreeIpSearch.entity().getIpAddress(), SearchCriteria.Op.NEQ);
         FreeIpSearch.and("taken", FreeIpSearch.entity().getTakenAt(), SearchCriteria.Op.NULL);
         FreeIpSearch.done();
         
