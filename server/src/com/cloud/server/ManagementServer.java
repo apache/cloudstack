@@ -17,8 +17,6 @@
  */
 package com.cloud.server;
 
-import java.net.URISyntaxException;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
