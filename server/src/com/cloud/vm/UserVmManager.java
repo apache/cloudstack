@@ -22,6 +22,7 @@ import java.util.List;
 
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.ResetVMPasswordCmd;
 import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.StopVMCmd;
 import com.cloud.api.commands.UpdateVMCmd;
@@ -107,7 +108,7 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @param password the password of the virtual machine.
      * @param true if reset worked successfully, false otherwise
      */
-    boolean resetVMPassword(long userId, long vmId, String password);
+    boolean resetVMPassword(ResetVMPasswordCmd cmd);
     
     /**
      * Attaches the specified volume to the specified VM

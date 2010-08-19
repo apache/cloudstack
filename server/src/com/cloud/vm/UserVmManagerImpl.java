@@ -66,6 +66,7 @@ import com.cloud.agent.manager.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.ResetVMPasswordCmd;
 import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.StopVMCmd;
 import com.cloud.api.commands.UpdateVMCmd;
@@ -176,6 +177,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
@@ -270,17 +272,62 @@ public class UserVmManagerImpl implements UserVmManager {
     }
 
     @Override
-    public boolean resetVMPassword(long userId, long vmId, String password) {
-        UserVmVO vm = _vmDao.findById(vmId);
-        VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
+    public boolean resetVMPassword(ResetVMPasswordCmd cmd){
+    	
+    	Long userId = UserContext.current().getUserId();
+    	boolean result = resetVMPasswordInternal(cmd);
+
+        // Log event
+        UserVmVO userVm = _userVmDao.findById(cmd.getId());
+        if (userVm != null) {
+            if (result) {
+            	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_RESETPASSWORD, "successfully reset password for VM : " + userVm.getName(), null);
+            } else {
+            	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_RESETPASSWORD, "unable to reset password for VM : " + userVm.getName(), null);
+            }
+        } else {
+            s_logger.warn("Unable to find vm = " + cmd.getId()+ " to reset password");
+        }
+        
+        return result;
+    }
+
+    private boolean resetVMPasswordInternal(ResetVMPasswordCmd cmd) {
+    	
+    	//Input validation
+    	Account account = (Account)UserContext.current().getAccountObject();
+    	Long userId = UserContext.current().getUserId();
+    	Long id = cmd.getId();
+    	
+        String password = null;
+
+        //Verify input parameters
+        UserVmVO vmInstance = _userVmDao.findById(id.longValue());
+        if (vmInstance == null) {
+        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + id);
+        }
+        
+        userId = accountAndUserValidation(id, account, userId, vmInstance);
+        
+    	VMTemplateVO template = _templateDao.findById(vmInstance.getTemplateId());
+    	if (template.getEnablePassword()) {
+            password = PasswordGenerator.generateRandomPassword();;
+    	} else {
+    		password = "saved_password";
+    	}
+
+        if (password == null || password.equals("")) {
+            return false;
+        }
+    	
         if (template.getEnablePassword()) {
-        	if (vm.getDomainRouterId() == null)
+        	if (vmInstance.getDomainRouterId() == null)
         		/*TODO: add it for external dhcp mode*/
         		return true;
-	        if (_networkMgr.savePasswordToRouter(vm.getDomainRouterId(), vm.getPrivateIpAddress(), password)) {
+	        if (_networkMgr.savePasswordToRouter(vmInstance.getDomainRouterId(), vmInstance.getPrivateIpAddress(), password)) {
 	            // Need to reboot the virtual machine so that the password gets redownloaded from the DomR, and reset on the VM
-	        	if (!rebootVirtualMachine(userId, vmId)) {
-	        		if (vm.getState() == State.Stopped) {
+	        	if (!rebootVirtualMachine(userId, id)) {
+	        		if (vmInstance.getState() == State.Stopped) {
 	        			return true;
 	        		}
 	        		return false;

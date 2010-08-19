@@ -1939,26 +1939,26 @@ public class ManagementServerImpl implements ManagementServer {
     	return PasswordGenerator.generateRandomPassword();
     }
 
-    @Override
-    public boolean resetVMPassword(long userId, long vmId, String password) {
-        if (password == null || password.equals("")) {
-            return false;
-        }
-        boolean succeed = _vmMgr.resetVMPassword(userId, vmId, password);
-
-        // Log event
-        UserVmVO userVm = _userVmDao.findById(vmId);
-        if (userVm != null) {
-            if (succeed) {
-            	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_RESETPASSWORD, "successfully reset password for VM : " + userVm.getName(), null);
-            } else {
-            	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_RESETPASSWORD, "unable to reset password for VM : " + userVm.getName(), null);
-            }
-        } else {
-            s_logger.warn("Unable to find vm = " + vmId + " to reset password");
-        }
-        return succeed;
-    }
+//    @Override
+//    public boolean resetVMPassword(long userId, long vmId, String password) {
+//        if (password == null || password.equals("")) {
+//            return false;
+//        }
+//        boolean succeed = _vmMgr.resetVMPassword(userId, vmId, password);
+//
+//        // Log event
+//        UserVmVO userVm = _userVmDao.findById(vmId);
+//        if (userVm != null) {
+//            if (succeed) {
+//            	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_RESETPASSWORD, "successfully reset password for VM : " + userVm.getName(), null);
+//            } else {
+//            	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_RESETPASSWORD, "unable to reset password for VM : " + userVm.getName(), null);
+//            }
+//        } else {
+//            s_logger.warn("Unable to find vm = " + vmId + " to reset password");
+//        }
+//        return succeed;
+//    }
 
     @Override
     public void attachVolumeToVM(long vmId, long volumeId, Long deviceId, long startEventId) throws InternalErrorException {
@@ -2186,21 +2186,21 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job, true);
     }
 
-    @Override
-    public long resetVMPasswordAsync(long userId, long vmId, String password) {
-        ResetVMPasswordParam param = new ResetVMPasswordParam(userId, vmId, password);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        UserVm vm = _userVmDao.findById(vmId);
-		AsyncJobVO job = new AsyncJobVO();
-		job.setUserId(UserContext.current().getUserId());
-		job.setAccountId(vm.getAccountId());
-		job.setCmd("ResetVMPassword");
-		job.setCmdInfo(gson.toJson(param));
-		job.setCmdOriginator("virtualmachine");
-		
-		return _asyncMgr.submitAsyncJob(job, true);
-	}
+//    @Override
+//    public long resetVMPasswordAsync(long userId, long vmId, String password) {
+//        ResetVMPasswordParam param = new ResetVMPasswordParam(userId, vmId, password);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        UserVm vm = _userVmDao.findById(vmId);
+//		AsyncJobVO job = new AsyncJobVO();
+//		job.setUserId(UserContext.current().getUserId());
+//		job.setAccountId(vm.getAccountId());
+//		job.setCmd("ResetVMPassword");
+//		job.setCmdInfo(gson.toJson(param));
+//		job.setCmdOriginator("virtualmachine");
+//		
+//		return _asyncMgr.submitAsyncJob(job, true);
+//	}
 
     private boolean validPassword(String password) {
         for (int i = 0; i < password.length(); i++) {

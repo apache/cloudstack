@@ -609,8 +609,8 @@ public interface ManagementServer {
  	 * @param password the password for the virtual machine
      * @return true or false, based on the success of the method
      */
-    boolean resetVMPassword(long userId, long vmId, String password);
-    long resetVMPasswordAsync(long userId, long vmId, String password);
+//    boolean resetVMPassword(long userId, long vmId, String password);
+//    long resetVMPasswordAsync(long userId, long vmId, String password);
     
     /**
      * Attaches the specified volume to the specified VM
