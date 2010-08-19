@@ -66,7 +66,11 @@ function showDomainsTab() {
     
     function drawTree(id, level, container) {		        
         $.ajax({
+<<<<<<< HEAD
 	   data: createURL("command=listDomainChildren&id="+id+"&response=json"),
+=======
+		    data: "command=listDomainChildren&id="+id+"&response=json&pageSize=-1",
+>>>>>>> e8446f8... Issue #: 5975
 		    dataType: "json",
 		    async: false,
 		    success: function(json) {					        
@@ -321,7 +325,11 @@ function showDomainsTab() {
 	    rightPanelSearchResult.show();	                	        	
         var keyword = searchInput.val();             
         $.ajax({
+<<<<<<< HEAD
 	   data: createURL("command=listDomains&keyword="+keyword+"&response=json"+maxPageSize),
+=======
+	        data: "command=listDomains&keyword="+keyword+"&response=json&pageSize=-1", //pageSize=-1 will return all items (no limitation)
+>>>>>>> e8446f8... Issue #: 5975
 	        dataType: "json",
 	        async: false,
 	        success: function(json) {					        
@@ -350,7 +358,11 @@ function showDomainsTab() {
 	function drawRootNode(rootDomainId) {
 	    treeContentBox.empty();
 	    $.ajax({
+<<<<<<< HEAD
 		   data: createURL("command=listDomains&id="+rootDomainId+"&response=json"),
+=======
+	        data: "command=listDomains&id="+rootDomainId+"&response=json&pageSize=-1", //pageSize=-1 will return all items (no limitation)
+>>>>>>> e8446f8... Issue #: 5975
 	        dataType: "json",
 	        async: false,
 	        success: function(json) {					        
