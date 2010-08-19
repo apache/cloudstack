@@ -1874,7 +1874,6 @@ public interface ManagementServer {
 
     String[] getApiConfig();
     StoragePoolVO findPoolById(Long id);
-	StoragePoolVO addPool(Long zoneId, Long podId, Long clusterId, String poolName, String storageUri, String tags, Map<String, String> details) throws ResourceInUseException, URISyntaxException, IllegalArgumentException, UnknownHostException, ResourceAllocationException;
 	List<? extends StoragePoolVO> searchForStoragePools(Criteria c);
 	
 	/**

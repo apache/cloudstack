@@ -18,14 +18,17 @@
 package com.cloud.storage;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,6 +42,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.Command;
@@ -56,12 +60,11 @@ import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.to.DiskCharacteristicsTO;
 import com.cloud.agent.api.to.VolumeTO;
-import com.cloud.agent.manager.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.CreateStoragePoolCmd;
 import com.cloud.api.commands.DeletePoolCmd;
-import com.cloud.api.commands.StopVMCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobExecutor;
@@ -691,18 +694,16 @@ public class StorageManagerImpl implements StorageManager {
                                     ServiceOfferingVO offering, DiskOfferingVO diskOffering, List<StoragePoolVO> avoids, long size) {
         StoragePoolVO pool = null;
         final HashSet<StoragePool> avoidPools = new HashSet<StoragePool>(avoids);
-       
+
         DiskCharacteristicsTO dskCh = null;
         if (volume.getVolumeType() == VolumeType.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
             dskCh = createDiskCharacteristics(volume, template, dc, offering);
         } else {
             dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
         }
-        
+
         Transaction txn = Transaction.currentTxn();
-        
-        VolumeType volType = volume.getVolumeType();
-        
+
         VolumeTO created = null;
         int retry = _retry;
         while (--retry >= 0) {
@@ -1157,13 +1158,56 @@ public class StorageManagerImpl implements StorageManager {
 
     protected StorageManagerImpl() {
     }
-    
-    @Override
-    public StoragePoolVO createPool(long zoneId, Long podId, Long clusterId, String poolName, URI uri, String tags, Map<String, String> details) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceAllocationException {
-        if (tags != null) {
-            if (details == null) {
-                details = new HashMap<String, String>();
+
+    @Override @SuppressWarnings("rawtypes")
+    public StoragePoolVO createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceAllocationException {
+        Long clusterId = cmd.getClusterId();
+        Long podId = cmd.getPodId();
+        Map ds = cmd.getDetails();
+
+        if (clusterId != null && podId == null) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Cluster id requires pod id");
+        }
+
+        Map<String, String> details = new HashMap<String, String>();
+        if (ds != null) {
+            Collection detailsCollection = ds.values();
+            Iterator it = detailsCollection.iterator();
+            while (it.hasNext()) {
+                HashMap d = (HashMap)it.next();
+                Iterator it2 = d.entrySet().iterator();
+                while (it2.hasNext()) {
+                    Map.Entry entry = (Map.Entry)it2.next();
+                    details.put((String)entry.getKey(), (String)entry.getValue());
+                }
             }
+        }
+
+        //verify input parameters
+        Long zoneId = cmd.getZoneId();
+        DataCenterVO zone = _dcDao.findById(cmd.getZoneId());
+        if (zone == null) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find zone by id " + zoneId);
+        }
+        
+        URI uri = null;
+        try {
+            uri = new URI(cmd.getUrl());
+            if (uri.getScheme() == null)
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "scheme is null " + cmd.getUrl() + ", add nfs:// as a prefix");
+            else if (uri.getScheme().equalsIgnoreCase("nfs")) {
+                String uriHost = uri.getHost();
+                String uriPath = uri.getPath();
+                if (uriHost == null || uriPath == null || uriHost.trim().isEmpty() || uriPath.trim().isEmpty()) {
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "host or path is null, should be nfs://hostname/path");
+                }
+            }
+        } catch (URISyntaxException e) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, cmd.getUrl() + " is not a valid uri");
+        }
+
+        String tags = cmd.getTags();
+        if (tags != null) {
             String[] tokens = tags.split(",");
             
             for (String tag : tokens) {
@@ -1193,7 +1237,9 @@ public class StorageManagerImpl implements StorageManager {
         	if (_hypervisorType == Hypervisor.Type.KVM) {
         		hypervisorType = Hypervisor.Type.KVM;
         	} else {
-        		s_logger.debug("Couldn't find a host to serve in the server pool");
+        	    if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Couldn't find a host to serve in the server pool");
+        	    }
         		return null;
         	}
         }
@@ -1203,7 +1249,9 @@ public class StorageManagerImpl implements StorageManager {
         String hostPath = uri.getPath();
         int port = uri.getPort();
         StoragePoolVO pool = null;
-        s_logger.debug("createPool Params @ scheme - " +scheme+ " storageHost - " +storageHost+ " hostPath - " +hostPath+ " port - " +port);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("createPool Params @ scheme - " +scheme+ " storageHost - " +storageHost+ " hostPath - " +hostPath+ " port - " +port);
+        }
         if (scheme.equalsIgnoreCase("nfs")) {
             if (port == -1) {
                 port = 2049;
@@ -1234,7 +1282,7 @@ public class StorageManagerImpl implements StorageManager {
                 while (en.hasMoreElements()) {
                     Map<StoragePoolVO, Map<String, String>> pools;
                     try {
-                        pools = en.nextElement().find(zoneId, podId, uri, details);
+                        pools = en.nextElement().find(cmd.getZoneId(), podId, uri, details);
                     } catch (DiscoveryException e) {
                         throw new IllegalArgumentException("Not enough information for discovery " + uri, e);
                     }
@@ -1277,12 +1325,14 @@ public class StorageManagerImpl implements StorageManager {
         }
         long poolId = _storagePoolDao.getNextInSequence(Long.class, "id");
         String uuid = UUID.nameUUIDFromBytes(new String(storageHost + hostPath).getBytes()).toString();
-        s_logger.debug("In createPool Setting poolId - " +poolId+ " uuid - " +uuid+ " zoneId - " +zoneId+ " podId - " +podId+ " poolName - " +poolName);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("In createPool Setting poolId - " +poolId+ " uuid - " +uuid+ " zoneId - " +zoneId+ " podId - " +podId+ " poolName - " +cmd.getStoragePoolName());
+        }
         pool.setId(poolId);
         pool.setUuid(uuid);
-        pool.setDataCenterId(zoneId);
+        pool.setDataCenterId(cmd.getZoneId());
         pool.setPodId(podId);
-        pool.setName(poolName);
+        pool.setName(cmd.getStoragePoolName());
         pool.setClusterId(clusterId);
         pool.setStatus(Status.Up);
         pool = _storagePoolDao.persist(pool, details);

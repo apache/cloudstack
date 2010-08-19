@@ -7607,17 +7607,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public StoragePoolVO addPool(Long zoneId, Long podId, Long clusterId, String poolName, String storageUri, String tags, Map<String, String> details) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceAllocationException {
-        URI uri;
-        try {
-            uri = new URI(storageUri);
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("URI syntax needed for " + storageUri, e);
-        }
-        return _storageMgr.createPool(zoneId.longValue(), podId, clusterId, poolName, uri, tags, details);
-    }
-    
-    @Override
     public ClusterVO findClusterById(long clusterId) {
         return _clusterDao.findById(clusterId);
     }

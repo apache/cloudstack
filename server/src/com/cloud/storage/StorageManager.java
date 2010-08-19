@@ -17,13 +17,12 @@
  */
 package com.cloud.storage;
 
-import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.List;
-import java.util.Map;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.api.commands.CreateStoragePoolCmd;
 import com.cloud.api.commands.DeletePoolCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.dc.DataCenterVO;
@@ -102,16 +101,14 @@ public interface StorageManager extends Manager {
 	
 	/**
 	 * Create StoragePool based on uri
-	 * 
-	 * @param zoneId
-	 * @param podId
-	 * @param poolName
-	 * @param uriString
+	 * @param cmd the command object that specifies the zone, cluster/pod, URI, details, etc. to use to create the storage pool.
 	 * @return
-	 * @throws ResourceInUseException, IllegalArgumentException
+	 * @throws ResourceInUseException
+	 * @throws IllegalArgumentException
+	 * @throws UnknownHostException
 	 * @throws ResourceAllocationException
 	 */
-	StoragePoolVO createPool(long zoneId, Long podId, Long clusterId, String poolName, URI uri, String tags, Map<String, String> details) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceAllocationException;
+	StoragePoolVO createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceAllocationException;
 	
     /**
      * Get the storage ip address to connect to.
