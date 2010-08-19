@@ -40,9 +40,11 @@ import com.cloud.agent.api.ValidateSnapshotAnswer;
 import com.cloud.agent.api.ValidateSnapshotCommand;
 import com.cloud.agent.manager.AgentManager;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CreateSnapshotCmd;
 import com.cloud.api.commands.CreateSnapshotPolicyCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
+import com.cloud.api.commands.DeleteSnapshotCmd;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -85,6 +87,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
@@ -771,9 +774,62 @@ public class SnapshotManagerImpl implements SnapshotManager {
         }
         
     }
+    
+    protected Long checkAccountPermissions(Map<String, Object> params,
+            long targetAccountId,
+            long targetDomainId,
+            String targetDesc,
+            long targetId)
+	throws ServerApiException
+	{
+    	Long accountId = null;
+	
+    	Account account = getAccount(params);
+    	if (account != null) 
+    	{
+    		if (!isAdmin(account.getType())) 
+    		{
+    			if (account.getId().longValue() != targetAccountId) 
+    			{
+    				throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find a " + targetDesc + " with id " + targetId + " for this account");
+    			}
+    		} 
+    		else if (!getManagementServer().isChildDomain(account.getDomainId(), targetDomainId)) 
+    		{
+    			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to perform operation for " + targetDesc + " with id " + targetId + ", permission denied.");
+    		}
+    		accountId = account.getId();
+    	}
+	
+    	return accountId;
+	}
 
     @Override @DB
-    public boolean deleteSnapshot(long userId, long snapshotId, long policyId) {
+    public boolean deleteSnapshot(DeleteSnapshotCmd cmd) {
+    	
+    	Account account = (Account)UserContext.current().getAccountObject();
+    	Long userId = UserContext.current().getUserId();
+    	Long snapshotId = cmd.getId();
+    	
+        //Verify parameters
+        Snapshot snapshotCheck = _snapshotDao.findById(snapshotId.longValue());
+        if (snapshotCheck == null) {
+            throw new ServerApiException (BaseCmd.SNAPSHOT_INVALID_PARAM_ERROR, "unable to find a snapshot with id " + snapshotId);
+        }
+
+        // If an account was passed in, make sure that it matches the account of the snapshot
+        Account snapshotOwner = _accountDao.findById(snapshotCheck.getAccountId());
+        if (snapshotOwner == null) {
+            throw new ServerApiException(BaseCmd.SNAPSHOT_INVALID_PARAM_ERROR, "Snapshot id " + snapshotId + " does not have a valid account");
+        }
+        checkAccountPermissions(params, snapshotOwner.getId(), snapshotOwner.getDomainId(), "snapshot", snapshotId);
+        
+        //If command is executed via 8096 port, set userId to the id of System account (1)
+        if (userId == null) {
+            userId = Long.valueOf(1);
+        }
+
+    	
         s_logger.debug("Calling deleteSnapshot for snapshotId: " + snapshotId + " and policyId " + policyId);
         long prevSnapshotId = 0;
         SnapshotVO nextSnapshot = null;

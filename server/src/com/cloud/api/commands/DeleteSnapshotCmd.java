@@ -24,17 +24,20 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.Manager;
 import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
-public class DeleteSnapshotCmd extends BaseCmd {
+@Implementation(method="deleteSnapshot", manager=Manager.SnapshotManager)
+public class DeleteSnapshotCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSnapshotCmd.class.getName());
     private static final String s_name = "deletesnapshotresponse";
-	private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
 	static {
 	    s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
@@ -129,4 +132,10 @@ public class DeleteSnapshotCmd extends BaseCmd {
         	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "internal error deleting snapshot " + ex.getMessage());
         }
     }
+
+	@Override
+	public String getResponse() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

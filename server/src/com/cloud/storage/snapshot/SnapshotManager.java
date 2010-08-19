@@ -20,6 +20,7 @@ package com.cloud.storage.snapshot;
 import java.util.List;
 
 import com.cloud.api.commands.CreateSnapshotPolicyCmd;
+import com.cloud.api.commands.DeleteSnapshotCmd;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
@@ -93,7 +94,7 @@ public interface SnapshotManager extends Manager {
      * If no other policies are assigned it calls destroy snapshot.
      * This will be used for manual snapshots too.
      */
-    boolean deleteSnapshot(long userId, long snapshotId, long policyId);    
+    boolean deleteSnapshot(DeleteSnapshotCmd cmd);    
 
     /**
      * Creates a policy with specified schedule. maxSnaps specifies the number of most recent snapshots that are to be retained.

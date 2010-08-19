@@ -32,6 +32,8 @@ import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.manager.AgentManager;
+import com.cloud.api.BaseCmd;
+import com.cloud.api.ServerApiException;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
@@ -114,7 +116,91 @@ public class TemplateManagerImpl implements TemplateManager {
 
     @Override
     public Long create(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) {
-        Long id = _tmpltDao.getNextInSequence(Long.class, "id");
+        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
+        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
+        String name = (String)params.get(BaseCmd.Properties.NAME.getName());
+        String displayText = (String)params.get(BaseCmd.Properties.DISPLAY_TEXT.getName()); 
+        Integer bits = (Integer)params.get(BaseCmd.Properties.BITS.getName());
+        Boolean passwordEnabled = (Boolean)params.get(BaseCmd.Properties.PASSWORD_ENABLED.getName());
+        Boolean requiresHVM = (Boolean)params.get(BaseCmd.Properties.REQUIRES_HVM.getName());
+        String url = (String)params.get(BaseCmd.Properties.URL.getName());
+        Boolean isPublic = (Boolean)params.get(BaseCmd.Properties.IS_PUBLIC.getName());
+        Boolean featured = (Boolean)params.get(BaseCmd.Properties.IS_FEATURED.getName());
+        String format = (String)params.get(BaseCmd.Properties.FORMAT.getName());
+        Long guestOSId = (Long) params.get(BaseCmd.Properties.OS_TYPE_ID.getName());
+        Long zoneId = (Long) params.get(BaseCmd.Properties.ZONE_ID.getName());
+
+        //parameters verification
+        if (bits == null) {
+            bits = Integer.valueOf(64);
+        }
+        if (passwordEnabled == null) {
+            passwordEnabled = false;
+        }
+        if (requiresHVM == null) {
+            requiresHVM = true;
+        }
+        if (isPublic == null) {
+            isPublic = Boolean.FALSE;
+        }
+        
+        if (zoneId.longValue() == -1) {
+        	zoneId = null;
+        }
+                
+        long accountId = 1L; // default to system account
+        if (account != null) {
+            accountId = account.getId().longValue();
+        }
+        
+        Account accountObj;
+        if (account == null) {
+        	accountObj = getManagementServer().findAccountById(accountId);
+        } else {
+        	accountObj = account;
+        }
+        
+        boolean isAdmin = (accountObj.getType() == Account.ACCOUNT_TYPE_ADMIN);
+        
+        if (!isAdmin && zoneId == null) {
+        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid zone Id.");
+        }
+        
+        if(url.toLowerCase().contains("file://")){
+        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "File:// type urls are currently unsupported");
+        }
+        
+        if((!url.toLowerCase().endsWith("vhd"))&&(!url.toLowerCase().endsWith("vhd.zip"))
+        	&&(!url.toLowerCase().endsWith("vhd.bz2"))&&(!url.toLowerCase().endsWith("vhd.gz") 
+        	&&(!url.toLowerCase().endsWith("qcow2"))&&(!url.toLowerCase().endsWith("qcow2.zip"))
+        	&&(!url.toLowerCase().endsWith("qcow2.bz2"))&&(!url.toLowerCase().endsWith("qcow2.gz")))){
+        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid "+format.toLowerCase());
+        }
+        	
+        boolean allowPublicUserTemplates = Boolean.parseBoolean(getManagementServer().getConfigurationValue("allow.public.user.templates"));        
+        if (!isAdmin && !allowPublicUserTemplates && isPublic) {
+        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Only private templates can be created.");
+        }
+        
+        if (!isAdmin || featured == null) {
+        	featured = Boolean.FALSE;
+        }
+
+        //If command is executed via 8096 port, set userId to the id of System account (1)
+        if (userId == null) {
+            userId = Long.valueOf(1);
+        }
+    	
+    	
+    	
+    	
+    	
+    	
+    	
+    	
+    	
+    	
+    	Long id = _tmpltDao.getNextInSequence(Long.class, "id");
         
         UserVO user = _userDao.findById(userId);
         long accountId = user.getAccountId();
