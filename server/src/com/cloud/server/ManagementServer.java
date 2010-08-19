@@ -1878,19 +1878,6 @@ public interface ManagementServer {
 	List<? extends StoragePoolVO> searchForStoragePools(Criteria c);
 	
 	/**
-	 * Creates a policy with specified schedule to create snapshot for a volume . maxSnaps specifies the number of most recent snapshots that are to be retained.
-	 * @param volumeId
-	 * @param schedule MM[:HH][:DD] format. DD is day of week for weekly[1-7] and day of month for monthly
-	 * @param interval hourly/daily/weekly/monthly
-	 * @param maxSnaps If the number of snapshots go beyond maxSnaps the oldest snapshot is deleted
-	 * @param timezone The timezone in which the above time format is specified
-	 * @return
-	 * @throws InvalidParameterValueException
-	 */
-	SnapshotPolicyVO createSnapshotPolicy(long userId, long accountId, long volumeId, String schedule, String intervalType,
-			int maxSnaps, String timezone) throws InvalidParameterValueException;
-	
-	/**
 	 * List all snapshot policies which are created for the specified volume
 	 * @param volumeId
 	 * @return

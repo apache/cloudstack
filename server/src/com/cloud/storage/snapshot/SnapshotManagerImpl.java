@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -40,6 +41,7 @@ import com.cloud.agent.api.ValidateSnapshotCommand;
 import com.cloud.agent.manager.AgentManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.commands.CreateSnapshotCmd;
+import com.cloud.api.commands.CreateSnapshotPolicyCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
@@ -68,6 +70,7 @@ import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume.VolumeType;
@@ -84,9 +87,12 @@ import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.User;
+import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
@@ -134,7 +140,6 @@ public class SnapshotManagerImpl implements SnapshotManager {
     protected SearchBuilder<SnapshotVO> PolicySnapshotSearch;
     protected SearchBuilder<SnapshotPolicyVO> PoliciesForSnapSearch;
 
-    private String _hypervisorType;
     private final boolean _shouldBeSnapshotCapable = true; // all methods here should be snapshot capable.
 
     @Override @DB
@@ -1071,9 +1076,66 @@ public class SnapshotManagerImpl implements SnapshotManager {
     
     @Override
     @DB
-    public SnapshotPolicyVO createPolicy(long userId, long accountId, long volumeId, String schedule, short interval, int maxSnaps, String timezone) {
+    public SnapshotPolicyVO createPolicy(CreateSnapshotPolicyCmd cmd) throws InvalidParameterValueException {
+        Long volumeId = cmd.getVolumeId();
+        VolumeVO volume = _volsDao.findById(cmd.getVolumeId());
+        if (volume == null) {
+            throw new InvalidParameterValueException("Failed to create snapshot policy, unable to find a volume with id " + volumeId);
+        }
+
+        // TODO:  implement
+        // If an account was passed in, make sure that it matches the account of the volume
+//        checkAccountPermissions(params, volume.getAccountId(), volume.getDomainId(), "volume", volumeId);
+        
+        StoragePoolVO storagePoolVO = _storagePoolDao.findById(volume.getPoolId());
+        if (storagePoolVO == null) {
+            throw new InvalidParameterValueException("Failed to create snapshot policy, volumeId: " + volumeId + " does not have a valid storage pool. Is it destroyed?");
+        }
+        if (storagePoolVO.isLocal()) {
+            throw new InvalidParameterValueException("Failed to create snapshot policy, cannot create a snapshot from a volume residing on a local storage pool, poolId: " + volume.getPoolId());
+        }
+
+        Long instanceId = volume.getInstanceId();
+        if (instanceId != null) {
+            // It is not detached, but attached to a VM
+            if (_vmDao.findById(instanceId) == null) {
+                // It is not a UserVM but a SystemVM or DomR
+                throw new InvalidParameterValueException("Failed to create snapshot policy, snapshots of volumes attached to System or router VM are not allowed");
+            }
+        }
+        
+        Long accountId = volume.getAccountId();
+        Long userId = UserContext.current().getUserId();
+
+        // If command is executed via 8096 port, set userId to the id of System account (1)
+        if (userId == null) {
+            userId = User.UID_SYSTEM;
+        }
+
+        IntervalType type =  DateUtil.IntervalType.getIntervalType(cmd.getIntervalType());
+        if (type == null) {
+            throw new InvalidParameterValueException("Unsupported interval type " + cmd.getIntervalType());
+        }
+
+        TimeZone timeZone = TimeZone.getTimeZone(cmd.getTimezone());
+        String timezoneId = timeZone.getID();
+        if (!timezoneId.equals(cmd.getTimezone())) {
+            s_logger.warn("Using timezone: " + timezoneId + " for running this snapshot policy as an equivalent of " + cmd.getTimezone());
+        }
+
+        try {
+            DateUtil.getNextRunTime(type, cmd.getSchedule(), timezoneId, null);
+        } catch (Exception e){
+            throw new InvalidParameterValueException("Invalid schedule: "+ cmd.getSchedule() +" for interval type: " + cmd.getIntervalType());
+        }
+
+        int intervalMaxSnaps = type.getMax();
+        if (cmd.getMaxSnaps() > intervalMaxSnaps) {
+            throw new InvalidParameterValueException("maxSnaps exceeds limit: " + intervalMaxSnaps + " for interval type: " + cmd.getIntervalType());
+        }
+
         Long policyId = null;
-        SnapshotPolicyVO policy = getPolicyForVolumeByInterval(volumeId, (interval));
+        SnapshotPolicyVO policy = getPolicyForVolumeByInterval(volumeId, (short)type.ordinal());
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -1082,30 +1144,34 @@ public class SnapshotManagerImpl implements SnapshotManager {
         event.setAccountId(accountId);
         event.setUserId(userId);
         
-        if( policy != null){
-            s_logger.debug("Policy for specified interval already exists. Updating policy to new schedule");
+        if (policy != null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Policy for specified interval already exists. Updating policy to new schedule");
+            }
             policyId = policy.getId();
-            
+
             // By default, assume failure.
             event.setType(EventTypes.EVENT_SNAPSHOT_POLICY_UPDATE);
-            event.setDescription("Failed to update schedule for Snapshot policy with id: "+policyId);
+            event.setDescription("Failed to update schedule for Snapshot policy with id: " + policyId);
             event.setLevel(EventVO.LEVEL_ERROR);
-            
+
             // Check if there are any recurring snapshots being currently executed. Race condition.
             SnapshotScheduleVO snapshotSchedule = _snapshotScheduleDao.getCurrentSchedule(volumeId, policyId, true);
             if (snapshotSchedule != null) {
                 Date scheduledTimestamp = snapshotSchedule.getScheduledTimestamp();
                 String dateDisplay = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, scheduledTimestamp);
-                s_logger.debug("Cannot update the policy now. Wait until the current snapshot scheduled at " + dateDisplay + " finishes");
-                
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Cannot update the policy now. Wait until the current snapshot scheduled at " + dateDisplay + " finishes");
+                }
+
                 policyId = null;
                 policy = null;
             }
             else {
                 _snapSchedMgr.removeSchedule(volumeId, policyId);
-                policy.setSchedule(schedule);
-                policy.setTimezone(timezone);
-                policy.setMaxSnaps(maxSnaps);
+                policy.setSchedule(cmd.getSchedule());
+                policy.setTimezone(cmd.getTimezone());
+                policy.setMaxSnaps(cmd.getMaxSnaps());
                 policy.setActive(true);
                 
                 if(_snapshotPolicyDao.update(policy.getId(), policy)){
@@ -1114,7 +1180,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
                 }
             }
         } else {
-            policy = new SnapshotPolicyVO(volumeId, schedule, timezone, interval, maxSnaps);
+            policy = new SnapshotPolicyVO(volumeId, cmd.getSchedule(), cmd.getTimezone(), (short)type.ordinal(), cmd.getMaxSnaps());
             policy = _snapshotPolicyDao.persist(policy);
             policyId = policy.getId();
             event.setType(EventTypes.EVENT_SNAPSHOT_POLICY_CREATE);
@@ -1126,10 +1192,12 @@ public class SnapshotManagerImpl implements SnapshotManager {
             _snapSchedMgr.scheduleNextSnapshotJob(policy);
         }
         else {
-            s_logger.debug("Failed to update schedule for Snapshot policy with id: " + policyId);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Failed to update schedule for Snapshot policy with id: " + policyId);
+            }
         }
         txn.commit();
-        
+
         return policy;
     }
 
@@ -1294,8 +1362,6 @@ public class SnapshotManagerImpl implements SnapshotManager {
         if (configDao == null) {
             throw new ConfigurationException("Unable to get the configuration dao.");
         }
-        
-        _hypervisorType = configDao.getValue("hypervisor.type");
         
         DateUtil.IntervalType.HOURLY.setMax(NumbersUtil.parseInt(configDao.getValue("snapshot.max.hourly"), HOURLYMAX));
         DateUtil.IntervalType.DAILY.setMax(NumbersUtil.parseInt(configDao.getValue("snapshot.max.daily"), DAILYMAX));

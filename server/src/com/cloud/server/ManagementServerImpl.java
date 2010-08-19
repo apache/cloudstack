@@ -7735,33 +7735,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public SnapshotPolicyVO createSnapshotPolicy(long userId, long accountId, long volumeId, String schedule, String intervalType, int maxSnaps, String timeZoneStr) throws InvalidParameterValueException {
-    	IntervalType type =  DateUtil.IntervalType.getIntervalType(intervalType);
-    	if(type == null){
-    		throw new InvalidParameterValueException("Unsupported interval type " + intervalType);
-    	}
-    	
-    	TimeZone timeZone = TimeZone.getTimeZone(timeZoneStr);
-    	String timezoneId = timeZone.getID();
-    	if (!timezoneId.equals(timeZoneStr)) {
-    	    s_logger.warn("Using timezone: " + timezoneId + " for running this snapshot policy as an equivalent of " + timeZoneStr);
-    	}
-    	
-    	try {
-    		DateUtil.getNextRunTime(type, schedule, timezoneId, null);
-    	} catch (Exception e){
-    		throw new InvalidParameterValueException("Invalid schedule: "+ schedule +" for interval type: " + intervalType);
-    	}
-    	
-    	int intervalMaxSnaps = type.getMax();
-    	if(maxSnaps > intervalMaxSnaps){
-    		throw new InvalidParameterValueException("maxSnaps exceeds limit: "+ intervalMaxSnaps +" for interval type: " + intervalType);
-    	}
-    	
-    	return _snapMgr.createPolicy(userId, accountId, volumeId, schedule, (short)type.ordinal() , maxSnaps, timezoneId);
-    }
-
-    @Override
     public SnapshotPolicyVO findSnapshotPolicyById(Long policyId) {
         return _snapshotPolicyDao.findById(policyId);
     }

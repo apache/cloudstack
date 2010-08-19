@@ -19,13 +19,13 @@ package com.cloud.storage.snapshot;
 
 import java.util.List;
 
+import com.cloud.api.commands.CreateSnapshotPolicyCmd;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.VolumeVO;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.Filter;
 
@@ -94,16 +94,14 @@ public interface SnapshotManager extends Manager {
      * This will be used for manual snapshots too.
      */
     boolean deleteSnapshot(long userId, long snapshotId, long policyId);    
-    
 
     /**
      * Creates a policy with specified schedule. maxSnaps specifies the number of most recent snapshots that are to be retained.
      * If the number of snapshots go beyond maxSnaps the oldest snapshot is deleted 
-     * @param volumeId
-     * @param userId 
-     * @param timeZone The timezone in which the 'schedule' string is specified
+     * @param cmd the command that
+     * @return the newly created snapshot policy if success, null otherwise
      */
-    SnapshotPolicyVO createPolicy(long userId, long accountId, long volumeId, String schedule, short interval, int maxSnaps, String timezone);
+    SnapshotPolicyVO createPolicy(CreateSnapshotPolicyCmd cmd) throws InvalidParameterValueException;
     
     /**
      * Deletes snapshot scheduling policy. Delete will fail if this policy is assigned to one or more volumes
