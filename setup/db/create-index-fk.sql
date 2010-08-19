@@ -250,3 +250,6 @@ ALTER TABLE `cloud`.`network_group_vm_map` ADD CONSTRAINT `fk_network_group_vm_m
 
 ALTER TABLE `cloud`.`op_nwgrp_work` ADD INDEX `i_op_nwgrp_work__instance_id`(`instance_id`);
 ALTER TABLE `cloud`.`op_nwgrp_work` ADD INDEX `i_op_nwgrp_work__mgmt_server_id`(`mgmt_server_id`);
+
+ALTER TABLE `cloud`.`host_master` ADD UNIQUE `i_host_master__service_address`(`service_address`);
+

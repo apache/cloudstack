@@ -778,6 +778,12 @@ public class TestVMWare {
         		"dvPortGroup-vlan26", vNicSpec);
 	}
 	
+	private void createDatacenter() throws Exception {
+		cb.getServiceConnection3().getService().createDatacenter(
+			cb.getServiceConnection3().getRootFolder(), 
+			"cloud.dc.test");
+	}
+	
 	public static void main(String[] args) throws Exception {
 		setupLog4j();
 		TestVMWare client = new TestVMWare();
@@ -800,8 +806,10 @@ public class TestVMWare {
 			// client.createSnapshot();
 			// client.registerTemplate();
 			// client.createVmFromTemplate();
-			client.addNic();
+			// client.addNic();
 			// client.addNicToNetwork();
+
+			client.createDatacenter();
 			cb.disConnect();
 		} catch (Exception e) {
 			e.printStackTrace();

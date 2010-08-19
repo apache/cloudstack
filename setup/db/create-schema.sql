@@ -76,6 +76,7 @@ DROP TABLE IF EXISTS `cloud`.`cluster`;
 DROP TABLE IF EXISTS `cloud`.`nics`;
 DROP TABLE IF EXISTS `cloud`.`network_profiles`;
 DROP TABLE IF EXISTS `cloud`.`network_offerings`;
+DROP TABLE IF EXISTS `cloud`.`host_master`;
 
 CREATE TABLE `cloud`.`network_profiles` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
@@ -1041,6 +1042,15 @@ CREATE TABLE `cloud`.`op_vm_ruleset_log` (
   `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance that needs rules to be synced.',
   `created` datetime NOT NULL COMMENT 'time the entry was requested',
   `logsequence` bigint unsigned  COMMENT 'seq number to be sent to agent, uniquely identifies ruleset update',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`host_master` (
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `type` varchar(32) NOT NULL,
+  `service_address` varchar(255) NOT NULL,
+  `admin` varchar(32) NOT NULL,
+  `password` varchar(32),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
