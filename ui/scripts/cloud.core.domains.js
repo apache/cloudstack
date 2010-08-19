@@ -66,7 +66,7 @@ function showDomainsTab() {
     
     function drawTree(id, level, container) {		        
         $.ajax({
-		    data: "command=listDomainChildren&id="+id+"&response=json",
+		    data: "command=listDomainChildren&id="+id+"&response=json&pageSize=-1",
 		    dataType: "json",
 		    async: false,
 		    success: function(json) {					        
@@ -320,7 +320,7 @@ function showDomainsTab() {
 	    rightPanelSearchResult.show();	                	        	
         var keyword = searchInput.val();             
         $.ajax({
-	        data: "command=listDomains&keyword="+keyword+"&response=json",
+	        data: "command=listDomains&keyword="+keyword+"&response=json&pageSize=-1", //pageSize=-1 will return all items (no limitation)
 	        dataType: "json",
 	        async: false,
 	        success: function(json) {					        
@@ -349,7 +349,7 @@ function showDomainsTab() {
 	function drawRootNode(rootDomainId) {
 	    treeContentBox.empty();
 	    $.ajax({
-	        data: "command=listDomains&id="+rootDomainId+"&response=json",
+	        data: "command=listDomains&id="+rootDomainId+"&response=json&pageSize=-1", //pageSize=-1 will return all items (no limitation)
 	        dataType: "json",
 	        async: false,
 	        success: function(json) {					        
