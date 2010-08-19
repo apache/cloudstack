@@ -125,7 +125,7 @@ except IndexError: e("The first argument must be the license file to use")
 
 if options.all:
 	if len(args) != 0: e("IP addresses cannot be specified if -a is specified")
-	config = cloud_utils.read_properties(cfg)
+	config = read_properties(cfg)
 	creds = getknownhosts(config["db.cloud.host"],config["db.cloud.username"],config["db.cloud.password"])
 	hosts = creds.keys()
 else:
