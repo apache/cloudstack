@@ -32,12 +32,12 @@ import com.cloud.user.AccountVO;
 public interface VmManager {
     
     VMInstanceVO allocate(VMInstanceVO vm, 
-                        ServiceOfferingVO serviceOffering,
-                        Long rootSize,
-                        List<NetworkOfferingVO> networkOfferings, 
-                        Map<DiskOfferingVO, Long> diskOfferings,
-                        DataCenterVO dc,
-                        AccountVO owner);
+                          ServiceOfferingVO serviceOffering,
+                          Long rootSize,
+                          List<NetworkOfferingVO> networkOfferings, 
+                          Map<DiskOfferingVO, Long> diskOfferings,
+                          DataCenterVO dc,
+                          AccountVO owner);
     
     VMInstanceVO allocate(VMInstanceVO vm,
             ServiceOfferingVO serviceOffering,

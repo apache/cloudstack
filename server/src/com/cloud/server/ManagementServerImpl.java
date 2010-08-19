@@ -351,9 +351,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final Map<String, String> _configs;
 
     private String _domain;
-    private int _consoleProxyPort = ConsoleProxyManager.DEFAULT_PROXY_VNC_PORT;
-    // private int _consoleProxyUrlPort =
-    // ConsoleProxyManager.DEFAULT_PROXY_URL_PORT;
 
     private final int _routerRamSize;
     private final int _proxyRamSize;
@@ -447,16 +444,7 @@ public class ManagementServerImpl implements ManagementServer {
             _domain = "." + _domain;
         }
 
-        String value = _configs.get("consoleproxy.port");
-        if (value != null)
-            _consoleProxyPort = NumbersUtil.parseInt(value, ConsoleProxyManager.DEFAULT_PROXY_VNC_PORT);
-
-        // value = _configs.get("consoleproxy.url.port");
-        // if(value != null)
-        // _consoleProxyUrlPort = NumbersUtil.parseInt(value,
-        // ConsoleProxyManager.DEFAULT_PROXY_URL_PORT);
-
-        value = _configs.get("account.cleanup.interval");
+        String value = _configs.get("account.cleanup.interval");
         int cleanup = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 hour.
 
         // Parse the max number of UserVMs and public IPs from server-setup.xml,
@@ -771,6 +759,7 @@ public class ManagementServerImpl implements ManagementServer {
         return user;
     }
 
+    @Override
     public User getUser(long userId, boolean active) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Retrieiving user with id: " + userId + " and active = " + active);
@@ -1240,6 +1229,7 @@ public class ManagementServerImpl implements ManagementServer {
     /*
      * Save event after starting execution of an async job
      */
+    @Override
     public Long saveStartedEvent(Long userId, Long accountId, String type, String description, long startEventId) {
         EventVO event = new EventVO();
         event.setUserId(userId);
@@ -2874,6 +2864,7 @@ public class ManagementServerImpl implements ManagementServer {
         return _hostDao.findById(hostId);
     }
 
+    @Override
     public void updateHost(long hostId, long guestOSCategoryId) throws InvalidParameterValueException {
     	// Verify that the guest OS Category exists
     	if (guestOSCategoryId > 0) {
@@ -2885,6 +2876,7 @@ public class ManagementServerImpl implements ManagementServer {
     	_agentMgr.updateHost(hostId, guestOSCategoryId);
     }
     
+    @Override
     public boolean deleteHost(long hostId) {
         return _agentMgr.deleteHost(hostId);
     }
@@ -5950,6 +5942,7 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job);
     }
 
+    @Override
     public void deleteRule(long ruleId, long userId, long accountId) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException {
         Exception e = null;
         try {
@@ -6006,6 +5999,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
     }
 
+    @Override
     public long deleteRuleAsync(long id, long userId, long accountId) {
         DeleteRuleParam param = new DeleteRuleParam(id, userId, accountId);
         Gson gson = GsonHelper.getBuilder().create();
@@ -6019,10 +6013,12 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job);
     }
 
+    @Override
     public List<VMTemplateVO> listAllTemplates() {
         return _templateDao.listAll();
     }
 
+    @Override
     public List<GuestOSVO> listGuestOSByCriteria(Criteria c) 
     {
         
@@ -6047,6 +6043,7 @@ public class ManagementServerImpl implements ManagementServer {
         return _guestOSDao.search(sc, searchFilter);
     }
     
+    @Override
     public List<GuestOSCategoryVO> listGuestOSCategoriesByCriteria(Criteria c) 
     {
         Filter searchFilter = new Filter(GuestOSCategoryVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
@@ -6064,34 +6061,37 @@ public class ManagementServerImpl implements ManagementServer {
     	return _guestOSCategoryDao.search(sc, searchFilter);
     }
     
+    @Override
     public String getConfigurationValue(String name) {
     	return _configDao.getValue(name);
     }
 
+    @Override
     public ConsoleProxyInfo getConsoleProxy(long dataCenterId, long userVmId) {
-        ConsoleProxyVO proxy = _consoleProxyMgr.assignProxy(dataCenterId, userVmId);
-        if (proxy == null)
-            return null;
-        
-        return new ConsoleProxyInfo(proxy.isSslEnabled(), proxy.getPublicIpAddress(), _consoleProxyPort, proxy.getPort());
+        return _consoleProxyMgr.assignProxy(dataCenterId, userVmId);
     }
 
+    @Override
     public ConsoleProxyVO startConsoleProxy(long instanceId, long startEventId) throws InternalErrorException {
         return _consoleProxyMgr.startProxy(instanceId, startEventId);
     }
 
+    @Override
     public boolean stopConsoleProxy(long instanceId, long startEventId) {
         return _consoleProxyMgr.stopProxy(instanceId, startEventId);
     }
 
+    @Override
     public boolean rebootConsoleProxy(long instanceId, long startEventId) {
         return _consoleProxyMgr.rebootProxy(instanceId, startEventId);
     }
 
+    @Override
     public boolean destroyConsoleProxy(long instanceId, long startEventId) {
         return _consoleProxyMgr.destroyProxy(instanceId, startEventId);
     }
 
+    @Override
     public long startConsoleProxyAsync(long instanceId) {
         long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_START, "starting console proxy with Id: "+instanceId);
         VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
@@ -6106,6 +6106,7 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job, true);
     }
 
+    @Override
     public long stopConsoleProxyAsync(long instanceId) {
         long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_STOP, "stopping console proxy with Id: "+instanceId);
         VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
@@ -6122,6 +6123,7 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job, true);
     }
 
+    @Override
     public long rebootConsoleProxyAsync(long instanceId) {
         long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy with Id: "+instanceId);
         VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
@@ -6138,6 +6140,7 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job, true);
     }
 
+    @Override
     public long destroyConsoleProxyAsync(long instanceId) {
         long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_DESTROY, "destroying console proxy with Id: "+instanceId);
         VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
@@ -6152,6 +6155,7 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job);
     }
 
+    @Override
     public String getConsoleAccessUrlRoot(long vmId) {
         VMInstanceVO vm = this.findVMInstanceById(vmId);
         if (vm != null) {
@@ -6162,6 +6166,7 @@ public class ManagementServerImpl implements ManagementServer {
         return null;
     }
 
+    @Override
     public int getVncPort(VirtualMachine vm) {
         if (vm.getHostId() == null) {
         	s_logger.warn("VM " + vm.getName() + " does not have host, return -1 for its VNC port");
@@ -6180,10 +6185,12 @@ public class ManagementServerImpl implements ManagementServer {
         return port;
     }
 
+    @Override
     public ConsoleProxyVO findConsoleProxyById(long instanceId) {
         return _consoleProxyDao.findById(instanceId);
     }
 
+    @Override
     public List<? extends Domain> searchForDomains(Criteria c) {
         Filter searchFilter = new Filter(DomainVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
         Long domainId = (Long) c.getCriteria(Criteria.ID);
@@ -6223,6 +6230,7 @@ public class ManagementServerImpl implements ManagementServer {
         return _domainDao.search(sc, searchFilter);
     }
 
+    @Override
     public List<? extends Domain> searchForDomainChildren(Criteria c) {
         Filter searchFilter = new Filter(DomainVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
         Long domainId = (Long) c.getCriteria(Criteria.ID);
@@ -6354,6 +6362,7 @@ public class ManagementServerImpl implements ManagementServer {
         return success && deleteDomainSuccess;
     }
 
+    @Override
     public void updateDomain(Long domainId, String domainName) {
         SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
         sc.addAnd("name", SearchCriteria.Op.EQ, domainName);
@@ -6368,6 +6377,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
     }
 
+    @Override
     public Long findDomainIdByAccountId(Long accountId) {
         if (accountId == null) {
             return null;
@@ -6381,6 +6391,7 @@ public class ManagementServerImpl implements ManagementServer {
         return null;
     }
 
+    @Override
     public DomainVO findDomainIdById(Long domainId) {
         return _domainDao.findById(domainId);
     }
@@ -6447,6 +6458,7 @@ public class ManagementServerImpl implements ManagementServer {
         return _capacityDao.search(sc, searchFilter);
     }
     
+    @Override
     public long getMemoryUsagebyHost(Long hostId) {
         long mem = 0;
         List<VMInstanceVO> vms = _vmInstanceDao.listUpByHostIdTypes(hostId, VirtualMachine.Type.DomainRouter);
@@ -8266,6 +8278,7 @@ public class ManagementServerImpl implements ManagementServer {
 		return null;
 	}
         
+    @Override
     public ArrayList<String> getCloudIdentifierResponse(long userId)
     {
     	Criteria c = new Criteria ();
@@ -8477,12 +8490,14 @@ public class ManagementServerImpl implements ManagementServer {
 		return _configMgr.addConfig(category, instance, component, name, value, description);		
 	}
 
-	public boolean preparePrimaryStorageForMaintenance(long primaryStorageId, long userId) {
+	@Override
+    public boolean preparePrimaryStorageForMaintenance(long primaryStorageId, long userId) {
 		return	_storageMgr.preparePrimaryStorageForMaintenance(primaryStorageId, userId);
 
 	}
 
-	public long preparePrimaryStorageForMaintenanceAsync(long primaryStorageId) throws InvalidParameterValueException 
+	@Override
+    public long preparePrimaryStorageForMaintenanceAsync(long primaryStorageId) throws InvalidParameterValueException 
 	{
     	StoragePoolVO primaryStorage = _poolDao.findById(primaryStorageId);
     	
@@ -8512,12 +8527,14 @@ public class ManagementServerImpl implements ManagementServer {
 
 	}
 	
+    @Override
     public boolean cancelPrimaryStorageMaintenance(long primaryStorageId, long userId)
     {
 		return	_storageMgr.cancelPrimaryStorageForMaintenance(primaryStorageId, userId);
     }
 	
-	public long cancelPrimaryStorageMaintenanceAsync(long primaryStorageId) throws InvalidParameterValueException 
+	@Override
+    public long cancelPrimaryStorageMaintenanceAsync(long primaryStorageId) throws InvalidParameterValueException 
 	{
     	StoragePoolVO primaryStorage = _poolDao.findById(primaryStorageId);
     	

@@ -17,7 +17,6 @@
  */
 package com.cloud.consoleproxy;
 
-
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.Listener;
@@ -33,13 +32,13 @@ import com.cloud.host.Status;
 
 public class ConsoleProxyListener implements Listener {
     private final static Logger s_logger = Logger.getLogger(ConsoleProxyListener.class);
-    
-    ConsoleProxyManager _proxyMgr = null;
 
-    public ConsoleProxyListener(ConsoleProxyManager proxyMgr) {
+    AgentHook _proxyMgr = null;
+
+    public ConsoleProxyListener(AgentHook proxyMgr) {
         _proxyMgr = proxyMgr;
     }
-    
+
     @Override
     public boolean isRecurring() {
         return true;
@@ -47,46 +46,46 @@ public class ConsoleProxyListener implements Listener {
 
     @Override
     public boolean processAnswer(long agentId, long seq, Answer[] answers) {
-    	return true;
+        return true;
     }
 
     @Override
     public boolean processCommand(long agentId, long seq, Command[] commands) {
         return false;
     }
-    
+
     @Override
     public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {
-    	if(cmd instanceof ConsoleProxyLoadReportCommand) {
-    		_proxyMgr.onLoadReport((ConsoleProxyLoadReportCommand)cmd);
-    		
-    		// return dummy answer
-    		return new AgentControlAnswer(cmd);
-    	} else if(cmd instanceof ConsoleAccessAuthenticationCommand) {
-    		return _proxyMgr.onConsoleAccessAuthentication((ConsoleAccessAuthenticationCommand)cmd);
-    	}
-    	return null;
+        if (cmd instanceof ConsoleProxyLoadReportCommand) {
+            _proxyMgr.onLoadReport((ConsoleProxyLoadReportCommand) cmd);
+
+            // return dummy answer
+            return new AgentControlAnswer(cmd);
+        } else if (cmd instanceof ConsoleAccessAuthenticationCommand) {
+            return _proxyMgr.onConsoleAccessAuthentication((ConsoleAccessAuthenticationCommand) cmd);
+        }
+        return null;
     }
 
     @Override
     public boolean processConnect(HostVO host, StartupCommand cmd) {
-    	_proxyMgr.onAgentConnect(host, cmd);
+        _proxyMgr.onAgentConnect(host, cmd);
         return true;
     }
-    
+
     @Override
     public boolean processDisconnect(long agentId, Status state) {
-    	_proxyMgr.onAgentDisconnect(agentId, state);
+        _proxyMgr.onAgentDisconnect(agentId, state);
         return true;
     }
-    
+
     @Override
     public boolean processTimeout(long agentId, long seq) {
-    	return true;
+        return true;
     }
-    
+
     @Override
     public int getTimeout() {
-    	return -1;
+        return -1;
     }
 }
