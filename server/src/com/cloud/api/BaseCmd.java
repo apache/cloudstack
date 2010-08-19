@@ -48,7 +48,7 @@ public abstract class BaseCmd {
     }
 
     public enum Manager {
-    	ConfigManager, ManagementServer, NetworkGroupManager, NetworkManager, StorageManager, UserVmManager, AccountManager, AgentManager
+        AccountManager, AgentManager, ConfigManager, ManagementServer, NetworkGroupManager, NetworkManager, StorageManager, UserVmManager 
     }
 
     // FIXME:  Extract these out into a separate file

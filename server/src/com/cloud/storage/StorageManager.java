@@ -37,7 +37,6 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.exception.ExecutionException;

@@ -24,7 +24,10 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.async.AsyncJobResult;
@@ -36,10 +39,10 @@ import com.cloud.server.ManagementServer;
 import com.cloud.storage.VolumeVO;
 import com.cloud.utils.Pair;
 
-public class CreateSnapshotCmd extends BaseCmd {
+@Implementation(createMethod="createSnapshotDB", method="createSnapshot", manager=Manager.SnapshotManager)
+public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateSnapshotCmd.class.getName());
 	private static final String s_name = "createsnapshotresponse";
-	private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -53,7 +56,6 @@ public class CreateSnapshotCmd extends BaseCmd {
 
     @Parameter(name="volumeid", type=CommandType.LONG, required=true)
     private Long volumeId;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -71,11 +73,11 @@ public class CreateSnapshotCmd extends BaseCmd {
         return volumeId;
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
@@ -83,9 +85,9 @@ public class CreateSnapshotCmd extends BaseCmd {
     public static String getResultObjectName() {
     	return "snapshot";
     }
-    
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
+
+    @Override
+    public String getResponse() {
     }
 	
     @Override

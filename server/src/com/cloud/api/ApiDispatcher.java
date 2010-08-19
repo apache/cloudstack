@@ -18,6 +18,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -33,6 +34,7 @@ public class ApiDispatcher {
     private ManagementServer _mgmtServer;
     private NetworkGroupManager _networkGroupMgr;
     private NetworkManager _networkMgr;
+    private SnapshotManager _snapshotMgr;
     private StorageManager _storageMgr;
     private UserVmManager _userVmMgr;
 
@@ -42,6 +44,7 @@ public class ApiDispatcher {
         _configMgr = locator.getManager(ConfigurationManager.class);
         _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
         _networkMgr = locator.getManager(NetworkManager.class);
+        _snapshotMgr = locator.getManager(SnapshotManager.class);
         _storageMgr = locator.getManager(StorageManager.class);
         _userVmMgr = locator.getManager(UserVmManager.class);
     }
@@ -94,6 +97,9 @@ public class ApiDispatcher {
             break;
         case NetworkManager:
             mgr = _networkMgr;
+            break;
+        case SnapshotManager:
+            mgr = _snapshotMgr;
             break;
         case StorageManager:
             mgr = _storageMgr;
