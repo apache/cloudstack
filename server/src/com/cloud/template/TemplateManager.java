@@ -18,10 +18,14 @@
 package com.cloud.template;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
+import com.cloud.api.commands.CreateTemplateCmd;
+import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
@@ -62,6 +66,7 @@ public interface TemplateManager extends Manager {
      * @return id of the template created.
      */
     Long create(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable);
+    Long create(RegisterTemplateCmd cmd) throws InvalidParameterValueException, URISyntaxException, ResourceAllocationException;
     
     /**
      * Creates a Template

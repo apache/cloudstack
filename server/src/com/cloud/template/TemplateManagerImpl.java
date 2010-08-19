@@ -17,7 +17,11 @@
  */
 package com.cloud.template;
 
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +38,7 @@ import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.manager.AgentManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
@@ -44,6 +49,7 @@ import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -72,10 +78,12 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserAccount;
+import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
@@ -111,24 +119,26 @@ public class TemplateManagerImpl implements TemplateManager {
     @Inject SnapshotDao _snapshotDao;
     long _routerTemplateId = -1;
     @Inject StorageManager _storageMgr;
+    @Inject ConfigurationDao _configDao;
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     
 
     @Override
-    public Long create(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) {
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-        String name = (String)params.get(BaseCmd.Properties.NAME.getName());
-        String displayText = (String)params.get(BaseCmd.Properties.DISPLAY_TEXT.getName()); 
-        Integer bits = (Integer)params.get(BaseCmd.Properties.BITS.getName());
-        Boolean passwordEnabled = (Boolean)params.get(BaseCmd.Properties.PASSWORD_ENABLED.getName());
-        Boolean requiresHVM = (Boolean)params.get(BaseCmd.Properties.REQUIRES_HVM.getName());
-        String url = (String)params.get(BaseCmd.Properties.URL.getName());
-        Boolean isPublic = (Boolean)params.get(BaseCmd.Properties.IS_PUBLIC.getName());
-        Boolean featured = (Boolean)params.get(BaseCmd.Properties.IS_FEATURED.getName());
-        String format = (String)params.get(BaseCmd.Properties.FORMAT.getName());
-        Long guestOSId = (Long) params.get(BaseCmd.Properties.OS_TYPE_ID.getName());
-        Long zoneId = (Long) params.get(BaseCmd.Properties.ZONE_ID.getName());
+    public Long create(RegisterTemplateCmd cmd) throws InvalidParameterValueException, URISyntaxException, ResourceAllocationException{
+    	
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long userId = UserContext.current().getUserId();
+        String name = cmd.getName();
+        String displayText = cmd.getDisplayText(); 
+        Integer bits = cmd.getBits();
+        Boolean passwordEnabled = cmd.isPasswordEnabled();
+        Boolean requiresHVM = cmd.getRequiresHvm();
+        String url = cmd.getUrl();
+        Boolean isPublic = cmd.isPublic();
+        Boolean featured = cmd.isFeatured();
+        String format = cmd.getFormat();
+        Long guestOSId = cmd.getOsTypeId();
+        Long zoneId = cmd.getZoneId();
 
         //parameters verification
         if (bits == null) {
@@ -155,7 +165,7 @@ public class TemplateManagerImpl implements TemplateManager {
         
         Account accountObj;
         if (account == null) {
-        	accountObj = getManagementServer().findAccountById(accountId);
+        	accountObj = _accountDao.findById(accountId);
         } else {
         	accountObj = account;
         }
@@ -177,7 +187,7 @@ public class TemplateManagerImpl implements TemplateManager {
         	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid "+format.toLowerCase());
         }
         	
-        boolean allowPublicUserTemplates = Boolean.parseBoolean(getManagementServer().getConfigurationValue("allow.public.user.templates"));        
+        boolean allowPublicUserTemplates = Boolean.parseBoolean(_configDao.getValue("allow.public.user.templates"));        
         if (!isAdmin && !allowPublicUserTemplates && isPublic) {
         	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Only private templates can be created.");
         }
@@ -190,17 +200,78 @@ public class TemplateManagerImpl implements TemplateManager {
         if (userId == null) {
             userId = Long.valueOf(1);
         }
+        
+        if (name.length() > 32)
+        {
+            throw new InvalidParameterValueException("Template name should be less than 32 characters");
+        }
+        	
+        if (!name.matches("^[\\p{Alnum} ._-]+")) {
+            throw new InvalidParameterValueException("Only alphanumeric, space, dot, dashes and underscore characters allowed");
+        }
     	
+        ImageFormat imgfmt = ImageFormat.valueOf(format.toUpperCase());
+        if (imgfmt == null) {
+            throw new IllegalArgumentException("Image format is incorrect " + format + ". Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
+        }
+        
+        FileSystem fileSystem = FileSystem.valueOf("ext3");
+        if (fileSystem == null) {
+            throw new IllegalArgumentException("File system is incorrect " + "ext3" + ". Supported file systems are " + EnumUtils.listValues(FileSystem.values()));
+        }
+        
+        URI uri = new URI(url);
+        if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
+           throw new IllegalArgumentException("Unsupported scheme for url: " + url);
+        }
+        int port = uri.getPort();
+        if (!(port == 80 || port == 443 || port == -1)) {
+        	throw new IllegalArgumentException("Only ports 80 and 443 are allowed");
+        }
+        String host = uri.getHost();
+        try {
+        	InetAddress hostAddr = InetAddress.getByName(host);
+        	if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress() ) {
+        		throw new IllegalArgumentException("Illegal host specified in url");
+        	}
+        	if (hostAddr instanceof Inet6Address) {
+        		throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
+        	}
+        } catch (UnknownHostException uhe) {
+        	throw new IllegalArgumentException("Unable to resolve " + host);
+        }
+        
+        // Check that the resource limit for templates/ISOs won't be exceeded
+        UserVO user = _userDao.findById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("Unable to find user with id " + userId);
+        }
+        
+    	AccountVO accountVO = _accountDao.findById(user.getAccountId());
+        if (_accountMgr.resourceLimitExceeded(accountVO, ResourceType.template)) {
+        	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of templates and ISOs for account: " + account.getAccountName() + " has been exceeded.");
+        	rae.setResourceType("template");
+        	throw rae;
+        }
+        
+        // If a zoneId is specified, make sure it is valid
+        if (zoneId != null) {
+        	if (_dcDao.findById(zoneId) == null) {
+        		throw new IllegalArgumentException("Please specify a valid zone.");
+        	}
+        }
+        VMTemplateVO systemvmTmplt = _tmpltDao.findRoutingTemplate();
+        if (systemvmTmplt.getName().equalsIgnoreCase(name) || systemvmTmplt.getDisplayText().equalsIgnoreCase(displayText)) {
+        	throw new IllegalArgumentException("Cannot use reserved names for templates");
+        }
+        
+        return create(userId, zoneId, name, displayText, isPublic, featured, imgfmt, fileSystem, uri, null, requiresHVM, bits, passwordEnabled, guestOSId, true);
     	
-    	
-    	
-    	
-    	
-    	
-    	
-    	
-    	
-    	Long id = _tmpltDao.getNextInSequence(Long.class, "id");
+    }
+    
+    @Override
+    public Long create(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) {
+        Long id = _tmpltDao.getNextInSequence(Long.class, "id");
         
         UserVO user = _userDao.findById(userId);
         long accountId = user.getAccountId();
