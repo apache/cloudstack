@@ -28,7 +28,6 @@ import com.cloud.api.Parameter;
 @Implementation(method="discoverHosts", manager=Manager.AgentManager)
 public abstract class AddHostOrStorageCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddHostOrStorageCmd.class.getName());
-    private static final String s_name = "addhostorstorageresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -87,16 +86,5 @@ public abstract class AddHostOrStorageCmd extends BaseCmd {
     public Long getZoneId() {
         return zoneId;
     }
-
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
-    public String getName() {
-    	return s_name;
-    }
-
  
 }

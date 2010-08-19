@@ -41,6 +41,16 @@ public class UpdateIsoCmd extends UpdateTemplateOrIsoCmd {
     public String getFormat() {
         return null;
     }
+    
+    
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
+    public String getName() {
+        return s_name;
+    }
 
 //    @Override
 //    public List<Pair<String, Object>> execute(Map<String, Object> params) {

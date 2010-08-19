@@ -28,7 +28,6 @@ import com.cloud.api.Parameter;
 @Implementation(method="updateTemplate", manager=Manager.ManagementServer)
 public abstract class UpdateTemplateOrIsoCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIsoCmd.class.getName());
-    private static final String s_name = "updatetemplateorisoresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -48,6 +47,12 @@ public abstract class UpdateTemplateOrIsoCmd extends BaseCmd {
 
     @Parameter(name="ostypeid", type=CommandType.LONG)
     private Long osTypeId;
+    
+    @Parameter(name="format", type=CommandType.STRING)
+    private String format;
+    
+    @Parameter(name="passwordenabled", type=CommandType.BOOLEAN)
+    private Boolean passwordEnabled;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -72,14 +77,13 @@ public abstract class UpdateTemplateOrIsoCmd extends BaseCmd {
     public Long getOsTypeId() {
         return osTypeId;
     }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
-    public String getName() {
-        return s_name;
+    
+    public Boolean isPasswordEnabled() {
+        return passwordEnabled;
+    }
+    
+    public String getFormat() {
+        return format;
     }
 
 }

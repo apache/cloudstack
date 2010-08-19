@@ -30,7 +30,13 @@ public class AddHostCmd extends AddHostOrStorageCmd {
     public static final Logger s_logger = Logger.getLogger(AddHostCmd.class.getName());
     private static final String s_name = "addhostresponse";
     
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
     
+    public String getName() {
+    	return s_name;
+    }
     /*
     @Override
     public List<Pair<String, Object>> execute(Map<String, Object> params)

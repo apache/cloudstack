@@ -54,6 +54,15 @@ public class AddSecondaryStorageCmd extends AddHostOrStorageCmd {
     public String getUsername() {
         return null;
     }
+    
+    
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+    
+    public String getName() {
+    	return s_name;
+    }
 
     /*
     @Override
