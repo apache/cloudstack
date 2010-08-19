@@ -39,6 +39,7 @@ import com.cloud.api.commands.CreatePodCmd;
 import com.cloud.api.commands.CreateServiceOfferingCmd;
 import com.cloud.api.commands.DeleteDiskOfferingCmd;
 import com.cloud.api.commands.DeletePodCmd;
+import com.cloud.api.commands.DeleteServiceOfferingCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
 import com.cloud.api.commands.UpdatePodCmd;
@@ -1136,15 +1137,25 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
 
     
-    public boolean deleteServiceOffering(long userId, long serviceOfferingId) throws InvalidParameterValueException{
-    	ServiceOfferingVO offering = _serviceOfferingDao.findById(serviceOfferingId);
+    public boolean deleteServiceOffering(DeleteServiceOfferingCmd cmd) throws InvalidParameterValueException{
     	
+        Long offeringId = cmd.getId();
+        Long userId = UserContext.current().getUserId();
+        
+        if (userId == null) {
+            userId = Long.valueOf(User.UID_SYSTEM);
+        }
+ 
+        //Verify service offering id
+        ServiceOfferingVO offering = _serviceOfferingDao.findById(offeringId);
     	if (offering == null) {
-    		throw new InvalidParameterValueException("Unable to find service offering by id " + serviceOfferingId);
+    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find service offering " + offeringId);
+    	} else if (offering.getRemoved() != null) {
+    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find service offering " + offeringId);
     	}
     	
-    	if (_serviceOfferingDao.remove(serviceOfferingId)) {
-    		saveConfigurationEvent(userId, null, EventTypes.EVENT_SERVICE_OFFERING_EDIT, "Successfully deleted service offering with name: " + offering.getName(), "soId=" + serviceOfferingId, "name=" + offering.getName(),
+    	if (_serviceOfferingDao.remove(offeringId)) {
+    		saveConfigurationEvent(userId, null, EventTypes.EVENT_SERVICE_OFFERING_EDIT, "Successfully deleted service offering with name: " + offering.getName(), "soId=" + offeringId, "name=" + offering.getName(),
     				"displayText=" + offering.getDisplayText(), "offerHA=" + offering.getOfferHA(), "useVirtualNetwork=" + (offering.getGuestIpType() == GuestIpType.Virtualized));
     		return true;
     	} else {

@@ -25,6 +25,7 @@ import com.cloud.api.commands.CreatePodCmd;
 import com.cloud.api.commands.CreateServiceOfferingCmd;
 import com.cloud.api.commands.DeleteDiskOfferingCmd;
 import com.cloud.api.commands.DeletePodCmd;
+import com.cloud.api.commands.DeleteServiceOfferingCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
 import com.cloud.api.commands.UpdatePodCmd;
@@ -122,7 +123,7 @@ public interface ConfigurationManager extends Manager {
 	 * @param userId
 	 * @param serviceOfferingId
 	 */
-	boolean deleteServiceOffering(long userId, long serviceOfferingId) throws InvalidParameterValueException;
+	boolean deleteServiceOffering(DeleteServiceOfferingCmd cmd) throws InvalidParameterValueException;
 	
 	/**
 	 * Creates a new disk offering
