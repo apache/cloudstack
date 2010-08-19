@@ -2046,7 +2046,7 @@ public interface ManagementServer {
 	 * @return the job id if scheduled, 0 if the job was not scheduled
 	 */
 	long revokeNetworkGroupIngressAsync(Long accountId, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups);
-	boolean revokeNetworkGroupIngress(AccountVO account, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups);
+//	boolean revokeNetworkGroupIngress(AccountVO account, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups);
 
 	/**
 	 * Delete an empty network group.  If the group is not empty an error is returned.

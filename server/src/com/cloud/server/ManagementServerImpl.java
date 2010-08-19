@@ -8111,10 +8111,10 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job);
     }
 
-    @Override
-	public boolean revokeNetworkGroupIngress(AccountVO account, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups) {
-		return _networkGroupMgr.revokeNetworkGroupIngress(account, groupName, protocol, startPort, endPort, cidrList, authorizedGroups);
-	}
+//    @Override
+//	public boolean revokeNetworkGroupIngress(AccountVO account, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups) {
+//		return _networkGroupMgr.revokeNetworkGroupIngress(account, groupName, protocol, startPort, endPort, cidrList, authorizedGroups);
+//	}
 
 	@Override
 	public long revokeNetworkGroupIngressAsync(Long accountId, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups) {

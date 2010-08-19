@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.cloud.api.commands.CreateNetworkGroupCmd;
+import com.cloud.api.commands.RevokeNetworkGroupIngressCmd;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
@@ -61,9 +62,7 @@ public interface NetworkGroupManager extends Manager {
 
 	public void removeInstanceFromGroups(Long userVmId);
 
-	boolean revokeNetworkGroupIngress(AccountVO account, String groupName,
-			String proto, int startPort, int endPort, String[] cidrList,
-			List<NetworkGroupVO> authorizedGroups);
+	boolean revokeNetworkGroupIngress(RevokeNetworkGroupIngressCmd cmd);
 	
 	public void deleteNetworkGroup(Long groupId, Long accountId) throws ResourceInUseException, PermissionDeniedException;
 
