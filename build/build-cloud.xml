@@ -225,7 +225,6 @@
         <include name="**/*.jsp"/>
         <exclude name="**/.classpath" />
         <exclude name="**/.project" />
-        <exclude name="resources/*"/>
       </fileset>
       <filterset>
         <filter token="VERSION" value="${impl.version}"/>
@@ -239,7 +238,6 @@
         <exclude name="**/*.jsp"/>
         <exclude name="**/.classpath" />
         <exclude name="**/.project" />
-        <exclude name="resources/*"/>
       </fileset>
     </copy>
     <copy todir="${client.target.dir}">
