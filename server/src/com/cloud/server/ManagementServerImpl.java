@@ -4558,78 +4558,78 @@ public class ManagementServerImpl implements ManagementServer {
         return _vlanDao.findById(vlanDbId);
     }
 
-    @Override
-    public Long createTemplate(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) throws InvalidParameterValueException,IllegalArgumentException, ResourceAllocationException {
-        try
-        {
-            if (name.length() > 32)
-            {
-                throw new InvalidParameterValueException("Template name should be less than 32 characters");
-            }
-            	
-            if (!name.matches("^[\\p{Alnum} ._-]+")) {
-                throw new InvalidParameterValueException("Only alphanumeric, space, dot, dashes and underscore characters allowed");
-            }
-        	
-            ImageFormat imgfmt = ImageFormat.valueOf(format.toUpperCase());
-            if (imgfmt == null) {
-                throw new IllegalArgumentException("Image format is incorrect " + format + ". Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
-            }
-            
-            FileSystem fileSystem = FileSystem.valueOf(diskType);
-            if (fileSystem == null) {
-                throw new IllegalArgumentException("File system is incorrect " + diskType + ". Supported file systems are " + EnumUtils.listValues(FileSystem.values()));
-            }
-            
-            URI uri = new URI(url);
-            if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
-               throw new IllegalArgumentException("Unsupported scheme for url: " + url);
-            }
-            int port = uri.getPort();
-            if (!(port == 80 || port == 443 || port == -1)) {
-            	throw new IllegalArgumentException("Only ports 80 and 443 are allowed");
-            }
-            String host = uri.getHost();
-            try {
-            	InetAddress hostAddr = InetAddress.getByName(host);
-            	if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress() ) {
-            		throw new IllegalArgumentException("Illegal host specified in url");
-            	}
-            	if (hostAddr instanceof Inet6Address) {
-            		throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
-            	}
-            } catch (UnknownHostException uhe) {
-            	throw new IllegalArgumentException("Unable to resolve " + host);
-            }
-            
-            // Check that the resource limit for templates/ISOs won't be exceeded
-            UserVO user = _userDao.findById(userId);
-            if (user == null) {
-                throw new IllegalArgumentException("Unable to find user with id " + userId);
-            }
-        	AccountVO account = _accountDao.findById(user.getAccountId());
-            if (_accountMgr.resourceLimitExceeded(account, ResourceType.template)) {
-            	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of templates and ISOs for account: " + account.getAccountName() + " has been exceeded.");
-            	rae.setResourceType("template");
-            	throw rae;
-            }
-            
-            // If a zoneId is specified, make sure it is valid
-            if (zoneId != null) {
-            	if (_dcDao.findById(zoneId) == null) {
-            		throw new IllegalArgumentException("Please specify a valid zone.");
-            	}
-            }
-            VMTemplateVO systemvmTmplt = _templateDao.findRoutingTemplate();
-            if (systemvmTmplt.getName().equalsIgnoreCase(name) || systemvmTmplt.getDisplayText().equalsIgnoreCase(displayText)) {
-            	throw new IllegalArgumentException("Cannot use reserved names for templates");
-            }
-            
-            return _tmpltMgr.create(userId, zoneId, name, displayText, isPublic, featured, imgfmt, fileSystem, uri, chksum, requiresHvm, bits, enablePassword, guestOSId, bootable);
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Invalid URL " + url);
-        }
-    }
+//    @Override
+//    public Long createTemplate(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) throws InvalidParameterValueException,IllegalArgumentException, ResourceAllocationException {
+//        try
+//        {
+//            if (name.length() > 32)
+//            {
+//                throw new InvalidParameterValueException("Template name should be less than 32 characters");
+//            }
+//            	
+//            if (!name.matches("^[\\p{Alnum} ._-]+")) {
+//                throw new InvalidParameterValueException("Only alphanumeric, space, dot, dashes and underscore characters allowed");
+//            }
+//        	
+//            ImageFormat imgfmt = ImageFormat.valueOf(format.toUpperCase());
+//            if (imgfmt == null) {
+//                throw new IllegalArgumentException("Image format is incorrect " + format + ". Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
+//            }
+//            
+//            FileSystem fileSystem = FileSystem.valueOf(diskType);
+//            if (fileSystem == null) {
+//                throw new IllegalArgumentException("File system is incorrect " + diskType + ". Supported file systems are " + EnumUtils.listValues(FileSystem.values()));
+//            }
+//            
+//            URI uri = new URI(url);
+//            if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
+//               throw new IllegalArgumentException("Unsupported scheme for url: " + url);
+//            }
+//            int port = uri.getPort();
+//            if (!(port == 80 || port == 443 || port == -1)) {
+//            	throw new IllegalArgumentException("Only ports 80 and 443 are allowed");
+//            }
+//            String host = uri.getHost();
+//            try {
+//            	InetAddress hostAddr = InetAddress.getByName(host);
+//            	if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress() ) {
+//            		throw new IllegalArgumentException("Illegal host specified in url");
+//            	}
+//            	if (hostAddr instanceof Inet6Address) {
+//            		throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
+//            	}
+//            } catch (UnknownHostException uhe) {
+//            	throw new IllegalArgumentException("Unable to resolve " + host);
+//            }
+//            
+//            // Check that the resource limit for templates/ISOs won't be exceeded
+//            UserVO user = _userDao.findById(userId);
+//            if (user == null) {
+//                throw new IllegalArgumentException("Unable to find user with id " + userId);
+//            }
+//        	AccountVO account = _accountDao.findById(user.getAccountId());
+//            if (_accountMgr.resourceLimitExceeded(account, ResourceType.template)) {
+//            	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of templates and ISOs for account: " + account.getAccountName() + " has been exceeded.");
+//            	rae.setResourceType("template");
+//            	throw rae;
+//            }
+//            
+//            // If a zoneId is specified, make sure it is valid
+//            if (zoneId != null) {
+//            	if (_dcDao.findById(zoneId) == null) {
+//            		throw new IllegalArgumentException("Please specify a valid zone.");
+//            	}
+//            }
+//            VMTemplateVO systemvmTmplt = _templateDao.findRoutingTemplate();
+//            if (systemvmTmplt.getName().equalsIgnoreCase(name) || systemvmTmplt.getDisplayText().equalsIgnoreCase(displayText)) {
+//            	throw new IllegalArgumentException("Cannot use reserved names for templates");
+//            }
+//            
+//            return _tmpltMgr.create(userId, zoneId, name, displayText, isPublic, featured, imgfmt, fileSystem, uri, chksum, requiresHvm, bits, enablePassword, guestOSId, bootable);
+//        } catch (URISyntaxException e) {
+//            throw new IllegalArgumentException("Invalid URL " + url);
+//        }
+//    }
 
     @Override
     public boolean updateTemplate(UpdateTemplateOrIsoCmd cmd) throws InvalidParameterValueException {

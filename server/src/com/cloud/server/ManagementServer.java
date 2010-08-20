@@ -1112,7 +1112,7 @@ public interface ManagementServer {
      * @throws ResourceAllocationException
      * @throws InvalidParameterValueException
      */
-    Long createTemplate(long createdBy, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) throws IllegalArgumentException, ResourceAllocationException, InvalidParameterValueException;
+//    Long createTemplate(long createdBy, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) throws IllegalArgumentException, ResourceAllocationException, InvalidParameterValueException;
     
     /**
      * Deletes a template from all secondary storage servers

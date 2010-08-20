@@ -348,9 +348,7 @@ public class TemplateManagerImpl implements TemplateManager {
         }
     }
 
-    
-    @Override
-    public Long create(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) {
+    private Long create(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) {
         Long id = _tmpltDao.getNextInSequence(Long.class, "id");
         
         UserVO user = _userDao.findById(userId);
