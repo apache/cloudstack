@@ -18,27 +18,18 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.host.HostVO;
-import com.cloud.utils.Pair;
+import com.cloud.api.BaseCmd.Manager;
 
-public class ReconnectHostCmd extends BaseCmd {
+@Implementation(method="reconnectHost", manager=Manager.AgentManager)
+public class ReconnectHostCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(ReconnectHostCmd.class.getName());
 
     private static final String s_name = "reconnecthostresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -66,30 +57,33 @@ public class ReconnectHostCmd extends BaseCmd {
     public static String getResultObjectName() {
     	return "host";
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
     
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long hostId = (Long)params.get(BaseCmd.Properties.ID.getName());
-    
-        //verify input parameters
-    	HostVO host = getManagementServer().getHostBy(hostId);
-    	if (host == null) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Host with id " + hostId.toString() + " doesn't exist");
-    	}
-        
-        long jobId = getManagementServer().reconnectAsync(hostId);
-        if(jobId == 0) {
-        	s_logger.warn("Unable to schedule async-job for ReconnectHost comamnd");
-        } else {
-	        if(s_logger.isDebugEnabled())
-	        	s_logger.debug("ReconnectHost command has been accepted, job id: " + jobId);
-        }
-        
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-        return returnValues;
-    }
+//    @Override
+//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
+//        Long hostId = (Long)params.get(BaseCmd.Properties.ID.getName());
+//    
+//        //verify input parameters
+//    	HostVO host = getManagementServer().getHostBy(hostId);
+//    	if (host == null) {
+//    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Host with id " + hostId.toString() + " doesn't exist");
+//    	}
+//        
+//        long jobId = getManagementServer().reconnectAsync(hostId);
+//        if(jobId == 0) {
+//        	s_logger.warn("Unable to schedule async-job for ReconnectHost comamnd");
+//        } else {
+//	        if(s_logger.isDebugEnabled())
+//	        	s_logger.debug("ReconnectHost command has been accepted, job id: " + jobId);
+//        }
+//        
+//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
+//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
+//        return returnValues;
+//    }
+
+	@Override
+	public String getResponse() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

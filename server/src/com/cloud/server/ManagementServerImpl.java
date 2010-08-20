@@ -73,7 +73,6 @@ import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
-import com.cloud.api.commands.ReconnectHostCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.RemovePortForwardingServiceCmd;
 import com.cloud.api.commands.StartRouterCmd;
@@ -2220,29 +2219,29 @@ public class ManagementServerImpl implements ManagementServer {
         return true;
     }
 
-    @Override
-    public boolean reconnect(long hostId) {
-        try {
-            return _agentMgr.reconnect(hostId);
-        } catch (AgentUnavailableException e) {
-            return false;
-        }
-    }
+//    @Override
+//    public boolean reconnect(long hostId) {
+//        try {
+//            return _agentMgr.reconnect(hostId);
+//        } catch (AgentUnavailableException e) {
+//            return false;
+//        }
+//    }
 
-    @Override
-    public long reconnectAsync(long hostId) {
-        Long param = new Long(hostId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-		AsyncJobVO job = new AsyncJobVO();
-		job.setUserId(UserContext.current().getUserId());
-		job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-		job.setCmd("Reconnect");
-		job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(ReconnectHostCmd.getResultObjectName());
-        
-		return _asyncMgr.submitAsyncJob(job);
-	}
+//    @Override
+//    public long reconnectAsync(long hostId) {
+//        Long param = new Long(hostId);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//		AsyncJobVO job = new AsyncJobVO();
+//		job.setUserId(UserContext.current().getUserId());
+//		job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
+//		job.setCmd("Reconnect");
+//		job.setCmdInfo(gson.toJson(param));
+//        job.setCmdOriginator(ReconnectHostCmd.getResultObjectName());
+//        
+//		return _asyncMgr.submitAsyncJob(job);
+//	}
 
     @Override
     public UserVm deployVirtualMachine(long userId, long accountId, long dataCenterId, long serviceOfferingId, long templateId, Long diskOfferingId,

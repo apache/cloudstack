@@ -26,6 +26,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.commands.AddHostOrStorageCmd;
 import com.cloud.api.commands.DeleteHostCmd;
+import com.cloud.api.commands.ReconnectHostCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
@@ -220,6 +221,7 @@ public interface AgentManager extends Manager {
     
     public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException;
     public boolean reconnect(final long hostId) throws AgentUnavailableException;
+    public boolean reconnectHost(ReconnectHostCmd cmd) throws AgentUnavailableException;
     
     public List<HostVO> discoverHosts(AddHostOrStorageCmd cmd) throws DiscoveryException, InvalidParameterValueException;
 }

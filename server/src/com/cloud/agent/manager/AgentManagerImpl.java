@@ -70,9 +70,11 @@ import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.agent.transport.UpgradeResponse;
 import com.cloud.alert.AlertManager;
-import com.cloud.api.commands.AddHostCmd;
+import com.cloud.api.BaseCmd;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AddHostOrStorageCmd;
 import com.cloud.api.commands.DeleteHostCmd;
+import com.cloud.api.commands.ReconnectHostCmd;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -96,10 +98,10 @@ import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
-import com.cloud.host.Host.Type;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.Host.Type;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
@@ -1254,6 +1256,20 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         return send(hostId, cmds, stopOnError, _wait);
     }
 
+    @Override
+    public boolean reconnectHost(ReconnectHostCmd cmd) throws AgentUnavailableException
+    {
+    	Long hostId = cmd.getId();
+    	
+    	HostVO host = _hostDao.findById(hostId);
+    	if (host == null) {
+    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Host with id " + hostId.toString() + " doesn't exist");
+    	}
+
+    	return reconnect(hostId);
+    	
+    }
+    
     @Override
     public boolean reconnect(final long hostId) throws AgentUnavailableException {
         HostVO host;

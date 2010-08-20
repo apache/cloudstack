@@ -134,8 +134,8 @@ public interface ManagementServer {
      * @return a user object
      */
     User createUser(String username, String password, String firstName, String lastName, Long domain, String accountName, short userType, String email, String timezone);
-	boolean reconnect(long hostId);
-	long reconnectAsync(long hostId);
+//	boolean reconnect(long hostId);
+//	long reconnectAsync(long hostId);
 	
 	ClusterVO findClusterById(long clusterId);
     List<ClusterVO> listClusterByPodId(long podId);
