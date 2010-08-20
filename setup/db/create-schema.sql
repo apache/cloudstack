@@ -83,7 +83,7 @@ CREATE TABLE `cloud`.`hypervsior_properties` (
   `hypervisor` varchar(32) NOT NULL UNIQUE COMMENT 'hypervisor type',
   `max_storage_devices` int(10) NOT NULL COMMENT 'maximum number of storage devices',
   `cdrom_device` int(10) NOT NULL COMMENT 'device id reserved for cdrom',
-  `max_network_devices` int(10) NOT NULL COMMENT 'maximum number of network devices',
+  `max_network_devices` int(10) NOT NULL COMMENT 'maximum number of network devices'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`network_profiles` (
