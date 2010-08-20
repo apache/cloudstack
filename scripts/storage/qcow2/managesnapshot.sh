@@ -16,13 +16,20 @@ create_snapshot() {
   local snapshotname=$2
   local failed=0
 
-  qemu-img snapshot -c $snapshotname $disk
+  if [ ! -f $disk ]
+  then
+     failed=1
+     printf "No disk $disk exist\n" >&2
+     return $failed
+  fi
+
+  cloud-qemu-img snapshot -c $snapshotname $disk
   
   if [ $? -gt 0 ]
   then
-    failed=1
+    failed=2
     printf "***Failed to create snapshot $snapshotname for path $disk\n" >&2
-    qemu-img snapshot -d $snapshotname $disk
+    cloud-qemu-img snapshot -d $snapshotname $disk
     
     if [ $? -gt 0 ]
     then
@@ -34,20 +41,23 @@ create_snapshot() {
 }
 
 destroy_snapshot() {
-  local backupSnapDir=$1
+  local disk=$1
   local snapshotname=$2
   local failed=0
 
-  if [ -f $backupSnapDir/$snapshotname ]
+  if [ ! -f $disk ]
   then
-     rm -f $backupSnapDir/$snapshotname
-  
-     if [ $? -gt 0 ]
-     then
-        printf "***Failed to delete snapshot $snapshotname for path $backupSnapDir\n" >&2
-        failed=1
-     fi
+     failed=1
+     printf "No disk $disk exist\n" >&2
+     return $failed
   fi
+
+  cloud-qemu-img snapshot -d $snapshotname $disk
+  if [ $? -gt 0 ]
+  then
+     failed=2
+     printf "Failed to delete snapshot $snapshotname for path $disk\n" >&2
+  fi	
 
   return $failed 
 }
@@ -71,6 +81,7 @@ backup_snapshot() {
   local disk=$1
   local snapshotname=$2
   local destPath=$3
+  local destName=$4
 
   if [ ! -d $destPath ]
   then
@@ -90,7 +101,7 @@ backup_snapshot() {
     return 1
   fi
 
-  cloud-qemu-img convert -f qcow2 -O qcow2 -s $snapshotname $disk $destPath/$snapshotname >& /dev/null
+  cloud-qemu-img convert -f qcow2 -O qcow2 -s $snapshotname $disk $destPath/$destName >& /dev/null
   if [ $? -gt 0 ]
   then
     printf "Failed to backup $snapshotname for disk $disk to $destPath" >&2
@@ -107,8 +118,9 @@ bflag=
 nflag=
 pathval=
 snapshot=
+tmplName=
 
-while getopts 'c:d:r:n:b:p:' OPTION
+while getopts 'c:d:r:n:b:p:t:' OPTION
 do
   case $OPTION in
   c)	cflag=1
@@ -128,6 +140,8 @@ do
 	;;
   p)    destPath="$OPTARG"
         ;;
+  t)    tmplName="$OPTARG"
+	;;
   ?)	usage
 	;;
   esac
@@ -144,7 +158,7 @@ then
   exit $?
 elif [ "$bflag" == "1" ]
 then
-  backup_snapshot $pathval $snapshot $destPath
+  backup_snapshot $pathval $snapshot $destPath $tmplName
   exit $?
 elif [ "$rflag" == "1" ]
 then

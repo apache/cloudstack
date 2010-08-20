@@ -287,7 +287,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         }
         txn.commit();
 
-        VolumeVO volume = _volsDao.findById(volumeId);
+        VolumeVO volume = _volsDao.lock(volumeId, true);
         
         if (!shouldRunSnapshot(userId, volume, policyIds)) {
             // A null snapshot is interpreted as snapshot creation failed which is what we want to indicate
@@ -477,7 +477,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         _snapshotDao.update(snapshot.getId(), snapshot);
         
         long volumeId   = snapshot.getVolumeId();
-        VolumeVO volume = _volsDao.findById(volumeId);
+        VolumeVO volume = _volsDao.lock(volumeId, true);
         
         String primaryStoragePoolNameLabel = _storageMgr.getPrimaryStorageNameLabel(volume);
         Long dcId                          = volume.getDataCenterId();
