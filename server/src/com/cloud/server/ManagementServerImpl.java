@@ -79,6 +79,7 @@ import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
+import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.RemovePortForwardingServiceCmd;
 import com.cloud.api.commands.StartRouterCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
@@ -1398,8 +1399,10 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public String[] createApiKeyAndSecretKey(Long userId)
+    public String[] createApiKeyAndSecretKey(RegisterCmd cmd)
     {
+    	Long userId = cmd.getId();
+    	
     	User user = _userDao.findById(userId);
     	
     	if (user == null) {
@@ -2687,10 +2690,10 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job, true);
     }
 
-    @Override
-    public boolean recoverVirtualMachine(long vmId) throws ResourceAllocationException, InternalErrorException {
-        return _vmMgr.recoverVirtualMachine(vmId);
-    }
+//    @Override
+//    public boolean recoverVirtualMachine(long vmId) throws ResourceAllocationException, InternalErrorException {
+//        return _vmMgr.recoverVirtualMachine(vmId);
+//    }
 
     /*
     @Override
