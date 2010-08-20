@@ -18,23 +18,18 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.BaseCmd.Manager;
-import com.cloud.utils.Pair;
 
 @Implementation(method="stopSystemVM", manager=Manager.ManagementServer)
 public class StopSystemVmCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(StopSystemVmCmd.class.getName());
 
     private static final String s_name = "stopsystemvmresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

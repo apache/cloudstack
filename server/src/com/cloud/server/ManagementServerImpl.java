@@ -73,6 +73,7 @@ import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
+import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.RemovePortForwardingServiceCmd;
 import com.cloud.api.commands.StartRouterCmd;
@@ -8034,25 +8035,25 @@ public class ManagementServerImpl implements ManagementServer {
 		}
 	}
 
-	@Override
-	public long stopSystemVmAsync(long instanceId) {
-		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(instanceId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
-		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
-			return stopConsoleProxyAsync(instanceId);
-		} else {
-			return stopSecondaryStorageVmAsync(instanceId);
-		}
-	}
+//	@Override
+//	public long stopSystemVmAsync(long instanceId) {
+//		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(instanceId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
+//		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
+//			return stopConsoleProxyAsync(instanceId);
+//		} else {
+//			return stopSecondaryStorageVmAsync(instanceId);
+//		}
+//	}
 
-	@Override
-	public long rebootSystemVmAsync(long instanceId) {
-		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(instanceId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
-		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
-			return rebootConsoleProxyAsync(instanceId);
-		} else {
-			return rebootSecondaryStorageVmAsync(instanceId);
-		}
-	}
+//	@Override
+//	public long rebootSystemVmAsync(long instanceId) {
+//		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(instanceId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
+//		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
+//			return rebootConsoleProxyAsync(instanceId);
+//		} else {
+//			return rebootSecondaryStorageVmAsync(instanceId);
+//		}
+//	}
 	
 	@Override
 	public long startSystemVmAsync(long instanceId) {
@@ -8065,12 +8066,19 @@ public class ManagementServerImpl implements ManagementServer {
 	}
 	
 	@Override
-	public boolean rebootSystemVM(long instanceId, long startEventId)  {
-		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(instanceId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
+	public boolean rebootSystemVM(RebootSystemVmCmd cmd)  {
+		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(cmd.getId(), VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
+	
+		if (systemVm == null) {
+        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + systemVm.getId());
+        }
+		
 		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
-			return rebootConsoleProxy(instanceId, startEventId);
+			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_REBOOT, "Rebooting console proxy with Id: "+cmd.getId());
+			return rebootConsoleProxy(cmd.getId(), eventId);
 		} else {
-			return rebootSecondaryStorageVm(instanceId, startEventId);
+			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_REBOOT, "Rebooting secondary storage vm with Id: "+cmd.getId());
+			return rebootSecondaryStorageVm(cmd.getId(), eventId);
 		}
 	}
 

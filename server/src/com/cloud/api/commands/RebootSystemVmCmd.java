@@ -18,27 +18,18 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.utils.Pair;
-import com.cloud.vm.VMInstanceVO;
+import com.cloud.api.BaseCmd.Manager;
 
-public class RebootSystemVmCmd extends BaseCmd {
+@Implementation(method="rebootSystemVM", manager=Manager.ManagementServer)
+public class RebootSystemVmCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(RebootSystemVmCmd.class.getName());
 
     private static final String s_name = "rebootsystemvmresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-    }
     
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -62,30 +53,32 @@ public class RebootSystemVmCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-    
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-	    Long systemVmId = (Long)params.get(BaseCmd.Properties.ID.getName());
-	    
-	    // verify parameters
-        VMInstanceVO systemVm = getManagementServer().findSystemVMById(systemVmId);
-        if (systemVm == null) {
-        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + systemVmId);
-        }
-        
-	    long jobId = getManagementServer().rebootSystemVmAsync(systemVmId.longValue());
-        if(jobId == 0) {
-        	s_logger.warn("Unable to schedule async-job for RebootSystemVMCommand");
-        } else {
-	        if(s_logger.isDebugEnabled())
-	        	s_logger.debug("RebootSystemVMCommand has been accepted, job id: " + jobId);
-        }
-	    
-	    List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-	    returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-	    return returnValues;
-    }
+//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
+//	    Long systemVmId = (Long)params.get(BaseCmd.Properties.ID.getName());
+//	    
+//	    // verify parameters
+//        VMInstanceVO systemVm = getManagementServer().findSystemVMById(systemVmId);
+//        if (systemVm == null) {
+//        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + systemVmId);
+//        }
+//        
+//	    long jobId = getManagementServer().rebootSystemVmAsync(systemVmId.longValue());
+//        if(jobId == 0) {
+//        	s_logger.warn("Unable to schedule async-job for RebootSystemVMCommand");
+//        } else {
+//	        if(s_logger.isDebugEnabled())
+//	        	s_logger.debug("RebootSystemVMCommand has been accepted, job id: " + jobId);
+//        }
+//	    
+//	    List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
+//	    returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
+//	    return returnValues;
+//    }
+
+	@Override
+	public String getResponse() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

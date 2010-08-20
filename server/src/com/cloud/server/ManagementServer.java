@@ -29,6 +29,7 @@ import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
+import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.RemovePortForwardingServiceCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
@@ -1392,9 +1393,9 @@ public interface ManagementServer {
 	boolean stopSystemVM(StopSystemVmCmd cmd);
 	VMInstanceVO startSystemVM(StartSystemVMCmd cmd) throws InternalErrorException;
 	long startSystemVmAsync(long instanceId);
-	long stopSystemVmAsync(long instanceId);
-	long rebootSystemVmAsync(long longValue);
-	boolean rebootSystemVM(long instanceId, long startEventId);
+//	long stopSystemVmAsync(long instanceId);
+//	long rebootSystemVmAsync(long longValue);
+	boolean rebootSystemVM(RebootSystemVmCmd cmd);
 
 
 
