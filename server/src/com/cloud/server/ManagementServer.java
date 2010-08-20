@@ -29,6 +29,7 @@ import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
+import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.RemovePortForwardingServiceCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
 import com.cloud.api.commands.StopSystemVmCmd;
@@ -729,7 +730,7 @@ public interface ManagementServer {
      * @return true if recovered, false otherwise
      * @throws InternalErrorException 
      */
-    boolean recoverVirtualMachine(long vmId) throws ResourceAllocationException, InternalErrorException;
+//    boolean recoverVirtualMachine(long vmId) throws ResourceAllocationException, InternalErrorException;
 
     /**
      * Upgrade the virtual machine to a new service offering
@@ -2009,5 +2010,5 @@ public interface ManagementServer {
 	boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException;
 	boolean updateUser(UpdateUserCmd cmd) throws InvalidParameterValueException;
 	boolean updateTemplatePermissions(UpdateTemplateOrIsoPermissionsCmd cmd)throws InvalidParameterValueException, PermissionDeniedException,InternalErrorException;
-	String[] createApiKeyAndSecretKey(Long userId);
+	String[] createApiKeyAndSecretKey(RegisterCmd cmd);
 }
