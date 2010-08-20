@@ -66,6 +66,7 @@ import com.cloud.agent.manager.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
 import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.StopVMCmd;
@@ -242,7 +243,6 @@ public class UserVmManagerImpl implements UserVmManager {
     @Inject NetworkGroupManager _networkGroupManager;
     @Inject ServiceOfferingDao _serviceOfferingDao;
     @Inject EventDao _eventDao = null;
-    @Inject UserVmDao _userVmDao = null;
     
     private IpAddrAllocator _IpAllocator;
     ScheduledExecutorService _executor = null;
@@ -278,7 +278,7 @@ public class UserVmManagerImpl implements UserVmManager {
     	boolean result = resetVMPasswordInternal(cmd);
 
         // Log event
-        UserVmVO userVm = _userVmDao.findById(cmd.getId());
+        UserVmVO userVm = _vmDao.findById(cmd.getId());
         if (userVm != null) {
             if (result) {
             	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_RESETPASSWORD, "successfully reset password for VM : " + userVm.getName(), null);
@@ -302,7 +302,7 @@ public class UserVmManagerImpl implements UserVmManager {
         String password = null;
 
         //Verify input parameters
-        UserVmVO vmInstance = _userVmDao.findById(id.longValue());
+        UserVmVO vmInstance = _vmDao.findById(id.longValue());
         if (vmInstance == null) {
         	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + id);
         }
@@ -1169,7 +1169,7 @@ public class UserVmManagerImpl implements UserVmManager {
 
         // Verify input parameters
         
-        UserVmVO vmInstance = _userVmDao.createForUpdate(virtualMachineId.longValue());
+        UserVmVO vmInstance = _vmDao.createForUpdate(virtualMachineId.longValue());
         if (vmInstance == null) {
         	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + virtualMachineId);
         }       
@@ -1866,10 +1866,28 @@ public class UserVmManagerImpl implements UserVmManager {
     }
     
     @Override @DB
-    public boolean recoverVirtualMachine(long vmId) throws ResourceAllocationException, InternalErrorException {
-        UserVmVO vm = _vmDao.findById(vmId);
+    public boolean recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException, InternalErrorException {
+    	
+        Long vmId = cmd.getId();
+        Account accountHandle = (Account)UserContext.current().getAccountObject();
+   
+        //if account is removed, return error
+        if(accountHandle!=null && accountHandle.getRemoved() != null)
+        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account " + accountHandle.getId()+" is removed");
+        	
+        // Verify input parameters
+        UserVmVO vm = _vmDao.findById(vmId.longValue());
         
-        if (vm == null || vm.getRemoved() != null) {
+        if (vm == null) {
+        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
+        }
+
+        if ((accountHandle != null) && !_domainDao.isChildDomain(accountHandle.getDomainId(), vm.getDomainId())) {
+            // the domain in which the VM lives is not in the admin's domain tree
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to recover virtual machine with id " + vmId + ", invalid id given.");
+        }
+
+        if (vm.getRemoved() != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to find vm or vm is removed: " + vmId);
             }
@@ -3132,7 +3150,7 @@ public class UserVmManagerImpl implements UserVmManager {
         // Verify input parameters
         try 
         {
-        	vmInstance = _userVmDao.findById(id.longValue());
+        	vmInstance = _vmDao.findById(id.longValue());
         } 
         catch (Exception ex1) 
         {
@@ -3160,13 +3178,13 @@ public class UserVmManagerImpl implements UserVmManager {
     	long accountId = vmInstance.getAccountId();
 
         
-        UserVmVO vm = _userVmDao.findById(id);
+        UserVmVO vm = _vmDao.findById(id);
         if (vm == null) {
             throw new CloudRuntimeException("Unable to find virual machine with id " + id);
         }
 
         boolean haEnabled = vm.isHaEnabled();
-        _userVmDao.updateVM(id, displayName, group, ha);
+        _vmDao.updateVM(id, displayName, group, ha);
         if (haEnabled != ha) {
             String description = null;
             String type = null;
@@ -3197,7 +3215,7 @@ public class UserVmManagerImpl implements UserVmManager {
         if(account!=null && account.getRemoved() != null)
         	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account " + account.getId()+" is removed");
         		
-        UserVmVO vmInstance = _userVmDao.findById(id.longValue());
+        UserVmVO vmInstance = _vmDao.findById(id.longValue());
         if (vmInstance == null) {
         	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + id);
         }
@@ -3220,7 +3238,7 @@ public class UserVmManagerImpl implements UserVmManager {
         if(account!=null && account.getRemoved() != null)
         	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account " + account.getId()+" is removed");
         		
-        UserVmVO vmInstance = _userVmDao.findById(id.longValue());
+        UserVmVO vmInstance = _vmDao.findById(id.longValue());
         if (vmInstance == null) {
         	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + id);
         }

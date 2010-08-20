@@ -18,31 +18,18 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.exception.InternalErrorException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
-import com.cloud.vm.UserVmVO;
+import com.cloud.api.BaseCmd.Manager;
 
+@Implementation(method="recoverVirtualMachine", manager=Manager.UserVmManager)
 public class RecoverVMCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RecoverVMCmd.class.getName());
 
     private static final String s_name = "recovervirtualmachineresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -67,42 +54,44 @@ public class RecoverVMCmd extends BaseCmd {
         return s_name;
     }
 
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
+	@Override
+	public String getResponse() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long vmId = (Long)params.get(BaseCmd.Properties.ID.getName());
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-   
-        //if account is removed, return error
-        if(account!=null && account.getRemoved() != null)
-        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account " + account.getId()+" is removed");
-        	
-        // Verify input parameters
-        UserVmVO vmInstance = getManagementServer().findUserVMInstanceById(vmId.longValue());
-        if (vmInstance == null) {
-        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
-        }
-
-        if ((account != null) && !getManagementServer().isChildDomain(account.getDomainId(), vmInstance.getDomainId())) {
-            // the domain in which the VM lives is not in the admin's domain tree
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to recover virtual machine with id " + vmId + ", invalid id given.");
-        }
-
-        try {
-            boolean success = getManagementServer().recoverVirtualMachine(vmId.longValue());
-            if (success == false) {
-                throw new ServerApiException(BaseCmd.VM_RECOVER_ERROR, "unable to recover virtual machine with id " + vmId.toString());
-            }
-            List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), Boolean.valueOf(success).toString()));
-            return returnValues;
-        } catch (ResourceAllocationException ex) {
-            throw new ServerApiException(BaseCmd.VM_RECOVER_ERROR, "Failed to recover virtual machine with id " + vmId + "; " + ex.getMessage());
-        } catch (InternalErrorException e) {
-        	throw new ServerApiException(BaseCmd.VM_RECOVER_ERROR, "Failed to recover virtual machine with id " + vmId + "; " + e.getMessage());
-		}
-    }
+//    @Override
+//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
+//        Long vmId = (Long)params.get(BaseCmd.Properties.ID.getName());
+//        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
+//   
+//        //if account is removed, return error
+//        if(account!=null && account.getRemoved() != null)
+//        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account " + account.getId()+" is removed");
+//        	
+//        // Verify input parameters
+//        UserVmVO vmInstance = getManagementServer().findUserVMInstanceById(vmId.longValue());
+//        if (vmInstance == null) {
+//        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
+//        }
+//
+//        if ((account != null) && !getManagementServer().isChildDomain(account.getDomainId(), vmInstance.getDomainId())) {
+//            // the domain in which the VM lives is not in the admin's domain tree
+//            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to recover virtual machine with id " + vmId + ", invalid id given.");
+//        }
+//
+//        try {
+//            boolean success = getManagementServer().recoverVirtualMachine(vmId.longValue());
+//            if (success == false) {
+//                throw new ServerApiException(BaseCmd.VM_RECOVER_ERROR, "unable to recover virtual machine with id " + vmId.toString());
+//            }
+//            List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
+//            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), Boolean.valueOf(success).toString()));
+//            return returnValues;
+//        } catch (ResourceAllocationException ex) {
+//            throw new ServerApiException(BaseCmd.VM_RECOVER_ERROR, "Failed to recover virtual machine with id " + vmId + "; " + ex.getMessage());
+//        } catch (InternalErrorException e) {
+//        	throw new ServerApiException(BaseCmd.VM_RECOVER_ERROR, "Failed to recover virtual machine with id " + vmId + "; " + e.getMessage());
+//		}
+//    }
 }

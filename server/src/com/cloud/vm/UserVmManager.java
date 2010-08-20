@@ -22,6 +22,7 @@ import java.util.List;
 
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
 import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.StopVMCmd;
@@ -193,7 +194,7 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
     boolean rebootVirtualMachine(long userId, long vmId);
     OperationResponse executeRebootVM(RebootVMExecutor executor, VMOperationParam param);
     
-    boolean recoverVirtualMachine(long vmId) throws ResourceAllocationException, InternalErrorException;
+    boolean recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException, InternalErrorException;
 
     VMTemplateVO createPrivateTemplateRecord(Long userId, long vmId, String name, String description, long guestOsId, Boolean requiresHvm, Integer bits, Boolean passwordEnabled, boolean isPublic, boolean featured)
 		throws InvalidParameterValueException;
