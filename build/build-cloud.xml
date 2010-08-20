@@ -3,8 +3,8 @@
 
 <project name="Cloud Stack" default="help" basedir=".">
   <description>
-    Cloud Stack ant build file
-  </description>
+		Cloud Stack ant build file
+    </description>
 
   <!--
   Test
