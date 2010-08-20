@@ -273,26 +273,22 @@
         <include name="xenserver-5.5.0-1.jar" />
         <include name="ws-commons-util-1.0.2.jar" />
         <include name="trilead-ssh2-build213.jar" />
-      </fileset>
-      <fileset dir="${thirdparty.dir}/vmware">
-        <include name="apputils.jar" />
-        <include name="vim.jar" />
-        <include name="vim25.jar" />
-      </fileset>
-      <fileset dir="${thirdparty.dir}/vmware/lib">
-        <include name="activation.jar" />
-        <include name="axis.jar" />
-        <include name="jaxen-core.jar" />
-        <include name="jaxen-jdom.jar" />
-        <include name="jaxrpc.jar" />
-        <include name="jdom.jar" />
-        <include name="mailapi.jar" />
-        <include name="saxpath.jar" />
-        <include name="smtp.jar" />
-        <include name="wbem.jar" />
-        <include name="xalan.jar" />
-        <include name="xerces.jar" />
-        <include name="xml-apis.jar" />
+        <include name="vmware-apputils.jar" />
+        <include name="vmware-vim.jar" />
+        <include name="vmware-vim25.jar" />
+        <include name="vmware-lib-activation.jar" />
+        <include name="vmware-lib-axis.jar" />
+        <include name="vmware-lib-jaxen-core.jar" />
+        <include name="vmware-lib-jaxen-jdom.jar" />
+        <include name="vmware-lib-jaxrpc.jar" />
+        <include name="vmware-lib-jdom.jar" />
+        <include name="vmware-lib-mailapi.jar" />
+        <include name="vmware-lib-saxpath.jar" />
+        <include name="vmware-lib-smtp.jar" />
+        <include name="vmware-lib-wbem.jar" />
+        <include name="vmware-lib-xalan.jar" />
+        <include name="vmware-lib-xerces.jar" />
+        <include name="vmware-lib-xml-apis.jar" />
       </fileset>
     </copy>
 
