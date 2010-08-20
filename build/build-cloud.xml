@@ -211,6 +211,7 @@
       <fileset dir="${ui.user.dir}">
         <include name="**/*.html" />
         <include name="**/*.js"/>
+        <include name="**/*.jsp"/>
         <exclude name="**/.classpath" />
         <exclude name="**/.project" />
       </fileset>
@@ -223,6 +224,7 @@
         <include name="**/*"/>
         <exclude name="**/*.html" />
         <exclude name="**/*.js"/>
+        <exclude name="**/*.jsp"/>
         <exclude name="**/.classpath" />
         <exclude name="**/.project" />
       </fileset>
