@@ -698,7 +698,7 @@ public interface ManagementServer {
      * @param vmId
      * @return true if successfully rebooted, false otherwise
      */
-    boolean rebootVirtualMachine(long userId, long vmId);
+//    boolean rebootVirtualMachine(long userId, long vmId);
     
     /**
      * Reboots a Virtual Machine
@@ -706,7 +706,7 @@ public interface ManagementServer {
      * @param vmId
      * @return the async-call job id
      */
-    long rebootVirtualMachineAsync(long userId, long vmId);
+//    long rebootVirtualMachineAsync(long userId, long vmId);
     
 
     /**

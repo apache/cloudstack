@@ -2631,31 +2631,31 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job, true);
     }
 
-    @Override
-    public boolean rebootVirtualMachine(long userId, long vmId) {
-        return _vmMgr.rebootVirtualMachine(userId, vmId);
-    }
+//    @Override
+//    public boolean rebootVirtualMachine(long userId, long vmId) {
+//        return _vmMgr.rebootVirtualMachine(userId, vmId);
+//    }
 
-    @Override
-    public long rebootVirtualMachineAsync(long userId, long vmId) {
-        
-        UserVmVO userVm = _userVmDao.findById(vmId);
-
-        long eventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_VM_REBOOT, "rebooting Vm with Id: "+vmId);
-        
-        VMOperationParam param = new VMOperationParam(userId, userVm.getAccountId(), vmId, null, eventId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-    	job.setUserId(UserContext.current().getUserId());
-    	job.setAccountId(userVm.getAccountId());
-        job.setCmd("RebootVM");
-        job.setCmdInfo(gson.toJson(param));
-        
-        // use the same result result object name as StartVMCmd
-        job.setCmdOriginator(StartVMCmd.getResultObjectName());
-        return _asyncMgr.submitAsyncJob(job, true);
-    }
+//    @Override
+//    public long rebootVirtualMachineAsync(long userId, long vmId) {
+//        
+//        UserVmVO userVm = _userVmDao.findById(vmId);
+//
+//        long eventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_VM_REBOOT, "rebooting Vm with Id: "+vmId);
+//        
+//        VMOperationParam param = new VMOperationParam(userId, userVm.getAccountId(), vmId, null, eventId);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//    	job.setUserId(UserContext.current().getUserId());
+//    	job.setAccountId(userVm.getAccountId());
+//        job.setCmd("RebootVM");
+//        job.setCmdInfo(gson.toJson(param));
+//        
+//        // use the same result result object name as StartVMCmd
+//        job.setCmdOriginator(StartVMCmd.getResultObjectName());
+//        return _asyncMgr.submitAsyncJob(job, true);
+//    }
 
     @Override
     public boolean destroyVirtualMachine(long userId, long vmId) {

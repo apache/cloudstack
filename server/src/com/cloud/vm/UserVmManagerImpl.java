@@ -66,6 +66,7 @@ import com.cloud.agent.manager.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
 import com.cloud.api.commands.StartVMCmd;
@@ -1080,8 +1081,7 @@ public class UserVmManagerImpl implements UserVmManager {
 		}
     }
 
-    @Override
-    public boolean rebootVirtualMachine(long userId, long vmId) {
+    private boolean rebootVirtualMachine(long userId, long vmId) {
         UserVmVO vm = _vmDao.findById(vmId);
 
         if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getRemoved() != null) {
@@ -3249,6 +3249,36 @@ public class UserVmManagerImpl implements UserVmManager {
         
         return startVirtualMachine(userId, id, null, null, eventId);
 		
+	}
+
+	@Override
+	public boolean rebootVirtualMachine(RebootVMCmd cmd) {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long userId = UserContext.current().getUserId();
+        Long vmId = cmd.getId();
+        
+        //Verify input parameters
+        UserVmVO vmInstance = _vmDao.findById(vmId.longValue());
+        if (vmInstance == null) {
+        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
+        }
+
+        userId = accountAndUserValidation(vmId, account, userId, vmInstance);
+        
+        EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_REBOOT, "Rebooting Vm with Id: "+vmId);
+        
+        boolean status = rebootVirtualMachine(userId, vmId);
+        
+        if(status)
+        {
+        	EventUtils.saveEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_REBOOT, "Successfully rebooted vm with id:"+vmId);
+        	return status;
+        }
+        else
+        {
+        	EventUtils.saveEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_REBOOT, "Failed to reboot vm with id:"+vmId);
+        	return status;
+        }
 	}
 	
 	

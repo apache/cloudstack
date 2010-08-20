@@ -22,6 +22,7 @@ import java.util.List;
 
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
 import com.cloud.api.commands.StartVMCmd;
@@ -191,7 +192,7 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      */
     HashMap<Long, VmStatsEntry> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds) throws InternalErrorException;
     
-    boolean rebootVirtualMachine(long userId, long vmId);
+    boolean rebootVirtualMachine(RebootVMCmd cmd);
     OperationResponse executeRebootVM(RebootVMExecutor executor, VMOperationParam param);
     
     boolean recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException, InternalErrorException;

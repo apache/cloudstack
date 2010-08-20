@@ -18,30 +18,18 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
-import com.cloud.vm.UserVmVO;
+import com.cloud.api.BaseCmd.Manager;
 
-public class RebootVMCmd extends BaseCmd {
+@Implementation(method="rebootVirtualMachine", manager=Manager.UserVmManager)
+public class RebootVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RebootVMCmd.class.getName());
     private static final String s_name = "rebootvirtualmachineresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-    }
-
+   
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -64,47 +52,49 @@ public class RebootVMCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-    
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-        Long vmId = (Long)params.get(BaseCmd.Properties.ID.getName());
-        
-        //Verify input parameters
-        UserVmVO vmInstance = getManagementServer().findUserVMInstanceById(vmId.longValue());
-        if (vmInstance == null) {
-        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
-        }
+//    @Override
+//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
+//        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
+//        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
+//        Long vmId = (Long)params.get(BaseCmd.Properties.ID.getName());
+//        
+//        //Verify input parameters
+//        UserVmVO vmInstance = getManagementServer().findUserVMInstanceById(vmId.longValue());
+//        if (vmInstance == null) {
+//        	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
+//        }
+//
+//        if (account != null) {
+//            if (!isAdmin(account.getType()) && (account.getId().longValue() != vmInstance.getAccountId())) {
+//                throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId + " for this account");
+//            } else if (!getManagementServer().isChildDomain(account.getDomainId(), vmInstance.getDomainId())) {
+//                // the domain in which the VM lives is not in the admin's domain tree
+//                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to reboot virtual machine with id " + vmId + ", invalid id given.");
+//            }
+//        }
+//
+//        // If command is executed via 8096 port, set userId to the id of System account (1)
+//        if (userId == null) {
+//            userId = Long.valueOf(1);
+//        }
+//
+//        long jobId = getManagementServer().rebootVirtualMachineAsync(userId.longValue(), vmId.longValue());
+//        if(jobId == 0) {
+//        	s_logger.warn("Unable to schedule async-job for RebootVM comamnd");
+//        } else {
+//	        if(s_logger.isDebugEnabled())
+//	        	s_logger.debug("RebootVM command has been accepted, job id: " + jobId);
+//        }
+//        
+//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
+//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
+//        return returnValues;
+//    }
 
-        if (account != null) {
-            if (!isAdmin(account.getType()) && (account.getId().longValue() != vmInstance.getAccountId())) {
-                throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId + " for this account");
-            } else if (!getManagementServer().isChildDomain(account.getDomainId(), vmInstance.getDomainId())) {
-                // the domain in which the VM lives is not in the admin's domain tree
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to reboot virtual machine with id " + vmId + ", invalid id given.");
-            }
-        }
-
-        // If command is executed via 8096 port, set userId to the id of System account (1)
-        if (userId == null) {
-            userId = Long.valueOf(1);
-        }
-
-        long jobId = getManagementServer().rebootVirtualMachineAsync(userId.longValue(), vmId.longValue());
-        if(jobId == 0) {
-        	s_logger.warn("Unable to schedule async-job for RebootVM comamnd");
-        } else {
-	        if(s_logger.isDebugEnabled())
-	        	s_logger.debug("RebootVM command has been accepted, job id: " + jobId);
-        }
-        
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-        return returnValues;
-    }
+	@Override
+	public String getResponse() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
