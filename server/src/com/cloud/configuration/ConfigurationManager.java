@@ -25,6 +25,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.utils.component.Manager;
@@ -56,7 +57,7 @@ public interface ConfigurationManager extends Manager {
 	 * @param useVirtualNetwork
 	 * @return ID
 	 */
-	ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean useVirtualNetwork, String tags);
+	ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean useVirtualNetwork, String tags, Hypervisor.Type hyperVisor);
 	
 	/**
 	 * Updates a service offering

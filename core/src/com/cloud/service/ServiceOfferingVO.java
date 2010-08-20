@@ -54,6 +54,9 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     @Column(name="ha_enabled")
     private boolean offerHA;
     
+    @Column(name="hypervisor_type")
+    private String hypervisorType;
+    
     @Column(name="guest_ip_type")
     @Enumerated(EnumType.STRING)
     private NetworkOffering.GuestIpType guestIpType;
@@ -62,7 +65,7 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         super();
     }
 
-    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, NetworkOffering.GuestIpType guestIpType, boolean useLocalStorage, boolean recreatable, String tags) {
+    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, NetworkOffering.GuestIpType guestIpType, boolean useLocalStorage, boolean recreatable, String tags, String hyperVirsoType) {
         super(name, displayText, false, tags, recreatable, useLocalStorage);
         this.cpu = cpu;
         this.ramSize = ramSize;
@@ -71,6 +74,7 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.multicastRateMbps = multicastRateMbps;
         this.offerHA = offerHA;
         this.guestIpType = guestIpType;
+        this.hypervisorType = hyperVirsoType;
     }
 
 	@Override
@@ -142,5 +146,9 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 
 	public NetworkOffering.GuestIpType getGuestIpType() {
 		return guestIpType;
+	}
+	
+	public String gethypervisorType() {
+		return hypervisorType;
 	}
 }
