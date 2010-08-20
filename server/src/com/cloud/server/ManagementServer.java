@@ -26,6 +26,7 @@ import com.cloud.alert.AlertVO;
 import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
+import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
@@ -441,7 +442,7 @@ public interface ManagementServer {
      * @param ipAddress
      * @return success
      */
-    boolean disassociateIpAddress(long userId, long accountId, String ipAddress) throws PermissionDeniedException;
+    boolean disassociateIpAddress(DisassociateIPAddrCmd cmd) throws PermissionDeniedException;
     long disassociateIpAddressAsync(long userId, long accountId, String ipAddress);
    
     /**

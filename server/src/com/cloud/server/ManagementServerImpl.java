@@ -68,6 +68,7 @@ import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
+import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
@@ -1689,10 +1690,38 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     @DB
-    public boolean disassociateIpAddress(long userId, long accountId, String publicIPAddress) throws PermissionDeniedException, IllegalArgumentException {
+    public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd) throws PermissionDeniedException, IllegalArgumentException {
         Transaction txn = Transaction.currentTxn();
+        
+        Long userId = UserContext.current().getUserId();
+        Account account = (Account)UserContext.current().getAccountObject();
+        String ipAddress = cmd.getIpAddress();
+        boolean result = false;
+
+        // Verify input parameters
+        Account accountByIp = findAccountByIpAddress(ipAddress);
+        if(accountByIp == null) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find account owner for ip " + ipAddress);
+        }
+
+        Long accountId = accountByIp.getId();
+        if (account != null) {
+            if (!isAdmin(account.getType())) {
+                if (account.getId().longValue() != accountId.longValue()) {
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "account " + account.getAccountName() + " doesn't own ip address " + ipAddress);
+                }
+            } else if (!isChildDomain(account.getDomainId(), accountByIp.getDomainId())) {
+                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to disassociate IP address " + ipAddress + ", permission denied.");
+            }
+        }
+
+        // If command is executed via 8096 port, set userId to the id of System account (1)
+        if (userId == null) {
+            userId = Long.valueOf(1);
+        }
+
         try {
-            IPAddressVO ipVO = _publicIpAddressDao.findById(publicIPAddress);
+            IPAddressVO ipVO = _publicIpAddressDao.findById(ipAddress);
             if (ipVO == null) {
                 return false;
             }
@@ -1710,7 +1739,7 @@ public class ManagementServerImpl implements ManagementServer {
                 // FIXME: is the user visible in the admin account's domain????
                 if (!BaseCmd.isAdmin(accountVO.getType())) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("permission denied disassociating IP address " + publicIPAddress + "; acct: " + accountId + "; ip (acct / dc / dom / alloc): "
+                        s_logger.debug("permission denied disassociating IP address " + ipAddress + "; acct: " + accountId + "; ip (acct / dc / dom / alloc): "
                                 + ipVO.getAccountId() + " / " + ipVO.getDataCenterId() + " / " + ipVO.getDomainId() + " / " + ipVO.getAllocated());
                     }
                     throw new PermissionDeniedException("User/account does not own supplied address");
@@ -1732,11 +1761,11 @@ public class ManagementServerImpl implements ManagementServer {
 			
 			//Check for account wide pool. It will have an entry for account_vlan_map. 
             if (_accountVlanMapDao.findAccountVlanMap(accountId,ipVO.getVlanDbId()) != null){
-            	throw new PermissionDeniedException(publicIPAddress + " belongs to Account wide IP pool and cannot be disassociated");
+            	throw new PermissionDeniedException(ipAddress + " belongs to Account wide IP pool and cannot be disassociated");
             }
 			
             txn.start();
-            boolean success = _networkMgr.releasePublicIpAddress(userId, publicIPAddress);
+            boolean success = _networkMgr.releasePublicIpAddress(userId, ipAddress);
             if (success)
             	_accountMgr.decrementResourceCount(accountId, ResourceType.public_ip);
             txn.commit();
