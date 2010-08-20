@@ -22,6 +22,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 
 import com.cloud.api.commands.CreateTemplateCmd;
+import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -67,7 +68,7 @@ public interface TemplateManager extends Manager {
      */
     Long create(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable);
     Long registerTemplate(RegisterTemplateCmd cmd) throws InvalidParameterValueException, URISyntaxException, ResourceAllocationException;
-    
+    Long registerIso(RegisterIsoCmd cmd) throws InvalidParameterValueException, IllegalArgumentException, ResourceAllocationException;   
     /**
      * Creates a Template
      * 

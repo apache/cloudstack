@@ -23,6 +23,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -38,6 +39,7 @@ import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.manager.AgentManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -122,6 +124,75 @@ public class TemplateManagerImpl implements TemplateManager {
     @Inject ConfigurationDao _configDao;
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     
+    @Override
+    public Long registerIso(RegisterIsoCmd cmd) throws InvalidParameterValueException, IllegalArgumentException, ResourceAllocationException{
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long userId = UserContext.current().getUserId();
+        String name = cmd.getName();
+        String displayText = cmd.getDisplayText();
+        String url = cmd.getUrl();
+        Boolean isPublic = cmd.isPublic();
+        Boolean featured = cmd.isFeatured();
+        Long guestOSId = cmd.getOsTypeId();
+        Boolean bootable = cmd.isBootable();
+        Long zoneId = cmd.getZoneId();
+
+        if (isPublic == null) {
+            isPublic = Boolean.FALSE;
+        }
+        
+        if (zoneId.longValue() == -1) {
+        	zoneId = null;
+        }
+        
+        long accountId = 1L; // default to system account
+        if (account != null) {
+            accountId = account.getId().longValue();
+        }
+        
+        Account accountObj;
+        if (account == null) {
+        	accountObj = _accountDao.findById(accountId);
+        } else {
+        	accountObj = account;
+        }
+        
+        boolean isAdmin = (accountObj.getType() == Account.ACCOUNT_TYPE_ADMIN);
+        
+        if (!isAdmin && zoneId == null) {
+        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid zone Id.");
+        }
+        
+        if((!url.toLowerCase().endsWith("iso"))&&(!url.toLowerCase().endsWith("iso.zip"))&&(!url.toLowerCase().endsWith("iso.bz2"))
+        		&&(!url.toLowerCase().endsWith("iso.gz"))){
+        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid iso");
+        }
+        
+        boolean allowPublicUserTemplates = Boolean.parseBoolean(_configDao.getValue("allow.public.user.templates"));        
+        if (!isAdmin && !allowPublicUserTemplates && isPublic) {
+        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Only private ISOs can be created.");
+        }
+        
+        if (!isAdmin || featured == null) {
+        	featured = Boolean.FALSE;
+        }
+
+        // If command is executed via 8096 port, set userId to the id of System account (1)
+        if (userId == null) {
+            userId = Long.valueOf(1);
+        }
+        
+        if (bootable == null) {
+        	bootable = Boolean.TRUE;
+        }
+
+        //removing support for file:// type urls (bug: 4239)
+        if(url.toLowerCase().contains("file://")){
+        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "File:// type urls are currently unsupported");
+        }
+        
+        return createTemplateOrIso(userId, zoneId, name, displayText, isPublic.booleanValue(), featured.booleanValue(), ImageFormat.ISO.toString(), FileSystem.cdfs.toString(), url, null, true, 64 /*bits*/, false, guestOSId, bootable);
+    }
 
     @Override
     public Long registerTemplate(RegisterTemplateCmd cmd) throws InvalidParameterValueException, URISyntaxException, ResourceAllocationException{
@@ -201,73 +272,82 @@ public class TemplateManagerImpl implements TemplateManager {
             userId = Long.valueOf(1);
         }
         
-        if (name.length() > 32)
-        {
-            throw new InvalidParameterValueException("Template name should be less than 32 characters");
-        }
-        	
-        if (!name.matches("^[\\p{Alnum} ._-]+")) {
-            throw new InvalidParameterValueException("Only alphanumeric, space, dot, dashes and underscore characters allowed");
-        }
-    	
-        ImageFormat imgfmt = ImageFormat.valueOf(format.toUpperCase());
-        if (imgfmt == null) {
-            throw new IllegalArgumentException("Image format is incorrect " + format + ". Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
-        }
-        
-        FileSystem fileSystem = FileSystem.valueOf("ext3");
-        if (fileSystem == null) {
-            throw new IllegalArgumentException("File system is incorrect " + "ext3" + ". Supported file systems are " + EnumUtils.listValues(FileSystem.values()));
-        }
-        
-        URI uri = new URI(url);
-        if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
-           throw new IllegalArgumentException("Unsupported scheme for url: " + url);
-        }
-        int port = uri.getPort();
-        if (!(port == 80 || port == 443 || port == -1)) {
-        	throw new IllegalArgumentException("Only ports 80 and 443 are allowed");
-        }
-        String host = uri.getHost();
-        try {
-        	InetAddress hostAddr = InetAddress.getByName(host);
-        	if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress() ) {
-        		throw new IllegalArgumentException("Illegal host specified in url");
-        	}
-        	if (hostAddr instanceof Inet6Address) {
-        		throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
-        	}
-        } catch (UnknownHostException uhe) {
-        	throw new IllegalArgumentException("Unable to resolve " + host);
-        }
-        
-        // Check that the resource limit for templates/ISOs won't be exceeded
-        UserVO user = _userDao.findById(userId);
-        if (user == null) {
-            throw new IllegalArgumentException("Unable to find user with id " + userId);
-        }
-        
-    	AccountVO accountVO = _accountDao.findById(user.getAccountId());
-        if (_accountMgr.resourceLimitExceeded(accountVO, ResourceType.template)) {
-        	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of templates and ISOs for account: " + account.getAccountName() + " has been exceeded.");
-        	rae.setResourceType("template");
-        	throw rae;
-        }
-        
-        // If a zoneId is specified, make sure it is valid
-        if (zoneId != null) {
-        	if (_dcDao.findById(zoneId) == null) {
-        		throw new IllegalArgumentException("Please specify a valid zone.");
-        	}
-        }
-        VMTemplateVO systemvmTmplt = _tmpltDao.findRoutingTemplate();
-        if (systemvmTmplt.getName().equalsIgnoreCase(name) || systemvmTmplt.getDisplayText().equalsIgnoreCase(displayText)) {
-        	throw new IllegalArgumentException("Cannot use reserved names for templates");
-        }
-        
-        return create(userId, zoneId, name, displayText, isPublic, featured, imgfmt, fileSystem, uri, null, requiresHVM, bits, passwordEnabled, guestOSId, true);
+        return createTemplateOrIso(userId, zoneId, name, displayText, isPublic, featured, format, "ext3", url, null, requiresHVM, bits, passwordEnabled, guestOSId, true);
     	
     }
+    
+    private Long createTemplateOrIso(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) throws InvalidParameterValueException,IllegalArgumentException, ResourceAllocationException {
+        try
+        {
+            if (name.length() > 32)
+            {
+                throw new InvalidParameterValueException("Template name should be less than 32 characters");
+            }
+            	
+            if (!name.matches("^[\\p{Alnum} ._-]+")) {
+                throw new InvalidParameterValueException("Only alphanumeric, space, dot, dashes and underscore characters allowed");
+            }
+        	
+            ImageFormat imgfmt = ImageFormat.valueOf(format.toUpperCase());
+            if (imgfmt == null) {
+                throw new IllegalArgumentException("Image format is incorrect " + format + ". Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
+            }
+            
+            FileSystem fileSystem = FileSystem.valueOf(diskType);
+            if (fileSystem == null) {
+                throw new IllegalArgumentException("File system is incorrect " + diskType + ". Supported file systems are " + EnumUtils.listValues(FileSystem.values()));
+            }
+            
+            URI uri = new URI(url);
+            if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
+               throw new IllegalArgumentException("Unsupported scheme for url: " + url);
+            }
+            int port = uri.getPort();
+            if (!(port == 80 || port == 443 || port == -1)) {
+            	throw new IllegalArgumentException("Only ports 80 and 443 are allowed");
+            }
+            String host = uri.getHost();
+            try {
+            	InetAddress hostAddr = InetAddress.getByName(host);
+            	if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress() ) {
+            		throw new IllegalArgumentException("Illegal host specified in url");
+            	}
+            	if (hostAddr instanceof Inet6Address) {
+            		throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
+            	}
+            } catch (UnknownHostException uhe) {
+            	throw new IllegalArgumentException("Unable to resolve " + host);
+            }
+            
+            // Check that the resource limit for templates/ISOs won't be exceeded
+            UserVO user = _userDao.findById(userId);
+            if (user == null) {
+                throw new IllegalArgumentException("Unable to find user with id " + userId);
+            }
+        	AccountVO account = _accountDao.findById(user.getAccountId());
+            if (_accountMgr.resourceLimitExceeded(account, ResourceType.template)) {
+            	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of templates and ISOs for account: " + account.getAccountName() + " has been exceeded.");
+            	rae.setResourceType("template");
+            	throw rae;
+            }
+            
+            // If a zoneId is specified, make sure it is valid
+            if (zoneId != null) {
+            	if (_dcDao.findById(zoneId) == null) {
+            		throw new IllegalArgumentException("Please specify a valid zone.");
+            	}
+            }
+            VMTemplateVO systemvmTmplt = _tmpltDao.findRoutingTemplate();
+            if (systemvmTmplt.getName().equalsIgnoreCase(name) || systemvmTmplt.getDisplayText().equalsIgnoreCase(displayText)) {
+            	throw new IllegalArgumentException("Cannot use reserved names for templates");
+            }
+            
+            return create(userId, zoneId, name, displayText, isPublic, featured, imgfmt, fileSystem, uri, chksum, requiresHvm, bits, enablePassword, guestOSId, bootable);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Invalid URL " + url);
+        }
+    }
+
     
     @Override
     public Long create(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) {
