@@ -29,6 +29,7 @@ import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
+import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.RemovePortForwardingServiceCmd;
@@ -252,7 +253,7 @@ public interface ManagementServer {
      * @param userId
      * @return true if enable was successful, false otherwise
      */
-    boolean lockUser(long userId);
+    boolean lockUser(LockUserCmd cmd);
     
     /**
      * registerPreallocatedLun registers a preallocated lun in our database.

@@ -71,6 +71,7 @@ import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
+import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
@@ -1082,18 +1083,38 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean lockUser(long userId) {
+    public boolean lockUser(LockUserCmd cmd) {
         boolean success = false;
+        
+        Account adminAccount = (Account)UserContext.current().getAccountObject();
+        Long id = cmd.getId();
+
+        // Check if user with id exists in the system
+        User user = _userDao.findById(id);
+        if (user == null) {
+            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find user by id");
+        } else if (user.getRemoved() != null) {
+            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find user by id");
+        }
+
+        // If the user is a System user, return an error.  We do not allow this
+        Account account = _accountDao.findById(user.getAccountId());
+        if ((account != null) && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
+            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "user id : " + id + " is a system user, locking is not allowed");
+        }
+
+        if ((adminAccount != null) && !_domainDao.isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
+            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Failed to lock user " + id + ", permission denied.");
+        }
 
         // make sure the account is enabled too
-        UserVO user = _userDao.findById(userId);
         if (user != null) {
             // if the user is either locked already or disabled already, don't change state...only lock currently enabled users
             if (user.getState().equals(Account.ACCOUNT_STATE_LOCKED)) {
                 // already locked...no-op
                 return true;
             } else if (user.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
-                success = doSetUserStatus(userId, Account.ACCOUNT_STATE_LOCKED);
+                success = doSetUserStatus(user.getId(), Account.ACCOUNT_STATE_LOCKED);
 
                 boolean lockAccount = true;
                 List<UserVO> allUsersByAccount = _userDao.listByAccount(user.getAccountId());
@@ -1109,11 +1130,11 @@ public class ManagementServerImpl implements ManagementServer {
                 }
             } else {
                 if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Attempting to lock a non-enabled user, current state is " + user.getState() + " (userId: " + userId + "), locking failed.");
+                    s_logger.info("Attempting to lock a non-enabled user, current state is " + user.getState() + " (userId: " + user.getId() + "), locking failed.");
                 }
             }
         } else {
-            s_logger.warn("Unable to find user with id: " + userId);
+            s_logger.warn("Unable to find user with id: " + UserContext.current().getUserId());
         }
         return success;
     }
