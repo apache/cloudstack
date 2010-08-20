@@ -119,14 +119,14 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 				_configDao.update("hypervisor.type", "xenserver");
 				s_logger.debug("ConfigurationServer changed the hypervisor type to \"xenserver\".");
 				
-				_configDao.update("secondary.storage.vm", "true");
-				s_logger.debug("ConfigurationServer made secondary storage vm required.");
+				//_configDao.update("secondary.storage.vm", "true");
+				//s_logger.debug("ConfigurationServer made secondary storage vm required.");
 				
-				_configDao.update("secstorage.encrypt.copy", "true");
-				s_logger.debug("ConfigurationServer made secondary storage copy encrypted.");
+				//_configDao.update("secstorage.encrypt.copy", "true");
+				//s_logger.debug("ConfigurationServer made secondary storage copy encrypted.");
 				
-				_configDao.update("secstorage.secure.copy.cert", "realhostip");
-				s_logger.debug("ConfigurationServer made secondary storage copy use realhostip.");					          	         
+				//_configDao.update("secstorage.secure.copy.cert", "realhostip");
+				//s_logger.debug("ConfigurationServer made secondary storage copy use realhostip.");					          	         
 			}
 			
 			boolean externalIpAlloator = Boolean.parseBoolean(_configDao.getValue("direct.attach.network.externalIpAllocator.enabled"));

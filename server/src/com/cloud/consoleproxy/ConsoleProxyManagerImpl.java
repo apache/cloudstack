@@ -2303,7 +2303,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         _networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
         _multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
         _serviceOffering = new ServiceOfferingVO("Fake Offering For DomP", 1, _proxyRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized,
-                useLocalStorage, true, null);
+                useLocalStorage, true, null, null);
         _serviceOffering.setUniqueName("Cloud.com-ConsoleProxy");
         _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
         _template = _templateDao.findConsoleProxyTemplate();

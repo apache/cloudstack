@@ -21,11 +21,14 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase;
 import com.cloud.resource.Discoverer;
@@ -47,6 +50,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 	 private String _hostIp;
 	 private int _waitTime = 3; /*wait for 3 minutes*/
 	 @Inject HostDao _hostDao = null;
+	 @Inject ClusterDao _clusterDao;
 	 
 	@Override
 	public boolean processAnswer(long agentId, long seq, Answer[] answers) {
@@ -224,6 +228,11 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			kvmResource.configure("kvm agent", params);
 			kvmResource.setRemoteAgent(true);
 			resources.put(kvmResource, details);
+			
+			 /*set cluster hypervisor type to xenserver*/
+            ClusterVO clu = _clusterDao.findById(clusterId);
+            clu.setHypervisorType(Hypervisor.Type.KVM.toString());
+            _clusterDao.update(clusterId, clu);
 			return resources;
 		} catch (Exception e) {
 			String msg = " can't setup agent, due to " + e.toString() + " - " + e.getMessage();
