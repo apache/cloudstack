@@ -29,6 +29,7 @@ import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
+import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
@@ -231,7 +232,7 @@ public interface ManagementServer {
      * @param accountId
      * @return true if enable was successful, false otherwise
      */
-    boolean lockAccount(long accountId);
+    boolean lockAccount(LockAccountCmd cmd);
 
     /**
      * Updates an account name

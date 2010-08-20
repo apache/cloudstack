@@ -71,6 +71,7 @@ import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
+import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
@@ -1126,7 +1127,7 @@ public class ManagementServerImpl implements ManagementServer {
                 }
 
                 if (lockAccount) {
-                    success = (success && lockAccount(user.getAccountId()));
+                    success = (success && lockAccountInternal(user.getAccountId()));
                 }
             } else {
                 if (s_logger.isInfoEnabled()) {
@@ -1267,8 +1268,7 @@ public class ManagementServerImpl implements ManagementServer {
         return success;
     }
 
-    @Override
-    public boolean lockAccount(long accountId) {
+    private boolean lockAccountInternal(long accountId) {
         boolean success = false;
         Account account = _accountDao.findById(accountId);
         if (account != null) {
@@ -8393,6 +8393,30 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
 		return true;
+	}
+
+	@Override
+	public boolean lockAccount(LockAccountCmd cmd) {
+
+        Account adminAccount = (Account)UserContext.current().getAccountObject();
+        Long domainId = cmd.getDomainId();
+        String accountName = UserContext.current().getAccountName();
+
+        if ((adminAccount != null) && !_domainDao.isChildDomain(adminAccount.getDomainId(), domainId)) {
+            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Failed to lock account " + accountName + " in domain " + domainId + ", permission denied.");
+        }
+
+        Account account = _accountDao.findActiveAccount(accountName, domainId);
+        if (account == null) {
+            throw new ServerApiException (BaseCmd.PARAM_ERROR, "Unable to find active account with name " + accountName + " in domain " + domainId);
+        }
+
+        // don't allow modify system account
+        if (account.getId().longValue() == Account.ACCOUNT_ID_SYSTEM) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "can not lock system account");
+        }
+
+        return lockAccountInternal(account.getId());
 	}
 }
 
