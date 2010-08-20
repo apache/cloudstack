@@ -3,8 +3,8 @@
 
 <project name="Cloud Stack" default="help" basedir=".">
   <description>
-		Cloud Stack ant build file
-    </description>
+    Cloud Stack ant build file
+  </description>
 
   <!--
   Test
@@ -101,7 +101,7 @@
   <property name="console-viewer.dist.dir" location="${dist.dir}/console-viewer" />
 
   <property name="tools.dir" location="${base.dir}/tools" />
-<!--  <property name="antcontrib.dir" location="${tools.dir}/tools/ant/apache-ant-1.8.0/lib" />-->
+  <!--  <property name="antcontrib.dir" location="${tools.dir}/tools/ant/apache-ant-1.8.0/lib" />-->
   <property name="deploy.dir" location="${build.dir}/deploy" />
   <property name="production.dir" location="${deploy.dir}/production" />
   <property name="meld.home" location="/usr/local/bin" />
@@ -137,7 +137,7 @@
 
   <path id="src.classpath">
   </path>
-     
+
   <path id="thirdparty.classpath">
     <filelist files="${thirdparty.classpath}" />
     <fileset dir="${thirdparty.dir}" erroronmissingdir="false">
@@ -176,7 +176,7 @@
   <target name="compile-api" depends="-init, compile-utils" description="Compile the utilities jar that is shared.">
     <compile-java jar.name="${api.jar}" top.dir="${api.dir}" classpath="api.classpath" />
   </target>
-  
+
   <path id="core.classpath">
     <path refid="thirdparty.classpath" />
     <path refid="dist.classpath" />
@@ -223,9 +223,9 @@
         <include name="**/*.html" />
         <include name="**/*.js"/>
         <include name="**/*.jsp"/>
-        <include name="**/*.properties"/>
         <exclude name="**/.classpath" />
         <exclude name="**/.project" />
+        <exclude name="resources/*"/>
       </fileset>
       <filterset>
         <filter token="VERSION" value="${impl.version}"/>
@@ -237,9 +237,14 @@
         <exclude name="**/*.html" />
         <exclude name="**/*.js"/>
         <exclude name="**/*.jsp"/>
-        <exclude name="**/*.properties"/>
         <exclude name="**/.classpath" />
         <exclude name="**/.project" />
+        <exclude name="resources/*"/>
+      </fileset>
+    </copy>
+    <copy todir="${client.target.dir}">
+      <fileset dir="${client.dir}/WEB-INF/classes">
+        <include name="**/*.properties"/>
       </fileset>
     </copy>
   </target>
@@ -252,45 +257,45 @@
     <copy todir="${server.dist.dir}/lib">
       <fileset dir="${thirdparty.dir}">
         <include name="mysql-connector-java-5.1.7-bin.jar" />
-		<include name="cglib-nodep-2.2.jar" />
-		<include name="gson-1.3.jar" />
-		<include name="log4j-1.2.15.jar" />
-		<include name="apache-log4j-extras-1.0.jar" />
-		<include name="ehcache-1.5.0.jar" />
-		<include name="commons-logging-1.1.1.jar" />
-		<include name="commons-dbcp-1.2.2.jar" />
-		<include name="commons-pool-1.4.jar" />
-		<include name="backport-util-concurrent-3.0.jar" />
-		<include name="httpcore-4.0.jar" />
-		<include name="commons-httpclient-3.1.jar" />
-		<include name="commons-codec-1.4.jar" />
-		<include name="email.jar" />
-		<include name="xmlrpc-client-3.1.3.jar" />
-		<include name="xmlrpc-common-3.1.3.jar" />
-		<include name="xenserver-5.5.0-1.jar" />
-		<include name="ws-commons-util-1.0.2.jar" />
-		<include name="trilead-ssh2-build213.jar" />
+        <include name="cglib-nodep-2.2.jar" />
+        <include name="gson-1.3.jar" />
+        <include name="log4j-1.2.15.jar" />
+        <include name="apache-log4j-extras-1.0.jar" />
+        <include name="ehcache-1.5.0.jar" />
+        <include name="commons-logging-1.1.1.jar" />
+        <include name="commons-dbcp-1.2.2.jar" />
+        <include name="commons-pool-1.4.jar" />
+        <include name="backport-util-concurrent-3.0.jar" />
+        <include name="httpcore-4.0.jar" />
+        <include name="commons-httpclient-3.1.jar" />
+        <include name="commons-codec-1.4.jar" />
+        <include name="email.jar" />
+        <include name="xmlrpc-client-3.1.3.jar" />
+        <include name="xmlrpc-common-3.1.3.jar" />
+        <include name="xenserver-5.5.0-1.jar" />
+        <include name="ws-commons-util-1.0.2.jar" />
+        <include name="trilead-ssh2-build213.jar" />
       </fileset>
-	  <fileset dir="${thirdparty.dir}/vmware">
-		<include name="apputils.jar" />
-		<include name="vim.jar" />
-		<include name="vim25.jar" />
-	  </fileset>
-  	  <fileset dir="${thirdparty.dir}/vmware/lib">
-  		<include name="activation.jar" />
-  		<include name="axis.jar" />
-  		<include name="jaxen-core.jar" />
-  		<include name="jaxen-jdom.jar" />
-  		<include name="jaxrpc.jar" />
-  		<include name="jdom.jar" />
-  		<include name="mailapi.jar" />
-  		<include name="saxpath.jar" />
-  		<include name="smtp.jar" />
-  		<include name="wbem.jar" />
-  		<include name="xalan.jar" />
-  		<include name="xerces.jar" />
-  		<include name="xml-apis.jar" />
-	  </fileset>
+      <fileset dir="${thirdparty.dir}/vmware">
+        <include name="apputils.jar" />
+        <include name="vim.jar" />
+        <include name="vim25.jar" />
+      </fileset>
+      <fileset dir="${thirdparty.dir}/vmware/lib">
+        <include name="activation.jar" />
+        <include name="axis.jar" />
+        <include name="jaxen-core.jar" />
+        <include name="jaxen-jdom.jar" />
+        <include name="jaxrpc.jar" />
+        <include name="jdom.jar" />
+        <include name="mailapi.jar" />
+        <include name="saxpath.jar" />
+        <include name="smtp.jar" />
+        <include name="wbem.jar" />
+        <include name="xalan.jar" />
+        <include name="xerces.jar" />
+        <include name="xml-apis.jar" />
+      </fileset>
     </copy>
 
     <copy overwrite="true" todir="${server.dist.dir}/conf">
@@ -304,12 +309,12 @@
         </filterreader>
       </filterchain>
     </copy>
-  	
+
     <copy overwrite="true" todir="${server.dist.dir}/conf">
-        <fileset dir="${server.dir}/src/com/cloud/migration">
-          <include name="*.xml" />
-        </fileset>
-  	</copy>
+      <fileset dir="${server.dir}/src/com/cloud/migration">
+        <include name="*.xml" />
+      </fileset>
+    </copy>
   </target>
 
   <path id="console-common.classpath">
@@ -343,7 +348,7 @@
       <fileset dir="${thirdparty.dir}">
         <include name="log4j-1.2.15.jar" />
         <include name="apache-log4j-extras-1.0.jar" />
-         <include name="gson-1.3.jar" />
+        <include name="gson-1.3.jar" />
       </fileset>
     </copy>
 
@@ -517,20 +522,20 @@
     <chmod file="${dist.dir}/deploy-agent.sh" perm="uog+xr" />
     <chmod file="${dist.dir}/deploy-server.sh" perm="uog+xr" />
   </target>
- 
-	
-  <target name="build-kvm-domr-patch" depends="-init">		
+
+
+  <target name="build-kvm-domr-patch" depends="-init">
     <tar destfile="${dist.dir}/patch.tar">
-	  <tarfileset dir="${base.dir}/patches/kvm" filemode="755">
-	    <include name="**/*"/>
-            <exclude name="**/.classpath" />
-            <exclude name="**/.project" />
-	  </tarfileset>
-	  <tarfileset dir="${base.dir}/patches/shared" filemode="755">
-            <include name="**/*"/>
-            <exclude name="**/.classpath" />
-            <exclude name="**/.project" />
-          </tarfileset>
+      <tarfileset dir="${base.dir}/patches/kvm" filemode="755">
+        <include name="**/*"/>
+        <exclude name="**/.classpath" />
+        <exclude name="**/.project" />
+      </tarfileset>
+      <tarfileset dir="${base.dir}/patches/shared" filemode="755">
+        <include name="**/*"/>
+        <exclude name="**/.classpath" />
+        <exclude name="**/.project" />
+      </tarfileset>
     </tar>
     <gzip destfile="${dist.dir}/patch.tgz" src="${dist.dir}/patch.tar"/>
     <delete file="${dist.dir}/patch.tar"/>
@@ -562,8 +567,8 @@
     <!-- set build.number property, stored in eponymous file -->
     <buildnumber file="${build.dir}/build.number" />
     <condition property="impl.version" value="${version}.${manual.build.number}" else="${version}.${utc.build.timestamp}">
-       <isset property="manual.build.number"/>
-     </condition>
+      <isset property="manual.build.number"/>
+    </condition>
 
     <echo message="Build number is ${impl.version}" />
 
