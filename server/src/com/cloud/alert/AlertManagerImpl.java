@@ -443,7 +443,7 @@ public class AlertManagerImpl implements AlertManager {
             newCapacities.add(newPrivateIPCapacity);
 //            _capacityDao.persist(newPrivateIPCapacity);
         }
-        
+
         if (m_capacityCheckLock.lock(5)) { // 5 second timeout
             try {
                 // delete the old records

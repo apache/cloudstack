@@ -53,7 +53,6 @@ import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -297,7 +296,49 @@ public class StatsCollector {
 				}
 				_storagePoolStats = storagePoolStats;
 
-		        if (m_capacityCheckLock.lock(5)) { // 5 second timeout
+				// a list to store the new capacity entries that will be committed once everything is calculated
+				List<CapacityVO> newCapacities = new ArrayList<CapacityVO>();
+
+                // create new entries
+                for (Long hostId : storageStats.keySet()) {
+                    StorageStats stats = storageStats.get(hostId);
+                    HostVO host = _hostDao.findById(hostId);
+                    host.setTotalSize(stats.getCapacityBytes());
+                    _hostDao.update(host.getId(), host);
+
+                    if (Host.Type.SecondaryStorage.equals(host.getType())) {
+                        CapacityVO capacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), stats.getByteUsed(), stats.getCapacityBytes(), CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE);
+                        newCapacities.add(capacity);
+//                        _capacityDao.persist(capacity);
+                    } else if (Host.Type.Storage.equals(host.getType())) {
+                        CapacityVO capacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), stats.getByteUsed(), stats.getCapacityBytes(), CapacityVO.CAPACITY_TYPE_STORAGE);
+                        newCapacities.add(capacity);
+//                        _capacityDao.persist(capacity);
+                    }
+                }
+
+                for (Long poolId : storagePoolStats.keySet()) {
+                    StorageStats stats = storagePoolStats.get(poolId);
+                    StoragePoolVO pool = _storagePoolDao.findById(poolId);
+                    
+                    if (pool == null) {
+                        continue;
+                    }
+                    
+                    pool.setCapacityBytes(stats.getCapacityBytes());
+                    long available = stats.getCapacityBytes() - stats.getByteUsed();
+                    if( available < 0 ) {
+                        available = 0;
+                    }
+                    pool.setAvailableBytes(available);
+                    _storagePoolDao.update(pool.getId(), pool);                         
+                    
+                    CapacityVO capacity = new CapacityVO(poolId, pool.getDataCenterId(), pool.getPodId(), stats.getByteUsed(), stats.getCapacityBytes(), CapacityVO.CAPACITY_TYPE_STORAGE);
+                    newCapacities.add(capacity);
+//                    _capacityDao.persist(capacity);
+                }
+
+                if (m_capacityCheckLock.lock(5)) { // 5 second timeout
 		            if (s_logger.isTraceEnabled()) {
 		                s_logger.trace("recalculating system storage capacity");
 		            }
@@ -310,52 +351,20 @@ public class StatsCollector {
 		                //        than this model right now
 		                _capacityDao.clearStorageCapacities();
 
-		                // create new entries
-		                for (Long hostId : storageStats.keySet()) {
-		                    StorageStats stats = storageStats.get(hostId);
-		                    HostVO host = _hostDao.findById(hostId);
-		                    host.setTotalSize(stats.getCapacityBytes());
-		                    _hostDao.update(host.getId(), host);
-
-		                    if (Host.Type.SecondaryStorage.equals(host.getType())) {
-	                            CapacityVO capacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), stats.getByteUsed(), stats.getCapacityBytes(), CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE);
-	                            _capacityDao.persist(capacity);
-		                    } else if (Host.Type.Storage.equals(host.getType())) {
-	                            CapacityVO capacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), stats.getByteUsed(), stats.getCapacityBytes(), CapacityVO.CAPACITY_TYPE_STORAGE);
-	                            _capacityDao.persist(capacity);
-		                    }
-		                }
-
-		                for (Long poolId : storagePoolStats.keySet()) {
-		                    StorageStats stats = storagePoolStats.get(poolId);
-		                    StoragePoolVO pool = _storagePoolDao.findById(poolId);
-		                    
-		                    if (pool == null) {
-		                    	continue;
-		                    }
-		                    
-		                    pool.setCapacityBytes(stats.getCapacityBytes());
-		                    long available = stats.getCapacityBytes() - stats.getByteUsed();
-		                    if( available < 0 ) {
-		                        available = 0;
-		                    }
-		                    pool.setAvailableBytes(available);
-		                    _storagePoolDao.update(pool.getId(), pool);		                    
-		                    
-		                    CapacityVO capacity = new CapacityVO(poolId, pool.getDataCenterId(), pool.getPodId(), stats.getByteUsed(), stats.getCapacityBytes(), CapacityVO.CAPACITY_TYPE_STORAGE);
-		                    _capacityDao.persist(capacity);
+		                for (CapacityVO newCapacity : newCapacities) {
+		                    _capacityDao.persist(newCapacity);
 		                }
 		            } finally {
-		                m_capacityCheckLock.unlock();
+                        m_capacityCheckLock.unlock();
 		            }
                     if (s_logger.isTraceEnabled()) {
                         s_logger.trace("done recalculating system storage capacity");
                     }
-		        } else {
+                } else {
                     if (s_logger.isTraceEnabled()) {
                         s_logger.trace("not recalculating system storage capacity, unable to lock capacity table");
                     }
-		        }
+                }
 			} catch (Throwable t) {
 				s_logger.error("Error trying to retrieve storage stats", t);
 			}
