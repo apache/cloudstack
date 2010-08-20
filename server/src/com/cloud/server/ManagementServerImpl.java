@@ -6664,19 +6664,17 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public long createPrivateTemplateAsync(Long userId, long volumeId, String name, String description, long guestOSId, Boolean requiresHvm, Integer bits, Boolean passwordEnabled, boolean isPublic, boolean featured, Long snapshotId)
             throws InvalidParameterValueException, ResourceAllocationException, InternalErrorException {
-        if (name.length() > 32)
-        {
+        if (name.length() > 32) {
             throw new InvalidParameterValueException("Template name should be less than 32 characters");
         }
-        		
-        if(!name.matches("^[\\p{Alnum} ._-]+"))
-        {
+
+        if (!name.matches("^[\\p{Alnum} ._-]+")) {
             throw new InvalidParameterValueException("Only alphanumeric, space, dot, dashes and underscore characters allowed");
         }
 
         // The volume below could be destroyed or removed.
         VolumeVO volume = _volumeDao.findById(volumeId);
-            	
+
         // If private template is created from Volume, check that the volume will not be active when the private template is created
         if (snapshotId == null && !_storageMgr.volumeInactive(volume)) {
             String msg = "Unable to create private template for volume: " + volume.getName() + "; volume is attached to a non-stopped VM.";

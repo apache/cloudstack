@@ -22,6 +22,7 @@ import java.util.List;
 
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
@@ -42,6 +43,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.network.security.NetworkGroupVO;
@@ -199,18 +201,26 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
     
     boolean recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException, InternalErrorException;
 
-    VMTemplateVO createPrivateTemplateRecord(Long userId, long vmId, String name, String description, long guestOsId, Boolean requiresHvm, Integer bits, Boolean passwordEnabled, boolean isPublic, boolean featured)
-		throws InvalidParameterValueException;
+    /**
+     * Create a template database record in preparation for creating a private template.
+     * @param cmd the command object that defines the name, display text, snapshot/volume, bits, public/private, etc.
+     * for the private template
+     * @return the vm template object if successful, null otherwise
+     * @throws InvalidParameterValueException
+     */
+    VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
     /**
      * Creates a private template from a snapshot of a VM
-     * @param template the template record that is used to store data (we need instance be created first)
+     * @param cmd the command object that defines 
+     * 
+     * template the template record that is used to store data (we need instance be created first)
      * @param snapshotId the id of the snaphot to use for the template
      * @param name the user given name of the private template
      * @param description the user give description (aka display text) for the template
      * @return a template if successfully created, null otherwise
      */
-    VMTemplateVO createPrivateTemplate(VMTemplateVO template, Long userId, long snapshotId, String name, String description);
+    VMTemplateVO createPrivateTemplate(CreateTemplateCmd cmd);
 
     /**
      * @param userId    The Id of the user who invoked this operation.

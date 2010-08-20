@@ -25,6 +25,8 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.async.executor.CreatePrivateTemplateResultObject;
@@ -36,7 +38,8 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
-public class CreateTemplateCmd extends BaseCmd {
+@Implementation(method="createPrivateTemplate", createMethod="createPrivateTemplateRecord", manager=Manager.UserVmManager)
+public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTemplateCmd.class.getName());
     private static final String s_name = "createtemplateresponse";
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
@@ -141,6 +144,7 @@ public class CreateTemplateCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
@@ -148,9 +152,9 @@ public class CreateTemplateCmd extends BaseCmd {
     public static String getResultObjectName() {
     	return "template";  
     }
-    
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
+
+    @Override
+    public String getResponse() {
     }
 	
     @Override
