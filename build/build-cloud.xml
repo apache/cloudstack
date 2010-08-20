@@ -227,6 +227,11 @@
         <exclude name="**/.project" />
       </fileset>
     </copy>
+    <copy todir="${client.target.dir}">
+      <fileset dir="${client.dir}/WEB-INF/classes">
+        <include name="**/*.properties"/>
+      </fileset>
+    </copy>
   </target>
 
   <target name="build-server" depends="compile-server">
