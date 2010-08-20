@@ -433,7 +433,7 @@ public class AlertManagerImpl implements AlertManager {
             CapacityVO newPrivateIPCapacity = new CapacityVO(null, dcId, podId, allocatedPrivateIPs, totalPrivateIPs, CapacityVO.CAPACITY_TYPE_PRIVATE_IP);
             newCapacities.add(newPrivateIPCapacity);
         }
-        
+
         if (m_capacityCheckLock.lock(5)) { // 5 second timeout
             try {
                 // delete the old records
