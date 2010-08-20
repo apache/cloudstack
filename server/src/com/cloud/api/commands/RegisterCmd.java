@@ -18,27 +18,19 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.user.User;
-import com.cloud.utils.Pair;
+import com.cloud.api.BaseCmd.Manager;
 
+@Implementation(method="createApiKeyAndSecretKey", manager=Manager.ManagementServer)
 public class RegisterCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterCmd.class.getName());
 
     private static final String s_name = "registeruserkeysresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -62,28 +54,31 @@ public class RegisterCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long userId = (Long)params.get(BaseCmd.Properties.ID.getName());
+//    @Override
+//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
+//        Long userId = (Long)params.get(BaseCmd.Properties.ID.getName());
+//
+//        User user = getManagementServer().findUserById(userId);
+//
+//        if (user == null) {
+//            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to find user for id : " + userId);
+//        }
+//        
+//        // generate both an api key and a secret key, update the user table with the keys, return the keys to the user
+//        String apiKey = getManagementServer().createApiKey(user.getId());
+//        String secretKey = getManagementServer().createSecretKey(user.getId());
+//
+//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
+//
+//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.API_KEY.getName(), apiKey));
+//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SECRET_KEY.getName(), secretKey));
+//        return returnValues;
+//    }
 
-        User user = getManagementServer().findUserById(userId);
-
-        if (user == null) {
-            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to find user for id : " + userId);
-        }
-        
-        // generate both an api key and a secret key, update the user table with the keys, return the keys to the user
-        String apiKey = getManagementServer().createApiKey(user.getId());
-        String secretKey = getManagementServer().createSecretKey(user.getId());
-
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.API_KEY.getName(), apiKey));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SECRET_KEY.getName(), secretKey));
-        return returnValues;
-    }
+	@Override
+	public String getResponse() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

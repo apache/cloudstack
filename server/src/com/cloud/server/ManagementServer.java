@@ -325,7 +325,7 @@ public interface ManagementServer {
      * @param userId
      * @return the new API key
      */
-    String createApiKey(Long userId);
+//    String createApiKey(Long userId);
 
     /**
      * Create a secret key for a user, this key is used to sign requests made by the user
@@ -334,7 +334,7 @@ public interface ManagementServer {
      * @param userId
      * @return the new secret key
      */
-    String createSecretKey(Long userId);
+//    String createSecretKey(Long userId);
 
     /**
      * Gets Storage statistics for a given host
@@ -2009,4 +2009,5 @@ public interface ManagementServer {
 	boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException;
 	boolean updateUser(UpdateUserCmd cmd) throws InvalidParameterValueException;
 	boolean updateTemplatePermissions(UpdateTemplateOrIsoPermissionsCmd cmd)throws InvalidParameterValueException, PermissionDeniedException,InternalErrorException;
+	String[] createApiKeyAndSecretKey(Long userId);
 }

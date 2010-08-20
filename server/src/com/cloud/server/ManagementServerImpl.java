@@ -1396,9 +1396,25 @@ public class ManagementServerImpl implements ManagementServer {
 
         return account;
     }
-
+    
     @Override
-    public String createApiKey(Long userId) {
+    public String[] createApiKeyAndSecretKey(Long userId)
+    {
+    	User user = _userDao.findById(userId);
+    	
+    	if (user == null) {
+           throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to find user for id : " + userId);
+    	}
+    	
+    	// generate both an api key and a secret key, update the user table with the keys, return the keys to the user
+    	String[] keys = new String[2];
+    	keys[0] = createApiKey(userId);
+    	keys[1] = createSecretKey(userId);
+    	
+    	return keys;
+    }
+
+    private String createApiKey(Long userId) {
         User user = findUserById(userId);
         try {
             UserVO updatedUser = _userDao.createForUpdate();
@@ -1427,8 +1443,7 @@ public class ManagementServerImpl implements ManagementServer {
         return null;
     }
 
-    @Override
-    public String createSecretKey(Long userId) {
+    private String createSecretKey(Long userId) {
         User user = findUserById(userId);
         try {
             UserVO updatedUser = _userDao.createForUpdate();
