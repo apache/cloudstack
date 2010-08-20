@@ -132,6 +132,9 @@
       <fileset dir="${client.target.dir}">
         <include name="**/*" />
       </fileset>
+      <classes dir="${client.target.dir}">
+    	  <include name="**/resources/*.properties" />
+      </classes>
       <lib dir="${jar.dir}">
         <include name="${core.jar}" />
         <include name="${utils.jar}" />
