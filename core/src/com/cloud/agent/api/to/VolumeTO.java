@@ -18,12 +18,11 @@
 package com.cloud.agent.api.to;
 
 import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.StorageResourceType;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Storage.StoragePoolType;
 
 
 public class VolumeTO {
@@ -39,6 +38,7 @@ public class VolumeTO {
     private Storage.StorageResourceType resourceType;
     private StoragePoolType storagePoolType;
     private long poolId;
+    private int deviceId;
     
     public VolumeTO(long id, Volume.VolumeType type, Storage.StorageResourceType resourceType, StoragePoolType poolType, String name, String mountPoint, String path, long size) {
         this.id = id;
@@ -69,6 +69,10 @@ public class VolumeTO {
     	this.resourceType = Storage.StorageResourceType.STORAGE_POOL;
     	this.storagePoolType = pool.getPoolType();
     	this.mountPoint = pool.getPath();
+    }
+    
+    public int getDeviceId() {
+        return deviceId;
     }
 
     public Storage.StorageResourceType getResourceType() {

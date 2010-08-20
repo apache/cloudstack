@@ -104,6 +104,8 @@ import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
+import com.cloud.agent.api.Start2Answer;
+import com.cloud.agent.api.Start2Command;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartConsoleProxyAnswer;
@@ -141,22 +143,26 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ShareAnswer;
 import com.cloud.agent.api.storage.ShareCommand;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StoragePoolTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.Network.BroadcastDomainType;
+import com.cloud.network.Network.TrafficType;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.resource.StoragePoolResource;
 import com.cloud.storage.template.TemplateInfo;
+import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -169,6 +175,7 @@ import com.cloud.vm.DiskCharacteristics;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineName;
 import com.trilead.ssh2.SCPClient;
 import com.xensource.xenapi.APIVersion;
@@ -683,8 +690,375 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             return execute((ModifySshKeysCommand) cmd);
         } else if (cmd instanceof PoolEjectCommand) {
             return execute((PoolEjectCommand) cmd);
+        } else if (cmd instanceof Start2Command) {
+            return execute((Start2Command)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
+        }
+    }
+    
+    Pair<Network, String> getNetworkForTraffic(Connection conn, TrafficType type) throws XenAPIException, XmlRpcException {
+        if (type == TrafficType.Guest) {
+            return new Pair<Network, String>(Network.getByUuid(conn, _host.guestNetwork), _host.guestPif);
+        } else if (type == TrafficType.LinkLocal) {
+            return new Pair<Network, String>(Network.getByUuid(conn, _host.linkLocalNetwork), null);
+        } else if (type == TrafficType.Management) {
+            return new Pair<Network, String>(Network.getByUuid(conn, _host.privateNetwork), _host.privatePif);
+        } else if (type == TrafficType.Public) {
+            return new Pair<Network, String>(Network.getByUuid(conn, _host.publicNetwork), _host.publicPif);
+        } else if (type == TrafficType.Storage) {
+            return new Pair<Network, String>(Network.getByUuid(conn, _host.storageNetwork1), _host.storagePif1);
+        } else if (type == TrafficType.Vpn) {
+            return new Pair<Network, String>(Network.getByUuid(conn, _host.publicNetwork), _host.publicPif);
+        }
+        
+        throw new CloudRuntimeException("Unsupported network type: " + type);
+    }
+    
+    protected VIF createVif(Connection conn, String vmName, VM vm, NicTO nic) throws XmlRpcException, XenAPIException {
+        VIF.Record vifr = new VIF.Record();
+        vifr.VM = vm;
+        vifr.device = Integer.toString(nic.getDeviceId());
+        vifr.MAC = nic.getMac();
+        
+        Pair<Network, String> network = getNetworkForTraffic(conn, nic.getType());
+        if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
+            vifr.network = enableVlanNetwork(conn, nic.getVlan(), network.first(), network.second());
+        } else {
+            vifr.network = network.first();
+        }
+        
+        if (nic.getNetworkRateMbps() != null) {
+            vifr.qosAlgorithmType = "ratelimit";
+            vifr.qosAlgorithmParams = new HashMap<String, String>();
+            vifr.qosAlgorithmParams.put("kbps", Integer.toString(nic.getNetworkRateMbps() * 1000));
+        }
+        
+        VIF vif = VIF.create(conn, vifr);
+        if (s_logger.isDebugEnabled()) {
+            vifr = vif.getRecord(conn);
+            s_logger.debug("Created a vif " + vifr.uuid + " on " + nic.getDeviceId());
+        }
+        
+        return vif;
+    }
+    
+    protected VDI mount(Connection conn, String vmName, VolumeTO volume) throws XmlRpcException, XenAPIException {
+        if (volume.getType() == VolumeType.ISO) {
+            String isopath = volume.getPath();
+            int index = isopath.lastIndexOf("/");
+
+            String mountpoint = isopath.substring(0, index);
+            URI uri;
+            try {
+                uri = new URI(mountpoint);
+            } catch (URISyntaxException e) {
+                throw new CloudRuntimeException("Incorrect uri " + mountpoint, e);
+            }
+            SR isoSr = createIsoSRbyURI(uri, vmName, false);
+
+            String isoname = isopath.substring(index + 1);
+
+            VDI isoVdi = getVDIbyLocationandSR(isoname, isoSr);
+
+            if (isoVdi == null) {
+                throw new CloudRuntimeException("Unable to find ISO " + volume.getPath());
+            }
+            return isoVdi;
+        } else {
+            return VDI.getByUuid(conn, volume.getPath());
+        }
+    }
+    
+    protected VBD createVbd(Connection conn, String vmName, VM vm, VolumeTO volume, boolean patch) throws XmlRpcException, XenAPIException {
+        VolumeType type = volume.getType();
+        
+        VDI vdi = mount(conn, vmName, volume);
+        
+        if (patch) {
+            if (!patchSystemVm(vdi, vmName)) {
+                throw new CloudRuntimeException("Unable to patch system vm");
+            }
+        }
+        
+        VBD.Record vbdr = new VBD.Record();
+        vbdr.VM = vm;
+        vbdr.VDI = vdi;
+        if (type == VolumeType.ROOT) {
+            vbdr.bootable = true;
+        }
+        vbdr.userdevice = Long.toString(volume.getDeviceId());
+        if (volume.getType() == VolumeType.ISO) {
+            vbdr.mode = Types.VbdMode.RO;
+            vbdr.type = Types.VbdType.CD;
+        } else {
+            vbdr.mode = Types.VbdMode.RW;
+            vbdr.type = Types.VbdType.DISK;
+            
+        }
+        
+        VBD vbd = VBD.create(conn, vbdr);
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("VBD " + vbd.getUuid(conn) + " created for " + volume);
+        }
+        
+        return vbd;
+    }
+    
+    protected Pair<VM, String> createVmFromTemplate(Connection conn, VirtualMachineTO vmSpec, Host host) throws XenAPIException, XmlRpcException {
+        String guestOsTypeName = getGuestOsType(vmSpec.getOs());
+        Set<VM> templates = VM.getByNameLabel(conn, guestOsTypeName);
+        assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
+        VM template = templates.iterator().next();
+        
+        VM vm = template.createClone(conn, vmSpec.getName());
+        vm.setAffinity(conn, host);
+        
+        VM.Record vmr = vm.getRecord(conn);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Created VM " + vmr.uuid + " for " + vmSpec.getName());
+        }
+        
+        for (Console console : vmr.consoles) {
+            console.destroy(conn);
+        }
+        
+        vm.setIsATemplate(conn, false);
+        vm.removeFromOtherConfig(conn, "disks");
+        vm.setNameLabel(conn, vmSpec.getName());
+        setMemory(conn, vm, vmSpec.getMinRam());
+        vm.setVCPUsAtStartup(conn, (long)vmSpec.getCpus());
+        vm.setVCPUsMax(conn, (long)vmSpec.getCpus());
+        vm.setVCPUsNumberLive(conn, (long)vmSpec.getCpus());
+        
+        Map<String, String> vcpuParams = new HashMap<String, String>();
+
+        if (vmSpec.getWeight() != null) {
+            vcpuParams.put("weight", Integer.toString(vmSpec.getWeight()));
+        }
+        if (vmSpec.getUtilization() != null) {
+            vcpuParams.put("cap", Integer.toString(vmSpec.getUtilization()));
+        }
+        if (vcpuParams.size() > 0) {
+            vm.setVCPUsParams(conn, vcpuParams);
+        }
+
+        vm.setActionsAfterCrash(conn, Types.OnCrashBehaviour.DESTROY);
+        vm.setActionsAfterShutdown(conn, Types.OnNormalExit.DESTROY);
+        
+        String bootArgs = vmSpec.getBootArgs();
+        if (bootArgs != null && bootArgs.length() > 0) {
+            String pvargs = vm.getPVArgs(conn);
+            pvargs = pvargs + vmSpec.getBootArgs();
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("PV args are " + pvargs);
+            }
+            vm.setPVArgs(conn, pvargs);
+        }
+        
+        if (!(guestOsTypeName.startsWith("Windows") || guestOsTypeName.startsWith("Citrix") || guestOsTypeName.startsWith("Other"))) {
+            if (vmSpec.getBootloader() == BootloaderType.CD) {
+                vm.setPVBootloader(conn, "eliloader");
+                vm.addToOtherConfig(conn, "install-repository", "cdrom");
+            } else if (vmSpec.getBootloader() == BootloaderType.PyGrub ){
+                vm.setPVBootloader(conn, "pygrub");
+            } else {
+                vm.destroy(conn);
+                throw new CloudRuntimeException("Unable to handle boot loader type: " + vmSpec.getBootloader());
+            }
+        }
+        
+        return new Pair<VM, String>(vm, vmr.uuid);
+    }
+    
+    protected String handleVmStartFailure(String vmName, VM vm, String message, Throwable th) {
+        String msg = "Unable to start " + vmName + " due to " + message;
+        s_logger.warn(msg, th);
+        
+        if (vm == null) {
+            return msg;
+        }
+        
+        Connection conn = getConnection();
+        try {
+            VM.Record vmr = vm.getRecord(conn);
+            if (vmr.powerState == VmPowerState.RUNNING) {
+                try {
+                    vm.hardShutdown(conn);
+                } catch (Exception e) {
+                    s_logger.warn("VM hardshutdown failed due to ", e);
+                }
+            }
+            if (vm.getPowerState(conn) == VmPowerState.HALTED) {
+                try {
+                    vm.destroy(conn);
+                } catch (Exception e) {
+                    s_logger.warn("VM destroy failed due to ", e);
+                }
+            }
+            for (VBD vbd : vmr.VBDs) {
+                try {
+                    vbd.unplug(conn);
+                    vbd.destroy(conn);
+                } catch (Exception e) {
+                    s_logger.warn("Unable to clean up VBD due to ", e);
+                }
+            }
+            for (VIF vif : vmr.VIFs) {
+                try {
+                    vif.unplug(conn);
+                    vif.destroy(conn);
+                } catch (Exception e) {
+                    s_logger.warn("Unable to cleanup VIF", e);
+                }
+            }
+        } catch (Exception e) {
+            s_logger.warn("VM getRecord failed due to ", e);
+        }
+        
+        return msg;
+    }
+    
+    protected Start2Answer execute(Start2Command cmd) {
+        VirtualMachineTO vmSpec = cmd.getVirtualMachine();
+        String vmName = vmSpec.getName(); 
+        
+        Connection conn = getConnection();
+        State state = State.Stopped;
+        VM vm = null;
+        try {
+            Host host = Host.getByUuid(conn, _host.uuid);
+            synchronized (_vms) {
+                _vms.put(vmName, State.Starting);
+            }
+            
+            Pair<VM, String> v = createVmFromTemplate(conn, vmSpec, host);
+            vm = v.first();
+            String vmUuid = v.second();
+            
+            for (VolumeTO disk : vmSpec.getDisks()) {
+                createVbd(conn, vmName, vm, disk, disk.getType() == VolumeType.ROOT && vmSpec.getType() != VirtualMachine.Type.User);
+            }
+            
+            NicTO controlNic = null;
+            for (NicTO nic : vmSpec.getNetworks()) {
+                if (nic.getControlPort() != null) {
+                    controlNic = nic;
+                }
+                createVif(conn, vmName, vm, nic);
+            }
+            
+            /*
+             *             
+                VBD.Record vbdr = new VBD.Record();
+                Ternary<SR, VDI, VolumeVO> mount = mounts.get(0);
+                vbdr.VM = vm;
+                vbdr.VDI = mount.second();
+                vbdr.bootable = !bootFromISO;
+                vbdr.userdevice = "0";
+                vbdr.mode = Types.VbdMode.RW;
+                vbdr.type = Types.VbdType.DISK;
+                VBD.create(conn, vbdr);
+
+                for (int i = 1; i < mounts.size(); i++) {
+                    mount = mounts.get(i);
+                    // vdi.setNameLabel(conn, cmd.getVmName() + "-DATA");
+                    vbdr.VM = vm;
+                    vbdr.VDI = mount.second();
+                    vbdr.bootable = false;
+                    vbdr.userdevice = Long.toString(mount.third().getDeviceId());
+                    vbdr.mode = Types.VbdMode.RW;
+                    vbdr.type = Types.VbdType.DISK;
+                    vbdr.unpluggable = true;
+                    VBD.create(conn, vbdr);
+
+                }
+
+                VBD.Record cdromVBDR = new VBD.Record();
+                cdromVBDR.VM = vm;
+                cdromVBDR.empty = true;
+                cdromVBDR.bootable = bootFromISO;
+                cdromVBDR.userdevice = "3";
+                cdromVBDR.mode = Types.VbdMode.RO;
+                cdromVBDR.type = Types.VbdType.CD;
+                VBD cdromVBD = VBD.create(conn, cdromVBDR);
+
+                String isopath = cmd.getISOPath();
+                if (isopath != null) {
+                    int index = isopath.lastIndexOf("/");
+
+                    String mountpoint = isopath.substring(0, index);
+                    URI uri = new URI(mountpoint);
+                    isosr = createIsoSRbyURI(uri, cmd.getVmName(), false);
+
+                    String isoname = isopath.substring(index + 1);
+
+                    VDI isovdi = getVDIbyLocationandSR(isoname, isosr);
+
+                    if (isovdi == null) {
+                        String msg = " can not find ISO " + cmd.getISOPath();
+                        s_logger.warn(msg);
+                        return new StartAnswer(cmd, msg);
+                    } else {
+                        cdromVBD.insert(conn, isovdi);
+                    }
+
+                }
+             */
+            
+            vm.startOn(conn, host, false, true);
+            
+            if (_canBridgeFirewall) {
+                String result = null;
+                if (vmSpec.getType() != VirtualMachine.Type.User) {
+                    result = callHostPlugin("vmops", "default_network_rules_systemvm", "vmName", vmName);
+                } else {
+                }
+                
+                if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+                    s_logger.warn("Failed to program default network rules for " + vmName);
+                } else {
+                    s_logger.info("Programmed default network rules for " + vmName);
+                }
+            }
+
+            if (controlNic != null) {
+                String privateIp = controlNic.getIp();
+                int cmdPort = controlNic.getControlPort();
+                
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Ping command port, " + privateIp + ":" + cmdPort);
+                }
+    
+                String result = connect(vmName, privateIp, cmdPort);
+                if (result != null) {
+                    throw new CloudRuntimeException("Can not ping System vm " + vmName + "due to:" + result);
+                } 
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Ping command port succeeded for vm " + vmName);
+                }
+            }
+            
+            state = State.Running;
+            return new Start2Answer(cmd);
+        } catch (XmlRpcException e) {
+            String msg = handleVmStartFailure(vmName, vm, "", e);
+            return new Start2Answer(cmd, msg);
+        } catch (XenAPIException e) {
+            String msg = handleVmStartFailure(vmName, vm, "", e);
+            return new Start2Answer(cmd, msg);
+        } catch (Exception e) {
+            String msg = handleVmStartFailure(vmName, vm, "", e);
+            return new Start2Answer(cmd, msg);
+        } finally {
+            synchronized (_vms) {
+                if (state != State.Stopped) {
+                    _vms.put(vmName, state);
+                } else {
+                    _vms.remove(vmName);
+                }
+            }
         }
     }
 
@@ -1695,6 +2069,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
     }
 
+    @Override
     public DownloadAnswer execute(final PrimaryStorageDownloadCommand cmd) {
         SR tmpltsr = null;
         String tmplturl = cmd.getUrl();
@@ -3292,6 +3667,45 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return null;
     }
 
+    protected synchronized Network getNetworkByName(Connection conn, String name, boolean lookForPif) throws XenAPIException, XmlRpcException {
+        Network found = null;
+        Set<Network> networks = Network.getByNameLabel(conn, name);
+        if (networks.size() == 1) {
+            found = networks.iterator().next();
+        } else if (networks.size() > 1) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Found more than one network with the name " + name);
+            }
+            for (Network network : networks) {
+                if (!lookForPif) {
+                    found = network;
+                    break;
+                }
+                
+                Network.Record netr = network.getRecord(conn);
+                s_logger.debug("Checking network " + netr.uuid);
+                if (netr.PIFs.size() == 0) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Network " + netr.uuid + " has no pifs so skipping that.");
+                    }
+                } else {
+                    for (PIF pif : netr.PIFs) {
+                        PIF.Record pifr = pif.getRecord(conn);
+                        if (_host.uuid.equals(pifr.host.getUuid(conn))) {
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("Network " + netr.uuid + " has a pif " + pifr.uuid + " for our host ");
+                            }
+                            found = network;
+                            break;
+                        }
+                    }
+                }
+            }
+        } 
+
+        return found;
+    }
+    
     protected Network enableVlanNetwork(long tag, String networkUuid, String pifUuid) throws XenAPIException, XmlRpcException {
         // In XenServer, vlan is added by
         // 1. creating a network.
@@ -3344,6 +3758,60 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return vlanNetwork;
     }
 
+    protected Network enableVlanNetwork(Connection conn, long tag, Network network, String pifUuid) throws XenAPIException, XmlRpcException {
+        // In XenServer, vlan is added by
+        // 1. creating a network.
+        // 2. creating a vlan associating network with the pif.
+        // We always create
+        // 1. a network with VLAN[vlan id in decimal]
+        // 2. a vlan associating the network created with the pif to private
+        // network.
+
+        Network vlanNetwork = null;
+        String name = "VLAN" + Long.toString(tag);
+
+        vlanNetwork = getNetworkByName(conn, name, true);
+        if (vlanNetwork == null) { // Can't find it, then create it.
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Creating VLAN network for " + tag + " on host " + _host.ip);
+            }
+            Network.Record nwr = new Network.Record();
+            nwr.nameLabel = name;
+            nwr.bridge = name;
+            vlanNetwork = Network.create(conn, nwr);
+        }
+
+        PIF nPif = PIF.getByUuid(conn, pifUuid);
+        PIF.Record nPifr = nPif.getRecord(conn);
+
+        Network.Record vlanNetworkr = vlanNetwork.getRecord(conn);
+        if (vlanNetworkr.PIFs != null) {
+            for (PIF pif : vlanNetworkr.PIFs) {
+                PIF.Record pifr = pif.getRecord(conn);
+                if (pifr.device.equals(nPifr.device) && pifr.host.equals(nPifr.host)) {
+                    pif.plug(conn);
+                    return vlanNetwork;
+                }
+            }
+        }
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Creating VLAN " + tag + " on host " + _host.ip + " on device " + nPifr.device);
+        }
+        VLAN vlan = VLAN.create(conn, nPif, tag, vlanNetwork);
+        VLAN.Record vlanr = vlan.getRecord(conn);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("VLAN is created for " + tag + ".  The uuid is " + vlanr.uuid);
+        }
+        
+        PIF untaggedPif = vlanr.untaggedPIF;
+        if (!untaggedPif.getCurrentlyAttached(conn)) {
+            untaggedPif.plug(conn);
+        }
+
+        return vlanNetwork;
+    }
+    
     protected void disableVlanNetwork(Network network) throws InternalErrorException {
         try {
             Connection conn = getConnection();
@@ -4263,6 +4731,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
     }
 
+    @Override
     public CreateAnswer execute(CreateCommand cmd) {
         StoragePoolTO pool = cmd.getPool();
         DiskCharacteristics dskch = cmd.getDiskCharacteristics();
@@ -4762,6 +5231,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
     }
 
+    @Override
     public Answer execute(DestroyCommand cmd) {
         VolumeTO vol = cmd.getVolume();
 
@@ -4805,6 +5275,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return new Answer(cmd, true, "Success");
     }
 
+    @Override
     public ShareAnswer execute(final ShareCommand cmd) {
         if (!cmd.isShare()) {
             SR sr = getISOSRbyVmName(cmd.getVmName());
@@ -4824,6 +5295,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return new ShareAnswer(cmd, new HashMap<String, Integer>());
     }
 
+    @Override
     public CopyVolumeAnswer execute(final CopyVolumeCommand cmd) {
         String volumeUUID = cmd.getVolumePath();
         StoragePoolVO pool = cmd.getPool();
@@ -6076,10 +6548,12 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         _agentControl = agentControl;
     }
 
+    @Override
     public boolean IsRemoteAgent() {
     	return _isRemoteAgent;
     }
     
+    @Override
     public void setRemoteAgent(boolean remote) {
     	_isRemoteAgent = remote;
     }

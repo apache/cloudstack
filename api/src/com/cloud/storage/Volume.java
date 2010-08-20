@@ -23,7 +23,7 @@ import com.cloud.user.OwnedBy;
 
 
 public interface Volume extends PartOf, OwnedBy, BasedOn {
-	enum VolumeType {UNKNOWN, ROOT, SWAP, DATADISK};
+	enum VolumeType {UNKNOWN, ROOT, SWAP, DATADISK, ISO};
 	
 	enum MirrorState {NOT_MIRRORED, ACTIVE, DEFUNCT};
 	

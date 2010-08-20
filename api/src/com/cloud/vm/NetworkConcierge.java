@@ -17,7 +17,7 @@ import com.cloud.utils.component.Adapter;
 public interface NetworkConcierge extends Adapter {
     String getUniqueName();
     
-    Pair<String, NetworkTO> reserve(long vmId, NetworkCharacteristics ch) throws InsufficientVirtualNetworkCapcityException;
+    Pair<String, String> reserve(long vmId, NetworkCharacteristics ch) throws InsufficientVirtualNetworkCapcityException;
     
     boolean release(String uniqueName, String uniqueId);
 }
