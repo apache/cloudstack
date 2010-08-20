@@ -232,10 +232,13 @@ conf.env.USAGECLASSPATH = pathsep.join(usageclasspath)
 # 1. source directories (without including the JARs)
 # JARs are not included because in case of parallel compilation (IOW, all the time), javac picks up half-written JARs and die
 compilecp = []# list(srcdirs)
-# 2.a) the thirdparty/ directory in the source if on Windows / Mac
 # 2.b) the deps/ directory in the source if on Linux
-if conf.env.DISTRO in ["Windows","Mac"]:  compilecp+= _glob(_join("cloudstack-proprietary","thirdparty","*.jar"))
-else:					  compilecp+= _glob(_join("deps","*.jar"))
+# 2.a) the thirdparty/ directory if available
+if conf.env.DISTRO in ["Windows","Mac"]:
+	pass
+else:
+	compilecp+= _glob(_join("deps","*.jar"))
+compilecp+= _glob(_join("cloudstack-proprietary","thirdparty","*.jar"))
 # 3. the system classpath (system-installed JARs)
 compilecp+= [ conf.env.SYSTEMCLASSPATH ]
 compilecp+= _glob(_join(conf.env.TOMCATHOME,'bin',"*.jar"))
