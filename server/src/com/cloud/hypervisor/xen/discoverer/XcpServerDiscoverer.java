@@ -264,7 +264,11 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         } catch (UnknownHostException e) {
             s_logger.warn("Unable to resolve the host name", e);
             return null;
-        } finally {
+        } catch (Exception e) {
+        	s_logger.debug("other exceptions: " + e.toString());
+        	return null;
+        }
+        finally {
             if (conn != null) {
                 try{
                     Session.logout(conn);
