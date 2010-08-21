@@ -478,7 +478,13 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         Enumeration<Discoverer> en = _discoverers.enumeration();
         while (en.hasMoreElements()) {
             Discoverer discoverer = en.nextElement();
-            Map<? extends ServerResource, Map<String, String>> resources = discoverer.find(dcId, podId, clusterId, url, username, password);
+            Map<? extends ServerResource, Map<String, String>> resources = null;
+            
+            try {
+            	resources = discoverer.find(dcId, podId, clusterId, url, username, password);
+            } catch(Exception e) {
+            	s_logger.info("Exception in host discovery process with discoverer: " + discoverer.getName() + ", skip to another discoverer if there is any");
+            }
             if (resources != null) {
                 for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
                     ServerResource resource = entry.getKey();
@@ -1677,7 +1683,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
             // If this command is from a KVM agent, or from an agent that has a
             // null hypervisor type, don't do the CIDR check
-            if (hypervisorType == null || hypervisorType == Hypervisor.Type.KVM)
+            if (hypervisorType == null || hypervisorType == Hypervisor.Type.KVM || hypervisorType == Hypervisor.Type.VMware)
                 doCidrCheck = false;
 
             if (doCidrCheck)

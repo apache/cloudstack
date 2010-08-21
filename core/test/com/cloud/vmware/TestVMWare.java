@@ -19,6 +19,7 @@ import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
 import com.vmware.vim25.VirtualEthernetCard;
 import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
+import com.vmware.vim25.VirtualNicManagerNetConfig;
 import com.vmware.vim25.VirtualPCNet32;
 import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualMachineCloneSpec;
@@ -784,6 +785,14 @@ public class TestVMWare {
 			"cloud.dc.test");
 	}
 	
+	private void getPropertyWithPath() throws Exception {
+		ManagedObjectReference morHost = new ManagedObjectReference();
+		morHost.setType("HostSystem");
+		morHost.set_value("host-161");
+		
+		VirtualNicManagerNetConfig[] netConfigs = (VirtualNicManagerNetConfig[])cb.getServiceUtil3().getDynamicProperty(morHost, "config.virtualNicManagerInfo.netConfig");
+	}
+	
 	public static void main(String[] args) throws Exception {
 		setupLog4j();
 		TestVMWare client = new TestVMWare();
@@ -809,7 +818,9 @@ public class TestVMWare {
 			// client.addNic();
 			// client.addNicToNetwork();
 
-			client.createDatacenter();
+			// client.createDatacenter();
+			client.getPropertyWithPath();
+		
 			cb.disConnect();
 		} catch (Exception e) {
 			e.printStackTrace();
