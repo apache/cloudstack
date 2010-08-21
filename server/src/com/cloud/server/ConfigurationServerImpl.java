@@ -137,25 +137,17 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 			}
 			
 			// Save Direct Networking service offerings
-			_configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Direct Networking", 1, 512, 500, "Small Instance, Direct Networking, $0.05 per hour", false, false, false, null, Hypervisor.Type.KVM);			
-			_configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Direct Networking", 1, 1024, 1000, "Medium Instance, Direct Networking, $0.10 per hour", false, false, false, null,Hypervisor.Type.KVM);			
-			  // Save Virtual Networking service offerings
-            _configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Virtual Networking", 1, 512, 500, "Small Instance, Virtual Networking, $0.05 per hour", false, false, true, null, Hypervisor.Type.KVM);
-            _configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Virtual Networking", 1, 1024, 1000, "Medium Instance, Virtual Networking, $0.10 per hour", false, false, true, null, Hypervisor.Type.KVM);
-            
+			_configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Direct Networking", 1, 512, 500, "KVM, Small Instance, Direct Networking, $0.05 per hour", false, false, false, null, Hypervisor.Type.KVM);			
+			_configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Direct Networking", 1, 1024, 1000, "KVM, Medium Instance, Direct Networking, $0.10 per hour", false, false, false, null,Hypervisor.Type.KVM);			
+			
          // Save Direct Networking service offerings
-			_configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Direct Networking", 1, 512, 500, "Small Instance, Direct Networking, $0.05 per hour", false, false, false, null, Hypervisor.Type.XenServer);			
-			_configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Direct Networking", 1, 1024, 1000, "Medium Instance, Direct Networking, $0.10 per hour", false, false, false, null,Hypervisor.Type.XenServer);			
-			  // Save Virtual Networking service offerings
-            _configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Virtual Networking", 1, 512, 500, "Small Instance, Virtual Networking, $0.05 per hour", false, false, true, null, Hypervisor.Type.XenServer);
-            _configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Virtual Networking", 1, 1024, 1000, "Medium Instance, Virtual Networking, $0.10 per hour", false, false, true, null, Hypervisor.Type.XenServer);
-            
+			_configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Direct Networking", 1, 512, 500, "Xenserver, Small Instance, Direct Networking, $0.05 per hour", false, false, false, null, Hypervisor.Type.XenServer);			
+			_configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Direct Networking", 1, 1024, 1000, "Xenserver, Medium Instance, Direct Networking, $0.10 per hour", false, false, false, null,Hypervisor.Type.XenServer);			
+			
          // Save Direct Networking service offerings
-			_configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Direct Networking", 1, 512, 500, "Small Instance, Direct Networking, $0.05 per hour", false, false, false, null, Hypervisor.Type.VMware);			
-			_configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Direct Networking", 1, 1024, 1000, "Medium Instance, Direct Networking, $0.10 per hour", false, false, false, null, Hypervisor.Type.VMware);			
-			  // Save Virtual Networking service offerings
-            _configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Virtual Networking", 1, 512, 500, "Small Instance, Virtual Networking, $0.05 per hour", false, false, true, null, Hypervisor.Type.VMware);
-            _configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Virtual Networking", 1, 1024, 1000, "Medium Instance, Virtual Networking, $0.10 per hour", false, false, true, null, Hypervisor.Type.VMware);
+			_configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Direct Networking", 1, 512, 500, "VMware, Small Instance, Direct Networking, $0.05 per hour", false, false, false, null, Hypervisor.Type.VMware);			
+			_configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Direct Networking", 1, 1024, 1000, "VMware, Medium Instance, Direct Networking, $0.10 per hour", false, false, false, null, Hypervisor.Type.VMware);			
+			 
 			// Save default disk offerings
 			_configMgr.createDiskOffering(User.UID_SYSTEM, DomainVO.ROOT_DOMAIN, "Small", "Small Disk, 5 GB", 5, null);
 			_configMgr.createDiskOffering(User.UID_SYSTEM, DomainVO.ROOT_DOMAIN, "Medium", "Medium Disk, 20 GB", 20, null);

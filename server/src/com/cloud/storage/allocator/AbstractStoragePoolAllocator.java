@@ -31,6 +31,8 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.server.StatsCollector;
@@ -74,6 +76,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     @Inject VolumeDao _volumeDao;
     @Inject StoragePoolHostDao _poolHostDao;
     @Inject ConfigurationDao _configDao;
+    @Inject ClusterDao _clusterDao;
     int _storageOverprovisioningFactor;
     long _extraBytesPerVolume = 0;
     Random _rand;
@@ -142,6 +145,12 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 			return false;
 		}
 
+		/*hypervisor type is correct*/
+		Long clusterId = pool.getClusterId();
+		ClusterVO cluster = _clusterDao.findById(clusterId);
+		if (!cluster.getHypervisorType().equalsIgnoreCase(offering.gethypervisorType())) {
+			return false;
+		}
 		// check the used size against the total size, skip this host if it's greater than the configured
 		// capacity check "storage.capacity.threshold"
 		if (sc != null) {

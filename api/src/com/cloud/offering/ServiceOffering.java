@@ -67,4 +67,5 @@ public interface ServiceOffering {
      */
     boolean getUseLocalStorage();
 
+    public String gethypervisorType();
 }
