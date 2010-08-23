@@ -28,5 +28,4 @@ public class Hypervisor {
     	VirtualBox,
     	Parralels;
     }
-
 }

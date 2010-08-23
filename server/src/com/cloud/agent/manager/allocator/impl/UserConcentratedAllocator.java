@@ -155,47 +155,23 @@ public class UserConcentratedAllocator implements PodAllocator {
     }
 
     private boolean dataCenterAndPodHasEnoughCapacity(long dataCenterId, long podId, long capacityNeeded, short capacityType, long[] hostCandidate) {
+        List<CapacityVO> capacities = null;
         if (m_capacityCheckLock.lock(120)) { // 2 minutes
             try {
                 SearchCriteria<CapacityVO> sc = _capacityDao.createSearchCriteria();
                 sc.addAnd("capacityType", SearchCriteria.Op.EQ, capacityType);
                 sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, dataCenterId);
                 sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
-                List<CapacityVO> capacities = _capacityDao.search(sc, null);
-                boolean enoughCapacity = false;
-                if (capacities != null) {
-                    for (CapacityVO capacity : capacities) {
-                    	if(capacityType == CapacityVO.CAPACITY_TYPE_CPU || capacityType == CapacityVO.CAPACITY_TYPE_MEMORY) {
-                    		//
-                    		// for CPU/Memory, we now switch to static allocation
-                    		//
-	                        if ((capacity.getTotalCapacity() -
-	                        	calcHostAllocatedCpuMemoryCapacity(capacity.getHostOrPoolId(), capacityType)) >= capacityNeeded) {
-	                        	
-	                            hostCandidate[0] = capacity.getHostOrPoolId();
-	                            enoughCapacity = true;
-	                            break;
-	                        }
-                    	} else {
-	                        if ((capacity.getTotalCapacity() - capacity.getUsedCapacity()) >= capacityNeeded) {
-	                        	
-	                            hostCandidate[0] = capacity.getHostOrPoolId();
-	                            enoughCapacity = true;
-	                            break;
-	                        }
-                    	}
-                    }
-                }
-                return enoughCapacity;
+                capacities = _capacityDao.search(sc, null);
             } finally {
                 m_capacityCheckLock.unlock();
             }
         } else {
-        	s_logger.error("Unable to acquire synchronization lock for pod allocation");
-        	
-        	// we now try to enforce reservation-style allocation, waiting time has been adjusted
-        	// to 2 minutes
-        	return false;
+            s_logger.error("Unable to acquire synchronization lock for pod allocation");
+            
+            // we now try to enforce reservation-style allocation, waiting time has been adjusted
+            // to 2 minutes
+            return false;
 
 /*
             // If we can't lock the table, just return that there is enough capacity and allow instance creation to fail on the agent
@@ -204,6 +180,31 @@ public class UserConcentratedAllocator implements PodAllocator {
             return true;
 */
         }
+
+        boolean enoughCapacity = false;
+        if (capacities != null) {
+            for (CapacityVO capacity : capacities) {
+                if(capacityType == CapacityVO.CAPACITY_TYPE_CPU || capacityType == CapacityVO.CAPACITY_TYPE_MEMORY) {
+                    //
+                    // for CPU/Memory, we now switch to static allocation
+                    //
+                    if ((capacity.getTotalCapacity() -
+                            calcHostAllocatedCpuMemoryCapacity(capacity.getHostOrPoolId(), capacityType)) >= capacityNeeded) {
+
+                        hostCandidate[0] = capacity.getHostOrPoolId();
+                        enoughCapacity = true;
+                        break;
+                    }
+                } else {
+                    if ((capacity.getTotalCapacity() - capacity.getUsedCapacity()) >= capacityNeeded) {
+                        hostCandidate[0] = capacity.getHostOrPoolId();
+                        enoughCapacity = true;
+                        break;
+                    }
+                }
+            }
+        }
+        return enoughCapacity;
     }
     
     private boolean skipCalculation(VMInstanceVO vm) {

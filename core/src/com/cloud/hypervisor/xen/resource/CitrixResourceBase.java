@@ -4582,6 +4582,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     break;
                 }
             }
+            
             // assume the memory Virtualization overhead is 1/64
             ram = (ram - dom0Ram) * 63/64;
             cmd.setMemory(ram);
