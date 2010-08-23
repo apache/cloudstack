@@ -327,113 +327,120 @@ public class AlertManagerImpl implements AlertManager {
         //        the amount allocated.  Hopefully it's limited to 3 entry points and will keep the amount allocated
         //        per host accurate.
 
-        if (m_capacityCheckLock.lock(5)) { // 5 second timeout
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("recalculating system capacity");
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("recalculating system capacity");
+        }
+        List<CapacityVO> newCapacities = new ArrayList<CapacityVO>();
+
+        // get all hosts..
+        SearchCriteria sc = _hostDao.createSearchCriteria();
+        sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
+        List<HostVO> hosts = _hostDao.search(sc, null);
+
+        // prep the service offerings
+        List<ServiceOfferingVO> offerings = _offeringsDao.listAll();
+        Map<Long, ServiceOfferingVO> offeringsMap = new HashMap<Long, ServiceOfferingVO>();
+        for (ServiceOfferingVO offering : offerings) {
+            offeringsMap.put(offering.getId(), offering);
+        }
+        for (HostVO host : hosts) {
+            if (host.getType() != Host.Type.Routing) {
+                continue;
             }
+
+            long cpu = 0;
+            long usedMemory = 0;
+            List<DomainRouterVO> domainRouters = _routerDao.listUpByHostId(host.getId());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Found " + domainRouters.size() + " router domains on host " + host.getId());
+            }
+            for (DomainRouterVO router : domainRouters) {
+                usedMemory += router.getRamSize() * 1024L * 1024L;
+            }
+
+            List<ConsoleProxyVO> proxys = _consoleProxyDao.listUpByHostId(host.getId());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Found " + proxys.size() + " console proxy on host " + host.getId());
+            }
+            for(ConsoleProxyVO proxy : proxys) {
+                usedMemory += proxy.getRamSize() * 1024L * 1024L;
+            }
+
+            List<SecondaryStorageVmVO> secStorageVms = _secStorgaeVmDao.listUpByHostId(host.getId());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Found " + secStorageVms.size() + " secondary storage VM on host " + host.getId());
+            }
+            for(SecondaryStorageVmVO secStorageVm : secStorageVms) {
+                usedMemory += secStorageVm.getRamSize() * 1024L * 1024L;
+            }
+
+            List<UserVmVO> vms = _userVmDao.listUpByHostId(host.getId());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Found " + vms.size() + " user VM on host " + host.getId());
+            }
+
+            for (UserVmVO vm : vms) {
+                ServiceOffering so = offeringsMap.get(vm.getServiceOfferingId());
+                usedMemory += so.getRamSize() * 1024L * 1024L;
+                cpu += so.getCpu() * (so.getSpeed() * 0.99);
+            }
+
+            long totalMemory = host.getTotalMemory();
+
+            CapacityVO newMemoryCapacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), usedMemory, totalMemory, CapacityVO.CAPACITY_TYPE_MEMORY);
+            CapacityVO newCPUCapacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), cpu, (long)(host.getCpus()*host.getSpeed()* _cpuOverProvisioningFactor), CapacityVO.CAPACITY_TYPE_CPU);
+            newCapacities.add(newMemoryCapacity);
+            newCapacities.add(newCPUCapacity);
+        }
+
+        // Calculate storage pool capacity
+        List<StoragePoolVO> storagePools = _storagePoolDao.listAllActive();
+        for (StoragePoolVO pool : storagePools) {
+            long disk = 0l;
+            Pair<Long, Long> sizes = _volumeDao.getCountAndTotalByPool(pool.getId());
+            disk = sizes.second();
+            int provFactor = 1;
+            if( pool.getPoolType() == StoragePoolType.NetworkFilesystem ) {
+                provFactor = _overProvisioningFactor;
+            }
+            CapacityVO newStorageCapacity = new CapacityVO(pool.getId(), pool.getDataCenterId(), pool.getPodId(), disk, pool.getCapacityBytes() * provFactor, CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED);
+            newCapacities.add(newStorageCapacity);
+
+            continue;
+        }
+
+        // Calculate new Public IP capacity
+        List<DataCenterVO> datacenters = _dcDao.listAll();
+        for (DataCenterVO datacenter : datacenters) {
+            long dcId = datacenter.getId();
+
+            int totalPublicIPs = _publicIPAddressDao.countIPs(dcId, -1, false);
+            int allocatedPublicIPs = _publicIPAddressDao.countIPs(dcId, -1, true);
+
+            CapacityVO newPublicIPCapacity = new CapacityVO(null, dcId, null, allocatedPublicIPs, totalPublicIPs, CapacityVO.CAPACITY_TYPE_PUBLIC_IP);
+            newCapacities.add(newPublicIPCapacity);
+        }
+
+        // Calculate new Private IP capacity
+        List<HostPodVO> pods = _podDao.listAll();
+        for (HostPodVO pod : pods) {
+            long podId = pod.getId();
+            long dcId = pod.getDataCenterId();
+
+            int totalPrivateIPs = _privateIPAddressDao.countIPs(podId, dcId, false);
+            int allocatedPrivateIPs = _privateIPAddressDao.countIPs(podId, dcId, true);
+
+            CapacityVO newPrivateIPCapacity = new CapacityVO(null, dcId, podId, allocatedPrivateIPs, totalPrivateIPs, CapacityVO.CAPACITY_TYPE_PRIVATE_IP);
+            newCapacities.add(newPrivateIPCapacity);
+        }
+
+        if (m_capacityCheckLock.lock(5)) { // 5 second timeout
             try {
                 // delete the old records
                 _capacityDao.clearNonStorageCapacities();
 
-                // get all hosts..
-                SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
-                sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
-                List<HostVO> hosts = _hostDao.search(sc, null);
-
-                // prep the service offerings
-                List<ServiceOfferingVO> offerings = _offeringsDao.listAll();
-                Map<Long, ServiceOfferingVO> offeringsMap = new HashMap<Long, ServiceOfferingVO>();
-                for (ServiceOfferingVO offering : offerings) {
-                    offeringsMap.put(offering.getId(), offering);
-                }
-                for (HostVO host : hosts) {
-                    if (host.getType() != Host.Type.Routing) {
-                        continue;
-                    }
-                    long cpu = 0;
-                    long usedMemory = 0;
-                    List<DomainRouterVO> domainRouters = _routerDao.listUpByHostId(host.getId());
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Found " + domainRouters.size() + " router domains on host " + host.getId());
-                    }
-                    for (DomainRouterVO router : domainRouters) {
-                        usedMemory += router.getRamSize() * 1024L * 1024L;
-                    }
-
-                    List<ConsoleProxyVO> proxys = _consoleProxyDao.listUpByHostId(host.getId());
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Found " + proxys.size() + " console proxy on host " + host.getId());
-                    }
-                    for(ConsoleProxyVO proxy : proxys) {
-                        usedMemory += proxy.getRamSize() * 1024L * 1024L;
-                    }
-                    
-                    List<SecondaryStorageVmVO> secStorageVms = _secStorgaeVmDao.listUpByHostId(host.getId());
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Found " + secStorageVms.size() + " secondary storage VM on host " + host.getId());
-                    }
-                    for(SecondaryStorageVmVO secStorageVm : secStorageVms) {
-                        usedMemory += secStorageVm.getRamSize() * 1024L * 1024L;
-                    }
-                            
-                    List<UserVmVO> vms = _userVmDao.listUpByHostId(host.getId());
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Found " + vms.size() + " user VM on host " + host.getId());
-                    }
-                    
-                    for (UserVmVO vm : vms) {
-                        ServiceOffering so = offeringsMap.get(vm.getServiceOfferingId());
-                        usedMemory += so.getRamSize() * 1024L * 1024L;
-                        cpu += so.getCpu() * (so.getSpeed() * 0.99);
-                    }
-
-                    long totalMemory = host.getTotalMemory();
-
-                    CapacityVO newMemoryCapacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), usedMemory, totalMemory, CapacityVO.CAPACITY_TYPE_MEMORY);
-                    CapacityVO newCPUCapacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), cpu, (long)(host.getCpus()*host.getSpeed()* _cpuOverProvisioningFactor), CapacityVO.CAPACITY_TYPE_CPU);
-                    _capacityDao.persist(newMemoryCapacity);
-                    _capacityDao.persist(newCPUCapacity);
-                }
-
-                // Calculate storage pool capacity
-                List<StoragePoolVO> storagePools = _storagePoolDao.listAllActive();
-                for (StoragePoolVO pool : storagePools) {
-                    long disk = 0l;
-                    Pair<Long, Long> sizes = _volumeDao.getCountAndTotalByPool(pool.getId());
-                    disk = sizes.second();
-                    int provFactor = 1;
-                    if( pool.getPoolType() == StoragePoolType.NetworkFilesystem ) {
-                        provFactor = _overProvisioningFactor;
-                    }
-                    CapacityVO newStorageCapacity = new CapacityVO(pool.getId(), pool.getDataCenterId(), pool.getPodId(), disk, pool.getCapacityBytes() * provFactor, CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED);
-                    _capacityDao.persist(newStorageCapacity);
-
-                    continue;
-                }
-
-                // Calculate new Public IP capacity
-                List<DataCenterVO> datacenters = _dcDao.listAll();
-                for (DataCenterVO datacenter : datacenters) {
-                    long dcId = datacenter.getId();
-
-                    int totalPublicIPs = _publicIPAddressDao.countIPs(dcId, -1, false);
-                    int allocatedPublicIPs = _publicIPAddressDao.countIPs(dcId, -1, true);
-
-                    CapacityVO newPublicIPCapacity = new CapacityVO(null, dcId, null, allocatedPublicIPs, totalPublicIPs, CapacityVO.CAPACITY_TYPE_PUBLIC_IP);
-                    _capacityDao.persist(newPublicIPCapacity);
-                }
-
-                // Calculate new Private IP capacity
-                List<HostPodVO> pods = _podDao.listAll();
-                for (HostPodVO pod : pods) {
-                    long podId = pod.getId();
-                    long dcId = pod.getDataCenterId();
-                    
-                    int totalPrivateIPs = _privateIPAddressDao.countIPs(podId, dcId, false);
-                    int allocatedPrivateIPs = _privateIPAddressDao.countIPs(podId, dcId, true);
-
-                    CapacityVO newPrivateIPCapacity = new CapacityVO(null, dcId, podId, allocatedPrivateIPs, totalPrivateIPs, CapacityVO.CAPACITY_TYPE_PRIVATE_IP);
-                    _capacityDao.persist(newPrivateIPCapacity);
+                for (CapacityVO newCapacity : newCapacities) {
+                    _capacityDao.persist(newCapacity);
                 }
             } finally {
                 m_capacityCheckLock.unlock();
