@@ -86,7 +86,8 @@ import com.cloud.network.IpAddrAllocator;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.IpAddrAllocator.networkInfo;
 import com.cloud.network.dao.IPAddressDao;
-import com.cloud.offering.ServiceOffering.GuestIpType;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
@@ -1365,7 +1366,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		}
 		
 		boolean useLocalStorage = Boolean.parseBoolean((String)params.get(Config.SystemVMUseLocalStorage.key()));
-		_serviceOffering = new ServiceOfferingVO("Fake Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, useLocalStorage, true, null);
+		_serviceOffering = new ServiceOfferingVO("Fake Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, useLocalStorage, true, null);
 		_serviceOffering.setUniqueName("Cloud.com-SecondaryStorage");
 		_serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
         _template = _templateDao.findConsoleProxyTemplate();

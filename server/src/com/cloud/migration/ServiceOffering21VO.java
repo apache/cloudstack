@@ -9,6 +9,7 @@ import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 
 @Entity
@@ -36,13 +37,13 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
     
     @Column(name="guest_ip_type")
     @Enumerated(EnumType.STRING)
-    private GuestIpType guestIpType;
+    private NetworkOffering.GuestIpType guestIpType;
     
     protected ServiceOffering21VO() {
         super();
     }
 
-    public ServiceOffering21VO(String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, GuestIpType guestIpType, boolean useLocalStorage, boolean recreatable, String tags) {
+    public ServiceOffering21VO(String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, NetworkOffering.GuestIpType guestIpType, boolean useLocalStorage, boolean recreatable, String tags) {
         super(name, displayText, false, tags, recreatable, useLocalStorage);
         this.cpu = cpu;
         this.ramSize = ramSize;
@@ -116,11 +117,11 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
 		return multicastRateMbps;
 	}
 
-	public void setGuestIpType(GuestIpType guestIpType) {
+	public void setGuestIpType(NetworkOffering.GuestIpType guestIpType) {
 		this.guestIpType = guestIpType;
 	}
 
-	public GuestIpType getGuestIpType() {
+	public NetworkOffering.GuestIpType getGuestIpType() {
 		return guestIpType;
 	}
 }

@@ -36,7 +36,7 @@ import com.cloud.user.OwnedBy;
  *
  */
 @Entity
-@Table(name="network_profile")
+@Table(name="network_profiles")
 public class NetworkProfileVO implements OwnedBy {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -65,13 +65,16 @@ public class NetworkProfileVO implements OwnedBy {
     
     public NetworkProfileVO() {
     }
+    
+    public NetworkProfileVO(long accountId, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType) {
+        this.accountId = accountId;
+        this.trafficType = trafficType;
+        this.mode = mode;
+        this.broadcastDomainType = broadcastDomainType;
+    }
 
     public long getId() {
         return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
     }
 
     public Mode getMode() {

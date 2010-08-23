@@ -52,7 +52,8 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.dao.IPAddressDao;
-import com.cloud.offering.ServiceOffering.GuestIpType;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -799,7 +800,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
     	int networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
     	int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
-    	GuestIpType guestIpType = useVirtualNetwork ? GuestIpType.Virtualized : GuestIpType.DirectSingle;        
+    	NetworkOffering.GuestIpType guestIpType = useVirtualNetwork ? NetworkOffering.GuestIpType.Virtualized : NetworkOffering.GuestIpType.DirectSingle;        
     	tags = cleanupTags(tags);
     	ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, multicastRate, offerHA, displayText, guestIpType, localStorageRequired, false, tags);
     	
@@ -833,7 +834,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         }
 	    
         if (useVirtualNetwork != null) {
-        	GuestIpType guestIpType = useVirtualNetwork ? GuestIpType.Virtualized : GuestIpType.DirectSingle;
+        	NetworkOffering.GuestIpType guestIpType = useVirtualNetwork ? NetworkOffering.GuestIpType.Virtualized : NetworkOffering.GuestIpType.DirectSingle;
             offering.setGuestIpType(guestIpType);
         }
         
@@ -848,7 +849,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         if (_serviceOfferingDao.update(serviceOfferingId, offering)) {
         	offering = _serviceOfferingDao.findById(serviceOfferingId);
     		saveConfigurationEvent(userId, null, EventTypes.EVENT_SERVICE_OFFERING_EDIT, "Successfully updated service offering with name: " + offering.getName() + ".", "soId=" + offering.getId(), "name=" + offering.getName(),
-    				"displayText=" + offering.getDisplayText(), "offerHA=" + offering.getOfferHA(), "useVirtualNetwork=" + (offering.getGuestIpType() == GuestIpType.Virtualized), "tags=" + offering.getTags());
+    				"displayText=" + offering.getDisplayText(), "offerHA=" + offering.getOfferHA(), "useVirtualNetwork=" + (offering.getGuestIpType() == NetworkOffering.GuestIpType.Virtualized), "tags=" + offering.getTags());
         	return offering;
         } else {
         	return null;
@@ -891,7 +892,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	
     	if (_serviceOfferingDao.remove(serviceOfferingId)) {
     		saveConfigurationEvent(userId, null, EventTypes.EVENT_SERVICE_OFFERING_EDIT, "Successfully deleted service offering with name: " + offering.getName(), "soId=" + serviceOfferingId, "name=" + offering.getName(),
-    				"displayText=" + offering.getDisplayText(), "offerHA=" + offering.getOfferHA(), "useVirtualNetwork=" + (offering.getGuestIpType() == GuestIpType.Virtualized));
+    				"displayText=" + offering.getDisplayText(), "offerHA=" + offering.getOfferHA(), "useVirtualNetwork=" + (offering.getGuestIpType() == NetworkOffering.GuestIpType.Virtualized));
     		return true;
     	} else {
     		return false;

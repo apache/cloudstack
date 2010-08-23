@@ -22,13 +22,7 @@ package com.cloud.offering;
  * offered.
  */
 public interface ServiceOffering {
-	public enum GuestIpType {
-		Virtualized,
-		DirectSingle,
-		DirectDual
-	}
-	
-    /**
+	/**
      * @return user readable description
      */
     String getName();
@@ -66,7 +60,7 @@ public interface ServiceOffering {
     /**
      * @return the type of IP address to allocate as the primary ip address to a guest
      */
-    GuestIpType getGuestIpType();
+    NetworkOffering.GuestIpType getGuestIpType();
     
     /**
      * @return whether or not the service offering requires local storage

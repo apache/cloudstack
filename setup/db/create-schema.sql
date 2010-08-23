@@ -114,12 +114,16 @@ CREATE TABLE `cloud`.`nics` (
 
 CREATE TABLE `cloud`.`network_offerings` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
-  `name` varchar(64) NOT NULL COMMENT 'network offering',
+  `name` varchar(64) NOT NULL unique COMMENT 'network offering',
   `type` varchar(32) NOT NULL COMMENT 'type of network',
   `display_text` varchar(255) NOT NULL COMMENT 'text to display to users',
-  `nw_rate` smallint unsigned default 200 COMMENT 'network rate throttle mbits/s',
-  `mc_rate` smallint unsigned default 10 COMMENT 'mcast rate throttle mbits/s',
-  `concurrent_connections` smallint unsigned COMMENT 'concurrent connections supported on this network',
+  `nw_rate` smallint unsigned COMMENT 'network rate throttle mbits/s',
+  `mc_rate` smallint unsigned COMMENT 'mcast rate throttle mbits/s',
+  `concurrent_connections` int(10) unsigned COMMENT 'concurrent connections supported on this network',
+  `traffic_type` varchar(32) NOT NULL COMMENT 'traffic type carried on this network',
+  `created` datetime NOT NULL COMMENT 'time the entry was created',
+  `removed` datetime NOT NULL COMMENT 'time the entry was removed',
+  `system_only` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is this network offering for system use only',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
