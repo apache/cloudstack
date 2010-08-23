@@ -221,7 +221,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     private EventDao _eventDao;
     @Inject
     ServiceOfferingDao _offeringDao;
-    @Inject
+    
     private IpAddrAllocator _IpAllocator;
 
     private ConsoleProxyListener _listener;
