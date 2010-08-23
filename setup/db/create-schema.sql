@@ -250,6 +250,8 @@ CREATE TABLE `cloud`.`volumes` (
   `removed` datetime COMMENT 'Date removed.  not null if removed',
   `status` varchar(32) COMMENT 'Async API volume creation status',
   `state` varchar(32) COMMENT 'State machine',
+  `source_id` bigint unsigned  COMMENT 'id for the source',
+  `source_type` varchar(32) COMMENT 'source from which the volume is created -- snapshot, diskoffering, template, blank',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
