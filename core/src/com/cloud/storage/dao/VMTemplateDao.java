@@ -21,7 +21,6 @@ package com.cloud.storage.dao;
 import java.util.List;
 
 import com.cloud.domain.DomainVO;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
@@ -46,6 +45,15 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long> {
 	public VMTemplateVO findByName(String templateName);
 	//finds by the column "name" 
 	public VMTemplateVO findByTemplateName(String templateName);
+
+	/**
+	 * Find a template by name for a specific account.
+	 * @param templateName the name to search for
+	 * @param accountId the account to use for filtering the search results
+	 * @return the template with the given name for the given account if it exists, null otherwise
+	 */
+	public VMTemplateVO findByTemplateNameAccountId(String templateName, Long accountId);
+
 	//public void update(VMTemplateVO template);
 	public VMTemplateVO findRoutingTemplate();
 	public VMTemplateVO findConsoleProxyTemplate();

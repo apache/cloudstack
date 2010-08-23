@@ -220,7 +220,7 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @param description the user give description (aka display text) for the template
      * @return a template if successfully created, null otherwise
      */
-    VMTemplateVO createPrivateTemplate(CreateTemplateCmd cmd);
+    VMTemplateVO createPrivateTemplate(CreateTemplateCmd cmd) throws InternalErrorException;
 
     /**
      * @param userId    The Id of the user who invoked this operation.
