@@ -145,7 +145,7 @@ public class CreatePrivateTemplateExecutor extends VolumeOperationExecutor {
             				    jobStatus = AsyncJobResult.STATUS_SUCCEEDED;
             				    resultCode = 0;
             				    details = null;
-            				    String eventParams = "id="+template.getId()+"\nname=" + template.getName() +"\nsize="+volume.getSize();
+            				    String eventParams = "id="+template.getId()+"\nname=" + template.getName() +"\nsize="+volume.getSize()+ "\ndcId="+volume.getDataCenterId();
             				    managerServer.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_TEMPLATE_CREATE, "Successfully created Template " +param.getName(), eventParams ,param.getEventId());
             				    resultObject = composeResultObject(template, templateHostRef, volume.getDataCenterId());
             				} 

@@ -21,7 +21,7 @@ import com.cloud.storage.Storage.FileSystem;
 
 public interface VirtualMachineTemplate  {
     
-    public static enum BootloaderType { PyGrub, HVM, External };
+    public static enum BootloaderType { PyGrub, HVM, External, CD };
     
     /**
      * @return id.

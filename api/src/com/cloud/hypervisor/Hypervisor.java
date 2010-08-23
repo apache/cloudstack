@@ -24,7 +24,8 @@ public class Hypervisor {
     	Xen,
     	XenServer,
     	KVM,
-    	VMware;
+    	VmWare,
+    	VirtualBox,
+    	Parralels;
     }
-
 }

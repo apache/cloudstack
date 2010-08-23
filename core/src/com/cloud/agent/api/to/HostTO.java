@@ -18,7 +18,6 @@
 package com.cloud.agent.api.to;
 
 import com.cloud.host.HostVO;
-import com.cloud.vm.NetworkTO;
 
 public class HostTO {
     private String guid;

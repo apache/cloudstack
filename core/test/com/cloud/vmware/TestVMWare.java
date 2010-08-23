@@ -793,6 +793,35 @@ public class TestVMWare {
 		VirtualNicManagerNetConfig[] netConfigs = (VirtualNicManagerNetConfig[])cb.getServiceUtil3().getDynamicProperty(morHost, "config.virtualNicManagerInfo.netConfig");
 	}
 	
+	private void getHostVMs() throws Exception {
+		ManagedObjectReference morHost = new ManagedObjectReference();
+		morHost.setType("HostSystem");
+		morHost.set_value("host-48");
+		
+		PropertySpec pSpec = new PropertySpec();
+		pSpec.setType("VirtualMachine");
+		pSpec.setPathSet(new String[] { "name", "runtime.powerState", "config.template" });
+		
+	    TraversalSpec host2VmTraversal = new TraversalSpec();
+	    host2VmTraversal.setType("HostSystem");
+	    host2VmTraversal.setPath("vm");
+	    host2VmTraversal.setName("host2VmTraversal");
+
+	    ObjectSpec oSpec = new ObjectSpec();
+	    oSpec.setObj(morHost);
+	    oSpec.setSkip(Boolean.TRUE);
+	    oSpec.setSelectSet(new SelectionSpec[] { host2VmTraversal });
+
+	    PropertyFilterSpec pfSpec = new PropertyFilterSpec();
+	    pfSpec.setPropSet(new PropertySpec[] { pSpec });
+	    pfSpec.setObjectSet(new ObjectSpec[] { oSpec });
+		      
+	    ObjectContent[] ocs = cb.getServiceConnection3().getService().retrieveProperties(
+            cb.getServiceConnection3().getServiceContent().getPropertyCollector(),
+            new PropertyFilterSpec[] { pfSpec });
+	    this.printContent(ocs);
+	}
+	
 	public static void main(String[] args) throws Exception {
 		setupLog4j();
 		TestVMWare client = new TestVMWare();
@@ -819,7 +848,8 @@ public class TestVMWare {
 			// client.addNicToNetwork();
 
 			// client.createDatacenter();
-			client.getPropertyWithPath();
+			// client.getPropertyWithPath();
+			client.getHostVMs();
 		
 			cb.disConnect();
 		} catch (Exception e) {

@@ -85,7 +85,13 @@ public class ListDomainsCmd extends BaseCmd {
                 startIndex = Long.valueOf(pageSizeNum * (pageNum-1));
             }
         }
-        Criteria c = new Criteria("id", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
+        
+        //temporary solution at API level. We need a permanent solution for all "listXXXXXXX & pageSize = -1" in the future.
+        Criteria c;
+        if(pageSizeNum != -1)
+            c = new Criteria("id", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
+        else
+        	c = new Criteria("id", Boolean.TRUE, null, null);
         
         if (keyword != null) {
         	c.addCriteria(Criteria.KEYWORD, keyword);

@@ -26,7 +26,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
-import com.cloud.vm.ConsoleProxyVO;
+import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.vm.UserVmVO;
 
 @Local(value={ConsoleProxyManager.class})
@@ -35,7 +35,7 @@ AgentBasedConsoleProxyManager {
 	private static final Logger s_logger = Logger.getLogger(AgentBasedStandaloneConsoleProxyManager.class);
 
 	@Override
-	public ConsoleProxyVO assignProxy(long dataCenterId, long userVmId) {
+	public ConsoleProxyInfo assignProxy(long dataCenterId, long userVmId) {
 		UserVmVO userVm = _userVmDao.findById(userVmId);
 		if (userVm == null) {
 			s_logger.warn("User VM " + userVmId
@@ -81,15 +81,11 @@ AgentBasedConsoleProxyManager {
 				publicIp = allocatedHost.getPrivateIpAddress();
 			}
 
-			ConsoleProxyVO proxy = allocateProxy(allocatedHost, dataCenterId);
-
-			if(allocatedHost.getProxyPort() != null && allocatedHost.getProxyPort().intValue() > 0)
-				proxy.setPort(allocatedHost.getProxyPort().intValue());
-			else
-				proxy.setPort(_consoleProxyUrlPort);
-
-			proxy.setSslEnabled(_sslEnabled);
-			return proxy;
+			int urlPort = _consoleProxyUrlPort;
+            if(allocatedHost.getProxyPort() != null && allocatedHost.getProxyPort().intValue() > 0)
+                urlPort = allocatedHost.getProxyPort().intValue();
+            
+            return new ConsoleProxyInfo(_sslEnabled, publicIp, _consoleProxyPort, urlPort);
 		} else {
 			s_logger.warn("Host that VM is running is no longer available, console access to VM " + userVmId + " will be temporarily unavailable.");
 		}

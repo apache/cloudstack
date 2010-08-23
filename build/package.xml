@@ -135,7 +135,7 @@
       	<exclude name="**/*.properties" />
       </fileset>
       <classes dir="${client.target.dir}">
-    	<include name="**/resources/*.properties" />
+    	  <include name="**/resources/*.properties" />
       </classes>
       <lib dir="${jar.dir}">
         <include name="cloud-*.jar" />

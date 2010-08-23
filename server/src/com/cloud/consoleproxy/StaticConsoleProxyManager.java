@@ -24,8 +24,9 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.host.HostVO;
 import com.cloud.host.Host.Type;
+import com.cloud.host.HostVO;
+import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.ConsoleProxyVO;
@@ -46,31 +47,8 @@ public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager imp
     }
     
     @Override
-    public ConsoleProxyVO assignProxy(long dataCenterId, long userVmId) {
-        ConsoleProxyVO proxy =  new ConsoleProxyVO(1l, "EmbeddedProxy", null, null, null,
-                "02:02:02:02:02:02",
-                "127.0.0.1",
-                "255.255.255.0",
-                1l,
-                1l,
-                "03:03:03:03:03:03",
-                _ip,
-                "255.255.255.0",
-                null,
-                "untagged",
-                1l,
-                dataCenterId,
-                "0.0.0.0",
-                0L,
-                "dns1",
-                "dn2",
-                "domain",
-                0,
-                0);
-        
-		proxy.setPort(_consoleProxyUrlPort);
-		proxy.setSslEnabled(false);
-		return proxy;
+    public ConsoleProxyInfo assignProxy(long dataCenterId, long userVmId) {
+        return new ConsoleProxyInfo(false, _ip, _consoleProxyPort, _consoleProxyUrlPort);
     }
     
     @Override
