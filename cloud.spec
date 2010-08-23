@@ -232,7 +232,7 @@ Requires: %{name}-daemonize
 Requires: /sbin/service
 Requires: /sbin/chkconfig
 Requires: kvm
-%if 0%{?fedora} >= 13
+%if 0%{?fedora} >= 12
 Requires: cloud-qemu-system-x86
 %endif
 Requires: libcgroup
