@@ -37,6 +37,9 @@ public interface Volume extends PartOf, OwnedBy, BasedOn {
 	    Destroyed
 	}
 	
+	enum SourceType {
+		Snapshot,DiskOffering,Template,Blank
+	}
 	/**
      * @return the volume name
      */
@@ -75,4 +78,12 @@ public interface Volume extends PartOf, OwnedBy, BasedOn {
 	Long getPoolId();
 	
 	State getState();
+	
+	SourceType getSourceType();
+	
+	void setSourceType(SourceType sourceType);
+
+	void setSourceId(Long sourceId);
+
+	Long getSourceId();
 }

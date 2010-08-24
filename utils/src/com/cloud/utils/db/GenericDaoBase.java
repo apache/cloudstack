@@ -45,8 +45,11 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.TableGenerator;
 
+import net.sf.cglib.proxy.Callback;
+import net.sf.cglib.proxy.CallbackFilter;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.Factory;
+import net.sf.cglib.proxy.NoOp;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
@@ -126,8 +129,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     protected final Map<Pair<String, String>, Attribute> _allColumns;
     protected Enhancer _enhancer;
     protected Factory _factory;
+    protected Enhancer _searchEnhancer;
     protected int _timeoutSeconds;
 
+    protected final static CallbackFilter s_callbackFilter = new UpdateFilter();
+    
     protected static final String FOR_UPDATE_CLAUSE = " FOR UPDATE ";
     protected static final String SHARE_MODE_CLAUSE = " LOCK IN SHARE MODE";
     protected static final String SELECT_LAST_INSERT_ID_SQL = "SELECT LAST_INSERT_ID()";
@@ -157,9 +163,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         return dao;
     }
     
+    @Override
     @SuppressWarnings("unchecked")
     public <J> GenericSearchBuilder<T, J> createSearchBuilder(Class<J> resultType) {
-        final T entity = (T)_enhancer.create();
+        final T entity = (T)_searchEnhancer.create();
         final Factory factory = (Factory)entity;
         GenericSearchBuilder<T, J> builder = new GenericSearchBuilder<T, J>(entity, resultType, _allAttributes);
         factory.setCallback(0, builder);
@@ -210,10 +217,17 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             _tgs.put(tg.name(), tg);
         }
         
+        Callback[] callbacks = new Callback[] { NoOp.INSTANCE, new UpdateBuilder(_allAttributes) };
+        
         _enhancer = new Enhancer();
         _enhancer.setSuperclass(_entityBeanType);
-        _enhancer.setCallback(new UpdateBuilder(_allAttributes));
+        _enhancer.setCallbackFilter(s_callbackFilter);
+        _enhancer.setCallbacks(callbacks);
         _factory = (Factory)_enhancer.create();
+        
+        _searchEnhancer = new Enhancer();
+        _searchEnhancer.setSuperclass(_entityBeanType);
+        _searchEnhancer.setCallback(new UpdateBuilder(_allAttributes));
         
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Select SQL: " + _partialSelectSql.first().toString());
@@ -235,8 +249,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     @Override @DB(txn=false)
     @SuppressWarnings("unchecked")
     public T createForUpdate(final ID id) {
-        final T entity = (T)_enhancer.create();
-        final Factory factory = (Factory)entity;
+        final T entity = (T)_factory.newInstance(new Callback[] {NoOp.INSTANCE, new UpdateBuilder(_allAttributes)});
         if (id != null) {
             try {
                 _idField.set(entity, id);
@@ -244,7 +257,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             } catch (final IllegalAccessException e) {
             }
         }
-        factory.setCallback(0, new UpdateBuilder(_allAttributes));
         return entity;
     }
 
@@ -254,7 +266,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <K> K getNextInSequence(final Class<K> clazz, final String name) {
         final TableGenerator tg = _tgs.get(name);
         assert (tg != null) : "Couldn't find Table generator using " + name;
@@ -285,6 +296,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         return searchAll(sc, filter, lock, cache);
     }
 
+    @Override
     public List<T> searchAll(SearchCriteria<T> sc, final Filter filter, final Boolean lock, final boolean cache) {
         String clause = sc != null ? sc.getWhereClause() : null;
         if (clause != null && clause.length() == 0) {
@@ -377,7 +389,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
 
         final Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = s_initStmt;
-        final List<T> result = new ArrayList<T>();
         try {
             pstmt = txn.prepareAutoCloseStatement(sql);
             int i = 0;
@@ -398,7 +409,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             }
             ResultSet rs = pstmt.executeQuery();
             SelectType st = sc.getSelectType();
-            ResultSetMetaData md = rs.getMetaData();
             ArrayList<M> results = new ArrayList<M>();
             List<Field> fields = sc.getSelectFields();
             while (rs.next()) {
@@ -505,8 +515,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                 final Enumerated enumerated = field.getAnnotation(Enumerated.class);
                 final EnumType enumType = (enumerated == null) ? EnumType.STRING : enumerated.value();
 
-                final Enum[] enums =  (Enum[])field.getType().getEnumConstants();
-                for (final Enum e : enums) {
+                final Enum<?>[] enums =  (Enum<?>[])field.getType().getEnumConstants();
+                for (final Enum<?> e : enums) {
                     if ((enumType == EnumType.STRING && e.name().equalsIgnoreCase(rs.getString(index))) ||
                         (enumType == EnumType.ORDINAL && e.ordinal() == rs.getInt(index))) {
                         field.set(entity, e);
@@ -626,7 +636,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
 
     @DB(txn=false)
     protected int update(final ID id, final UpdateBuilder ub) {
-    	SearchCriteria sc = createSearchCriteria();
+    	SearchCriteria<T> sc = createSearchCriteria();
     	sc.addAnd(_idAttributes.get(_table)[0], SearchCriteria.Op.EQ, id);
     	int rowsUpdated = update(ub, sc, null);
     	if (_cache != null) {
@@ -761,7 +771,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
     
     @Override @DB(txn=false)
-    @SuppressWarnings("unchecked")
     public T findById(final ID id, boolean fresh) {
     	if(!fresh)
     		return findById(id);
@@ -801,6 +810,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     	return acquire(id, _timeoutSeconds);
     }
     
+    @Override
     public T acquire(final ID id, int seconds) {
         Transaction txn = Transaction.currentTxn();
         T t = null;
@@ -941,6 +951,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     // FIXME: Does not work for joins.
+    @Override
     public int delete(final SearchCriteria<T> sc) {
         final StringBuilder str = new StringBuilder("DELETE FROM ");
         str.append(_table);
@@ -1176,7 +1187,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             if (type == EnumType.STRING) {
                 pstmt.setString(j, value == null ? null :  value.toString());
             } else if (type == EnumType.ORDINAL) {
-                pstmt.setInt(j, value == null ? null : ((Enum)value).ordinal());
+                pstmt.setInt(j, value == null ? null : ((Enum<?>)value).ordinal());
             }
         } else if (attr.field.getType() == byte[].class) {
             pstmt.setBytes(j, (byte[])value);
@@ -1204,7 +1215,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
 
     @SuppressWarnings("unchecked") @DB(txn=false)
     protected T toEntityBean(final ResultSet result, final boolean cache) throws SQLException {
-        final T entity = (T)_factory.newInstance(new UpdateBuilder(_allAttributes));
+        final T entity = (T)_factory.newInstance(new Callback[] {NoOp.INSTANCE, new UpdateBuilder(_allAttributes)});
 
         toEntityBean(result, entity);
 
@@ -1341,13 +1352,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     public static <T> UpdateBuilder getUpdateBuilder(final T entityObject) {
         final Factory factory = (Factory)entityObject;
         assert(factory != null);
-        return (UpdateBuilder)factory.getCallback(0);
+        return (UpdateBuilder)factory.getCallback(1);
     }
     
     @SuppressWarnings("unchecked")
     @Override @DB(txn=false)
     public SearchBuilder<T> createSearchBuilder() {
-        final T entity = (T)_enhancer.create();
+        final T entity = (T)_searchEnhancer.create();
         final Factory factory = (Factory)entity;
         SearchBuilder<T> builder = new SearchBuilder<T>(entity, _allAttributes);
         factory.setCallback(0, builder);

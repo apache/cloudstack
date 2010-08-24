@@ -337,6 +337,8 @@ public abstract class BaseCmd {
         STATE("state", BaseCmd.TYPE_STRING, "state"),
         STOPPED_VMS("stoppedvms", BaseCmd.TYPE_LONG, "stoppedvms"),
         STORAGE("storage", BaseCmd.TYPE_LONG, "storage"),
+        SOURCE_ID("sourceid", BaseCmd.TYPE_LONG, "sourceid"),
+        SOURCE_TYPE("sourcetype",BaseCmd.TYPE_STRING,"sourcetype"),
         STORAGE_TYPE("storagetype", BaseCmd.TYPE_STRING, "storageType"),
         SUCCESS("success", BaseCmd.TYPE_BOOLEAN, "success"),
         SUM_ACROSS_ZONE("sumacrosszone", BaseCmd.TYPE_BOOLEAN, "sumAcrossZone"),

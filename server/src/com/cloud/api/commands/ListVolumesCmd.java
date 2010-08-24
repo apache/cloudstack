@@ -223,7 +223,9 @@ public class ListVolumesCmd extends BaseCmd{
             Long poolId = volume.getPoolId();
             String poolName = (poolId == null) ? "none" : getManagementServer().findPoolById(poolId).getName();
             volumeData.add(new Pair<String, Object>(BaseCmd.Properties.STORAGE.getName(), poolName));
-
+            volumeData.add(new Pair<String, Object>(BaseCmd.Properties.SOURCE_ID.getName(),volume.getSourceId()));
+            volumeData.add(new Pair<String, Object>(BaseCmd.Properties.SOURCE_TYPE.getName(),volume.getSourceType().toString()));
+            
             vTag[i++] = volumeData;
         }
         Pair<String, Object> volumeTag = new Pair<String, Object>("volume", vTag);

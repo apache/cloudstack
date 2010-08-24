@@ -25,11 +25,12 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.user.AccountVO;
+import com.cloud.utils.component.Manager;
 
 /**
  * Manages allocating resources to vms.
  */
-public interface VmManager {
+public interface VmManager extends Manager {
     
     VMInstanceVO allocate(VMInstanceVO vm, 
                           ServiceOfferingVO serviceOffering,
@@ -50,10 +51,6 @@ public interface VmManager {
             
     
     void create(VmCharacteristics vm, List<DiskCharacteristics> disks, List<NetworkCharacteristics> networks);
-    
-    void start();
-    
-    void stop();
     
     void destroy();
     

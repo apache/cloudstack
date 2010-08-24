@@ -174,8 +174,9 @@ import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupRulesVO;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.network.security.dao.NetworkGroupDao;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.offering.ServiceOffering.GuestIpType;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.service.ServiceOfferingVO;
@@ -2275,7 +2276,7 @@ public class ManagementServerImpl implements ManagementServer {
             		throw rae;
             	}
             } else {
-            	if (offering.getGuestIpType() == GuestIpType.Virtualized) {
+            	if (offering.getGuestIpType() == NetworkOffering.GuestIpType.Virtualized) {
             		try {
             			externalIp = _networkMgr.assignSourceNatIpAddress(account, dc, domain, offering, startEventId);
             		} catch (ResourceAllocationException rae) {
@@ -2484,12 +2485,12 @@ public class ManagementServerImpl implements ManagementServer {
         	}
 			
         }
-        if (offering.getGuestIpType() != GuestIpType.Virtualized) {
+        if (offering.getGuestIpType() != NetworkOffering.GuestIpType.Virtualized) {
         	_networkGroupMgr.createDefaultNetworkGroup(accountId);
     	}
         
         if (networkGroups != null) {
-        	if (offering.getGuestIpType() == GuestIpType.Virtualized) {
+        	if (offering.getGuestIpType() == NetworkOffering.GuestIpType.Virtualized) {
         		throw new InvalidParameterValueException("Network groups are not compatible with service offering " + offering.getName());
         	}
         	Set<String> nameSet = new HashSet<String>(); //handle duplicate names -- allowed
@@ -2502,7 +2503,7 @@ public class ManagementServerImpl implements ManagementServer {
         	}
 
         } else { //create a default group if necessary
-        	if (offering.getGuestIpType() != GuestIpType.Virtualized && _networkGroupsEnabled) {
+        	if (offering.getGuestIpType() != NetworkOffering.GuestIpType.Virtualized && _networkGroupsEnabled) {
         		networkGroups = new String[]{NetworkGroupManager.DEFAULT_GROUP_NAME};
         	}
         }
@@ -2932,7 +2933,7 @@ public class ManagementServerImpl implements ManagementServer {
 
             // sanity check that the vm can be applied to the load balancer
             ServiceOfferingVO offering = _offeringsDao.findById(userVm.getServiceOfferingId());
-            if ((offering == null) || !GuestIpType.Virtualized.equals(offering.getGuestIpType())) {
+            if ((offering == null) || !NetworkOffering.GuestIpType.Virtualized.equals(offering.getGuestIpType())) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Unable to apply port forwarding service to virtual machine " + userVm.toString() + ", bad network type (" + ((offering == null) ? "null" : offering.getGuestIpType()) + ")");
                 }
@@ -3362,7 +3363,7 @@ public class ManagementServerImpl implements ManagementServer {
     private FirewallRuleVO createFirewallRule(long userId, String ipAddress, UserVm userVm, String publicPort, String privatePort, String protocol, Long securityGroupId) throws NetworkRuleConflictException {
         // sanity check that the vm can be applied to the load balancer
         ServiceOfferingVO offering = _offeringsDao.findById(userVm.getServiceOfferingId());
-        if ((offering == null) || !GuestIpType.Virtualized.equals(offering.getGuestIpType())) {
+        if ((offering == null) || !NetworkOffering.GuestIpType.Virtualized.equals(offering.getGuestIpType())) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to create port forwarding rule (" + protocol + ":" + publicPort + "->" + privatePort+ ") for virtual machine " + userVm.toString() + ", bad network type (" + ((offering == null) ? "null" : offering.getGuestIpType()) + ")");
             }
@@ -7211,7 +7212,7 @@ public class ManagementServerImpl implements ManagementServer {
                 } else {
                     // sanity check that the vm can be applied to the load balancer
                     ServiceOfferingVO offering = _offeringsDao.findById(userVm.getServiceOfferingId());
-                    if ((offering == null) || !GuestIpType.Virtualized.equals(offering.getGuestIpType())) {
+                    if ((offering == null) || !NetworkOffering.GuestIpType.Virtualized.equals(offering.getGuestIpType())) {
                         // we previously added these instanceIds to the loadBalancerVMMap, so remove them here as we are rejecting the API request
                         // without actually modifying the load balancer
                         _loadBalancerVMMapDao.remove(loadBalancerId, instanceIds, Boolean.TRUE);

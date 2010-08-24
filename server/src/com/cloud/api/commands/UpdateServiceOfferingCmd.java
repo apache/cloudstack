@@ -26,7 +26,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
-import com.cloud.offering.ServiceOffering.GuestIpType;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
@@ -95,7 +96,7 @@ public class UpdateServiceOfferingCmd extends BaseCmd{
             String storageType = offering.getUseLocalStorage() ? "local" : "shared";
             returnValues.add(new Pair<String, Object>(BaseCmd.Properties.STORAGE_TYPE.getName(), storageType));
             returnValues.add(new Pair<String, Object>(BaseCmd.Properties.OFFER_HA.getName(), offering.getOfferHA()));
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.USE_VIRTUAL_NETWORK.getName(), (offering.getGuestIpType().equals(GuestIpType.Virtualized))));
+            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.USE_VIRTUAL_NETWORK.getName(), (offering.getGuestIpType().equals(NetworkOffering.GuestIpType.Virtualized))));
             returnValues.add(new Pair<String, Object>(BaseCmd.Properties.TAGS.getName(), offering.getTags()));
         } else {
         	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update service offering " + offeringId);

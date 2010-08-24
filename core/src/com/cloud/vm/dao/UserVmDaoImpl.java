@@ -24,7 +24,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.offering.ServiceOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.component.ComponentLocator;
@@ -279,7 +279,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         SearchCriteria<UserVmVO> sc = AccountDataCenterVirtualSearch.create();
         sc.setParameters("account", accountId);
         sc.setParameters("dc", dcId);
-        sc.setJoinParameters("offeringSearch", "guestIpType", ServiceOffering.GuestIpType.Virtualized);
+        sc.setJoinParameters("offeringSearch", "guestIpType", NetworkOffering.GuestIpType.Virtualized);
 
         return listActiveBy(sc);
     }

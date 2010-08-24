@@ -18,6 +18,7 @@
 package com.cloud.utils.component;
 
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
 
 import com.cloud.utils.EnumerationImpl;
@@ -30,7 +31,7 @@ import com.cloud.utils.EnumerationImpl;
  * the iterator even during dynamic reloading.
  * 
  **/
-public class Adapters<T extends Adapter> {
+public class Adapters<T extends Adapter> implements Iterable<T> {
     private List<T> _adapters;
     protected String      _name;
 
@@ -49,6 +50,11 @@ public class Adapters<T extends Adapter> {
     }
 
     public Enumeration<T> enumeration() {
+        return new EnumerationImpl<T>(_adapters.iterator());
+    }
+    
+    @Override
+    public Iterator<T> iterator() {
         return new EnumerationImpl<T>(_adapters.iterator());
     }
 

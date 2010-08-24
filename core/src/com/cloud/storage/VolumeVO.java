@@ -149,6 +149,13 @@ public class VolumeVO implements Volume {
     @Enumerated(value=EnumType.STRING)
     private State state;
     
+    @Column(name="source_type")
+    @Enumerated(value=EnumType.STRING)
+    Volume.SourceType sourceType;
+    
+    @Column(name="source_id")
+    Long sourceId;
+    
     /**
      * Constructor for data disk.
      * @param type
@@ -178,8 +185,7 @@ public class VolumeVO implements Volume {
     }
  
     // Real Constructor
-    public VolumeVO(long id, VolumeType type, String name, long dcId, long domainId, long accountId, long diskOfferingId, long size) {
-        this.id = id;
+    public VolumeVO(VolumeType type, String name, long dcId, long domainId, long accountId, long diskOfferingId, long size) {
         this.volumeType = type;
         this.name = name;
         this.dataCenterId = dcId;
@@ -212,8 +218,7 @@ public class VolumeVO implements Volume {
     }
     
     
-    public VolumeVO(Long id, String name, long dcId, long podId, long accountId, long domainId, Long instanceId, String folder, String path, long size, Volume.VolumeType vType) {
-        this.id = id;
+    public VolumeVO(String name, long dcId, long podId, long accountId, long domainId, Long instanceId, String folder, String path, long size, Volume.VolumeType vType) {
         this.name = name;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -509,5 +514,25 @@ public class VolumeVO implements Volume {
 	@Override
     public String toString() {
 	    return new StringBuilder("Vol[").append(id).append("|vm=").append(instanceId).append("|").append(volumeType).append("]").toString();
+	}
+
+	@Override
+	public SourceType getSourceType() {
+		return this.sourceType;
+	}
+
+	@Override
+	public void setSourceType(SourceType sourceType) {
+		this.sourceType = sourceType;
+	}
+	
+	@Override
+	public void setSourceId(Long sourceId){
+		this.sourceId = sourceId;
+	}
+	
+	@Override
+	public Long getSourceId(){
+		return this.sourceId;
 	}
 }

@@ -98,11 +98,15 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.Network.TrafficType;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.SecurityGroupVMMapDao;
-import com.cloud.offering.ServiceOffering.GuestIpType;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.GuestIpType;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
@@ -125,6 +129,7 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -186,8 +191,10 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     @Inject AsyncJobManager _asyncMgr;
     @Inject StoragePoolDao _storagePoolDao = null;
     @Inject ServiceOfferingDao _serviceOfferingDao = null;
-    @Inject
-    private UserStatisticsDao _statsDao;
+    @Inject UserStatisticsDao _statsDao = null;
+    @Inject NetworkOfferingDao _networkOfferingDao = null;
+    
+    Adapters<NetworkProfiler> _networkProfilers;
 
     long _routerTemplateId = -1;
     int _routerRamSize;
@@ -198,6 +205,10 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     int _routerCleanupInterval = 3600;
     int _routerStatsInterval = 300;
     private ServiceOfferingVO _offering;
+    private NetworkOfferingVO _managementNetworkOffering;
+    private NetworkOfferingVO _publicNetworkOffering;
+    private NetworkOfferingVO _linkLocalNetworkOffering;
+    private NetworkOfferingVO _guestNetworkOffering;
     private VMTemplateVO _template;
     
     ScheduledExecutorService _executor;
@@ -207,6 +218,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 		return destroyRouter(router.getId());
 	}
 
+    @Override
     public boolean sendSshKeysToHost(Long hostId, String pubKey, String prvKey) {
     	ModifySshKeysCommand cmd = new ModifySshKeysCommand(pubKey, prvKey);
     	final Answer answer = _agentMgr.easySend(hostId, cmd);
@@ -219,7 +231,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     
     @Override @DB
     public String assignSourceNatIpAddress(AccountVO account, final DataCenterVO dc, final String domain, final ServiceOfferingVO serviceOffering, long startEventId) throws ResourceAllocationException {
-    	if (serviceOffering.getGuestIpType() == GuestIpType.DirectDual || serviceOffering.getGuestIpType() == GuestIpType.DirectSingle) {
+    	if (serviceOffering.getGuestIpType() == NetworkOffering.GuestIpType.DirectDual || serviceOffering.getGuestIpType() == NetworkOffering.GuestIpType.DirectSingle) {
     		return null;
     	}
         final long dcId = dc.getId();
@@ -354,6 +366,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         }
     }
 
+    @Override
     @DB
     public DomainRouterVO createDhcpServerForDirectlyAttachedGuests(long userId, long accountId, DataCenterVO dc, HostPodVO pod, Long candidateHost, VlanVO guestVlan) throws ConcurrentOperationException{
  
@@ -1492,6 +1505,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         }
     }
 
+    @Override
     public List<FirewallRuleVO>  updatePortForwardingRules(final List<FirewallRuleVO> fwRules, final DomainRouterVO router, Long hostId ){
         final List<FirewallRuleVO> fwdRules = new ArrayList<FirewallRuleVO>();
         final List<FirewallRuleVO> result = new ArrayList<FirewallRuleVO>();
@@ -1734,6 +1748,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         return _routerDao.listByHostId(hostId);
     }
 
+    @Override
     public boolean updateLoadBalancerRules(final List<FirewallRuleVO> fwRules, final DomainRouterVO router, Long hostId) {
     	
     	for (FirewallRuleVO rule : fwRules) {
@@ -1764,6 +1779,8 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterMonitor"));
 
         final ComponentLocator locator = ComponentLocator.getCurrentLocator();
+        _networkProfilers = locator.getAdapters(NetworkProfiler.class);
+        
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 
         _routerTemplateId = NumbersUtil.parseInt(configs.get("router.template.id"), 1);
@@ -1806,13 +1823,26 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         _haMgr.registerHandler(VirtualMachine.Type.DomainRouter, this);
 
         boolean useLocalStorage = Boolean.parseBoolean((String)params.get(Config.SystemVMUseLocalStorage.key()));
-        _offering = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, useLocalStorage, true, null);
+        _offering = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, useLocalStorage, true, null);
         _offering.setUniqueName("Cloud.Com-SoftwareRouter");
         _offering = _serviceOfferingDao.persistSystemServiceOffering(_offering);
         _template = _templateDao.findById(_routerTemplateId);
         if (_template == null) {
             throw new ConfigurationException("Unable to find the template for the router: " + _routerTemplateId);
         }
+        
+        _publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmPublicNetwork, TrafficType.Public, null);
+        _publicNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_publicNetworkOffering);
+        _managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmManagementNetwork, TrafficType.Management, null);
+        _managementNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_managementNetworkOffering);
+        _linkLocalNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmLinkLocalNetwork, TrafficType.LinkLocal, null);
+        _linkLocalNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_linkLocalNetworkOffering);
+        _guestNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmGuestNetwork, TrafficType.Guest, GuestIpType.Virtualized);
+        _guestNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_guestNetworkOffering);
+        
+        // FIXME: Obviously Virtualized is not the only guest network.  How do we determine which one to use?
+        
+        
         
         s_logger.info("Network Manager is configured.");
 
@@ -1826,6 +1856,15 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 
     @Override
     public boolean start() {
+        List<NetworkOfferingVO> offerings = new ArrayList<NetworkOfferingVO>(4);
+        offerings.add(_publicNetworkOffering);
+        offerings.add(_guestNetworkOffering);
+        offerings.add(_linkLocalNetworkOffering);
+        offerings.add(_managementNetworkOffering);
+        
+        for (NetworkProfiler profiler : _networkProfilers) {
+            List<? extends NetworkProfile> profiles = profiler.convert(offerings, _accountMgr.getSystemAccount());
+        }
         _executor.scheduleAtFixedRate(new RouterCleanupTask(), _routerCleanupInterval, _routerCleanupInterval, TimeUnit.SECONDS);
         _executor.scheduleAtFixedRate(new NetworkUsageTask(), _routerStatsInterval, _routerStatsInterval, TimeUnit.SECONDS);
         return true;
@@ -2133,6 +2172,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         public RouterCleanupTask() {
         }
 
+        @Override
         public void run() {
             try {
                 final List<Long> ids = _routerDao.findLonelyRouters();
@@ -2298,6 +2338,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         public NetworkUsageTask() {
         }
 
+        @Override
         public void run() {
             final List<DomainRouterVO> routers = _routerDao.listUpByHostId(null);
             s_logger.debug("Found " + routers.size() + " running routers. ");

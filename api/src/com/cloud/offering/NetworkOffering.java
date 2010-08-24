@@ -17,18 +17,20 @@
  */
 package com.cloud.offering;
 
+import com.cloud.network.Network.TrafficType;
 
 /**
  * Describes network offering
  *
  */
 public interface NetworkOffering {
-    public enum GuestIpType {
-        Virtualized,
-        DirectSingle,
-        DirectDual
-    }
     
+    public enum GuestIpType {
+    	Virtualized,
+    	DirectSingle,
+    	DirectDual
+    }
+
     long getId();
 
     /**
@@ -60,4 +62,6 @@ public interface NetworkOffering {
      * @return concurrent connections to be supported.
      */
     Integer getConcurrentConnections();
+    
+    TrafficType getTrafficType();
 }

@@ -120,8 +120,9 @@ import com.cloud.network.dao.SecurityGroupDao;
 import com.cloud.network.dao.SecurityGroupVMMapDao;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupVO;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.offering.ServiceOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -1176,7 +1177,7 @@ public class UserVmManagerImpl implements UserVmManager {
     public void releaseGuestIpAddress(UserVmVO userVm)  {
     	ServiceOffering offering = _offeringDao.findById(userVm.getServiceOfferingId());
     	
-    	if (offering.getGuestIpType() != GuestIpType.Virtualized) {  		
+    	if (offering.getGuestIpType() != NetworkOffering.GuestIpType.Virtualized) {  		
     		IPAddressVO guestIP = (userVm.getGuestIpAddress() == null) ? null : _ipAddressDao.findById(userVm.getGuestIpAddress());
     		if (guestIP != null && guestIP.getAllocated() != null) {
     			_ipAddressDao.unassignIpAddress(userVm.getGuestIpAddress());

@@ -33,9 +33,7 @@ import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
@@ -48,8 +46,6 @@ public class AccountManagerImpl implements AccountManager {
 	private String _name;
 	@Inject private AccountDao _accountDao;
 	@Inject private DomainDao _domainDao;
-	@Inject private UserDao _userDao;
-	@Inject private VMTemplateDao _templateDao;
 	@Inject private ResourceLimitDao _resourceLimitDao;
 	@Inject private ResourceCountDao _resourceCountDao;
 	private final GlobalLock m_resourceCountLock = GlobalLock.getInternLock("resource.count");

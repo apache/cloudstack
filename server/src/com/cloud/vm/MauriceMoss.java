@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
+import javax.naming.ConfigurationException;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.network.NetworkManager;
@@ -33,9 +34,11 @@ import com.cloud.utils.component.Inject;
 
 @Local(value=VmManager.class)
 public class MauriceMoss implements VmManager {
+    String _name;
     @Inject private StorageManager _storageMgr;
     @Inject private NetworkManager _networkMgr;
 
+    @Override
     public VMInstanceVO allocate(VMInstanceVO vm, 
             ServiceOfferingVO serviceOffering,
             Long rootSize,
@@ -46,6 +49,7 @@ public class MauriceMoss implements VmManager {
         return null;
     }
 
+    @Override
     public VMInstanceVO allocate(VMInstanceVO vm,
     ServiceOfferingVO serviceOffering,
     Long rootSize,
@@ -70,16 +74,27 @@ public class MauriceMoss implements VmManager {
     }
 
     @Override
-    public void start() {
-        // TODO Auto-generated method stub
-
+    public boolean start() {
+        return true;
     }
 
     @Override
-    public void stop() {
-        // TODO Auto-generated method stub
+    public boolean stop() {
+        return true;
+    }
+    
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        _name = name;
+        return true;
+    }
+    
+    @Override
+    public String getName() {
+        return _name;
     }
     
     protected MauriceMoss() {
     }
+    
 }

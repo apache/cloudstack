@@ -19,11 +19,29 @@ package com.cloud.network.dao;
 
 import javax.ejb.Local;
 
+import com.cloud.network.Network.Mode;
+import com.cloud.network.Network.TrafficType;
 import com.cloud.network.NetworkProfileVO;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 
 @Local(value=NetworkProfileDao.class)
-public class NetworkProfileDaoImpl extends GenericDaoBase<NetworkProfileVO, Long> {
+public class NetworkProfileDaoImpl extends GenericDaoBase<NetworkProfileVO, Long> implements NetworkProfileDao {
+    final SearchBuilder<NetworkProfileVO> ProfileSearch;
+    
     protected NetworkProfileDaoImpl() {
+        super();
+        
+        ProfileSearch = createSearchBuilder();
+        ProfileSearch.and("account", ProfileSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        ProfileSearch.and("trafficType", ProfileSearch.entity().getTrafficType(), SearchCriteria.Op.EQ);
+        ProfileSearch.and("cidr", ProfileSearch.entity().getCidr(), SearchCriteria.Op.EQ);
+        ProfileSearch.and("broadcastType", ProfileSearch.entity().getBroadcastDomainType(), SearchCriteria.Op.EQ);
+    }
+    
+    public NetworkProfileVO findBy(TrafficType trafficType, Mode mode, long accountId) {
+        return null;
+        
     }
 }

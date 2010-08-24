@@ -36,8 +36,9 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.offering.ServiceOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.VolumeVO;
@@ -253,14 +254,14 @@ public class UserConcentratedAllocator implements PodAllocator {
         		so = _offeringDao.findById(userVm.getServiceOfferingId());
         	} else if(vm.getType() == VirtualMachine.Type.ConsoleProxy) {
         		so = new ServiceOfferingVO("Fake Offering For DomP", 1,
-    				_proxyRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
+    				_proxyRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null);
         	} else if(vm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
-        		so = new ServiceOfferingVO("Fake Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
+        		so = new ServiceOfferingVO("Fake Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null);
         	} else if(vm.getType() == VirtualMachine.Type.DomainRouter) {
-                so = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
+                so = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null);
         	} else {
         		assert(false) : "Unsupported system vm type";
-                so = new ServiceOfferingVO("Fake Offering For unknow system VM", 1, 128, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
+                so = new ServiceOfferingVO("Fake Offering For unknow system VM", 1, 128, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null);
         	}
             
             if(capacityType == CapacityVO.CAPACITY_TYPE_MEMORY) {

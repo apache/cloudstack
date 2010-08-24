@@ -26,7 +26,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
-import com.cloud.offering.ServiceOffering.GuestIpType;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
@@ -123,7 +124,7 @@ public class ListServiceOfferingsCmd extends BaseCmd {
             String storageType = offering.getUseLocalStorage() ? "local" : "shared";
             offeringData.add(new Pair<String, Object>(BaseCmd.Properties.STORAGE_TYPE.getName(), storageType));
             offeringData.add(new Pair<String, Object>(BaseCmd.Properties.OFFER_HA.getName(), offering.getOfferHA()));
-            offeringData.add(new Pair<String, Object>(BaseCmd.Properties.USE_VIRTUAL_NETWORK.getName(), (offering.getGuestIpType().equals(GuestIpType.Virtualized))));
+            offeringData.add(new Pair<String, Object>(BaseCmd.Properties.USE_VIRTUAL_NETWORK.getName(), (offering.getGuestIpType().equals(NetworkOffering.GuestIpType.Virtualized))));
             offeringData.add(new Pair<String, Object>(BaseCmd.Properties.TAGS.getName(), (offering.getTags())));      
 
             soTag[i++] = offeringData;
