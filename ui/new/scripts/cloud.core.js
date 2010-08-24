@@ -16,7 +16,11 @@
  * 
  */
 
+<<<<<<< HEAD
 // Version: @VERSION@
+=======
+// Version: 1.9.1.6
+>>>>>>> 10bc0b5... new UI - left menu, middle menu, instance
 var g_mySession = null;
 var g_sessionKey = null;
 var g_role = null; // roles - root, domain-admin, ro-admin, user

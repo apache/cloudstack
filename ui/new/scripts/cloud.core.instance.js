@@ -287,9 +287,14 @@ function clickInstanceGroupHeader($arrowIcon) {
         $arrowIcon.removeClass("open").addClass("close");            
         $instanceGroupContainer.empty();   
     }	     
+<<<<<<< HEAD
     //***** VM Detail (end) ********************************************************************************
     
     $("#right_panel").load("content/tab_instance.htm", function() {			
+=======
+    //***** VM Detail (end) ********************************************************************************    
+    $("#right_panel").load("jsp/tab_instance.jsp", function() {			
+>>>>>>> 10bc0b5... new UI - left menu, middle menu, instance
 		$rightPanelHeader = $("#right_panel_header");			                                		                                
 		$rightPanelContent = $("#right_panel_content");	
 		
