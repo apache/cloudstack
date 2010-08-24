@@ -35,6 +35,11 @@ import com.cloud.utils.db.GenericDao;
 @Entity
 @Table(name="network_offerings")
 public class NetworkOfferingVO implements NetworkOffering {
+    public final static String SystemVmPublicNetwork = "System-Vm-Public-Network";
+    public final static String SystemVmGuestNetwork = "System-Vm-Guest-Network";
+    public final static String SystemVmLinkLocalNetwork = "System-Vm-LinkLocal-Network";
+    public final static String SystemVmManagementNetwork = "System-Vm-Management-Network";
+    
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -46,10 +51,10 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name="display_text")
     String displayText;
     
-    @Column(name="rate")
+    @Column(name="nw_rate")
     Integer rateMbps;
     
-    @Column(name="multicast_rate")
+    @Column(name="mc_rate")
     Integer multicastRateMbps;
     
     @Column(name="concurrent_connections")

@@ -93,7 +93,15 @@ public class ConsoleProxyVO extends VMInstanceVO implements ConsoleProxy {
     
 	@Transient
     private int port;
-    
+
+	/**
+	 * Correct constructor to use.
+	 */
+	public ConsoleProxyVO(long id, String name, long templateId, long guestOSId, long dataCenterId, int activeSession) {
+	    super(id, name, name, Type.ConsoleProxy, templateId, guestOSId, false);
+	    this.activeSession = activeSession;
+	}
+	
     public ConsoleProxyVO(
     		long id,
             String name,

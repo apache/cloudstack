@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -96,9 +97,11 @@ import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.maid.StackMaid;
 import com.cloud.network.IpAddrAllocator;
 import com.cloud.network.IpAddrAllocator.networkInfo;
-import com.cloud.network.NetworkProfileVO;
+import com.cloud.network.Network.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
@@ -111,6 +114,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
@@ -219,16 +223,23 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     private StorageManager _storageMgr;
     @Inject
     private HighAvailabilityManager _haMgr;
+    @Inject AccountManager _accountMgr;
     @Inject
     private EventDao _eventDao;
     @Inject
     ServiceOfferingDao _offeringDao;
+    @Inject
+    NetworkOfferingDao _networkOfferingDao;
     private IpAddrAllocator _IpAllocator;
 
     private ConsoleProxyListener _listener;
 
     private ServiceOfferingVO _serviceOffering;
     private VMTemplateVO _template;
+    
+    NetworkOfferingVO _publicNetworkOffering;
+    NetworkOfferingVO _managementNetworkOffering;
+    NetworkOfferingVO _linkLocalNetworkOffering;
 
     @Inject
     private AsyncJobManager _asyncMgr;
@@ -252,10 +263,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
 
     private String _domain;
     private String _instance;
-    private NetworkProfileVO _publicNetworkProfile;
-    private NetworkProfileVO _managementNetworkProfile;
-    private NetworkProfileVO _controlNetworkProfile;
-    
 
     // private String _privateNetmask;
     private int _proxyCmdPort = DEFAULT_PROXY_CMD_PORT;
@@ -1000,11 +1007,21 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     @DB
     protected Map<String, Object> createProxyInstance2(long dataCenterId) {
 
+        long id = _consoleProxyDao.getNextInSequence(Long.class, "id");
+        String name = VirtualMachineName.getConsoleProxyName(id, _instance);
+        
+        ConsoleProxyVO proxy = new ConsoleProxyVO(id, name, _template.getId(), _template.getGuestOSId(), dataCenterId, 0);
+        proxy = _consoleProxyDao.persist(proxy);
+        ArrayList<NetworkOfferingVO> networkOfferings = new ArrayList<NetworkOfferingVO>(3);
+        networkOfferings.add(_managementNetworkOffering);
+        networkOfferings.add(_linkLocalNetworkOffering);
+        networkOfferings.add(_publicNetworkOffering);
+        _vmMgr.allocate(proxy, _serviceOffering, null, networkOfferings, null, null, null, _accountMgr.getSystemAccount());
         Map<String, Object> context = new HashMap<String, Object>();
         String publicIpAddress = null;
+        return null;
         
-        
-
+/*
         Transaction txn = Transaction.currentTxn();
         try {
             DataCenterVO dc = _dcDao.findById(dataCenterId);
@@ -1044,7 +1061,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
                 context.put("proxyVmId", (long) 0);
                 return context;
             }
-
             long id = _consoleProxyDao.getNextInSequence(Long.class, "id");
 
             context.put("publicIpAddress", publicIpAndVlan._ipAddr);
@@ -1090,7 +1106,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
 
             context.put("proxyVmId", (long) 0);
             return context;
-        }
+        }*/
     }
     
     @DB
@@ -2336,6 +2352,13 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         if (_template == null) {
             throw new ConfigurationException("Unable to find the template for console proxy VMs");
         }
+        
+        _publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmPublicNetwork, TrafficType.Public, null);
+        _publicNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_publicNetworkOffering);
+        _managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmManagementNetwork, TrafficType.Management, null);
+        _managementNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_managementNetworkOffering);
+        _linkLocalNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmLinkLocalNetwork, TrafficType.LinkLocal, null);
+        _linkLocalNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_linkLocalNetworkOffering);
         
         _capacityScanScheduler.scheduleAtFixedRate(getCapacityScanTask(), STARTUP_DELAY, _capacityScanInterval, TimeUnit.MILLISECONDS);
 

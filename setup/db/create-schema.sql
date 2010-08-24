@@ -122,7 +122,7 @@ CREATE TABLE `cloud`.`network_offerings` (
   `concurrent_connections` int(10) unsigned COMMENT 'concurrent connections supported on this network',
   `traffic_type` varchar(32) NOT NULL COMMENT 'traffic type carried on this network',
   `created` datetime NOT NULL COMMENT 'time the entry was created',
-  `removed` datetime NOT NULL COMMENT 'time the entry was removed',
+  `removed` datetime DEFAULT NULL COMMENT 'time the entry was removed',
   `system_only` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is this network offering for system use only',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

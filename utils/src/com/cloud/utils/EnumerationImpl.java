@@ -26,7 +26,7 @@ import java.util.Iterator;
  * 
  * Why the heck didn't Iterator extend from Enumeration, I will probably never know. Tell me Lee Boyton!
  **/
-public class EnumerationImpl<T> implements Enumeration<T> {
+public class EnumerationImpl<T> implements Enumeration<T>, Iterator<T> {
     Iterator<T> _it;
 
     // Can't use this.
@@ -37,11 +37,28 @@ public class EnumerationImpl<T> implements Enumeration<T> {
         _it = it;
     }
 
+    @Override
     public boolean hasMoreElements() {
         return _it.hasNext();
     }
 
+    @Override
     public T nextElement() {
         return _it.next();
+    }
+
+    @Override
+    public boolean hasNext() {
+        return _it.hasNext();
+    }
+
+    @Override
+    public T next() {
+        return _it.next();
+    }
+
+    @Override
+    public void remove() {
+        throw new UnsupportedOperationException("Enumerations do not support remove operation");
     }
 }

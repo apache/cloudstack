@@ -57,6 +57,9 @@ public class NetworkProfileVO implements OwnedBy {
     @Enumerated(value=EnumType.STRING)
     TrafficType trafficType;
     
+    @Column(name="vlanIds")
+    String vlanIds; 
+    
     @Column(name="gateway")
     String gateway;
     
@@ -125,4 +128,5 @@ public class NetworkProfileVO implements OwnedBy {
     public void setCidr(String cidr) {
         this.cidr = cidr;
     }
+    
 }

@@ -18,16 +18,13 @@
 package com.cloud.utils.db;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
-import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -40,6 +37,7 @@ public class UpdateBuilder implements MethodInterceptor {
         _changes = new HashMap<String, Ternary<Attribute, Boolean, Object>>();
     }
     
+    @Override
     public Object intercept(Object object, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
         String name = method.getName();
         if (name.startsWith("set")) {
@@ -125,7 +123,6 @@ public class UpdateBuilder implements MethodInterceptor {
     }
     
     public StringBuilder toSql(String tables) {
-    	List<Pair<Attribute, Object>> setters = new ArrayList<Pair<Attribute, Object>>();
     	if (_changes.isEmpty()) {
     		return null;
     	}

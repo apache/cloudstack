@@ -12,7 +12,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Local(value=NetworkOfferingDao.class)
-public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Long> {
+public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Long> implements NetworkOfferingDao {
     SearchBuilder<NetworkOfferingVO> NameSearch; 
     
     protected NetworkOfferingDaoImpl() {
@@ -23,6 +23,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         NameSearch.done();
     }
     
+    @Override
     public NetworkOfferingVO findByName(String name) {
         SearchCriteria<NetworkOfferingVO> sc = NameSearch.create();
         
@@ -32,6 +33,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         
     }
     
+    @Override
     public NetworkOfferingVO persistSystemNetworkOffering(NetworkOfferingVO offering) {
         assert offering.getName() != null : "how are you going to find this later if you don't set it?";
         NetworkOfferingVO vo = findByName(offering.getName());

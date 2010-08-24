@@ -3,6 +3,8 @@
  */
 package com.cloud.acl;
 
+import java.security.acl.NotOwnerException;
+
 import com.cloud.domain.PartOf;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
@@ -23,7 +25,7 @@ public interface SecurityChecker extends Adapter {
      * @return true if access allowed.  false if this adapter cannot authenticate ownership.
      * @throws PermissionDeniedException if this adapter is suppose to authenticate ownership and the check failed.
      */
-    boolean checkOwnership(Account account, OwnedBy object) throws PermissionDeniedException;
+    boolean checkOwnership(Account account, OwnedBy object) throws NotOwnerException;
     
     /**
      * Checks if the user belongs to an account that owns the object.
@@ -33,7 +35,7 @@ public interface SecurityChecker extends Adapter {
      * @return true if access allowed.  false if this adapter cannot authenticate ownership.
      * @throws PermissionDeniedException if this adapter is suppose to authenticate ownership and the check failed.
      */
-    boolean checkOwnership(User user, OwnedBy object) throws PermissionDeniedException;
+    boolean checkOwnership(User user, OwnedBy object) throws NotOwnerException;
     
     /**
      * Checks if the account can access the object.

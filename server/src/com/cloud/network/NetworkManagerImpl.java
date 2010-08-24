@@ -129,6 +129,7 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -192,6 +193,8 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     @Inject ServiceOfferingDao _serviceOfferingDao = null;
     @Inject UserStatisticsDao _statsDao = null;
     @Inject NetworkOfferingDao _networkOfferingDao = null;
+    
+    Adapters<NetworkProfiler> _networkProfilers;
 
     long _routerTemplateId = -1;
     int _routerRamSize;
@@ -1776,6 +1779,8 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterMonitor"));
 
         final ComponentLocator locator = ComponentLocator.getCurrentLocator();
+        _networkProfilers = locator.getAdapters(NetworkProfiler.class);
+        
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 
         _routerTemplateId = NumbersUtil.parseInt(configs.get("router.template.id"), 1);
@@ -1826,13 +1831,18 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             throw new ConfigurationException("Unable to find the template for the router: " + _routerTemplateId);
         }
         
-        _publicNetworkOffering = new NetworkOfferingVO("System-VM-Public-Network", TrafficType.Public, null);
+        _publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmPublicNetwork, TrafficType.Public, null);
         _publicNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_publicNetworkOffering);
+        _managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmManagementNetwork, TrafficType.Management, null);
+        _managementNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_managementNetworkOffering);
+        _linkLocalNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmLinkLocalNetwork, TrafficType.LinkLocal, null);
+        _linkLocalNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_linkLocalNetworkOffering);
+        _guestNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmGuestNetwork, TrafficType.Guest, GuestIpType.Virtualized);
+        _guestNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_guestNetworkOffering);
         
-        _managementNetworkOffering = new NetworkOfferingVO("System-VM-Management-Network", TrafficType.Management, null);
-        _linkLocalNetworkOffering = new NetworkOfferingVO("System-VM-LinkLocal-Network", TrafficType.LinkLocal, null);
-        _guestNetworkOffering = new NetworkOfferingVO("System-VM-Guest-Network", TrafficType.Guest, GuestIpType.Virtualized);
         // FIXME: Obviously Virtualized is not the only guest network.  How do we determine which one to use?
+        
+        
         
         s_logger.info("Network Manager is configured.");
 
@@ -1846,6 +1856,15 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 
     @Override
     public boolean start() {
+        List<NetworkOfferingVO> offerings = new ArrayList<NetworkOfferingVO>(4);
+        offerings.add(_publicNetworkOffering);
+        offerings.add(_guestNetworkOffering);
+        offerings.add(_linkLocalNetworkOffering);
+        offerings.add(_managementNetworkOffering);
+        
+        for (NetworkProfiler profiler : _networkProfilers) {
+            List<? extends NetworkProfile> profiles = profiler.convert(offerings, _accountMgr.getSystemAccount());
+        }
         _executor.scheduleAtFixedRate(new RouterCleanupTask(), _routerCleanupInterval, _routerCleanupInterval, TimeUnit.SECONDS);
         _executor.scheduleAtFixedRate(new NetworkUsageTask(), _routerStatsInterval, _routerStatsInterval, TimeUnit.SECONDS);
         return true;
