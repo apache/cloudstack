@@ -195,7 +195,7 @@ public abstract class StorageResource extends ServerResourceBase implements Serv
         String path = rootdiskFolder + File.separator + "rootdisk";
         long totalSize = getVolumeSize(path);
 
-        VolumeVO vol = new VolumeVO(null, null, -1, -1, -1, -1, new Long(-1), rootdiskFolder, path, totalSize, Volume.VolumeType.ROOT);
+        VolumeVO vol = new VolumeVO(null, -1, -1, -1, -1, new Long(-1), rootdiskFolder, path, totalSize, Volume.VolumeType.ROOT);
         vols.add(vol);
 
         // Get the datadisk volume
@@ -203,7 +203,7 @@ public abstract class StorageResource extends ServerResourceBase implements Serv
         	path = datadiskFolder + File.separator + datadiskName;
             totalSize = getVolumeSize(path);
 
-            vol = new VolumeVO(null, null, -1, -1, -1, -1, new Long(-1), datadiskFolder, path, totalSize, Volume.VolumeType.DATADISK);
+            vol = new VolumeVO(null, -1, -1, -1, -1, new Long(-1), datadiskFolder, path, totalSize, Volume.VolumeType.DATADISK);
             vols.add(vol);
         }
 
@@ -216,7 +216,7 @@ public abstract class StorageResource extends ServerResourceBase implements Serv
         String path = getVolumeName(imagePath, null);
         long totalSize = getVolumeSize(path);
 
-        VolumeVO vol = new VolumeVO(null, null, -1, -1, -1, -1, new Long(-1), null, path, totalSize, Volume.VolumeType.ROOT);
+        VolumeVO vol = new VolumeVO(null, -1, -1, -1, -1, new Long(-1), null, path, totalSize, Volume.VolumeType.ROOT);
 
         vols.add(vol);
 
@@ -225,7 +225,7 @@ public abstract class StorageResource extends ServerResourceBase implements Serv
             totalSize = getVolumeSize(path);
 
 
-            vol = new VolumeVO(null, null, -1, -1, -1, -1, new Long(-1), null, path, totalSize, Volume.VolumeType.DATADISK);
+            vol = new VolumeVO(null, -1, -1, -1, -1, new Long(-1), null, path, totalSize, Volume.VolumeType.DATADISK);
             vols.add(vol);
         }
 

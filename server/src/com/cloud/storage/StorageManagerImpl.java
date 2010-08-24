@@ -102,6 +102,7 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume.MirrorState;
+import com.cloud.storage.Volume.SourceType;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.allocator.StoragePoolAllocator;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -233,7 +234,7 @@ public class StorageManagerImpl implements StorageManager {
         long deviceId = 0;
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        rootVol = new VolumeVO(rootDisk.getVolumeId(), VolumeType.ROOT, rootDisk.getName(), dc.getId(), account.getDomainId(), account.getId(), rootDisk.getDiskOfferingId(), rootDisk.getSize());
+        rootVol = new VolumeVO(VolumeType.ROOT, rootDisk.getName(), dc.getId(), account.getDomainId(), account.getId(), rootDisk.getDiskOfferingId(), rootDisk.getSize());
         if (rootDisk.getTemplateId() != null) {
             rootVol.setTemplateId(rootDisk.getTemplateId());
         }
@@ -242,7 +243,7 @@ public class StorageManagerImpl implements StorageManager {
         rootVol = _volsDao.persist(rootVol);
         vols.add(rootVol);
         for (DiskCharacteristics dataDisk : dataDisks) {
-            dataVol = new VolumeVO(dataDisk.getVolumeId(), VolumeType.DATADISK, dataDisk.getName(), dc.getId(), account.getDomainId(), account.getId(), dataDisk.getDiskOfferingId(), dataDisk.getSize());
+            dataVol = new VolumeVO(VolumeType.DATADISK, dataDisk.getName(), dc.getId(), account.getDomainId(), account.getId(), dataDisk.getDiskOfferingId(), dataDisk.getSize());
             dataVol.setDeviceId(deviceId++);
             dataVol.setInstanceId(vm.getId());
             dataVol = _volsDao.persist(dataVol);
@@ -484,7 +485,7 @@ public class StorageManagerImpl implements StorageManager {
         
         // Create the Volume object and save it so that we can return it to the user
         Account account = _accountDao.findById(accountId);
-        VolumeVO volume = new VolumeVO(null, userSpecifiedName, -1, -1, -1, -1, new Long(-1), null, null, 0, Volume.VolumeType.DATADISK);
+        VolumeVO volume = new VolumeVO(userSpecifiedName, -1, -1, -1, -1, new Long(-1), null, null, 0, Volume.VolumeType.DATADISK);
         volume.setPoolId(null);
         volume.setDataCenterId(dc.getId());
         volume.setPodId(null);
@@ -499,6 +500,8 @@ public class StorageManagerImpl implements StorageManager {
         volume.setInstanceId(null);
         volume.setUpdated(new Date());
         volume.setStatus(AsyncInstanceCreateStatus.Creating);
+        volume.setSourceType(SourceType.Snapshot);
+        volume.setSourceId(snapshot.getId());
         volume = _volsDao.persist(volume);
         volumeId = volume.getId();
         
@@ -853,18 +856,24 @@ public class StorageManagerImpl implements StorageManager {
         if (Storage.ImageFormat.ISO == template.getFormat()) {
             rootVol = new VolumeVO(VolumeType.ROOT, vm.getId(), vm.getInstanceName() + "-ROOT", dc.getId(), pod.getId(), account.getId(), account.getDomainId(),(size>0)? size : diskOffering.getDiskSizeInBytes());
             rootVol.setDiskOfferingId(diskOffering.getId());
+            rootVol.setSourceType(SourceType.Template);
+            rootVol.setSourceId(template.getId());
             rootVol.setDeviceId(0l);
             rootVol = _volsDao.persist(rootVol);
         } else {
             rootVol = new VolumeVO(VolumeType.ROOT, vm.getId(), template.getId(), vm.getInstanceName() + "-ROOT", dc.getId(), pod.getId(), account.getId(), account.getDomainId(), offering.isRecreatable());
             rootVol.setDiskOfferingId(offering.getId());
             rootVol.setTemplateId(template.getId());
+            rootVol.setSourceId(template.getId());
+            rootVol.setSourceType(SourceType.Template);
             rootVol.setDeviceId(0l);
             rootVol = _volsDao.persist(rootVol);
             
             if (diskOffering != null && diskOffering.getDiskSizeInBytes() > 0) {
                 dataVol = new VolumeVO(VolumeType.DATADISK, vm.getId(), vm.getInstanceName() + "-DATA", dc.getId(), pod.getId(), account.getId(), account.getDomainId(), (size>0)? size : diskOffering.getDiskSizeInBytes());
                 dataVol.setDiskOfferingId(diskOffering.getId());
+                dataVol.setSourceType(SourceType.DiskOffering);
+                dataVol.setSourceId(diskOffering.getId());
                 dataVol.setDeviceId(1l);
                 dataVol = _volsDao.persist(dataVol);
             }
@@ -1572,7 +1581,7 @@ public class StorageManagerImpl implements StorageManager {
 	
 	        // Create the Volume object and save it so that we can return it to the user
 	        Account account = _accountDao.findById(accountId);
-	        VolumeVO volume = new VolumeVO(null, userSpecifiedName, -1, -1, -1, -1, new Long(-1), null, null, 0, Volume.VolumeType.DATADISK);
+	        VolumeVO volume = new VolumeVO(userSpecifiedName, -1, -1, -1, -1, new Long(-1), null, null, 0, Volume.VolumeType.DATADISK);
 	        volume.setPoolId(null);
 	        volume.setDataCenterId(dc.getId());
 	        volume.setPodId(null);
@@ -1585,6 +1594,8 @@ public class StorageManagerImpl implements StorageManager {
 	        volume.setUpdated(new Date());
 	        volume.setStatus(AsyncInstanceCreateStatus.Creating);
 	        volume.setDomainId(account.getDomainId());
+	        volume.setSourceId(diskOffering.getId());
+	        volume.setSourceType(SourceType.DiskOffering);
 	        volume = _volsDao.persist(volume);
 	
 	        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
