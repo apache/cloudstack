@@ -95,6 +95,7 @@ CREATE TABLE `cloud`.`network_profiles` (
   `gateway` varchar(15) NOT NULL COMMENT 'gateway for this network profile',
   `cidr` varchar(32) NOT NULL COMMENT 'network cidr',
   `mode` varchar(32) NOT NULL COMMENT 'How to retrieve ip address in this network',
+  `vlan_id` bigint unsigned NULL COMMENT 'vlan id if the broadcast_domain_type is the vlan',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

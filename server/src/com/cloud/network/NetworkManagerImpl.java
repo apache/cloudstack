@@ -102,6 +102,7 @@ import com.cloud.network.Network.TrafficType;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
+import com.cloud.network.dao.NetworkProfileDao;
 import com.cloud.network.dao.SecurityGroupVMMapDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
@@ -193,6 +194,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     @Inject ServiceOfferingDao _serviceOfferingDao = null;
     @Inject UserStatisticsDao _statsDao = null;
     @Inject NetworkOfferingDao _networkOfferingDao = null;
+    @Inject NetworkProfileDao _networkProfileDao = null;
     
     Adapters<NetworkProfiler> _networkProfilers;
 
@@ -1835,7 +1837,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         _publicNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_publicNetworkOffering);
         _managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmManagementNetwork, TrafficType.Management, null);
         _managementNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_managementNetworkOffering);
-        _linkLocalNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmLinkLocalNetwork, TrafficType.LinkLocal, null);
+        _linkLocalNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmLinkLocalNetwork, TrafficType.Control, null);
         _linkLocalNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_linkLocalNetworkOffering);
         _guestNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmGuestNetwork, TrafficType.Guest, GuestIpType.Virtualized);
         _guestNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_guestNetworkOffering);
@@ -1847,6 +1849,29 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         s_logger.info("Network Manager is configured.");
 
         return true;
+    }
+    
+    public void setupNetworkProfiles(List<NetworkOfferingVO> offerings, AccountVO account) {
+        List<? extends NetworkProfile> profiles = null;
+        for (NetworkProfiler profiler : _networkProfilers) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Sending network profiles to " + profiler.getName());
+            }
+            profiles = profiler.convert(offerings, account);
+            if (profiles != null) {
+                break;
+            }
+        }
+
+        if (profiles == null) {
+            s_logger.debug("Unable to resolve the network profiles");
+            throw new CloudRuntimeException("Uanble to convert network offerings to network profiles for that account");
+        }
+        
+        for (NetworkProfile profile : profiles) {
+            NetworkProfileVO vo = new NetworkProfileVO(profile, account.getId());
+            vo = _networkProfileDao.persist(vo);
+        }
     }
 
     @Override
@@ -1861,9 +1886,12 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         offerings.add(_guestNetworkOffering);
         offerings.add(_linkLocalNetworkOffering);
         offerings.add(_managementNetworkOffering);
-        
-        for (NetworkProfiler profiler : _networkProfilers) {
-            List<? extends NetworkProfile> profiles = profiler.convert(offerings, _accountMgr.getSystemAccount());
+
+        try {
+            setupNetworkProfiles(offerings, _accountMgr.getSystemAccount());
+        } catch (Exception e) {
+            s_logger.warn("Unable to setup the system network profiles");
+            return false;
         }
         _executor.scheduleAtFixedRate(new RouterCleanupTask(), _routerCleanupInterval, _routerCleanupInterval, TimeUnit.SECONDS);
         _executor.scheduleAtFixedRate(new NetworkUsageTask(), _routerStatsInterval, _routerStatsInterval, TimeUnit.SECONDS);

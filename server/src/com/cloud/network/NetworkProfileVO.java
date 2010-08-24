@@ -57,8 +57,8 @@ public class NetworkProfileVO implements OwnedBy {
     @Enumerated(value=EnumType.STRING)
     TrafficType trafficType;
     
-    @Column(name="vlanIds")
-    String vlanIds; 
+    @Column(name="vlan_id")
+    Long vlanId; 
     
     @Column(name="gateway")
     String gateway;
@@ -67,6 +67,10 @@ public class NetworkProfileVO implements OwnedBy {
     String cidr;
     
     public NetworkProfileVO() {
+    }
+    
+    public NetworkProfileVO(NetworkProfile that, long accountId) {
+        this(accountId, that.getTrafficType(), that.getMode(), that.getBroadcastDomainType());
     }
     
     public NetworkProfileVO(long accountId, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType) {
@@ -129,4 +133,11 @@ public class NetworkProfileVO implements OwnedBy {
         this.cidr = cidr;
     }
     
+    public Long getVlanId() {
+        return vlanId;
+    }
+
+    public void setVlanId(Long vlanId) {
+        this.vlanId = vlanId;
+    }
 }
