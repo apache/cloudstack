@@ -99,8 +99,8 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			String password) throws DiscoveryException {
 		 Map<KvmDummyResourceBase, Map<String, String>> resources = new HashMap<KvmDummyResourceBase, Map<String, String>>();
 		 Map<String, String> details = new HashMap<String, String>();
-		if (!uri.getScheme().equals("http")) {
-            String msg = "urlString is not http so we're not taking care of the discovery for this: " + uri;
+		if (!uri.getScheme().equals("kvm")) {
+            String msg = "urlString is not kvm so we're not taking care of the discovery for this: " + uri;
             s_logger.debug(msg);
             return null;
 		}

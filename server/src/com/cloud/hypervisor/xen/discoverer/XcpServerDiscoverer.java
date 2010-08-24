@@ -53,6 +53,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase;
 import com.cloud.hypervisor.xen.resource.XcpServerResource;
 import com.cloud.hypervisor.xen.resource.XenServerConnectionPool;
+import com.cloud.hypervisor.xen.resource.XenServerResource;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ServerResource;
@@ -170,15 +171,10 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 if (_hostDao.findByGuid(record.uuid) != null) {
                     s_logger.debug("Skipping " + record.address + " because " + record.uuid + " is already in the database.");
                     continue;
-                }
-                
-                
-                if (!checkServer(conn, dcId, podId, host, record)) {
-                    continue;
-                }
-                    
+                }                
+
+                CitrixResourceBase resource = createServerResource(dcId, podId, record);
                 s_logger.info("Found host " + record.hostname + " ip=" + record.address + " product version=" + prodVersion);
-                CitrixResourceBase resource = createServerResource(record);
                             
                 Map<String, String> details = new HashMap<String, String>();
                 Map<String, Object> params = new HashMap<String, Object>();
@@ -379,22 +375,21 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         
         return true;
     }
-
-    protected boolean checkServer(Connection conn, long dcId, Long podId, Host host, Host.Record record) {
+    
+    protected CitrixResourceBase createServerResource(long dcId, Long podId, Host.Record record) {
         String prodBrand = record.softwareVersion.get("product_brand").trim();
         String prodVersion = record.softwareVersion.get("product_version").trim();
         
-        if(!prodBrand.equals("XenCloudPlatform") || !prodVersion.equals("0.1.1")) {
-            String msg = "Only support XCP 0.1.1, but this one is " + prodBrand + " " + prodVersion;
-            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
-            s_logger.debug(msg);
-            throw new RuntimeException(msg);
-        }
-        return true;
-    }
-    
-    protected CitrixResourceBase createServerResource(Host.Record record) {
-        return new XcpServerResource();
+        if(prodBrand.equals("XenCloudPlatform") && prodVersion.equals("0.1.1")) 
+        	return new XcpServerResource();
+        
+        if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.0")) 
+        	return new XenServerResource();
+        
+        String msg = "Only support XCP 0.1.1 and Xerver 5.6.0, but this one is " + prodBrand + " " + prodVersion;
+        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
+        s_logger.debug(msg);
+        throw new RuntimeException(msg);
     }
     
     protected void serverConfig() {
