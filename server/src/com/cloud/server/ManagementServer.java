@@ -26,6 +26,7 @@ import com.cloud.alert.AlertVO;
 import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
+import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
@@ -39,7 +40,6 @@ import com.cloud.api.commands.StartSystemVMCmd;
 import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
-import com.cloud.api.commands.UpdateTemplateCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateUserCmd;
@@ -58,7 +58,6 @@ import com.cloud.dc.VlanVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventVO;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InternalErrorException;
@@ -68,7 +67,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.info.ConsoleProxyInfo;
@@ -126,39 +124,14 @@ public interface ManagementServer {
     static final String Name = "management-server";
     
     /**
-     * Creates a new user, encrypts the password on behalf of the caller
-     * 
-     * @param username username
-     * @param password the user's password
-     * @param firstName the user's first name
-     * @param lastName the user's last name
-     * @param domain the id of the domain that this user belongs to
-     * @param accountName the name(a.k.a. id) of the account that this user belongs to
-     * @param timezone the user's current timezone (default: PST)
-     * @return a user object
+     * Creates a new user, stores the password as is so encrypted passwords are recommended.
+     * @param cmd the create command that has the username, email, password, account name, domain, timezone, etc. for creating the user.
+     * @return the user if created successfully, null otherwise
      */
-    User createUser(String username, String password, String firstName, String lastName, Long domain, String accountName, short userType, String email, String timezone);
-//	boolean reconnect(long hostId);
-//	long reconnectAsync(long hostId);
-	
-	ClusterVO findClusterById(long clusterId);
-    List<ClusterVO> listClusterByPodId(long podId);
-    
-//    ClusterVO createCluster(long dcId, long podId, String name);
+    UserAccount createUser(CreateUserCmd cmd);
 
-    /**
-     * Creates a new user, does not encrypt the password
-     * 
-     * @param username username
-     * @param password the user's password
-     * @param firstName the user's first name
-     * @param lastName the user's last name
-     * @param domain the id of the domain that this user belongs to FIXME: if we have account, do we also need domain?
-     * @param accountName the name(a.k.a. id) of the account that this user belongs to
-     * @param timezone the user's current timezone (default: PST)
-     * @return a user object
-     */
-    User createUserAPI(String username, String password, String firstName, String lastName, Long domain, String accountName, short userType, String email, String timezone);
+    ClusterVO findClusterById(long clusterId);
+    List<ClusterVO> listClusterByPodId(long podId);
 
     /**
      * Gets a user by userId

@@ -63,6 +63,7 @@ import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.CreateTemplateCmd;
+import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
@@ -572,8 +573,17 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public User createUserAPI(String username, String password, String firstName, String lastName, Long domainId, String accountName, short userType, String email, String timezone) {
+    public UserAccount createUser(CreateUserCmd cmd) {
         Long accountId = null;
+        String username = cmd.getUsername();
+        String password = cmd.getPassword();
+        String firstName = cmd.getFirstname();
+        String lastName = cmd.getLastname();
+        Long domainId = cmd.getDomainId();
+        String email = cmd.getEmail();
+        String timezone = cmd.getTimezone();
+        String accountName = cmd.getAccountName();
+        short userType = cmd.getAccountType().shortValue();
         try {
             if (accountName == null) {
                 accountName = username;
@@ -715,11 +725,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job);
     }
 
-    @Override
-    public User createUser(String username, String password, String firstName, String lastName, Long domain, String accountName, short userType, String email, String timezone) {
-        return createUserAPI(username, StringToMD5(password), firstName, lastName, domain, accountName, userType, email, timezone);
-    }
-    
     @Override
     public String updateAdminPassword(long userId, String oldPassword, String newPassword) {
         // String old = StringToMD5(oldPassword);
