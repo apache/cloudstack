@@ -1887,12 +1887,12 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         offerings.add(_linkLocalNetworkOffering);
         offerings.add(_managementNetworkOffering);
 
-        try {
-            setupNetworkProfiles(offerings, _accountMgr.getSystemAccount());
-        } catch (Exception e) {
-            s_logger.warn("Unable to setup the system network profiles");
-            return false;
-        }
+       // try {
+        //    setupNetworkProfiles(offerings, _accountMgr.getSystemAccount());
+        //} catch (Exception e) {
+          //  s_logger.warn("Unable to setup the system network profiles");
+            //return false;
+        //}
         _executor.scheduleAtFixedRate(new RouterCleanupTask(), _routerCleanupInterval, _routerCleanupInterval, TimeUnit.SECONDS);
         _executor.scheduleAtFixedRate(new NetworkUsageTask(), _routerStatsInterval, _routerStatsInterval, TimeUnit.SECONDS);
         return true;
