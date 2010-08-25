@@ -66,6 +66,7 @@ import com.cloud.agent.manager.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
@@ -87,6 +88,8 @@ import com.cloud.async.executor.UpgradeVMParam;
 import com.cloud.async.executor.VMExecutorHelper;
 import com.cloud.async.executor.VMOperationListener;
 import com.cloud.async.executor.VMOperationParam;
+import com.cloud.async.executor.VolumeOperationParam;
+import com.cloud.async.executor.VolumeOperationParam.VolumeOp;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceCount.ResourceType;
@@ -483,25 +486,59 @@ public class UserVmManagerImpl implements UserVmManager {
     }
     
     @Override
-    public void detachVolumeFromVM(long volumeId, long startEventId) throws InternalErrorException {
-    	VolumeVO volume = _volsDao.findById(volumeId);
+    public void detachVolumeFromVM(DetachVolumeCmd cmmd) throws InternalErrorException, InvalidParameterValueException {
     	
-    	Long vmId = volume.getInstanceId();
+    	Account account = (Account) UserContext.current().getAccountObject();
+    	Long volumeId = cmmd.getId();
     	
-    	if (vmId == null) {
-    		return;
+    	boolean isAdmin;
+    	if (account == null) {
+    		// Admin API call
+    		isAdmin = true;
+    	} else {
+    		// User API call
+    		isAdmin = isAdmin(account.getType());
     	}
-    	
-        EventVO event = new EventVO();
-        event.setType(EventTypes.EVENT_VOLUME_DETACH);
-        event.setUserId(1L);
-        event.setAccountId(volume.getAccountId());
-        event.setState(EventState.Started);
-        event.setStartId(startEventId);
-        event.setDescription("Detaching volume: "+volumeId+" from Vm: "+vmId);
-        _eventDao.persist(event);
-    	
-    	UserVmVO vm = _vmDao.findById(vmId);
+
+    	// Check that the volume ID is valid
+    	VolumeVO volume = _volsDao.findById(volumeId);
+    	if (volume == null)
+    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId);
+
+    	// If the account is not an admin, check that the volume is owned by the account that was passed in
+    	if (!isAdmin) {
+    		if (account.getId() != volume.getAccountId())
+    			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
+    	} else if (account != null) {
+    	    if (!_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId())) {
+                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to detach volume with ID: " + volumeId + ", permission denied.");
+    	    }
+    	}
+
+        // Check that the volume is a data volume
+        if (volume.getVolumeType() != VolumeType.DATADISK) {
+            throw new InvalidParameterValueException("Please specify a data volume.");
+        }
+
+        // Check that the volume is stored on shared storage
+        if (!_storageMgr.volumeOnSharedStoragePool(volume)) {
+            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
+        }
+
+        Long vmId = volume.getInstanceId();
+
+        // Check that the volume is currently attached to a VM
+        if (vmId == null) {
+            throw new InvalidParameterValueException("The specified volume is not attached to a VM.");
+        }
+
+        // Check that the VM is in the correct state
+        UserVmVO vm = _vmDao.findById(vmId);
+        if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
+        	throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
+        }
+        
+        long eventId = EventUtils.saveScheduledEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_DETACH, "detaching volume: "+volumeId+" from Vm: "+vmId);
     	
         AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
         if(asyncExecutor != null) {
@@ -528,12 +565,12 @@ public class UserVmManagerImpl implements UserVmManager {
     		}
     	}
     	
-        event = new EventVO();
+        EventVO event = new EventVO();
         event.setAccountId(volume.getAccountId());
         event.setUserId(1L);
         event.setType(EventTypes.EVENT_VOLUME_DETACH);
         event.setState(EventState.Completed);
-        event.setStartId(startEventId);
+        event.setStartId(eventId);
 		if (!sendCommand || (answer != null && answer.getResult())) {
 			// Mark the volume as detached
     		_volsDao.detachVolume(volume.getId());

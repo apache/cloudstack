@@ -2091,10 +2091,10 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job);
     }
 
-    @Override
-    public void detachVolumeFromVM(long volumeId, long startEventId) throws InternalErrorException {
-        _vmMgr.detachVolumeFromVM(volumeId, startEventId);
-    }
+//    @Override
+//    public void detachVolumeFromVM(long volumeId, long startEventId) throws InternalErrorException {
+//        _vmMgr.detachVolumeFromVM(volumeId, startEventId);
+//    }
 
     @Override
     public long detachVolumeFromVMAsync(long volumeId) throws InvalidParameterValueException {

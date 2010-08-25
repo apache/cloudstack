@@ -22,6 +22,7 @@ import java.util.List;
 
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
@@ -124,8 +125,9 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * Detaches the specified volume from the VM it is currently attached to.
      * @param volumeId
      * @throws InternalErrorException
+     * @throws InvalidParameterValueException 
      */
-    void detachVolumeFromVM(long volumeId, long startEventId) throws InternalErrorException;
+    void detachVolumeFromVM(DetachVolumeCmd cmmd) throws InternalErrorException, InvalidParameterValueException;
     
     /**
      * Attaches an ISO to the virtual CDROM device of the specified VM. Will eject any existing virtual CDROM if isoPath is null.
