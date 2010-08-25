@@ -2096,52 +2096,52 @@ public class ManagementServerImpl implements ManagementServer {
 //        _vmMgr.detachVolumeFromVM(volumeId, startEventId);
 //    }
 
-    @Override
-    public long detachVolumeFromVMAsync(long volumeId) throws InvalidParameterValueException {
-        VolumeVO volume = _volumeDao.findById(volumeId);
-
-        // Check that the volume is a data volume
-        if (volume.getVolumeType() != VolumeType.DATADISK) {
-            throw new InvalidParameterValueException("Please specify a data volume.");
-        }
-
-        // Check that the volume is stored on shared storage
-        if (!_storageMgr.volumeOnSharedStoragePool(volume)) {
-            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
-        }
-
-        Long vmId = volume.getInstanceId();
-
-        // Check that the volume is currently attached to a VM
-        if (vmId == null) {
-            throw new InvalidParameterValueException("The specified volume is not attached to a VM.");
-        }
-
-        // Check that the VM is in the correct state
-        UserVmVO vm = _vmDao.findById(vmId);
-        if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
-        	throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
-        }
-        
-        long eventId = EventUtils.saveScheduledEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_DETACH, "detaching volume: "+volumeId+" from Vm: "+vmId);
-        VolumeOperationParam param = new VolumeOperationParam();
-        param.setUserId(1);
-        param.setAccountId(volume.getAccountId());
-        param.setOp(VolumeOp.Detach);
-        param.setVolumeId(volumeId);
-        param.setEventId(eventId);
-
-        Gson gson = GsonHelper.getBuilder().create();
-
-		AsyncJobVO job = new AsyncJobVO();
-		job.setUserId(UserContext.current().getUserId());
-		job.setAccountId(vm.getAccountId());
-		job.setCmd("VolumeOperation");
-		job.setCmdInfo(gson.toJson(param));
-		job.setCmdOriginator("virtualmachine");
-		
-		return _asyncMgr.submitAsyncJob(job);
-	}
+//    @Override
+//    public long detachVolumeFromVMAsync(long volumeId) throws InvalidParameterValueException {
+//        VolumeVO volume = _volumeDao.findById(volumeId);
+//
+//        // Check that the volume is a data volume
+//        if (volume.getVolumeType() != VolumeType.DATADISK) {
+//            throw new InvalidParameterValueException("Please specify a data volume.");
+//        }
+//
+//        // Check that the volume is stored on shared storage
+//        if (!_storageMgr.volumeOnSharedStoragePool(volume)) {
+//            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
+//        }
+//
+//        Long vmId = volume.getInstanceId();
+//
+//        // Check that the volume is currently attached to a VM
+//        if (vmId == null) {
+//            throw new InvalidParameterValueException("The specified volume is not attached to a VM.");
+//        }
+//
+//        // Check that the VM is in the correct state
+//        UserVmVO vm = _vmDao.findById(vmId);
+//        if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
+//        	throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
+//        }
+//        
+//        long eventId = EventUtils.saveScheduledEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_DETACH, "detaching volume: "+volumeId+" from Vm: "+vmId);
+//        VolumeOperationParam param = new VolumeOperationParam();
+//        param.setUserId(1);
+//        param.setAccountId(volume.getAccountId());
+//        param.setOp(VolumeOp.Detach);
+//        param.setVolumeId(volumeId);
+//        param.setEventId(eventId);
+//
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//		AsyncJobVO job = new AsyncJobVO();
+//		job.setUserId(UserContext.current().getUserId());
+//		job.setAccountId(vm.getAccountId());
+//		job.setCmd("VolumeOperation");
+//		job.setCmdInfo(gson.toJson(param));
+//		job.setCmdOriginator("virtualmachine");
+//		
+//		return _asyncMgr.submitAsyncJob(job);
+//	}
 
     @Override
     public boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach, long startEventId) {
