@@ -19,7 +19,7 @@ public class CloudResourceBundle {
 		try {
 			return _bundle.getString(key);
 		} catch(Exception e) {
-			return "##" + key + "##";
+			return key; //if translation is not found, just return original word (i.e. English).
 		}
 	}
 	

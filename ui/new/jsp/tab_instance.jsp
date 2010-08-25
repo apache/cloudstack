@@ -24,11 +24,11 @@
     </div>
     <div class="tabbox" style="margin-top:15px;">
         <div class="content_tabs on">
-            Details <%=t.t("computer")%></div>
+            <%=t.t("Details")%></div>
         <div class="content_tabs off">
-            Volume</div>
+            <%=t.t("Volume")%></div>
         <div class="content_tabs off">
-            Statistics</div>
+            <%=t.t("Statistics")%></div>
     </div>
     <div class="grid_container">
         <div class="grid_rows odd">
@@ -47,7 +47,7 @@
         <div class="grid_rows even">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
-                    Zone:</div>
+                    <%=t.t("Zone")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
                 <div class="row_celltitles" id="zoneName">
@@ -57,7 +57,7 @@
         <div class="grid_rows odd">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
-                    Template:</div>
+                    <%=t.t("Template")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
                 <div class="row_celltitles" id="templateName">
@@ -67,7 +67,7 @@
         <div class="grid_rows even">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
-                    Service:</div>
+                    <%=t.t("Service")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
                 <div class="row_celltitles" id="serviceOfferingName">
@@ -77,7 +77,7 @@
         <div class="grid_rows odd">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
-                    HA:</div>
+                    <%=t.t("HA")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
                 <div class="row_celltitles">
@@ -89,7 +89,7 @@
         <div class="grid_rows even">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
-                    Created:</div>
+                    <%=t.t("Created")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
                 <div class="row_celltitles" id="created">
@@ -99,7 +99,7 @@
         <div class="grid_rows odd">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
-                    Account:</div>
+                    <%=t.t("Account")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
                 <div class="row_celltitles" id="account">
@@ -109,7 +109,7 @@
         <div class="grid_rows odd">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
-                    Domain:</div>
+                    <%=t.t("Domain")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
                 <div class="row_celltitles" id="domain">
@@ -119,7 +119,7 @@
         <div class="grid_rows even">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
-                    Host:</div>
+                    <%=t.t("Host")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
                 <div class="row_celltitles" id="hostName">
@@ -129,7 +129,7 @@
         <div class="grid_rows odd">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
-                    ISO:</div>
+                    <%=t.t("ISO")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
                 <div class="row_celltitles">
