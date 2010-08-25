@@ -282,6 +282,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 	
 	private void sendResponse(HttpServletResponse resp, String content) {
 		try {
+			resp.setContentType("text/html");
 			resp.getWriter().print(content);
 		} catch(IOException e) {
 			if(s_logger.isInfoEnabled())
