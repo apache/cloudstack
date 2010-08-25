@@ -2357,7 +2357,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         _publicNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_publicNetworkOffering);
         _managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmManagementNetwork, TrafficType.Management, null);
         _managementNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_managementNetworkOffering);
-        _linkLocalNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmLinkLocalNetwork, TrafficType.LinkLocal, null);
+        _linkLocalNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmLinkLocalNetwork, TrafficType.Control, null);
         _linkLocalNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_linkLocalNetworkOffering);
         
         _capacityScanScheduler.scheduleAtFixedRate(getCapacityScanTask(), STARTUP_DELAY, _capacityScanInterval, TimeUnit.MILLISECONDS);

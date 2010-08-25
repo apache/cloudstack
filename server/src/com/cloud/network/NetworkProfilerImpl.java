@@ -27,6 +27,7 @@ public class NetworkProfilerImpl extends AdapterBase implements NetworkProfiler 
 
     @Override
     public List<? extends NetworkProfile> convert(Collection<? extends NetworkOffering> networkOfferings, Account owner) {
+        List<NetworkProfileVO> profiles = _profileDao.listBy(owner.getId());
         for (NetworkOffering offering : networkOfferings) {
         }
         return null;

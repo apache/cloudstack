@@ -700,7 +700,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     Pair<Network, String> getNetworkForTraffic(Connection conn, TrafficType type) throws XenAPIException, XmlRpcException {
         if (type == TrafficType.Guest) {
             return new Pair<Network, String>(Network.getByUuid(conn, _host.guestNetwork), _host.guestPif);
-        } else if (type == TrafficType.LinkLocal) {
+        } else if (type == TrafficType.Control) {
             return new Pair<Network, String>(Network.getByUuid(conn, _host.linkLocalNetwork), null);
         } else if (type == TrafficType.Management) {
             return new Pair<Network, String>(Network.getByUuid(conn, _host.privateNetwork), _host.privatePif);
