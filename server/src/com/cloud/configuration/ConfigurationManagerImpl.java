@@ -1937,7 +1937,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 	}
 
 	@Override
-	public boolean deleteVlanAnIpRange(DeleteVlanIpRangeCmd cmd) throws InvalidParameterValueException {
+	public boolean deleteVlanIpRange(DeleteVlanIpRangeCmd cmd) throws InvalidParameterValueException {
 		
     	Long vlanDbId = cmd.getId();
     	Long userId = UserContext.current().getUserId();
