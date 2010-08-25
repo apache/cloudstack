@@ -646,7 +646,7 @@ public interface ManagementServer {
      */
     boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach, long startEventId);
     long attachISOToVMAsync(long vmId, long userId, long isoId) throws InvalidParameterValueException;
-    long detachISOFromVMAsync(long vmId, long userId) throws InvalidParameterValueException;
+//    long detachISOFromVMAsync(long vmId, long userId) throws InvalidParameterValueException;
 
     /**
      * Creates and starts a new Virtual Machine.
@@ -1126,8 +1126,8 @@ public interface ManagementServer {
      * @param zoneId
      * @return true if success
      */
-    boolean deleteTemplate(long userId, long templateId, Long zoneId, long startEventId) throws InternalErrorException;
-    long deleteTemplateAsync(long userId, long templateId, Long zoneId) throws InvalidParameterValueException;
+//    boolean deleteTemplate(long userId, long templateId, Long zoneId, long startEventId) throws InternalErrorException;
+//    long deleteTemplateAsync(long userId, long templateId, Long zoneId) throws InvalidParameterValueException;
     
     /**
      * Copies a template from one secondary storage server to another

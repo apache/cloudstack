@@ -23,13 +23,14 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.GNOME.Accessibility._ValueStub;
+import org.GNOME.Bonobo._UnknownStub;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -39,14 +40,17 @@ import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.manager.AgentManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.DetachIsoCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InternalErrorException;
@@ -85,6 +89,7 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
@@ -94,7 +99,11 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.State;
+import com.cloud.vm.UserVmManager;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value=TemplateManager.class)
@@ -117,10 +126,13 @@ public class TemplateManagerImpl implements TemplateManager {
     @Inject AccountManager _accountMgr;
     @Inject HostDao _hostDao;
     @Inject DataCenterDao _dcDao;
+    @Inject UserVmDao _userVmDao;
     @Inject VolumeDao _volumeDao;
     @Inject SnapshotDao _snapshotDao;
+    @Inject DomainDao _domainDao;
     long _routerTemplateId = -1;
     @Inject StorageManager _storageMgr;
+    @Inject UserVmManager _vmMgr;
     @Inject ConfigurationDao _configDao;
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     
@@ -867,5 +879,99 @@ public class TemplateManagerImpl implements TemplateManager {
 		}
 		
 		return true;
+	}
+
+	@Override
+	public boolean detachIso(DetachIsoCmd cmd) throws InternalErrorException, InvalidParameterValueException {
+        Account account = (Account) UserContext.current().getAccountObject();
+        Long userId = UserContext.current().getUserId();
+        Long vmId = cmd.getVirtualMachineId();
+        
+        // Verify input parameters
+        UserVmVO vmInstanceCheck = _userVmDao.findById(vmId.longValue());
+        if (vmInstanceCheck == null) {
+            throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, "Unable to find a virtual machine with id " + vmId);
+        }
+
+        userId = accountAndUserValidation(account, userId, vmInstanceCheck);
+        
+        UserVm userVM = _userVmDao.findById(vmId);
+        if (userVM == null) {
+            throw new InvalidParameterValueException("Please specify a valid VM.");
+        }
+
+        Long isoId = userVM.getIsoId();
+        if (isoId == null) {
+            throw new InvalidParameterValueException("The specified VM has no ISO attached to it.");
+        }
+        
+        State vmState = userVM.getState();
+        if (vmState != State.Running && vmState != State.Stopped) {
+        	throw new InvalidParameterValueException("Please specify a VM that is either Stopped or Running.");
+        }
+        
+        return attachISOToVM(vmId, userId, isoId, false); //attach=false => detach
+
+	}
+
+    private boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach) {
+    	UserVmVO vm = _userVmDao.findById(vmId);
+    	VMTemplateVO iso = _tmpltDao.findById(isoId);
+    	long startEventId = 0;
+    	if(attach){
+    		startEventId = EventUtils.saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_ISO_ATTACH, "Attaching ISO: "+isoId+" to Vm: "+vmId, startEventId);
+    	} else {
+    		startEventId = EventUtils.saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_ISO_DETACH, "Detaching ISO: "+isoId+" from Vm: "+vmId, startEventId);
+    	}
+        boolean success = _vmMgr.attachISOToVM(vmId, isoId, attach);
+
+        if (success) {
+            if (attach) {
+                vm.setIsoId(iso.getId().longValue());
+            } else {
+                vm.setIsoId(null);
+            }
+            _userVmDao.update(vmId, vm);
+
+            if (attach) {
+            	EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ISO_ATTACH, "Successfully attached ISO: " + iso.getName() + " to VM with ID: " + vmId,
+                        null, startEventId);
+            } else {
+            	EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ISO_DETACH, "Successfully detached ISO from VM with ID: " + vmId, null, startEventId);
+            }
+        } else {
+            if (attach) {
+            	EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ISO_ATTACH, "Failed to attach ISO: " + iso.getName() + " to VM with ID: " + vmId, null, startEventId);
+            } else {
+            	EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ISO_DETACH, "Failed to detach ISO from VM with ID: " + vmId, null, startEventId);
+            }
+        }
+
+        return success;
+    }
+
+	private Long accountAndUserValidation(Account account, Long userId,
+			UserVmVO vmInstanceCheck) {
+		if (account != null) {
+            if (!isAdmin(account.getType())) {
+                if (account.getId().longValue() != vmInstanceCheck.getAccountId()) {
+                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to detach ISO from virtual machine " + vmInstanceCheck.getName() + " for this account");
+                }
+            } else if (!_domainDao.isChildDomain(account.getDomainId(), vmInstanceCheck.getDomainId())) {
+                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to detach ISO from virtual machine " + vmInstanceCheck.getName() + ", permission denied.");
+            }
+        }
+
+        // If command is executed via 8096 port, set userId to the id of System account (1)
+        if (userId == null)
+            userId = new Long(1);
+        
+        return userId;
+	}
+	
+	private static boolean isAdmin(short accountType) {
+	    return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
+	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
+	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
 	}
 }

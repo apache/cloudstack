@@ -22,6 +22,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 
 import com.cloud.api.commands.CreateTemplateCmd;
+import com.cloud.api.commands.DetachIsoCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.exception.InternalErrorException;
@@ -119,6 +120,7 @@ public interface TemplateManager extends Manager {
      */
     boolean delete(long userId, long templateId, Long zoneId, long startEventId) throws InternalErrorException;
     
+    boolean detachIso(DetachIsoCmd cmd) throws InternalErrorException, InvalidParameterValueException;
     /**
      * Lists templates in the specified storage pool that are not being used by any VM.
      * @param pool

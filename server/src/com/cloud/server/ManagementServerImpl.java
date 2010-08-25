@@ -2215,35 +2215,35 @@ public class ManagementServerImpl implements ManagementServer {
 		return _asyncMgr.submitAsyncJob(job, true);
 	}
 
-    @Override
-    public long detachISOFromVMAsync(long vmId, long userId) throws InvalidParameterValueException {
-        UserVm userVM = _userVmDao.findById(vmId);
-        if (userVM == null) {
-            throw new InvalidParameterValueException("Please specify a valid VM.");
-        }
-
-        Long isoId = userVM.getIsoId();
-        if (isoId == null) {
-            throw new InvalidParameterValueException("The specified VM has no ISO attached to it.");
-        }
-        
-        State vmState = userVM.getState();
-        if (vmState != State.Running && vmState != State.Stopped) {
-        	throw new InvalidParameterValueException("Please specify a VM that is either Stopped or Running.");
-        }
-
-        long eventId = EventUtils.saveScheduledEvent(userId, userVM.getAccountId(), EventTypes.EVENT_ISO_DETACH, "detaching ISO: "+isoId+" from Vm: "+vmId);
-        AttachISOParam param = new AttachISOParam(vmId, userId, isoId.longValue(), false);
-        param.setEventId(eventId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(userVM.getAccountId());
-        job.setCmd("AttachISO");
-        job.setCmdInfo(gson.toJson(param));
-        return _asyncMgr.submitAsyncJob(job, true);
-    }
+//    @Override
+//    public long detachISOFromVMAsync(long vmId, long userId) throws InvalidParameterValueException {
+//        UserVm userVM = _userVmDao.findById(vmId);
+//        if (userVM == null) {
+//            throw new InvalidParameterValueException("Please specify a valid VM.");
+//        }
+//
+//        Long isoId = userVM.getIsoId();
+//        if (isoId == null) {
+//            throw new InvalidParameterValueException("The specified VM has no ISO attached to it.");
+//        }
+//        
+//        State vmState = userVM.getState();
+//        if (vmState != State.Running && vmState != State.Stopped) {
+//        	throw new InvalidParameterValueException("Please specify a VM that is either Stopped or Running.");
+//        }
+//
+//        long eventId = EventUtils.saveScheduledEvent(userId, userVM.getAccountId(), EventTypes.EVENT_ISO_DETACH, "detaching ISO: "+isoId+" from Vm: "+vmId);
+//        AttachISOParam param = new AttachISOParam(vmId, userId, isoId.longValue(), false);
+//        param.setEventId(eventId);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//        job.setUserId(UserContext.current().getUserId());
+//        job.setAccountId(userVM.getAccountId());
+//        job.setCmd("AttachISO");
+//        job.setCmdInfo(gson.toJson(param));
+//        return _asyncMgr.submitAsyncJob(job, true);
+//    }
 
 //    @Override
 //    public long resetVMPasswordAsync(long userId, long vmId, String password) {
@@ -4774,47 +4774,47 @@ public class ManagementServerImpl implements ManagementServer {
         return _templateDao.update(id, template);
     }
 
-    @Override
-    public boolean deleteTemplate(long userId, long templateId, Long zoneId, long startEventId) throws InternalErrorException {
-    	return _tmpltMgr.delete(userId, templateId, zoneId, startEventId);
-    }
+//    @Override
+//    public boolean deleteTemplate(long userId, long templateId, Long zoneId, long startEventId) throws InternalErrorException {
+//    	return _tmpltMgr.delete(userId, templateId, zoneId, startEventId);
+//    }
     
-    @Override
-    public long deleteTemplateAsync(long userId, long templateId, Long zoneId) throws InvalidParameterValueException {
-    	UserVO user = _userDao.findById(userId);
-    	if (user == null) {
-    		throw new InvalidParameterValueException("Please specify a valid user.");
-    	}
-    	
-    	VMTemplateVO template = _templateDao.findById(templateId);
-    	if (template == null) {
-    		throw new InvalidParameterValueException("Please specify a valid template.");
-    	}
-    	
-    	if (template.getFormat() == ImageFormat.ISO) {
-    		throw new InvalidParameterValueException("Please specify a valid template.");
-    	}
-    	
-    	if (template.getUniqueName().equals("routing")) {
-    		throw new InvalidParameterValueException("The DomR template cannot be deleted.");
-    	}
-    	
-    	if (zoneId != null && (_hostDao.findSecondaryStorageHost(zoneId) == null)) {
-    		throw new InvalidParameterValueException("Failed to find a secondary storage host in the specified zone.");
-    	}
-    	
-        DeleteTemplateParam param = new DeleteTemplateParam(userId, templateId, zoneId, 0);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-    	job.setUserId(UserContext.current().getUserId());
-    	job.setAccountId(template.getAccountId());
-        job.setCmd("DeleteTemplate");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(DeleteTemplateCmd.getStaticName());
-        
-        return _asyncMgr.submitAsyncJob(job);
-    }
+//    @Override
+//    public long deleteTemplateAsync(long userId, long templateId, Long zoneId) throws InvalidParameterValueException {
+//    	UserVO user = _userDao.findById(userId);
+//    	if (user == null) {
+//    		throw new InvalidParameterValueException("Please specify a valid user.");
+//    	}
+//    	
+//    	VMTemplateVO template = _templateDao.findById(templateId);
+//    	if (template == null) {
+//    		throw new InvalidParameterValueException("Please specify a valid template.");
+//    	}
+//    	
+//    	if (template.getFormat() == ImageFormat.ISO) {
+//    		throw new InvalidParameterValueException("Please specify a valid template.");
+//    	}
+//    	
+//    	if (template.getUniqueName().equals("routing")) {
+//    		throw new InvalidParameterValueException("The DomR template cannot be deleted.");
+//    	}
+//    	
+//    	if (zoneId != null && (_hostDao.findSecondaryStorageHost(zoneId) == null)) {
+//    		throw new InvalidParameterValueException("Failed to find a secondary storage host in the specified zone.");
+//    	}
+//    	
+//        DeleteTemplateParam param = new DeleteTemplateParam(userId, templateId, zoneId, 0);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//    	job.setUserId(UserContext.current().getUserId());
+//    	job.setAccountId(template.getAccountId());
+//        job.setCmd("DeleteTemplate");
+//        job.setCmdInfo(gson.toJson(param));
+//        job.setCmdOriginator(DeleteTemplateCmd.getStaticName());
+//        
+//        return _asyncMgr.submitAsyncJob(job);
+//    }
     
     @Override
     public boolean copyTemplate(long userId, long templateId, long sourceZoneId, long destZoneId, long startEventId) throws InternalErrorException {
