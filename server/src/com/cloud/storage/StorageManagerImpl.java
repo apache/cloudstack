@@ -1062,6 +1062,8 @@ public class StorageManagerImpl implements StorageManager {
         String hypervisoType = configDao.getValue("hypervisor.type");
         if (hypervisoType.equalsIgnoreCase("KVM")) {
         	_hypervisorType = Hypervisor.Type.KVM;
+        } else if(hypervisoType.equalsIgnoreCase("vmware")) {
+        	_hypervisorType = Hypervisor.Type.VmWare;
         }
         _agentMgr.registerForHostEvents(new StoragePoolMonitor(this, _hostDao, _storagePoolDao), true, false, true);
 
@@ -1256,6 +1258,8 @@ public class StorageManagerImpl implements StorageManager {
         if (hypervisorType == null) {
         	if (_hypervisorType == Hypervisor.Type.KVM) {
         		hypervisorType = Hypervisor.Type.KVM;
+        	} else if(_hypervisorType == Hypervisor.Type.VmWare) {
+        		hypervisorType = Hypervisor.Type.VmWare;
         	} else {
         		s_logger.debug("Couldn't find a host to serve in the server pool");
         		return null;
