@@ -991,7 +991,7 @@ public interface ManagementServer {
      * @param userId
      * @param zoneId
      */
-    void deleteZone(long userId, Long zoneId) throws InvalidParameterValueException, InternalErrorException;
+//    void deleteZone(long userId, Long zoneId) throws InvalidParameterValueException, InternalErrorException;
     
     /**
      * Change a pod's private IP range

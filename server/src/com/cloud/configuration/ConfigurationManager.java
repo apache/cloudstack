@@ -27,6 +27,7 @@ import com.cloud.api.commands.DeleteDiskOfferingCmd;
 import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.DeleteServiceOfferingCmd;
 import com.cloud.api.commands.DeleteVlanIpRangeCmd;
+import com.cloud.api.commands.DeleteZoneCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
 import com.cloud.api.commands.UpdatePodCmd;
@@ -207,7 +208,7 @@ public interface ConfigurationManager extends Manager {
      * @param userId
      * @param zoneId
      */
-	void deleteZone(long userId, long zoneId) throws InvalidParameterValueException, InternalErrorException;
+	void deleteZone(DeleteZoneCmd cmd) throws InvalidParameterValueException, InternalErrorException;
 	
 	/**
 	 * Adds a VLAN to the database, along with an IP address range. Can add three types of VLANs: (1) zone-wide VLANs on the virtual public network (2) pod-wide direct attached VLANs (3) account-specific direct attached VLANs

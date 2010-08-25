@@ -41,6 +41,7 @@ import com.cloud.api.commands.DeleteDiskOfferingCmd;
 import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.DeleteServiceOfferingCmd;
 import com.cloud.api.commands.DeleteVlanIpRangeCmd;
+import com.cloud.api.commands.DeleteZoneCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
 import com.cloud.api.commands.UpdatePodCmd;
@@ -735,7 +736,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
     
     @DB
-    public void deleteZone(long userId, long zoneId) throws InvalidParameterValueException, InternalErrorException {
+    public void deleteZone(DeleteZoneCmd cmd) throws InvalidParameterValueException, InternalErrorException {
+    	
+    	Long userId = UserContext.current().getUserId();
+    	Long zoneId = cmd.getId();
+    		
+    	if (userId == null) {
+    		userId = Long.valueOf(User.UID_SYSTEM);
+		}
+    	
     	// Make sure the zone exists
     	if (!validZone(zoneId)) {
     		throw new InvalidParameterValueException("A zone with ID: " + zoneId + " does not exist.");

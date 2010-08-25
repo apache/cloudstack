@@ -4370,10 +4370,10 @@ public class ManagementServerImpl implements ManagementServer {
         return _configMgr.createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr);
     }
 
-    @Override
-    public void deleteZone(long userId, Long zoneId) throws InvalidParameterValueException, InternalErrorException {
-        _configMgr.deleteZone(userId, zoneId);
-    }
+//    @Override
+//    public void deleteZone(long userId, Long zoneId) throws InvalidParameterValueException, InternalErrorException {
+//        _configMgr.deleteZone(userId, zoneId);
+//    }
 
     @Override
     public String changePrivateIPRange(boolean add, Long podId, String startIP, String endIP) throws InvalidParameterValueException {
