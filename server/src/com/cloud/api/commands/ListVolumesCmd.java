@@ -186,7 +186,8 @@ public class ListVolumesCmd extends BaseCmd{
                 volumeData.add(new Pair<String, Object>(BaseCmd.Properties.VIRTUAL_MACHINE_NAME.getName(), vm.getName()));
                 volumeData.add(new Pair<String, Object>(BaseCmd.Properties.VIRTUAL_MACHINE_DISPLAYNAME.getName(), vm.getName()));
                 volumeData.add(new Pair<String, Object>(BaseCmd.Properties.VIRTUAL_MACHINE_STATE.getName(), vm.getState()));
-            }             
+                volumeData.add(new Pair<String, Object>(BaseCmd.Properties.DEVICE_ID.getName(), volume.getDeviceId()));
+            }
 
             // Show the virtual size of the volume
             long virtualSizeInBytes = volume.getSize();
