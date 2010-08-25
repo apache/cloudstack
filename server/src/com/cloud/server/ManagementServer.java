@@ -53,7 +53,6 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventVO;
@@ -418,23 +417,6 @@ public interface ManagementServer {
     boolean disassociateIpAddress(DisassociateIPAddrCmd cmd) throws PermissionDeniedException;
     long disassociateIpAddressAsync(long userId, long accountId, String ipAddress);
    
-    /**
-	 * Adds a VLAN to the database, along with an IP address range. Can add three types of VLANs: (1) zone-wide VLANs on the virtual network (2) pod-wide direct attached VLANs (3) account-specific direct attached VLANs
-	 * @param userId
-	 * @param vlanType - either "DomR" (VLAN for a virtual network) or "DirectAttached" (VLAN for IPs that will be directly attached to UserVMs)
-	 * @param zoneId
-	 * @param accountId
-	 * @param podId
-	 * @param add
-	 * @param vlanId
-	 * @param gateway
-	 * @param startIP
-	 * @param endIP
-	 * @return The new VlanVO object
-     * @throws Exception 
-	 */
-	VlanVO createVlanAndPublicIpRange(long userId, VlanType vlanType, Long zoneId, Long accountId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String startIP, String endIP) throws Exception;
-	
 	/**
 	 * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated IP addresses.
 	 * @param userId
@@ -1620,23 +1602,6 @@ public interface ManagementServer {
      */
     Snapshot findSnapshotById(long snapshotId);
 
-    /**
-     * Create a private template from a given snapshot
-     * @param snapshotId the id of the snapshot to use as the basis of the template
-     * @param name user provided string to use to name the template
-     * @param description the display text to show when listing the template as given by the user
-     * @param guestOSId the OS of the template
-     * @param requiresHvm whether the new template will require HVM
-     * @param bits number of bits (32-bit or 64-bit)
-     * @param passwordEnabled whether or not the template is password enabled
-     * @param iswhether or not the template is public
-     * @return valid template if success, null otherwise
-     * @throws InvalidParameterValueException, ResourceAllocationException
-     */
-    VMTemplateVO createPrivateTemplate(VMTemplateVO template, Long userId, long snapshotId, String name, String description) throws InvalidParameterValueException;
-    long createPrivateTemplateAsync(Long userId, long vmId, String name, String description, long guestOSId, Boolean requiresHvm, Integer bits, Boolean passwordEnabled, boolean isPublic, boolean featured, Long snapshotId) throws InvalidParameterValueException, ResourceAllocationException, InternalErrorException;
-    
-    
     /**
      * Finds a diskOffering by the specified ID.
      * @param diskOfferingId

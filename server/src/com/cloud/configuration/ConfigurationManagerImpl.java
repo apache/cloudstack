@@ -37,6 +37,7 @@ import com.cloud.api.commands.AddConfigCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.CreatePodCmd;
 import com.cloud.api.commands.CreateServiceOfferingCmd;
+import com.cloud.api.commands.CreateVlanIpRangeCmd;
 import com.cloud.api.commands.DeleteDiskOfferingCmd;
 import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.DeleteServiceOfferingCmd;
@@ -47,6 +48,7 @@ import com.cloud.api.commands.UpdateDiskOfferingCmd;
 import com.cloud.api.commands.UpdatePodCmd;
 import com.cloud.api.commands.UpdateServiceOfferingCmd;
 import com.cloud.api.commands.UpdateZoneCmd;
+import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.DataCenterVO;
@@ -63,16 +65,22 @@ import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.ServiceOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
@@ -85,6 +93,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.State;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -111,6 +120,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 	@Inject UserDao _userDao;
 	@Inject DataCenterDao _dcDao;
 	@Inject HostPodDao _hostPodDao;
+	@Inject AccountManager _accountMgr;
+	@Inject NetworkManager _networkMgr;
 	public boolean _premium;
 
 	private int _maxVolumeSizeInGb;
@@ -1190,14 +1201,50 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 			return genChangeRangeSuccessString(problemIPs, add);
 		}
     }
-    
-    public VlanVO createVlanAndPublicIpRange(long userId, VlanType vlanType, Long zoneId, Long accountId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String startIP, String endIP) throws InvalidParameterValueException, InternalErrorException {    		
-    	
+
+    @Override
+//    public VlanVO createVlanAndPublicIpRange(long userId, VlanType vlanType, Long zoneId, Long accountId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String startIP, String endIP) throws InvalidParameterValueException, InternalErrorException {    		
+    public VlanVO createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InvalidParameterValueException, InternalErrorException, InsufficientCapacityException {
+        Long userId = UserContext.current().getUserId();
+        if (userId == null) {
+            userId = Long.valueOf(User.UID_SYSTEM);
+        }
+
+        // If forVirtualNetworks isn't specified, default it to true
+        Boolean forVirtualNetwork = cmd.isForVirtualNetwork();
+        if (forVirtualNetwork == null) {
+            forVirtualNetwork = Boolean.TRUE;
+        }
+
+        // If the VLAN id is null, default it to untagged
+        String vlanId = cmd.getVlan();
+        if (vlanId == null) {
+            vlanId = Vlan.UNTAGGED;
+        }
+
+        // If an account name and domain ID are specified, look up the account
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        Account account = null;
+        if ((accountName != null) && (domainId != null)) {
+            account = _accountDao.findActiveAccount(accountName, domainId);
+            if (account == null) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid account.");
+            }
+        }       
+        
+        VlanType vlanType = forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
+        Long zoneId = cmd.getZoneId();
+        Long podId = cmd.getPodId();
+        String startIP = cmd.getStartIp();
+        String endIP = cmd.getEndIp();
+        String vlanGateway = cmd.getGateway();
+        String vlanNetmask = cmd.getNetmask();
+
 		//check for hypervisor type to be xenserver
 		String hypervisorType = _configDao.getValue("hypervisor.type");
 				
-		if(hypervisorType.equalsIgnoreCase("xenserver"))
-		{
+		if(hypervisorType.equalsIgnoreCase("xenserver")) {
 	    	//check for the vlan being added before going to db, to see if it is untagged
 	    	if(vlanType.toString().equalsIgnoreCase("VirtualNetwork") && vlanId.equalsIgnoreCase("untagged"))
 	    	{
@@ -1208,33 +1255,38 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 	    	}
 	    	
 		}
-    	
+
     	DataCenterVO zone;
     	if (zoneId == null || ((zone = _zoneDao.findById(zoneId)) == null)) {
 			throw new InvalidParameterValueException("Please specify a valid zone.");
-		}    	    	
-    	//remove this
+		}
+
+    	boolean associateIpRangeToAccount = false;
     	if (vlanType.equals(VlanType.VirtualNetwork)) {
-    		if (!(accountId == null && podId == null) && false) {
-    			throw new InvalidParameterValueException("IP ranges for the virtual network must be zone-wide.");
-    		}
+    	    if (account != null) {
+    	        // verify resource limits
+    	        long ipResourceLimit = _accountMgr.findCorrectResourceLimit((AccountVO)account, ResourceType.public_ip);
+    	        long accountIpRange  = NetUtils.ip2Long(endIP) - NetUtils.ip2Long(startIP) + 1;
+    	        if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(" IPResourceLimit " +ipResourceLimit + " accountIpRange " + accountIpRange);
+    	        }
+    	        if (ipResourceLimit != -1 && accountIpRange > ipResourceLimit){ // -1 means infinite
+    	            throw new InvalidParameterValueException(" Public IP Resource Limit is set to " + ipResourceLimit + " which is less than the IP range of " + accountIpRange + " provided");
+    	        }
+    	        associateIpRangeToAccount = true;
+    	    }
     	} else if (vlanType.equals(VlanType.DirectAttached)) {
-    		if (!((accountId != null && podId == null) || (accountId == null && podId != null))) {
+    		if (!((account != null && podId == null) ||
+    		      (account == null && podId != null))) {
     			throw new InvalidParameterValueException("Direct Attached IP ranges must either be pod-wide, or for one account.");
     		}
-    		
-    		if (accountId != null) {
+
+    		if (account != null) {
     			// VLANs for an account must be tagged
         		if (vlanId.equals(Vlan.UNTAGGED)) {
         			throw new InvalidParameterValueException("Direct Attached IP ranges for an account must be tagged.");
         		}
-        		
-        		// Check that the account ID is valid
-        		AccountVO account;
-        		if ((account = _accountDao.findById(accountId)) == null) {
-        			throw new InvalidParameterValueException("Please specify a valid account.");
-        		}
-        		
+
         		// Make sure there aren't any pod VLANs in this zone
         		List<HostPodVO> podsInZone = _podDao.listByDataCenterId(zone.getId());
         		for (HostPodVO pod : podsInZone) {
@@ -1244,7 +1296,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         		}
         		
         		// Make sure the specified account isn't already assigned to a VLAN in this zone
-        		List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAccountVlanMapsByAccount(accountId);
+        		List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAccountVlanMapsByAccount(account.getId());
         		for (AccountVlanMapVO accountVlanMap : accountVlanMaps) {
         			VlanVO vlan = _vlanDao.findById(accountVlanMap.getVlanDbId());
         			if (vlan.getDataCenterId() == zone.getId().longValue()) {
@@ -1281,12 +1333,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		if (!NetUtils.isValidIp(vlanGateway)) {
 			throw new InvalidParameterValueException("Please specify a valid gateway");
 		}
-		
+
 		// Make sure the netmask is valid
 		if (!NetUtils.isValidIp(vlanNetmask)) {
 			throw new InvalidParameterValueException("Please specify a valid netmask");
 		}
-		
+
 		String newVlanSubnet = NetUtils.getSubNet(vlanGateway, vlanNetmask);
 		    	    		
 		// Check if the new VLAN's subnet conflicts with the guest network in the specified zone
@@ -1295,23 +1347,23 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		String guestIpNetwork = NetUtils.getIpRangeStartIpFromCidr(cidrPair[0],Long.parseLong(cidrPair[1]));
 		long guestCidrSize = Long.parseLong(cidrPair[1]);
 		long vlanCidrSize = NetUtils.getCidrSize(vlanNetmask);
-		
+
 		long cidrSizeToUse = -1;
 		if (vlanCidrSize < guestCidrSize) {
 			cidrSizeToUse = vlanCidrSize;
 		} else {
 			cidrSizeToUse = guestCidrSize;
 		}
-		
+
 		String guestSubnet = NetUtils.getCidrSubNet(guestIpNetwork, cidrSizeToUse);
-		
+
 		if (newVlanSubnet.equals(guestSubnet)) {
 			throw new InvalidParameterValueException("The new IP range you have specified has the same subnet as the guest network in zone: " + zone.getName() + ". Please specify a different gateway/netmask.");
 		}
-		
+
 		// Check if there are any errors with the IP range
 		checkPublicIpRangeErrors(zoneId, vlanId, vlanGateway, vlanNetmask, startIP, endIP);
-		
+
 		// Throw an exception if any of the following is true:
 		// 1. Another VLAN in the same zone has a different tag but the same subnet as the new VLAN
 		// 2. Another VLAN in the same zone that has the same tag and subnet as the new VLAN has IPs that overlap with the IPs being added
@@ -1356,8 +1408,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		vlan = _vlanDao.persist(vlan);
 		
 		// Persist the IP range
-		if (accountId != null && vlanType.equals(VlanType.VirtualNetwork)){
-			if(!savePublicIPRangeForAccount(startIP, endIP, zoneId, vlan.getId(), accountId, _accountDao.findById(accountId).getDomainId())){
+		if (account != null && vlanType.equals(VlanType.VirtualNetwork)){
+			if(!savePublicIPRangeForAccount(startIP, endIP, zoneId, vlan.getId(), account.getId(), account.getDomainId())) {
 				deletePublicIPRange(vlan.getId());
 				_vlanDao.delete(vlan.getId());
 				throw new InternalErrorException("Failed to save IP range. Please contact Cloud Support."); //It can be Direct IP or Public IP.
@@ -1368,9 +1420,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 			throw new InternalErrorException("Failed to save IP range. Please contact Cloud Support."); //It can be Direct IP or Public IP.
 		}
 		
-		if (accountId != null) {
+		if (account != null) {
 			// This VLAN is account-specific, so create an AccountVlanMapVO entry
-			AccountVlanMapVO accountVlanMapVO = new AccountVlanMapVO(accountId, vlan.getId());
+			AccountVlanMapVO accountVlanMapVO = new AccountVlanMapVO(account.getId(), vlan.getId());
 			_accountVlanMapDao.persist(accountVlanMapVO);
 		} else if (podId != null) {
 			// This VLAN is pod-wide, so create a PodVlanMapVO entry
@@ -1383,13 +1435,94 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 			eventMsg += ", end IP = " + endIP;
 		}
 		eventMsg += ".";
-		saveConfigurationEvent(userId, accountId, EventTypes.EVENT_VLAN_IP_RANGE_CREATE, eventMsg, "vlanType=" + vlanType, "dcId=" + zoneId,
-																												"accountId=" + accountId, "podId=" + podId,
+		saveConfigurationEvent(userId, account.getId(), EventTypes.EVENT_VLAN_IP_RANGE_CREATE, eventMsg, "vlanType=" + vlanType, "dcId=" + zoneId,
+																												"accountId=" + account.getId(), "podId=" + podId,
 																												"vlanId=" + vlanId, "vlanGateway=" + vlanGateway,
 																												"vlanNetmask=" + vlanNetmask, "startIP=" + startIP,
 																												"endIP=" + endIP);
-		
+
+		// if this is an account VLAN, now associate the IP Addresses to the account
+        associateIpAddressListToAccount(userId, account.getId(), zoneId, vlan.getId());
+
 		return vlan;
+    }
+
+    @Override @DB
+    public void associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId) throws InsufficientAddressCapacityException,
+            InvalidParameterValueException, InternalErrorException {
+        
+        Transaction txn = Transaction.currentTxn();
+        AccountVO account = null;
+        
+        try {
+            //Acquire Lock                    
+            account = _accountDao.acquire(accountId);
+            if (account == null) {
+                s_logger.warn("Unable to lock account: " + accountId);
+                throw new InternalErrorException("Unable to acquire account lock");
+            }            
+            s_logger.debug("Associate IP address lock acquired");
+            
+            //Get Router
+            DomainRouterVO router = _domrDao.findBy(accountId, zoneId);
+            if (router == null) {
+                s_logger.debug("No router found for account: " + account.getAccountName() + ".");
+                return;
+            }
+            
+            if (router.getState() == State.Running) {
+                //Get Vlans associated with the account
+                List<VlanVO> vlansForAccount = new ArrayList<VlanVO>();
+                if (vlanId == null){
+                    vlansForAccount.addAll(_vlanDao.listVlansForAccountByType(zoneId, account.getId(), VlanType.VirtualNetwork));
+                    s_logger.debug("vlansForAccount "+ vlansForAccount);
+                }else{
+                    vlansForAccount.add(_vlanDao.findById(vlanId));
+                }
+                 
+                // Creating a list of all the ips that can be assigned to this account
+                txn.start();
+                List<String> ipAddrsList = new ArrayList<String>();
+                for (VlanVO vlan : vlansForAccount){
+                    ipAddrsList.addAll(_publicIpAddressDao.assignAcccountSpecificIps(accountId, account.getDomainId().longValue(), vlan.getId(), false));
+
+                    long size = ipAddrsList.size();
+                    _accountMgr.incrementResourceCount(accountId, ResourceType.public_ip, size);
+                    s_logger.debug("Assigning new ip addresses " +ipAddrsList);                 
+                }
+                if(ipAddrsList.isEmpty())
+                    return;
+
+                String params = "\nsourceNat=" + false + "\ndcId=" + zoneId;
+
+                // Associate the IP's to DomR
+                boolean success = _networkMgr.associateIP(router,ipAddrsList, true);
+                String errorMsg = "Unable to assign public IP address pool";
+                if (!success) {
+                    s_logger.debug(errorMsg);
+                     for(String ip : ipAddrsList){
+                         EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_NET_IP_ASSIGN, "Unable to assign public IP " +ip, params);
+                     }
+                    throw new InternalErrorException(errorMsg);
+                }
+                txn.commit();
+                for(String ip : ipAddrsList){
+                    EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_NET_IP_ASSIGN, "Successfully assigned account IP " +ip, params);
+                }
+            }
+            } catch (InternalErrorException iee) {
+                s_logger.error("Associate IP threw an InternalErrorException.", iee);
+                throw iee;
+            } catch (Throwable t) {
+                s_logger.error("Associate IP address threw an exception.", t);
+                throw new InternalErrorException("Associate IP address exception");
+            } finally {
+                if (account != null) {
+                    _accountDao.release(accountId);
+                    s_logger.debug("Associate IP address lock released");
+                }
+            }
+    
     }
     
     public boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId) throws InvalidParameterValueException {
