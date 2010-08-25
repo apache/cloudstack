@@ -292,7 +292,7 @@ a:visited {
 	padding:0;
 }
 
-<<<<<<< HEAD
+
 .vmpopup_container_closebutton {
 	width:13px;
 	height:13px;
@@ -308,8 +308,7 @@ a:visited {
 	background:url(../images/vm_closebutton_hover.gif) no-repeat top left;
 }
 
-=======
->>>>>>> 10bc0b5... new UI - left menu, middle menu, instance
+
 .vmpopup_container_top {
 	width:737px;
 	height:30px;
@@ -1608,11 +1607,7 @@ a:visited {
 }
 
 .midmenu_textbox {
-<<<<<<< HEAD
-	width:165px;
-=======
-	width:150px;
->>>>>>> 10bc0b5... new UI - left menu, middle menu, instance
+	width:165px;	
 	height:auto;
 	float:left;
 	margin:0 0 0 10px;
@@ -1621,11 +1616,7 @@ a:visited {
 }
 
 .midmenu_textbox p {
-<<<<<<< HEAD
 	width:165px;
-=======
-	width:150px;
->>>>>>> 10bc0b5... new UI - left menu, middle menu, instance
 	height:auto;
 	float:left;
 	text-align:left;
@@ -1939,7 +1930,6 @@ a:visited {
 	background:url(../images/infoerror_icon.gif) no-repeat top left;
 }
 
-<<<<<<< HEAD
 .info_detailbox {
 	width:99%;
 	height:auto;
@@ -1965,7 +1955,7 @@ a:visited {
 	background:#ffe5e5 repeat top left;
 	color:#a90000;
 }
-=======
+
 .info_detailbox {
 	width:99%;
 	height:auto;
@@ -1991,4 +1981,4 @@ a:visited {
 	background:#ffe5e5 repeat top left;
 	color:#a90000;
 }
->>>>>>> 10bc0b5... new UI - left menu, middle menu, instance
+
