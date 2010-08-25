@@ -98,7 +98,9 @@ $(document).ready(function() {
 		return;
 	}
 	
+	/*
 	initializeTestTool();
+	*/
 	
 	// We will be dropping all the main tab content into this container
 	mainContainer = $("#maincontentarea");

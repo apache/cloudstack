@@ -24,7 +24,7 @@
     </div>
     <div class="tabbox" style="margin-top:15px;">
         <div class="content_tabs on">
-            <%=t.getString("computer")%> Details</div>
+            Details <%=t.t("computer")%></div>
         <div class="content_tabs off">
             Volume</div>
         <div class="content_tabs off">

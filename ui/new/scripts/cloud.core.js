@@ -17,6 +17,9 @@
  */
 
 
+
+// Version: @VERSION@
+
 var g_mySession = null;
 var g_sessionKey = null;
 var g_role = null; // roles - root, domain-admin, ro-admin, user
