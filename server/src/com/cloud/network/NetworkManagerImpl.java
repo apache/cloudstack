@@ -779,6 +779,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 	            if (s_logger.isDebugEnabled()) {
 	                s_logger.debug("Router is already started: " + router.toString());
 	            }
+	            started = true;
 	            return router;
 	        }
 	        
