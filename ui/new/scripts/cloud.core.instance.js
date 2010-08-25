@@ -287,14 +287,8 @@ function clickInstanceGroupHeader($arrowIcon) {
         $arrowIcon.removeClass("open").addClass("close");            
         $instanceGroupContainer.empty();   
     }	     
-<<<<<<< HEAD
-    //***** VM Detail (end) ********************************************************************************
-    
-    $("#right_panel").load("content/tab_instance.htm", function() {			
-=======
     //***** VM Detail (end) ********************************************************************************    
     $("#right_panel").load("jsp/tab_instance.jsp", function() {			
->>>>>>> 10bc0b5... new UI - left menu, middle menu, instance
 		$rightPanelHeader = $("#right_panel_header");			                                		                                
 		$rightPanelContent = $("#right_panel_content");	
 		
@@ -304,42 +298,11 @@ function clickInstanceGroupHeader($arrowIcon) {
         var $diskOfferingTemplate = $("#vm_popup_disk_offering_template");
 	    var currentPageInTemplateGridInVmPopup =1;
 	    var selectedTemplateTypeInVmPopup;  //selectedTemplateTypeInVmPopup will be set to "featured" when new VM dialog box opens
-    	
-    	/*
-	    $vmPopup.find("#wizard_service_offering").bind("click", function(event){		
-	        event.stopPropagation(); //do not use event.preventDetault(), otherwise, radio button won't be checked.	    
-	        var serviceOfferingId = $vmPopup.find("#wizard_service_offering input[name=service]:checked").val();		    
-	        if(getDirectAttachNetworkGroupsEnabled() != "true") {
-	            $vmPopup.find("#wizard_network_groups_container").hide();
-	        }
-	        else {    
-	            $.ajax({
-			        data: "command=listServiceOfferings&response=json&id="+serviceOfferingId,
-			        dataType: "json",				
-			        success: function(json) {
-				        var offerings = json.listserviceofferingsresponse.serviceoffering;					
-				        if (offerings != null && offerings.length > 0) {
-				            if(offerings[0].usevirtualnetwork =="true") { //virtual network
-				                $vmPopup.find("#wizard_network_groups_container").hide();	
-				            }
-				            else { //direct attached					            
-				                if($vmPopup.find("#wizard_network_groups").find("option").length == 0)
-				                    $vmPopup.find("#wizard_network_groups_container").hide();	
-				                else 
-				                    $vmPopup.find("#wizard_network_groups_container").show();	
-				            }
-    					        
-				        }			
-			        }				
-		        });	
-		    }   
-	    });
-    	*/
-    	
+    	   	
 	    $("#add_link").unbind("click").bind("click", function(event) {
             vmWizardOpen();			
 		    $.ajax({
-			    data: "command=listZones&available=true&response=json",
+			    data: createURL("command=listZones&available=true&response=json"),
 			    dataType: "json",
 			    success: function(json) {
 				    var zones = json.listzonesresponse.zone;					
@@ -354,7 +317,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 		    });
     		
 		    $.ajax({
-			    data: "command=listServiceOfferings&response=json",
+			    data: createURL("command=listServiceOfferings&response=json"),
 			    dataType: "json",
 			    async: false,
 			    success: function(json) {
@@ -387,7 +350,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 			    			    
 		
 		    $.ajax({
-			    data: "command=listDiskOfferings&domainid=1&response=json",
+			    data: createURL("command=listDiskOfferings&domainid=1&response=json"),
 			    dataType: "json",
 			    async: false,
 			    success: function(json) {
@@ -599,7 +562,7 @@ function clickInstanceGroupHeader($arrowIcon) {
                 $vmPopup.find("#prevPage").show();  		
     		
 		    $.ajax({
-			    data: commandString,
+			    data: createURL(commandString),
 			    dataType: "json",
 			    async: false,
 			    success: function(json) {
@@ -874,7 +837,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 			    */
     			
 			    $.ajax({
-				    data: "command=deployVirtualMachine"+moreCriteria.join("")+"&response=json",
+				    data: createURL("command=deployVirtualMachine"+moreCriteria.join("")+"&response=json"),
 				    dataType: "json",
 				    success: function(json) {
 					    var jobId = json.deployvirtualmachineresponse.jobid;
@@ -887,7 +850,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 						    timerKey,
 						    function() {
 							    $.ajax({
-								    data: "command=queryAsyncJobResult&jobId="+jobId+"&response=json",
+								    data: createURL("command=queryAsyncJobResult&jobId="+jobId+"&response=json"),
 								    dataType: "json",
 								    success: function(json) {
 									    var result = json.queryasyncjobresultresponse;
