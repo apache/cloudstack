@@ -573,7 +573,7 @@ function showHostsTab() {
 			} else if (state == "Maintenance") {
 				template.find(".grid_links").find("#host_action_reconnect_container, #host_action_enable_maint_container").hide();
 			} else if (state == "Disconnected") {
-				template.find(".grid_links").find("#host_action_reconnect_container, #host_action_enable_maint_container, #host_action_cancel_maint_container, #host_action_remove_container").hide();
+				template.find(".grid_links").find("#host_action_reconnect_container, #host_action_enable_maint_container, #host_action_cancel_maint_container").hide();
 			} else {
 				alert("Unsupported Host State: " + state);
 			}
