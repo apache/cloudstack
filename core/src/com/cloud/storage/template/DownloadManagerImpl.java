@@ -781,6 +781,11 @@ public class DownloadManagerImpl implements DownloadManager {
         processor = new QCOW2Processor();
         processor.configure("QCOW2 Processor", params);
         processors.add(processor);
+
+        processor = new VmdkProcessor();
+        processor.configure("VMDK Processor", params);
+        processors.add(processor);
+        
         // Add more processors here.
         threadPool = Executors.newFixedThreadPool(numInstallThreads);
         return true;
