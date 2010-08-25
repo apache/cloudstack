@@ -26,6 +26,7 @@ import com.cloud.api.commands.CreateServiceOfferingCmd;
 import com.cloud.api.commands.DeleteDiskOfferingCmd;
 import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.DeleteServiceOfferingCmd;
+import com.cloud.api.commands.DeleteVlanIpRangeCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
 import com.cloud.api.commands.UpdatePodCmd;
@@ -232,6 +233,7 @@ public interface ConfigurationManager extends Manager {
 	 * @return success/failure
 	 */
 	boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId) throws InvalidParameterValueException;
+	boolean deleteVlanIpRange(DeleteVlanIpRangeCmd cmd) throws InvalidParameterValueException;
 	
 	/**
 	 * Adds/deletes private IPs

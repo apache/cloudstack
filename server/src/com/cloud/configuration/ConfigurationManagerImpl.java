@@ -40,6 +40,7 @@ import com.cloud.api.commands.CreateServiceOfferingCmd;
 import com.cloud.api.commands.DeleteDiskOfferingCmd;
 import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.DeleteServiceOfferingCmd;
+import com.cloud.api.commands.DeleteVlanIpRangeCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
 import com.cloud.api.commands.UpdatePodCmd;
@@ -1924,5 +1925,19 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 			s_logger.error("Unable to add the new config entry:",ex);
 			return false;
 		}
+	}
+
+	@Override
+	public boolean deleteVlanAnIpRange(DeleteVlanIpRangeCmd cmd) throws InvalidParameterValueException {
+		
+    	Long vlanDbId = cmd.getId();
+    	Long userId = UserContext.current().getUserId();
+    	
+    	if (userId == null) {
+            userId = Long.valueOf(User.UID_SYSTEM);
+        }
+
+    	return deleteVlanAndPublicIpRange(userId, vlanDbId);
+		
 	}   
 }

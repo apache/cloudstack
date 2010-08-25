@@ -1828,10 +1828,10 @@ public class ManagementServerImpl implements ManagementServer {
 		return _configMgr.createVlanAndPublicIpRange(userId, vlanType, zoneId, accountId, podId, vlanId, vlanGateway, vlanNetmask, startIP, endIP);
     }
 
-    @Override
-    public boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId) throws InvalidParameterValueException {
-        return _configMgr.deleteVlanAndPublicIpRange(userId, vlanDbId);
-    }
+//    @Override
+//    public boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId) throws InvalidParameterValueException {
+//        return _configMgr.deleteVlanAndPublicIpRange(userId, vlanDbId);
+//    }
 
     @Override
     public VolumeVO createVolume(long userId, long accountId, String name, long zoneId, long diskOfferingId, long startEventId, long size) throws InternalErrorException {

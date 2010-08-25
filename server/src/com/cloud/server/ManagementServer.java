@@ -468,7 +468,7 @@ public interface ManagementServer {
 	 * @param vlanDbId
 	 * @return success/failure
 	 */
-	boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId) throws InvalidParameterValueException;
+//	boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId) throws InvalidParameterValueException;
         
     /**
      * Searches for vlan by the specified search criteria
