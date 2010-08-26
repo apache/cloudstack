@@ -1602,16 +1602,23 @@ a:visited {
 }
 
 .midmenu_content.selected{
-	background:#626262 url(../images/leftmenu_hover.gif) repeat-x top left;
+	background:#626262 url(../images/leftmenu_hover.gif) repeat-x top left;7497ae url(../images/mid_addingbg.gif) repeat-x top left;
 	color:#FFF;
 }
 
+.midmenu_content.adding{
+	background:#7497ae url(../images/mid_addingbg.gif) repeat-x top left;
+	color:#FFF;
+}
 /*
 .midmenu_content:hover{
 	background:#626262 url(../images/leftmenu_hover.gif) repeat-x top left;
 	color:#FFF;
 }
 */
+
+
+
 
 .midmenu_icons  {
 	width:8px;
@@ -1929,6 +1936,25 @@ a:visited {
 	height:16px;
 	float:left;
 	background:url(../images/selected_loader.gif) no-repeat top left;
+	margin:5px 0 0 0;
+	padding:0;
+}
+
+.midmenu_addingloader {
+	width:16px;
+	height:16px;
+	float:left;
+	background:url(../images/adding_loader.gif) no-repeat top left;
+	margin:2px 0 0 19px;
+	display:inline;
+	padding:0;
+}
+
+.midmenu_defaultloader {
+	width:16px;
+	height:16px;
+	float:left;
+	background:url(../images/mid_default.gif) no-repeat top left;
 	margin:5px 0 0 0;
 	padding:0;
 }

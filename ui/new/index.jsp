@@ -65,7 +65,7 @@
                                 <li>
                                     <div class="search_textbg">
                                         <input class="text" type="text" name="search_input" />
-                                        <div style="display:none;" class="search_closebutton"></div>
+                                        <div class="search_closebutton" style="display:none;"></div>
                                     </div>
                                 </li>
                             </ol>
@@ -239,18 +239,26 @@
                 <!-- Mid Menu starts here-->
                 <div class="midmenu_panel">
                     <div class="midmenu_box" id="midmenu_container">
-                        <!--
+                    	<div class="midmenu_list">
+                        	<div class="midmenu_content adding">
+                                    <div class="midmenu_textbox">
+                                    	<p><strong>Adding &hellip;</strong></p>
+                                    </div>
+                                    <div class="midmenu_addingloader"></div>
+                             </div>
+                        </div>
+                        
                         	<div class="midmenu_list">
-                            	<div class="midmenu_content selected">
+                            	<div class="midmenu_content">
                                 	<div class="midmenu_icons"><img src="images/status_green.png" alt="Running" /></div>
                                     <div class="midmenu_textbox">
                                     	<p><strong>Instance 1</strong></p>
                                         <p>IP Address: 10.1.1.2</p>
                                     </div>
-                                    <div class="midmenu_selectedloader"></div>
+                                    <div class="midmenu_defaultloader"></div>
                                 </div>
                             </div>
-                            
+                       <!--
                             <div class="midmenu_list">
                             	<div class="midmenu_content">
                                 	<div class="midmenu_icons"><img src="images/status_red.png" alt="Running" /></div>
