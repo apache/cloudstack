@@ -29,7 +29,7 @@ $(document).ready(function() {
 	mainContainer = $("#maincontentarea");
 
 	// Tab Links, dashboard is the initial active tab
-	mainContainer.load("content/tab_dashboard.html");
+	mainContainer.load("jsp/tab_dashboard.jsp");
 	
 	// Default AJAX Setup
 	$.ajaxSetup({
@@ -278,39 +278,39 @@ $(document).ready(function() {
 		if (tabId == "menutab_dashboard_user" || tabId == "menutab_dashboard_root" || tabId == "menutab_dashboard_domain") {
 			showDashboardTab();
 		} else if (tabId == "menutab_vm") {
-		    mainContainer.load("content/tab_instances.html", function() {
+		    mainContainer.load("jsp/tab_instances.jsp", function() {
 			    showInstancesTab(tab.data("domainId"), tab.data("account"));
 			});		
 		} else if (tabId == "menutab_networking") {
-		    mainContainer.load("content/tab_networking.html", function() {		
+		    mainContainer.load("jsp/tab_networking.jsp", function() {		
 			    showNetworkingTab(tab.data("domainId"), tab.data("account"));
 			});
 		} else if (tabId == "menutab_templates") {
-		    mainContainer.load("content/tab_templates.html", function() {
+		    mainContainer.load("jsp/tab_templates.jsp", function() {
 			    showTemplatesTab();
 			});
 		} else if (tabId == "menutab_events") {
-		    mainContainer.load("content/tab_events.html", function() {			   
+		    mainContainer.load("jsp/tab_events.jsp", function() {			   
 			    showEventsTab(tab.data("showEvents"));
 			});
 		} else if (tabId == "menutab_hosts") {
-		    mainContainer.load("content/tab_hosts.html", function() {	
+		    mainContainer.load("jsp/tab_hosts.jsp", function() {	
 			    showHostsTab();
 			});
 	    } else if (tabId == "menutab_storage") {
-	        mainContainer.load("content/tab_storage.html", function() {		
+	        mainContainer.load("jsp/tab_storage.jsp", function() {		
 			    showStorageTab(tab.data("domainId"), tab.data("targetTab"));
 			});
 		} else if (tabId == "menutab_accounts") {
-		    mainContainer.load("content/tab_accounts.html", function() {	
+		    mainContainer.load("jsp/tab_accounts.jsp", function() {	
 			    showAccountsTab(tab.data("domainId"));
 			});
 		} else if (tabId == "menutab_domain") {
-		    mainContainer.load("content/tab_domains.html", function() {	   
+		    mainContainer.load("jsp/tab_domains.jsp", function() {	   
 			    showDomainsTab();
 			});
 		} else if (tabId == "menutab_configuration") {
-		    mainContainer.load("content/tab_configuration.html", function() {
+		    mainContainer.load("jsp/tab_configuration.jsp", function() {
 			    showConfigurationTab();
 			});
 		} else {
@@ -335,7 +335,7 @@ $(document).ready(function() {
 	
 	// Dashboard Tab
 	function showDashboardTab() {
-		mainContainer.load("content/tab_dashboard.html", function() {
+		mainContainer.load("jsp/tab_dashboard.jsp", function() {
 			$(".header_topright #header_username").text($.cookie("username"));
 			
 			if (isAdmin()) {

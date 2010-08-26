@@ -1,4 +1,8 @@
-<script type="text/javascript" src="scripts/cloud.core.accounts.js"></script>
+<%@ page import="java.util.Date" %>
+<%
+long milliseconds = new Date().getTime();
+%>
+<script type="text/javascript" src="scripts/cloud.core.accounts.js?t=<%=milliseconds%>"></script>
 	
 <!-- Accounts -->
 <div class="maincontent" style="display:block;" id="submenu_content_account">

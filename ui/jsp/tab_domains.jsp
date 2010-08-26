@@ -1,4 +1,8 @@
-<script type="text/javascript" src="scripts/cloud.core.domains.js"></script>
+<%@ page import="java.util.Date" %>
+<%
+long milliseconds = new Date().getTime();
+%>
+<script type="text/javascript" src="scripts/cloud.core.domains.js?t=<%=milliseconds%>"></script>
 	
 <!-- Content Panel -->
 <div class="maincontent" style="display:block;" id="submenu_content_domains">

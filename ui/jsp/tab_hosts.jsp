@@ -1,4 +1,8 @@
-<script type="text/javascript" src="scripts/cloud.core.hosts.js"></script>
+<%@ page import="java.util.Date" %>
+<%
+long milliseconds = new Date().getTime();
+%>
+<script type="text/javascript" src="scripts/cloud.core.hosts.js?t=<%=milliseconds%>"></script>
 	
 <div class="maincontent" id="submenu_content_routing" style="display:block">
 	<div id="maincontent_title">

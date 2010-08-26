@@ -1,4 +1,9 @@
-<script type="text/javascript" src="scripts/cloud.core.templates.js"></script>
+<%@ page import="java.util.Date" %>
+<%
+long milliseconds = new Date().getTime();
+%>
+
+<script type="text/javascript" src="scripts/cloud.core.templates.js?t=<%=milliseconds%>"></script>
 
 <div class="submenu_links">		
     <div class="submenu_links_on" id="submenu_template">Template</div>

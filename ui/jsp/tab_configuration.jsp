@@ -1,4 +1,8 @@
-<script type="text/javascript" src="scripts/cloud.core.configuration.js"></script>
+<%@ page import="java.util.Date" %>
+<%
+long milliseconds = new Date().getTime();
+%>
+<script type="text/javascript" src="scripts/cloud.core.configuration.js?t=<%=milliseconds%>"></script>
 	
 <!-- Content Panel -->
 <!-- Submenu -->
