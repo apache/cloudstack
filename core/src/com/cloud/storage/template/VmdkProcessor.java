@@ -20,20 +20,22 @@ public class VmdkProcessor implements Processor {
     @Override
     public FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException {
         if (format != null) {
-            s_logger.debug("We currently don't handle conversion from " + format + " to VMDK.");
+        	if(s_logger.isInfoEnabled())
+        		s_logger.info("We currently don't handle conversion from " + format + " to VMDK.");
             return null;
         }
         
         s_logger.info("Template processing. templatePath: " + templatePath + ", templateName: " + templateName);
-        String templateFilePath = templatePath + File.separator + templateName + ".tar.bz2";
+        String templateFilePath = templatePath + File.separator + templateName + ImageFormat.VMDK.getFileExtension();
         if (!_storage.exists(templateFilePath)) {
-            s_logger.debug("Unable to find the vmware template file: " + templateFilePath);
+        	if(s_logger.isInfoEnabled())
+        		s_logger.info("Unable to find the vmware template file: " + templateFilePath);
             return null;
         }
         
         FormatInfo info = new FormatInfo();
         info.format = ImageFormat.VMDK;
-        info.filename = templateName + ".tar.bz2";
+        info.filename = templateName + ImageFormat.VMDK.getFileExtension();
         info.size = _storage.getSize(templateFilePath);
         info.virtualSize = info.size;
         return info;
