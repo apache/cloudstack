@@ -134,6 +134,7 @@ import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.CreatePrivateTemplateCommand;
+import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.StoragePoolTO;
@@ -1116,6 +1117,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((MaintainCommand) cmd);
             } else if (cmd instanceof CreateCommand) {
                 return execute((CreateCommand) cmd);
+            } else if (cmd instanceof DestroyCommand) {
+                return execute((DestroyCommand) cmd);
             } else if (cmd instanceof PrimaryStorageDownloadCommand) {
                 return execute((PrimaryStorageDownloadCommand) cmd);
             } else if (cmd instanceof CreatePrivateTemplateCommand) {
@@ -1225,6 +1228,25 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	  }
           }
     }
+    
+    public Answer execute(DestroyCommand cmd) {
+    	 VolumeTO vol = cmd.getVolume();
+
+    	 StorageVol volume = getVolume(vol.getPath());
+    	 if (volume == null) {
+    		 s_logger.debug("Failed to find the volume: " + vol.getPath());
+    		 return new Answer(cmd, true, "Success");
+    	 }
+    	 try {
+    		 volume.delete(0);
+    		 volume.free();
+    	 } catch (LibvirtException e) {
+    		 s_logger.debug("Failed to delete volume: " + e.toString());
+    		 return new Answer(cmd, false, e.toString());
+    	 }
+    	 return new Answer(cmd, true, "Success");
+    }
+    
     protected ManageSnapshotAnswer execute(final ManageSnapshotCommand cmd) {
     	String snapshotName = cmd.getSnapshotName();
     	String VolPath = cmd.getVolumePath();
