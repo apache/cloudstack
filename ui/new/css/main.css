@@ -1354,7 +1354,7 @@ a:visited {
 }
 
 .searchpanel .text{
-	width:122px;
+	width:116px;
 	height:14px;
 	float:left;
 	background:#FFF repeat top left;
@@ -1365,6 +1365,22 @@ a:visited {
 	margin:1px 0 0 20px;
 	display:inline;
 	padding:0;
+}
+
+.search_closebutton {
+	width:12px;
+	height:12px;
+	background:url(../images/search_closeicon.gif) no-repeat top left;
+	float:left;
+	margin:2px 0 0 2px;
+	display:inline;
+	padding:0;
+	cursor:pointer;
+	cursor:hand;
+}
+
+.search_closebutton:hover {
+	background:url(../images/search_closeicon_hover.gif) no-repeat top left;
 }
 
 .search_textbg {
@@ -1382,7 +1398,7 @@ a:visited {
 	float:left;
 	margin:0;
 	padding:0;
-	background:url(../images/actionpanel_border.gif) no-repeat top right;
+	background:url(../images/actionpanel_border.gif) no-repeat top left;
 	
 }
 
@@ -1931,7 +1947,7 @@ a:visited {
 }
 
 .info_detailbox {
-	width:99%;
+	width:100%;
 	height:auto;
 	float:left;
 	background:#fffbe6 repeat top left;
@@ -1956,29 +1972,7 @@ a:visited {
 	color:#a90000;
 }
 
-.info_detailbox {
-	width:99%;
-	height:auto;
-	float:left;
-	background:#fffbe6 repeat top left;
-	border:1px dashed #CCC;
-	color:#333;
-	margin:0 0 0 0;
-	padding:0;
-}
-
-.info_detailbox p{
-	width:auto;
-	height:auto;
-	float:left;
-	text-align:left;
-	font-size:11px;
-	margin:10px;
-	padding:0;
-}
-
-.info_detailbox.errorbox {
-	background:#ffe5e5 repeat top left;
-	color:#a90000;
+.thanks box {
+		
 }
 
