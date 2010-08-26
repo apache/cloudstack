@@ -94,7 +94,7 @@
 
   <target name="package-agent" depends="-init-package, package-oss-systemvm,  build-kvm-domr-patch, package-agent-common">
     <zip destfile="${dist.dir}/agent.zip" duplicate="preserve" update="true">
-      <zipfileset dir="${dist.dir}" prefix="scripts/vm/hypervisor/kvm">
+      <zipfileset dir="${kvm.patch.dist.dir}" prefix="scripts/vm/hypervisor/kvm">
         <include name="patch.tgz" />
       </zipfileset>
       <zipfileset dir="${dist.dir}" prefix="vms" filemode="555">
@@ -102,6 +102,18 @@
       </zipfileset>
     </zip>
   </target>
+
+  <target name="package-oss-systemvm-iso" depends="-init-package, package-oss-systemvm,  build-xenserver-domr-patch">
+    <exec executable="mkisofs" dir="${dist.dir}">
+      <arg value="-quiet"/>
+      <arg value="-r"/>
+      <arg value="-o"/>
+      <arg value="systemvm.iso"/>
+      <arg value="systemvm.zip"/>
+      <arg value="patches/xenserver/patch.tgz"/>
+    </exec>
+  </target>
+
 
   <target name="package-agent-simulator" depends="-init-package">
     <delete file="${dist.dir}/agent-simulator.zip" />
@@ -123,7 +135,7 @@
     </zip>
   </target>
 
-  <target name="build-all" depends="build-opensource, build-kvm-domr-patch, build-ui, build-war-oss, package-oss-systemvm">
+  <target name="build-all" depends="build-opensource, build-kvm-domr-patch, build-ui, build-war-oss, package-oss-systemvm-iso">
   </target>
 
   <target name="build-war-oss" depends="-init-package" description="Compile the GWT client UI and builds WAR file.">
