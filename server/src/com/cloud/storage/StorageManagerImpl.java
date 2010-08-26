@@ -65,6 +65,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CreateStoragePoolCmd;
 import com.cloud.api.commands.DeletePoolCmd;
+import com.cloud.api.commands.DeleteVolumeCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobExecutor;
@@ -2251,4 +2252,10 @@ public class StorageManagerImpl implements StorageManager {
     		return false;
     	}
     }
+
+	@Override
+	public boolean deleteVolume(DeleteVolumeCmd cmd) {
+		
+		return false;
+	}
 }

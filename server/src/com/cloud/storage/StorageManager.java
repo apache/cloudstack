@@ -24,6 +24,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.api.commands.CreateStoragePoolCmd;
 import com.cloud.api.commands.DeletePoolCmd;
+import com.cloud.api.commands.DeleteVolumeCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -206,6 +207,7 @@ public interface StorageManager extends Manager {
 	 * @param volume
 	 */
 	void destroyVolume(VolumeVO volume);
+	boolean deleteVolume(DeleteVolumeCmd cmd);
 	
 	/** Create capacity entries in the op capacity table
 	 * @param storagePool

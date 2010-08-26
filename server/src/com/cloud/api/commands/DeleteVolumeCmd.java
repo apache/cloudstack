@@ -34,12 +34,6 @@ import com.cloud.utils.Pair;
 public class DeleteVolumeCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(DeleteVolumeCmd.class.getName());
     private static final String s_name = "deletevolumeresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -64,10 +58,6 @@ public class DeleteVolumeCmd extends BaseCmd {
 
     public String getName() {
         return s_name;
-    }
-    
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
     }
 
     public static String getResultObjectName() {
@@ -113,4 +103,11 @@ public class DeleteVolumeCmd extends BaseCmd {
     		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete volume: " + ex.getMessage());
     	}
     }
+
+
+	@Override
+	public String getResponse() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
