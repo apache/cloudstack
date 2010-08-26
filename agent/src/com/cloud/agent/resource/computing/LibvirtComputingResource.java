@@ -1199,7 +1199,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	 String mountPath = _mountPoint + File.separator + secondaryStorage.getUUIDString() + templateInstallFolder;
         	 File mpfile = new File(mountPath);
         	 if (!mpfile.exists()) {
-        		 mpfile.mkdir();
+        		 mpfile.mkdirs();
         	 }
         	 
         	 // Create a SR for the secondary storage installation folder
