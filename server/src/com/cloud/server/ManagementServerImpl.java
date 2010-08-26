@@ -8594,6 +8594,26 @@ public class ManagementServerImpl implements ManagementServer {
 		return false;
 	}
 
+    @Override
+    public Map<String, String> listCapabilities() {
+        Map<String, String> capabilities = new HashMap<String, String>();
+        
+        String networkGroupsEnabled = _configs.get("direct.attach.network.groups.enabled");
+        if(networkGroupsEnabled == null) 
+            networkGroupsEnabled = "false";             
+
+        capabilities.put("networkGroupsEnabled", networkGroupsEnabled);
+        
+        final Class<?> c = this.getClass();
+        String fullVersion = c.getPackage().getImplementationVersion();
+        String version = "unknown"; 
+        if(fullVersion.length() > 0){
+            version = fullVersion.substring(0,fullVersion.lastIndexOf("."));
+        }
+        capabilities.put("cloudStackVersion", version);
+        return capabilities;
+    }
+
 
 }
 
