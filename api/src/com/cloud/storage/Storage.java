@@ -23,7 +23,7 @@ public class Storage {
         RAW(false, false, false),
         VHD(true, true, true),
         ISO(false, false, false),
-        VMDK(true, true, true, ".tar.bz2");
+        VMDK(true, true, true);
         
         private final boolean thinProvisioned;
         private final boolean supportSparse;
