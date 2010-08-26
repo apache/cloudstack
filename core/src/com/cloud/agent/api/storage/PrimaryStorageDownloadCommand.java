@@ -28,6 +28,16 @@ public class PrimaryStorageDownloadCommand extends AbstractDownloadCommand {
 	String localPath;
 	String poolUuid;
 	long poolId;
+	
+	//
+	// Temporary hacking to make vmware work quickly, expose NFS raw information to allow
+	// agent do quick copy over NFS.
+	//
+	// provide storage URL (it contains all information to help agent resource to mount the
+	// storage if needed, example of such URL may be as following
+	// 		nfs://192.168.10.231/export/home/kelven/vmware-test/secondary
+	String secondaryStorageUrl;
+	String primaryStorageUrl;
 
 	protected PrimaryStorageDownloadCommand() {
 	}
@@ -52,6 +62,22 @@ public class PrimaryStorageDownloadCommand extends AbstractDownloadCommand {
     
     public String getLocalPath() {
     	return localPath;
+    }
+    
+    public void setSecondaryStorageUrl(String url) {
+    	secondaryStorageUrl = url;
+    }
+    
+    public String getSecondaryStorageUrl() {
+    	return secondaryStorageUrl;
+    }
+    
+    public void setPrimaryStorageUrl(String url) {
+    	primaryStorageUrl = url;
+    }
+    
+    public String getPrimaryStorageUrl() {
+    	return primaryStorageUrl;
     }
     
     @Override

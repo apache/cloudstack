@@ -2187,4 +2187,5 @@ public interface ManagementServer {
 	
 	boolean checkIfMaintenable(long hostId);
 
+    Map<String, String> listCapabilities();
 }

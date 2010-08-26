@@ -139,6 +139,7 @@ listSystemVms=com.cloud.api.commands.ListSystemVMsCmd;1
 updateConfiguration=com.cloud.api.commands.UpdateCfgCmd;1
 listConfigurations=com.cloud.api.commands.ListCfgsByCmd;1
 addConfig=com.cloud.api.commands.AddConfigCmd;15
+listCapabilities=com.cloud.api.commands.ListCapabilitiesCmd;15
 
 #### pod commands
 createPod=com.cloud.api.commands.CreatePodCmd;1

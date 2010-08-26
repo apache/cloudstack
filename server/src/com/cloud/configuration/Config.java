@@ -146,6 +146,7 @@ public enum Config {
 	DirectAttachNetworkExternalAPIURL("Advanced", ManagementServer.class, String.class, "direct.attach.network.externalIpAllocator.url", null, "Direct-attach VMs using external DHCP server (API url)", null),
 	DirectAttachUntaggedVlanEnabled("Advanced", ManagementServer.class, String.class, "direct.attach.untagged.vlan.enabled", "false", "Indicate whether the system supports direct-attached untagged vlan", "true,false"),
 	CheckPodCIDRs("Advanced", ManagementServer.class, String.class, "check.pod.cidrs", "true", "If true, different pods must belong to different CIDR subnets.", "true,false"),
+	MD5Hashed("Advanced", ManagementServer.class, Boolean.class, "security.password.md5hashed", "true", "If set to false password is sent in clear text or else md5hashed", null),
 	
 	// XenServer
     VmAllocationAlgorithm("Advanced", ManagementServer.class, String.class, "vm.allocation.algorithm", "random", "If 'random', hosts within a pod will be randomly considered for VM/volume allocation. If 'firstfit', they will be considered on a first-fit basis.", null),

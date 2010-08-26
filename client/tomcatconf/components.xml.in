@@ -217,8 +217,9 @@
         <dao name="IP Addresses configuration server" class="com.cloud.network.dao.IPAddressDaoImpl"/>
 		<dao name="Datacenter IP Addresses configuration server" class="com.cloud.dc.dao.DataCenterIpAddressDaoImpl"/>
 		<dao name="domain router" class="com.cloud.vm.dao.DomainRouterDaoImpl"/>
-		<dao name="host zone configuration server" class="com.cloud.dc.dao.DataCenterDaoImpl">
-        </dao>
+		<dao name="host zone configuration server" class="com.cloud.dc.dao.DataCenterDaoImpl"/>
+        <dao name="Console Proxy" class="com.cloud.vm.dao.ConsoleProxyDaoImpl"/>
+        <dao name="Secondary Storage VM" class="com.cloud.vm.dao.SecondaryStorageVmDaoImpl"/>
         <dao name="host pod configuration server" class="com.cloud.dc.dao.HostPodDaoImpl">
         </dao>
 		<dao name="PodVlanMap configuration server" class="com.cloud.dc.dao.PodVlanMapDaoImpl"/>

@@ -23,16 +23,25 @@ public class Storage {
         RAW(false, false, false),
         VHD(true, true, true),
         ISO(false, false, false),
-        VMDK(true, true, true);
+        VMDK(true, true, true, "vmw.tar");
         
         private final boolean thinProvisioned;
         private final boolean supportSparse;
         private final boolean supportSnapshot;
+        private final String fileExtension;
         
         private ImageFormat(boolean thinProvisioned, boolean supportSparse, boolean supportSnapshot) {
             this.thinProvisioned = thinProvisioned;
             this.supportSparse = supportSparse;
             this.supportSnapshot = supportSnapshot;
+            fileExtension = null;
+        }
+        
+        private ImageFormat(boolean thinProvisioned, boolean supportSparse, boolean supportSnapshot, String fileExtension) {
+            this.thinProvisioned = thinProvisioned;
+            this.supportSparse = supportSparse;
+            this.supportSnapshot = supportSnapshot;
+            this.fileExtension = fileExtension;
         }
         
         public boolean isThinProvisioned() {
@@ -48,7 +57,10 @@ public class Storage {
         }
         
         public String getFileExtension() {
-            return toString().toLowerCase();
+        	if(fileExtension == null)
+        		return toString().toLowerCase();
+        	
+        	return fileExtension;
         }
     }
     

@@ -1,7 +1,8 @@
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones)
-    VALUES (1, 'routing', 'SystemVM Template', 0, now(), 'ext3', 0, 64, 1, 'http://nfs1.lab.vmops.com/templates/vmware/fedora11-x86.tar.bz2', '7957ff05cae838689eb53c7600b2fbe4', 0, 'SystemVM Template', 'VMDK', 47, 0, 1);
+    VALUES (1, 'routing', 'SystemVM Template', 0, now(), 'ext3', 0, 64, 1, 'http://nfs1.lab.vmops.com/templates/vmware/dummydomr.tar.bz2', '54c578d2c02759de4a9a8be7bd533df1', 0, 'SystemVM Template', 'VMDK', 47, 0, 1);
+    
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones)
-    VALUES (2, 'fedora11-x86', 'Fedora 11 x86', 1, now(), 'ext3', 0, 32, 1, 'http://nfs1.lab.vmops.com/templates/vmware/fedora11-x86.tar.bz2', '7957ff05cae838689eb53c7600b2fbe4', 0, 'Fedora 11 x86', 'VMDK', 47, 1, 1);
+    VALUES (2, 'fedora11-x86', 'Fedora11-x86', 1, now(), 'ext3', 0, 32, 1, 'http://nfs1.lab.vmops.com/templates/vmware/fedora11-x86.tar.bz2', '7957ff05cae838689eb53c7600b2fbe4', 0, 'Fedora 11 x86', 'VMDK', 47, 1, 1);
 
 INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (1, 'Windows');
 INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (2, 'Linux');
