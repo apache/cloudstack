@@ -24,21 +24,20 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.Manager;
 import com.cloud.utils.Pair;
 import com.cloud.vm.ConsoleProxyVO;
 
-public class DestroyConsoleProxyCmd extends BaseCmd {
+@Implementation(method="destroyConsoleProxy", manager=Manager.ConsoleProxyManager)
+public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(DestroyConsoleProxyCmd.class.getName());
 
     private static final String s_name = "destroyconsoleproxyresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-    }
     
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -65,10 +64,6 @@ public class DestroyConsoleProxyCmd extends BaseCmd {
         return s_name;
     }
     
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
-
     public List<Pair<String, Object>> execute(Map<String, Object> params) {
 	    Long proxyId = (Long)params.get(BaseCmd.Properties.ID.getName());
 	    
@@ -90,4 +85,11 @@ public class DestroyConsoleProxyCmd extends BaseCmd {
 	    returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
 	    return returnValues;
     }
+
+
+	@Override
+	public String getResponse() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
