@@ -1202,6 +1202,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         		 mpfile.mkdirs();
         	 }
         	 
+        	 
         	 // Create a SR for the secondary storage installation folder
         	 privateTemplStorage = getNfsSPbyURI(_conn, new URI(secondaryStorageURL + templateInstallFolder));
         	 snapshotVol = getVolume(snapshotUUID);
