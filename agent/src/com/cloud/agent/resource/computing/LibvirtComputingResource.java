@@ -1489,7 +1489,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	 String tmpltPath = _mountPoint + File.separator + secondaryStorage.getUUIDString() + templateInstallFolder;
         	 File mpfile = new File(tmpltPath);
         	 if (!mpfile.exists()) {
-        		 mpfile.mkdir();
+        		 mpfile.mkdirs();
         	 }
 
         	 Script command = new Script(_createTmplPath, _timeout, s_logger);
