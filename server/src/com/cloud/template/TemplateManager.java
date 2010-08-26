@@ -22,6 +22,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 
 import com.cloud.api.commands.CreateTemplateCmd;
+import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.DetachIsoCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
@@ -135,5 +136,6 @@ public interface TemplateManager extends Manager {
     void evictTemplateFromStoragePool(VMTemplateStoragePoolVO templatePoolVO);
     
     boolean templateIsDeleteable(VMTemplateHostVO templateHostRef);
-    
+ 
+    boolean deleteTemplate(DeleteTemplateCmd cmd) throws InvalidParameterValueException, InternalErrorException;
 }

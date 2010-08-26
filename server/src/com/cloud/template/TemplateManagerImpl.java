@@ -40,6 +40,7 @@ import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.manager.AgentManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.DetachIsoCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
@@ -892,8 +893,10 @@ public class TemplateManagerImpl implements TemplateManager {
         if (vmInstanceCheck == null) {
             throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, "Unable to find a virtual machine with id " + vmId);
         }
+        
+        String errMsg = "Unable to detach ISO from virtual machine ";
 
-        userId = accountAndUserValidation(account, userId, vmInstanceCheck);
+        userId = accountAndUserValidation(account, userId, vmInstanceCheck, null, errMsg);
         
         UserVm userVM = _userVmDao.findById(vmId);
         if (userVM == null) {
@@ -950,15 +953,14 @@ public class TemplateManagerImpl implements TemplateManager {
         return success;
     }
 
-	private Long accountAndUserValidation(Account account, Long userId,
-			UserVmVO vmInstanceCheck) {
+	private Long accountAndUserValidation(Account account, Long userId, UserVmVO vmInstanceCheck, VMTemplateVO template, String msg) {
 		if (account != null) {
             if (!isAdmin(account.getType())) {
                 if (account.getId().longValue() != vmInstanceCheck.getAccountId()) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to detach ISO from virtual machine " + vmInstanceCheck.getName() + " for this account");
+                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, msg + vmInstanceCheck!=null ? vmInstanceCheck.getName():template.getName() + " for this account");
                 }
             } else if (!_domainDao.isChildDomain(account.getDomainId(), vmInstanceCheck.getDomainId())) {
-                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to detach ISO from virtual machine " + vmInstanceCheck.getName() + ", permission denied.");
+                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, msg + vmInstanceCheck!=null ? vmInstanceCheck.getName():template.getName() + ", permission denied.");
             }
         }
 
@@ -973,5 +975,41 @@ public class TemplateManagerImpl implements TemplateManager {
 	    return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
 	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
 	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
+	}
+	
+	@Override
+    public boolean deleteTemplate(DeleteTemplateCmd cmd) throws InvalidParameterValueException, InternalErrorException{
+		
+        Long templateId = cmd.getId();
+        Long userId = UserContext.current().getUserId();
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long zoneId = (Long)cmd.getZoneId();
+        
+        VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
+        if (template == null) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find template with id " + templateId);
+        }
+        
+        userId = accountAndUserValidation(account, userId, null, template, "Unable to delete template " );
+        
+    	UserVO user = _userDao.findById(userId);
+    	if (user == null) {
+    		throw new InvalidParameterValueException("Please specify a valid user.");
+    	}
+    	
+    	if (template.getFormat() == ImageFormat.ISO) {
+    		throw new InvalidParameterValueException("Please specify a valid template.");
+    	}
+    	
+    	if (template.getUniqueName().equals("routing")) {
+    		throw new InvalidParameterValueException("The DomR template cannot be deleted.");
+    	}
+    	
+    	if (zoneId != null && (_hostDao.findSecondaryStorageHost(zoneId) == null)) {
+    		throw new InvalidParameterValueException("Failed to find a secondary storage host in the specified zone.");
+    	}
+
+    	long eventId = EventUtils.saveScheduledEvent(userId, account.getId(), EventTypes.EVENT_TEMPLATE_DELETE, "Scheduling the template for deletion");
+    	return delete(userId, templateId, zoneId, eventId);
 	}
 }
