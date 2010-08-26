@@ -242,16 +242,6 @@ public class DateUtil {
 	
 	// test only
 	public static void main(String[] args) {
-		try {
-			URI uri = new URI("nfs://192.168.10.231/export/home/kelven/vmware-test/secondary");
-			System.out.println("protocol: " + uri.getScheme());
-			System.out.println("Host: " + uri.getHost());
-			System.out.println("path: " + uri.getPath());
-			System.out.println("port: " + uri.getPort());
-		} catch(Exception e) {
-		}
-		
-/*		
 		TimeZone localTimezone = Calendar.getInstance().getTimeZone();
 		TimeZone gmtTimezone = TimeZone.getTimeZone("GMT");
 		TimeZone estTimezone = TimeZone.getTimeZone("EST");
@@ -274,7 +264,6 @@ public class DateUtil {
 			System.out.println("Parsed TZ time string : "+ dtParsed.toString());
 		} catch (ParseException e) {
 		}
-*/		
 	}
 }
 
