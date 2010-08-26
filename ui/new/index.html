@@ -65,6 +65,7 @@
                                 <li>
                                     <div class="search_textbg">
                                         <input class="text" type="text" name="search_input" />
+                                        <div style="display:none;" class="search_closebutton"></div>
                                     </div>
                                 </li>
                             </ol>
@@ -94,6 +95,16 @@
                                     Add</div>
                             </div>
                         </div>
+                        
+                        <div class="actionpanel_button_wrapper" id="add_link" style="display: block; float:right; background:none; ">
+                            <div class="actionpanel_button">
+                                <div class="actionpanel_button_icons">
+                                    <img src="images/help_actionicon.png" alt="Add" /></div>
+                                <div class="actionpanel_button_links">
+                                    Help</div>
+                            </div>
+                        </div>
+                        
                     </div>
                     <!-- Action Panel ends here-->
                     <!-- Right Panel starts here-->
@@ -585,7 +596,7 @@
                     <strong id="vm_name"></strong>
                 </p>
                 <p id="ip_address_container">
-                    <span id="label">IP Address: </span><span id="ip_address"></span>
+                    IP Address: <span id="ip_address"></span>
                 </p>
             </div>
             <div class="midmenu_selectedloader" id="spinning_wheel" style="display: none;">
