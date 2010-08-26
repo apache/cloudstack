@@ -1830,7 +1830,9 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         _offering = _serviceOfferingDao.persistSystemServiceOffering(_offering);
         _template = _templateDao.findById(_routerTemplateId);
         if (_template == null) {
-            throw new ConfigurationException("Unable to find the template for the router: " + _routerTemplateId);
+        	s_logger.error("Unable to find system vm template.");
+        	
+            // throw new ConfigurationException("Unable to find the template for the router: " + _routerTemplateId);
         }
         
         _publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmPublicNetwork, TrafficType.Public, null);

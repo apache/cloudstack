@@ -1370,7 +1370,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		_serviceOffering.setUniqueName("Cloud.com-SecondaryStorage");
 		_serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
         _template = _templateDao.findConsoleProxyTemplate();
-        if (_template == null) {
+        if (_template == null && _useServiceVM) {
             throw new ConfigurationException("Unable to find the template for secondary storage vm VMs");
         }
  
