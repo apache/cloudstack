@@ -58,7 +58,6 @@ ALTER TABLE `cloud`.`op_vm_host` ADD CONSTRAINT `fk_op_vm_host__id` FOREIGN KEY 
 
 ALTER TABLE `cloud`.`user` ADD INDEX `i_user__secret_key_removed`(`secret_key`, `removed`);
 ALTER TABLE `cloud`.`user` ADD INDEX `i_user__removed`(`removed`);
-ALTER TABLE `cloud`.`user` ADD UNIQUE `i_user__username__removed`(`username`, `removed`);
 ALTER TABLE `cloud`.`user` ADD UNIQUE `i_user__api_key`(`api_key`);
 ALTER TABLE `cloud`.`user` ADD CONSTRAINT `fk_user__account_id` FOREIGN KEY `fk_user__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`user` ADD INDEX `i_user__account_id`(`account_id`);
