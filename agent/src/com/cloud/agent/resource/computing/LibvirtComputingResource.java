@@ -1231,13 +1231,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     
     public Answer execute(DestroyCommand cmd) {
     	 VolumeTO vol = cmd.getVolume();
-
-    	 StorageVol volume = getVolume(vol.getPath());
-    	 if (volume == null) {
-    		 s_logger.debug("Failed to find the volume: " + vol.getPath());
-    		 return new Answer(cmd, true, "Success");
-    	 }
+    	
     	 try {
+    		 StorageVol volume = getVolume(vol.getPath());
+        	 if (volume == null) {
+        		 s_logger.debug("Failed to find the volume: " + vol.getPath());
+        		 return new Answer(cmd, true, "Success");
+        	 }
     		 volume.delete(0);
     		 volume.free();
     	 } catch (LibvirtException e) {
@@ -1430,7 +1430,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		 String templatePath = _mountPoint + File.separator + secondaryPool.getUUIDString() + File.separator + templateInstallFolder;	 
     		 File f = new File(templatePath);
     		 if (!f.exists()) {
-    			 f.mkdir();
+    			 f.mkdirs();
     		 }
     		 String tmplPath = templateInstallFolder + File.separator + tmplFileName;
     		 Script command = new Script(_createTmplPath, _timeout, s_logger);
@@ -1704,7 +1704,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     														  pool.getHostAddress(), pool.getPath(), targetPath);
     	File tpFile = new File(targetPath);
 		  if (!tpFile.exists()) {
-			  tpFile.mkdir();
+			  tpFile.mkdirs();
 		  }
     	StoragePool sp = null;
     	try {
@@ -3366,7 +3366,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	 
     	 File logPath = new File("/var/run/cloud");
     	 if (!logPath.exists()) {
-    		 logPath.mkdir();
+    		 logPath.mkdirs();
     	 }
     	 
     	 cleanup_rules_for_dead_vms();
