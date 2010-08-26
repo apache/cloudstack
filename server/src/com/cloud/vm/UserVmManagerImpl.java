@@ -37,8 +37,6 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import net.sf.ehcache.config.Configuration;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -66,6 +64,7 @@ import com.cloud.agent.manager.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
@@ -84,7 +83,6 @@ import com.cloud.async.executor.OperationResponse;
 import com.cloud.async.executor.RebootVMExecutor;
 import com.cloud.async.executor.StartVMExecutor;
 import com.cloud.async.executor.StopVMExecutor;
-import com.cloud.async.executor.UpgradeVMParam;
 import com.cloud.async.executor.VMExecutorHelper;
 import com.cloud.async.executor.VMOperationListener;
 import com.cloud.async.executor.VMOperationParam;
@@ -114,6 +112,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
@@ -139,8 +138,6 @@ import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offering.ServiceOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
-import com.cloud.serializer.GsonHelper;
-import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -198,7 +195,6 @@ import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.google.gson.Gson;
 
 @Local(value={UserVmManager.class})
 public class UserVmManagerImpl implements UserVmManager {
@@ -735,9 +731,7 @@ public class UserVmManagerImpl implements UserVmManager {
 
         VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
         ServiceOffering offering = _offeringDao.findById(vm.getServiceOfferingId());
-        
-        long diskOfferingId = -1;
-        
+
         // If an ISO path is passed in, boot from that ISO
         // Else, check if the VM already has an ISO attached to it. If so, start the VM with that ISO inserted, but don't boot from it.
         boolean bootFromISO = false;
@@ -1197,8 +1191,7 @@ public class UserVmManagerImpl implements UserVmManager {
     /*
      * TODO: cleanup eventually - Refactored API call
      */
-    public boolean upgradeVirtualMachine(UpgradeVMCmd cmd) throws ServerApiException, InvalidParameterValueException
-    {
+    public boolean upgradeVirtualMachine(UpgradeVMCmd cmd) throws ServerApiException, InvalidParameterValueException {
         Long virtualMachineId = cmd.getId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
         Account account = (Account)UserContext.current().getAccountObject();
@@ -1262,8 +1255,9 @@ public class UserVmManagerImpl implements UserVmManager {
             											 "current service offering. Current service offering tags: " + currentTags + "; " +
             											 "new service offering tags: " + newTags);
             }
-            
-			long eventId = EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_UPGRADE, "upgrading Vm with Id: "+vmInstance.getId());
+
+            // FIXME:  save this eventId somewhere as part of the async process?
+			/*long eventId = */EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_UPGRADE, "upgrading Vm with Id: "+vmInstance.getId());
  
             vmInstance.setServiceOfferingId(serviceOfferingId);
             vmInstance.setHaEnabled(_serviceOfferingDao.findById(serviceOfferingId).getOfferHA());
@@ -1844,7 +1838,7 @@ public class UserVmManagerImpl implements UserVmManager {
             		s_logger.debug("Execute asynchronize destroy VM command:" + resultDescription);            	
                 return response;
             }
-            long childEventId = executor.getAsyncJobMgr().getExecutorContext().getManagementServer().saveStartedEvent(param.getUserId(), param.getAccountId(),
+            long childEventId = EventUtils.saveStartedEvent(param.getUserId(), param.getAccountId(),
             		EventTypes.EVENT_VM_STOP, "stopping vm " + vm.getName(), 0);
             param.setChildEventId(childEventId);
             StopCommand cmd = new StopCommand(vm, vm.getInstanceName(), vm.getVnet());
@@ -2585,10 +2579,17 @@ public class UserVmManagerImpl implements UserVmManager {
             }
         }
     }
-    
-    public VMTemplateVO createPrivateTemplateRecord(Long userId, long volumeId, String name, String description, long guestOSId, Boolean requiresHvm, Integer bits, Boolean passwordEnabled, boolean isPublic, boolean featured)
-    	throws InvalidParameterValueException {
 
+    @Override
+    public VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Long userId = UserContext.current().getUserId();
+        if (userId == null) {
+            userId = User.UID_SYSTEM;
+        }
+
+        Account account = (Account)UserContext.current().getAccountObject();
+        boolean isAdmin = ((account == null) || isAdmin(account.getType()));
+        
     	VMTemplateVO privateTemplate = null;
 
     	UserVO user = _userDao.findById(userId);
@@ -2597,16 +2598,75 @@ public class UserVmManagerImpl implements UserVmManager {
     		throw new InvalidParameterValueException("User " + userId + " does not exist");
     	}
 
+    	Long volumeId = cmd.getVolumeId();
+    	Long snapshotId = cmd.getSnapshotId();
+    	if (volumeId == null) {
+    	    if (snapshotId == null) {
+                throw new InvalidParameterValueException("Failed to create private template record, neither volume ID nor snapshot ID were specified.");
+    	    }
+    	    SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
+    	    if (snapshot == null) {
+                throw new InvalidParameterValueException("Failed to create private template record, unable to find snapshot " + snapshotId);
+    	    }
+    	    volumeId = snapshot.getVolumeId();
+    	} else {
+    	    if (snapshotId != null) {
+                throw new InvalidParameterValueException("Failed to create private template record, please specify only one of volume ID (" + volumeId + ") and snapshot ID (" + snapshotId + ")");
+    	    }
+    	}
+
     	VolumeVO volume = _volsDao.findById(volumeId);
     	if (volume == null) {
             throw new InvalidParameterValueException("Volume with ID: " + volumeId + " does not exist");
     	}
 
+        if (!isAdmin) {
+            if (account.getId().longValue() != volume.getAccountId()) {
+                throw new PermissionDeniedException("Unable to create a template from volume with id " + volumeId + ", permission denied.");
+            }
+        } else if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId())) {
+            throw new PermissionDeniedException("Unable to create a template from volume with id " + volumeId + ", permission denied.");
+        }
+
+        String name = cmd.getTemplateName();
+        if ((name == null) || (name.length() > 32)) {
+            throw new InvalidParameterValueException("Template name cannot be null and should be less than 32 characters");
+        }
+
+        if (!name.matches("^[\\p{Alnum} ._-]+")) {
+            throw new InvalidParameterValueException("Only alphanumeric, space, dot, dashes and underscore characters allowed");
+        }
+        String uniqueName = Long.valueOf((userId == null)?1:userId).toString() + Long.valueOf(volumeId).toString() + UUID.nameUUIDFromBytes(name.getBytes()).toString();
+
+        VMTemplateVO existingTemplate = _templateDao.findByTemplateNameAccountId(name, volume.getAccountId());
+        if (existingTemplate != null) {
+            throw new InvalidParameterValueException("Failed to create private template " + name + ", a template with that name already exists.");
+        }
+
+        // do some parameter defaulting
+    	Integer bits = cmd.getBits();
+    	Boolean requiresHvm = cmd.getRequiresHvm();
+    	Boolean passwordEnabled = cmd.isPasswordEnabled();
+    	Boolean isPublic = cmd.isPublic();
+    	Boolean featured = cmd.isFeatured();
+
     	int bitsValue = ((bits == null) ? 64 : bits.intValue());
     	boolean requiresHvmValue = ((requiresHvm == null) ? true : requiresHvm.booleanValue());
     	boolean passwordEnabledValue = ((passwordEnabled == null) ? false : passwordEnabled.booleanValue());
+        if (isPublic == null) {
+            isPublic = Boolean.FALSE;
+        }   
+        
+        if (!isAdmin || featured == null) {
+            featured = Boolean.FALSE;
+        }
 
-    	// if the volume is a root disk, try to find out requiresHvm and bits if possible
+        boolean allowPublicUserTemplates = Boolean.parseBoolean(_configDao.getValue("allow.public.user.templates"));        
+        if (!isAdmin && !allowPublicUserTemplates && isPublic) {
+            throw new PermissionDeniedException("Failed to create template " + name + ", only private templates can be created.");
+        }
+
+        // if the volume is a root disk, try to find out requiresHvm and bits if possible
     	if (Volume.VolumeType.ROOT.equals(volume.getVolumeType())) {
     	    Long instanceId = volume.getInstanceId();
     	    if (instanceId != null) {
@@ -2621,13 +2681,14 @@ public class UserVmManagerImpl implements UserVmManager {
     	    }
     	}
 
+    	Long guestOSId = cmd.getOsTypeId();
     	GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
     	if (guestOS == null) {
     		throw new InvalidParameterValueException("GuestOS with ID: " + guestOSId + " does not exist.");
     	}
 
-        String uniqueName = Long.valueOf((userId == null)?1:userId).toString() + Long.valueOf(volumeId).toString() + UUID.nameUUIDFromBytes(name.getBytes()).toString();
     	Long nextTemplateId = _templateDao.getNextInSequence(Long.class, "id");
+    	String description = cmd.getDisplayText();
 
         privateTemplate = new VMTemplateVO(nextTemplateId,
                                            uniqueName,
@@ -2647,22 +2708,62 @@ public class UserVmManagerImpl implements UserVmManager {
                                            guestOS.getId(),
                                            true);
 
+        // FIXME:  scheduled events should get saved when the command is actually scheduled, not when it starts executing, need another callback
+        //         for when the command is scheduled?  Could this fit into the setup / execute / response lifecycle?  Right after setup you would
+        //         know your job is being scheduled, so you could save this kind of event in setup after verifying params.
+        /*long eventId = */EventUtils.saveScheduledEvent(userId, volume.getAccountId(), EventTypes.EVENT_TEMPLATE_CREATE, "creating template" +name);
+
         return _templateDao.persist(privateTemplate);
     }
 
     @Override @DB
-    public VMTemplateVO createPrivateTemplate(VMTemplateVO template, Long userId, long snapshotId, String name, String description) {
-    	VMTemplateVO privateTemplate = null;
-    	long templateId = template.getId();
-        SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
-        if (snapshot != null) {
-        	Long volumeId = snapshot.getVolumeId();
-            VolumeVO volume = _volsDao.findById(volumeId);
+    public VMTemplateVO createPrivateTemplate(CreateTemplateCmd command) throws InternalErrorException {
+        Long userId = UserContext.current().getUserId();
+        if (userId == null) {
+            userId = User.UID_SYSTEM;
+        }
+
+        Long volumeId = command.getVolumeId();
+        Long snapshotId = command.getSnapshotId();
+        SnapshotVO snapshot = null;
+
+        // Verify input parameters
+        if (snapshotId != null) {
+            snapshot = _snapshotDao.findById(snapshotId);
+
+            // Set the volumeId to that of the snapshot. All further input parameter checks will be done w.r.t the volume.
+            volumeId = snapshot.getVolumeId();
+        } else {
+            // We are create private template from volume. Create a snapshot, copy the vhd chain of the disk to secondary storage. 
+            // For template snapshot, we use a separate snapshot method.
+            snapshot = createTemplateSnapshot(userId, volumeId);
+            snapshotId = snapshot.getId();
+        }
+        
+        // The volume below could be destroyed or removed.
+        VolumeVO volume = _volsDao.findById(volumeId);
+
+        // If private template is created from Volume, check that the volume will not be active when the private template is created
+        if (snapshotId == null && !_storageMgr.volumeInactive(volume)) {
+            String msg = "Unable to create private template for volume: " + volume.getName() + "; volume is attached to a non-stopped VM.";
+
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info(msg);
+            }
+
+            throw new InternalErrorException(msg);
+        }
+
+        VMTemplateVO privateTemplate = null;
+    	long templateId = command.getId();
+        if (snapshotId != null) {
+            volume = _volsDao.findById(volumeId);
             StringBuilder userFolder = new StringBuilder();
             Formatter userFolderFormat = new Formatter(userFolder);
             userFolderFormat.format("u%06d", snapshot.getAccountId());
 
             String uniqueName = getRandomPrivateTemplateName();
+            String name = command.getTemplateName();
 
             long zoneId = volume.getDataCenterId();
             HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
@@ -2698,8 +2799,7 @@ public class UserVmManagerImpl implements UserVmManager {
                                                                    origTemplateInstallPath,
                                                                    templateId,
                                                                    name);
-            }
-            else {
+            } else {
                 cmd = new CreatePrivateTemplateCommand(secondaryStorageURL,
                                                        templateId,
                                                        volume.getAccountId(),
@@ -2768,14 +2868,10 @@ public class UserVmManagerImpl implements UserVmManager {
                 
                 // Increment the number of templates
                 _accountMgr.incrementResourceCount(volume.getAccountId(), ResourceType.template);
-                
             } else {                
-                
                 // Remove the template record
                 _templateDao.remove(templateId);
             }
-
-            
         }
         return privateTemplate;
     }

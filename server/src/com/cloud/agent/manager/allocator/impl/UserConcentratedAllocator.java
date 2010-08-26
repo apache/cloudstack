@@ -170,14 +170,13 @@ public class UserConcentratedAllocator implements PodAllocator {
                     		//
 	                        if ((capacity.getTotalCapacity() -
 	                        	calcHostAllocatedCpuMemoryCapacity(capacity.getHostOrPoolId(), capacityType)) >= capacityNeeded) {
-	                        	
+
 	                            hostCandidate[0] = capacity.getHostOrPoolId();
 	                            enoughCapacity = true;
 	                            break;
 	                        }
                     	} else {
 	                        if ((capacity.getTotalCapacity() - capacity.getUsedCapacity()) >= capacityNeeded) {
-	                        	
 	                            hostCandidate[0] = capacity.getHostOrPoolId();
 	                            enoughCapacity = true;
 	                            break;

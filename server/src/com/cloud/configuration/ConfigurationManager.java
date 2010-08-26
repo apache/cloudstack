@@ -23,6 +23,8 @@ import com.cloud.api.commands.AddConfigCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.CreatePodCmd;
 import com.cloud.api.commands.CreateServiceOfferingCmd;
+import com.cloud.api.commands.CreateVlanIpRangeCmd;
+import com.cloud.api.commands.CreateZoneCmd;
 import com.cloud.api.commands.DeleteDiskOfferingCmd;
 import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.DeleteServiceOfferingCmd;
@@ -35,8 +37,9 @@ import com.cloud.api.commands.UpdateServiceOfferingCmd;
 import com.cloud.api.commands.UpdateZoneCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.service.ServiceOfferingVO;
@@ -184,33 +187,41 @@ public interface ConfigurationManager extends Manager {
 	
 	/**
 	 * Creates a new zone
-	 * @param userId
-	 * @param zoneName
-	 * @param dns1
-	 * @param dns2
-	 * @param dns3
-	 * @param dns4
-	 * @param vnetRange
-	 * @param guestNetworkCidr
-	 * @return Zone
+	 * @param cmd
+	 * @return the zone if successful, null otherwise
+	 * @throws InvalidParameterValueException
+	 * @throws InternalErrorException
 	 */
-	DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String dns3, String dns4, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException;
+    DataCenterVO createZone(CreateZoneCmd cmd) throws InvalidParameterValueException, InternalErrorException;
 	
-	/**
+    /**
      * Edits a zone in the database. Will not allow you to edit DNS values if there are VMs in the specified zone.
      * @param UpdateZoneCmd
      * @return Updated zone
      */
-	DataCenterVO editZone(UpdateZoneCmd cmd) throws InvalidParameterValueException, InternalErrorException;
-	
-	/**
+    DataCenterVO editZone(UpdateZoneCmd cmd) throws InvalidParameterValueException, InternalErrorException;
+
+    /**
      * Deletes a zone from the database. Will not allow you to delete zones that are being used anywhere in the system.
      * @param userId
      * @param zoneId
      */
-	void deleteZone(DeleteZoneCmd cmd) throws InvalidParameterValueException, InternalErrorException;
+    void deleteZone(DeleteZoneCmd cmd) throws InvalidParameterValueException, InternalErrorException;
 	
 	/**
+	 * Associates an ip address list to an account.  The list of ip addresses are all addresses associated with the given vlan id.
+	 * @param userId
+	 * @param accountId
+	 * @param zoneId
+	 * @param vlanId
+	 * @throws InsufficientAddressCapacityException
+	 * @throws InvalidParameterValueException
+	 * @throws InternalErrorException
+	 */
+    public void associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId) throws InsufficientAddressCapacityException,
+    InvalidParameterValueException, InternalErrorException;
+
+    /**
 	 * Adds a VLAN to the database, along with an IP address range. Can add three types of VLANs: (1) zone-wide VLANs on the virtual public network (2) pod-wide direct attached VLANs (3) account-specific direct attached VLANs
 	 * @param userId
 	 * @param vlanType - either "DomR" (VLAN for a virtual public network) or "DirectAttached" (VLAN for IPs that will be directly attached to UserVMs)
@@ -225,8 +236,9 @@ public interface ConfigurationManager extends Manager {
 	 * @throws InvalidParameterValueException
 	 * @return The new VlanVO object
 	 */
-	VlanVO createVlanAndPublicIpRange(long userId, VlanType vlanType, Long zoneId, Long accountId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String startIP, String endIP) throws InvalidParameterValueException, InternalErrorException;
-	
+	VlanVO createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InvalidParameterValueException, InternalErrorException, InsufficientCapacityException;
+//    VlanVO createVlanAndPublicIpRange(long userId, VlanType vlanType, Long zoneId, Long accountId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String startIP, String endIP) throws InvalidParameterValueException, InternalErrorException;
+
 	/**
 	 * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated IP addresses.
 	 * @param userId

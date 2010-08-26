@@ -18,43 +18,21 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.dc.HostPodVO;
-import com.cloud.dc.Vlan;
-import com.cloud.dc.Vlan.VlanType;
+import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.dc.VlanVO;
-import com.cloud.user.Account;
-import com.cloud.user.User;
-import com.cloud.utils.Pair;
+import com.cloud.serializer.SerializerHelper;
 
+@Implementation(method="createVlanAndPublicIpRange", manager=Manager.ConfigManager)
 public class CreateVlanIpRangeCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateVlanIpRangeCmd.class.getName());
 
     private static final String s_name = "createvlaniprangeresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.END_IP, Boolean.FALSE));     
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.FOR_VIRTUAL_NETWORK, Boolean.FALSE));	
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.GATEWAY, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NETMASK, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.START_IP, Boolean.TRUE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VLAN, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.TRUE));
-
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -140,86 +118,32 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
     @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-    	Boolean forVirtualNetwork = (Boolean) params.get(BaseCmd.Properties.FOR_VIRTUAL_NETWORK.getName());
-    	String vlanId = (String) params.get(BaseCmd.Properties.VLAN.getName());
-    	String vlanGateway = (String) params.get(BaseCmd.Properties.GATEWAY.getName());
-    	String vlanNetmask = (String) params.get(BaseCmd.Properties.NETMASK.getName());
-    	Long zoneId = (Long) params.get(BaseCmd.Properties.ZONE_ID.getName());
-    	String accountName = (String) params.get(BaseCmd.Properties.ACCOUNT.getName());
-    	Long domainId = (Long) params.get(BaseCmd.Properties.DOMAIN_ID.getName());
-    	Long podId = (Long) params.get(BaseCmd.Properties.POD_ID.getName());
-    	String startIp = (String) params.get(BaseCmd.Properties.START_IP.getName());
-    	String endIp = (String) params.get(BaseCmd.Properties.END_IP.getName());    
-    	Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-    	
-    	if (userId == null) {
-            userId = Long.valueOf(User.UID_SYSTEM);
-        }
-    	    	
-    	// If forVirtualNetworks isn't specified, default it to true
-    	if (forVirtualNetwork == null) {
-    		forVirtualNetwork = Boolean.TRUE;
-    	}
-    	
-    	// If the VLAN id is null, default it to untagged
-    	if (vlanId == null) {
-    		vlanId = Vlan.UNTAGGED;
-    	}
-    	
-    	// If an account name and domain ID are specified, look up the account
-    	Long accountId = null;
-    	if (accountName != null && domainId != null) {
-    		Account account = getManagementServer().findAccountByName(accountName, domainId);
-    		if (account == null || account.getRemoved() != null) {
-    			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid account.");
-    		} else {
-    			accountId = account.getId();
-    		}
-    	}    	
-    	
-    	VlanType vlanType = forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
-     	    
-    	// Create a VLAN and public IP addresses
-    	VlanVO vlan = null;
-    	try {
-			vlan = getManagementServer().createVlanAndPublicIpRange(userId, vlanType, zoneId, accountId, podId, vlanId, vlanGateway, vlanNetmask, startIp, endIp);
-		} catch (Exception e) {
-			s_logger.error("Error adding VLAN: ", e);
-			throw new ServerApiException (BaseCmd.INTERNAL_ERROR, e.getMessage());
-		}    	
-    	
-    	List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();    	
-    	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), vlan.getId()));
-    	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.FOR_VIRTUAL_NETWORK.getName(), forVirtualNetwork));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.VLAN.getName(), vlan.getVlanId()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_ID.getName(), vlan.getDataCenterId()));
-        
-        if (accountId != null) {
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT.getName(), accountName));
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), domainId));
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), getManagementServer().findDomainIdById(domainId).getName()));
-        }
-        
-        if (podId != null) {
-        	HostPodVO pod = getManagementServer().findHostPodById(podId);
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.POD_ID.getName(), podId));
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.POD_NAME.getName(), pod.getName()));
-        }
-        
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.GATEWAY.getName(), vlan.getVlanGateway()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.NETMASK.getName(), vlan.getVlanNetmask()));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DESCRIPTION.getName(), vlan.getIpRange()));
-    	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.START_IP.getName(), startIp));
-    	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.END_IP.getName(), endIp));        
-        return returnValues;
+    public String getResponse() {
+        VlanVO vlan = (VlanVO)getResponseObject();
+
+        VlanIpRangeResponse response = new VlanIpRangeResponse();
+        response.setAccountName(accountName);
+        response.setDescription(vlan.getIpRange());
+        response.setDomainId(domainId);
+        response.setEndIp(endIp);
+        response.setForVirtualNetwork(forVirtualNetwork);
+        response.setGateway(vlan.getVlanGateway());
+        response.setId(vlan.getId());
+        response.setNetmask(vlan.getVlanNetmask());
+        response.setPodId(podId);
+        response.setStartIp(startIp);
+        response.setVlan(vlan.getVlanId());
+        response.setZoneId(vlan.getDataCenterId());
+        // TODO:  implement
+//      response.setDomainName(vlan.getDomainName());
+//      response.setPodName(podName);
+
+        return SerializerHelper.toSerializedString(response);
     }
 }

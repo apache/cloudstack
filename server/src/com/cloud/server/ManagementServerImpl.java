@@ -62,7 +62,7 @@ import com.cloud.api.commands.CopyTemplateCmd;
 import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
-import com.cloud.api.commands.CreateTemplateCmd;
+import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
@@ -101,7 +101,6 @@ import com.cloud.async.executor.AssociateIpAddressParam;
 import com.cloud.async.executor.AttachISOParam;
 import com.cloud.async.executor.CopyTemplateParam;
 import com.cloud.async.executor.CreateOrUpdateRuleParam;
-import com.cloud.async.executor.CreatePrivateTemplateParam;
 import com.cloud.async.executor.DeleteDomainParam;
 import com.cloud.async.executor.DeleteRuleParam;
 import com.cloud.async.executor.DeleteTemplateParam;
@@ -572,8 +571,17 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public User createUserAPI(String username, String password, String firstName, String lastName, Long domainId, String accountName, short userType, String email, String timezone) {
+    public UserAccount createUser(CreateUserCmd cmd) {
         Long accountId = null;
+        String username = cmd.getUsername();
+        String password = cmd.getPassword();
+        String firstName = cmd.getFirstname();
+        String lastName = cmd.getLastname();
+        Long domainId = cmd.getDomainId();
+        String email = cmd.getEmail();
+        String timezone = cmd.getTimezone();
+        String accountName = cmd.getAccountName();
+        short userType = cmd.getAccountType().shortValue();
         try {
             if (accountName == null) {
                 accountName = username;
@@ -645,7 +653,7 @@ public class ManagementServerImpl implements ManagementServer {
 
             EventUtils.saveEvent(new Long(1), new Long(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_CREATE, "User, " + username + " for accountId = " + accountId
                     + " and domainId = " + domainId + " was created.");
-            return dbUser;
+            return _userAccountDao.findById(dbUser.getId());
         } catch (Exception e) {
         	EventUtils.saveEvent(new Long(1), new Long(1), EventVO.LEVEL_ERROR, EventTypes.EVENT_USER_CREATE, "Error creating user, " + username + " for accountId = " + accountId
                     + " and domainId = " + domainId);
@@ -715,11 +723,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job);
     }
 
-    @Override
-    public User createUser(String username, String password, String firstName, String lastName, Long domain, String accountName, short userType, String email, String timezone) {
-        return createUserAPI(username, StringToMD5(password), firstName, lastName, domain, accountName, userType, email, timezone);
-    }
-    
     @Override
     public String updateAdminPassword(long userId, String oldPassword, String newPassword) {
         // String old = StringToMD5(oldPassword);
@@ -1110,33 +1113,29 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         // make sure the account is enabled too
-        if (user != null) {
-            // if the user is either locked already or disabled already, don't change state...only lock currently enabled users
-            if (user.getState().equals(Account.ACCOUNT_STATE_LOCKED)) {
-                // already locked...no-op
-                return true;
-            } else if (user.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
-                success = doSetUserStatus(user.getId(), Account.ACCOUNT_STATE_LOCKED);
+        // if the user is either locked already or disabled already, don't change state...only lock currently enabled users
+        if (user.getState().equals(Account.ACCOUNT_STATE_LOCKED)) {
+            // already locked...no-op
+            return true;
+        } else if (user.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
+            success = doSetUserStatus(user.getId(), Account.ACCOUNT_STATE_LOCKED);
 
-                boolean lockAccount = true;
-                List<UserVO> allUsersByAccount = _userDao.listByAccount(user.getAccountId());
-                for (UserVO oneUser : allUsersByAccount) {
-                    if (oneUser.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
-                        lockAccount = false;
-                        break;
-                    }
-                }
-
-                if (lockAccount) {
-                    success = (success && lockAccountInternal(user.getAccountId()));
-                }
-            } else {
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Attempting to lock a non-enabled user, current state is " + user.getState() + " (userId: " + user.getId() + "), locking failed.");
+            boolean lockAccount = true;
+            List<UserVO> allUsersByAccount = _userDao.listByAccount(user.getAccountId());
+            for (UserVO oneUser : allUsersByAccount) {
+                if (oneUser.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
+                    lockAccount = false;
+                    break;
                 }
             }
+
+            if (lockAccount) {
+                success = (success && lockAccountInternal(user.getAccountId()));
+            }
         } else {
-            s_logger.warn("Unable to find user with id: " + UserContext.current().getUserId());
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("Attempting to lock a non-enabled user, current state is " + user.getState() + " (userId: " + user.getId() + "), locking failed.");
+            }
         }
         return success;
     }
@@ -1487,84 +1486,6 @@ public class ManagementServerImpl implements ManagementServer {
         return null;
     }
 
-    @DB
-    public void associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId) throws InsufficientAddressCapacityException,
-    		InvalidParameterValueException, InternalErrorException {
-    	
-        Transaction txn = Transaction.currentTxn();
-        AccountVO account = null;
-        
-        try {
-            //Acquire Lock                    
-            account = _accountDao.acquire(accountId);
-            if (account == null) {
-                s_logger.warn("Unable to lock account: " + accountId);
-                throw new InternalErrorException("Unable to acquire account lock");
-            }            
-            s_logger.debug("Associate IP address lock acquired");
-            
-            //Get Router
-            DomainRouterVO router = _routerDao.findBy(accountId, zoneId);
-            if (router == null) {
-                s_logger.debug("No router found for account: " + account.getAccountName() + ".");
-                return;
-            }
-            
-            if (router.getState() == State.Running) {
-	            //Get Vlans associated with the account
-            	List<VlanVO> vlansForAccount = new ArrayList<VlanVO>();
-            	if (vlanId == null){
-            		vlansForAccount.addAll(_vlanDao.listVlansForAccountByType(zoneId, account.getId(), VlanType.VirtualNetwork));
-            		s_logger.debug("vlansForAccount "+ vlansForAccount);
-            	}else{
-            		vlansForAccount.add(_vlanDao.findById(vlanId));
-            	}
-		         
-	            // Creating a list of all the ips that can be assigned to this account
-		        txn.start();
-		        List<String> ipAddrsList = new ArrayList<String>();
-		     	for (VlanVO vlan : vlansForAccount){
-		     		ipAddrsList.addAll(_publicIpAddressDao.assignAcccountSpecificIps(accountId, account.getDomainId().longValue(), vlan.getId(), false));
-
-		     		long size = ipAddrsList.size();
-		     		_accountMgr.incrementResourceCount(accountId, ResourceType.public_ip, size);
-		     		s_logger.debug("Assigning new ip addresses " +ipAddrsList);		     		
-		     	}
-		     	if(ipAddrsList.isEmpty())
-		     		return;
-
-                String params = "\nsourceNat=" + false + "\ndcId=" + zoneId;
-
-                // Associate the IP's to DomR
-                boolean success = _networkMgr.associateIP(router,ipAddrsList, true);
-                String errorMsg = "Unable to assign public IP address pool";
-            	if (!success) {
-            		s_logger.debug(errorMsg);
-            		 for(String ip : ipAddrsList){
-            			 EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_NET_IP_ASSIGN, "Unable to assign public IP " +ip, params);
-                     }
-            		throw new InternalErrorException(errorMsg);
-            	}
-                txn.commit();
-                for(String ip : ipAddrsList){
-                	EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_NET_IP_ASSIGN, "Successfully assigned account IP " +ip, params);
-                }
-            }
-            } catch (InternalErrorException iee) {
-                s_logger.error("Associate IP threw an InternalErrorException.", iee);
-                throw iee;
-            } catch (Throwable t) {
-                s_logger.error("Associate IP address threw an exception.", t);
-                throw new InternalErrorException("Associate IP address exception");
-            } finally {
-                if (account != null) {
-                    _accountDao.release(accountId);
-                    s_logger.debug("Associate IP address lock released");
-                }
-            }
-    
-    }
-    
     @Override
     @DB
     public String associateIpAddress(long userId, long accountId, long domainId, long zoneId) throws ResourceAllocationException, InsufficientAddressCapacityException,
@@ -1696,7 +1617,6 @@ public class ManagementServerImpl implements ManagementServer {
         Long userId = UserContext.current().getUserId();
         Account account = (Account)UserContext.current().getAccountObject();
         String ipAddress = cmd.getIpAddress();
-        boolean result = false;
 
         // Verify input parameters
         Account accountByIp = findAccountByIpAddress(ipAddress);
@@ -1794,44 +1714,6 @@ public class ManagementServerImpl implements ManagementServer {
         
         return _asyncMgr.submitAsyncJob(job, true);
     }
-
-    @DB
-    @Override
-    public VlanVO createVlanAndPublicIpRange(long userId, VlanType vlanType, Long zoneId, Long accountId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String startIP, String endIP) throws Exception{
-    	          
-		if(accountId != null && vlanType == VlanType.VirtualNetwork){
-			long ipResourceLimit = _accountMgr.findCorrectResourceLimit( _accountDao.findById(accountId), ResourceType.public_ip);
-			long accountIpRange  = NetUtils.ip2Long(endIP) - NetUtils.ip2Long(startIP) + 1 ;
-			s_logger.debug(" IPResourceLimit " +ipResourceLimit + " accountIpRange " + accountIpRange);
-			if (ipResourceLimit != -1 && accountIpRange > ipResourceLimit){ // -1 means infinite
-				throw new InvalidParameterValueException(" Public IP Resource Limit is set to " + ipResourceLimit + " which is less than the IP range of " + accountIpRange + " provided");
-			}
-			String params = "\nsourceNat=" + false + "\ndcId=" + zoneId;
-			Transaction txn = Transaction.currentTxn();
-			try{
-				txn.start();
-				VlanVO vlan = _configMgr.createVlanAndPublicIpRange(userId, vlanType, zoneId, accountId, podId, vlanId, vlanGateway, vlanNetmask, startIP, endIP);
-				associateIpAddressListToAccount(userId, accountId, zoneId, vlan.getId());
-				txn.commit();
-				return vlan;
-			}catch(Exception e){
-				txn.rollback();
-		    	long startIPLong = NetUtils.ip2Long(startIP);
-		    	long endIPLong = NetUtils.ip2Long(endIP);		    	
-		        while (startIPLong <= endIPLong) {
-		        	EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_NET_IP_ASSIGN, "Unable to assign public IP " +NetUtils.long2Ip(startIPLong), params);
-		        	startIPLong += 1;
-		        }
-				throw new Exception(e.getMessage());
-			}
-		}
-		return _configMgr.createVlanAndPublicIpRange(userId, vlanType, zoneId, accountId, podId, vlanId, vlanGateway, vlanNetmask, startIP, endIP);
-    }
-
-//    @Override
-//    public boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId) throws InvalidParameterValueException {
-//        return _configMgr.deleteVlanAndPublicIpRange(userId, vlanDbId);
-//    }
 
     @Override
     public VolumeVO createVolume(long userId, long accountId, String name, long zoneId, long diskOfferingId, long startEventId, long size) throws InternalErrorException {
@@ -2510,7 +2392,7 @@ public class ManagementServerImpl implements ManagementServer {
                 }
 
                 try {
-					associateIpAddressListToAccount(userId, accountId, dc.getId(),null);															
+					_configMgr.associateIpAddressListToAccount(userId, accountId, dc.getId(),null);															
 				} catch (InsufficientAddressCapacityException e) {
 					s_logger.debug("Unable to assign public IP address pool: " +e.getMessage());					
 				}
@@ -4365,16 +4247,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _hostPodDao.listByDataCenterId(dataCenterId);
     }
     
-    @Override
-    public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange,String guestCidr) throws InvalidParameterValueException, InternalErrorException {
-        return _configMgr.createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr);
-    }
-
-//    @Override
-//    public void deleteZone(long userId, Long zoneId) throws InvalidParameterValueException, InternalErrorException {
-//        _configMgr.deleteZone(userId, zoneId);
-//    }
-
     @Override
     public String changePrivateIPRange(boolean add, Long podId, String startIP, String endIP) throws InvalidParameterValueException {
         return _configMgr.changePrivateIPRange(add, podId, startIP, endIP);
@@ -6656,59 +6528,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public VMTemplateVO createPrivateTemplate(VMTemplateVO template, Long userId, long snapshotId, String name, String description) throws InvalidParameterValueException {
-
-        return _vmMgr.createPrivateTemplate(template, userId, snapshotId, name, description);
-    }
-
-    @Override
-    public long createPrivateTemplateAsync(Long userId, long volumeId, String name, String description, long guestOSId, Boolean requiresHvm, Integer bits, Boolean passwordEnabled, boolean isPublic, boolean featured, Long snapshotId)
-            throws InvalidParameterValueException, ResourceAllocationException, InternalErrorException {
-        if (name.length() > 32)
-        {
-            throw new InvalidParameterValueException("Template name should be less than 32 characters");
-        }
-        		
-        if(!name.matches("^[\\p{Alnum} ._-]+"))
-        {
-            throw new InvalidParameterValueException("Only alphanumeric, space, dot, dashes and underscore characters allowed");
-        }
-
-        // The volume below could be destroyed or removed.
-        VolumeVO volume = _volumeDao.findById(volumeId);
-            	
-        // If private template is created from Volume, check that the volume will not be active when the private template is created
-        if (snapshotId == null && !_storageMgr.volumeInactive(volume)) {
-            String msg = "Unable to create private template for volume: " + volume.getName() + "; volume is attached to a non-stopped VM.";
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info(msg);
-            }
-
-            throw new InternalErrorException(msg);
-        }
-
-        // Check that the guest OS is valid
-        GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
-        if (guestOS == null) {
-            throw new InvalidParameterValueException("Please specify a valid guest OS.");
-        }
-
-        long eventId = EventUtils.saveScheduledEvent(userId, volume.getAccountId(), EventTypes.EVENT_TEMPLATE_CREATE, "creating template" +name);
-        CreatePrivateTemplateParam param = new CreatePrivateTemplateParam(userId, volume.getAccountId(), volumeId, guestOSId, eventId, name, description, requiresHvm, bits, passwordEnabled, isPublic, featured, snapshotId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-    	job.setUserId(UserContext.current().getUserId());
-    	job.setAccountId(volume.getAccountId());
-        job.setCmd("CreatePrivateTemplate");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(CreateTemplateCmd.getResultObjectName());
-        
-        return _asyncMgr.submitAsyncJob(job, true);
-    }
-
-    @Override
     public DiskOfferingVO findDiskOfferingById(long diskOfferingId) {
         return _diskOfferingDao.findById(diskOfferingId);
     }
@@ -8120,7 +7939,7 @@ public class ManagementServerImpl implements ManagementServer {
 		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(cmd.getId(), VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
 	
 		if (systemVm == null) {
-        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + systemVm.getId());
+        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + cmd.getId());
         }
 		
 		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
