@@ -4409,6 +4409,7 @@ public class ManagementServerImpl implements ManagementServer {
         SearchBuilder<AccountVO> sb = _accountDao.createSearchBuilder();
         sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("nid", sb.entity().getId(), SearchCriteria.Op.NEQ);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("needsCleanup", sb.entity().getNeedsCleanup(), SearchCriteria.Op.EQ);
@@ -4440,6 +4441,9 @@ public class ManagementServerImpl implements ManagementServer {
 
             // I want to join on user_vm.domain_id = domain.id where domain.path like 'foo%'
             sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+            sc.setParameters("nid", 1L);
+        } else {
+        	sc.setParameters("nid", 1L);
         }
 
         if (type != null) {
