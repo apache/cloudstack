@@ -145,8 +145,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 			_configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Direct Networking", 1, 1024, 1000, "Xenserver, Medium Instance, Direct Networking, $0.10 per hour", false, false, false, null,Hypervisor.Type.XenServer);			
 			
          // Save Direct Networking service offerings
-			_configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Direct Networking", 1, 512, 500, "VMware, Small Instance, Direct Networking, $0.05 per hour", false, false, false, null, Hypervisor.Type.VMware);			
-			_configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Direct Networking", 1, 1024, 1000, "VMware, Medium Instance, Direct Networking, $0.10 per hour", false, false, false, null, Hypervisor.Type.VMware);			
+			_configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Direct Networking", 1, 512, 500, "VMware, Small Instance, Direct Networking, $0.05 per hour", false, false, false, null, Hypervisor.Type.VmWare);			
+			_configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Direct Networking", 1, 1024, 1000, "VMware, Medium Instance, Direct Networking, $0.10 per hour", false, false, false, null, Hypervisor.Type.VmWare);			
 			 
 			// Save default disk offerings
 			_configMgr.createDiskOffering(User.UID_SYSTEM, DomainVO.ROOT_DOMAIN, "Small", "Small Disk, 5 GB", 5, null);
