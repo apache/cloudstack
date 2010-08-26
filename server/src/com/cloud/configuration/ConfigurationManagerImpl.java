@@ -57,6 +57,7 @@ import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.SecondaryStorage;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
@@ -66,9 +67,14 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value={ConfigurationManager.class})
@@ -91,6 +97,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 	@Inject AccountDao _accountDao;
 	@Inject EventDao _eventDao;
 	@Inject UserDao _userDao;
+	@Inject ConsoleProxyDao _consoleDao;
+	@Inject SecondaryStorageVmDao _secStorageDao;
 	public boolean _premium;
  
     @Override
@@ -665,13 +673,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     		throw new InvalidParameterValueException("A zone with ID: " + zoneId + " does not exist.");
     	}
     	
-    	// If DNS values are being changed, make sure there are no VMs in this zone
-    	if (dns1 != null || dns2 != null || internalDns1 != null || internalDns2 != null) {
-    		if (zoneHasVMs(zoneId)) {
-    			throw new InternalErrorException("The zone is not editable because there are VMs in the zone.");
-    		}
-    	}
-    	
     	// If the Vnet range is being changed, make sure there are no allocated VNets
     	if (vnetRange != null) {
     		if (zoneHasAllocatedVnets(zoneId)) {
@@ -679,28 +680,18 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     		}
     	}
     	
-    	//To modify a zone, we need to make sure there are no domr's associated with it
-    	//1. List all the domain router objs
-    	//2. Check if any of these has the current data center associated
-    	//3. If yes, throw exception
-    	//4, If no, edit
-    	List<DomainRouterVO> allDomainRoutersAvailable = _domrDao.listAll();
-    	
-    	for(DomainRouterVO domR : allDomainRoutersAvailable)
-    	{
-    		if(domR.getDataCenterId() == zoneId)
-    		{
-    			throw new InternalErrorException("The zone is not editable because there are domR's associated with the zone.");
-    		}
-    	}
-    	
-    	//5. Reached here, hence editable
     	
     	DataCenterVO zone = _zoneDao.findById(zoneId);
     	String oldZoneName = zone.getName();
     	
     	if (newZoneName == null) {
     		newZoneName = oldZoneName;
+    	}
+    	
+    	boolean dnsUpdate = false;
+    	
+    	if(dns1 != null || dns2 != null){
+    	    dnsUpdate = true;
     	}
     	
     	if (dns1 == null) {
@@ -741,6 +732,48 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 	    	_zoneDao.deleteVnet(zoneId);
 	    	_zoneDao.addVnet(zone.getId(), begin, end);
     	}
+    	
+    	if(dnsUpdate){
+    	    
+    	    //Update dns for domRs in zone
+    	    
+    	    List<DomainRouterVO> DomainRouters = _domrDao.listByDataCenter(zoneId);
+
+    	    for(DomainRouterVO domR : DomainRouters)
+    	    {
+    	        domR.setDns1(dns1);
+    	        domR.setDns2(dns2);
+    	        _domrDao.update(domR.getId(), domR);
+    	    }
+    	    
+    	  //Update dns for console proxies in zone
+            List<VMInstanceVO> ConsoleProxies = _vmInstanceDao.listByZoneIdAndType(zoneId, VirtualMachine.Type.ConsoleProxy);
+            
+            for(VMInstanceVO consoleVm : ConsoleProxies)
+            {
+                ConsoleProxyVO proxy = _consoleDao.findById(consoleVm.getId());
+                if( proxy!= null ){
+                    proxy.setDns1(dns1);
+                    proxy.setDns2(dns2);
+                    _consoleDao.update(proxy.getId(), proxy);
+                }
+            }    	    
+            
+          //Update dns for secondary storage Vms in zone
+            List<VMInstanceVO> storageVms = _vmInstanceDao.listByZoneIdAndType(zoneId, VirtualMachine.Type.SecondaryStorageVm);
+            
+            for(VMInstanceVO storageVm : storageVms)
+            {
+                SecondaryStorageVmVO secStorageVm = _secStorageDao.findById(storageVm.getId());
+                if( secStorageVm!= null ){
+                    secStorageVm.setDns1(dns1);
+                    secStorageVm.setDns2(dns2);
+                    _secStorageDao.update(secStorageVm.getId(), secStorageVm);
+                }
+            }           
+            
+    	}
+
     	
     	saveConfigurationEvent(userId, null, EventTypes.EVENT_ZONE_EDIT, "Successfully edited zone with name: " + zone.getName() + ".", "dcId=" + zone.getId(), "dns1=" + dns1, "dns2=" + dns2, "internalDns1=" + internalDns1, "internalDns2=" + internalDns2, "vnetRange=" + vnetRange, "guestCidr=" + guestCidr);
     	
