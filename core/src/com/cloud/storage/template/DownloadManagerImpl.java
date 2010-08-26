@@ -353,6 +353,7 @@ public class DownloadManagerImpl implements DownloadManager {
 			try {
 				info = processor.process(templatePath, null, templateName);
 			} catch (InternalErrorException e) {
+				s_logger.error("Template process exception ", e);
 				return e.toString();
 			}
             if (info != null) {
