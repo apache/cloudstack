@@ -472,7 +472,7 @@ public interface ManagementServer {
      * Marks a data volume as destroyed
      * @param volumeId
      */
-    void destroyVolume(long volumeId) throws InvalidParameterValueException;
+//    void destroyVolume(long volumeId) throws InvalidParameterValueException;
 
     /**
      * Return a list of IP addresses

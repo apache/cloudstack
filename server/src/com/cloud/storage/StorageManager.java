@@ -207,7 +207,7 @@ public interface StorageManager extends Manager {
 	 * @param volume
 	 */
 	void destroyVolume(VolumeVO volume);
-	boolean deleteVolume(DeleteVolumeCmd cmd);
+	boolean deleteVolume(DeleteVolumeCmd cmd) throws InvalidParameterValueException;
 	
 	/** Create capacity entries in the op capacity table
 	 * @param storagePool

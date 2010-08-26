@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.GNOME.Accessibility._DocumentStub;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -83,6 +84,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
@@ -130,6 +132,7 @@ import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
+import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
@@ -195,6 +198,7 @@ public class StorageManagerImpl implements StorageManager {
     @Inject protected VMTemplateDao _templateDao;
     @Inject protected VMTemplateHostDao _templateHostDao;
     @Inject protected ServiceOfferingDao _offeringDao;
+    @Inject protected DomainDao _domainDao;
     
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     protected SearchBuilder<StoragePoolVO> PoolsUsedByVmSearch;
@@ -2253,9 +2257,67 @@ public class StorageManagerImpl implements StorageManager {
     	}
     }
 
+	private boolean isAdmin(short accountType) {
+	    return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
+	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
+	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
+	}
+	
 	@Override
-	public boolean deleteVolume(DeleteVolumeCmd cmd) {
+	public boolean deleteVolume(DeleteVolumeCmd cmd) throws InvalidParameterValueException {
 		
-		return false;
+    	Account account = (Account) UserContext.current().getAccountObject();
+    	Long volumeId = (Long) cmd.getId();
+    	
+    	boolean isAdmin;
+    	if (account == null) {
+    		// Admin API call
+    		isAdmin = true;
+    	} else {
+    		// User API call
+    		isAdmin = isAdmin(account.getType());
+    	}
+
+    	// Check that the volume ID is valid
+    	VolumeVO volume = _volsDao.findById(volumeId);
+    	if (volume == null) {
+    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId);
+    	}
+    	
+    	// If the account is not an admin, check that the volume is owned by the account that was passed in
+    	if (!isAdmin) {
+    		if (account.getId() != volume.getAccountId()) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
+    		}
+    	} else if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId())) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to delete volume with id " + volumeId + ", permission denied.");
+    	}
+
+
+        // Check that the volume is stored on shared storage
+        if (!volumeOnSharedStoragePool(volume)) {
+            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
+        }
+
+        // Check that the volume is not currently attached to any VM
+        if (volume.getInstanceId() != null) {
+            throw new InvalidParameterValueException("Please specify a volume that is not attached to any VM.");
+        }
+           
+        // Check that the volume is not already destroyed
+        if (volume.getDestroyed()) {
+            throw new InvalidParameterValueException("Please specify a volume that is not already destroyed.");
+        }
+        
+        try {
+			// Destroy the volume
+			destroyVolume(volume);
+		} catch (Exception e) {
+			s_logger.warn("Error destroying volume:"+e);
+			throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Error destroying volume:"+e);
+		}
+        
+        return true;
+    	
 	}
 }

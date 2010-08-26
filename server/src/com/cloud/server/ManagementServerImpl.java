@@ -1824,32 +1824,32 @@ public class ManagementServerImpl implements ManagementServer {
             return null;
     }
     
-    @Override
-    public void destroyVolume(long volumeId) throws InvalidParameterValueException {
-        // Check that the volume is valid
-        VolumeVO volume = _volumeDao.findById(volumeId);
-        if (volume == null) {
-            throw new InvalidParameterValueException("Please specify a valid volume ID.");
-        }
-
-        // Check that the volume is stored on shared storage
-        if (!_storageMgr.volumeOnSharedStoragePool(volume)) {
-            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
-        }
-
-        // Check that the volume is not currently attached to any VM
-        if (volume.getInstanceId() != null) {
-            throw new InvalidParameterValueException("Please specify a volume that is not attached to any VM.");
-        }
-           
-        // Check that the volume is not already destroyed
-        if (volume.getDestroyed()) {
-            throw new InvalidParameterValueException("Please specify a volume that is not already destroyed.");
-        }
-        
-        // Destroy the volume
-        _storageMgr.destroyVolume(volume);
-    }
+//    @Override
+//    public void destroyVolume(long volumeId) throws InvalidParameterValueException {
+//        // Check that the volume is valid
+//        VolumeVO volume = _volumeDao.findById(volumeId);
+//        if (volume == null) {
+//            throw new InvalidParameterValueException("Please specify a valid volume ID.");
+//        }
+//
+//        // Check that the volume is stored on shared storage
+//        if (!_storageMgr.volumeOnSharedStoragePool(volume)) {
+//            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
+//        }
+//
+//        // Check that the volume is not currently attached to any VM
+//        if (volume.getInstanceId() != null) {
+//            throw new InvalidParameterValueException("Please specify a volume that is not attached to any VM.");
+//        }
+//           
+//        // Check that the volume is not already destroyed
+//        if (volume.getDestroyed()) {
+//            throw new InvalidParameterValueException("Please specify a volume that is not already destroyed.");
+//        }
+//        
+//        // Destroy the volume
+//        _storageMgr.destroyVolume(volume);
+//    }
 
     @Override
     public List<IPAddressVO> listPublicIpAddressesBy(Long accountId, boolean allocatedOnly, Long zoneId, Long vlanDbId) {
