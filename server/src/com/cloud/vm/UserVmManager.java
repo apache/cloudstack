@@ -23,6 +23,7 @@ import java.util.List;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CreateTemplateCmd;
+import com.cloud.api.commands.DestroyVMCmd;
 import com.cloud.api.commands.DetachVolumeCmd;
 import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
@@ -102,8 +103,9 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @param userId the id of the user performing the action
      * @param vmId the id of the virtual machine.
      */
+	boolean destroyVm(DestroyVMCmd cmd);
     boolean destroyVirtualMachine(long userId, long vmId);
-    OperationResponse executeDestroyVM(DestroyVMExecutor executor, VMOperationParam param);
+//    OperationResponse executeDestroyVM(DestroyVMExecutor executor, VMOperationParam param);
     
     
     /**
