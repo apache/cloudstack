@@ -176,29 +176,22 @@ public class CreateVolumeCmd extends BaseCmd {
         }
         
         boolean useSnapshot = false;
-        if (snapshotId == null) 
-        {
-            if ((zoneId == null)) 
-            {
+        if (snapshotId == null) {
+            if ((zoneId == null)) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "Missing parameter,zoneid must be specified.");
             }
-            
-            if(diskOfferingId == null && size == 0)
-            {
+
+            if (diskOfferingId == null && size == 0) {
             	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Missing parameter(s),either a positive volume size or a valid disk offering id must be specified.");
-            }
-            else if(diskOfferingId == null && size != 0)
-            {
+            } else if(diskOfferingId == null && size != 0) {
             	//validate the size to ensure between min and max size range
-            	try 
-            	{
+            	try {
 					boolean ok = getManagementServer().validateCustomVolumeSizeRange(size);
 					
-					if(!ok)
+					if (!ok) {
 						throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid size for custom volume creation:");
-					
-				} catch (InvalidParameterValueException e) 
-				{
+					}
+				} catch (InvalidParameterValueException e) {
 					s_logger.warn("Invalid size for custom volume creation");
 					throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid size for custom volume creation:"+e.getMessage());
 				}
@@ -207,9 +200,7 @@ public class CreateVolumeCmd extends BaseCmd {
             	List<DiskOfferingVO> privateTemplateList = getManagementServer().findPrivateDiskOffering();
             	diskOfferingId = privateTemplateList.get(0).getId(); //we use this id for creating volume
             }
-        } 
-        else 
-        {
+        } else {
             useSnapshot = true;
             //Verify parameters
             Snapshot snapshotCheck = getManagementServer().findSnapshotById(snapshotId);

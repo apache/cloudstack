@@ -1113,33 +1113,29 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         // make sure the account is enabled too
-        if (user != null) {
-            // if the user is either locked already or disabled already, don't change state...only lock currently enabled users
-            if (user.getState().equals(Account.ACCOUNT_STATE_LOCKED)) {
-                // already locked...no-op
-                return true;
-            } else if (user.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
-                success = doSetUserStatus(user.getId(), Account.ACCOUNT_STATE_LOCKED);
+        // if the user is either locked already or disabled already, don't change state...only lock currently enabled users
+        if (user.getState().equals(Account.ACCOUNT_STATE_LOCKED)) {
+            // already locked...no-op
+            return true;
+        } else if (user.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
+            success = doSetUserStatus(user.getId(), Account.ACCOUNT_STATE_LOCKED);
 
-                boolean lockAccount = true;
-                List<UserVO> allUsersByAccount = _userDao.listByAccount(user.getAccountId());
-                for (UserVO oneUser : allUsersByAccount) {
-                    if (oneUser.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
-                        lockAccount = false;
-                        break;
-                    }
-                }
-
-                if (lockAccount) {
-                    success = (success && lockAccountInternal(user.getAccountId()));
-                }
-            } else {
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Attempting to lock a non-enabled user, current state is " + user.getState() + " (userId: " + user.getId() + "), locking failed.");
+            boolean lockAccount = true;
+            List<UserVO> allUsersByAccount = _userDao.listByAccount(user.getAccountId());
+            for (UserVO oneUser : allUsersByAccount) {
+                if (oneUser.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
+                    lockAccount = false;
+                    break;
                 }
             }
+
+            if (lockAccount) {
+                success = (success && lockAccountInternal(user.getAccountId()));
+            }
         } else {
-            s_logger.warn("Unable to find user with id: " + UserContext.current().getUserId());
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("Attempting to lock a non-enabled user, current state is " + user.getState() + " (userId: " + user.getId() + "), locking failed.");
+            }
         }
         return success;
     }
@@ -1621,7 +1617,6 @@ public class ManagementServerImpl implements ManagementServer {
         Long userId = UserContext.current().getUserId();
         Account account = (Account)UserContext.current().getAccountObject();
         String ipAddress = cmd.getIpAddress();
-        boolean result = false;
 
         // Verify input parameters
         Account accountByIp = findAccountByIpAddress(ipAddress);
@@ -4252,16 +4247,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _hostPodDao.listByDataCenterId(dataCenterId);
     }
     
-    @Override
-    public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange,String guestCidr) throws InvalidParameterValueException, InternalErrorException {
-        return _configMgr.createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr);
-    }
-
-//    @Override
-//    public void deleteZone(long userId, Long zoneId) throws InvalidParameterValueException, InternalErrorException {
-//        _configMgr.deleteZone(userId, zoneId);
-//    }
-
     @Override
     public String changePrivateIPRange(boolean add, Long podId, String startIP, String endIP) throws InvalidParameterValueException {
         return _configMgr.changePrivateIPRange(add, podId, startIP, endIP);
@@ -7954,7 +7939,7 @@ public class ManagementServerImpl implements ManagementServer {
 		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(cmd.getId(), VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
 	
 		if (systemVm == null) {
-        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + systemVm.getId());
+        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + cmd.getId());
         }
 		
 		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){

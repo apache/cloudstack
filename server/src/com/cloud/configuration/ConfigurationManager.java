@@ -24,6 +24,7 @@ import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.CreatePodCmd;
 import com.cloud.api.commands.CreateServiceOfferingCmd;
 import com.cloud.api.commands.CreateVlanIpRangeCmd;
+import com.cloud.api.commands.CreateZoneCmd;
 import com.cloud.api.commands.DeleteDiskOfferingCmd;
 import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.DeleteServiceOfferingCmd;
@@ -186,17 +187,12 @@ public interface ConfigurationManager extends Manager {
 	
 	/**
 	 * Creates a new zone
-	 * @param userId
-	 * @param zoneName
-	 * @param dns1
-	 * @param dns2
-	 * @param dns3
-	 * @param dns4
-	 * @param vnetRange
-	 * @param guestNetworkCidr
-	 * @return Zone
+	 * @param cmd
+	 * @return the zone if successful, null otherwise
+	 * @throws InvalidParameterValueException
+	 * @throws InternalErrorException
 	 */
-	DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String dns3, String dns4, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException;
+    DataCenterVO createZone(CreateZoneCmd cmd) throws InvalidParameterValueException, InternalErrorException;
 	
     /**
      * Edits a zone in the database. Will not allow you to edit DNS values if there are VMs in the specified zone.

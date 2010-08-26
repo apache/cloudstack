@@ -38,6 +38,7 @@ import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.CreatePodCmd;
 import com.cloud.api.commands.CreateServiceOfferingCmd;
 import com.cloud.api.commands.CreateVlanIpRangeCmd;
+import com.cloud.api.commands.CreateZoneCmd;
 import com.cloud.api.commands.DeleteDiskOfferingCmd;
 import com.cloud.api.commands.DeletePodCmd;
 import com.cloud.api.commands.DeleteServiceOfferingCmd;
@@ -886,8 +887,21 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
     
     @DB
-    public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException {
-    	
+    public DataCenterVO createZone(CreateZoneCmd cmd) throws InvalidParameterValueException, InternalErrorException {
+        // grab parameters from the command
+        Long userId = UserContext.current().getUserId();
+        String zoneName = cmd.getZoneName();
+        String dns1 = cmd.getDns1();
+        String dns2 = cmd.getDns2();
+        String internalDns1 = cmd.getInternalDns1();
+        String internalDns2 = cmd.getInternalDns2();
+        String vnetRange = cmd.getVlan();
+        String guestCidr = cmd.getGuestCidrAddress();
+
+        if (userId == null) {
+            userId = User.UID_SYSTEM;
+        }
+
         int vnetStart, vnetEnd;
         if (vnetRange != null) {
             String[] tokens = vnetRange.split("-");
@@ -911,23 +925,22 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         		throw new InvalidParameterValueException("Please specify a vlan range.");
         	}
         }
-        
+
         //checking the following params outside checkzoneparams method as we do not use these params for updatezone
         //hence the method below is generic to check for common params
-        if(guestCidr!=null && !NetUtils.isValidCIDR(guestCidr))
-        {
+        if ((guestCidr != null) && !NetUtils.isValidCIDR(guestCidr)) {
         	throw new InvalidParameterValueException("Please enter a valid guest cidr");
         }
-        
+
     	checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2,true);
-		
+
 		// Create the new zone in the database
 		DataCenterVO zone = new DataCenterVO(null, zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr);
 		zone = _zoneDao.persist(zone);
-		
+
 		// Add vnet entries for the new zone
     	_zoneDao.addVnet(zone.getId(), vnetStart, vnetEnd);
-		
+
 		saveConfigurationEvent(userId, null, EventTypes.EVENT_ZONE_CREATE, "Successfully created new zone with name: " + zoneName + ".", "dcId=" + zone.getId(), "dns1=" + dns1, "dns2=" + dns2, "internalDns1=" + internalDns1, "internalDns2=" + internalDns2, "vnetRange=" + vnetRange, "guestCidr=" + guestCidr);
     	
 		return zone;
@@ -1441,8 +1454,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 																												"vlanNetmask=" + vlanNetmask, "startIP=" + startIP,
 																												"endIP=" + endIP);
 
-		// if this is an account VLAN, now associate the IP Addresses to the account
-        associateIpAddressListToAccount(userId, account.getId(), zoneId, vlan.getId());
+		if (associateIpRangeToAccount) {
+	        // if this is an account VLAN, now associate the IP Addresses to the account
+	        associateIpAddressListToAccount(userId, account.getId(), zoneId, vlan.getId());
+		}
 
 		return vlan;
     }

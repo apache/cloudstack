@@ -928,27 +928,6 @@ public interface ManagementServer {
     List<HostPodVO> listPods(long dataCenterId);
 
     /**
-     * Adds a new zone to the database
-     * @param userId
-     * @param zoneName
-     * @param dns1
-     * @param dns2
-     * @param dns3
-     * @param dns4
-     * @param "-" separated range for network virtualization.
-     * @param guestNetworkCidr
-     * @return Zone
-     */
-    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String dns3, String dns4, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException;
-    
-    /**
-     * Deletes a zone from the database
-     * @param userId
-     * @param zoneId
-     */
-//    void deleteZone(long userId, Long zoneId) throws InvalidParameterValueException, InternalErrorException;
-    
-    /**
      * Change a pod's private IP range
      * @param op
      * @param podId
