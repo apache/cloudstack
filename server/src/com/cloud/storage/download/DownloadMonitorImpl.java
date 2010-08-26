@@ -483,7 +483,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			}
 		}
 		
-		for (String uniqueName: templateInfo.keySet()) {
+		/*for (String uniqueName: templateInfo.keySet()) {
 			TemplateInfo tInfo = templateInfo.get(uniqueName);
 			DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(tInfo.getInstallPath());
 			long result = send(sserverId, dtCommand, null);
@@ -497,7 +497,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			logEvent(1L, EventTypes.EVENT_TEMPLATE_DELETE, description, EventVO.LEVEL_INFO);
 			s_logger.info(description);
 
-		}
+		}*/
 
 	}
 
