@@ -110,9 +110,7 @@
         <dao name="GuestOSDao" class="com.cloud.storage.dao.GuestOSDaoImpl"/>
         <dao name="GuestOSCategoryDao" class="com.cloud.storage.dao.GuestOSCategoryDaoImpl"/>
         <dao name="ClusterDao" class="com.cloud.dc.dao.ClusterDaoImpl"/>
-        <dao name="NetworkProfileDao" class="com.cloud.network.dao.NetworkProfileDaoImpl"/>
-        <dao name="NetworkOfferingDao" class="com.cloud.offerings.dao.NetworkOfferingDaoImpl"/>
-
+        
         <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
             <adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator"/>
             <adapter name="FirstFit" class="com.cloud.agent.manager.allocator.impl.FirstFitAllocator"/>

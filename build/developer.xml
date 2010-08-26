@@ -100,7 +100,7 @@
   </target>
     
   <target name="deploy-server" depends="deploy-common" >
-    <copy todir="${server.deploy.to.dir}/webapps/client/WEB-INF/lib/vms" file="${dist.dir}/systemvm.iso" />
+    <copy todir="${server.deploy.to.dir}/webapps/client/WEB-INF/lib/vms" file="${dist.dir}/systemvm.zip" />
   </target>
 
   <target name="deploy-common" > 
@@ -114,6 +114,7 @@
         <include name="*.jar"/>
       </fileset>
     </copy>
+    <copy todir="${server.deploy.to.dir}/webapps/client/WEB-INF/lib/scripts/vm/hypervisor/xenserver" file="${dist.dir}/patch.tgz" />
     <touch file="${server.deploy.to.dir}/webapps/client/WEB-INF/lib/scripts/vm/hypervisor/xenserver/version"/>
     <echo file="${server.deploy.to.dir}/webapps/client/WEB-INF/lib/scripts/vm/hypervisor/xenserver/version" append="false" message="${version}.${build.number}"/>
     <copy overwrite="true" todir="${server.deploy.to.dir}/conf">

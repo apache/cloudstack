@@ -107,10 +107,6 @@
   <property name="meld.home" location="/usr/local/bin" />
   <property name="assertion" value="-da" />
 
-  <!-- directories for patches -->
-  <property name="kvm.patch.dist.dir" location="${dist.dir}/patches/kvm" />
-  <property name="xenserver.patch.dist.dir" location="${dist.dir}/patches/xenserver" />
-
   <!-- directories for testing -->
   <property name="test.target.dir" location="${target.dir}/test" />
   <property name="test.classes.dir" location="${test.target.dir}/classes" />
@@ -523,8 +519,7 @@
 
 
   <target name="build-kvm-domr-patch" depends="-init">
-    <mkdir dir="${kvm.patch.dist.dir}" />
-    <tar destfile="${kvm.patch.dist.dir}/patch.tar">
+    <tar destfile="${dist.dir}/patch.tar">
       <tarfileset dir="${base.dir}/patches/kvm" filemode="755">
         <include name="**/*"/>
         <exclude name="**/.classpath" />
@@ -536,26 +531,8 @@
         <exclude name="**/.project" />
       </tarfileset>
     </tar>
-    <gzip destfile="${kvm.patch.dist.dir}/patch.tgz" src="${kvm.patch.dist.dir}/patch.tar"/>
-    <delete file="${kvm.patch.dist.dir}/patch.tar"/>
-  </target>
-
-  <target name="build-xenserver-domr-patch" depends="-init">
-    <mkdir dir="${xenserver.patch.dist.dir}" />
-    <tar destfile="${xenserver.patch.dist.dir}/patch.tar">
-      <tarfileset dir="${base.dir}/patches/xenserver" filemode="755">
-        <include name="**/*"/>
-        <exclude name="**/.classpath" />
-        <exclude name="**/.project" />
-      </tarfileset>
-      <tarfileset dir="${base.dir}/patches/shared" filemode="755">
-        <include name="**/*"/>
-        <exclude name="**/.classpath" />
-        <exclude name="**/.project" />
-      </tarfileset>
-    </tar>
-    <gzip destfile="${xenserver.patch.dist.dir}/patch.tgz" src="${xenserver.patch.dist.dir}/patch.tar"/>
-    <delete file="${xenserver.patch.dist.dir}/patch.tar"/>
+    <gzip destfile="${dist.dir}/patch.tgz" src="${dist.dir}/patch.tar"/>
+    <delete file="${dist.dir}/patch.tar"/>
   </target>
 
   <target name="help">
