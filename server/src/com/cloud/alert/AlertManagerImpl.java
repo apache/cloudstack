@@ -154,6 +154,7 @@ public class AlertManagerImpl implements AlertManager {
         }
 
         _emailAlert = new EmailAlert(emailAddresses, smtpHost, smtpPort, useAuth, smtpUsername, smtpPassword, emailSender, smtpDebug);
+        _emailAlert = null;
 
         String storageCapacityThreshold = configs.get("storage.capacity.threshold");
         String cpuCapacityThreshold = configs.get("cpu.capacity.threshold");

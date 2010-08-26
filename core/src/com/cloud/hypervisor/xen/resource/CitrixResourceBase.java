@@ -152,6 +152,7 @@ import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network.BroadcastDomainType;
 import com.cloud.network.Network.TrafficType;
+import com.cloud.hypervisor.xen.resource.XenServerConnectionPool.XenServerConnection;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
@@ -1063,29 +1064,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
 
     protected Answer execute(ModifySshKeysCommand cmd) {
-        String publickey = cmd.getPubKey();
-        String privatekey = cmd.getPrvKey();
-
-        com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_host.ip, 22);
-        try {
-            sshConnection.connect(null, 60000, 60000);
-            if (!sshConnection.authenticateWithPassword(_username, _password)) {
-                throw new Exception("Unable to authenticate");
-            }
-            SCPClient scp = new SCPClient(sshConnection);
-
-            scp.put(publickey.getBytes(), "id_rsa.pub", "/opt/xensource/bin", "0600");
-            scp.put(privatekey.getBytes(), "id_rsa", "/opt/xensource/bin", "0600");
-            scp.put(privatekey.getBytes(), "id_rsa.cloud", "/root/.ssh", "0600");
-            return new Answer(cmd);
-
-        } catch (Exception e) {
-            String msg = " scp ssh key failed due to " + e.toString() + " - " + e.getMessage();
-            s_logger.warn(msg);
-        } finally {
-            sshConnection.close();
-        }
-        return new Answer(cmd, false, "modifySshkeys failed");
+    	return new Answer(cmd);
     }
 
     private boolean doPingTest(final String computingHostIp) {
@@ -3187,13 +3166,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
             Ternary<SR, VDI, VolumeVO> mount = mounts.get(0);
 
-            if (!patchSystemVm(mount.second(), vmName)) { // FIXME make this
-                // nonspecific
-                String msg = "patch system vm failed";
-                s_logger.warn(msg);
-                return msg;
-            }
-
             Set<VM> templates = VM.getByNameLabel(conn, "CentOS 5.3");
             if (templates.size() == 0) {
                 templates = VM.getByNameLabel(conn, "CentOS 5.3 (64-bit)");
@@ -3232,6 +3204,17 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             vbdr.type = Types.VbdType.DISK;
             VBD.create(conn, vbdr);
 
+            
+            /* create CD-ROM VBD */
+            VBD.Record cdromVBDR = new VBD.Record();
+            cdromVBDR.VM = vm;
+            cdromVBDR.empty = true;
+            cdromVBDR.bootable = false;
+            cdromVBDR.userdevice = "3";
+            cdromVBDR.mode = Types.VbdMode.RO;
+            cdromVBDR.type = Types.VbdType.CD;
+            VBD cdromVBD = VBD.create(conn, cdromVBDR);
+            cdromVBD.insert(conn, VDI.getByUuid(conn, _host.systemvmisouuid));
 
             /* create VIF0 */
             VIF.Record vifr = new VIF.Record();
@@ -3508,8 +3491,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 s_logger.debug("Slave logon successful. session= " + slaveSession);
             }
             Host host = Host.getByUuid(slaveConn, _host.uuid);
-
-
             for (int i = 0; i < params.length; i += 2) {
                 args.put(params[i], params[i + 1]);
             }
@@ -4013,7 +3994,38 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         try {
             Host myself = Host.getByUuid(conn, _host.uuid);
             _host.pool = getPoolUuid();
+            
+            boolean findsystemvmiso = false;
+            Set<SR> srs = SR.getByNameLabel(conn, "XenServer Tools");
+            if( srs.size() != 1 ) {
+            	throw new CloudRuntimeException("There are " + srs.size() + " SRs with name XenServer Tools");
+            }
+            SR sr = srs.iterator().next();
+            sr.scan(conn);
 
+            SR.Record srr = sr.getRecord(conn);
+            _host.systemvmisouuid = null;
+            for( VDI vdi : srr.VDIs ) {
+            	VDI.Record vdir = vdi.getRecord(conn);
+           		if(vdir.nameLabel.contains("systemvm-premium")){
+           			_host.systemvmisouuid = vdir.uuid;
+           			break;
+            	}                   	
+            }
+            if(  _host.systemvmisouuid == null ) {
+                for( VDI vdi : srr.VDIs ) {
+                    VDI.Record vdir = vdi.getRecord(conn);
+                        if(vdir.nameLabel.contains("systemvm")){
+                            _host.systemvmisouuid = vdir.uuid;
+                            break;
+                     }
+                }
+            }
+
+            if(  _host.systemvmisouuid == null ) {
+            	throw new CloudRuntimeException("can not find systemvmiso");
+            } 
+            
             String name = "cloud-private";
             if (_privateNetworkName != null) {
                 name = _privateNetworkName;
@@ -4344,17 +4356,13 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     scp.put(f, d, p);
 
                 }
+
             } catch (IOException e) {
                 throw new CloudRuntimeException("Unable to setup the server correctly", e);
             } finally {
                 sshConnection.close();
             }
-            try {
-                // wait 2 seconds before call plugin
-                Thread.sleep(2000);
-            } catch (final InterruptedException ex) {
 
-            }
             if (!setIptables()) {
                 s_logger.warn("set xenserver Iptable failed");
             }
@@ -6639,6 +6647,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     // the resource first connects to XenServer. These UUIDs do
     // not change over time.
     protected class XenServerHost {
+        public String systemvmisouuid;
         public String uuid;
         public String ip;
         public String publicNetwork;
