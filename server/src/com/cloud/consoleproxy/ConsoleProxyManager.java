@@ -27,9 +27,8 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.ConsoleProxyVO;
-
-
 public interface ConsoleProxyManager extends Manager {
+	
 	public static final int DEFAULT_PROXY_CAPACITY = 50;
 	public static final int DEFAULT_STANDBY_CAPACITY = 10;
 	public static final int DEFAULT_PROXY_VM_RAMSIZE = 1024;			// 1G
