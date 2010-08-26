@@ -65,13 +65,13 @@ import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeleteIsoCmd;
-import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
+import com.cloud.api.commands.ListAlertsCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
@@ -111,15 +111,15 @@ import com.cloud.async.executor.NetworkGroupIngressParam;
 import com.cloud.async.executor.SecurityGroupParam;
 import com.cloud.async.executor.UpdateLoadBalancerParam;
 import com.cloud.async.executor.VMOperationParam;
-import com.cloud.async.executor.VolumeOperationParam;
 import com.cloud.async.executor.VMOperationParam.VmOp;
+import com.cloud.async.executor.VolumeOperationParam;
 import com.cloud.async.executor.VolumeOperationParam.VolumeOp;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
-import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.consoleproxy.ConsoleProxyManager;
@@ -129,8 +129,8 @@ import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -194,21 +194,21 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Snapshot.SnapshotType;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.DiskTemplateDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -218,9 +218,9 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -242,12 +242,12 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -6314,12 +6314,27 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<AlertVO> searchForAlerts(Criteria c) {
-        Filter searchFilter = new Filter(AlertVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+    public List<AlertVO> searchForAlerts(ListAlertsCmd cmd) {
+        Integer page = cmd.getPage();
+        Integer pageSize = cmd.getPageSize();
+        Long startIndex = Long.valueOf(0);
+        long pageSizeNum = 50;
+        if (pageSize != null) {
+            pageSizeNum = pageSize.intValue();
+        }
+        if (page != null) {
+            int pageNum = page.intValue();
+            if (pageNum > 0) {
+                startIndex = pageSizeNum * (pageNum - 1L);
+            }
+        }
+
+        Filter searchFilter = new Filter(AlertVO.class, "lastSent", false, startIndex, pageSizeNum);
         SearchCriteria<AlertVO> sc = _alertDao.createSearchCriteria();
 
-        Object type = c.getCriteria(Criteria.TYPE);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
+        
+        Object type = cmd.getType();
+        Object keyword = cmd.getKeyword();
 
         if (keyword != null) {
             SearchCriteria<AlertVO> ssc = _alertDao.createSearchCriteria();

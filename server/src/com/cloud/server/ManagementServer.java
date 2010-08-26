@@ -31,6 +31,7 @@ import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
+import com.cloud.api.commands.ListAlertsCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
@@ -1526,7 +1527,7 @@ public interface ManagementServer {
      * @param c
      * @return List of Alerts
      */
-    List<AlertVO> searchForAlerts(Criteria c);
+    List<AlertVO> searchForAlerts(ListAlertsCmd cmd);
 
     /**
      * list all the capacity rows in capacity operations table
