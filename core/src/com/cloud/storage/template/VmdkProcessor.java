@@ -26,7 +26,7 @@ public class VmdkProcessor implements Processor {
         }
         
         s_logger.info("Template processing. templatePath: " + templatePath + ", templateName: " + templateName);
-        String templateFilePath = templatePath + File.separator + templateName + ImageFormat.VMDK.getFileExtension();
+        String templateFilePath = templatePath + File.separator + templateName + "." + ImageFormat.VMDK.getFileExtension();
         if (!_storage.exists(templateFilePath)) {
         	if(s_logger.isInfoEnabled())
         		s_logger.info("Unable to find the vmware template file: " + templateFilePath);
@@ -35,7 +35,7 @@ public class VmdkProcessor implements Processor {
         
         FormatInfo info = new FormatInfo();
         info.format = ImageFormat.VMDK;
-        info.filename = templateName + ImageFormat.VMDK.getFileExtension();
+        info.filename = templateName + "." + ImageFormat.VMDK.getFileExtension();
         info.size = _storage.getSize(templateFilePath);
         info.virtualSize = info.size;
         return info;

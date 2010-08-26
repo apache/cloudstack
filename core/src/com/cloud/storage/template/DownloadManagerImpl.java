@@ -303,7 +303,7 @@ public class DownloadManagerImpl implements DownloadManager {
         }
 
         // add options common to ISO and template
-        String extension = dnld.getFormat().toString().toLowerCase();
+        String extension = dnld.getFormat().getFileExtension();
         String templateName = "";
         if( extension.equals("iso")) {
             templateName = jobs.get(jobId).getTmpltName().trim().replace(" ", "_");
