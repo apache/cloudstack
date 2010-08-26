@@ -576,7 +576,7 @@ function showInstancesTab(p_domainId, p_account) {
 						
 						if (offerings != null && offerings.length > 0) {
 							for (var i = 0; i < offerings.length; i++) {
-								var option = $("<option value='" + offerings[i].id + "'>" + sanitizeXSS(offerings[i].displaytext) + "</option>").data("name", offerings[i].name);
+								var option = $("<option value='" + offerings[i].id + "'>" + sanitizeXSS(unescape(offerings[i].displaytext)) + "</option>").data("name", sanitizeXSS(unescape(offerings[i].name)));
 								offeringSelect.append(option); 
 							}
 						} 
@@ -611,7 +611,7 @@ function showInstancesTab(p_domainId, p_account) {
 								                        vmInstance.find(".row_loading").show();
 								                        vmInstance.find(".loadingmessage_container .loadingmessage_top p").html("Your virtual instance has been upgraded.  Please restart your virtual instance for the new service offering to take effect.");
 								                        vmInstance.find(".loadingmessage_container").fadeIn("slow");										                        
-								                        vmInstance.find("#vm_service").html("<strong>Service:</strong> " + sanitizeXSS(result.virtualmachine[0].serviceofferingname));		
+								                        vmInstance.find("#vm_service").html("<strong>Service:</strong> " + sanitizeXSS(unescape(result.virtualmachine[0].serviceofferingname)));		
 								                        if (result.virtualmachine[0].haenable =='true') {
 			                                                vmInstance.find("#vm_ha").html("<strong>HA:</strong> Enabled");
 			                                                vmInstance.find("#vm_action_ha").text("Disable HA");
@@ -1109,7 +1109,7 @@ function showInstancesTab(p_domainId, p_account) {
 		instanceTemplate.find("#vm_ip_address").html("<strong>IP Address:</strong> " + instanceJSON.ipaddress);
 		instanceTemplate.find("#vm_zone").html("<strong>Zone:</strong> " + sanitizeXSS(instanceJSON.zonename));
 		instanceTemplate.find("#vm_template").html("<strong>Template:</strong> " + sanitizeXSS(instanceJSON.templatename));
-		instanceTemplate.find("#vm_service").html("<strong>Service:</strong> " + sanitizeXSS(instanceJSON.serviceofferingname));
+		instanceTemplate.find("#vm_service").html("<strong>Service:</strong> " + sanitizeXSS(unescape(instanceJSON.serviceofferingname)));
 		if (instanceJSON.haenable =='true') {
 			instanceTemplate.find("#vm_ha").html("<strong>HA:</strong> Enabled");
 			instanceTemplate.find("#vm_action_ha").text("Disable HA");
@@ -1277,7 +1277,7 @@ function showInstancesTab(p_domainId, p_account) {
 					        continue;						
 						var checked = "checked";
 						if (first == false) checked = "";
-						var listItem = $("<li><input class='radio' type='radio' name='service' id='service' value='"+offerings[i].id+"'" + checked + "/><label style='width:500px;font-size:11px;' for='service'>"+sanitizeXSS(offerings[i].displaytext)+"</label></li>");
+						var listItem = $("<li><input class='radio' type='radio' name='service' id='service' value='"+offerings[i].id+"'" + checked + "/><label style='width:500px;font-size:11px;' for='service'>"+sanitizeXSS(unescape(offerings[i].displaytext))+"</label></li>");
 						$("#wizard_service_offering").append(listItem);													
 						first = false;
 					}
@@ -1306,14 +1306,14 @@ function showInstancesTab(p_domainId, p_account) {
 								var html = 
 									"<li>"
 										+"<input class='radio' type='radio' name='rootdisk' id='rootdisk' value='"+offerings[i].id+"'" + ((i==0)?"checked":"") + "/>"
-										+"<label style='width:500px;font-size:11px;' for='disk'>"+sanitizeXSS(offerings[i].displaytext)+"</label>"
+										+"<label style='width:500px;font-size:11px;' for='disk'>"+sanitizeXSS(unescape(offerings[i].displaytext))+"</label>"
 								   +"</li>";
 								$("#wizard_root_disk_offering").append(html);
 							
 								var html2 = 
 								"<li>"
 									+"<input class='radio' type='radio' name='datadisk' id='datadisk' value='"+offerings[i].id+"'" + "/>"
-									+"<label style='width:500px;font-size:11px;' for='disk'>"+sanitizeXSS(offerings[i].displaytext)+"</label>"
+									+"<label style='width:500px;font-size:11px;' for='disk'>"+sanitizeXSS(unescape(offerings[i].displaytext))+"</label>"
 							   +"</li>";
 								$("#wizard_data_disk_offering").append(html2);																		
 							}

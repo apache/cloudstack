@@ -1,3 +1,9 @@
+<%@ page import="java.util.Date" %>
+
+<%
+long milliseconds = new Date().getTime();
+%>
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -5,10 +11,9 @@
 	<meta http-equiv='cache-control' content='no-cache'>  
 	<meta http-equiv='expires' content='0'>  
 	<meta http-equiv='pragma' content='no-cache'>
-	<meta name="version" content="@VERSION@" />
+	<meta name="version" content="1.9.1.13" />
 
 	<title>cloud.com - User Console</title>
-	
 	
 	<!--  Style Sheet -->
 	<link rel= "stylesheet" href="css/main.css" type="text/css" />
@@ -38,12 +43,12 @@
 	<script type="text/javascript" src="scripts/jquery.md5.js"></script>
 	
 	<!-- Callback script for Single Signon -->
-	<script type="text/javascript" src="scripts/cloud.core.callbacks.js"></script>
+	<script type="text/javascript" src="scripts/cloud.core.callbacks.js?t=<%=milliseconds%>"></script>
 	
 	<!-- cloud.com scripts -->
-	<script type="text/javascript" src="scripts/cloud.logger.js"></script>
-	<script type="text/javascript" src="scripts/cloud.core.js"></script>
-	<script type="text/javascript" src="scripts/cloud.core.init.js"></script>
+	<script type="text/javascript" src="scripts/cloud.logger.js?t=<%=milliseconds%>"></script>
+	<script type="text/javascript" src="scripts/cloud.core.js?t=<%=milliseconds%>"></script>
+	<script type="text/javascript" src="scripts/cloud.core.init.js?t=<%=milliseconds%>"></script>
 		
 	<!-- Favicon -->
 	<link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />

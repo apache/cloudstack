@@ -939,10 +939,12 @@ public class StorageManagerImpl implements StorageManager {
     		if (vmId != null) {
     			VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
     			if (vmInstance != null) {
-    				return vmInstance.getHostId();
+    				Long hostId = vmInstance.getHostId();
+    				if (hostId != null && !avoidHosts.contains(vmInstance.getHostId()))
+    					return hostId;
     			}
     		}
-    		return null;
+    		/*Can't find the vm where host resides on(vm is destroyed? or volume is detached from vm), randomly choose a host to send the cmd */
     	}
         List<StoragePoolHostVO> poolHosts = _poolHostDao.listByHostStatus(poolVO.getId(), Status.Up);
         Collections.shuffle(poolHosts);

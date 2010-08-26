@@ -1,4 +1,8 @@
-<script type="text/javascript" src="scripts/cloud.core.instances.js"></script>	
+<%@ page import="java.util.Date" %>
+<%
+long milliseconds = new Date().getTime();
+%>
+<script type="text/javascript" src="scripts/cloud.core.instances.js?t=<%=milliseconds%>"></script>
 
 <!-- Content Panel -->
 <!-- Submenu -->
@@ -704,8 +708,7 @@
                     <h2>
                         <strong>Step 3:</strong> Optional</h2>
                     <p>
-                        To create a new instance, please first select a zone you wish to have your virtual
-                        instance hosted on.</p>
+                        You can choose to name and group your virtual machine for easy identification. You can also choose additional data storage. (These options can be added at any time.) </p>
                 </div>
                 <div class="rev_wizmid_contentbox">
                     <div class="rev_tempsearchpanel">
