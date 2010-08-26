@@ -20,31 +20,22 @@ package com.cloud.api.commands;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.alert.AlertVO;
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseListCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.server.Criteria;
-import com.cloud.utils.Pair;
+import com.cloud.api.response.AlertResponse;
+import com.cloud.serializer.SerializerHelper;
 
-
-public class ListAlertsCmd extends BaseCmd {
+@Implementation(method="searchForALerts")
+public class ListAlertsCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListAlertsCmd.class.getName());
 
     private static final String s_name = "listalertsresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TYPE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -67,60 +58,25 @@ public class ListAlertsCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
 
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
+    @Override @SuppressWarnings("unchecked")
+    public String getResponse() {
+        List<AlertVO> alertList = (List<AlertVO>)getResponseObject();
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        String alertType = (String) params.get(BaseCmd.Properties.TYPE.getName());
-        String keyword = (String) params.get(BaseCmd.Properties.KEYWORD.getName());
-        Integer page = (Integer) params.get(BaseCmd.Properties.PAGE.getName());
-        Integer pageSize = (Integer) params.get(BaseCmd.Properties.PAGESIZE.getName());
+        List<AlertResponse> alertResponseList = new ArrayList<AlertResponse>();
+        for (AlertVO alert : alertList) {
+            AlertResponse alertResponse = new AlertResponse();
+            alertResponse.setAlertType(alert.getType());
+            alertResponse.setDescription(alert.getSubject());
+            alertResponse.setLastSent(alert.getLastSent());
 
-        Long startIndex = Long.valueOf(0);
-        int pageSizeNum = 50;
-        if (pageSize != null) {
-            pageSizeNum = pageSize.intValue();
-        }
-        if (page != null) {
-            int pageNum = page.intValue();
-            if (pageNum > 0) {
-                startIndex = Long.valueOf(pageSizeNum * (pageNum - 1));
-            }
+            alertResponseList.add(alertResponse);
         }
 
-        Criteria c = new Criteria("lastSent", Boolean.FALSE, startIndex, Long.valueOf(pageSizeNum));
-        c.addCriteria(Criteria.KEYWORD, keyword);
-
-        if (keyword == null)
-            c.addCriteria(Criteria.TYPE, alertType);
-
-        List<AlertVO> alerts = getManagementServer().searchForAlerts(c);
-
-        if (alerts == null) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "unable to find alerts");
-        }
-
-        List<Pair<String, Object>> alertsTags = new ArrayList<Pair<String, Object>>();
-        Object[] aTag = new Object[alerts.size()];
-        int i = 0;
-
-        for (AlertVO alert : alerts) {
-            List<Pair<String, Object>> alertData = new ArrayList<Pair<String, Object>>();
-            alertData.add(new Pair<String, Object>(BaseCmd.Properties.TYPE.getName(), alert.getType()));
-            alertData.add(new Pair<String, Object>(BaseCmd.Properties.DESCRIPTION.getName(), alert.getSubject()));
-            alertData.add(new Pair<String, Object>(BaseCmd.Properties.SENT.getName(), alert.getLastSent()));
-            aTag[i++] = alertData;
-        }
-
-        Pair<String, Object> alertTag = new Pair<String, Object>("alert", aTag);
-        alertsTags.add(alertTag);
-        return alertsTags;
-
+        return SerializerHelper.toSerializedString(alertResponseList);
     }
 }
