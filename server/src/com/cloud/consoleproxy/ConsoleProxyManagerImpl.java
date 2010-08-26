@@ -57,6 +57,9 @@ import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.manager.AgentManager;
+import com.cloud.api.BaseCmd;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.DestroyConsoleProxyCmd;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -76,6 +79,7 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
@@ -2359,5 +2363,21 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager,
 		if (event != null)
 			return event.getId();
 		return null;
+	}
+	
+	@Override
+	public boolean destroyConsoleProxy(DestroyConsoleProxyCmd cmd) throws ServerApiException{
+	    Long proxyId = cmd.getId();
+	    
+	    // verify parameters
+        ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyId);
+        if (proxy == null) {
+        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a console proxy with id " + proxyId);
+        }
+        
+        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_DESTROY, "destroying console proxy with Id: "+proxyId);
+        
+        return destroyProxy(proxyId, eventId);
+        
 	}
 }

@@ -22,6 +22,7 @@ import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.ConsoleAccessAuthenticationCommand;
 import com.cloud.agent.api.ConsoleProxyLoadReportCommand;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.DestroyConsoleProxyCmd;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -52,5 +53,5 @@ public interface ConsoleProxyManager extends Manager {
 	
     public void onAgentConnect(HostVO host, StartupCommand cmd);
 	public void onAgentDisconnect(long agentId, Status state);
-	public boolean destroyConsoleProxy(DestroyConsoleProxyCmd cmd);
+	public boolean destroyConsoleProxy(DestroyConsoleProxyCmd cmd) throws ServerApiException;
 }

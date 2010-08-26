@@ -5966,9 +5966,9 @@ public class ManagementServerImpl implements ManagementServer {
         return _consoleProxyMgr.rebootProxy(instanceId, startEventId);
     }
 
-    public boolean destroyConsoleProxy(long instanceId, long startEventId) {
-        return _consoleProxyMgr.destroyProxy(instanceId, startEventId);
-    }
+//    public boolean destroyConsoleProxy(long instanceId, long startEventId) {
+//        return _consoleProxyMgr.destroyProxy(instanceId, startEventId);
+//    }
 
     public long startConsoleProxyAsync(long instanceId) {
         long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_START, "starting console proxy with Id: "+instanceId);
@@ -6016,19 +6016,19 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job, true);
     }
 
-    public long destroyConsoleProxyAsync(long instanceId) {
-        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_DESTROY, "destroying console proxy with Id: "+instanceId);
-        VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-        job.setCmd("DestroyConsoleProxy");
-        job.setCmdInfo(gson.toJson(param));
-        
-        return _asyncMgr.submitAsyncJob(job);
-    }
+//    public long destroyConsoleProxyAsync(long instanceId) {
+//        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_DESTROY, "destroying console proxy with Id: "+instanceId);
+//        VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//        job.setUserId(UserContext.current().getUserId());
+//        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
+//        job.setCmd("DestroyConsoleProxy");
+//        job.setCmdInfo(gson.toJson(param));
+//        
+//        return _asyncMgr.submitAsyncJob(job);
+//    }
 
     public String getConsoleAccessUrlRoot(long vmId) {
         VMInstanceVO vm = this.findVMInstanceById(vmId);

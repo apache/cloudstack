@@ -1322,8 +1322,8 @@ public interface ManagementServer {
 	long stopConsoleProxyAsync(long instanceId);
 	boolean rebootConsoleProxy(long instanceId, long startEventId);
 	long rebootConsoleProxyAsync(long instanceId);
-	boolean destroyConsoleProxy(long instanceId, long startEventId);
-	long destroyConsoleProxyAsync(long instanceId);
+//	boolean destroyConsoleProxy(long instanceId, long startEventId);
+//	long destroyConsoleProxyAsync(long instanceId);
 	String getConsoleAccessUrlRoot(long vmId);
 	ConsoleProxyVO findConsoleProxyById(long instanceId);
 	VMInstanceVO findSystemVMById(long instanceId);

@@ -18,20 +18,12 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.BaseCmd.Manager;
-import com.cloud.utils.Pair;
-import com.cloud.vm.ConsoleProxyVO;
 
 @Implementation(method="destroyConsoleProxy", manager=Manager.ConsoleProxyManager)
 public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
@@ -64,27 +56,27 @@ public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
         return s_name;
     }
     
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-	    Long proxyId = (Long)params.get(BaseCmd.Properties.ID.getName());
-	    
-	    // verify parameters
-        ConsoleProxyVO proxy = getManagementServer().findConsoleProxyById(proxyId);
-        if (proxy == null) {
-        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a console proxy with id " + proxyId);
-        }
-        
-	    long jobId = getManagementServer().destroyConsoleProxyAsync(proxyId.longValue());
-        if(jobId == 0) {
-        	s_logger.warn("Unable to schedule async-job for DestroyConsoleProxy comamnd");
-        } else {
-	        if(s_logger.isDebugEnabled())
-	        	s_logger.debug("DestroyConsoleProxy command has been accepted, job id: " + jobId);
-        }
-	    
-	    List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-	    returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-	    return returnValues;
-    }
+//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
+//	    Long proxyId = (Long)params.get(BaseCmd.Properties.ID.getName());
+//	    
+//	    // verify parameters
+//        ConsoleProxyVO proxy = getManagementServer().findConsoleProxyById(proxyId);
+//        if (proxy == null) {
+//        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a console proxy with id " + proxyId);
+//        }
+//        
+//	    long jobId = getManagementServer().destroyConsoleProxyAsync(proxyId.longValue());
+//        if(jobId == 0) {
+//        	s_logger.warn("Unable to schedule async-job for DestroyConsoleProxy comamnd");
+//        } else {
+//	        if(s_logger.isDebugEnabled())
+//	        	s_logger.debug("DestroyConsoleProxy command has been accepted, job id: " + jobId);
+//        }
+//	    
+//	    List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
+//	    returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
+//	    return returnValues;
+//    }
 
 
 	@Override
