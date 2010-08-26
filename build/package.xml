@@ -72,6 +72,7 @@
         <include name="${agent.jar}" />
         <include name="${utils.jar}" />
         <include name="${core.jar}" />
+        <include name="${api.jar}" />
       </zipfileset>
 
       <zipfileset dir="${agent.dist.dir}" filemode="770">
@@ -131,14 +132,13 @@
     <war destfile="${client.dist.dir}/client.war" webxml="${client.dir}/WEB-INF/web.xml">
       <fileset dir="${client.target.dir}">
         <include name="**/*" />
+      	<exclude name="**/*.properties" />
       </fileset>
       <classes dir="${client.target.dir}">
     	  <include name="**/resources/*.properties" />
       </classes>
       <lib dir="${jar.dir}">
-        <include name="${core.jar}" />
-        <include name="${utils.jar}" />
-        <include name="${server.jar}" />
+        <include name="cloud-*.jar" />
       </lib>
       <zipfileset dir="${scripts.target.dir}" prefix="WEB-INF/lib/scripts" filemode="555">
         <include name="**/*" />
@@ -168,6 +168,7 @@
         <include name="${agent.jar}" />
         <include name="${utils.jar}" />
         <include name="${core.jar}" />
+        <include name="${api.jar}" />
       </zipfileset>
       <zipfileset dir="${console-proxy.dist.dir}">
         <exclude name="**/*.sh" />

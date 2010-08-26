@@ -7,6 +7,7 @@
     </description>
 
   <!--
+  Test
  	Always use this variable to refer to the base directory because this
 	variable is changeable
     -->
@@ -60,7 +61,7 @@
   <property name="dep.cache.dir" location="${target.dir}/dep-cache" />
   <property name="build.log" location="${target.dir}/ant_verbose.txt" />
 
-  <property name="proprietary.dir" location="${base.dir}/cloudstack-proprietary" />
+  <property name="proprietary.dir" location="${base.dir}/${premium.name}" />
 
   <property name="thirdparty.dir" location="${proprietary.dir}/thirdparty" />
   <property name="deps.dir" location="${base.dir}/deps" />
@@ -100,7 +101,7 @@
   <property name="console-viewer.dist.dir" location="${dist.dir}/console-viewer" />
 
   <property name="tools.dir" location="${base.dir}/tools" />
-<!--  <property name="antcontrib.dir" location="${tools.dir}/tools/ant/apache-ant-1.8.0/lib" />-->
+  <!--  <property name="antcontrib.dir" location="${tools.dir}/tools/ant/apache-ant-1.8.0/lib" />-->
   <property name="deploy.dir" location="${build.dir}/deploy" />
   <property name="production.dir" location="${deploy.dir}/production" />
   <property name="meld.home" location="/usr/local/bin" />
@@ -135,7 +136,7 @@
 
   <path id="src.classpath">
   </path>
-     
+
   <path id="thirdparty.classpath">
     <filelist files="${thirdparty.classpath}" />
     <fileset dir="${thirdparty.dir}" erroronmissingdir="false">
@@ -190,8 +191,7 @@
     <copy todir="${scripts.target.dir}">
       <fileset dir="${scripts.dir}">
         <include name="**/*"/>
-        <exclude name="**/.classpath" />
-        <exclude name="**/.project" />
+        <exclude name="**/.*" />
         <exclude name="**/network/domr/mth/" />
         <exclude name="**/network/domr/kvm/" />
         <exclude name="**/network/domr/xenserver/" />
@@ -244,24 +244,40 @@
     <copy todir="${server.dist.dir}/lib">
       <fileset dir="${thirdparty.dir}">
         <include name="mysql-connector-java-5.1.7-bin.jar" />
-	<include name="cglib-nodep-2.2.jar" />
-	<include name="gson-1.3.jar" />
-	<include name="log4j-1.2.15.jar" />
-	<include name="apache-log4j-extras-1.0.jar" />
-	<include name="ehcache-1.5.0.jar" />
-	<include name="commons-logging-1.1.1.jar" />
-	<include name="commons-dbcp-1.2.2.jar" />
-	<include name="commons-pool-1.4.jar" />
-	<include name="backport-util-concurrent-3.0.jar" />
-	<include name="httpcore-4.0.jar" />
-	<include name="commons-httpclient-3.1.jar" />
-	<include name="commons-codec-1.4.jar" />
-	<include name="email.jar" />
-	<include name="xmlrpc-client-3.1.3.jar" />
-	<include name="xmlrpc-common-3.1.3.jar" />
-	<include name="xenserver-5.5.0-1.jar" />
-	<include name="ws-commons-util-1.0.2.jar" />
-	<include name="trilead-ssh2-build213.jar" />
+        <include name="cglib-nodep-2.2.jar" />
+        <include name="gson-1.3.jar" />
+        <include name="log4j-1.2.15.jar" />
+        <include name="apache-log4j-extras-1.0.jar" />
+        <include name="ehcache-1.5.0.jar" />
+        <include name="commons-logging-1.1.1.jar" />
+        <include name="commons-dbcp-1.2.2.jar" />
+        <include name="commons-pool-1.4.jar" />
+        <include name="backport-util-concurrent-3.0.jar" />
+        <include name="httpcore-4.0.jar" />
+        <include name="commons-httpclient-3.1.jar" />
+        <include name="commons-codec-1.4.jar" />
+        <include name="email.jar" />
+        <include name="xmlrpc-client-3.1.3.jar" />
+        <include name="xmlrpc-common-3.1.3.jar" />
+        <include name="xenserver-5.5.0-1.jar" />
+        <include name="ws-commons-util-1.0.2.jar" />
+        <include name="trilead-ssh2-build213.jar" />
+        <include name="vmware-apputils.jar" />
+        <include name="vmware-vim.jar" />
+        <include name="vmware-vim25.jar" />
+        <include name="vmware-lib-activation.jar" />
+        <include name="vmware-lib-axis.jar" />
+        <include name="vmware-lib-jaxen-core.jar" />
+        <include name="vmware-lib-jaxen-jdom.jar" />
+        <include name="vmware-lib-jaxrpc.jar" />
+        <include name="vmware-lib-jdom.jar" />
+        <include name="vmware-lib-mailapi.jar" />
+        <include name="vmware-lib-saxpath.jar" />
+        <include name="vmware-lib-smtp.jar" />
+        <include name="vmware-lib-wbem.jar" />
+        <include name="vmware-lib-xalan.jar" />
+        <include name="vmware-lib-xerces.jar" />
+        <include name="vmware-lib-xml-apis.jar" />
       </fileset>
     </copy>
 
@@ -276,12 +292,12 @@
         </filterreader>
       </filterchain>
     </copy>
-  	
+
     <copy overwrite="true" todir="${server.dist.dir}/conf">
-        <fileset dir="${server.dir}/src/com/cloud/migration">
-          <include name="*.xml" />
-        </fileset>
-  	</copy>
+      <fileset dir="${server.dir}/src/com/cloud/migration">
+        <include name="*.xml" />
+      </fileset>
+    </copy>
   </target>
 
   <path id="console-common.classpath">
@@ -315,7 +331,7 @@
       <fileset dir="${thirdparty.dir}">
         <include name="log4j-1.2.15.jar" />
         <include name="apache-log4j-extras-1.0.jar" />
-         <include name="gson-1.3.jar" />
+        <include name="gson-1.3.jar" />
       </fileset>
     </copy>
 
@@ -488,20 +504,20 @@
     <chmod file="${dist.dir}/deploy-agent.sh" perm="uog+xr" />
     <chmod file="${dist.dir}/deploy-server.sh" perm="uog+xr" />
   </target>
- 
-	
-  <target name="build-kvm-domr-patch" depends="-init">		
+
+
+  <target name="build-kvm-domr-patch" depends="-init">
     <tar destfile="${dist.dir}/patch.tar">
-	  <tarfileset dir="${base.dir}/patches/kvm" filemode="755">
-	    <include name="**/*"/>
-            <exclude name="**/.classpath" />
-            <exclude name="**/.project" />
-	  </tarfileset>
-	  <tarfileset dir="${base.dir}/patches/shared" filemode="755">
-            <include name="**/*"/>
-            <exclude name="**/.classpath" />
-            <exclude name="**/.project" />
-          </tarfileset>
+      <tarfileset dir="${base.dir}/patches/kvm" filemode="755">
+        <include name="**/*"/>
+        <exclude name="**/.classpath" />
+        <exclude name="**/.project" />
+      </tarfileset>
+      <tarfileset dir="${base.dir}/patches/shared" filemode="755">
+        <include name="**/*"/>
+        <exclude name="**/.classpath" />
+        <exclude name="**/.project" />
+      </tarfileset>
     </tar>
     <gzip destfile="${dist.dir}/patch.tgz" src="${dist.dir}/patch.tar"/>
     <delete file="${dist.dir}/patch.tar"/>
@@ -520,7 +536,7 @@
 
     <!-- create a UTC build timestamp using ISO 8601 formatting -->
     <tstamp>
-      <format property="utc.build.timestamp" pattern="yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" timezone="GMT" />
+      <format property="utc.build.timestamp" pattern="yyyy-MM-dd'T'HH:mm:ss'Z'" timezone="GMT" />
     </tstamp>
 
     <!-- remember who/where did the build -->
@@ -532,9 +548,9 @@
 
     <!-- set build.number property, stored in eponymous file -->
     <buildnumber file="${build.dir}/build.number" />
-    <condition property="impl.version" value="${version}.${manual.build.number}" else="${version}.${build.number}">
-       <isset property="manual.build.number"/>
-     </condition>
+    <condition property="impl.version" value="${version}.${manual.build.number}" else="${version}.${utc.build.timestamp}">
+      <isset property="manual.build.number"/>
+    </condition>
 
     <echo message="Build number is ${impl.version}" />
 

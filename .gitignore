@@ -6,9 +6,10 @@ artifacts
 .waf-*
 waf-*
 target
-override
+premium/
+override/
 .metadata
-dist
+dist/
 *~
 *.bak
 cloud-*.tar.bz2
