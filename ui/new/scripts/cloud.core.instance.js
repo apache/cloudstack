@@ -190,6 +190,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 		        
 		        //action menu			        
 		        $("#action_link").show();
+		        $actionList.empty();
 		        for(var api in actionMap) {		
 		            var apiInfo = actionMap[api];
 		            var $listItem = $("#action_list_item").clone();
