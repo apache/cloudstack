@@ -32,6 +32,7 @@ import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.ListAlertsCmd;
+import com.cloud.api.commands.ListAsyncJobsCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
@@ -1649,9 +1650,13 @@ public interface ManagementServer {
     AsyncJobResult queryAsyncJobResult(long jobId) throws PermissionDeniedException;
     AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId);
     AsyncJobVO findAsyncJobById(long jobId);
-    
-    List<AsyncJobVO> searchForAsyncJobs(Criteria c);
-    
+
+    /**
+     * Search for async jobs by account and/or startDate
+     * @param cmd the command specifying the account and start date parameters
+     * @return the list of async jobs that match the criteria
+     */
+    List<AsyncJobVO> searchForAsyncJobs(ListAsyncJobsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 
     /**
      * Assign a security group to a VM

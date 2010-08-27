@@ -71,6 +71,7 @@ import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.ListAlertsCmd;
+import com.cloud.api.commands.ListAsyncJobsCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
@@ -7643,32 +7644,75 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public List<AsyncJobVO> searchForAsyncJobs(Criteria c) {
-        Filter searchFilter = new Filter(AsyncJobVO.class, c.getOrderBy(), c
-                .getAscending(), c.getOffset(), c.getLimit());
+    public List<AsyncJobVO> searchForAsyncJobs(ListAsyncJobsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Integer pageSize = cmd.getPageSize();
+        Integer page = cmd.getPage();
+        Long startIndex = Long.valueOf(0);
+        int pageSizeNum = 50;
+        if (pageSize != null) {
+            pageSizeNum = pageSize.intValue();
+        }
+        if (page != null) {
+            int pageNum = page.intValue();
+            if (pageNum > 0) {
+                startIndex = Long.valueOf(pageSizeNum * (pageNum-1));
+            }
+        }
+
+        Filter searchFilter = new Filter(AsyncJobVO.class, "id", true, startIndex, Long.valueOf(pageSizeNum));
+        SearchBuilder<AsyncJobVO> sb = _jobDao.createSearchBuilder();
+
+        Object accountId = null;
+        Long domainId = cmd.getDomainId();
+        Account account = (Account)UserContext.current().getAccountObject();
+        if ((account == null) || isAdmin(account.getType())) {
+            String accountName = cmd.getAccountName();
+
+            if ((accountName != null) && (domainId != null)) {
+                Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                if (userAccount != null) {
+                    accountId = userAccount.getId();
+                } else {
+                    throw new InvalidParameterValueException("Failed to list async jobs for account " + accountName + " in domain " + domainId + "; account not found.");
+                }
+            } else if (domainId != null) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Failed to list async jobs for domain " + domainId + "; permission denied.");
+                }                    
+
+                // we can do a domain match for the admin case
+                SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+                domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+
+                SearchBuilder<AccountVO> accountSearch = _accountDao.createSearchBuilder();
+                accountSearch.join("domainSearch", domainSearch, accountSearch.entity().getDomainId(), domainSearch.entity().getId());
+
+                sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId());
+            }
+        } else {
+            accountId = account.getId();
+        }
+
+        Object keyword = cmd.getKeyword();
+        Object startDate = cmd.getStartDate();
+
+
         SearchCriteria<AsyncJobVO> sc = _jobDao.createSearchCriteria();
-
-        Object accountId = c.getCriteria(Criteria.ACCOUNTID);
-        Object status = c.getCriteria(Criteria.STATUS);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
-        Object startDate = c.getCriteria(Criteria.STARTDATE);
-
         if (keyword != null) {
-            sc.addAnd("cmd", SearchCriteria.Op.LIKE, "%" + keyword+ "%");
+            sc.addAnd("cmd", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         }
 
         if (accountId != null) {
             sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        } else if (domainId != null) {
+            DomainVO domain = _domainDao.findById(domainId);
+            sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
         }
 
-        if(status != null) {
-            sc.addAnd("status", SearchCriteria.Op.EQ, status);
-        }
-        
-        if(startDate != null) {
+        if (startDate != null) {
             sc.addAnd("created", SearchCriteria.Op.GTEQ, startDate);
         }
-        
+
         return _jobDao.search(sc, searchFilter);
     }
 

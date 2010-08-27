@@ -15,38 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
-
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseListCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.response.AsyncJobResponse;
 import com.cloud.async.AsyncJobVO;
-import com.cloud.server.Criteria;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
+import com.cloud.serializer.SerializerHelper;
 
-public class ListAsyncJobsCmd extends BaseCmd {
+@Implementation(method="searchForAsyncJobs")
+public class ListAsyncJobsCmd extends BaseListCmd {
     private static final String s_name = "listasyncjobsresponse";
-    
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.START_TZDATE, Boolean.FALSE));
-
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
-    }
-    
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -81,80 +66,33 @@ public class ListAsyncJobsCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
-    
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
-    
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-    	Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
-        Integer pageSize = (Integer)params.get(BaseCmd.Properties.PAGESIZE.getName());
-        Long accountId = (Long)params.get(BaseCmd.Properties.ACCOUNT_ID.getName());
-        Date startDate = (Date)params.get(BaseCmd.Properties.START_TZDATE.getName());
-        
-        Long startIndex = Long.valueOf(0);
-        int pageSizeNum = 50;
-    	if (pageSize != null) {
-    		pageSizeNum = pageSize.intValue();
-    	}
-        if (page != null) {
-            int pageNum = page.intValue();
-            if (pageNum > 0) {
-                startIndex = Long.valueOf(pageSizeNum * (pageNum-1));
-            }
+
+    @Override @SuppressWarnings("unchecked")
+    public String getResponse() {
+        List<AsyncJobVO> jobs = (List<AsyncJobVO>)getResponseObject();
+
+        List<AsyncJobResponse> response = new ArrayList<AsyncJobResponse>();
+        for (AsyncJobVO job : jobs) {
+            AsyncJobResponse jobResponse = new AsyncJobResponse();
+            jobResponse.setAccountId(job.getAccountId());
+            jobResponse.setCmd(job.getCmd());
+            jobResponse.setCreated(job.getCreated());
+            jobResponse.setId(job.getId());
+            jobResponse.setJobInstanceId(job.getInstanceId());
+            jobResponse.setJobInstanceType(job.getInstanceType());
+            jobResponse.setJobProcStatus(job.getProcessStatus());
+            jobResponse.setJobResult(job.getResult());
+            jobResponse.setJobResultCode(job.getResultCode());
+            jobResponse.setJobStatus(job.getStatus());
+            jobResponse.setUserId(job.getUserId());
+
+            response.add(jobResponse);
         }
-        
-        Criteria c = new Criteria("id", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
-        if(account == null) {
-        	if(accountId != null)
-        		c.addCriteria(Criteria.ACCOUNTID, accountId.longValue());
-        } else {
-        	if(account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-        		// for root admins, can take arbitrary account id from input
-            	if(accountId != null)
-            		c.addCriteria(Criteria.ACCOUNTID, accountId.longValue());
-        	} else {
-        		// for normal accounts, they can only query jobs of their own
-            	c.addCriteria(Criteria.ACCOUNTID, account.getId());
-        	}
-        }
-        
-        if(startDate != null) {
-        	c.addCriteria(Criteria.STARTDATE, startDate);
-        }
-        
-   	 	List<AsyncJobVO> jobs = getManagementServer().searchForAsyncJobs(c);
-	    if (jobs == null) {
-	    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "unable to find async jobs");
-	    }
-	    
-        List<Pair<String, Object>> jobTags = new ArrayList<Pair<String, Object>>();
-        Object[] sTag = new Object[jobs.size()];
-        int i = 0;
-        for(AsyncJobVO job : jobs) {
-            List<Pair<String, Object>> jobData = new ArrayList<Pair<String, Object>>();
-            jobData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), job.getId().toString()));
-            jobData.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT_ID.getName(), String.valueOf(job.getAccountId())));
-            jobData.add(new Pair<String, Object>(BaseCmd.Properties.USER_ID.getName(), String.valueOf(job.getUserId())));
-            jobData.add(new Pair<String, Object>(BaseCmd.Properties.CMD.getName(), job.getCmd()));
-            jobData.add(new Pair<String, Object>(BaseCmd.Properties.JOB_STATUS.getName(), String.valueOf(job.getStatus())));
-            jobData.add(new Pair<String, Object>(BaseCmd.Properties.JOB_PROCESS_STATUS.getName(), String.valueOf(job.getProcessStatus())));
-            jobData.add(new Pair<String, Object>(BaseCmd.Properties.JOB_RESULT_CODE.getName(), String.valueOf(job.getResultCode())));
-            jobData.add(new Pair<String, Object>(BaseCmd.Properties.JOB_RESULT.getName(), job.getResult()));
-            jobData.add(new Pair<String, Object>(BaseCmd.Properties.JOB_INSTANCE_TYPE.getName(), job.getInstanceType()));
-            jobData.add(new Pair<String, Object>(BaseCmd.Properties.JOB_INSTANCE_ID.getName(), String.valueOf(job.getInstanceId())));
-       	 	jobData.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(job.getCreated())));
-        
-            sTag[i++] = jobData;
-        }
-        
-        Pair<String, Object> jobTag = new Pair<String, Object>("asyncjobs", sTag);
-        jobTags.add(jobTag);
-        
-        return jobTags;
+
+        return SerializerHelper.toSerializedString(response);
     }
 }
