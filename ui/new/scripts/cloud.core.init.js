@@ -16,20 +16,23 @@ $(document).ready(function() {
         selecting: function(event, ui) {	 	                               
             if(ui.selecting.id.indexOf("midmenuItem") != -1) {                     
                 var $t = $("#"+ui.selecting.id);
-                $t.find("#content").addClass("selected");                  
-                
-                var id =$t.data("id");                
-                selectedItemIds[id] = null; 
-                               
+                if($t.find("#content").hasClass("adding") == false) { //only items not in action are allowed to be selected
+                    var id =$t.data("id");                
+                    selectedItemIds[id] = null; 
+                    $t.find("#content").addClass("selected");   
+                }                               
                 var toRightPanelFn = $t.data("toRightPanelFn");
                 toRightPanelFn($t);	          
             }                                             
         },
         unselecting: function(event, ui) {
             if(ui.unselecting.id.indexOf("midmenuItem") != -1) {                     
-                $("#"+ui.unselecting.id).find("#content").removeClass("selected");    
-                var itemId =$("#"+ui.unselecting.id).data("id");                
-                delete selectedItemIds[itemId];
+                var $t = $("#"+ui.unselecting.id);
+                var id = $t.data("id");
+                if(id in selectedItemIds) {                    
+                    delete selectedItemIds[id];
+                    $t.find("#content").removeClass("selected"); 
+                }
             }             
         }
     });
