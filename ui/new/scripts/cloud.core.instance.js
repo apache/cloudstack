@@ -1,4 +1,4 @@
-function clickInstanceGroupHeader($arrowIcon) {   
+function clickInstanceGroupHeader($arrowIcon, selectedItemIds) {   
     //***** VM Detail (begin) ******************************************************************************
     var $vmPopup
     var $rightPanelHeader;  
@@ -15,8 +15,6 @@ function clickInstanceGroupHeader($arrowIcon) {
     
     var noGroupName = "(no group name)";             
       
-    //var selectedItemType;
-    var selectedItemIds = {};
     var actionMap = {        
         stopVirtualMachine: {
             label: "Stop",     
@@ -50,6 +48,7 @@ function clickInstanceGroupHeader($arrowIcon) {
       
     function setMidmenuItemVm(instance, $midmenuItemVm1) {  
         $midmenuItemVm1.data("jsonObj", instance);
+        $midmenuItemVm1.data("toRightPanelFn", vmMidmenuItemToRightPanel);
         $midmenuItemVm1.attr("id", ("midmenuItemVm_"+instance.id));                             
         $midmenuItemVm1.data("id", instance.id);        
         var vmName = getVmName(instance.name, instance.displayname);
@@ -57,28 +56,8 @@ function clickInstanceGroupHeader($arrowIcon) {
         $midmenuItemVm1.find("#ip_address").text(instance.ipaddress);                                            
         updateVirtualMachineStateInMidMenu(instance.state, $midmenuItemVm1);        
         $midmenuItemVm1.bind("click", function(event) {  
-            var $t = $(this);                                       
-            var id = $t.data("id");                                     
-            
-            $t.find("#content").addClass("selected");   
-            if(!(id in selectedItemIds))
-                selectedItemIds[id] = null;                                                                                                                             
-                                 
-            if($t.find("#info_icon").css("display") != "none") {                
-                $rightPanelContent.find("#after_action_info").text($t.data("afterActionInfo"));
-                if($t.find("#info_icon").hasClass("error"))
-                    $rightPanelContent.find("#after_action_info_container").addClass("errorbox");
-                 else
-                    $rightPanelContent.find("#after_action_info_container").removeClass("errorbox");                                        
-                $rightPanelContent.find("#after_action_info_container").show();                                         
-            } 
-            else {
-                $rightPanelContent.find("#after_action_info").text("");
-                $rightPanelContent.find("#after_action_info_container").hide();                
-            }
-            var jsonObj = $t.data("jsonObj"); 
-            vmJsonToRightPanel(jsonObj);	        		                            
-               
+            var $t = $(this);     
+            vmMidmenuItemToRightPanel($t);	 
             return false;
         }); 
     }
@@ -99,7 +78,21 @@ function clickInstanceGroupHeader($arrowIcon) {
         $rightPanelContent.find("#iso").hide();
     }
     
-    function vmJsonToRightPanel(jsonObj) {
+    function vmMidmenuItemToRightPanel($t) {
+        if($t.find("#info_icon").css("display") != "none") {                
+            $rightPanelContent.find("#after_action_info").text($t.data("afterActionInfo"));
+            if($t.find("#info_icon").hasClass("error"))
+                $rightPanelContent.find("#after_action_info_container").addClass("errorbox");
+             else
+                $rightPanelContent.find("#after_action_info_container").removeClass("errorbox");                                        
+            $rightPanelContent.find("#after_action_info_container").show();                                         
+        } 
+        else {
+            $rightPanelContent.find("#after_action_info").text("");
+            $rightPanelContent.find("#after_action_info_container").hide();                
+        }
+        
+        var jsonObj = $t.data("jsonObj");     
         var vmName = getVmName(jsonObj.name, jsonObj.displayname);        
         $rightPanelHeader.find("#vm_name").text(vmName);	
         updateVirtualMachineStateInRightPanel(jsonObj.state);	
@@ -199,7 +192,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 		                var label = $t.data("label");			           
 		                var isAsyncJob = $t.data("isAsyncJob");
 		                var asyncJobResponse = $t.data("asyncJobResponse");		                           	               	                
-		                var jobIdMap = {};
+		                var jobIdMap = {};		         
 		                for(var id in selectedItemIds) {	
 		                    var midmenuItem = $("#midmenuItemVm_"+id);	  
 		                    midmenuItem.find("#content").removeClass("selected").addClass("adding");                          

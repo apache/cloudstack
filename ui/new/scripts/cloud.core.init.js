@@ -1,6 +1,4 @@
-$(document).ready(function() {      
-    
-       
+$(document).ready(function() {     
     $("#accordion_menu").accordion({
         autoHeight: false, 
         collapsible: true,
@@ -12,8 +10,29 @@ $(document).ready(function() {
                 ui.newHeader.find("#arrow_icon").removeClass("close").addClass("open");   
         }
     });
-
     $("#accordion_menu").show();
+    
+    $("#midmenu_container").selectable({
+        selecting: function(event, ui) {	 	                               
+            if(ui.selecting.id.indexOf("midmenuItem") != -1) {                     
+                var $t = $("#"+ui.selecting.id);
+                $t.find("#content").addClass("selected");                  
+                
+                var id =$t.data("id");                
+                selectedItemIds[id] = null; 
+                               
+                var toRightPanelFn = $t.data("toRightPanelFn");
+                toRightPanelFn($t);	          
+            }                                             
+        },
+        unselecting: function(event, ui) {
+            if(ui.unselecting.id.indexOf("midmenuItem") != -1) {                     
+                $("#"+ui.unselecting.id).find("#content").removeClass("selected");    
+                var itemId =$("#"+ui.unselecting.id).data("id");                
+                delete selectedItemIds[itemId];
+            }             
+        }
+    });
 
     var $rightPanel = $("#right_panel"); 
     var $addLink = $("#add_link");
@@ -24,9 +43,11 @@ $(document).ready(function() {
     var $midmenuItemVm = $("#midmenu_item_vm");    
     var $actionListItem = $("#action_list_item");
     
+    var selectedItemIds = {};
+    
     $("#leftmenu_instance_group_header").bind("click", function(event) {   
         var $arrowIcon = $(this).find("#arrow_icon");        
-        clickInstanceGroupHeader($arrowIcon);
+        clickInstanceGroupHeader($arrowIcon, selectedItemIds);
         return false;
     });
     
