@@ -3596,9 +3596,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             _host.storagePif1 = storageNic1.pr.uuid;
 
             Nic storageNic2 = getLocalNetwork(conn, _storageNetworkName2);
-            if (storageNic2 != null) {
-                _host.storageNetwork2 = storageNic2.nr.uuid;
-                _host.storagePif2 = storageNic2.pr.uuid;
+            if (storageNic2 == null) {
+                storageNic2 = storageNic1;
             }
             _host.storageNetwork2 = storageNic2.nr.uuid;
             _host.storagePif2 = storageNic2.pr.uuid;
