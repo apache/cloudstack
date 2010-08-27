@@ -20,6 +20,125 @@
 
 // Version: @VERSION@
 
+//var jobIdMap;
+function doAction(id, $t) {      
+    var api = $t.data("api");
+    var label = $t.data("label");			           
+    var isAsyncJob = $t.data("isAsyncJob");
+    var asyncJobResponse = $t.data("asyncJobResponse");	
+    var afterActionSeccessFn = $t.data("afterActionSeccessFn");	
+        
+    var $midmenuItem = $("#midmenuItemVm_"+id);	
+    $midmenuItem.find("#content").removeClass("selected").addClass("inaction");                          
+    $midmenuItem.find("#spinning_wheel").addClass("midmenu_addingloader").show();	
+    $midmenuItem.find("#info_icon").hide();		  
+	
+	//Async job (begin) *****
+	if(isAsyncJob == true) {	                     
+        $.ajax({
+            data: createURL("command="+api+"&id="+id+"&response=json"),
+            dataType: "json",           
+            success: function(json) {	                	                        
+                var jobId = json[asyncJobResponse].jobid;                  			                        
+                var timerKey = "asyncJob_" + jobId;					                       
+                $("body").everyTime(
+                    10000,
+                    timerKey,
+                    function() {
+                        $.ajax({
+                            data: createURL("command=queryAsyncJobResult&jobId="+jobId+"&response=json"),
+	                        dataType: "json",									                    					                    
+	                        success: function(json) {		                            							                       
+		                        var result = json.queryasyncjobresultresponse;										                   
+		                        if (result.jobstatus == 0) {
+			                        return; //Job has not completed
+		                        } else {											                    
+			                        $("body").stopTime(timerKey);	
+			                        $midmenuItem.find("#content").removeClass("inaction");
+			                        $midmenuItem.find("#spinning_wheel").hide();	
+			                        if (result.jobstatus == 1) { // Succeeded  
+			                            $midmenuItem.find("#info_icon").removeClass("error").show();
+			                            $midmenuItem.data("afterActionInfo", (label + " action succeeded.")); 
+			                            if("virtualmachine" in result)	
+			                                afterActionSeccessFn(result.virtualmachine[0], $midmenuItem);	
+			                        } else if (result.jobstatus == 2) { // Failed	
+			                            $midmenuItem.find("#info_icon").addClass("error").show();
+			                            $midmenuItem.data("afterActionInfo", (label + " action failed. Reason: " + sanitizeXSS(result.jobresult)));    
+			                        }											                    
+		                        }
+	                        },
+	                        error: function(XMLHttpResponse) {
+		                        $("body").stopTime(timerKey);
+		                        $midmenuItem.find("#content").removeClass("inaction");
+		                        $midmenuItem.find("#spinning_wheel").hide();	
+		                        $midmenuItem.find("#info_icon").addClass("error").show();	
+		                        $midmenuItem.data("afterActionInfo", (label + " action failed."));    	                        
+		                        handleError(XMLHttpResponse);
+	                        }
+                        });
+                    },
+                    0
+                );
+            },
+            error: function(XMLHttpResponse) {	               		                        
+                $midmenuItem.find("#content").removeClass("inaction");
+		        $midmenuItem.find("#spinning_wheel").hide();	
+		        $midmenuItem.find("#info_icon").addClass("error").show();	
+		        $midmenuItem.data("afterActionInfo", (label + " action failed."));    	     
+                handleError(XMLHttpResponse);
+            }
+        });     
+    }     
+    //Async job (end) *****
+    
+    //Sync job (begin) *****
+    else { 	              
+        $.ajax({
+            data: createURL("command="+api+"&id="+id+"&response=json"),
+	        dataType: "json",
+	        async: false,
+	        success: function(json) {
+	            $midmenuItem.find("#content").removeClass("inaction");
+				$midmenuItem.find("#spinning_wheel").hide();	
+														              
+	            //RecoverVirtualMachine API doesn't return an embedded object on success (Bug 6037)
+	            //Before Bug 6037 is fixed, use the temporary solution below.							            
+	            $.ajax({
+                    cache: false,
+                    data: createURL("command=listVirtualMachines&id="+id+"&response=json"),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {		                                                                                  
+                        afterActionSeccessFn(json.listvirtualmachinesresponse.virtualmachine[0], $midmenuItem);	
+                        $midmenuItem.find("#info_icon").removeClass("error").show();
+				        $midmenuItem.data("afterActionInfo", (label + " action succeeded.")); 
+                    },
+                    error: function(XMLHttpResponse) {
+                        $midmenuItem.find("#info_icon").addClass("error").show();
+				        $midmenuItem.data("afterActionInfo", (label + " action failed.")); 
+                    }
+                });										
+				//After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
+				//afterActionSeccessFn(json[asyncJobResponse]virtualmachine[0], $item);	
+	        }
+        });
+    }
+    //Sync job (end) *****
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 var g_mySession = null;
 var g_sessionKey = null;
 var g_role = null; // roles - root, domain-admin, ro-admin, user

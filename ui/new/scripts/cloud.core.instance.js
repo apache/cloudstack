@@ -19,26 +19,32 @@ function clickInstanceGroupHeader($arrowIcon) {
         stopVirtualMachine: {
             label: "Stop Instance",     
             isAsyncJob: true,
-            asyncJobResponse: "stopvirtualmachineresponse"
+            asyncJobResponse: "stopvirtualmachineresponse",
+            afterActionSeccessFn: updateVirtualMachineStateInMidMenu
         },
         startVirtualMachine: {
             label: "Start Instance",     
             isAsyncJob: true,
-            asyncJobResponse: "startvirtualmachineresponse"
+            asyncJobResponse: "startvirtualmachineresponse",
+            afterActionSeccessFn: updateVirtualMachineStateInMidMenu
         },
         rebootVirtualMachine: {
             label: "Reboot Instance",
             isAsyncJob: true,
-            asyncJobResponse: "rebootvirtualmachineresponse"
+            asyncJobResponse: "rebootvirtualmachineresponse",
+            afterActionSeccessFn: updateVirtualMachineStateInMidMenu
+            
         },
         destroyVirtualMachine: {
             label: "Destroy Instance",
             isAsyncJob: true,
-            asyncJobResponse: "destroyvirtualmachineresponse"
+            asyncJobResponse: "destroyvirtualmachineresponse",
+            afterActionSeccessFn: updateVirtualMachineStateInMidMenu
         },
         recoverVirtualMachine: {
             label: "Restore Instance",
-            isAsyncJob: false
+            isAsyncJob: false,
+            afterActionSeccessFn: updateVirtualMachineStateInMidMenu
         }        
     }            
    
@@ -51,10 +57,10 @@ function clickInstanceGroupHeader($arrowIcon) {
             $rightPanelContent.find("#state").text(state).removeClass("green red").addClass("gray");            			       
     }
     
-    function updateVirtualMachineStateInMidMenu(state, midmenuItem) {         
-        if(state == "Running")
+    function updateVirtualMachineStateInMidMenu(jsonObj, midmenuItem) {         
+        if(jsonObj.state == "Running")
             midmenuItem.find("#status_icon").attr("src", "images/status_green.png");
-        else if(state == "Stopped")
+        else if(jsonObj.state == "Stopped")
             midmenuItem.find("#status_icon").attr("src", "images/status_red.png");
         else  //Destroyed, Creating, ~                                  
             midmenuItem.find("#status_icon").attr("src", "images/status_gray.png");
@@ -68,7 +74,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         var vmName = getVmName(instance.name, instance.displayname);
         $midmenuItemVm1.find("#vm_name").text(vmName);
         $midmenuItemVm1.find("#ip_address").text(instance.ipaddress);                                            
-        updateVirtualMachineStateInMidMenu(instance.state, $midmenuItemVm1);        
+        updateVirtualMachineStateInMidMenu(instance, $midmenuItemVm1);        
         $midmenuItemVm1.bind("click", function(event) {  
             var $t = $(this);     
             vmMidmenuItemToRightPanel($t);	 
@@ -199,110 +205,14 @@ function clickInstanceGroupHeader($arrowIcon) {
 		            $link.data("api", api);			
 		            $link.data("label", apiInfo.label);	       
 		            $link.data("isAsyncJob", apiInfo.isAsyncJob);
-		            $link.data("asyncJobResponse", apiInfo.asyncJobResponse);		            
+		            $link.data("asyncJobResponse", apiInfo.asyncJobResponse);		     
+		            $link.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);		            
 		            $link.bind("click", function(event) {	
-		                $actionMenu.hide();  	
-		                var $t = $(this);
-		                var api = $t.data("api");
-		                var label = $t.data("label");			           
-		                var isAsyncJob = $t.data("isAsyncJob");
-		                var asyncJobResponse = $t.data("asyncJobResponse");		                           	               	                
-		                var jobIdMap = {};		         
-		                for(var id in selectedItemIds) {	
-		                    var $midmenuItem = $("#midmenuItemVm_"+id);	
-		                    $midmenuItem.find("#content").removeClass("selected").addClass("inaction");                          
-		                    $midmenuItem.find("#spinning_wheel").addClass("midmenu_addingloader").show();	
-		                    $midmenuItem.find("#info_icon").hide();		                   
-		                    //Async job (begin) *****
-		                    if(isAsyncJob == true) {		                        
-		                        $.ajax({
-			                        data: createURL("command="+api+"&id="+id+"&response=json"),
-				                    dataType: "json",
-				                    async: false,
-				                    success: function(json) {				                        
-				                        var jobId = json[asyncJobResponse].jobid; 				                        
-				                        jobIdMap[jobId] = id;					                        
-				                        var timerKey = "asyncJob_" + jobId;					                       
-					                    $("body").everyTime(
-						                    10000,
-						                    timerKey,
-						                    function() {
-							                    $.ajax({
-							                        data: createURL("command=queryAsyncJobResult&jobId="+jobId+"&response=json"),
-								                    dataType: "json",									                    					                    
-								                    success: function(json) {									                       
-									                    var result = json.queryasyncjobresultresponse;										                   
-									                    if (result.jobstatus == 0) {
-										                    return; //Job has not completed
-									                    } else {											                    
-										                    $("body").stopTime(timerKey);											                    
-										                    var itemId = jobIdMap[jobId];										                   
-										                    $item = $("#midmenuItemVm_"+itemId);
-										                    $item.find("#content").removeClass("inaction");
-										                    $item.find("#spinning_wheel").hide();	
-										                    if (result.jobstatus == 1) { // Succeeded  
-										                        $item.find("#info_icon").removeClass("error").show();
-										                        $item.data("afterActionInfo", (label + " action succeeded.")); 
-										                        if("virtualmachine" in result)	
-										                            updateVirtualMachineStateInMidMenu(result.virtualmachine[0].state, $item);	
-										                    } else if (result.jobstatus == 2) { // Failed	
-										                        $item.find("#info_icon").addClass("error").show();
-										                        $item.data("afterActionInfo", (label + " action failed. Reason: " + sanitizeXSS(result.jobresult)));    
-										                    }											                    
-									                    }
-								                    },
-								                    error: function(XMLHttpResponse) {
-									                    $spinningWheel.hide();	
-									                    $("body").stopTime(timerKey);
-									                    handleError(XMLHttpResponse);
-								                    }
-							                    });
-						                    },
-						                    0
-					                    );
-				                    }
-				                    ,
-				                    error: function(XMLHttpResponse) {					                        
-					                    $spinningWheel.hide();		
-					                    handleError(XMLHttpResponse);
-				                    }
-			                    });                     
-			                }
-			                //Async job (end) *****
-			                
-			                //Sync job (begin) *****
-			                else { 			                    
-			                    $.ajax({
-						            data: createURL("command="+api+"&id="+id+"&response=json"),
-							        dataType: "json",
-							        async: false,
-							        success: function(json) {
-							            $midmenuItem.find("#content").removeClass("inaction");
-										$midmenuItem.find("#spinning_wheel").hide();	
-																				              
-							            //RecoverVirtualMachine API doesn't return an embedded object on success (Bug 6037)
-							            //Before Bug 6037 is fixed, use the temporary solution below.							            
-							            $.ajax({
-	                                        cache: false,
-	                                        data: createURL("command=listVirtualMachines&id="+id+"&response=json"),
-	                                        dataType: "json",
-	                                        async: false,
-	                                        success: function(json) {		                                                                                  
-	                                            updateVirtualMachineStateInMidMenu(json.listvirtualmachinesresponse.virtualmachine[0].state, $midmenuItem);	
-	                                            $midmenuItem.find("#info_icon").removeClass("error").show();
-										        $midmenuItem.data("afterActionInfo", (label + " action succeeded.")); 
-	                                        },
-	                                        error: function(XMLHttpResponse) {
-	                                            $midmenuItem.find("#info_icon").addClass("error").show();
-										        $midmenuItem.data("afterActionInfo", (label + " action failed.")); 
-	                                        }
-	                                    });										
-										//After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
-										//updateVirtualMachineStateInMidMenu(json[asyncJobResponse]virtualmachine[0].state, $item);	
-							        }
-						        });
-			                }
-			                //Sync job (end) *****
+		                $actionMenu.hide();    	 
+		                var $t = $(this);              	                
+		                //jobIdMap = {};	//to remove after testing, jessica	         
+		                for(var id in selectedItemIds) {	                        
+		                    doAction(id, $t);   
 		                }		
 		                selectedItemIds = {}; //clear selected items for action	                          
 		                return false;
