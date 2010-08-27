@@ -18,38 +18,21 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.server.ManagementServer;
-import com.cloud.storage.SnapshotPolicyVO;
-import com.cloud.storage.VolumeVO;
-import com.cloud.utils.Pair;
+import com.cloud.api.BaseCmd.Manager;
 
+@Implementation(method="deleteSnapshotPolicies", manager=Manager.SnapshotManager)
 public class DeleteSnapshotPoliciesCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSnapshotPoliciesCmd.class.getName());
 
     private static final String s_name = "deletesnapshotpoliciesresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IDS, Boolean.FALSE));
-
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-    }
-
+    
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -95,69 +78,72 @@ public class DeleteSnapshotPoliciesCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-    	Long policyId = (Long)params.get(BaseCmd.Properties.ID.getName());
-        String policyIds = (String)params.get(BaseCmd.Properties.IDS.getName());
-        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
+	@Override
+	public String getResponse() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-        // If command is executed via 8096 port, set userId to the id of System account (1)
-        if (userId == null) {
-            userId = Long.valueOf(1);
-        }
-
-        if ((policyId == null) && (policyIds == null)) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "No policy id (or list off ids) specified.");
-        }
-
-        List<Long> policyIdList = new ArrayList<Long>();
-
-        if (policyId != null) {
-        	policyIdList.add(policyId);
-        } else if (policyIds != null) {
-        	StringTokenizer st = new StringTokenizer(policyIds, ",");
-        	while (st.hasMoreTokens()) {
-        		String token = st.nextToken();
-        		try {
-        			Long nextId = Long.parseLong(token);
-        			policyIdList.add(nextId);
-        		} catch (NumberFormatException nfe) {
-        			throw new ServerApiException(BaseCmd.PARAM_ERROR, "The policy id " + token + " is not a valid parameter.");
-        		}
-        	}
-        }
-        
-        ManagementServer managementServer = getManagementServer();
-        for (Long policy : policyIdList) {
-            SnapshotPolicyVO snapshotPolicyVO = managementServer.findSnapshotPolicyById(policy);
-            if (snapshotPolicyVO == null) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Policy id given: " + policy + " does not exist");
-            }
-            VolumeVO volume = managementServer.findVolumeById(snapshotPolicyVO.getVolumeId());
-            if (volume == null) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Policy id given: " + policy + " does not belong to a valid volume");
-            }
-            
-            // If an account was passed in, make sure that it matches the account of the volume
-            checkAccountPermissions(params, volume.getAccountId(), volume.getDomainId(), "volume", volume.getId());
-        }
-        
-        try {
-            boolean success = true;
-            if (policyIdList.size() > 0) {
-                success = managementServer.deleteSnapshotPolicies(userId, policyIdList);
-            }
-    
-            List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), Boolean.valueOf(success).toString()));
-            return returnValues;
-            
-        } catch (InvalidParameterValueException ex) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Error deleting snapshot policy: " + ex.getMessage());
-        }
-    }
+//    @Override
+//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
+//    	Long policyId = (Long)params.get(BaseCmd.Properties.ID.getName());
+//        String policyIds = (String)params.get(BaseCmd.Properties.IDS.getName());
+//        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
+//
+//        // If command is executed via 8096 port, set userId to the id of System account (1)
+//        if (userId == null) {
+//            userId = Long.valueOf(1);
+//        }
+//
+//        if ((policyId == null) && (policyIds == null)) {
+//            throw new ServerApiException(BaseCmd.PARAM_ERROR, "No policy id (or list off ids) specified.");
+//        }
+//
+//        List<Long> policyIdList = new ArrayList<Long>();
+//
+//        if (policyId != null) {
+//        	policyIdList.add(policyId);
+//        } else if (policyIds != null) {
+//        	StringTokenizer st = new StringTokenizer(policyIds, ",");
+//        	while (st.hasMoreTokens()) {
+//        		String token = st.nextToken();
+//        		try {
+//        			Long nextId = Long.parseLong(token);
+//        			policyIdList.add(nextId);
+//        		} catch (NumberFormatException nfe) {
+//        			throw new ServerApiException(BaseCmd.PARAM_ERROR, "The policy id " + token + " is not a valid parameter.");
+//        		}
+//        	}
+//        }
+//        
+//        ManagementServer managementServer = getManagementServer();
+//        for (Long policy : policyIdList) {
+//            SnapshotPolicyVO snapshotPolicyVO = managementServer.findSnapshotPolicyById(policy);
+//            if (snapshotPolicyVO == null) {
+//                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Policy id given: " + policy + " does not exist");
+//            }
+//            VolumeVO volume = managementServer.findVolumeById(snapshotPolicyVO.getVolumeId());
+//            if (volume == null) {
+//                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Policy id given: " + policy + " does not belong to a valid volume");
+//            }
+//            
+//            // If an account was passed in, make sure that it matches the account of the volume
+//            checkAccountPermissions(params, volume.getAccountId(), volume.getDomainId(), "volume", volume.getId());
+//        }
+//        
+//        try {
+//            boolean success = true;
+//            if (policyIdList.size() > 0) {
+//                success = managementServer.deleteSnapshotPolicies(userId, policyIdList);
+//            }
+//    
+//            List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
+//            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), Boolean.valueOf(success).toString()));
+//            return returnValues;
+//            
+//        } catch (InvalidParameterValueException ex) {
+//            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Error deleting snapshot policy: " + ex.getMessage());
+//        }
+//    }
 }

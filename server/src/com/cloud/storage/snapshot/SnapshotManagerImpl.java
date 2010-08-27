@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.TimeZone;
 
 import javax.ejb.Local;
@@ -45,6 +46,7 @@ import com.cloud.api.commands.CreateSnapshotCmd;
 import com.cloud.api.commands.CreateSnapshotPolicyCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeleteSnapshotCmd;
+import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -53,6 +55,7 @@ import com.cloud.async.executor.SnapshotOperationParam;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
@@ -63,6 +66,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.Snapshot.Status;
@@ -130,7 +134,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
     @Inject protected VMTemplateDao _templateDao;
     @Inject protected VMTemplatePoolDao _templatePoolDao;
     @Inject protected VMTemplateHostDao _templateHostDao;
-    
+    @Inject protected DomainDao _domainDao;
     @Inject protected StorageManager _storageMgr;
     @Inject protected AgentManager _agentMgr;
     @Inject protected SnapshotScheduler _snapSchedMgr;
@@ -775,16 +779,11 @@ public class SnapshotManagerImpl implements SnapshotManager {
         
     }
     
-    protected Long checkAccountPermissions(Map<String, Object> params,
-            long targetAccountId,
-            long targetDomainId,
-            String targetDesc,
-            long targetId)
-	throws ServerApiException
+    protected Long checkAccountPermissions(long targetAccountId,long targetDomainId,String targetDesc,long targetId) throws ServerApiException
 	{
     	Long accountId = null;
 	
-    	Account account = getAccount(params);
+    	Account account = (Account)UserContext.current().getAccountObject();
     	if (account != null) 
     	{
     		if (!isAdmin(account.getType())) 
@@ -794,7 +793,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
     				throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find a " + targetDesc + " with id " + targetId + " for this account");
     			}
     		} 
-    		else if (!getManagementServer().isChildDomain(account.getDomainId(), targetDomainId)) 
+    		else if (!_domainDao.isChildDomain(account.getDomainId(), targetDomainId)) 
     		{
     			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to perform operation for " + targetDesc + " with id " + targetId + ", permission denied.");
     		}
@@ -802,6 +801,12 @@ public class SnapshotManagerImpl implements SnapshotManager {
     	}
 	
     	return accountId;
+	}
+    
+	private static boolean isAdmin(short accountType) {
+	    return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
+	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
+	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
 	}
 
     @Override @DB
@@ -822,7 +827,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         if (snapshotOwner == null) {
             throw new ServerApiException(BaseCmd.SNAPSHOT_INVALID_PARAM_ERROR, "Snapshot id " + snapshotId + " does not have a valid account");
         }
-        checkAccountPermissions(params, snapshotOwner.getId(), snapshotOwner.getDomainId(), "snapshot", snapshotId);
+        checkAccountPermissions(snapshotOwner.getId(), snapshotOwner.getDomainId(), "snapshot", snapshotId);
         
         //If command is executed via 8096 port, set userId to the id of System account (1)
         if (userId == null) {
@@ -1257,7 +1262,6 @@ public class SnapshotManagerImpl implements SnapshotManager {
         return policy;
     }
 
-    
     @Override
     public boolean deletePolicy(long userId, long policyId) {
         SnapshotPolicyVO snapshotPolicy = _snapshotPolicyDao.findById(policyId);
@@ -1461,7 +1465,57 @@ public class SnapshotManagerImpl implements SnapshotManager {
     public boolean stop() {
         return true;
     }
-    
-    
+
+	@Override
+	public boolean deleteSnapshotPolicies(DeleteSnapshotPoliciesCmd cmd) throws InvalidParameterValueException {
+
+    	Long policyId = (Long)cmd.getId();
+        List<Long> policyIds = cmd.getIds();
+        Long userId = UserContext.current().getUserId();
+
+        // If command is executed via 8096 port, set userId to the id of System account (1)
+        if (userId == null) {
+            userId = Long.valueOf(1);
+        }
+
+        if ((policyId == null) && (policyIds == null)) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "No policy id (or list off ids) specified.");
+        }
+        
+        if(policyIds.size()<=0){
+        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR,"There are no policy ids");
+        }
+        	
+        
+        for (Long policy : policyIds) {
+            SnapshotPolicyVO snapshotPolicyVO = _snapshotPolicyDao.findById(policy);
+            if (snapshotPolicyVO == null) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Policy id given: " + policy + " does not exist");
+            }
+            VolumeVO volume = _volsDao.findById(snapshotPolicyVO.getVolumeId());
+            if (volume == null) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Policy id given: " + policy + " does not belong to a valid volume");
+            }
+            
+            // If an account was passed in, make sure that it matches the account of the volume
+            checkAccountPermissions(volume.getAccountId(), volume.getDomainId(), "volume", volume.getId());
+        }
+        
+        boolean success = true;
+        
+		if (policyIds.contains(Snapshot.MANUAL_POLICY_ID)) {
+		    throw new InvalidParameterValueException("Invalid Policy id given: " + Snapshot.MANUAL_POLICY_ID);
+		}
+		
+		for (long pId : policyIds) {
+			if (!deletePolicy(userId, pId)) {
+				success = false;
+				s_logger.warn("Failed to delete snapshot policy with Id: " + policyId);
+				return success;
+			}
+		}
+		
+		return success;
+	}
 
 }

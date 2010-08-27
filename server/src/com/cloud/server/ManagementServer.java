@@ -1810,7 +1810,7 @@ public interface ManagementServer {
 	/**
 	 * Deletes snapshot scheduling policies
 	 */
-	boolean deleteSnapshotPolicies(long userId, List<Long> policyIds) throws InvalidParameterValueException;
+//	boolean deleteSnapshotPolicies(long userId, List<Long> policyIds) throws InvalidParameterValueException;
 
 	/**
 	 * Get the recurring snapshots scheduled for this volume currently along with the time at which they are scheduled

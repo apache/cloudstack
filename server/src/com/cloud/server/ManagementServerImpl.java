@@ -7691,20 +7691,20 @@ public class ManagementServerImpl implements ManagementServer {
         return _snapshotPolicyDao.findById(policyId);
     }
     
-	@Override
-	public boolean deleteSnapshotPolicies(long userId, List<Long> policyIds) throws InvalidParameterValueException {
-		boolean result = true;
-		if (policyIds.contains(Snapshot.MANUAL_POLICY_ID)) {
-		    throw new InvalidParameterValueException("Invalid Policy id given: " + Snapshot.MANUAL_POLICY_ID);
-		}
-		for (long policyId : policyIds) {
-			if (!_snapMgr.deletePolicy(userId, policyId)) {
-				result = false;
-				s_logger.warn("Failed to delete snapshot policy with Id: " + policyId);
-			}
-		}
-		return result;
-	}
+//	@Override
+//	public boolean deleteSnapshotPolicies(long userId, List<Long> policyIds) throws InvalidParameterValueException {
+//		boolean result = true;
+//		if (policyIds.contains(Snapshot.MANUAL_POLICY_ID)) {
+//		    throw new InvalidParameterValueException("Invalid Policy id given: " + Snapshot.MANUAL_POLICY_ID);
+//		}
+//		for (long policyId : policyIds) {
+//			if (!_snapMgr.deletePolicy(userId, policyId)) {
+//				result = false;
+//				s_logger.warn("Failed to delete snapshot policy with Id: " + policyId);
+//			}
+//		}
+//		return result;
+//	}
 
 	@Override
 	public String getSnapshotIntervalTypes(long snapshotId){

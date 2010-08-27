@@ -21,6 +21,7 @@ import java.util.List;
 
 import com.cloud.api.commands.CreateSnapshotPolicyCmd;
 import com.cloud.api.commands.DeleteSnapshotCmd;
+import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
@@ -154,4 +155,5 @@ public interface SnapshotManager extends Manager {
 
     void validateSnapshot(Long userId, SnapshotVO snapshot);
 
+    boolean deleteSnapshotPolicies(DeleteSnapshotPoliciesCmd cmd) throws InvalidParameterValueException;
 }
