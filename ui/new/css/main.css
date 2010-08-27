@@ -1606,7 +1606,7 @@ a:visited {
 	color:#FFF;
 }
 
-.midmenu_content.adding{
+.midmenu_content.inaction{
 	background:#7497ae url(../images/mid_addingbg.gif) repeat-x top left;
 	color:#FFF;
 }
@@ -1940,12 +1940,12 @@ a:visited {
 	padding:0;
 }
 
-.midmenu_addingloader {
+.midmenu_inactionloader {
 	width:16px;
 	height:16px;
 	float:left;
 	background:url(../images/adding_loader.gif) no-repeat top left;
-	margin:2px 0 0 19px;
+	margin:5px 0 0 0;
 	display:inline;
 	padding:0;
 }
