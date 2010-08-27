@@ -3097,9 +3097,25 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
     protected String callHostPlugin(String cmd, String... params) {
         Map<String, String> args = new HashMap<String, String>();
+        Session slaveSession = null;
+        Connection slaveConn = null;
         try {
-            Connection conn = getConnection();
-            Host host = Host.getByUuid(conn, _host.uuid);
+            URL slaveUrl = null;
+            try {
+                slaveUrl = new URL("http://" + _host.ip);
+            } catch (MalformedURLException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            slaveConn = new Connection(slaveUrl, 10);
+            slaveSession = Session.slaveLocalLoginWithPassword(slaveConn, _username, _password);
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Slave logon successful. session= " + slaveSession);
+            }
+            Host host = Host.getByUuid(slaveConn, _host.uuid);
+
+
             for (int i = 0; i < params.length; i += 2) {
                 args.put(params[i], params[i + 1]);
             }
@@ -3108,7 +3124,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 s_logger.trace("callHostPlugin executing for command " + cmd + " with " + getArgsString(args));
             }
 
-            String result = host.callPlugin(conn, "vmops", cmd, args);
+            String result = host.callPlugin(slaveConn, "vmops", cmd, args);
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("callHostPlugin Result: " + result);
             }
@@ -3117,6 +3133,13 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             s_logger.warn("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to " + e.toString());
         } catch (XmlRpcException e) {
             s_logger.debug("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to " + e.getMessage());
+        } finally {
+            if( slaveSession != null) {
+                try {
+                    slaveSession.localLogout(slaveConn);
+                } catch (Exception e) {
+                }
+            }
         }
         return null;
     }
@@ -3489,6 +3512,10 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             s_logger.debug("Can't get xs-tools.iso: " + e.toString());
         }
     }
+    
+    protected boolean can_bridge_firewall() {
+        return false;
+    }
 
     protected boolean getHostInfo() throws IllegalArgumentException{
         Connection conn = getConnection();
@@ -3508,7 +3535,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 return false;
             }
 
-            _canBridgeFirewall = Boolean.valueOf(callHostPlugin("can_bridge_firewall", "host_uuid", _host.uuid));
+            _canBridgeFirewall = can_bridge_firewall();
 
             Nic privateNic = getLocalNetwork(conn, name);
             if (privateNic == null) {
@@ -3518,6 +3545,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     s_logger.warn("Unable to determine the private network for host " + _host.ip);
                     return false;
                 }
+                _privateNetworkName = name;
                 privateNic = getLocalNetwork(conn, name);
                 if (privateNic == null) {
                     s_logger.warn("Unable to get private network " + name);
@@ -3535,6 +3563,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             	}
             } else {
             	guestNic = privateNic;
+            	_guestNetworkName = _privateNetworkName;
             }
             name = guestNic.nr.nameLabel;
 
@@ -3547,6 +3576,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 }
             } else {
                 publicNic = guestNic;
+                _publicNetworkName = _guestNetworkName;
             }
             name = publicNic.nr.nameLabel;
 
@@ -3570,7 +3600,15 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 _host.storageNetwork2 = storageNic2.nr.uuid;
                 _host.storagePif2 = storageNic2.pr.uuid;
             }
-
+            _host.storageNetwork2 = storageNic2.nr.uuid;
+            _host.storagePif2 = storageNic2.pr.uuid;
+            
+            s_logger.info("Private Network is " + _privateNetworkName + " for host " + _host.ip);
+            s_logger.info("Guest Network is " + _guestNetworkName + " for host " + _host.ip);
+            s_logger.info("Public Network is " + _publicNetworkName + " for host " + _host.ip);
+            s_logger.info("Storage Network 1 is " + _storageNetworkName1 + " for host " + _host.ip);
+            s_logger.info("Storage Network 2 is " + _storageNetworkName2 + " for host " + _host.ip);
+            
             return true;
         } catch (XenAPIException e) {
             s_logger.warn("Unable to get host information for " + _host.ip, e);

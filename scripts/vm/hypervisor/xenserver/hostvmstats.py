@@ -7,14 +7,8 @@ import time
 import logging
 logging.basicConfig(filename='/tmp/xapilog',level=logging.DEBUG)
                       
-def get_xapi_session():
-    xapi = XenAPI.xapi_local();
-    xapi.login_with_password("","")
-    return xapi._session
-
-def get_stats(collect_host_stats, consolidation_function, interval, start_time):
+def get_stats(session, collect_host_stats, consolidation_function, interval, start_time):
   try:
-    session = get_xapi_session()
     
     if collect_host_stats == "true" :
     	url = "http://localhost/rrd_updates?"

@@ -4,6 +4,7 @@
 
 import os, sys, time
 import XenAPIPlugin
+import XenAPI
 sys.path.append("/opt/xensource/sm/")
 import SR, VDI, SRCommand, util, lvutil
 from util import CommandException
@@ -38,13 +39,20 @@ def echo(fn):
         return res
     return wrapped
 
+
+def get_xapi_session():
+    xapi = XenAPI.xapi_local();
+    xapi.login_with_password("","")
+    return xapi._session
+
 @echo
 def gethostvmstats(session, args):
     collect_host_stats = args['collectHostStats']
     consolidation_function = args['consolidationFunction']
     interval = args['interval']
     start_time = args['startTime']
-    result = hostvmstats.get_stats(collect_host_stats, consolidation_function, interval, start_time)
+    session = get_xapi_session()
+    result = hostvmstats.get_stats(session, collect_host_stats, consolidation_function, interval, start_time)
     return result
     
 @echo
@@ -1478,7 +1486,9 @@ def heartbeat(session, args):
        txt='fail'
     return txt
 
-def get_private_nic(session, args):
+def get_private_nic( args):
+    session = get_xapi_session()
+    vms = session.xenapi.VM.get_all()
     host_uuid = args.get('host_uuid')
     host = session.xenapi.host.get_by_uuid(host_uuid)
     piflist = session.xenapi.host.get_PIFs(host)
@@ -1505,7 +1515,7 @@ def can_bridge_firewall(session, args):
         util.pread2(['iptables', '-D', 'FORWARD',  '-j', 'RH-Firewall-1-INPUT'])
     except:
         util.SMlog('Chain BRIDGE-FIREWALL already exists')
-    privnic = get_private_nic(session, args)
+    privnic = get_private_nic(args)
     result = 'true'
     try:
         util.pread2(['/bin/bash', '-c', 'iptables -n -L FORWARD | grep BRIDGE-FIREWALL'])
@@ -1520,8 +1530,8 @@ def can_bridge_firewall(session, args):
     if not os.path.exists('/var/run/cloud'):
         os.makedirs('/var/run/cloud')
  
-    cleanup_rules_for_dead_vms(session)
-    cleanup_rules(session)
+    cleanup_rules_for_dead_vms()
+    cleanup_rules()
     
     return result
 
@@ -1899,6 +1909,8 @@ def get_rule_log_for_vm(session, vmName):
 def get_rule_logs_for_vms(session, args):
     host_uuid = args.pop('host_uuid')
     try:
+        session = get_xapi_session()
+
         thishost = session.xenapi.host.get_by_uuid(host_uuid)
         hostrec = session.xenapi.host.get_record(thishost)
         vms = hostrec.get('resident_VMs')
@@ -1921,7 +1933,9 @@ def get_rule_logs_for_vms(session, args):
     return ";".join(result)
 
 @echo
-def cleanup_rules_for_dead_vms(session):
+def cleanup_rules_for_dead_vms():
+  try:
+    session = get_xapi_session()
     vms = session.xenapi.VM.get_all()
     cleaned = 0
     for vm_name in [session.xenapi.VM.get_name_label(x) for x in vms]:
@@ -1937,9 +1951,16 @@ def cleanup_rules_for_dead_vms(session):
                 cleaned = cleaned+1
                 
     util.SMlog("Cleaned up rules for " + str(cleaned) + " vms")
+  except:
+    util.SMlog("Failed to cleanup rules for dead vms!")
+        
+
 
 @echo
-def cleanup_rules(session):
+def cleanup_rules():
+  try:
+    session = get_xapi_session()
+
     chainscmd = "iptables-save | grep '^:' | awk '{print $1}' | cut -d':' -f2"
     chains = util.pread2(['/bin/bash', '-c', chainscmd]).split('\n')
     cleaned = 0
@@ -1966,6 +1987,8 @@ def cleanup_rules(session):
         destroy_network_rules_for_vm(session, {'vmName':vmname})
                     
     util.SMlog("Cleaned up rules for " + str(len(cleanup)) + " chains")                
+  except:
+    util.SMlog("Failed to cleanup rules !")
 
 @echo
 def check_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
@@ -2029,6 +2052,8 @@ def remove_rule_log_for_vm(vmName):
 
 @echo
 def network_rules(session, args):
+  try:
+    session = get_xapi_session()
     vm_name = args.get('vmName')
     vmName = vm_name
     vm_ip = args.get('vmIP')
@@ -2125,6 +2150,8 @@ def network_rules(session, args):
         return 'false'
     
     return 'true'
+  except:
+    util.SMlog("Failed to network rule !")
 
 
 

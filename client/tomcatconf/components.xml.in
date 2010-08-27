@@ -144,6 +144,8 @@
 
         <adapters key="com.cloud.resource.Discoverer">
             <adapter name="SecondaryStorage" class="com.cloud.storage.secondary.SecondaryStorageDiscoverer"/>
+            <adapter name="XCP Agent" class="com.cloud.hypervisor.xen.discoverer.XcpServerDiscoverer"/>
+            <adapter name="KVM Agent" class="com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer"/>
         </adapters>
 
         <manager name="Cluster Manager" class="com.cloud.cluster.DummyClusterManagerImpl">
