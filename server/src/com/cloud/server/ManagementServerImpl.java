@@ -72,6 +72,10 @@ import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.ListAlertsCmd;
 import com.cloud.api.commands.ListAsyncJobsCmd;
+import com.cloud.api.commands.ListCapacityCmd;
+import com.cloud.api.commands.ListCfgsByCmd;
+import com.cloud.api.commands.ListClustersCmd;
+import com.cloud.api.commands.ListDiskOfferingsCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
@@ -3859,14 +3863,14 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public List<ClusterVO> searchForClusters(Criteria c) {
-        Filter searchFilter = new Filter(ClusterVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+    public List<ClusterVO> searchForClusters(ListClustersCmd cmd) {
+        Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<ClusterVO> sc = _clusterDao.createSearchCriteria();
 
-        Object id = c.getCriteria(Criteria.ID);
-        Object name = c.getCriteria(Criteria.NAME);
-        Object podId = c.getCriteria(Criteria.PODID);
-        Object zoneId = c.getCriteria(Criteria.DATACENTERID);
+        Object id = cmd.getId();
+        Object name = cmd.getName();
+        Object podId = cmd.getPodId();
+        Object zoneId = cmd.getZoneId();
 
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
@@ -4073,13 +4077,13 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<ConfigurationVO> searchForConfigurations(Criteria c, boolean showHidden) {
-        Filter searchFilter = new Filter(ConfigurationVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+    public List<ConfigurationVO> searchForConfigurations(ListCfgsByCmd cmd) {
+        Filter searchFilter = new Filter(ConfigurationVO.class, "name", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<ConfigurationVO> sc = _configDao.createSearchCriteria();
 
-        Object name = c.getCriteria(Criteria.NAME);
-        Object category = c.getCriteria(Criteria.CATEGORY);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
+        Object name = cmd.getConfigName();
+        Object category = cmd.getCategory();
+        Object keyword = cmd.getKeyword();
 
         if (keyword != null) {
             SearchCriteria<ConfigurationVO> ssc = _configDao.createSearchCriteria();
@@ -4101,9 +4105,8 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("category", SearchCriteria.Op.EQ, category);
         }
 
-        if (!showHidden) {
-        	sc.addAnd("category", SearchCriteria.Op.NEQ, "Hidden");
-        }
+        // hidden configurations are not displayed using the search API
+        sc.addAnd("category", SearchCriteria.Op.NEQ, "Hidden");
 
         return _configDao.search(sc, searchFilter);
     }
@@ -6302,21 +6305,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<AlertVO> searchForAlerts(ListAlertsCmd cmd) {
-        Integer page = cmd.getPage();
-        Integer pageSize = cmd.getPageSize();
-        Long startIndex = Long.valueOf(0);
-        long pageSizeNum = 50;
-        if (pageSize != null) {
-            pageSizeNum = pageSize.intValue();
-        }
-        if (page != null) {
-            int pageNum = page.intValue();
-            if (pageNum > 0) {
-                startIndex = pageSizeNum * (pageNum - 1L);
-            }
-        }
-
-        Filter searchFilter = new Filter(AlertVO.class, "lastSent", false, startIndex, pageSizeNum);
+        Filter searchFilter = new Filter(AlertVO.class, "lastSent", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<AlertVO> sc = _alertDao.createSearchCriteria();
 
         
@@ -6338,20 +6327,20 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<CapacityVO> listCapacities(Criteria c) {
+    public List<CapacityVO> listCapacities(ListCapacityCmd cmd) {
         // make sure capacity is accurate before displaying it anywhere
         // NOTE: listCapacities is currently called by the UI only, so this
         // shouldn't be called much since it checks all hosts/VMs
         // to figure out what has been allocated.
         _alertMgr.recalculateCapacity();
 
-        Filter searchFilter = new Filter(CapacityVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+        Filter searchFilter = new Filter(CapacityVO.class, "capacityType", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<CapacityVO> sc = _capacityDao.createSearchCriteria();
 
-        Object type = c.getCriteria(Criteria.TYPE);
-        Object zoneId = c.getCriteria(Criteria.DATACENTERID);
-        Object podId = c.getCriteria(Criteria.PODID);
-        Object hostId = c.getCriteria(Criteria.HOSTID);
+        Object type = cmd.getType();
+        Object zoneId = cmd.getZoneId();
+        Object podId = cmd.getPodId();
+        Object hostId = cmd.getHostId();
 
         if (type != null) {
             sc.addAnd("capacityType", SearchCriteria.Op.EQ, type);
@@ -6715,16 +6704,15 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<DiskOfferingVO> searchForDiskOfferings(Criteria c) {
-        Filter searchFilter = new Filter(DiskOfferingVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+    public List<DiskOfferingVO> searchForDiskOfferings(ListDiskOfferingsCmd cmd) {
+        Filter searchFilter = new Filter(DiskOfferingVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<DiskOfferingVO> sb = _diskOfferingDao.createSearchBuilder();
 
         // SearchBuilder and SearchCriteria are now flexible so that the search builder can be built with all possible
         // search terms and only those with criteria can be set.  The proper SQL should be generated as a result.
-        Object name = c.getCriteria(Criteria.NAME);
-        //Object domainId = c.getCriteria(Criteria.DOMAINID);
-        Object id = c.getCriteria(Criteria.ID);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
+        Object name = cmd.getDiskOfferingName();
+        Object id = cmd.getId();
+        Object keyword = cmd.getKeyword();
 
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -7645,21 +7633,7 @@ public class ManagementServerImpl implements ManagementServer {
     
     @Override
     public List<AsyncJobVO> searchForAsyncJobs(ListAsyncJobsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        Integer pageSize = cmd.getPageSize();
-        Integer page = cmd.getPage();
-        Long startIndex = Long.valueOf(0);
-        int pageSizeNum = 50;
-        if (pageSize != null) {
-            pageSizeNum = pageSize.intValue();
-        }
-        if (page != null) {
-            int pageNum = page.intValue();
-            if (pageNum > 0) {
-                startIndex = Long.valueOf(pageSizeNum * (pageNum-1));
-            }
-        }
-
-        Filter searchFilter = new Filter(AsyncJobVO.class, "id", true, startIndex, Long.valueOf(pageSizeNum));
+        Filter searchFilter = new Filter(AsyncJobVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<AsyncJobVO> sb = _jobDao.createSearchBuilder();
 
         Object accountId = null;
@@ -8025,19 +7999,12 @@ public class ManagementServerImpl implements ManagementServer {
         User user = findUserById(userId);
         if ((user == null) || (user.getRemoved() != null))
         	throw new InvalidParameterValueException("Unable to find active user by id " + userId);
-    	
-    	Criteria c = new Criteria ();
-    	c.addCriteria(Criteria.NAME, "cloud.identifier");
 
-    	List<ConfigurationVO> configs = searchForConfigurations(c, true);
-    	
-    	String cloudIdentifier;
-    	if (configs == null || configs.size() != 1) {
-    		cloudIdentifier = "";
-    	} else {
-    		cloudIdentifier = configs.get(0).getValue();
+    	String cloudIdentifier = _configDao.getValue("cloud.identifier");
+    	if (cloudIdentifier == null) {
+    	    cloudIdentifier = "";
     	}
-    	
+
     	String signature = "";
     	try {
         	//get the user obj to get his secret key

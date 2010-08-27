@@ -33,6 +33,10 @@ import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.ListAlertsCmd;
 import com.cloud.api.commands.ListAsyncJobsCmd;
+import com.cloud.api.commands.ListCapacityCmd;
+import com.cloud.api.commands.ListCfgsByCmd;
+import com.cloud.api.commands.ListClustersCmd;
+import com.cloud.api.commands.ListDiskOfferingsCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
@@ -837,7 +841,7 @@ public interface ManagementServer {
      * returns the a map of the names/values in the configuraton table
      * @return map of configuration name/values
      */
-    List<ConfigurationVO> searchForConfigurations(Criteria c, boolean showHidden);
+    List<ConfigurationVO> searchForConfigurations(ListCfgsByCmd c);
     
     /**
      * returns the instance id of this management server.
@@ -866,7 +870,7 @@ public interface ManagementServer {
      * @param c
      * @return
      */
-    List<ClusterVO> searchForClusters(Criteria c);
+    List<ClusterVO> searchForClusters(ListClustersCmd c);
     
     /**
      * Searches for Pods by the specified search criteria
@@ -1526,10 +1530,10 @@ public interface ManagementServer {
 
     /**
      * list all the capacity rows in capacity operations table
-     * @param c
+     * @param cmd
      * @return List of capacities
      */
-    List<CapacityVO> listCapacities(Criteria c);
+    List<CapacityVO> listCapacities(ListCapacityCmd cmd);
 
     public long getMemoryUsagebyHost(Long hostId);
     
@@ -1636,12 +1640,11 @@ public interface ManagementServer {
 
     /**
      * Search for disk offerings based on search criteria
-     * @param c the criteria to use for searching for disk offerings
+     * @param cmd the command containing the criteria to use for searching for disk offerings
      * @return a list of disk offerings that match the given criteria
      */
-    List<DiskOfferingVO> searchForDiskOfferings(Criteria c);
-   
-    
+    List<DiskOfferingVO> searchForDiskOfferings(ListDiskOfferingsCmd cmd);
+
     /**
      * 
      * @param jobId async-call job id

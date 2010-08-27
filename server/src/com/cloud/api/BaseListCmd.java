@@ -2,6 +2,8 @@ package com.cloud.api;
 
 
 public abstract class BaseListCmd extends BaseCmd {
+    private static final long DEFAULT_PAGE_SIZE = 50;
+
     /////////////////////////////////////////////////////
     /////////// BaseList API parameters /////////////////
     /////////////////////////////////////////////////////
@@ -30,5 +32,26 @@ public abstract class BaseListCmd extends BaseCmd {
 
     public Integer getPageSize() {
         return pageSize;
+    }
+
+    public Long getPageSizeVal() {
+        Long pageSize = DEFAULT_PAGE_SIZE;
+        Integer pageSizeInt = getPageSize();
+        if (pageSizeInt != null) {
+            pageSize = pageSizeInt.longValue();
+        }
+        return pageSize;
+    }
+
+    public Long getStartIndex() {
+        Long startIndex = Long.valueOf(0);
+        Long pageSizeVal = getPageSizeVal();
+        if (page != null) {
+            int pageNum = page.intValue();
+            if (pageNum > 0) {
+                startIndex = Long.valueOf(pageSizeVal * (pageNum-1));
+            }
+        }
+        return startIndex;
     }
 }

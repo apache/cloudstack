@@ -30,31 +30,25 @@ import java.util.StringTokenizer;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseListCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.CapacityResponse;
 import com.cloud.capacity.CapacityVO;
+import com.cloud.serializer.SerializerHelper;
 import com.cloud.server.Criteria;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.utils.Pair;
 
-public class ListCapacityCmd extends BaseCmd{
+@Implementation(method="listCapacities")
+public class ListCapacityCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListCapacityCmd.class.getName());
     private static final DecimalFormat s_percentFormat = new DecimalFormat("####.##");
 
     private static final String s_name = "listcapacityresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HOST_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TYPE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
-
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -97,86 +91,54 @@ public class ListCapacityCmd extends BaseCmd{
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
+
+    @Override
+    public Long getPageSizeVal() {
+        Long pageSizeVal = 1000000L;
+        Integer pageSize = getPageSize();
+        if (pageSize != null) {
+            pageSizeVal = pageSize.longValue();
+        }
+        return pageSizeVal;
     }
 
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long zoneId = (Long)params.get(BaseCmd.Properties.ZONE_ID.getName());
-        Long podId = (Long)params.get(BaseCmd.Properties.POD_ID.getName());
-        Long hostId = (Long)params.get(BaseCmd.Properties.HOST_ID.getName());
-        String type = (String)params.get(BaseCmd.Properties.TYPE.getName());
-        Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
-        Integer pageSize = (Integer)params.get(BaseCmd.Properties.PAGESIZE.getName());
-
-        Long startIndex = Long.valueOf(0);
-        int pageSizeNum = 1000000;
-        if (pageSize != null) {
-            pageSizeNum = pageSize.intValue();
-        }
-        if (page != null) {
-            int pageNum = page.intValue();
-            if (pageNum > 0) {
-                startIndex = Long.valueOf(pageSizeNum * (pageNum-1));
-            }
-        }
-
-        Criteria c = new Criteria ("capacityType", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
-        c.addCriteria(Criteria.DATACENTERID, zoneId);
-        c.addCriteria(Criteria.PODID, podId);
-        c.addCriteria(Criteria.HOSTID, hostId);
-        c.addCriteria(Criteria.TYPE, type);
-
-        List<CapacityVO> capacities = getManagementServer().listCapacities(c);
-
-        if (capacities == null ) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "unable to get capacity statistic");
-        }
+    @Override @SuppressWarnings("unchecked")
+    public String getResponse() {
+        List<CapacityVO> capacities = (List<CapacityVO>)getResponseObject();
 
         List<CapacityVO> summedCapacities = sumCapacities(capacities);
-        List<Pair<String, Object>> capacitiesTags = new ArrayList<Pair<String, Object>>();
-        Object[] cTag = new Object[summedCapacities.size()];
-        int i=0;
-
-        for (CapacityVO capacity : summedCapacities) {
-            List<Pair<String, Object>> capacityData = new ArrayList<Pair<String, Object>>();
-            capacityData.add(new Pair<String, Object>(BaseCmd.Properties.TYPE.getName(), capacity.getCapacityType()));
-            capacityData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_ID.getName(), capacity.getDataCenterId()));
-            capacityData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), getManagementServer().getDataCenterBy(capacity.getDataCenterId()).getName()));
-            if (capacity.getPodId() != null) {
-                capacityData.add(new Pair<String, Object>(BaseCmd.Properties.POD_ID.getName(), capacity.getPodId()));
-                capacityData.add(new Pair<String, Object>(BaseCmd.Properties.POD_NAME.getName(), (capacity.getPodId() > 0) ? getManagementServer().findHostPodById(capacity.getPodId()).getName() : "All"));
+        List<CapacityResponse> response = new ArrayList<CapacityResponse>();
+        for (CapacityVO summedCapacity : summedCapacities) {
+            CapacityResponse capacityResponse = new CapacityResponse();
+            capacityResponse.setCapacityTotal(summedCapacity.getTotalCapacity());
+            capacityResponse.setCapacityType(summedCapacity.getCapacityType());
+            capacityResponse.setCapacityUsed(summedCapacity.getUsedCapacity());
+            capacityResponse.setPodId(summedCapacity.getPodId());
+            capacityResponse.setZoneId(summedCapacity.getDataCenterId());
+            // TODO:  implement
+//            capacityResponse.setPodName(podName);
+//            capacityResponse.setZoneName(zoneName);
+            if (summedCapacity.getTotalCapacity() != 0) {
+                capacityResponse.setPercentUsed(s_percentFormat.format(summedCapacity.getUsedCapacity() / summedCapacity.getTotalCapacity()));
+            } else {
+                capacityResponse.setPercentUsed(s_percentFormat.format(0L));
             }
-            capacityData.add(new Pair<String, Object>(BaseCmd.Properties.CAPACITY_USED.getName(), Long.valueOf(capacity.getUsedCapacity()).toString()));
-            capacityData.add(new Pair<String, Object>(BaseCmd.Properties.CAPACITY_TOTAL.getName(), Long.valueOf(capacity.getTotalCapacity()).toString()));
-            try {  
-                if (capacity.getTotalCapacity() != 0) {
-                    float percent = (float)capacity.getUsedCapacity()/(float)capacity.getTotalCapacity()*100;
-                    capacityData.add(new Pair<String, Object>(BaseCmd.Properties.PERCENT_USED.getName(), s_percentFormat.format(percent)));
-                }
-                else {
-                    capacityData.add(new Pair<String, Object>(BaseCmd.Properties.PERCENT_USED.getName(), s_percentFormat.format(0)));
-                }
-            } catch (Exception  ex) {
-                throw new ServerApiException (BaseCmd.INTERNAL_ERROR, "unable to get capacity statistic");
-            }
-            cTag[i++] = capacityData;
         }
 
-        Pair<String, Object> capacityTag = new Pair<String, Object>("capacity", cTag);
-        capacitiesTags.add(capacityTag);
-        return capacitiesTags;
+        return SerializerHelper.toSerializedString(response);
     }
 
-    public List<CapacityVO> sumCapacities(List<CapacityVO> hostCapacities) {	        
+    private List<CapacityVO> sumCapacities(List<CapacityVO> hostCapacities) {	        
         Map<String, Long> totalCapacityMap = new HashMap<String, Long>();
         Map<String, Long> usedCapacityMap = new HashMap<String, Long>();
         
         Set<Long> poolIdsToIgnore = new HashSet<Long>();
         Criteria c = new Criteria();
+        // TODO:  implement
         List<? extends StoragePoolVO> allStoragePools = getManagementServer().searchForStoragePools(c);
         for (StoragePoolVO pool : allStoragePools) {
         	StoragePoolType poolType = pool.getPoolType();

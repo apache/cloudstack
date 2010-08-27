@@ -20,33 +20,21 @@ package com.cloud.api.commands;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseListCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.server.Criteria;
+import com.cloud.api.response.DiskOfferingResponse;
+import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.utils.Pair;
 
-public class ListDiskOfferingsCmd extends BaseCmd {
+@Implementation(method="searchForDiskOfferings")
+public class ListDiskOfferingsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDiskOfferingsCmd.class.getName());
 
     private static final String s_name = "listdiskofferingsresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
-
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -87,61 +75,27 @@ public class ListDiskOfferingsCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-    @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-    	Long id = (Long)params.get(BaseCmd.Properties.ID.getName());
-        Long domainId = (Long)params.get(BaseCmd.Properties.DOMAIN_ID.getName());
-        String name = (String)params.get(BaseCmd.Properties.NAME.getName());
-        String keyword = (String)params.get(BaseCmd.Properties.KEYWORD.getName());
-        Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
-        Integer pageSize = (Integer)params.get(BaseCmd.Properties.PAGESIZE.getName());
+    @Override @SuppressWarnings("unchecked")
+    public String getResponse() {
+        List<DiskOfferingVO> offerings = (List<DiskOfferingVO>)getResponseObject();
 
-        Long startIndex = Long.valueOf(0);
-        int pageSizeNum = 50;
-    	if (pageSize != null) {
-    		pageSizeNum = pageSize.intValue();
-    	}
-        if (page != null) {
-            int pageNum = page.intValue();
-            if (pageNum > 0) {
-                startIndex = Long.valueOf(pageSizeNum * (pageNum-1));
-            }
-        }
-
-        Criteria c = new Criteria("id", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
-        if (keyword != null) {
-        	c.addCriteria(Criteria.KEYWORD, keyword);
-        }else {
-        	c.addCriteria(Criteria.ID, id);
-            c.addCriteria(Criteria.NAME, name);
-            c.addCriteria(Criteria.DOMAINID, domainId);
-        }
-
-        List<DiskOfferingVO> offerings = getManagementServer().searchForDiskOfferings(c);
-
-        List<Pair<String, Object>> offeringTags = new ArrayList<Pair<String, Object>>();
-        Object[] diskOffTag = new Object[offerings.size()];
-        int i = 0;
+        List<DiskOfferingResponse> response = new ArrayList<DiskOfferingResponse>();
         for (DiskOfferingVO offering : offerings) {
-            List<Pair<String, Object>> offeringData = new ArrayList<Pair<String, Object>>();
+            DiskOfferingResponse diskOffResp = new DiskOfferingResponse();
+            diskOffResp.setCreated(offering.getCreated());
+            diskOffResp.setDiskSize(offering.getDiskSize());
+            diskOffResp.setDisplayText(offering.getDisplayText());
+            diskOffResp.setDomainId(offering.getDomainId());
+            diskOffResp.setId(offering.getId());
+            diskOffResp.setName(offering.getName());
+            diskOffResp.setTags(offering.getTags());
+            // TODO: implement
+//            getManagementServer().findDomainIdById(offering.getDomainId()).getName()
+//            diskOffResp.setDomain(domain);
 
-            offeringData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.toString(offering.getId())));
-            offeringData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), offering.getDomainId()));
-            offeringData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), getManagementServer().findDomainIdById(offering.getDomainId()).getName()));
-            offeringData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), offering.getName()));
-            offeringData.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_TEXT.getName(), offering.getDisplayText()));
-            offeringData.add(new Pair<String, Object>(BaseCmd.Properties.DISK_SIZE.getName(), offering.getDiskSizeInBytes()));
-            offeringData.add(new Pair<String, Object>(BaseCmd.Properties.IS_MIRRORED.getName(), offering.isMirrored()));
-            offeringData.add(new Pair<String, Object>(BaseCmd.Properties.TAGS.getName(), offering.getTags()));
-            diskOffTag[i++] = offeringData;
         }
-        Pair<String, Object> offeringTag = new Pair<String, Object>("diskoffering", diskOffTag);
-        offeringTags.add(offeringTag);
-        return offeringTags;
+
+        return SerializerHelper.toSerializedString(response);
     }
 }
