@@ -43,7 +43,7 @@ except ImportError:
 #---------------------- option parsing and command line checks ------------------------
 
 
-usage = """%prog user:password@mysqlhost:port <kvm|xenserver> [--deploy-as=rootuser:rootpassword] [--auto=/path/to/server-setup.xml]
+usage = """%prog user:password@mysqlhost:port <kvm|xenserver|vmware> [--deploy-as=rootuser:rootpassword] [--auto=/path/to/server-setup.xml]
 
 This command sets up the CloudStack Management Server and CloudStack Usage Server database configuration (connection credentials and host information) based on the first argument.
 
@@ -224,7 +224,7 @@ def setupconfigfile(fn,myipaddr,username,password,host,port):
 (options, args) = parser.parse_args()
 
 if len(args) != 2: e("Wrong number of arguments")
-if args[1] not in ["xenserver","kvm"]: e("You need to specify either xenserver or kvm after the database credentials")
+if args[1] not in ["xenserver","kvm","vmware"]: e("You need to specify either xenserver or kvm or vmware after the database credentials")
 virttech = args[1]
 
 user,password,host,port= get_creds(parser,options,args)

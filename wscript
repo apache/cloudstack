@@ -759,6 +759,9 @@ def deploydb_xenserver(ctx):
 def deploydb_kvm(ctx):
 	"""re-deploys the database using the MySQL connection information and the KVM templates.sql"""
 	return deploydb(ctx,"kvm")
+def deploydb_vmware(ctx):
+	"""re-deploys the database using the MySQL connection information and the KVM templates.sql"""
+	return deploydb(ctx,"vmware")
 
 def run(args):
 	"""runs the management server"""

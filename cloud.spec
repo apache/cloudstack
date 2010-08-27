@@ -591,8 +591,7 @@ fi
 %{_datadir}/%{name}/setup/create-index-fk.sql
 %{_datadir}/%{name}/setup/create-schema.sql
 %{_datadir}/%{name}/setup/server-setup.sql
-%{_datadir}/%{name}/setup/templates.kvm.sql
-%{_datadir}/%{name}/setup/templates.xenserver.sql
+%{_datadir}/%{name}/setup/templates.*.sql
 %{_datadir}/%{name}/setup/deploy-db-dev.sh
 %{_datadir}/%{name}/setup/server-setup.xml
 %{_datadir}/%{name}/setup/data-20to21.sql
