@@ -1,3 +1,5 @@
+var selectedItemIds = {};
+    
 $(document).ready(function() {     
     $("#accordion_menu").accordion({
         autoHeight: false, 
@@ -46,11 +48,9 @@ $(document).ready(function() {
     var $midmenuItemVm = $("#midmenu_item_vm");    
     var $actionListItem = $("#action_list_item");
     
-    var selectedItemIds = {};
-    
     $("#leftmenu_instance_group_header").bind("click", function(event) {   
         var $arrowIcon = $(this).find("#arrow_icon");        
-        clickInstanceGroupHeader($arrowIcon, selectedItemIds);
+        clickInstanceGroupHeader($arrowIcon);
         return false;
     });
     

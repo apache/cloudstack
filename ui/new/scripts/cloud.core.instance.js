@@ -1,4 +1,4 @@
-function clickInstanceGroupHeader($arrowIcon, selectedItemIds) {   
+function clickInstanceGroupHeader($arrowIcon) {   
     //***** VM Detail (begin) ******************************************************************************
     var $vmPopup
     var $rightPanelHeader;  
