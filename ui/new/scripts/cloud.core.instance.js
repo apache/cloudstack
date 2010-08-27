@@ -25,6 +25,16 @@ function clickInstanceGroupHeader($arrowIcon, selectedItemIds) {
             label: "Start",     
             isAsyncJob: true,
             asyncJobResponse: "startvirtualmachineresponse"
+        },
+        rebootVirtualMachine: {
+            label: "Reboot",
+            isAsyncJob: true,
+            asyncJobResponse: "rebootvirtualmachineresponse"
+        },
+        destroyVirtualMachine: {
+            label: "Destroy",
+            isAsyncJob: true,
+            asyncJobResponse: "destroyvirtualmachineresponse"
         }        
     }            
    
@@ -175,7 +185,7 @@ function clickInstanceGroupHeader($arrowIcon, selectedItemIds) {
 		        }
 		        
 		        //action menu			        
-		        $("#action_link").show();			  
+		        $("#action_link").show();
 		        for(var api in actionMap) {		
 		            var apiInfo = actionMap[api];
 		            var $listItem = $("#action_list_item").clone();
