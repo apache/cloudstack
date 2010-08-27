@@ -239,14 +239,7 @@
                 <!-- Mid Menu starts here-->
                 <div class="midmenu_panel">
                     <div class="midmenu_box" id="midmenu_container">
-                    	<div class="midmenu_list">
-                        	<div class="midmenu_content adding">
-                                    <div class="midmenu_textbox">
-                                    	<p><strong>Adding &hellip;</strong></p>
-                                    </div>
-                                    <div class="midmenu_addingloader"></div>
-                             </div>
-                        </div>
+                    	
                         
                         	<div class="midmenu_list">
                             	<div class="midmenu_content">
@@ -607,12 +600,26 @@
                     IP Address: <span id="ip_address"></span>
                 </p>
             </div>
-            <div class="midmenu_selectedloader" id="spinning_wheel" style="display: none;">
+            <div class="midmenu_inactionloader" id="spinning_wheel" style="display: none;">
             </div>
             <div class="midmenu_infoicon" id="info_icon" style="display: none;">
             </div>
         </div>
     </div>
+    
+        <div class="midmenu_list" id="midmenu_item" style="display: none;">
+        	<div class="midmenu_content" id="content">
+                 <div class="midmenu_textbox">
+                 	<p>
+                    	<strong id="vm_name">ABC</strong>
+                    </p>
+                 </div>
+                 <div class="midmenu_inactionloader" id="spinning_wheel" style="display: none; margin-left:18px; display:inline;">
+                 </div>
+                 <div class="midmenu_infoicon" id="info_icon" style="display: none; margin-left:18px; display:inline;">
+                 </div>
+            </div>
+       </div>
     <!-- action list item -->
     <li id="action_list_item"><a id="link" href="#">Stop</a></li>
     <!-- templates ends here-->
