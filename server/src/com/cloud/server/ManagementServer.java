@@ -37,6 +37,7 @@ import com.cloud.api.commands.ListCapacityCmd;
 import com.cloud.api.commands.ListCfgsByCmd;
 import com.cloud.api.commands.ListClustersCmd;
 import com.cloud.api.commands.ListDiskOfferingsCmd;
+import com.cloud.api.commands.ListDomainsCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
@@ -1355,10 +1356,10 @@ public interface ManagementServer {
 
 	/**
 	 * Search for domains owned by the given domainId/domainName (those parameters are wrapped
-	 * in a Criteria object.
+	 * in a command object.
 	 * @return list of domains owned by the given user
 	 */
-	List<DomainVO> searchForDomains(Criteria c);
+	List<DomainVO> searchForDomains(ListDomainsCmd c) throws PermissionDeniedException;
 	
 	List<DomainVO> searchForDomainChildren(Criteria c);
 

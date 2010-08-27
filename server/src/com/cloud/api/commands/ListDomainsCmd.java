@@ -20,35 +20,21 @@ package com.cloud.api.commands;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseListCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.response.DomainResponse;
 import com.cloud.domain.DomainVO;
-import com.cloud.server.Criteria;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
+import com.cloud.serializer.SerializerHelper;
 
-public class ListDomainsCmd extends BaseCmd {
+@Implementation(method="searchForDomains")
+public class ListDomainsCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListDomainsCmd.class.getName());
 	
     private static final String s_name = "listdomainsresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_LEVEL, Boolean.FALSE));
-
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -85,74 +71,28 @@ public class ListDomainsCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-    	Long domainId = (Long)params.get(BaseCmd.Properties.ID.getName());
-        String domainName = (String)params.get(BaseCmd.Properties.NAME.getName());
-        Integer level = (Integer)params.get(BaseCmd.Properties.DOMAIN_LEVEL.getName());
-        String keyword = (String)params.get(BaseCmd.Properties.KEYWORD.getName());
-        Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
-        Integer pageSize = (Integer)params.get(BaseCmd.Properties.PAGESIZE.getName());
+    @Override @SuppressWarnings("unchecked")
+    public String getResponse() {
+        List<DomainVO> domains = (List<DomainVO>)getResponseObject();
 
-        if (account != null) {
-            if (domainId != null) {
-                if (!getManagementServer().isChildDomain(account.getDomainId(), domainId)) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to list domains for domain id " + domainId + ", permission denied.");
-                }
-            } else {
-                domainId = account.getDomainId();
-            }
-        }
-
-        Long startIndex = Long.valueOf(0);
-        int pageSizeNum = 50;
-    	if (pageSize != null) {
-    		pageSizeNum = pageSize.intValue();
-    	}
-        if (page != null) {
-            int pageNum = page.intValue();
-            if (pageNum > 0) {
-                startIndex = Long.valueOf(pageSizeNum * (pageNum-1));
-            }
-        }
-        Criteria c = new Criteria("id", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
-        
-        if (keyword != null) {
-        	c.addCriteria(Criteria.KEYWORD, keyword);
-        } else {
-        	c.addCriteria(Criteria.ID, domainId);
-            c.addCriteria(Criteria.NAME, domainName);
-            c.addCriteria(Criteria.LEVEL, level);
-        }
-        
-        List<DomainVO> domains = getManagementServer().searchForDomains(c);
-        
-        List<Pair<String, Object>> domainTags = new ArrayList<Pair<String, Object>>();
-        Object[] dTag = new Object[domains.size()];
-        int i = 0;
+        List<DomainResponse> response = new ArrayList<DomainResponse>();
         for (DomainVO domain : domains) {
-            List<Pair<String, Object>> domainData = new ArrayList<Pair<String, Object>>();
-            domainData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.valueOf(domain.getId()).toString()));
-            domainData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), domain.getName()));
-            domainData.add(new Pair<String, Object>(BaseCmd.Properties.LEVEL.getName(), domain.getLevel().toString()));
-            
-            if (domain.getParent() != null){
-            	domainData.add(new Pair<String, Object>(BaseCmd.Properties.PARENT_DOMAIN_ID.getName(), domain.getParent().toString()));
-            	domainData.add(new Pair<String, Object>(BaseCmd.Properties.PARENT_DOMAIN_NAME.getName(), 
-            			getManagementServer().findDomainIdById(domain.getParent()).getName()));
-            }
-            dTag[i++] = domainData;
+            DomainResponse domainResponse = new DomainResponse();
+            domainResponse.setDomainName(domain.getName());
+            domainResponse.setId(domain.getId());
+            domainResponse.setLevel(domain.getLevel());
+            domainResponse.setParentDomainId(domain.getParent());
+            // TODO:  implement
+//            domainResponse.setParentDomainName(findDomainIdById(domain.getParent()).getName());
+
+            response.add(domainResponse);
         }
-        Pair<String, Object> domainTag = new Pair<String, Object>("domain", dTag);
-        domainTags.add(domainTag);
-        return domainTags;
+
+        return SerializerHelper.toSerializedString(response);
     }
 }
