@@ -772,8 +772,8 @@ public class SnapshotManagerImpl implements SnapshotManager {
             long oldSnapId = oldestSnapshot.getId();
             s_logger.debug("Max snaps: "+ policy.getMaxSnaps() + " exceeded for snapshot policy with Id: " + policyId + ". Deleting oldest snapshot: " + oldSnapId);
             // Excess snapshot. delete it asynchronously
-            destroySnapshotAsync(userId, volumeId, oldSnapId, policyId);
-            
+            //destroySnapshotAsync(userId, volumeId, oldSnapId, policyId);
+            deleteSnapshotInternal(oldSnapId, policyId, userId);
             snaps.remove(oldestSnapshot);
         }
         
@@ -833,9 +833,27 @@ public class SnapshotManagerImpl implements SnapshotManager {
         if (userId == null) {
             userId = Long.valueOf(1);
         }
+        
+        long volumeId = snapshotCheck.getVolumeId();
+        List<SnapshotPolicyVO> policies = listPoliciesforSnapshot(snapshotId);
+        
+        boolean status = true; 
+        for (SnapshotPolicyVO policy : policies) {
+            status = deleteSnapshotInternal(snapshotId,policy.getId(),userId);
+            
+            if(!status)
+            {
+            	s_logger.warn("Failed to delete snapshot");
+            	throw new ServerApiException(BaseCmd.INTERNAL_ERROR,"Failed to delete snapshot:"+snapshotId);
+            }
+        }
 
-    	
-        s_logger.debug("Calling deleteSnapshot for snapshotId: " + snapshotId + " and policyId " + policyId);
+        return status;
+
+    }
+
+	private boolean deleteSnapshotInternal(Long snapshotId, Long policyId, Long userId) {
+		s_logger.debug("Calling deleteSnapshot for snapshotId: " + snapshotId + " and policyId " + policyId);
         long prevSnapshotId = 0;
         SnapshotVO nextSnapshot = null;
         boolean deleted = true;
@@ -903,25 +921,24 @@ public class SnapshotManagerImpl implements SnapshotManager {
         }
         
         return deleted;
+	}
 
-    }
-
-    @Override @DB
-    public long destroySnapshotAsync(long userId, long volumeId, long snapshotId, long policyId) {
-        VolumeVO volume = _volsDao.findById(volumeId);
-        SnapshotOperationParam param = new SnapshotOperationParam(userId, volume.getAccountId(), volumeId, snapshotId, policyId);
-        Gson gson = GsonHelper.getBuilder().create();
-        
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(userId);
-        job.setAccountId(volume.getAccountId());
-        job.setCmd("DeleteSnapshot");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(CreateSnapshotCmd.getResultObjectName());
-        
-        return _asyncMgr.submitAsyncJob(job, true);
-
-    }
+//    @Override @DB
+//    public long destroySnapshotAsync(long userId, long volumeId, long snapshotId, long policyId) {
+//        VolumeVO volume = _volsDao.findById(volumeId);
+//        SnapshotOperationParam param = new SnapshotOperationParam(userId, volume.getAccountId(), volumeId, snapshotId, policyId);
+//        Gson gson = GsonHelper.getBuilder().create();
+//        
+//        AsyncJobVO job = new AsyncJobVO();
+//        job.setUserId(userId);
+//        job.setAccountId(volume.getAccountId());
+//        job.setCmd("DeleteSnapshot");
+//        job.setCmdInfo(gson.toJson(param));
+//        job.setCmdOriginator(CreateSnapshotCmd.getResultObjectName());
+//        
+//        return _asyncMgr.submitAsyncJob(job, true);
+//
+//    }
 
     @Override @DB
     public boolean destroySnapshot(long userId, long snapshotId, long policyId) {

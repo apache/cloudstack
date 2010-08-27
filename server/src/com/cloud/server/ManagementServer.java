@@ -1564,7 +1564,7 @@ public interface ManagementServer {
      * @return true if snapshot successfully destroyed, false otherwise
      */
     boolean destroyTemplateSnapshot(Long userId, long snapshotId);
-    long deleteSnapshotAsync(long userId, long snapshotId);
+//    long deleteSnapshotAsync(long userId, long snapshotId);
 
     long createVolumeFromSnapshotAsync(long userId, long accountId, long snapshotId, String volumeName) throws InternalErrorException, ResourceAllocationException;
     

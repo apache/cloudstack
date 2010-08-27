@@ -87,7 +87,7 @@ public interface SnapshotManager extends Manager {
     /**
      * Destroys the specified snapshot from secondary storage
      */
-    long destroySnapshotAsync(long userId, long volumeId, long snapshotId, long policyId);
+//    long destroySnapshotAsync(long userId, long volumeId, long snapshotId, long policyId);
     boolean destroySnapshot(long userId, long snapshotId, long policyId);
 
     /**

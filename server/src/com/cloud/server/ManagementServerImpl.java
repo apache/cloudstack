@@ -6450,20 +6450,20 @@ public class ManagementServerImpl implements ManagementServer {
         return _vmMgr.destroyTemplateSnapshot(userId, snapshotId);
     }
 
-    @Override
-    public long deleteSnapshotAsync(long userId, long snapshotId) {
-    	Snapshot snapshot = findSnapshotById(snapshotId);
-        long volumeId = snapshot.getVolumeId();
-        List<SnapshotPolicyVO> policies = _snapMgr.listPoliciesforSnapshot(snapshotId);
-        
-        // Return the job id of the last destroySnapshotAsync job which actually destroys the snapshot.
-        // The rest of the async jobs just update the db and don't really do any meaningful thing.
-        long finalJobId = 0;
-        for (SnapshotPolicyVO policy : policies) {
-            finalJobId = _snapMgr.destroySnapshotAsync(userId, volumeId, snapshotId, policy.getId());
-        }
-        return finalJobId;
-    }
+//    @Override
+//    public long deleteSnapshotAsync(long userId, long snapshotId) {
+//    	Snapshot snapshot = findSnapshotById(snapshotId);
+//        long volumeId = snapshot.getVolumeId();
+//        List<SnapshotPolicyVO> policies = _snapMgr.listPoliciesforSnapshot(snapshotId);
+//        
+//        // Return the job id of the last destroySnapshotAsync job which actually destroys the snapshot.
+//        // The rest of the async jobs just update the db and don't really do any meaningful thing.
+//        long finalJobId = 0;
+//        for (SnapshotPolicyVO policy : policies) {
+//            finalJobId = _snapMgr.destroySnapshotAsync(userId, volumeId, snapshotId, policy.getId());
+//        }
+//        return finalJobId;
+//    }
 
 
     @Override
