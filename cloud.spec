@@ -597,6 +597,7 @@ fi
 %{_datadir}/%{name}/setup/server-setup.xml
 %{_datadir}/%{name}/setup/data-20to21.sql
 %{_datadir}/%{name}/setup/index-20to21.sql
+%{_datadir}/%{name}/setup/index-212to213.sql
 %{_datadir}/%{name}/setup/postprocess-20to21.sql
 %{_datadir}/%{name}/setup/schema-20to21.sql
 %doc README

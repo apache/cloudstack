@@ -10,5 +10,6 @@
 /usr/share/cloud/setup/server-setup.xml
 /usr/share/cloud/setup/data-20to21.sql
 /usr/share/cloud/setup/index-20to21.sql
+/usr/share/cloud/setup/index-212to213.sql
 /usr/share/cloud/setup/postprocess-20to21.sql
 /usr/share/cloud/setup/schema-20to21.sql
