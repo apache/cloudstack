@@ -118,6 +118,11 @@ public class EventTypes {
 	public static final String EVENT_SERVICE_OFFERING_EDIT = "SERVICE.OFFERING.EDIT";
 	public static final String EVENT_SERVICE_OFFERING_DELETE = "SERVICE.OFFERING.DELETE";
 	
+	// Disk Offerings
+    public static final String EVENT_DISK_OFFERING_CREATE = "DISK.OFFERING.CREATE";
+    public static final String EVENT_DISK_OFFERING_EDIT = "DISK.OFFERING.EDIT";
+    public static final String EVENT_DISK_OFFERING_DELETE = "DISK.OFFERING.DELETE";
+	
 	// Pods
 	public static final String EVENT_POD_CREATE = "POD.CREATE";
 	public static final String EVENT_POD_EDIT = "POD.EDIT";

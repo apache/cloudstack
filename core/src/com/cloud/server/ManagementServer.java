@@ -1836,14 +1836,14 @@ public interface ManagementServer {
      * @param tags Comma separated string to indicate special tags for the disk offering.
      * @return the created disk offering, null if failed to create
      */
-    DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException;
+    DiskOfferingVO createDiskOffering(long userId, long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException;
 
     /**
      * Delete a disk offering
      * @param id id of the disk offering to delete
      * @return true if deleted, false otherwise
      */
-    boolean deleteDiskOffering(long id);
+    boolean deleteDiskOffering(long userId, long id);
     
     /**
      * Update a disk offering
@@ -2187,4 +2187,5 @@ public interface ManagementServer {
 	
 	boolean checkIfMaintenable(long hostId);
 
+    Map<String, String> listCapabilities();
 }

@@ -99,7 +99,14 @@ public interface ConfigurationManager extends Manager {
 	 * @param size
 	 * @return ID
 	 */
-	DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags);
+	DiskOfferingVO createDiskOffering(long userId, long domainId, String name, String description, int numGibibytes, String tags);
+	
+	 /**
+     * Deletes a disk offering
+     * @param userId
+     * @param diskOfferingId
+     */
+    boolean deleteDiskOffering(long userId, long diskOfferingId);
 	
 	/**
 	 * Creates a new pod

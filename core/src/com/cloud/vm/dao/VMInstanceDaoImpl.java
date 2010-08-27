@@ -51,6 +51,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected final SearchBuilder<VMInstanceVO> HostSearch;
     protected final SearchBuilder<VMInstanceVO> LastHostSearch;
     protected final SearchBuilder<VMInstanceVO> ZoneSearch;
+    protected final SearchBuilder<VMInstanceVO> ZoneVmTypeSearch;
     protected final SearchBuilder<VMInstanceVO> ZoneTemplateNonExpungedSearch;
     protected final SearchBuilder<VMInstanceVO> NameLikeSearch;
     protected final SearchBuilder<VMInstanceVO> StateChangeSearch;
@@ -79,6 +80,11 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         ZoneSearch = createSearchBuilder();
         ZoneSearch.and("zone", ZoneSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         ZoneSearch.done();
+        
+        ZoneVmTypeSearch = createSearchBuilder();
+        ZoneVmTypeSearch.and("zone", ZoneVmTypeSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        ZoneVmTypeSearch.and("type", ZoneVmTypeSearch.entity().getType(), SearchCriteria.Op.EQ);
+        ZoneVmTypeSearch.done();
 
         ZoneTemplateNonExpungedSearch = createSearchBuilder();
         ZoneTemplateNonExpungedSearch.and("zone", ZoneTemplateNonExpungedSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
@@ -193,6 +199,15 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         return listActiveBy(sc);
     }
 
+    @Override
+    public List<VMInstanceVO> listByZoneIdAndType(long zoneId, VirtualMachine.Type type) {
+        SearchCriteria<VMInstanceVO> sc = ZoneVmTypeSearch.create();
+        sc.setParameters("zone", zoneId);
+        sc.setParameters("type", type.toString());
+        return listActiveBy(sc);
+    }
+    
+    
     @Override
     public List<VMInstanceVO> listNonExpungedByZoneAndTemplate(long zoneId, long templateId) {
         SearchCriteria<VMInstanceVO> sc = ZoneTemplateNonExpungedSearch.create();

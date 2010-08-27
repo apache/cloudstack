@@ -27,6 +27,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.user.User;
 import com.cloud.utils.Pair;
 
 public class DeleteDiskOfferingCmd extends BaseCmd {
@@ -37,6 +38,7 @@ public class DeleteDiskOfferingCmd extends BaseCmd {
 
     static {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
     }
 
     public String getName() {
@@ -49,6 +51,11 @@ public class DeleteDiskOfferingCmd extends BaseCmd {
     @Override
     public List<Pair<String, Object>> execute(Map<String, Object> params) {
         Long id = (Long)params.get(BaseCmd.Properties.ID.getName());
+        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
+        
+        if (userId == null) {
+            userId = Long.valueOf(User.UID_SYSTEM);
+        }
         
         //verify input parameters 
         DiskOfferingVO disk = getManagementServer().findDiskOfferingById(id);
@@ -56,7 +63,7 @@ public class DeleteDiskOfferingCmd extends BaseCmd {
         	throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a disk offering with id " + id);
         }
 
-        boolean result = getManagementServer().deleteDiskOffering(id);
+        boolean result = getManagementServer().deleteDiskOffering(userId, id);
 
         List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
         returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), Boolean.valueOf(result).toString()));

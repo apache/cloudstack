@@ -481,45 +481,16 @@ fi
 %doc README.html
 %doc debian/copyright
 
-%if %{_premium}
-
 %files agent-scripts
 %defattr(-,root,root,-)
 %{_libdir}/%{name}/agent/scripts/*
 %{_libdir}/%{name}/agent/vms/systemvm.zip
+%{_libdir}/%{name}/agent/vms/systemvm.iso
 %doc README
 %doc INSTALL
 %doc HACKING
 %doc README.html
 %doc debian/copyright
-
-%else
-
-%files agent-scripts
-%defattr(-,root,root,-)
-%{_libdir}/%{name}/agent/scripts/installer/*
-%{_libdir}/%{name}/agent/scripts/network/domr/*.sh
-%{_libdir}/%{name}/agent/scripts/storage/*.sh
-%{_libdir}/%{name}/agent/scripts/storage/zfs/*
-%{_libdir}/%{name}/agent/scripts/storage/qcow2/*
-%{_libdir}/%{name}/agent/scripts/storage/secondary/*
-%{_libdir}/%{name}/agent/scripts/util/*
-%{_libdir}/%{name}/agent/scripts/vm/*.sh
-%{_libdir}/%{name}/agent/scripts/vm/storage/nfs/*
-%{_libdir}/%{name}/agent/scripts/vm/storage/iscsi/*
-%{_libdir}/%{name}/agent/scripts/vm/network/*
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/*.sh
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/kvm/*
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xen/*
-%{_libdir}/%{name}/agent/vms/systemvm.zip
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/*
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
-
-%endif
 
 %files daemonize
 %defattr(-,root,root,-)
@@ -591,12 +562,12 @@ fi
 %{_datadir}/%{name}/setup/create-index-fk.sql
 %{_datadir}/%{name}/setup/create-schema.sql
 %{_datadir}/%{name}/setup/server-setup.sql
-%{_datadir}/%{name}/setup/templates.kvm.sql
-%{_datadir}/%{name}/setup/templates.xenserver.sql
+%{_datadir}/%{name}/setup/templates.*.sql
 %{_datadir}/%{name}/setup/deploy-db-dev.sh
 %{_datadir}/%{name}/setup/server-setup.xml
 %{_datadir}/%{name}/setup/data-20to21.sql
 %{_datadir}/%{name}/setup/index-20to21.sql
+%{_datadir}/%{name}/setup/index-212to213.sql
 %{_datadir}/%{name}/setup/postprocess-20to21.sql
 %{_datadir}/%{name}/setup/schema-20to21.sql
 %doc README
@@ -724,8 +695,7 @@ fi
 %{_javadir}/%{name}-server-extras.jar
 %{_sysconfdir}/%{name}/management/commands-ext.properties
 %{_sysconfdir}/%{name}/management/components-premium.xml
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/*
-%{_libdir}/%{name}/agent/vms/systemvm-premium.zip
+%{_libdir}/%{name}/agent/vms/systemvm-premium.iso
 %{_datadir}/%{name}/setup/create-database-premium.sql
 %{_datadir}/%{name}/setup/create-schema-premium.sql
 %doc README

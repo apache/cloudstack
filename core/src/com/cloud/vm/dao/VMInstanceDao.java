@@ -80,4 +80,5 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long> {
     List<VMInstanceVO> listByHostIdTypes(long hostid, VirtualMachine.Type... types);
     
     List<VMInstanceVO> listUpByHostIdTypes(long hostid, VirtualMachine.Type... types);
+    List<VMInstanceVO> listByZoneIdAndType(long zoneId, VirtualMachine.Type type);
 }

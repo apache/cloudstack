@@ -44,6 +44,7 @@ public class Network {
         Native,
         Vlan,
         Vswitch,
+        LinkLocal,
         Vnet;
     };
     
@@ -54,7 +55,7 @@ public class Network {
         Public,
         Guest,
         Storage,
-        LinkLocal,
+        Control,
         Vpn,
         Management
     };

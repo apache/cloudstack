@@ -4402,6 +4402,7 @@ public class ManagementServerImpl implements ManagementServer {
         SearchBuilder<AccountVO> sb = _accountDao.createSearchBuilder();
         sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("nid", sb.entity().getId(), SearchCriteria.Op.NEQ);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("needsCleanup", sb.entity().getNeedsCleanup(), SearchCriteria.Op.EQ);
@@ -4433,6 +4434,9 @@ public class ManagementServerImpl implements ManagementServer {
 
             // I want to join on user_vm.domain_id = domain.id where domain.path like 'foo%'
             sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+            sc.setParameters("nid", 1L);
+        } else {
+        	sc.setParameters("nid", 1L);
         }
 
         if (type != null) {
@@ -6832,14 +6836,14 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException {
+    public DiskOfferingVO createDiskOffering(long userId, long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException {
         if (numGibibytes!=0 && numGibibytes < 1) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
         } else if (numGibibytes > _maxVolumeSizeInGb) {
         	throw new InvalidParameterValueException("The maximum size for a disk is " + _maxVolumeSizeInGb + " Gb.");
         }
 
-        return _configMgr.createDiskOffering(domainId, name, description, numGibibytes, tags);
+        return _configMgr.createDiskOffering(userId, domainId, name, description, numGibibytes, tags);
     }
 
     @Override
@@ -6848,8 +6852,8 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean deleteDiskOffering(long id) {
-        return _diskOfferingDao.remove(Long.valueOf(id));
+    public boolean deleteDiskOffering(long userId, long id) {
+        return _configMgr.deleteDiskOffering(userId, id);
     }
 
     @Override
@@ -8589,6 +8593,26 @@ public class ManagementServerImpl implements ManagementServer {
 		}
 		return false;
 	}
+
+    @Override
+    public Map<String, String> listCapabilities() {
+        Map<String, String> capabilities = new HashMap<String, String>();
+        
+        String networkGroupsEnabled = _configs.get("direct.attach.network.groups.enabled");
+        if(networkGroupsEnabled == null) 
+            networkGroupsEnabled = "false";             
+
+        capabilities.put("networkGroupsEnabled", networkGroupsEnabled);
+        
+        final Class<?> c = this.getClass();
+        String fullVersion = c.getPackage().getImplementationVersion();
+        String version = "unknown"; 
+        if(fullVersion.length() > 0){
+            version = fullVersion.substring(0,fullVersion.lastIndexOf("."));
+        }
+        capabilities.put("cloudStackVersion", version);
+        return capabilities;
+    }
 
 
 }

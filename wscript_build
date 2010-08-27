@@ -229,21 +229,22 @@ def tar_up(task):
 	z.close()
 	return 0
 
-if bld.env.DISTRO != "Windows":
-	for virttech in [ _basename(x) for x in _glob(_join("patches","*")) ]:
-		if virttech == "shared":
-			continue
-		patchfiles = filelist('patches/%s/** patches/shared/**'%virttech,src=True,bld=True,dir=False,flat=True)
-		tgen = bld(
-			rule   = tar_up,
-			source = patchfiles,
-			target = '%s-patch.tgz'%virttech,
-			name   = '%s-patch_tgz'%virttech,
-			root = "patches/%s"%virttech,
-			rename = lambda x: re.sub(".subst$","",x),
-			after = 'patchsubst',
-		)
-		bld.process_after(tgen)
+for virttech in [ _basename(x) for x in _glob(_join("patches","*")) ]:
+	if virttech == "shared":
+		continue
+	patchfiles = filelist('patches/%s/** patches/shared/**'%virttech,src=True,bld=True,dir=False,flat=True)
+	tgen = bld(
+		rule   = tar_up,
+		source = patchfiles,
+		target = '%s-patch.tgz'%virttech,
+		name   = '%s-patch_tgz'%virttech,
+		root = "patches/%s"%virttech,
+		rename = lambda x: re.sub(".subst$","",x),
+		after = 'patchsubst',
+	)
+	bld.process_after(tgen)
+	if virttech != "xenserver":
+		# xenserver uses the patch.tgz file later to make an ISO, so we do not need to install it
 		bld.install_as("${AGENTLIBDIR}/scripts/vm/hypervisor/%s/patch.tgz"%virttech, "%s-patch.tgz"%virttech)
 
 # ================== End creation of patch.tgz's ====================
@@ -338,6 +339,8 @@ def zip_up(task):
 	z.close()
 	return 0
 
+bld.path.ensure_dir_node_from_path("target/oss")
+bld.path.ensure_dir_node_from_path("target/premium")
 if bld.env.DISTRO not in ["Windows","Mac"]:
 	tgen = bld(
 		rule   = copydeps,
@@ -348,28 +351,78 @@ if bld.env.DISTRO not in ["Windows","Mac"]:
 	tgen = bld(
 		rule   = zip_up,
 		source = " ".join( [sources,artifacts,deps,systems] ),
-		target = 'systemvm.zip',
+		target = 'target/oss/systemvm.zip',
 		name   = 'systemvm_zip',
-		after  = 'copydeps getsystemjars runant',
+		after  = 'getsystemjars runant',
 	)
 	bld.process_after(tgen)
+	bld.install_files("${AGENTLIBDIR}/vms", "target/oss/systemvm.zip")
+
 if buildpremium:
 	tgen = bld(
 		rule   = zip_up,
 		source = " ".join( [premiumsources,premiumartifacts,thirdparties] ),
-		target = 'systemvm-premium.zip',
+		target = 'target/premium/systemvm.zip',
 		name   = 'systemvm-premium_zip',
 		after  = 'runant',
 	)
 	bld.process_after(tgen)
-
-if bld.env.DISTRO not in [ "Windows", "Mac"]:
-	bld.install_files("${AGENTLIBDIR}/vms", "systemvm.zip")
-
-if buildpremium:
-	bld.install_files("${AGENTLIBDIR}/vms", "systemvm-premium.zip")
+	#no need to install the premium one, we have ISOs below
+	#bld.install_files("${AGENTLIBDIR}/vms", "systemvm-premium.zip")
 
 # ================== End systemvm patch creation ====================
+
+
+# ================== systemvm ISO creation ====================
+
+if bld.env.DISTRO not in ["Windows","Mac"]: # mkisofs only on windows
+
+	def iso_up(task):
+		tgt = task.outputs[0].bldpath(task.env)
+		if _exists(tgt): _unlink(tgt)
+		inps = []
+		for inp in task.inputs:
+			if inp.id&3==Node.BUILD:
+				src = inp.bldpath(task.env)
+				srcname = src
+				srcname = "/".join(srcname.split("/")[1:]) # chop off default/
+			else:
+				src = inp.srcpath(task.env)
+				srcname = src
+				srcname = "/".join(srcname.split("/")[1:]) # chop off ../
+			# post-process the paths
+			inps.append(src)
+		return Utils.exec_command(
+			[
+				#"echo",
+				"mkisofs",
+				"-quiet",
+				"-r",
+				"-o",tgt,
+			] + inps)
+
+	tgen = bld(
+		rule   = iso_up,
+		source = "xenserver-patch.tgz target/oss/systemvm.zip",
+		target = 'target/oss/systemvm.iso',
+		name   = 'systemvm_iso',
+		after  = 'systemvm_zip xenserver-patch_tgz',
+	)
+	bld.process_after(tgen)
+	bld.install_as("${AGENTLIBDIR}/vms/systemvm.iso", "target/oss/systemvm.iso")
+	
+	if buildpremium:
+		tgen = bld(
+			rule   = iso_up,
+			source = "xenserver-patch.tgz target/premium/systemvm.zip",
+			target = 'target/premium/systemvm.iso',
+			name   = 'systemvm-premium_iso',
+			after  = 'systemvm-premium_zip xenserver-patch_tgz',
+		)
+		bld.process_after(tgen)
+		bld.install_as("${AGENTLIBDIR}/vms/systemvm-premium.iso", "target/premium/systemvm.iso")
+
+# ================== End systemvm ISO creation ====================
 
 
 # =================== Empty directory / symlink creation on install target ====================

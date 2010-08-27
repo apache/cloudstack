@@ -1244,7 +1244,7 @@ function showConfigurationTab() {
 				
 				dialogEditService.find("#service_name").text(svcName);
 				dialogEditService.find("#edit_service_name").val(svcName);
-				dialogEditService.find("#edit_service_display").val(template.find("#service_display").text());
+			    dialogEditService.find("#edit_service_display").val(template.find("#service_displaytext").text());
 				dialogEditService.find("#edit_service_offerha").val(toBooleanValue(template.find("#service_offerha").text()));					
 				
 				dialogEditService
@@ -1260,9 +1260,9 @@ function showConfigurationTab() {
 				
 				        var moreCriteria = [];	
 				        var name = trim(thisDialog.find("#edit_service_name").val());
-				        moreCriteria.push("&name="+encodeURIComponent(name));						        
+				        moreCriteria.push("&name="+encodeURIComponent(escape(name)));						        
 						var displaytext = trim(thisDialog.find("#edit_service_display").val());
-						moreCriteria.push("&displayText="+encodeURIComponent(displaytext));								
+						moreCriteria.push("&displayText="+encodeURIComponent(escape(displaytext)));								
 						var offerha = trim(thisDialog.find("#edit_service_offerha").val());
 						moreCriteria.push("&offerha="+offerha);								
 										
@@ -1316,17 +1316,17 @@ function showConfigurationTab() {
 	function serviceJSONToTemplate(json, template) {	
 	    template.attr("id", "service_"+json.id);	   
 		(index++ % 2 == 0)? template.addClass("smallrow_even"): template.addClass("smallrow_odd");	
-		template.data("svcId", json.id).data("svcName", sanitizeXSS(json.name));
+		template.data("svcId", json.id).data("svcName", sanitizeXSS(unescape(json.name)));
 		
 		template.find("#service_id").text(json.id);
-		template.find("#service_name").text(json.name);
-		template.find("#service_displaytext").text(json.displaytext);
+		template.find("#service_name").text(unescape(json.name));
+		template.find("#service_displaytext").text(unescape(json.displaytext));
 		template.find("#service_storagetype").text(json.storagetype);
 		template.find("#service_cpu").text(json.cpunumber + " x " + convertHz(json.cpuspeed));
 		template.find("#service_memory").text(convertBytes(parseInt(json.memory)*1024*1024));			
 		template.find("#service_offerha").text(toBooleanText(json.offerha));
 		template.find("#service_networktype").text(toNetworkType(json.usevirtualnetwork));
-		template.find("#service_tags").text(json.tags);
+		template.find("#service_tags").text(unescape(json.tags));
 		
 		setDateField(json.created, template.find("#service_created"));			
 	}
@@ -1454,10 +1454,10 @@ function showConfigurationTab() {
 									
 				var array1 = [];						
 				var name = trim(thisDialog.find("#add_service_name").val());
-				array1.push("&name="+encodeURIComponent(name));	
+				array1.push("&name="+encodeURIComponent(escape(name)));	
 				
 				var display = trim(thisDialog.find("#add_service_display").val());
-				array1.push("&displayText="+encodeURIComponent(display));	
+				array1.push("&displayText="+encodeURIComponent(escape(display)));	
 				
 				var storagetype = trim(thisDialog.find("#add_service_storagetype").val());
 				array1.push("&storageType="+storagetype);	
@@ -1480,7 +1480,7 @@ function showConfigurationTab() {
 				
 				var tags = trim(thisDialog.find("#add_service_tags").val());
 				if(tags != null && tags.length > 0)
-				    array1.push("&tags="+encodeURIComponent(tags));		
+				    array1.push("&tags="+encodeURIComponent(escape(tags)));		
 				
 				thisDialog.dialog("close");
 				$.ajax({
@@ -1544,17 +1544,17 @@ function showConfigurationTab() {
 					
 				var array1 = [];					
 				var name = trim(thisDialog.find("#add_disk_name").val());
-				array1.push("&name="+encodeURIComponent(name));
+				array1.push("&name="+encodeURIComponent(escape(name)));
 				
 				var description = trim(thisDialog.find("#add_disk_description").val());	
-				array1.push("&displaytext="+encodeURIComponent(description));
+				array1.push("&displaytext="+encodeURIComponent(escape(description)));
 							
 				var disksize = trim(thisDialog.find("#add_disk_disksize").val());
 				array1.push("&disksize="+disksize);
 				
 				var tags = trim(thisDialog.find("#add_disk_tags").val());
 				if(tags != null && tags.length > 0)
-				    array1.push("&tags="+encodeURIComponent(tags));		
+				    array1.push("&tags="+encodeURIComponent(escape(tags)));		
 						
 				thisDialog.dialog("close");
 				$.ajax({
@@ -1649,7 +1649,7 @@ function showConfigurationTab() {
 						var dialogBox = $(this);					
 						dialogBox.dialog("close");
 						$.ajax({
-						  data: createURL("command=updateDiskOffering&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(display)+"&id="+diskId+"&response=json"),
+						  data: createURL("command=updateDiskOffering&name="+encodeURIComponent(escape(name))+"&displayText="+encodeURIComponent(escape(display))+"&id="+diskId+"&response=json"),
 							dataType: "json",
 							success: function(json) {									   				    
 								template.find("#disk_description").text(display);
@@ -1699,15 +1699,14 @@ function showConfigurationTab() {
 		} else {
 			template.addClass("smallrow_odd");
 		}
-		template.data("diskId", json.id).data("diskName", sanitizeXSS(json.name));	
+		template.data("diskId", json.id).data("diskName", sanitizeXSS(unescape(json.name)));	
 				
 		template.find("#disk_id").text(json.id);			
-		template.find("#disk_name").text(json.name);
-		template.find("#disk_description").text(json.displaytext);
+		template.find("#disk_name").text(unescape(json.name));
+		template.find("#disk_description").text(unescape(json.displaytext));
 	    template.find("#disk_disksize").text(convertBytes(json.disksize));
-	    template.find("#disk_tags").text(json.tags);
-		template.find("#disk_domain").text(json.domain); 			
-	    template.find("#disk_ismirrored").text(json.ismirrored);	
+	    template.find("#disk_tags").text(unescape(json.tags));
+		template.find("#disk_domain").text(unescape(json.domain)); 		
 	}
 		
 	function listDiskOfferings() {		  

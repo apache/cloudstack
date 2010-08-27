@@ -52,16 +52,16 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase;
 import com.cloud.hypervisor.xen.resource.XcpServerResource;
-import com.cloud.hypervisor.xen.resource.XenServerConnectionPool;
 import com.cloud.hypervisor.xen.resource.XenServerResource;
+import com.cloud.hypervisor.xen.resource.XenServerConnectionPool;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ServerResource;
+import com.cloud.storage.Storage.FileSystem;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Storage.FileSystem;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.template.TemplateInfo;
@@ -386,7 +386,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.0")) 
         	return new XenServerResource();
         
-        String msg = "Only support XCP 0.1.1 and Xerver 5.6.0, but this one is " + prodBrand + " " + prodVersion;
+        String msg = "Only support XCP 0.1.1 and XenServer 5.6.0, but this one is " + prodBrand + " " + prodVersion;
         _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
         s_logger.debug(msg);
         throw new RuntimeException(msg);

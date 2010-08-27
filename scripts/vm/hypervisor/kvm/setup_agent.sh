@@ -174,4 +174,4 @@ done
 #install_cloud_agent $dflag
 #install_cloud_consoleP $dflag
 cloud_agent_setup $host $zone $pod $guid
-cloud_consoleP_setup $host $zone $pod
+#cloud_consoleP_setup $host $zone $pod

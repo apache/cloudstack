@@ -17,8 +17,11 @@
  */
 package com.cloud.network.dao;
 
+import java.util.List;
+
 import javax.ejb.Local;
 
+import com.cloud.network.Network.BroadcastDomainType;
 import com.cloud.network.Network.Mode;
 import com.cloud.network.Network.TrafficType;
 import com.cloud.network.NetworkProfileVO;
@@ -29,6 +32,7 @@ import com.cloud.utils.db.SearchCriteria;
 @Local(value=NetworkProfileDao.class)
 public class NetworkProfileDaoImpl extends GenericDaoBase<NetworkProfileVO, Long> implements NetworkProfileDao {
     final SearchBuilder<NetworkProfileVO> ProfileSearch;
+    final SearchBuilder<NetworkProfileVO> AccountSearch;
     
     protected NetworkProfileDaoImpl() {
         super();
@@ -38,10 +42,28 @@ public class NetworkProfileDaoImpl extends GenericDaoBase<NetworkProfileVO, Long
         ProfileSearch.and("trafficType", ProfileSearch.entity().getTrafficType(), SearchCriteria.Op.EQ);
         ProfileSearch.and("cidr", ProfileSearch.entity().getCidr(), SearchCriteria.Op.EQ);
         ProfileSearch.and("broadcastType", ProfileSearch.entity().getBroadcastDomainType(), SearchCriteria.Op.EQ);
+        ProfileSearch.done();
+        
+        AccountSearch = createSearchBuilder();
+        AccountSearch.and("account", AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AccountSearch.done();
     }
     
-    public NetworkProfileVO findBy(TrafficType trafficType, Mode mode, long accountId) {
+    public NetworkProfileVO findBy(TrafficType trafficType, Mode mode, BroadcastDomainType broadcastType,  long accountId) {
+        SearchCriteria<NetworkProfileVO> sc = ProfileSearch.create();
+        sc.setParameters("account", accountId);
+        sc.setParameters("trafficType", trafficType);
+        sc.setParameters("broadcastType", broadcastType);
+        
         return null;
         
+    }
+    
+    @Override
+    public List<NetworkProfileVO> listBy(long accountId) {
+        SearchCriteria<NetworkProfileVO> sc = AccountSearch.create();
+        sc.setParameters("account", accountId);
+        
+        return listActiveBy(sc);
     }
 }

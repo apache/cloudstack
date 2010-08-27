@@ -17,9 +17,11 @@
  */
 package com.cloud.network.dao;
 
+import java.util.List;
+
 import com.cloud.network.NetworkProfileVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface NetworkProfileDao extends GenericDao<NetworkProfileVO, Long> {
-
+    List<NetworkProfileVO> listBy(long accountId);
 }
