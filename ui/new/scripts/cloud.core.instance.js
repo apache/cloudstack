@@ -17,24 +17,28 @@ function clickInstanceGroupHeader($arrowIcon) {
       
     var actionMap = {        
         stopVirtualMachine: {
-            label: "Stop",     
+            label: "Stop Instance",     
             isAsyncJob: true,
             asyncJobResponse: "stopvirtualmachineresponse"
         },
         startVirtualMachine: {
-            label: "Start",     
+            label: "Start Instance",     
             isAsyncJob: true,
             asyncJobResponse: "startvirtualmachineresponse"
         },
         rebootVirtualMachine: {
-            label: "Reboot",
+            label: "Reboot Instance",
             isAsyncJob: true,
             asyncJobResponse: "rebootvirtualmachineresponse"
         },
         destroyVirtualMachine: {
-            label: "Destroy",
+            label: "Destroy Instance",
             isAsyncJob: true,
             asyncJobResponse: "destroyvirtualmachineresponse"
+        },
+        recoverVirtualMachine: {
+            label: "Restore Instance",
+            isAsyncJob: false
         }        
     }            
    
@@ -204,10 +208,11 @@ function clickInstanceGroupHeader($arrowIcon) {
 		                var asyncJobResponse = $t.data("asyncJobResponse");		                           	               	                
 		                var jobIdMap = {};		         
 		                for(var id in selectedItemIds) {	
-		                    var midmenuItem = $("#midmenuItemVm_"+id);	  
-		                    midmenuItem.find("#content").removeClass("selected").addClass("adding");                          
-		                    midmenuItem.find("#spinning_wheel").addClass("midmenu_addingloader").show();	
-		                    midmenuItem.find("#info_icon").hide();		                   
+		                    var $midmenuItem = $("#midmenuItemVm_"+id);	
+		                    $midmenuItem.find("#content").removeClass("selected").addClass("adding");                          
+		                    $midmenuItem.find("#spinning_wheel").addClass("midmenu_addingloader").show();	
+		                    $midmenuItem.find("#info_icon").hide();		                   
+		                    //Async job (begin) *****
 		                    if(isAsyncJob == true) {		                        
 		                        $.ajax({
 			                        data: createURL("command="+api+"&id="+id+"&response=json"),
@@ -262,9 +267,41 @@ function clickInstanceGroupHeader($arrowIcon) {
 				                    }
 			                    });                     
 			                }
-			                else { //isAsyncJob == false
-			                    
+			                //Async job (end) *****
+			                
+			                //Sync job (begin) *****
+			                else { 			                    
+			                    $.ajax({
+						            data: createURL("command="+api+"&id="+id+"&response=json"),
+							        dataType: "json",
+							        async: false,
+							        success: function(json) {
+							            $midmenuItem.find("#content").removeClass("adding");
+										$midmenuItem.find("#spinning_wheel").hide();	
+																				              
+							            //RecoverVirtualMachine API doesn't return an embedded object on success (Bug 6037)
+							            //Before Bug 6037 is fixed, use the temporary solution below.							            
+							            $.ajax({
+	                                        cache: false,
+	                                        data: createURL("command=listVirtualMachines&id="+id+"&response=json"),
+	                                        dataType: "json",
+	                                        async: false,
+	                                        success: function(json) {		                                                                                  
+	                                            updateVirtualMachineStateInMidMenu(json.listvirtualmachinesresponse.virtualmachine[0].state, $midmenuItem);	
+	                                            $midmenuItem.find("#info_icon").removeClass("error").show();
+										        $midmenuItem.data("afterActionInfo", (label + " action succeeded.")); 
+	                                        },
+	                                        error: function(XMLHttpResponse) {
+	                                            $midmenuItem.find("#info_icon").addClass("error").show();
+										        $midmenuItem.data("afterActionInfo", (label + " action failed.")); 
+	                                        }
+	                                    });										
+										//After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
+										//updateVirtualMachineStateInMidMenu(json[asyncJobResponse]virtualmachine[0].state, $item);	
+							        }
+						        });
 			                }
+			                //Sync job (end) *****
 		                }		
 		                selectedItemIds = {}; //clear selected items for action	                          
 		                return false;
