@@ -278,7 +278,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 
-public class ManagementServerImpl implements ManagementServer {
+public class ManagementServerImpl implements ManagementServer {	
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
 
     private final AccountManager _accountMgr;
@@ -839,8 +839,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
     }
 
-    @Override
-    public boolean deleteUser(long userId) {
+    private boolean deleteUserInternal(long userId) {
         UserAccount userAccount = null;
         Long accountId = null;
         String username = null;
@@ -893,20 +892,20 @@ public class ManagementServerImpl implements ManagementServer {
         }
     }
 
-    @Override
-    public long deleteUserAsync(long userId) {
-        Long param = new Long(userId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-        job.setCmd("DeleteUser");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(DeleteUserCmd.getStaticName());
-
-        return _asyncMgr.submitAsyncJob(job);
-    }
+//    @Override
+//    public long deleteUserAsync(long userId) {
+//        Long param = new Long(userId);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//        job.setUserId(UserContext.current().getUserId());
+//        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
+//        job.setCmd("DeleteUser");
+//        job.setCmdInfo(gson.toJson(param));
+//        job.setCmdOriginator(DeleteUserCmd.getStaticName());
+//
+//        return _asyncMgr.submitAsyncJob(job);
+//    }
 
     public boolean deleteAccount(AccountVO account) {
         long accountId = account.getId();
@@ -6238,7 +6237,7 @@ public class ManagementServerImpl implements ManagementServer {
                 userSc.addAnd("accountId", SearchCriteria.Op.EQ, account.getId());
                 List<UserVO> users = _userDao.search(userSc, null);
                 for (UserVO user : users) {
-                    success = (success && deleteUser(user.getId()));
+                    success = (success && deleteUserInternal(user.getId()));
                 }
             }
         }
@@ -8280,6 +8279,25 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         return lockAccountInternal(account.getId());
+	}
+
+	@Override
+	public boolean deleteUser(DeleteUserCmd cmd) {
+        Long userId = cmd.getId();
+        
+        //Verify that the user exists in the system
+        User user = getUser(userId.longValue());
+        if (user == null) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find user " + userId);
+        }
+        
+        // If the user is a System user, return an error.  We do not allow this
+        Account account = _accountDao.findById(user.getAccountId());
+        if ((account != null) && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
+        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "user id : " + userId + " is a system account, delete is not allowed");
+        }
+		
+        return deleteUserInternal(userId);
 	}
 }
 

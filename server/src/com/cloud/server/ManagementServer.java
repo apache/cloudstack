@@ -27,6 +27,7 @@ import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.CreateUserCmd;
+import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
@@ -175,8 +176,8 @@ public interface ManagementServer {
      * @param userId
      * @return true if delete was successful, false otherwise
      */
-    boolean deleteUser(long userId);
-    long deleteUserAsync(long userId);
+    boolean deleteUser(DeleteUserCmd cmd);
+//    long deleteUserAsync(long userId);
 
     /**
      * Disables a user by userId
