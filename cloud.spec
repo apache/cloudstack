@@ -34,6 +34,7 @@ BuildRequires: commons-httpclient
 BuildRequires: jpackage-utils
 BuildRequires: gcc
 BuildRequires: glibc-devel
+BuildRequires: /usr/bin/mkisofs
 
 %global _premium %(tar jtvmf %{SOURCE0} '*/cloudstack-proprietary/' --occurrence=1 2>/dev/null | wc -l)
 
