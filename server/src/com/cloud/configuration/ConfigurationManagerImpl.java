@@ -914,6 +914,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         }
     	
     	if (_diskOfferingDao.update(diskOfferingId, diskOffering)) {
+            saveConfigurationEvent(userId, null, EventTypes.EVENT_DISK_OFFERING_EDIT, "Successfully updated disk offering with name: " + diskOffering.getName() + ".", "doId=" + diskOffering.getId(), "name=" + diskOffering.getName(),
+                    "displayText=" + diskOffering.getDisplayText(), "diskSize=" + diskOffering.getDiskSize(),"tags=" + diskOffering.getTags());
     		return _diskOfferingDao.findById(diskOfferingId);
     	} else { 
     		return null;
@@ -924,7 +926,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	ServiceOfferingVO offering = _serviceOfferingDao.findById(serviceOfferingId);
     	
     	if (_serviceOfferingDao.remove(serviceOfferingId)) {
-    		saveConfigurationEvent(userId, null, EventTypes.EVENT_SERVICE_OFFERING_EDIT, "Successfully deleted service offering with name: " + offering.getName(), "soId=" + serviceOfferingId, "name=" + offering.getName(),
+    		saveConfigurationEvent(userId, null, EventTypes.EVENT_SERVICE_OFFERING_DELETE, "Successfully deleted service offering with name: " + offering.getName(), "soId=" + serviceOfferingId, "name=" + offering.getName(),
     				"displayText=" + offering.getDisplayText(), "offerHA=" + offering.getOfferHA(), "useVirtualNetwork=" + (offering.getGuestIpType() == NetworkOffering.GuestIpType.Virtualized));
     		return true;
     	} else {
@@ -932,11 +934,32 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     }
     
-    public DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags) {
+    public DiskOfferingVO createDiskOffering(long userId, long domainId, String name, String description, int numGibibytes, String tags) {
     	long diskSize = numGibibytes * 1024;
     	tags = cleanupTags(tags);
 		DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize,tags);
-		return _diskOfferingDao.persist(newDiskOffering);
+		
+		if ((newDiskOffering = _diskOfferingDao.persist(newDiskOffering)) != null) {
+		    saveConfigurationEvent(userId, null, EventTypes.EVENT_DISK_OFFERING_CREATE, "Successfully created new disk offering with name: " 
+		                           + name + ".", "doId=" + newDiskOffering.getId(), "name=" + name, "diskSize=" + diskSize, "description=" 
+		                           + description, "tags=" + tags);
+		    return newDiskOffering;
+		} else {
+		    return null;
+		}
+    }
+    
+    public boolean deleteDiskOffering(long userId, long diskOfferingId) {
+        DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
+        
+        if (_diskOfferingDao.remove(diskOfferingId)) {
+            saveConfigurationEvent(userId, null, EventTypes.EVENT_DISK_OFFERING_DELETE, "Successfully deleted disk offering with name: " 
+                    + offering.getName(), "doId=" + offering.getId(), "name=" + offering.getName(), "diskSize=" + offering.getDiskSize(), 
+                    "description=" + offering.getDisplayText(), "tags=" + offering.getTags());
+            return true;
+        } else {
+            return false;
+        }
     }
     
     public String changePrivateIPRange(boolean add, long podId, String startIP, String endIP) throws InvalidParameterValueException {

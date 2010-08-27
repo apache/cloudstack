@@ -6836,14 +6836,14 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException {
+    public DiskOfferingVO createDiskOffering(long userId, long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException {
         if (numGibibytes!=0 && numGibibytes < 1) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
         } else if (numGibibytes > _maxVolumeSizeInGb) {
         	throw new InvalidParameterValueException("The maximum size for a disk is " + _maxVolumeSizeInGb + " Gb.");
         }
 
-        return _configMgr.createDiskOffering(domainId, name, description, numGibibytes, tags);
+        return _configMgr.createDiskOffering(userId, domainId, name, description, numGibibytes, tags);
     }
 
     @Override
@@ -6852,8 +6852,8 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean deleteDiskOffering(long id) {
-        return _diskOfferingDao.remove(Long.valueOf(id));
+    public boolean deleteDiskOffering(long userId, long id) {
+        return _configMgr.deleteDiskOffering(userId, id);
     }
 
     @Override
