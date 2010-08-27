@@ -1,5 +1,6 @@
 function clickInstanceGroupHeader($arrowIcon) {   
     //***** VM Detail (begin) ******************************************************************************
+    var $vmPopup
     var $rightPanelHeader;  
     var $rightPanelContent;   
     var $instanceGroupContainer = $("#leftmenu_instance_group_container");  
@@ -20,14 +21,12 @@ function clickInstanceGroupHeader($arrowIcon) {
         stopVirtualMachine: {
             label: "Stop",     
             isAsyncJob: true,
-            asyncJobResponse: "stopvirtualmachineresponse",
-            afterSuccessFn: updateVirtualMachineState
+            asyncJobResponse: "stopvirtualmachineresponse"
         },
         startVirtualMachine: {
             label: "Start",     
             isAsyncJob: true,
-            asyncJobResponse: "startvirtualmachineresponse",
-            afterSuccessFn: updateVirtualMachineState
+            asyncJobResponse: "startvirtualmachineresponse"
         }        
     }            
    
@@ -39,6 +38,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         else  //Destroyed, Creating, ~                                  
             $rightPanelContent.find("#state").text(state).removeClass("green red").addClass("gray");            			       
     }
+    
     function updateVirtualMachineStateInMidMenu(state, midmenuItem) {         
         if(state == "Running")
             midmenuItem.find("#status_icon").attr("src", "images/status_green.png");
@@ -47,40 +47,56 @@ function clickInstanceGroupHeader($arrowIcon) {
         else  //Destroyed, Creating, ~                                  
             midmenuItem.find("#status_icon").attr("src", "images/status_gray.png");
     }
-    function updateVirtualMachineState(state, midmenuItem) {
-        updateVirtualMachineStateInRightPanel(state);
-        updateVirtualMachineStateInMidMenu(state, midmenuItem);  
-    }
-        
-
+      
     function setMidmenuItemVm(instance, $midmenuItemVm1) {  
-        $midmenuItemVm1.attr("id", ("midmenuItemVm_"+instance.id));                             
-        $midmenuItemVm1.data("id", instance.id);
-        
-        var vmName = getVmName(instance.name, instance.displayname);
-        
         $midmenuItemVm1.data("jsonObj", instance);
-        /*
-        
-        $midmenuItemVm1.data("vmName", vmName);
-        $midmenuItemVm1.data("ipAddress", sanitizeXSS(instance.ipaddress));
-        $midmenuItemVm1.data("zoneName", sanitizeXSS(instance.zonename));
-        $midmenuItemVm1.data("templateName", sanitizeXSS(instance.templatename));
-        $midmenuItemVm1.data("serviceOfferingName", sanitizeXSS(instance.serviceofferingname));
-        $midmenuItemVm1.data("haEnable", instance.haenable);
-        $midmenuItemVm1.data("created", instance.created);
-        $midmenuItemVm1.data("account", sanitizeXSS(instance.account));
-        $midmenuItemVm1.data("domain", sanitizeXSS(instance.domain));
-        $midmenuItemVm1.data("hostName", sanitizeXSS(instance.hostname));
-        $midmenuItemVm1.data("group", sanitizeXSS(instance.group));
-        $midmenuItemVm1.data("state", instance.state);
-        $midmenuItemVm1.data("isoId", instance.isoid);
-        */
-           
+        $midmenuItemVm1.attr("id", ("midmenuItemVm_"+instance.id));                             
+        $midmenuItemVm1.data("id", instance.id);        
+        var vmName = getVmName(instance.name, instance.displayname);
         $midmenuItemVm1.find("#vm_name").text(vmName);
-        $midmenuItemVm1.find("#ip_address").text(instance.ipaddress);  
-                                                                                                                  
-        updateVirtualMachineStateInMidMenu(instance.state, $midmenuItemVm1);
+        $midmenuItemVm1.find("#ip_address").text(instance.ipaddress);                                            
+        updateVirtualMachineStateInMidMenu(instance.state, $midmenuItemVm1);        
+        $midmenuItemVm1.bind("click", function(event) {  
+            var $t = $(this);                                       
+            var id = $t.data("id");                                     
+            
+            $t.find("#content").addClass("selected");   
+            if(!(id in selectedItemIds))
+                selectedItemIds[id] = null;                                                                                                                             
+                                 
+            if($t.find("#info_icon").css("display") != "none") {                
+                $rightPanelContent.find("#after_action_info").text($t.data("afterActionInfo"));
+                if($t.find("#info_icon").hasClass("error"))
+                    $rightPanelContent.find("#after_action_info_container").addClass("errorbox");
+                 else
+                    $rightPanelContent.find("#after_action_info_container").removeClass("errorbox");                                        
+                $rightPanelContent.find("#after_action_info_container").show();                                         
+            } 
+            else {
+                $rightPanelContent.find("#after_action_info").text("");
+                $rightPanelContent.find("#after_action_info_container").hide();                
+            }
+            var jsonObj = $t.data("jsonObj"); 
+            vmJsonToRightPanel(jsonObj);	        		                            
+               
+            return false;
+        }); 
+    }
+    
+    function vmClearRightPanel(jsonObj) {       
+        $rightPanelHeader.find("#vm_name").text("");	
+        updateVirtualMachineStateInRightPanel("");	
+        $rightPanelContent.find("#ipAddress").text("");
+        $rightPanelContent.find("#zoneName").text("");
+        $rightPanelContent.find("#templateName").text("");
+        $rightPanelContent.find("#serviceOfferingName").text("");		
+        $rightPanelContent.find("#ha").hide();  
+        $rightPanelContent.find("#created").text("");
+        $rightPanelContent.find("#account").text("");
+        $rightPanelContent.find("#domain").text("");
+        $rightPanelContent.find("#hostName").text("");
+        $rightPanelContent.find("#group").text("");	
+        $rightPanelContent.find("#iso").hide();
     }
     
     function vmJsonToRightPanel(jsonObj) {
@@ -92,18 +108,18 @@ function clickInstanceGroupHeader($arrowIcon) {
         $rightPanelContent.find("#templateName").text(jsonObj.templatename);
         $rightPanelContent.find("#serviceOfferingName").text(jsonObj.serviceofferingname);		                                			                                
         if(jsonObj.haenable == "true")
-            $rightPanelContent.find("#ha").removeClass("cross_icon").addClass("tick_icon");
+            $rightPanelContent.find("#ha").removeClass("cross_icon").addClass("tick_icon").show();
         else
-            $rightPanelContent.find("#ha").removeClass("tick_icon").addClass("cross_icon");		                                
+            $rightPanelContent.find("#ha").removeClass("tick_icon").addClass("cross_icon").show();		                                
         $rightPanelContent.find("#created").text(jsonObj.created);
         $rightPanelContent.find("#account").text(jsonObj.account);
         $rightPanelContent.find("#domain").text(jsonObj.domain);
         $rightPanelContent.find("#hostName").text(jsonObj.hostname);
         $rightPanelContent.find("#group").text(jsonObj.group);	
         if(jsonObj.isoid != null && jsonObj.isoid.length > 0)
-            $rightPanelContent.find("#iso").removeClass("cross_icon").addClass("tick_icon");
+            $rightPanelContent.find("#iso").removeClass("cross_icon").addClass("tick_icon").show();
         else
-            $rightPanelContent.find("#iso").removeClass("tick_icon").addClass("cross_icon");    
+            $rightPanelContent.find("#iso").removeClass("tick_icon").addClass("cross_icon").show();           
     }
     
     
@@ -143,64 +159,21 @@ function clickInstanceGroupHeader($arrowIcon) {
                             $("#midmenu_container").empty();
                             var groupName = $(this).find("#group_name").text();
                                                         
-                            var instances = instanceGroupMap[groupName];                               
-                            for(var i=0; i<instances.length;i++) {                
-                                var instance = instances[i];
-                                var $midmenuItemVm1 = $midmenuItemVm.clone();                                                                                                                               
-                                setMidmenuItemVm(instance, $midmenuItemVm1);   
-                               
-                                //begin of $midmenuItemVm1.bind("click")    
-                                $midmenuItemVm1.bind("click", function(event) {  
-                                    var $t = $(this);                                       
-                                    var id = $t.data("id");                                     
-                                    
-                                    /*  
-                                    var vmName = $t.data("vmName");
-                                    var ipAddress = $t.data("ipAddress");
-                                    var zoneName = $t.data("zoneName");
-                                    var templateName = $t.data("templateName");
-                                    var serviceOfferingName = $t.data("serviceOfferingName");
-                                    var haEnable = $t.data("haEnable");
-                                    var created = $t.data("created");
-                                    var account = $t.data("account");
-                                    var domain = $t.data("domain");
-                                    var hostName = $t.data("hostName");
-                                    var group = $t.data("group");
-                                    var state = $t.data("state");
-                                    var isoId = $t.data("isoId");
-                                    */
-                                    
-                                    $t.find("#content").addClass("selected");   
-                                    if(!(id in selectedItemIds))
-                                        selectedItemIds[id] = null;
-                                    
-                                    //populate right panel (begin)                                     
-                                    if($t.find("#info_icon").css("display") != "none") {
-                                        $rightPanelContent.find("#after_action_info").text($t.data("afterActionInfo"));
-                                        if($t.find("#info_icon").hasClass("error"))
-                                            $rightPanelContent.find("#after_action_info_container").addClass("errorbox");
-                                         else
-                                            $rightPanelContent.find("#after_action_info_container").removeClass("errorbox");                                        
-                                        $rightPanelContent.find("#after_action_info_container").show();                                         
-                                    } 
-                                    else {
-                                        $rightPanelContent.find("#after_action_info").text("");
-                                        $rightPanelContent.find("#after_action_info_container").hide();                
-                                    }
-                                      
-	                                var jsonObj = $t.data("jsonObj"); 
-	                                vmJsonToRightPanel(jsonObj);	                                
-	                                	                                    
-	                                $rightPanelHeader.show();	
-	                                $rightPanelContent.show();		                                    
-	                                //populate right panel (end)   
-		                               
-                                    return false;
-                                });
-                                //end of $midmenuItemVm1.bind("click") 
-                                
-                                $("#midmenu_container").append($midmenuItemVm1.show());
-                            } 
+                            $.ajax({
+	                            cache: false,
+	                            data: createURL("command=listVirtualMachines&response=json"),
+	                            dataType: "json",
+	                            success: function(json) {		                                                             
+	                                var instances = json.listvirtualmachinesresponse.virtualmachine;                               
+                                    for(var i=0; i<instances.length;i++) {                
+                                        var instance = instances[i];
+                                        var $midmenuItemVm1 = $midmenuItemVm.clone();                                                                                                                               
+                                        setMidmenuItemVm(instance, $midmenuItemVm1);  
+                                        $("#midmenu_container").append($midmenuItemVm1.show());
+                                    }    
+	                            }
+	                        });
+                            
                             return false;
                         });			                
 		                
@@ -218,16 +191,14 @@ function clickInstanceGroupHeader($arrowIcon) {
 		            $link.data("api", api);			
 		            $link.data("label", apiInfo.label);	       
 		            $link.data("isAsyncJob", apiInfo.isAsyncJob);
-		            $link.data("asyncJobResponse", apiInfo.asyncJobResponse);
-		            $link.data("afterSuccessFn", apiInfo.afterSuccessFn);
+		            $link.data("asyncJobResponse", apiInfo.asyncJobResponse);		            
 		            $link.bind("click", function(event) {	
 		                $actionMenu.hide();  	
 		                var $t = $(this);
 		                var api = $t.data("api");
 		                var label = $t.data("label");			           
 		                var isAsyncJob = $t.data("isAsyncJob");
-		                var asyncJobResponse = $t.data("asyncJobResponse");
-		                var afterSuccessFn = $t.data("afterSuccessFn");		                	               	                
+		                var asyncJobResponse = $t.data("asyncJobResponse");		                           	               	                
 		                var jobIdMap = {};
 		                for(var id in selectedItemIds) {		                                  
 		                    $("#midmenuItemVm_"+id).find("#spinning_wheel").show();	
@@ -260,11 +231,11 @@ function clickInstanceGroupHeader($arrowIcon) {
 										                    if (result.jobstatus == 1) { // Succeeded  
 										                        $item.find("#info_icon").removeClass("error").show();
 										                        $item.data("afterActionInfo", (label + " action succeeded.")); 
-										                        if("virtualmachine" in result)											                                  													           													
-            													    afterSuccessFn(result.virtualmachine[0].state, $item, true);                 													
+										                        if("virtualmachine" in result)	
+										                            updateVirtualMachineStateInMidMenu(result.virtualmachine[0].state, $item);	
 										                    } else if (result.jobstatus == 2) { // Failed	
 										                        $item.find("#info_icon").addClass("error").show();
-										                        $item.data("afterActionInfo", (label + " action failed. Reason: " + sanitizeXSS(result.jobresult)));             													
+										                        $item.data("afterActionInfo", (label + " action failed. Reason: " + sanitizeXSS(result.jobresult)));    
 										                    }											                    
 									                    }
 								                    },
@@ -301,12 +272,12 @@ function clickInstanceGroupHeader($arrowIcon) {
         $instanceGroupContainer.empty();   
     }	     
     //***** VM Detail (end) ********************************************************************************    
-    $("#right_panel").load("jsp/tab_instance.jsp", function() {			
-		$rightPanelHeader = $("#right_panel_header");			                                		                                
-		$rightPanelContent = $("#right_panel_content");	
-		
+    $("#right_panel").load("jsp/tab_instance.jsp", function() {	
+        $rightPanelHeader = $("#right_panel_header");			                                		                                
+	    $rightPanelContent = $("#right_panel_content");	     
+        
         //***** VM Wizard (begin) ******************************************************************************
-        var $vmPopup = $("#vm_popup");
+        $vmPopup = $("#vm_popup");
         var $serviceOfferingTemplate = $("#vm_popup_service_offering_template");
         var $diskOfferingTemplate = $("#vm_popup_disk_offering_template");
 	    var currentPageInTemplateGridInVmPopup =1;
@@ -864,11 +835,11 @@ function clickInstanceGroupHeader($arrowIcon) {
 										    $("body").stopTime(timerKey);
 										    $t.find("#spinning_wheel").hide();		
 										    if (result.jobstatus == 1) {
-											    // Succeeded						    
-											    setMidmenuItemVm(result.virtualmachine[0], $t);	
-											    $t.find("#ip_address_container #label").show();
-											    $t.find("#info_icon").show();											   
-    			
+											    // Succeeded	
+											    $t.find("#info_icon").removeClass("error").show();
+						                        $t.data("afterActionInfo", ("Adding succeeded.")); 
+						                        if("virtualmachine" in result)	
+						                            setMidmenuItemVm(result.virtualmachine[0], $t);		
 											    /*
 											    vmJSONToTemplate(result.virtualmachine[0], vmInstance);
 											    if (result.virtualmachine[0].passwordenabled == 'true') {
@@ -885,8 +856,17 @@ function clickInstanceGroupHeader($arrowIcon) {
 											    
 										    } else if (result.jobstatus == 2) {
 											    // Failed
-											    $t.find("#info_icon").addClass("error").show();
 											    $t.find("#vm_name").text("Adding failed");
+											    $t.find("#info_icon").addClass("error").show();
+						                        $t.data("afterActionInfo", ("Adding failed. Reason: " + sanitizeXSS(result.jobresult)));   	
+						                        $t.bind("click", function(event) {  
+                                                    $rightPanelContent.find("#after_action_info").text($(this).data("afterActionInfo"));
+                                                    $rightPanelContent.find("#after_action_info_container").addClass("errorbox");
+                                                    $rightPanelContent.find("#after_action_info_container").show();   
+                                                    vmClearRightPanel();
+                                                    return false;
+                                                });			
+						                        
 											    /*
 											    vmInstance.find(".loadingmessage_container .loadingmessage_top p").text("Unable to create your new instance due to the error: " + result.jobresult);
 											    vmInstance.find(".loadingmessage_container").fadeIn("slow");
