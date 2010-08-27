@@ -200,9 +200,11 @@ function clickInstanceGroupHeader($arrowIcon) {
 		                var isAsyncJob = $t.data("isAsyncJob");
 		                var asyncJobResponse = $t.data("asyncJobResponse");		                           	               	                
 		                var jobIdMap = {};
-		                for(var id in selectedItemIds) {		                                  
-		                    $("#midmenuItemVm_"+id).find("#spinning_wheel").show();	
-		                    $("#midmenuItemVm_"+id).find("#info_icon").hide();		                   
+		                for(var id in selectedItemIds) {	
+		                    var midmenuItem = $("#midmenuItemVm_"+id);	  
+		                    midmenuItem.find("#content").removeClass("selected").addClass("adding");                          
+		                    midmenuItem.find("#spinning_wheel").addClass("midmenu_addingloader").show();	
+		                    midmenuItem.find("#info_icon").hide();		                   
 		                    if(isAsyncJob == true) {		                        
 		                        $.ajax({
 			                        data: createURL("command="+api+"&id="+id+"&response=json"),
@@ -227,6 +229,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 										                    $("body").stopTime(timerKey);											                    
 										                    var itemId = jobIdMap[jobId];										                   
 										                    $item = $("#midmenuItemVm_"+itemId);
+										                    $item.find("#content").removeClass("adding");
 										                    $item.find("#spinning_wheel").hide();	
 										                    if (result.jobstatus == 1) { // Succeeded  
 										                        $item.find("#info_icon").removeClass("error").show();
@@ -808,6 +811,7 @@ function clickInstanceGroupHeader($arrowIcon) {
     			var $t = $("#midmenu_item_vm").clone();
     			$t.find("#vm_name").text("Adding....");
     			$t.find("#ip_address_container #label").hide();
+    			$t.find("#content").addClass("adding"); 
     			$t.find("#spinning_wheel").show();
     			$("#midmenu_container").append($t.show());
     			
@@ -833,6 +837,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 										    return; //Job has not completed
 									    } else {
 										    $("body").stopTime(timerKey);
+										    $t.find("#content").removeClass("adding"); 
 										    $t.find("#spinning_wheel").hide();		
 										    if (result.jobstatus == 1) {
 											    // Succeeded	
