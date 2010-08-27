@@ -1963,13 +1963,13 @@ a:visited {
 	width:16px;
 	height:16px;
 	float:left;
-	background:url(../images/info_icon.gif) no-repeat top left;
+	background:url(../images/info_icon.png) no-repeat top left;
 	margin:5px 0 0 0;
 	padding:0;
 }
 
 .midmenu_infoicon.error {
-	background:url(../images/infoerror_icon.gif) no-repeat top left;
+	background:url(../images/infoerror_icon.png) no-repeat top left;
 }
 
 .info_detailbox {
