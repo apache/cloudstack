@@ -18,7 +18,7 @@ $(document).ready(function() {
         selecting: function(event, ui) {	 	                               
             if(ui.selecting.id.indexOf("midmenuItem") != -1) {                     
                 var $t = $("#"+ui.selecting.id);
-                if($t.find("#content").hasClass("adding") == false) { //only items not in action are allowed to be selected
+                if($t.find("#content").hasClass("inaction") == false) { //only items not in action are allowed to be selected
                     var id =$t.data("id");                
                     selectedItemIds[id] = null; 
                     $t.find("#content").addClass("selected");   

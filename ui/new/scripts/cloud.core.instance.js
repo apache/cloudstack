@@ -209,7 +209,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 		                var jobIdMap = {};		         
 		                for(var id in selectedItemIds) {	
 		                    var $midmenuItem = $("#midmenuItemVm_"+id);	
-		                    $midmenuItem.find("#content").removeClass("selected").addClass("adding");                          
+		                    $midmenuItem.find("#content").removeClass("selected").addClass("inaction");                          
 		                    $midmenuItem.find("#spinning_wheel").addClass("midmenu_addingloader").show();	
 		                    $midmenuItem.find("#info_icon").hide();		                   
 		                    //Async job (begin) *****
@@ -237,7 +237,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 										                    $("body").stopTime(timerKey);											                    
 										                    var itemId = jobIdMap[jobId];										                   
 										                    $item = $("#midmenuItemVm_"+itemId);
-										                    $item.find("#content").removeClass("adding");
+										                    $item.find("#content").removeClass("inaction");
 										                    $item.find("#spinning_wheel").hide();	
 										                    if (result.jobstatus == 1) { // Succeeded  
 										                        $item.find("#info_icon").removeClass("error").show();
@@ -276,7 +276,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 							        dataType: "json",
 							        async: false,
 							        success: function(json) {
-							            $midmenuItem.find("#content").removeClass("adding");
+							            $midmenuItem.find("#content").removeClass("inaction");
 										$midmenuItem.find("#spinning_wheel").hide();	
 																				              
 							            //RecoverVirtualMachine API doesn't return an embedded object on success (Bug 6037)
@@ -851,7 +851,7 @@ function clickInstanceGroupHeader($arrowIcon) {
     			var $t = $("#midmenu_item_vm").clone();
     			$t.find("#vm_name").text("Adding....");
     			$t.find("#ip_address_container #label").hide();
-    			$t.find("#content").addClass("adding"); 
+    			$t.find("#content").addClass("inaction"); 
     			$t.find("#spinning_wheel").show();
     			$("#midmenu_container").append($t.show());
     			
@@ -877,7 +877,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 										    return; //Job has not completed
 									    } else {
 										    $("body").stopTime(timerKey);
-										    $t.find("#content").removeClass("adding"); 
+										    $t.find("#content").removeClass("inaction"); 
 										    $t.find("#spinning_wheel").hide();		
 										    if (result.jobstatus == 1) {
 											    // Succeeded	
