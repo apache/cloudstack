@@ -3466,86 +3466,86 @@ public class ManagementServerImpl implements ManagementServer {
         return newFwRule;
     }
 
-    @Override
-    public boolean deleteNetworkRuleConfig(long userId, long networkRuleId) {
-        try {
-            NetworkRuleConfigVO netRule = _networkRuleConfigDao.findById(networkRuleId);
-            if (netRule != null) {
-                List<SecurityGroupVMMapVO> sgMappings = _securityGroupVMMapDao.listBySecurityGroup(netRule.getSecurityGroupId());
-                if ((sgMappings != null) && !sgMappings.isEmpty()) {
-                    for (SecurityGroupVMMapVO sgMapping : sgMappings) {
-                        UserVm userVm = _userVmDao.findById(sgMapping.getInstanceId());
-                        if (userVm != null) {
-                            List<FirewallRuleVO> fwRules = _firewallRulesDao.listIPForwarding(sgMapping.getIpAddress(), netRule.getPublicPort(), true);
-                            FirewallRuleVO rule = null;
-                            for (FirewallRuleVO fwRule : fwRules) {
-                                if (fwRule.getPrivatePort().equals(netRule.getPrivatePort()) && fwRule.getPrivateIpAddress().equals(userVm.getGuestIpAddress())) {
-                                    rule = fwRule;
-                                    break;
-                                }
-                            }
+//    @Override
+//    public boolean deleteNetworkRuleConfig(long userId, long networkRuleId) {
+//        try {
+//            NetworkRuleConfigVO netRule = _networkRuleConfigDao.findById(networkRuleId);
+//            if (netRule != null) {
+//                List<SecurityGroupVMMapVO> sgMappings = _securityGroupVMMapDao.listBySecurityGroup(netRule.getSecurityGroupId());
+//                if ((sgMappings != null) && !sgMappings.isEmpty()) {
+//                    for (SecurityGroupVMMapVO sgMapping : sgMappings) {
+//                        UserVm userVm = _userVmDao.findById(sgMapping.getInstanceId());
+//                        if (userVm != null) {
+//                            List<FirewallRuleVO> fwRules = _firewallRulesDao.listIPForwarding(sgMapping.getIpAddress(), netRule.getPublicPort(), true);
+//                            FirewallRuleVO rule = null;
+//                            for (FirewallRuleVO fwRule : fwRules) {
+//                                if (fwRule.getPrivatePort().equals(netRule.getPrivatePort()) && fwRule.getPrivateIpAddress().equals(userVm.getGuestIpAddress())) {
+//                                    rule = fwRule;
+//                                    break;
+//                                }
+//                            }
+//
+//                            if (rule != null) {
+//                                rule.setEnabled(false);
+//                                _networkMgr.updateFirewallRule(rule, null, null);
+//
+//                                // Save and create the event
+//                                Account account = _accountDao.findById(userVm.getAccountId());
+//
+//                                _firewallRulesDao.remove(rule.getId());
+//                                String description = "deleted ip forwarding rule [" + rule.getPublicIpAddress() + ":" + rule.getPublicPort() + "]->[" + rule.getPrivateIpAddress()
+//                                                     + ":" + rule.getPrivatePort() + "]" + " " + rule.getProtocol();
+//
+//                                EventUtils.saveEvent(Long.valueOf(userId), account.getId(), EventVO.LEVEL_INFO, EventTypes.EVENT_NET_RULE_DELETE, description);
+//                            }
+//                        }
+//                    }
+//                }
+//                _networkRuleConfigDao.remove(netRule.getId());
+//            }
+//        } catch (Exception ex) {
+//            s_logger.error("Unexpected exception deleting port forwarding service rule " + networkRuleId, ex);
+//            return false;
+//        }
+//
+//        return true;
+//    }
 
-                            if (rule != null) {
-                                rule.setEnabled(false);
-                                _networkMgr.updateFirewallRule(rule, null, null);
-
-                                // Save and create the event
-                                Account account = _accountDao.findById(userVm.getAccountId());
-
-                                _firewallRulesDao.remove(rule.getId());
-                                String description = "deleted ip forwarding rule [" + rule.getPublicIpAddress() + ":" + rule.getPublicPort() + "]->[" + rule.getPrivateIpAddress()
-                                                     + ":" + rule.getPrivatePort() + "]" + " " + rule.getProtocol();
-
-                                EventUtils.saveEvent(Long.valueOf(userId), account.getId(), EventVO.LEVEL_INFO, EventTypes.EVENT_NET_RULE_DELETE, description);
-                            }
-                        }
-                    }
-                }
-                _networkRuleConfigDao.remove(netRule.getId());
-            }
-        } catch (Exception ex) {
-            s_logger.error("Unexpected exception deleting port forwarding service rule " + networkRuleId, ex);
-            return false;
-        }
-
-        return true;
-    }
-
-    @Override
-    public long deleteNetworkRuleConfigAsync(long userId, Account account, Long networkRuleId) throws PermissionDeniedException {
-        // do a quick permissions check to make sure the account is either an
-        // admin or the owner of the security group to which the network rule
-        // belongs
-        NetworkRuleConfigVO netRule = _networkRuleConfigDao.findById(networkRuleId);
-        long accountId = Account.ACCOUNT_ID_SYSTEM;
-        if (netRule != null) {
-            SecurityGroupVO sg = _securityGroupDao.findById(netRule.getSecurityGroupId());
-            if (account != null) {
-                if (!BaseCmd.isAdmin(account.getType())) {
-                    if ((sg.getAccountId() == null) || (sg.getAccountId().longValue() != account.getId().longValue())) {
-                        throw new PermissionDeniedException("Unable to delete port forwarding service rule " + networkRuleId + "; account: " + account.getAccountName() + " is not the owner");
-                    }
-                } else if (!isChildDomain(account.getDomainId(), sg.getDomainId())) {
-                    throw new PermissionDeniedException("Unable to delete port forwarding service rule " + networkRuleId + "; account: " + account.getAccountName() + " is not an admin in the domain hierarchy.");
-                }
-            }
-            if (sg != null) {
-                accountId = sg.getAccountId().longValue();
-            }
-        } else {
-            return 0L;  // failed to delete due to netRule not found
-        }
-
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-    	job.setUserId(UserContext.current().getUserId());
-    	job.setAccountId(accountId);
-        job.setCmd("DeleteNetworkRuleConfig");
-        job.setCmdInfo(gson.toJson(networkRuleId));
-        
-        return _asyncMgr.submitAsyncJob(job);
-    }
+//    @Override
+//    public long deleteNetworkRuleConfigAsync(long userId, Account account, Long networkRuleId) throws PermissionDeniedException {
+//        // do a quick permissions check to make sure the account is either an
+//        // admin or the owner of the security group to which the network rule
+//        // belongs
+//        NetworkRuleConfigVO netRule = _networkRuleConfigDao.findById(networkRuleId);
+//        long accountId = Account.ACCOUNT_ID_SYSTEM;
+//        if (netRule != null) {
+//            SecurityGroupVO sg = _securityGroupDao.findById(netRule.getSecurityGroupId());
+//            if (account != null) {
+//                if (!BaseCmd.isAdmin(account.getType())) {
+//                    if ((sg.getAccountId() == null) || (sg.getAccountId().longValue() != account.getId().longValue())) {
+//                        throw new PermissionDeniedException("Unable to delete port forwarding service rule " + networkRuleId + "; account: " + account.getAccountName() + " is not the owner");
+//                    }
+//                } else if (!isChildDomain(account.getDomainId(), sg.getDomainId())) {
+//                    throw new PermissionDeniedException("Unable to delete port forwarding service rule " + networkRuleId + "; account: " + account.getAccountName() + " is not an admin in the domain hierarchy.");
+//                }
+//            }
+//            if (sg != null) {
+//                accountId = sg.getAccountId().longValue();
+//            }
+//        } else {
+//            return 0L;  // failed to delete due to netRule not found
+//        }
+//
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//    	job.setUserId(UserContext.current().getUserId());
+//    	job.setAccountId(accountId);
+//        job.setCmd("DeleteNetworkRuleConfig");
+//        job.setCmdInfo(gson.toJson(networkRuleId));
+//        
+//        return _asyncMgr.submitAsyncJob(job);
+//    }
 
     @DB
     protected boolean deleteIpForwardingRule(long userId, long accountId, String publicIp, String publicPort, String privateIp, String privatePort, String proto)

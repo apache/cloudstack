@@ -25,23 +25,19 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.Manager;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
+@Implementation(method="deleteNetworkRuleConfig", manager=Manager.NetworkManager)
 public class DeletePortForwardingServiceRuleCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePortForwardingServiceRuleCmd.class.getName());
 
     private static final String s_name = "deleteportforwardingserviceruleresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -68,10 +64,6 @@ public class DeletePortForwardingServiceRuleCmd extends BaseCmd {
         return s_name;
     }
     
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
-
     @Override
     public List<Pair<String, Object>> execute(Map<String, Object> params) {
         Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
@@ -100,4 +92,11 @@ public class DeletePortForwardingServiceRuleCmd extends BaseCmd {
             throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, ex.getMessage());
         }
     }
+
+
+	@Override
+	public String getResponse() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

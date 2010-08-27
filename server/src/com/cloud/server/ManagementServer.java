@@ -1748,8 +1748,8 @@ public interface ManagementServer {
     boolean isSecurityGroupNameInUse(Long domainId, Long accountId, String name);
     SecurityGroupVO findSecurityGroupById(Long groupId);
 
-    boolean deleteNetworkRuleConfig(long userId, long networkRuleId);
-    long deleteNetworkRuleConfigAsync(long userId, Account account, Long networkRuleId) throws PermissionDeniedException;
+//    boolean deleteNetworkRuleConfig(long userId, long networkRuleId);
+//    long deleteNetworkRuleConfigAsync(long userId, Account account, Long networkRuleId) throws PermissionDeniedException;
 
     LoadBalancerVO findLoadBalancer(Long accountId, String name);
     LoadBalancerVO findLoadBalancerById(long loadBalancerId);
