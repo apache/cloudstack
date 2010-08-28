@@ -21,8 +21,7 @@
 // Version: @VERSION@
 
 //var jobIdMap;
-function doAction(id, $t, apiCommand, listAPIMap) {      
-    var api = $t.data("api");
+function doAction(id, $t, apiCommand, listAPIMap) {   
     var label = $t.data("label");			           
     var isAsyncJob = $t.data("isAsyncJob");
     var asyncJobResponse = $t.data("asyncJobResponse");	
@@ -109,7 +108,7 @@ function doAction(id, $t, apiCommand, listAPIMap) {
     //Sync job (begin) *****
     else { 	              
         $.ajax({
-            data: createURL("command="+api+"&id="+id),
+            data: createURL(apiCommand),
 	        dataType: "json",
 	        async: false,
 	        success: function(json) {

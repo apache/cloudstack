@@ -597,8 +597,8 @@
 <!-- Attach ISO Dialog -->
 <div id="dialog_attach_iso" title="Attach ISO" style="display:none">
     <p>
-        Please specify the ISO you wish to attach to your Virtual Instance(s)
-        </span></b>.</p>
+        Please specify the ISO you wish to attach to your Virtual Instance(s).
+    </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>
@@ -608,6 +608,26 @@
                 <select class="select" name="attach_iso_select" id="attach_iso_select">
                     <option value="none">No Available ISO</option>
                 </select>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+
+<!-- Change Name Dialog -->
+<div id="dialog_change_name" title="Change Name" style="display:none">
+    <p>
+        Please specify the new name you want to change for your Virtual Instance(s).
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+                <label for="user_name">
+                    Instance Name:</label>
+                <input class="text" type="text" name="change_instance_name" id="change_instance_name" />
+                <div id="change_instance_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
             </li>
         </ol>
         </form>

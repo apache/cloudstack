@@ -22,56 +22,57 @@ function clickInstanceGroupHeader($arrowIcon) {
     };           
       
     var actionMap = {        
-        stopVirtualMachine: {
-            label: "Stop Instance",     
+        "Stop Instance": {
+            api: "stopVirtualMachine",            
             isAsyncJob: true,
             asyncJobResponse: "stopvirtualmachineresponse",
             afterActionSeccessFn: setMidmenuItemVm
         },
-        startVirtualMachine: {
-            label: "Start Instance",     
+        "Start Instance": {
+            api: "startVirtualMachine",            
             isAsyncJob: true,
             asyncJobResponse: "startvirtualmachineresponse",
             afterActionSeccessFn: setMidmenuItemVm
         },
-        rebootVirtualMachine: {
-            label: "Reboot Instance",
+        "Reboot Instance": {
+            api: "rebootVirtualMachine",           
             isAsyncJob: true,
             asyncJobResponse: "rebootvirtualmachineresponse",
             afterActionSeccessFn: setMidmenuItemVm
         },
-        destroyVirtualMachine: {
-            label: "Destroy Instance",
+        "Destroy Instance": {
+            api: "destroyVirtualMachine",           
             isAsyncJob: true,
             asyncJobResponse: "destroyvirtualmachineresponse",
             afterActionSeccessFn: setMidmenuItemVm
         },
-        recoverVirtualMachine: {
-            label: "Restore Instance",
+        "Restore Instance": {
+            api: "recoverVirtualMachine",           
             isAsyncJob: false,
             afterActionSeccessFn: setMidmenuItemVm
         },
-        attachIso: {
-            label: "Attach ISO",
+        "Attach ISO": {
             isAsyncJob: true,
-            asyncJobResponse: "attachisoresponse",
-            afterActionSeccessFn: setMidmenuItemVm,
-            dialogBeforeActionFn : doAttachISO   
+            asyncJobResponse: "attachisoresponse",            
+            dialogBeforeActionFn : doAttachISO,
+            afterActionSeccessFn: setMidmenuItemVm   
         },
-        detachIso: {
-            label: "Detach ISO",
+        "Detach ISO": {
             isAsyncJob: true,
-            asyncJobResponse: "detachisoresponse",
-            afterActionSeccessFn: setMidmenuItemVm,
-            dialogBeforeActionFn : doDetachISO   
-        } 
-        ,
-        resetPasswordForVirtualMachine: {
-            label: "Reset Password",
+            asyncJobResponse: "detachisoresponse",            
+            dialogBeforeActionFn : doDetachISO,
+            afterActionSeccessFn: setMidmenuItemVm   
+        },
+        "Reset Password": {
             isAsyncJob: true,
-            asyncJobResponse: "resetpasswordforvirtualmachineresponse",
-            afterActionSeccessFn: function(){},
-            dialogBeforeActionFn : doResetPassword   
+            asyncJobResponse: "resetpasswordforvirtualmachineresponse",            
+            dialogBeforeActionFn : doResetPassword,
+            afterActionSeccessFn: function(){}   
+        },
+        "Change Name": {
+            isAsyncJob: false,            
+            dialogBeforeActionFn : doChangeName,
+            afterActionSeccessFn: setMidmenuItemVm
         }          
     }            
         
@@ -158,6 +159,33 @@ function clickInstanceGroupHeader($arrowIcon) {
 			} 
 		}).dialog("open");
 	}
+   
+    function doChangeName($t, selectedItemIds, listAPIMap) { 
+		$("#dialog_change_name")
+		.dialog('option', 'buttons', { 						
+			"Confirm": function() { 			    
+			    var thisDialog = $(this);	
+			    thisDialog.dialog("close"); 
+			    											
+				// validate values
+		        var isValid = true;					
+		        isValid &= validateString("Name", thisDialog.find("#change_instance_name"), thisDialog.find("#change_instance_name_errormsg"));								
+		        if (!isValid) return;								
+				
+				var name = trim(thisDialog.find("#change_instance_name").val());
+				
+				for(var id in selectedItemIds) {
+		           var apiCommand = "command=updateVirtualMachine&id="+id+"&displayName="+encodeURIComponent(escape(name));		     
+		           doAction(id, $t, apiCommand, listAPIMap);
+		        }	
+			}, 
+			"Cancel": function() { 
+				$(this).dialog("close"); 
+			} 
+		}).dialog("open");
+    }
+   
+   
    
     function updateVirtualMachineStateInRightPanel(state) {
         if(state == "Running")
@@ -308,13 +336,13 @@ function clickInstanceGroupHeader($arrowIcon) {
 		        //action menu			        
 		        $("#action_link").show();
 		        $actionList.empty();
-		        for(var api in actionMap) {		
-		            var apiInfo = actionMap[api];
+		        for(var label in actionMap) {		
+		            var apiInfo = actionMap[label];
 		            var $listItem = $("#action_list_item").clone();
 		            $actionList.append($listItem.show());
-		            var $link = $listItem.find("#link").text(apiInfo.label);
-		            $link.data("api", api);			
-		            $link.data("label", apiInfo.label);	       
+		            var $link = $listItem.find("#link").text(label);
+		            $link.data("label", label);	  
+		            $link.data("api", apiInfo.api);				                 
 		            $link.data("isAsyncJob", apiInfo.isAsyncJob);
 		            $link.data("asyncJobResponse", apiInfo.asyncJobResponse);		     
 		            $link.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);
@@ -354,6 +382,12 @@ function clickInstanceGroupHeader($arrowIcon) {
 		    modal: true,
 		    zIndex: 2000
 	    }));   
+        
+        activateDialog($("#dialog_change_name").dialog({ 
+		    autoOpen: false,
+		    modal: true,
+		    zIndex: 2000
+	    }));
         
         //***** VM Wizard (begin) ******************************************************************************
         $vmPopup = $("#vm_popup");
