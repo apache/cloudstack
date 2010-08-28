@@ -21,12 +21,15 @@
 // Version: @VERSION@
 
 //var jobIdMap;
-function doAction(id, $t) {      
+function doAction(id, $t, apiCommand) {      
     var api = $t.data("api");
     var label = $t.data("label");			           
     var isAsyncJob = $t.data("isAsyncJob");
     var asyncJobResponse = $t.data("asyncJobResponse");	
     var afterActionSeccessFn = $t.data("afterActionSeccessFn");	
+    var listAPI = $t.data("listAPI");
+    var listAPIResponse = $t.data("listAPIResponse");
+    var listAPIResponseObj = $t.data("listAPIResponseObj");
         
     var $midmenuItem = $("#midmenuItemVm_"+id);	
     $midmenuItem.find("#content").removeClass("selected").addClass("inaction");                          
@@ -36,7 +39,7 @@ function doAction(id, $t) {
 	//Async job (begin) *****
 	if(isAsyncJob == true) {	                     
         $.ajax({
-            data: createURL("command="+api+"&id="+id+"&response=json"),
+            data: createURL(apiCommand),
             dataType: "json",           
             success: function(json) {	                	                        
                 var jobId = json[asyncJobResponse].jobid;                  			                        
@@ -55,12 +58,25 @@ function doAction(id, $t) {
 		                        } else {											                    
 			                        $("body").stopTime(timerKey);	
 			                        $midmenuItem.find("#content").removeClass("inaction");
-			                        $midmenuItem.find("#spinning_wheel").hide();	
+			                        $midmenuItem.find("#spinning_wheel").hide();			                       
 			                        if (result.jobstatus == 1) { // Succeeded  
 			                            $midmenuItem.find("#info_icon").removeClass("error").show();
 			                            $midmenuItem.data("afterActionInfo", (label + " action succeeded.")); 
-			                            if("virtualmachine" in result)	
-			                                afterActionSeccessFn(result.virtualmachine[0], $midmenuItem);	
+			                            
+			                            //DestroyVirtualMachine API doesn't return an embedded object on success (Bug 6041)
+	                                    //Before Bug 6041 get fixed, use the temporary solution below.							            
+	                                    $.ajax({
+                                            cache: false,
+                                            data: createURL("command="+listAPI+"&id="+id+"&response=json"),
+                                            dataType: "json",
+                                            async: false,
+                                            success: function(json) {		                                                                                  
+                                                afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem);	                        
+                                            }
+                                        });										
+				                        //After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
+			                            //afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem);	   
+			                            
 			                        } else if (result.jobstatus == 2) { // Failed	
 			                            $midmenuItem.find("#info_icon").addClass("error").show();
 			                            $midmenuItem.data("afterActionInfo", (label + " action failed. Reason: " + sanitizeXSS(result.jobresult)));    
@@ -102,24 +118,18 @@ function doAction(id, $t) {
 				$midmenuItem.find("#spinning_wheel").hide();	
 														              
 	            //RecoverVirtualMachine API doesn't return an embedded object on success (Bug 6037)
-	            //Before Bug 6037 is fixed, use the temporary solution below.							            
+	            //Before Bug 6037 get fixed, use the temporary solution below.							            
 	            $.ajax({
                     cache: false,
-                    data: createURL("command=listVirtualMachines&id="+id+"&response=json"),
+                    data: createURL("command="+listAPI+"&id="+id+"&response=json"),
                     dataType: "json",
                     async: false,
                     success: function(json) {		                                                                                  
-                        afterActionSeccessFn(json.listvirtualmachinesresponse.virtualmachine[0], $midmenuItem);	
-                        $midmenuItem.find("#info_icon").removeClass("error").show();
-				        $midmenuItem.data("afterActionInfo", (label + " action succeeded.")); 
-                    },
-                    error: function(XMLHttpResponse) {
-                        $midmenuItem.find("#info_icon").addClass("error").show();
-				        $midmenuItem.data("afterActionInfo", (label + " action failed.")); 
+                        afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem);	                           
                     }
                 });										
 				//After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
-				//afterActionSeccessFn(json[asyncJobResponse]virtualmachine[0], $item);	
+				//afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem);	   
 	        }
         });
     }

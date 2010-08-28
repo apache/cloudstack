@@ -593,3 +593,23 @@
     </div>
 </div>
 <!-- VM Wizard - disk Offering template (end)-->
+
+<!-- Attach ISO Dialog -->
+<div id="dialog_attach_iso" title="Attach ISO" style="display:none">
+    <p>
+        Please specify the ISO you wish to attach to your Virtual Instance: <b><span id="vm_name">
+        </span></b>.</p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+                <label for="user_name">
+                    Available ISO:</label>
+                <select class="select" name="attach_iso_select" id="attach_iso_select">
+                    <option value="none">No Available ISO</option>
+                </select>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>

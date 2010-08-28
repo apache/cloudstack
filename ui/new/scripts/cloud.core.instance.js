@@ -20,33 +20,97 @@ function clickInstanceGroupHeader($arrowIcon) {
             label: "Stop Instance",     
             isAsyncJob: true,
             asyncJobResponse: "stopvirtualmachineresponse",
-            afterActionSeccessFn: updateVirtualMachineStateInMidMenu
+            afterActionSeccessFn: updateVirtualMachineStateInMidMenu,
+            listAPI: "listVirtualMachines",
+            listAPIResponse: "listvirtualmachinesresponse",
+            listAPIResponseObj: "virtualmachine"            
         },
         startVirtualMachine: {
             label: "Start Instance",     
             isAsyncJob: true,
             asyncJobResponse: "startvirtualmachineresponse",
-            afterActionSeccessFn: updateVirtualMachineStateInMidMenu
+            afterActionSeccessFn: updateVirtualMachineStateInMidMenu,
+            listAPI: "listVirtualMachines",
+            listAPIResponse: "listvirtualmachinesresponse",
+            listAPIResponseObj: "virtualmachine"            
         },
         rebootVirtualMachine: {
             label: "Reboot Instance",
             isAsyncJob: true,
             asyncJobResponse: "rebootvirtualmachineresponse",
-            afterActionSeccessFn: updateVirtualMachineStateInMidMenu
-            
+            afterActionSeccessFn: updateVirtualMachineStateInMidMenu,
+            listAPI: "listVirtualMachines",
+            listAPIResponse: "listvirtualmachinesresponse",
+            listAPIResponseObj: "virtualmachine"           
         },
         destroyVirtualMachine: {
             label: "Destroy Instance",
             isAsyncJob: true,
             asyncJobResponse: "destroyvirtualmachineresponse",
-            afterActionSeccessFn: updateVirtualMachineStateInMidMenu
+            afterActionSeccessFn: updateVirtualMachineStateInMidMenu,
+            listAPI: "listVirtualMachines",
+            listAPIResponse: "listvirtualmachinesresponse",
+            listAPIResponseObj: "virtualmachine"            
         },
         recoverVirtualMachine: {
             label: "Restore Instance",
             isAsyncJob: false,
-            afterActionSeccessFn: updateVirtualMachineStateInMidMenu
-        }        
+            afterActionSeccessFn: updateVirtualMachineStateInMidMenu,
+            listAPI: "listVirtualMachines",
+            listAPIResponse: "listvirtualmachinesresponse",
+            listAPIResponseObj: "virtualmachine"              
+        },
+        attachIso: {
+            label: "Attach ISO",
+            isAsyncJob: true,
+            asyncJobResponse: "attachisoresponse",
+            afterActionSeccessFn: function(){
+                //debugger;
+            },
+            dialogBeforeActionFn : doAttachISO,
+            listAPI: "listVirtualMachines",
+            listAPIResponse: "listvirtualmachinesresponse",
+            listAPIResponseObj: "virtualmachine"     
+        }       
     }            
+        
+    function doAttachISO($t, selectedItemIds) {   
+        $.ajax({
+		    data: createURL("command=listIsos&isReady=true&response=json"),
+			dataType: "json",
+			async: false,
+			success: function(json) {
+				var isos = json.listisosresponse.iso;
+				var isoSelect = $("#dialog_attach_iso #attach_iso_select");
+				if (isos != null && isos.length > 0) {
+					isoSelect.empty();
+					for (var i = 0; i < isos.length; i++) {
+						isoSelect.append("<option value='"+isos[i].id+"'>"+sanitizeXSS(isos[i].displaytext)+"</option>");;
+					}
+				}
+			}
+		});
+		//$("#dialog_attach_iso").find("#vm_name").text(vmName);
+		$("#dialog_attach_iso")
+		.dialog('option', 'buttons', { 						
+			"Confirm": function() { 			    
+				$(this).dialog("close");
+				var isoId = $("#dialog_attach_iso #attach_iso_select").val();
+				if (isoId == "none") {
+					$("#dialog_alert").html("<p>There is no ISO file to attach to the virtual machine.</p>")
+					$("#dialog_alert").dialog("open");
+					return false;
+				}	
+				for(var id in selectedItemIds) {
+				   var apiCommand = "command=attachIso&virtualmachineid="+id+"&id="+isoId+"&response=json";
+				   doAction(id, $t, apiCommand);	
+				}			
+			}, 
+			"Cancel": function() { 
+				$(this).dialog("close"); 
+			} 
+		}).dialog("open");
+    }
    
     function updateVirtualMachineStateInRightPanel(state) {
         if(state == "Running")
@@ -206,14 +270,24 @@ function clickInstanceGroupHeader($arrowIcon) {
 		            $link.data("label", apiInfo.label);	       
 		            $link.data("isAsyncJob", apiInfo.isAsyncJob);
 		            $link.data("asyncJobResponse", apiInfo.asyncJobResponse);		     
-		            $link.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);		            
+		            $link.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);
+		            $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);		
+		            $link.data("listAPI", apiInfo.listAPI);	  
+		            $link.data("listAPIResponse", apiInfo.listAPIResponse);	
+		            $link.data("listAPIResponseObj", apiInfo.listAPIResponseObj);	 	            
 		            $link.bind("click", function(event) {	
 		                $actionMenu.hide();    	 
-		                var $t = $(this);              	                
-		                //jobIdMap = {};	//to remove after testing, jessica	         
-		                for(var id in selectedItemIds) {	                        
-		                    doAction(id, $t);   
-		                }		
+		                var $t = $(this);   
+		                var dialogBeforeActionFn = $t.data("dialogBeforeActionFn");
+		                if(dialogBeforeActionFn == null) {		                   
+		                    for(var id in selectedItemIds) {	
+	                            var apiCommand = "command="+$t.data("api")+"&id="+id+"&response=json";                      
+	                            doAction(id, $t, apiCommand); 	
+		                    }
+		                }
+		                else {
+		                    dialogBeforeActionFn($t, selectedItemIds);	
+		                }
 		                selectedItemIds = {}; //clear selected items for action	                          
 		                return false;
 		            });  
@@ -228,7 +302,14 @@ function clickInstanceGroupHeader($arrowIcon) {
     //***** VM Detail (end) ********************************************************************************    
     $("#right_panel").load("jsp/tab_instance.jsp", function() {	
         $rightPanelHeader = $("#right_panel_header");			                                		                                
-	    $rightPanelContent = $("#right_panel_content");	     
+	    $rightPanelContent = $("#right_panel_content");	  
+	    	    
+        activateDialog($("#dialog_attach_iso").dialog({ 
+		    width: 600,
+		    autoOpen: false,
+		    modal: true,
+		    zIndex: 2000
+	    }));   
         
         //***** VM Wizard (begin) ******************************************************************************
         $vmPopup = $("#vm_popup");
@@ -273,7 +354,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 						    $t.find("input:radio[name=service_offering_radio]").val(offerings[i].id); 
 						    $t.find("#name").text(sanitizeXSS(unescape(offerings[i].name)));
 						    $t.find("#description").text(sanitizeXSS(unescape(offerings[i].displaytext))); 
-						    //debugger;
+						
 						    //if(i == 0)
 						    //    $t.find("input:radio[name=service_offering_radio]").attr("checked", true);
 						    //var listItem = $("<li><input class='radio' type='radio' name='service' id='service' value='"+offerings[i].id+"'" + checked + "/><label style='width:500px;font-size:11px;' for='service'>"+sanitizeXSS(unescape(offerings[i].displaytext))+"</label></li>");
@@ -292,8 +373,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 			    dataType: "json",
 			    async: false,
 			    success: function(json) {
-				    var offerings = json.listdiskofferingsresponse.diskoffering;
-				    //???
+				    var offerings = json.listdiskofferingsresponse.diskoffering;			
 				    var $dataDiskOfferingContainer = $("#data_disk_offering_container").empty();
 			        var $rootDiskOfferingContainer = $("#root_disk_offering_container").empty();
 			        
@@ -319,8 +399,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 					        var $t = $diskOfferingTemplate.clone();  						  
 					        $t.find("input:radio[name=disk_offering_radio]").val(offerings[i].id); 
 					        $t.find("#name").text(sanitizeXSS(unescape(offerings[i].name)));
-					        $t.find("#description").text(sanitizeXSS(unescape(offerings[i].displaytext))); 
-					        //debugger;
+					        $t.find("#description").text(sanitizeXSS(unescape(offerings[i].displaytext))); 					        
 					        //if(i == 0)
 					        //    $t.find("input:radio[name=service_offering_radio]").attr("checked", true);
 					        //var listItem = $("<li><input class='radio' type='radio' name='service' id='service' value='"+offerings[i].id+"'" + checked + "/><label style='width:500px;font-size:11px;' for='service'>"+sanitizeXSS(unescape(offerings[i].displaytext))+"</label></li>");
@@ -330,8 +409,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 					        var $t = $diskOfferingTemplate.clone();  						  
 					        $t.find("input:radio[name=disk_offering_radio]").val(offerings[i].id); 
 					        $t.find("#name").text(sanitizeXSS(unescape(offerings[i].name)));
-					        $t.find("#description").text(sanitizeXSS(unescape(offerings[i].displaytext))); 
-					        //debugger;
+					        $t.find("#description").text(sanitizeXSS(unescape(offerings[i].displaytext))); 					       
 					        //if(i == 0)
 					        //    $t.find("input:radio[name=service_offering_radio]").attr("checked", true);
 					        //var listItem = $("<li><input class='radio' type='radio' name='service' id='service' value='"+offerings[i].id+"'" + checked + "/><label style='width:500px;font-size:11px;' for='service'>"+sanitizeXSS(unescape(offerings[i].displaytext))+"</label></li>");
@@ -638,17 +716,14 @@ function clickInstanceGroupHeader($arrowIcon) {
 	    $vmPopup.find("#next_step").bind("click", function(event) {
 		    event.preventDefault();
 		    event.stopPropagation();	
-		    var $thisPopup = $vmPopup;		
-    		//debugger;	//???
+		    var $thisPopup = $vmPopup;		    		
 		    if (currentStepInVmPopup == 1) { //template/ISO					
 		        // prevent a person from moving on if no templates are selected	    
 //		        if($thisPopup.find("#step1 #template_container .rev_wiztemplistbox_selected").length == 0) {			        
 //		            $thisPopup.find("#step1 #wiz_message").show();
 //		            return false;
 //		        }
-
-                
-                 //debugger;		 
+                   	 
 			    if ($thisPopup.find("#wiz_blank").hasClass("rev_wizmid_selectedtempbut")) {  //ISO
 			        $("#root_disk_offering_container").show();
 			        $("#data_disk_offering_container").hide();
@@ -745,8 +820,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 			    moreCriteria.push("&templateId="+$thisPopup.find("#step1 .rev_wiztemplistbox_selected").attr("id"));
     							
 			    moreCriteria.push("&serviceOfferingId="+$thisPopup.find("input:radio[name=service_offering_radio]:checked").val());
-    			
-    			//debugger;						
+    			    						
 			    if ($thisPopup.find("#wiz_blank").hasClass("rev_wizmid_selectedtempbut")) { //ISO
 			        var diskOfferingId = $thisPopup.find("#root_disk_offering_container input[name=rootdisk]:checked").val();
 				    moreCriteria.push("&diskOfferingId="+diskOfferingId);
