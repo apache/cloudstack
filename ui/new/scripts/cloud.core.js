@@ -68,8 +68,7 @@ function doAction(id, $t, apiCommand, listAPIMap) {
 	                                    $.ajax({
                                             cache: false,
                                             data: createURL("command="+listAPI+"&id="+id),
-                                            dataType: "json",
-                                            async: false,
+                                            dataType: "json",                                            
                                             success: function(json) {		                                                                                  
                                                 afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem);	                        
                                             }

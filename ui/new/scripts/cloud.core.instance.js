@@ -16,9 +16,9 @@ function clickInstanceGroupHeader($arrowIcon) {
     var noGroupName = "(no group name)";             
     
     var listAPIMap = {
-        API: "listVirtualMachines",
-        APIResponse: "listvirtualmachinesresponse",
-        APIResponseObj: "virtualmachine"
+        listAPI: "listVirtualMachines",
+        listAPIResponse: "listvirtualmachinesresponse",
+        listAPIResponseObj: "virtualmachine"
     };           
       
     var actionMap = {        
@@ -26,43 +26,43 @@ function clickInstanceGroupHeader($arrowIcon) {
             label: "Stop Instance",     
             isAsyncJob: true,
             asyncJobResponse: "stopvirtualmachineresponse",
-            afterActionSeccessFn: updateVirtualMachineStateInMidMenu
+            afterActionSeccessFn: setMidmenuItemVm
         },
         startVirtualMachine: {
             label: "Start Instance",     
             isAsyncJob: true,
             asyncJobResponse: "startvirtualmachineresponse",
-            afterActionSeccessFn: updateVirtualMachineStateInMidMenu
+            afterActionSeccessFn: setMidmenuItemVm
         },
         rebootVirtualMachine: {
             label: "Reboot Instance",
             isAsyncJob: true,
             asyncJobResponse: "rebootvirtualmachineresponse",
-            afterActionSeccessFn: updateVirtualMachineStateInMidMenu
+            afterActionSeccessFn: setMidmenuItemVm
         },
         destroyVirtualMachine: {
             label: "Destroy Instance",
             isAsyncJob: true,
             asyncJobResponse: "destroyvirtualmachineresponse",
-            afterActionSeccessFn: updateVirtualMachineStateInMidMenu
+            afterActionSeccessFn: setMidmenuItemVm
         },
         recoverVirtualMachine: {
             label: "Restore Instance",
             isAsyncJob: false,
-            afterActionSeccessFn: updateVirtualMachineStateInMidMenu
+            afterActionSeccessFn: setMidmenuItemVm
         },
         attachIso: {
             label: "Attach ISO",
             isAsyncJob: true,
             asyncJobResponse: "attachisoresponse",
-            afterActionSeccessFn: function(){},
+            afterActionSeccessFn: setMidmenuItemVm,
             dialogBeforeActionFn : doAttachISO   
         },
         detachIso: {
             label: "Detach ISO",
             isAsyncJob: true,
             asyncJobResponse: "detachisoresponse",
-            afterActionSeccessFn: function(){},
+            afterActionSeccessFn: setMidmenuItemVm,
             dialogBeforeActionFn : doDetachISO   
         }         
     }            
