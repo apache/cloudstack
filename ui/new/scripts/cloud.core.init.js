@@ -20,7 +20,7 @@ $(document).ready(function() {
                 var $t = $("#"+ui.selecting.id);
                 if($t.find("#content").hasClass("inaction") == false) { //only items not in action are allowed to be selected
                     var id =$t.data("id");                
-                    selectedItemIds[id] = null; 
+                    selectedItemIds[id] = $t; 
                     $t.find("#content").addClass("selected");   
                 }                               
                 var toRightPanelFn = $t.data("toRightPanelFn");

@@ -64,7 +64,15 @@ function clickInstanceGroupHeader($arrowIcon) {
             asyncJobResponse: "detachisoresponse",
             afterActionSeccessFn: setMidmenuItemVm,
             dialogBeforeActionFn : doDetachISO   
-        }         
+        } 
+        ,
+        resetPasswordForVirtualMachine: {
+            label: "Reset Password",
+            isAsyncJob: true,
+            asyncJobResponse: "resetpasswordforvirtualmachineresponse",
+            afterActionSeccessFn: function(){},
+            dialogBeforeActionFn : doResetPassword   
+        }          
     }            
         
     function doAttachISO($t, selectedItemIds, listAPIMap) {   
@@ -121,6 +129,35 @@ function clickInstanceGroupHeader($arrowIcon) {
 			} 
 		}).dialog("open");
     }
+   
+    function doResetPassword($t, selectedItemIds, listAPIMap) {   		
+		$("#dialog_confirmation")
+		.html("<p>Please confirm you want to change the ROOT password for your virtual machine(s)</p>")
+		.dialog('option', 'buttons', { 						
+			"Confirm": function() { 
+				$(this).dialog("close"); 
+				for(var id in selectedItemIds) {	
+				    var $midMenuItem = selectedItemIds[id];
+				    var jsonObj = $midMenuItem.data("jsonObj");
+				    if(jsonObj.state != "Stopped") {				    
+				        $midMenuItem.find("#info_icon").addClass("error").show();
+                        $midMenuItem.data("afterActionInfo", ($t.data("label") + " action failed. Reason: This instance needs to be stopped before you can reset password"));  
+			            continue;
+		            }
+		            if(jsonObj.passwordEnabled != "true") {
+		                $midMenuItem.find("#info_icon").addClass("error").show();
+                        $midMenuItem.data("afterActionInfo", ($t.data("label") + " action failed. Reason: This instance is not using a template that has the password reset feature enabled.  If you have forgotten your root password, please contact support."));  
+			            continue;
+		            }	
+		            var apiCommand = "command=resetPasswordForVirtualMachine&id="+id;
+		            doAction(id, $t, apiCommand, listAPIMap);	
+		        }		
+			}, 
+			"Cancel": function() { 
+				$(this).dialog("close"); 
+			} 
+		}).dialog("open");
+	}
    
     function updateVirtualMachineStateInRightPanel(state) {
         if(state == "Running")
