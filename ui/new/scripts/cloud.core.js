@@ -86,8 +86,18 @@ function doAction(id, $t, apiCommand, listAPIMap) {
 		                        $midmenuItem.find("#content").removeClass("inaction");
 		                        $midmenuItem.find("#spinning_wheel").hide();	
 		                        $midmenuItem.find("#info_icon").addClass("error").show();	
-		                        $midmenuItem.data("afterActionInfo", (label + " action failed."));    	                        
-		                        handleError(XMLHttpResponse);
+		                        
+		                        var errorMsg = "";
+                                if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {
+                                    var start = XMLHttpResponse.responseText.indexOf("h1") + 3;
+                                    var end = XMLHttpResponse.responseText.indexOf("</h1");
+                                    errorMsg = XMLHttpResponse.responseText.substring(start, end);		
+                                }
+                                if(errorMsg.length > 0) 
+                                    $midmenuItem.data("afterActionInfo", ((label + " action failed. Reason: " + sanitizeXSS(unescape(errorMsg)))));    
+                                else
+                                    $midmenuItem.data("afterActionInfo", (label + " action failed."));       	                        
+		                        //handleError(XMLHttpResponse);
 	                        }
                         });
                     },
@@ -98,8 +108,19 @@ function doAction(id, $t, apiCommand, listAPIMap) {
                 $midmenuItem.find("#content").removeClass("inaction");
 		        $midmenuItem.find("#spinning_wheel").hide();	
 		        $midmenuItem.find("#info_icon").addClass("error").show();	
-		        $midmenuItem.data("afterActionInfo", (label + " action failed."));    	     
-                handleError(XMLHttpResponse);
+		        $midmenuItem.data("afterActionInfo", (label + " action failed."));  
+		        
+		        var errorMsg = "";
+                if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {
+                    var start = XMLHttpResponse.responseText.indexOf("h1") + 3;
+                    var end = XMLHttpResponse.responseText.indexOf("</h1");
+                    errorMsg = XMLHttpResponse.responseText.substring(start, end);		
+                }
+                if(errorMsg.length > 0) 
+                    $midmenuItem.data("afterActionInfo", ((label + " action failed. Reason: " + sanitizeXSS(unescape(errorMsg)))));    
+                else
+                    $midmenuItem.data("afterActionInfo", (label + " action failed."));      	     
+                //handleError(XMLHttpResponse);
             }
         });     
     }     

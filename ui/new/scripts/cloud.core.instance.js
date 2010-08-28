@@ -73,6 +73,12 @@ function clickInstanceGroupHeader($arrowIcon) {
             isAsyncJob: false,            
             dialogBeforeActionFn : doChangeName,
             afterActionSeccessFn: setMidmenuItemVm
+        },
+        "Change Service": {
+            isAsyncJob: true,
+            asyncJobResponse: "changeserviceforvirtualmachineresponse",
+            dialogBeforeActionFn : doChangeService,
+            afterActionSeccessFn: setMidmenuItemVm
         }          
     }            
         
@@ -185,6 +191,47 @@ function clickInstanceGroupHeader($arrowIcon) {
 		}).dialog("open");
     }
    
+    function doChangeService($t, selectedItemIds, listAPIMap) { 
+		$.ajax({
+		    //data: createURL("command=listServiceOfferings&VirtualMachineId="+vmId), //can not specifiy VirtualMachineId since we allow multiple-item-selection.
+		    data: createURL("command=listServiceOfferings"), //can not specifiy VirtualMachineId since we support multiple-item-selection.
+			dataType: "json",
+			success: function(json) {
+				var offerings = json.listserviceofferingsresponse.serviceoffering;
+				var offeringSelect = $("#dialog_change_service_offering #change_service_offerings").empty();
+				
+				if (offerings != null && offerings.length > 0) {
+					for (var i = 0; i < offerings.length; i++) {
+						var option = $("<option value='" + offerings[i].id + "'>" + sanitizeXSS(unescape(offerings[i].displaytext)) + "</option>").data("name", sanitizeXSS(unescape(offerings[i].name)));
+						offeringSelect.append(option); 
+					}
+				} 
+			}
+		});
+		
+		$("#dialog_change_service_offering")
+		.dialog('option', 'buttons', { 						
+			"Change": function() { 
+			    var thisDialog = $(this);
+				thisDialog.dialog("close"); 
+				
+				for(var id in selectedItemIds) {				
+				    var $midMenuItem = selectedItemIds[id];
+				    var jsonObj = $midMenuItem.data("jsonObj");				
+				    if(jsonObj.state != "Stopped") {				    
+				        $midMenuItem.find("#info_icon").addClass("error").show();
+                        $midMenuItem.data("afterActionInfo", ($t.data("label") + " action failed. Reason: virtual instance needs to be stopped before you can change its service."));  
+			            continue;
+		            }
+                    var apiCommand = "command=changeServiceForVirtualMachine&id="+id+"&serviceOfferingId="+thisDialog.find("#change_service_offerings").val();	     
+                    doAction(id, $t, apiCommand, listAPIMap);
+                }
+			}, 
+			"Cancel": function() { 
+				$(this).dialog("close"); 
+			} 
+		}).dialog("open");
+     }
    
    
     function updateVirtualMachineStateInRightPanel(state) {
@@ -384,6 +431,13 @@ function clickInstanceGroupHeader($arrowIcon) {
 	    }));   
         
         activateDialog($("#dialog_change_name").dialog({ 
+		    autoOpen: false,
+		    modal: true,
+		    zIndex: 2000
+	    }));
+        
+        activateDialog($("#dialog_change_service_offering").dialog({ 
+		    width: 600,
 		    autoOpen: false,
 		    modal: true,
 		    zIndex: 2000

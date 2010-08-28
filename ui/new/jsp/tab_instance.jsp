@@ -597,7 +597,7 @@
 <!-- Attach ISO Dialog -->
 <div id="dialog_attach_iso" title="Attach ISO" style="display:none">
     <p>
-        Please specify the ISO you wish to attach to your Virtual Instance(s).
+        Please specify the ISO you wish to attach to virtual instance.
     </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
@@ -617,7 +617,7 @@
 <!-- Change Name Dialog -->
 <div id="dialog_change_name" title="Change Name" style="display:none">
     <p>
-        Please specify the new name you want to change for your Virtual Instance(s).
+        Please specify the new name you want to change for virtual instance.
     </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
@@ -628,6 +628,25 @@
                 <input class="text" type="text" name="change_instance_name" id="change_instance_name" />
                 <div id="change_instance_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+
+<!-- Change Service Offering Dialog -->
+<div id="dialog_change_service_offering" title="Change Service Offering" style="display:none">
+    <p>  
+        After changing service offering, you must restart virtual instance for the new service offering to take effect.
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+                <label for="user_name">
+                    Service Offering:</label>
+                <select class="select" name="change_service_offerings" id="change_service_offerings">
+                </select>
             </li>
         </ol>
         </form>
