@@ -240,7 +240,7 @@
                 <div class="midmenu_panel">
                     <div class="midmenu_box" id="midmenu_container">
                     	
-                        
+                        <!--  
                         	<div class="midmenu_list">
                             	<div class="midmenu_content">
                                 	<div class="midmenu_icons"><img src="images/status_green.png" alt="Running" /></div>
@@ -251,6 +251,7 @@
                                     <div class="midmenu_defaultloader"></div>
                                 </div>
                             </div>
+                       -->
                        <!--
                             <div class="midmenu_list">
                             	<div class="midmenu_content">
@@ -579,6 +580,16 @@
         <div class="poweredby_box">
         </div>
     </div>
+   
+    <!-- Dialogs -->
+	<div id="dialog_confirmation" title="Confirmation" style="display:none"></div>
+	<div id="dialog_info" title="Info" style="display:none"></div>
+	<div id="dialog_alert" title="Alert" style="display:none"></div>
+	<div id="dialog_error" title="Error" style="display:none"></div>
+	<div id="dialog_session_expired" title="Session Expired" style="display:none">
+		<p>Your session has expired.  Please click 'OK' to return to the login screen.</p>
+	</div>
+	
     <!-- templates starts here-->
     <div class="leftmenu_content" id="leftmenu_instance_group_template" style="display: none">
         <div class="leftmenu_thirdindent">

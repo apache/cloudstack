@@ -597,7 +597,7 @@
 <!-- Attach ISO Dialog -->
 <div id="dialog_attach_iso" title="Attach ISO" style="display:none">
     <p>
-        Please specify the ISO you wish to attach to your Virtual Instance: <b><span id="vm_name">
+        Please specify the ISO you wish to attach to your Virtual Instance(s)
         </span></b>.</p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">

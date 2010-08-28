@@ -14,69 +14,62 @@ function clickInstanceGroupHeader($arrowIcon) {
     var $actionListItem = $("#action_list_item");
     
     var noGroupName = "(no group name)";             
+    
+    var listAPIMap = {
+        API: "listVirtualMachines",
+        APIResponse: "listvirtualmachinesresponse",
+        APIResponseObj: "virtualmachine"
+    };           
       
     var actionMap = {        
         stopVirtualMachine: {
             label: "Stop Instance",     
             isAsyncJob: true,
             asyncJobResponse: "stopvirtualmachineresponse",
-            afterActionSeccessFn: updateVirtualMachineStateInMidMenu,
-            listAPI: "listVirtualMachines",
-            listAPIResponse: "listvirtualmachinesresponse",
-            listAPIResponseObj: "virtualmachine"            
+            afterActionSeccessFn: updateVirtualMachineStateInMidMenu
         },
         startVirtualMachine: {
             label: "Start Instance",     
             isAsyncJob: true,
             asyncJobResponse: "startvirtualmachineresponse",
-            afterActionSeccessFn: updateVirtualMachineStateInMidMenu,
-            listAPI: "listVirtualMachines",
-            listAPIResponse: "listvirtualmachinesresponse",
-            listAPIResponseObj: "virtualmachine"            
+            afterActionSeccessFn: updateVirtualMachineStateInMidMenu
         },
         rebootVirtualMachine: {
             label: "Reboot Instance",
             isAsyncJob: true,
             asyncJobResponse: "rebootvirtualmachineresponse",
-            afterActionSeccessFn: updateVirtualMachineStateInMidMenu,
-            listAPI: "listVirtualMachines",
-            listAPIResponse: "listvirtualmachinesresponse",
-            listAPIResponseObj: "virtualmachine"           
+            afterActionSeccessFn: updateVirtualMachineStateInMidMenu
         },
         destroyVirtualMachine: {
             label: "Destroy Instance",
             isAsyncJob: true,
             asyncJobResponse: "destroyvirtualmachineresponse",
-            afterActionSeccessFn: updateVirtualMachineStateInMidMenu,
-            listAPI: "listVirtualMachines",
-            listAPIResponse: "listvirtualmachinesresponse",
-            listAPIResponseObj: "virtualmachine"            
+            afterActionSeccessFn: updateVirtualMachineStateInMidMenu
         },
         recoverVirtualMachine: {
             label: "Restore Instance",
             isAsyncJob: false,
-            afterActionSeccessFn: updateVirtualMachineStateInMidMenu,
-            listAPI: "listVirtualMachines",
-            listAPIResponse: "listvirtualmachinesresponse",
-            listAPIResponseObj: "virtualmachine"              
+            afterActionSeccessFn: updateVirtualMachineStateInMidMenu
         },
         attachIso: {
             label: "Attach ISO",
             isAsyncJob: true,
             asyncJobResponse: "attachisoresponse",
-            afterActionSeccessFn: function(){
-                //debugger;
-            },
-            dialogBeforeActionFn : doAttachISO,
-            listAPI: "listVirtualMachines",
-            listAPIResponse: "listvirtualmachinesresponse",
-            listAPIResponseObj: "virtualmachine"     
-        }       
+            afterActionSeccessFn: function(){},
+            dialogBeforeActionFn : doAttachISO   
+        },
+        detachIso: {
+            label: "Detach ISO",
+            isAsyncJob: true,
+            asyncJobResponse: "detachisoresponse",
+            afterActionSeccessFn: function(){},
+            dialogBeforeActionFn : doDetachISO   
+        }         
     }            
         
-    function doAttachISO($t, selectedItemIds) {   
+    function doAttachISO($t, selectedItemIds, listAPIMap) {   
         $.ajax({
-		    data: createURL("command=listIsos&isReady=true&response=json"),
+		    data: createURL("command=listIsos&isReady=true"),
 			dataType: "json",
 			async: false,
 			success: function(json) {
@@ -90,21 +83,38 @@ function clickInstanceGroupHeader($arrowIcon) {
 				}
 			}
 		});
-		//$("#dialog_attach_iso").find("#vm_name").text(vmName);
+		
 		$("#dialog_attach_iso")
 		.dialog('option', 'buttons', { 						
 			"Confirm": function() { 			    
 				$(this).dialog("close");
 				var isoId = $("#dialog_attach_iso #attach_iso_select").val();
 				if (isoId == "none") {
-					$("#dialog_alert").html("<p>There is no ISO file to attach to the virtual machine.</p>")
+					$("#dialog_alert").html("<p>There is no ISO file to attach to the virtual machine.</p>");
 					$("#dialog_alert").dialog("open");
 					return false;
 				}	
 				for(var id in selectedItemIds) {
-				   var apiCommand = "command=attachIso&virtualmachineid="+id+"&id="+isoId+"&response=json";
-				   doAction(id, $t, apiCommand);	
+				   var apiCommand = "command=attachIso&virtualmachineid="+id+"&id="+isoId;
+				   doAction(id, $t, apiCommand, listAPIMap);	
 				}			
+			}, 
+			"Cancel": function() { 
+				$(this).dialog("close"); 
+			} 
+		}).dialog("open");
+    }
+   
+    function doDetachISO($t, selectedItemIds, listAPIMap) {    
+        $("#dialog_confirmation")
+		.html("<p>Please confirm you want to detach an ISO from the virtual machine(s)</p>")
+		.dialog('option', 'buttons', { 						
+			"Confirm": function() { 
+				$(this).dialog("close");				
+				for(var id in selectedItemIds) {
+				   var apiCommand = "command=detachIso&virtualmachineid="+id;
+				   doAction(id, $t, apiCommand, listAPIMap);	
+				}					
 			}, 
 			"Cancel": function() { 
 				$(this).dialog("close"); 
@@ -206,7 +216,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         $arrowIcon.removeClass("close").addClass("open");    
         $.ajax({
 	        cache: false,
-	        data: createURL("command=listVirtualMachines&response=json"),
+	        data: createURL("command=listVirtualMachines"),
 	        dataType: "json",
 	        success: function(json) {	
 	            var instanceGroupMap = {};	       
@@ -238,7 +248,7 @@ function clickInstanceGroupHeader($arrowIcon) {
                                                         
                             $.ajax({
 	                            cache: false,
-	                            data: createURL("command=listVirtualMachines&response=json"),
+	                            data: createURL("command=listVirtualMachines"),
 	                            dataType: "json",
 	                            success: function(json) {		                                                             
 	                                var instances = json.listvirtualmachinesresponse.virtualmachine;                               
@@ -271,22 +281,19 @@ function clickInstanceGroupHeader($arrowIcon) {
 		            $link.data("isAsyncJob", apiInfo.isAsyncJob);
 		            $link.data("asyncJobResponse", apiInfo.asyncJobResponse);		     
 		            $link.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);
-		            $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);		
-		            $link.data("listAPI", apiInfo.listAPI);	  
-		            $link.data("listAPIResponse", apiInfo.listAPIResponse);	
-		            $link.data("listAPIResponseObj", apiInfo.listAPIResponseObj);	 	            
+		            $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);
 		            $link.bind("click", function(event) {	
 		                $actionMenu.hide();    	 
 		                var $t = $(this);   
 		                var dialogBeforeActionFn = $t.data("dialogBeforeActionFn");
 		                if(dialogBeforeActionFn == null) {		                   
 		                    for(var id in selectedItemIds) {	
-	                            var apiCommand = "command="+$t.data("api")+"&id="+id+"&response=json";                      
-	                            doAction(id, $t, apiCommand); 	
+	                            var apiCommand = "command="+$t.data("api")+"&id="+id;                      
+	                            doAction(id, $t, apiCommand, listAPIMap); 	
 		                    }
 		                }
 		                else {
-		                    dialogBeforeActionFn($t, selectedItemIds);	
+		                    dialogBeforeActionFn($t, selectedItemIds, listAPIMap);	
 		                }
 		                selectedItemIds = {}; //clear selected items for action	                          
 		                return false;
@@ -321,7 +328,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 	    $("#add_link").unbind("click").bind("click", function(event) {
             vmWizardOpen();			
 		    $.ajax({
-			    data: createURL("command=listZones&available=true&response=json"),
+			    data: createURL("command=listZones&available=true"),
 			    dataType: "json",
 			    success: function(json) {
 				    var zones = json.listzonesresponse.zone;					
@@ -336,7 +343,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 		    });
     		
 		    $.ajax({
-			    data: createURL("command=listServiceOfferings&response=json"),
+			    data: createURL("command=listServiceOfferings"),
 			    dataType: "json",
 			    async: false,
 			    success: function(json) {
@@ -369,7 +376,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 			    			    
 		
 		    $.ajax({
-			    data: createURL("command=listDiskOfferings&domainid=1&response=json"),
+			    data: createURL("command=listDiskOfferings&domainid=1"),
 			    dataType: "json",
 			    async: false,
 			    success: function(json) {
@@ -561,14 +568,14 @@ function clickInstanceGroupHeader($arrowIcon) {
             var searchInput = $vmPopup.find("#search_input").val();   
             if (selectedTemplateTypeInVmPopup != "blank") {      
                 if (searchInput != null && searchInput.length > 0)                 
-                    commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup+"&response=json"; 
+                    commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup; 
                 else
-                    commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&page="+currentPageInTemplateGridInVmPopup+"&response=json";           		    		
+                    commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&page="+currentPageInTemplateGridInVmPopup;           		    		
 		    } else {
 		        if (searchInput != null && searchInput.length > 0)                 
-                    commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup+"&response=json";  
+                    commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup;  
                 else
-                    commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&page="+currentPageInTemplateGridInVmPopup+"&response=json";  
+                    commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&page="+currentPageInTemplateGridInVmPopup;  
 		    }
     		
 		    var loading = $vmPopup.find("#wiz_template_loading").show();				
@@ -841,7 +848,7 @@ function clickInstanceGroupHeader($arrowIcon) {
     			$("#midmenu_container").append($t.show());
     			
 			    $.ajax({
-				    data: createURL("command=deployVirtualMachine"+moreCriteria.join("")+"&response=json"),
+				    data: createURL("command=deployVirtualMachine"+moreCriteria.join("")),
 				    dataType: "json",
 				    success: function(json) {
 					    var jobId = json.deployvirtualmachineresponse.jobid;
@@ -854,7 +861,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 						    timerKey,
 						    function() {
 							    $.ajax({
-								    data: createURL("command=queryAsyncJobResult&jobId="+jobId+"&response=json"),
+								    data: createURL("command=queryAsyncJobResult&jobId="+jobId),
 								    dataType: "json",
 								    success: function(json) {
 									    var result = json.queryasyncjobresultresponse;

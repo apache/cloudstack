@@ -21,15 +21,15 @@
 // Version: @VERSION@
 
 //var jobIdMap;
-function doAction(id, $t, apiCommand) {      
+function doAction(id, $t, apiCommand, listAPIMap) {      
     var api = $t.data("api");
     var label = $t.data("label");			           
     var isAsyncJob = $t.data("isAsyncJob");
     var asyncJobResponse = $t.data("asyncJobResponse");	
     var afterActionSeccessFn = $t.data("afterActionSeccessFn");	
-    var listAPI = $t.data("listAPI");
-    var listAPIResponse = $t.data("listAPIResponse");
-    var listAPIResponseObj = $t.data("listAPIResponseObj");
+    var listAPI = listAPIMap["listAPI"];
+    var listAPIResponse = listAPIMap["listAPIResponse"];
+    var listAPIResponseObj = listAPIMap["listAPIResponseObj"];
         
     var $midmenuItem = $("#midmenuItemVm_"+id);	
     $midmenuItem.find("#content").removeClass("selected").addClass("inaction");                          
@@ -49,7 +49,7 @@ function doAction(id, $t, apiCommand) {
                     timerKey,
                     function() {
                         $.ajax({
-                            data: createURL("command=queryAsyncJobResult&jobId="+jobId+"&response=json"),
+                            data: createURL("command=queryAsyncJobResult&jobId="+jobId),
 	                        dataType: "json",									                    					                    
 	                        success: function(json) {		                            							                       
 		                        var result = json.queryasyncjobresultresponse;										                   
@@ -67,7 +67,7 @@ function doAction(id, $t, apiCommand) {
 	                                    //Before Bug 6041 get fixed, use the temporary solution below.							            
 	                                    $.ajax({
                                             cache: false,
-                                            data: createURL("command="+listAPI+"&id="+id+"&response=json"),
+                                            data: createURL("command="+listAPI+"&id="+id),
                                             dataType: "json",
                                             async: false,
                                             success: function(json) {		                                                                                  
@@ -110,7 +110,7 @@ function doAction(id, $t, apiCommand) {
     //Sync job (begin) *****
     else { 	              
         $.ajax({
-            data: createURL("command="+api+"&id="+id+"&response=json"),
+            data: createURL("command="+api+"&id="+id),
 	        dataType: "json",
 	        async: false,
 	        success: function(json) {
@@ -121,11 +121,17 @@ function doAction(id, $t, apiCommand) {
 	            //Before Bug 6037 get fixed, use the temporary solution below.							            
 	            $.ajax({
                     cache: false,
-                    data: createURL("command="+listAPI+"&id="+id+"&response=json"),
+                    data: createURL("command="+listAPI+"&id="+id),
                     dataType: "json",
                     async: false,
-                    success: function(json) {		                                                                                  
+                    success: function(json) {	
+                        $midmenuItem.find("#info_icon").removeClass("error").show();
+			            $midmenuItem.data("afterActionInfo", (label + " action succeeded.")); 	                                                                                  
                         afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem);	                           
+                    },
+                    error: function(XMLHttpResponse) {                       
+                        $midmenuItem.find("#info_icon").addClass("error").show();
+			            $midmenuItem.data("afterActionInfo", (label + " action failed. Reason: " + sanitizeXSS(result.jobresult)));    
                     }
                 });										
 				//After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
@@ -136,7 +142,9 @@ function doAction(id, $t, apiCommand) {
     //Sync job (end) *****
 }
 
-
+function createURL(url) {
+    return url +"&response=json&sessionkey=" + g_sessionKey;
+}
 
 
 
@@ -215,10 +223,6 @@ function isUser() {
 
 function isDomainAdmin() {
 	return (g_role == 2);
-}
-
-function createURL(url) {
-    return url + "&sessionkey=" + g_sessionKey;
 }
 
 function setDateField(dateValue, dateField, htmlMarkup) {
