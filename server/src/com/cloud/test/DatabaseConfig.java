@@ -124,6 +124,7 @@ public class DatabaseConfig {
     	fieldNames.add("ramSize");
     	fieldNames.add("speed");
     	fieldNames.add("useLocalStorage");
+    	fieldNames.add("hypervisorType");
     	fieldNames.add("diskSpace");
     	fieldNames.add("nwRate");
     	fieldNames.add("mcRate");

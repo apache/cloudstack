@@ -417,7 +417,9 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		if (storageHost == null) {
 			s_logger.warn("Huh? Agent id " + sserverId + " does not correspond to a row in hosts table?");
 			return;
-		}		Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
+		}		
+		
+		Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
 		List<VMTemplateVO> allTemplates = _templateDao.listAllInZone(storageHost.getDataCenterId());
 		VMTemplateVO rtngTmplt = _templateDao.findRoutingTemplate();
 		VMTemplateVO defaultBuiltin = _templateDao.findDefaultBuiltinTemplate();
