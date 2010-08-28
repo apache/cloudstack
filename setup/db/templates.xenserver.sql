@@ -82,4 +82,6 @@ INSERT INTO `cloud`.`guest_os` (id, category_id, name, display_name) VALUES (58,
 INSERT INTO `cloud`.`guest_os` (id, category_id, name, display_name) VALUES (59, 7, 'Other install media', 'Ubuntu');
 INSERT INTO `cloud`.`guest_os` (id, category_id, name, display_name) VALUES (60, 7, 'Other install media', 'Other');
 
+-- temporarily added for vmware, will be moved when vmware support is fully in-place
+INSERT INTO `cloud`.`host_master`(`type`, `service_address`, `admin`, `password`) VALUES('VSphere', '192.168.90.238', 'Administrator', 'Suite219');
 

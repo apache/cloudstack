@@ -78,5 +78,6 @@ INSERT INTO `cloud`.`guest_os` (id, category_id, name, display_name) VALUES (62,
 INSERT INTO `cloud`.`guest_os` (id, category_id, name, display_name) VALUES (63, 5, 'Other (32-bit)', 'Other (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, name, display_name) VALUES (64, 5, 'Other (64-bit)', 'Other (64-bit)');
 
+
 -- temporarily added for vmware, will be moved when vmware support is fully in-place
 INSERT INTO `cloud`.`host_master`(`type`, `service_address`, `admin`, `password`) VALUES('VSphere', 'vsphere-1.lab.vmops.com', 'Administrator', 'Suite219');
