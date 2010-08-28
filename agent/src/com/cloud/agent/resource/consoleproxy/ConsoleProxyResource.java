@@ -82,6 +82,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
     String _localgw;
     String _eth1ip; 
     String _eth1mask;    
+    String _pubIp;
     
     @Override
     public Answer executeRequest(final Command cmd) {
@@ -158,6 +159,8 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
         fillNetworkInformation(cmd);
         cmd.setProxyPort(_proxyPort);
         cmd.setProxyVmId(_proxyVmId);
+        if(_pubIp != null)
+        	cmd.setPublicIpAddress(_pubIp);
         return new StartupCommand[] {cmd};
     }
 
@@ -221,6 +224,8 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
         		addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, internalDns2);
         	}
         }
+        
+        _pubIp = (String)params.get("public.ip");
         
         if(s_logger.isInfoEnabled())
         	s_logger.info("Receive proxyVmId in ConsoleProxyResource configuration as " + _proxyVmId);
