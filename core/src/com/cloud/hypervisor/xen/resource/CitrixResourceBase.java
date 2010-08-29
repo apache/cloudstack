@@ -17,6 +17,7 @@
  */
 package com.cloud.hypervisor.xen.resource;
 
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -3358,13 +3359,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         } catch (XenAPIException e) {
             String msg = "Unable to disable VLAN network due to " + e.toString();
             s_logger.warn(msg, e);
-            throw new InternalErrorException(msg);
-        } catch (XmlRpcException e) {
+        } catch (Exception e) {
             String msg = "Unable to disable VLAN network due to " + e.getMessage();
             s_logger.warn(msg, e);
-            throw new InternalErrorException(msg);
-        } catch (Exception e) {
-            throw new InternalErrorException(e.getMessage());
         }
     }
 
