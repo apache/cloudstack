@@ -624,7 +624,7 @@ public class TestVMWare {
 	private void powerOnVm() throws Exception {
 		ManagedObjectReference morVm = new ManagedObjectReference();
 		morVm.setType("VirtualMachine");
-		morVm.set_value("vm-66");
+		morVm.set_value("vm-480");
 		
 		cb.getServiceConnection3().getService().powerOnVM_Task(morVm, null);
 	}
@@ -822,6 +822,44 @@ public class TestVMWare {
 	    this.printContent(ocs);
 	}
 	
+	private void testFT() throws Exception {
+		
+		ManagedObjectReference morVm = new ManagedObjectReference();
+		morVm.setType("VirtualMachine");
+		morVm.set_value("vm-480");
+		
+		ManagedObjectReference morHost = new ManagedObjectReference();
+		morHost.setType("HostSystem");
+		morHost.set_value("host-470");
+
+		System.out.println("Create secondary VM");
+		ManagedObjectReference morTask = cb.getServiceConnection3().getService().createSecondaryVM_Task(morVm, morHost);
+		String result = cb.getServiceUtil3().waitForTask(morTask);
+		
+		System.out.println("Create secondary VM resutl : " + result);
+	}
+	
+	private void testFTEnable() throws Exception {
+		ManagedObjectReference morVm = new ManagedObjectReference();
+		morVm.setType("VirtualMachine");
+		morVm.set_value("vm-480");
+		
+		ManagedObjectReference morHost = new ManagedObjectReference();
+		morHost.setType("HostSystem");
+		morHost.set_value("host-470");
+
+		ManagedObjectReference morSecondaryVm = new ManagedObjectReference();
+		morSecondaryVm.setType("VirtualMachine");
+		morSecondaryVm.set_value("vm-485");
+		
+		System.out.println("Enable FT");
+		ManagedObjectReference morTask = cb.getServiceConnection3().getService().enableSecondaryVM_Task(morVm, 
+			morSecondaryVm, morHost);
+		String result = cb.getServiceUtil3().waitForTask(morTask);
+		
+		System.out.println("Enable FT resutl : " + result);
+	}
+	
 	public static void main(String[] args) throws Exception {
 		setupLog4j();
 		TestVMWare client = new TestVMWare();
@@ -840,7 +878,7 @@ public class TestVMWare {
 
 			// client.listInventoryFolders();
 			// client.listDataCenters();
-			// client.powerOnVm();
+			client.powerOnVm();
 			// client.createSnapshot();
 			// client.registerTemplate();
 			// client.createVmFromTemplate();
@@ -849,7 +887,9 @@ public class TestVMWare {
 
 			// client.createDatacenter();
 			// client.getPropertyWithPath();
-			client.getHostVMs();
+			// client.getHostVMs();
+			// client.testFT();
+			// client.testFTEnable();
 		
 			cb.disConnect();
 		} catch (Exception e) {
