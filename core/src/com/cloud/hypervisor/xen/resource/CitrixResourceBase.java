@@ -3107,7 +3107,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-            slaveConn = new Connection(slaveUrl, 10);
+            slaveConn = new Connection(slaveUrl, 1800);
             slaveSession = Session.slaveLocalLoginWithPassword(slaveConn, _username, _password);
 
             if (s_logger.isDebugEnabled()) {
