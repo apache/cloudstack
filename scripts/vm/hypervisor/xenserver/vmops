@@ -855,12 +855,16 @@ def getIsTrueString(stringValue):
     return booleanValue 
 
 def makeUnavailable(uuid, primarySRPath, isISCSI):
+    if not isISCSI:
+        return
     VHD = getVHD(uuid, isISCSI)
     path = os.path.join(primarySRPath, VHD)
     manageAvailability(path, '-an')
     return
 
 def manageAvailability(path, value):
+    if path.__contains__("/var/run/sr-mount"):
+        return
     util.SMlog("Setting availability of " + path + " to " + value)
     try:
         cmd = ['/usr/sbin/lvchange', value, path]
