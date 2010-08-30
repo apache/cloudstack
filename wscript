@@ -48,7 +48,7 @@ for _globber in [
 	for f in _globber: Scripting.excludes.append(_basename(f)) # _basename() only the filename
 
 # things never to consider when building or installing
-for pattern in ["**/.project","**/.classpath"]: Node.exclude_regs += "\n%s"%pattern
+for pattern in ["**/.project","**/.classpath","**/.pydevproject"]: Node.exclude_regs += "\n%s"%pattern
 
 # Support functions
 
