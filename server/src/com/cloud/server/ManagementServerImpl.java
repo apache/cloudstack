@@ -77,6 +77,7 @@ import com.cloud.api.commands.ListCfgsByCmd;
 import com.cloud.api.commands.ListClustersCmd;
 import com.cloud.api.commands.ListDiskOfferingsCmd;
 import com.cloud.api.commands.ListDomainsCmd;
+import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
@@ -4243,10 +4244,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _configMgr.changePrivateIPRange(add, podId, startIP, endIP);
     }
 
-    private List<UserVO> findUsersLike(String username) {
-        return _userDao.findUsersLike(username);
-    }
-
     @Override
     public User findUserById(Long userId) {
         return _userDao.findById(userId);
@@ -5104,37 +5101,65 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<EventVO> searchForEvents(Criteria c) {
-        Filter searchFilter = new Filter(EventVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+    public List<EventVO> searchForEvents(ListEventsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long accountId = null;
+        boolean isAdmin = false;
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
 
-        Object[] userIds = (Object[]) c.getCriteria(Criteria.USERID);
-        Object[] accountIds = (Object[]) c.getCriteria(Criteria.ACCOUNTID);
-        Object username = c.getCriteria(Criteria.USERNAME);
-        Object accountName = c.getCriteria(Criteria.ACCOUNTNAME);
-        Object type = c.getCriteria(Criteria.TYPE);
-        Object level = c.getCriteria(Criteria.LEVEL);
-//        Object description = c.getCriteria(Criteria.DESCRIPTION);
-        Date startDate = (Date) c.getCriteria(Criteria.STARTDATE);
-        Date endDate = (Date) c.getCriteria(Criteria.ENDDATE);
-        Object domainId = c.getCriteria(Criteria.DOMAINID);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
+        if ((account == null) || isAdmin(account.getType())) {
+            isAdmin = true;
+            // validate domainId before proceeding
+            if (domainId != null) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list events.");
+                }
+
+                if (accountName != null) {
+                    Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                    if (userAccount != null) {
+                        accountId = userAccount.getId();
+                    } else {
+                        throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                }
+            } else {
+                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+            }
+        } else {
+            accountId = account.getId();
+        }
+
+        Filter searchFilter = new Filter(EventVO.class, "createDate", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        Object type = cmd.getType();
+        Object level = cmd.getLevel();
+        Date startDate = cmd.getStartDate();
+        Date endDate = cmd.getEndDate();
+        Object keyword = cmd.getKeyword();
+        Integer entryTime = cmd.getEntryTime();
+        Integer duration = cmd.getDuration();
+
+        if ((entryTime != null) && (duration != null)) {
+            if (entryTime <= duration){
+                throw new InvalidParameterValueException("Entry time must be greater than duration");
+            }
+            return listPendingEvents(entryTime, duration);
+        }
 
         SearchBuilder<EventVO> sb = _eventDao.createSearchBuilder();
         sb.and("levelL", sb.entity().getLevel(), SearchCriteria.Op.LIKE);
-        sb.and("userIdEQ", sb.entity().getUserId(), SearchCriteria.Op.EQ);
-        sb.and("userIdIN", sb.entity().getUserId(), SearchCriteria.Op.IN);
-        sb.and("accountIdEQ", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
-        sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+        sb.and("levelEQ", sb.entity().getLevel(), SearchCriteria.Op.EQ);
+        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
         sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.LIKE);
         sb.and("domainIdEQ", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
-        sb.and("levelEQ", sb.entity().getLevel(), SearchCriteria.Op.EQ);
-//        sb.and("description", sb.entity().getDescription(), SearchCriteria.Op.LIKE);
         sb.and("createDateB", sb.entity().getCreateDate(), SearchCriteria.Op.BETWEEN);
         sb.and("createDateG", sb.entity().getCreateDate(), SearchCriteria.Op.GTEQ);
         sb.and("createDateL", sb.entity().getCreateDate(), SearchCriteria.Op.LTEQ);
 
-        if ((accountIds == null) && (accountName == null) && (domainId != null)) {
+        if ((accountId == null) && (accountName == null) && (domainId != null) && isAdmin) {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
@@ -5150,58 +5175,23 @@ public class ManagementServerImpl implements ManagementServer {
 
             sc.addAnd("level", SearchCriteria.Op.SC, ssc);
         }
-
-//        if (keyword != null) {
-//            sc.setParameters("levelL", "%" + keyword + "%");
-//        } else if (level != null) {
-//            sc.setParameters("levelEQ", level);
-//        }
-
-//        if (description != null) {
-//        	sc.setParameters("description", "%" + description + "%");
-//        }
         
-        if(level!=null)
+        if (level != null)
         	sc.setParameters("levelEQ", level);
         	
-        if (userIds == null && username != null) {
-            List<UserVO> users = findUsersLike((String) username);
-            if (users == null || users.size() == 0) {
-                return new ArrayList<EventVO>();
-            }
-            userIds = new Long[users.size()];
-            for (int i = 0; i < users.size(); i++) {
-                userIds[i] = users.get(i).getId();
-            }
-        }
-
-        if (userIds != null) {
-            if (userIds.length == 1) {
-                if ((userIds[0] != null) && !((Long) userIds[0]).equals(Long.valueOf(-1))) {
-                    sc.setParameters("userIdEQ", userIds[0]);
-                }
-            } else {
-                sc.setParameters("userIdIN", userIds);
-            }
-        }
-        if (accountIds != null) {
-            if (accountIds.length == 1) {
-                if ((accountIds[0] != null) && !((Long) accountIds[0]).equals(Long.valueOf(-1))) {
-                    sc.setParameters("accountIdEQ", accountIds[0]);
-                }
-            } else {
-                sc.setParameters("accountIdIN", accountIds);
-            }
+        if (accountId != null) {
+            sc.setParameters("accountId", accountId);
         } else if (domainId != null) {
             if (accountName != null) {
                 sc.setParameters("domainIdEQ", domainId);
                 sc.setParameters("accountName", "%" + accountName + "%");
                 sc.addAnd("removed", SearchCriteria.Op.NULL);
-            } else {
+            } else if (isAdmin) {
                 DomainVO domain = _domainDao.findById((Long)domainId);
                 sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
             }
         }
+
         if (type != null) {
             sc.setParameters("type", type);
         }

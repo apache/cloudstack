@@ -38,6 +38,7 @@ import com.cloud.api.commands.ListCfgsByCmd;
 import com.cloud.api.commands.ListClustersCmd;
 import com.cloud.api.commands.ListDiskOfferingsCmd;
 import com.cloud.api.commands.ListDomainsCmd;
+import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
@@ -1173,7 +1174,7 @@ public interface ManagementServer {
      * @param c
      * @return List of Events.
      */
-    List<EventVO> searchForEvents(Criteria c);
+    List<EventVO> searchForEvents(ListEventsCmd c) throws PermissionDeniedException, InvalidParameterValueException;
     
     List<EventVO> listPendingEvents(int entryTime, int duration);
     
