@@ -80,6 +80,7 @@ import com.cloud.api.commands.ListDomainChildrenCmd;
 import com.cloud.api.commands.ListDomainsCmd;
 import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.api.commands.ListGuestOsCategoriesCmd;
+import com.cloud.api.commands.ListGuestOsCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
@@ -5884,12 +5885,11 @@ public class ManagementServerImpl implements ManagementServer {
         return _templateDao.listAll();
     }
 
-    public List<GuestOSVO> listGuestOSByCriteria(Criteria c) 
-    {
-        
-        Filter searchFilter = new Filter(GuestOSVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
-        Long id = (Long) c.getCriteria(Criteria.ID);
-        Long osCategoryId = (Long) c.getCriteria(Criteria.OSCATEGORYID);
+    @Override
+    public List<GuestOSVO> listGuestOSByCriteria(ListGuestOsCmd cmd) {
+        Filter searchFilter = new Filter(GuestOSVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Long id = cmd.getId();
+        Long osCategoryId = cmd.getOsCategoryId();
 
         SearchBuilder<GuestOSVO> sb = _guestOSDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);

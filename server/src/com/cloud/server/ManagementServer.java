@@ -41,6 +41,7 @@ import com.cloud.api.commands.ListDomainChildrenCmd;
 import com.cloud.api.commands.ListDomainsCmd;
 import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.api.commands.ListGuestOsCategoriesCmd;
+import com.cloud.api.commands.ListGuestOsCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
@@ -1274,7 +1275,7 @@ public interface ManagementServer {
      * Obtains a list of all guest OS.
      * @return list of GuestOS
      */
-    List<GuestOSVO> listGuestOSByCriteria(Criteria c);
+    List<GuestOSVO> listGuestOSByCriteria(ListGuestOsCmd cmd);
     
     /**
      * Obtains a list of all guest OS categories.
