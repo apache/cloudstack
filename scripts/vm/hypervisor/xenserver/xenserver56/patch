@@ -19,7 +19,6 @@ patch.tgz=..,0775,/opt/xensource/bin
 vmops=..,0755,/etc/xapi.d/plugins
 vmopsSnapshot=..,0755,/etc/xapi.d/plugins
 xs_cleanup.sh=..,0755,/opt/xensource/bin
-systemvm-premium.iso=../../../../../vms,0644,/opt/xensource/packages/iso
 systemvm.iso=../../../../../vms,0644,/opt/xensource/packages/iso
 hostvmstats.py=..,0755,/opt/xensource/sm
 id_rsa.cloud=..,0600,/opt/xensource/bin

@@ -38,9 +38,9 @@ def echo(fn):
 
 
 def get_xapi_session():
-    xapi = XenAPI.xapi_local();
-    xapi.login_with_password("","")
-    return xapi._session
+    session = XenAPI.xapi_local();
+    session.login_with_password("","")
+    return session
 
 @echo
 def gethostvmstats(session, args):
