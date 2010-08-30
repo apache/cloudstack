@@ -335,7 +335,7 @@ def zip_up(task):
 			if srcname.startswith("cloudstack-proprietary"): srcname = "/".join(srcname.split("/")[1:]) # chop off cloudstack proprietary
 			srcname = "/".join(srcname.split("/")[1:]) # chop off project name
 		# post-process the paths
-		if True in [ srcname.startswith(strt) for strt in [ 'scripts/run','scripts/config_ssl','scripts/config_auth','scripts/ssvm-check' ] ]:
+		if True in [ srcname.startswith(strt) for strt in [ 'scripts/run','scripts/_run','scripts/config_ssl','scripts/config_auth','scripts/ssvm-check' ] ]:
 			srcname = "/".join(srcname.split("/")[1:])
 		elif srcname.startswith('storage'):
 			srcname = "scripts/" + srcname
