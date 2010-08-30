@@ -449,6 +449,7 @@ fi
 %defattr(-,root,root,-)
 %{_libdir}/%{name}/agent/scripts/*
 # maintain the following list in sync with files agent-scripts
+%if %{_premium}
 %exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/check_heartbeat.sh
 %exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/find_bond.sh
 %exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/launch_hb.sh
@@ -457,6 +458,7 @@ fi
 %exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenheartbeat.sh
 %exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenserver56/patch-premium
 %exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xs_cleanup.sh
+%endif
 %{_libdir}/%{name}/agent/vms/systemvm.zip
 %doc README
 %doc HACKING
