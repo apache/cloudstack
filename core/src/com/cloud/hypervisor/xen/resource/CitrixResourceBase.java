@@ -3517,7 +3517,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         } finally {
             if( slaveSession != null) {
                 try {
-                    slaveSession.localLogout(slaveConn);
+                    Session.localLogout(slaveConn);
                 } catch (Exception e) {
                 }
             }
