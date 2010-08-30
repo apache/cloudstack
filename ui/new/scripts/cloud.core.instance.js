@@ -849,7 +849,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 		    event.preventDefault();
 		    event.stopPropagation();	
 		    var $thisPopup = $vmPopup;		    		
-		    if (currentStepInVmPopup == 1) { //template/ISO					
+		    if (currentStepInVmPopup == 1) { //select a template		
 		        // prevent a person from moving on if no templates are selected	    
 //		        if($thisPopup.find("#step1 #template_container .rev_wiztemplistbox_selected").length == 0) {			        
 //		            $thisPopup.find("#step1 #wiz_message").show();
@@ -857,41 +857,31 @@ function clickInstanceGroupHeader($arrowIcon) {
 //		        }
                    	 
 			    if ($thisPopup.find("#wiz_blank").hasClass("rev_wizmid_selectedtempbut")) {  //ISO
-			        $("#root_disk_offering_container").show();
-			        $("#data_disk_offering_container").hide();
-			        /*
-				    $thisPopup.find("#wizard_review_root_disk_offering").text($thisPopup.find("#wizard_root_disk_offering input[name=rootdisk]:checked").next().text());
-				    $thisPopup.find("#wizard_review_root_disk_offering_p").show();
-				    $thisPopup.find("#wizard_review_iso").text($thisPopup.find("#step1 .rev_wiztemplistbox_selected .rev_wiztemp_listtext").text());
-				    $thisPopup.find("#wizard_review_iso_p").show();
-				    $thisPopup.find("#wizard_review_data_disk_offering_p").hide();
-				    $thisPopup.find("#wizard_review_template").text("Blank Template");
-				    */
+			        $thisPopup.find("#step3_label").text("Root Disk Offering");
+			        $thisPopup.find("#root_disk_offering_container").show();
+			        $thisPopup.find("#data_disk_offering_container").hide();			       
 			    } else {  //template
-			        $("#data_disk_offering_container").show();
-			        $("#root_disk_offering_container").hide();
-			        /*
-				    $thisPopup.find("#wizard_review_template").text($thisPopup.find("#step1 .rev_wiztemplistbox_selected .rev_wiztemp_listtext").text());
-				    $thisPopup.find("#wizard_review_data_disk_offering_p").show();
-				    $thisPopup.find("#wizard_review_data_disk_offering").text($thisPopup.find("#wizard_data_disk_offering input[name=datadisk]:checked").next().text());
-				    $thisPopup.find("#wizard_review_root_disk_offering_p").hide();
-				    $thisPopup.find("#wizard_review_iso_p").hide();
-				    */
+			        $thisPopup.find("#step3_label").text("Data Disk Offering");
+			        $thisPopup.find("#data_disk_offering_container").show();
+			        $thisPopup.find("#root_disk_offering_container").hide();			       
 			    }	
-    							
-			    $thisPopup.find("#wizard_review_service_offering").text($thisPopup.find("#wizard_service_offering input[name=service]:checked").next().text());
-			    $thisPopup.find("#wizard_review_zone").text($thisPopup.find("#wizard_zone option:selected").text());
-			    $thisPopup.find("#wizard_review_name").text($thisPopup.find("#wizard_vm_name").val());
-			    $thisPopup.find("#wizard_review_group").text($thisPopup.find("#wizard_vm_group").val());
     			
-			    if($thisPopup.find("#wizard_network_groups_container").css("display") != "none" && $thisPopup.find("#wizard_network_groups").val() != null) {
-			        var networkGroupList = $thisPopup.find("#wizard_network_groups").val().join(",");
-			        $thisPopup.find("#wizard_review_network_groups_p").show();
-			        $thisPopup.find("#wizard_review_network_groups").text(networkGroupList);				    
-			    } else {
-			        $thisPopup.find("#wizard_review_network_groups_p").hide();
-			        $thisPopup.find("#wizard_review_network_groups").text("");
-			    }								
+    			$thisPopup.find("#wizard_review_zone").text($thisPopup.find("#wizard_zone option:selected").text());    	
+    			$thisPopup.find("#wizard_review_template").text($thisPopup.find("#step1 .rev_wiztemplistbox_selected .rev_wiztemp_listtext").text());
+    							
+//			    $thisPopup.find("#wizard_review_service_offering").text($thisPopup.find("#wizard_service_offering input[name=service]:checked").next().text());
+//			    $thisPopup.find("#wizard_review_zone").text($thisPopup.find("#wizard_zone option:selected").text());
+//			    $thisPopup.find("#wizard_review_name").text($thisPopup.find("#wizard_vm_name").val());
+//			    $thisPopup.find("#wizard_review_group").text($thisPopup.find("#wizard_vm_group").val());
+//    			
+//			    if($thisPopup.find("#wizard_network_groups_container").css("display") != "none" && $thisPopup.find("#wizard_network_groups").val() != null) {
+//			        var networkGroupList = $thisPopup.find("#wizard_network_groups").val().join(",");
+//			        $thisPopup.find("#wizard_review_network_groups_p").show();
+//			        $thisPopup.find("#wizard_review_network_groups").text(networkGroupList);				    
+//			    } else {
+//			        $thisPopup.find("#wizard_review_network_groups_p").hide();
+//			        $thisPopup.find("#wizard_review_network_groups").text("");
+//			    }								
 
 
 		    }			
@@ -903,6 +893,9 @@ function clickInstanceGroupHeader($arrowIcon) {
 //		            $thisPopup.find("#step2 #wiz_message").show();
 //			        return false;
 //			    }
+               
+                $thisPopup.find("#wizard_review_service_offering").text($thisPopup.find("input:radio[name=service_offering_radio]:checked").next().text());
+
 		    }			
     		
 		    if(currentStepInVmPopup ==3) { //disk offering
@@ -922,15 +915,22 @@ function clickInstanceGroupHeader($arrowIcon) {
 			        return false;
 			    }	
 			    */	   	
-    		    
-		       
+    		   
+		        if($thisPopup.find("#wiz_blank").hasClass("rev_wizmid_selectedtempbut"))  { //ISO
+		            $thisPopup.find("#wizard_review_disk_offering_label").text("Root Disk Offering:");
+			        $thisPopup.find("#wizard_review_disk_offering").text($thisPopup.find("#root_disk_offering_container input[name=disk_offering_radio]:checked").next().text());	
+			    }
+			    else { //template
+			        $thisPopup.find("#wizard_review_disk_offering_label").text("Data Disk Offering:");
+			        $thisPopup.find("#wizard_review_disk_offering").text($thisPopup.find("#data_disk_offering_container input[name=disk_offering_radio]:checked").next().text());
+			    }	
 		    }	
 		    	
-		    if (currentStepInVmPopup == 4) {
+		    if (currentStepInVmPopup == 4) { //network
 		    
 		    }	
 		    
-		    if (currentStepInVmPopup == 5) {
+		    if (currentStepInVmPopup == 5) { //last step
 			    // Create a new VM!!!!
 			    var moreCriteria = [];								
 			    moreCriteria.push("&zoneId="+$thisPopup.find("#wizard_zone").val());

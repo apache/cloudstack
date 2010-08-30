@@ -273,14 +273,13 @@
             <div class="vmpopup_maincontentarea">
                 <div class="vmpopup_titlebox">
                     <h2>
-                        Step 2: <strong>Select a Service</strong></h2>
-                    <p>
+                        Step 2: <strong>Service Offering</strong></h2>
+                    <p><!--  
                         Please select the CPU, Memory and Storage requirement you need for your new Virtual
-                        Instance</p>
+                        Instance--></p>
                 </div>
                 <div class="vmpopup_contentpanel">
-                    <h3>
-                        Service Offering</h3>
+                    <h3><!--Service Offering--></h3>
                     <div class="vmpopup_offeringpanel" id="service_offering_container">
                         <!--
                         <div class="vmpopup_offeringbox">
@@ -368,14 +367,11 @@
             <div class="vmpopup_maincontentarea">
                 <div class="vmpopup_titlebox">
                     <h2>
-                        Step 3: <strong>Additional Data Disk Offering</strong></h2>
-                    <p>
-                        Please select the CPU, Memory and Storage requirement you need for your new Virtual
-                        Instance</p>
+                        Step 3: <strong id="step3_label">Select a Disk Offering</strong></h2>
+                    <p></p>
                 </div>
                 <div class="vmpopup_contentpanel">
-                    <h3>
-                        Data Disk Offering</h3>
+                    <h3></h3>
                     <div class="vmpopup_offeringpanel" id="data_disk_offering_container" style="display:none">
                     </div>
                     <div class="vmpopup_offeringpanel" id="root_disk_offering_container" style="display:none">
@@ -411,14 +407,11 @@
             <div class="vmpopup_maincontentarea">
                 <div class="vmpopup_titlebox">
                     <h2>
-                        Step 4: <strong>Choose your Network</strong></h2>
-                    <p>
-                        Please select the CPU, Memory and Storage requirement you need for your new Virtual
-                        Instance</p>
+                        Step 4: <strong>Network</strong></h2>
+                    <p></p>
                 </div>
                 <div class="vmpopup_contentpanel">
-                    <h3>
-                        Network Offering</h3>
+                    <h3></h3>
                     <div class="vmpopup_offeringpanel">
                         <div class="vmpopup_offeringbox">
                             <input type="radio" name="radiogroup" class="radio" />
@@ -488,13 +481,10 @@
                 <div class="vmpopup_titlebox">
                     <h2>
                         Step 5: <strong>Last Step</strong></h2>
-                    <p>
-                        Please select the CPU, Memory and Storage requirement you need for your new Virtual
-                        Instance</p>
+                    <p></p>
                 </div>
                 <div class="vmpopup_contentpanel">
-                    <h3>
-                        Network Offering</h3>
+                    <h3></h3>
                     <div class="vmpopup_offeringpanel" style="margin-top: 10px;">
                         <div class="vmpopup_reviewbox_odd">
                             <div class="vmopopup_reviewtextbox">
@@ -502,7 +492,7 @@
                                 </div>
                                 <div class="vmopopup_review_label">
                                     Zone:</div>
-                                <span>US West</span>
+                                <span id="wizard_review_zone"></span>
                             </div>
                         </div>
                         <div class="vmpopup_reviewbox_even">
@@ -512,7 +502,7 @@
                                 <div class="vmopopup_review_label">
                                     Template:
                                 </div>
-                                <span>CentOS 5.4 64-bit Web Server (Apache)</span>
+                                <span id="wizard_review_template"></span>
                             </div>
                         </div>
                         <div class="vmpopup_reviewbox_odd">
@@ -520,18 +510,27 @@
                                 <div class="vmpopup_reviewtick">
                                 </div>
                                 <div class="vmopopup_review_label">
-                                    Zone:</div>
-                                <span>US West</span>
+                                    Service Offering:</div>
+                                <span id="wizard_review_service_offering"></span>
                             </div>
                         </div>
                         <div class="vmpopup_reviewbox_even">
                             <div class="vmopopup_reviewtextbox">
                                 <div class="vmpopup_reviewtick">
                                 </div>
-                                <div class="vmopopup_review_label">
-                                    Template:
+                                <div class="vmopopup_review_label" id="wizard_review_disk_offering_label">
+                                    Disk Offering:
                                 </div>
-                                <span>CentOS 5.4 64-bit Web Server (Apache)</span>
+                                <span id="wizard_review_disk_offering"></span>
+                            </div>
+                        </div>
+                         <div class="vmpopup_reviewbox_odd">
+                            <div class="vmopopup_reviewtextbox">
+                                <div class="vmpopup_reviewtick">
+                                </div>
+                                <div class="vmopopup_review_label">
+                                    Network:</div>
+                                <span id="wizard_review_network"></span>
                             </div>
                         </div>
                     </div>
