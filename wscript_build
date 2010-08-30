@@ -247,6 +247,15 @@ for virttech in [ _basename(x) for x in _glob(_join("patches","*")) ]:
 		# xenserver uses the patch.tgz file later to make an ISO, so we do not need to install it
 		bld.install_as("${AGENTLIBDIR}/scripts/vm/hypervisor/%s/patch.tgz"%virttech, "%s-patch.tgz"%virttech)
 
+tgen = bld(
+	rule = 'cp ${SRC} ${TGT}',
+	source = 'xenserver-patch.tgz',
+	target = 'patch.tgz',
+	after = 'xenserver-patch_tgz',
+	name = 'patch_tgz'
+)
+bld.process_after(tgen)
+
 # ================== End creation of patch.tgz's ====================
 
 
@@ -403,10 +412,10 @@ if bld.env.DISTRO not in ["Windows","Mac"]: # mkisofs only on windows
 
 	tgen = bld(
 		rule   = iso_up,
-		source = "xenserver-patch.tgz target/oss/systemvm.zip",
+		source = "patch.tgz target/oss/systemvm.zip",
 		target = 'target/oss/systemvm.iso',
 		name   = 'systemvm_iso',
-		after  = 'systemvm_zip xenserver-patch_tgz',
+		after  = 'systemvm_zip patch_tgz',
 	)
 	bld.process_after(tgen)
 	bld.install_as("${AGENTLIBDIR}/vms/systemvm.iso", "target/oss/systemvm.iso")
@@ -414,10 +423,10 @@ if bld.env.DISTRO not in ["Windows","Mac"]: # mkisofs only on windows
 	if buildpremium:
 		tgen = bld(
 			rule   = iso_up,
-			source = "xenserver-patch.tgz target/premium/systemvm.zip",
+			source = "patch.tgz target/premium/systemvm.zip",
 			target = 'target/premium/systemvm.iso',
 			name   = 'systemvm-premium_iso',
-			after  = 'systemvm-premium_zip xenserver-patch_tgz',
+			after  = 'systemvm-premium_zip patch_tgz',
 		)
 		bld.process_after(tgen)
 		bld.install_as("${AGENTLIBDIR}/vms/systemvm-premium.iso", "target/premium/systemvm.iso")
