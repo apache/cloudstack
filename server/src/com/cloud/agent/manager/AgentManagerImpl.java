@@ -1785,28 +1785,28 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
     }
 
-    protected void upgradeAgent(final Link link, final byte[] request, final String reason) {
-
-        if (reason == UnsupportedVersionException.IncompatibleVersion) {
-            final UpgradeResponse response = new UpgradeResponse(request, _upgradeMgr.getAgentUrl());
-            try {
-                s_logger.info("Asking for the agent to update due to incompatible version: " + response.toString());
-                link.send(response.toBytes());
-            } catch (final ClosedChannelException e) {
-                s_logger.warn("Unable to send response due to connection closed: " + response.toString());
-            }
-            return;
-        }
-
-        assert (reason == UnsupportedVersionException.UnknownVersion) : "Unknown reason: " + reason;
-        final UpgradeResponse response = new UpgradeResponse(request, _upgradeMgr.getAgentUrl());
-        try {
-            s_logger.info("Asking for the agent to update due to unknown version: " + response.toString());
-            link.send(response.toBytes());
-        } catch (final ClosedChannelException e) {
-            s_logger.warn("Unable to send response due to connection closed: " + response.toString());
-        }
-    }
+//    protected void upgradeAgent(final Link link, final byte[] request, final String reason) {
+//
+//        if (reason == UnsupportedVersionException.IncompatibleVersion) {
+//            final UpgradeResponse response = new UpgradeResponse(request, _upgradeMgr.getAgentUrl());
+//            try {
+//                s_logger.info("Asking for the agent to update due to incompatible version: " + response.toString());
+//                link.send(response.toBytes());
+//            } catch (final ClosedChannelException e) {
+//                s_logger.warn("Unable to send response due to connection closed: " + response.toString());
+//            }
+//            return;
+//        }
+//
+//        assert (reason == UnsupportedVersionException.UnknownVersion) : "Unknown reason: " + reason;
+//        final UpgradeResponse response = new UpgradeResponse(request, _upgradeMgr.getAgentUrl());
+//        try {
+//            s_logger.info("Asking for the agent to update due to unknown version: " + response.toString());
+//            link.send(response.toBytes());
+//        } catch (final ClosedChannelException e) {
+//            s_logger.warn("Unable to send response due to connection closed: " + response.toString());
+//        }
+//    }
 
     protected class SimulateStartTask implements Runnable {
         ServerResource resource;
@@ -1857,17 +1857,17 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
                     return;
                 }
                 StartupCommand startup = (StartupCommand) cmd;
-                if ((_upgradeMgr.registerForUpgrade(-1, startup.getVersion()) == UpgradeManager.State.RequiresUpdate) && (_upgradeMgr.getAgentUrl() != null)) {
-                    final UpgradeCommand upgrade = new UpgradeCommand(_upgradeMgr.getAgentUrl());
-                    final Request req = new Request(1, -1, -1, new Command[] { upgrade }, true, true);
-                    s_logger.info("Agent requires upgrade: " + req.toString());
-                    try {
-                        link.send(req.toBytes());
-                    } catch (ClosedChannelException e) {
-                        s_logger.warn("Unable to tell agent it should update.");
-                    }
-                    return;
-                }
+//                if ((_upgradeMgr.registerForUpgrade(-1, startup.getVersion()) == UpgradeManager.State.RequiresUpdate) && (_upgradeMgr.getAgentUrl() != null)) {
+//                    final UpgradeCommand upgrade = new UpgradeCommand(_upgradeMgr.getAgentUrl());
+//                    final Request req = new Request(1, -1, -1, new Command[] { upgrade }, true, true);
+//                    s_logger.info("Agent requires upgrade: " + req.toString());
+//                    try {
+//                        link.send(req.toBytes());
+//                    } catch (ClosedChannelException e) {
+//                        s_logger.warn("Unable to tell agent it should update.");
+//                    }
+//                    return;
+//                }
                 try {
                     StartupCommand[] startups = new StartupCommand[cmds.length];
                     for (int i = 0; i < cmds.length; i++)
@@ -2036,7 +2036,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 	                    }
 	                } catch (final UnsupportedVersionException e) {
 	                    s_logger.warn(e.getMessage());
-	                    upgradeAgent(task.getLink(), data, e.getReason());
+	                    //upgradeAgent(task.getLink(), data, e.getReason());
 	                }
 	            } else if (type == Task.Type.CONNECT) {
 	            } else if (type == Task.Type.DISCONNECT) {
