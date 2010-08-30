@@ -96,7 +96,6 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.async.dao.AsyncJobDao;
-import com.cloud.async.executor.AssociateIpAddressParam;
 import com.cloud.async.executor.AttachISOParam;
 import com.cloud.async.executor.CopyTemplateParam;
 import com.cloud.async.executor.CreateOrUpdateRuleParam;
@@ -1484,128 +1483,128 @@ public class ManagementServerImpl implements ManagementServer {
         return null;
     }
 
-    @Override
-    @DB
-    public String associateIpAddress(long userId, long accountId, long domainId, long zoneId) throws ResourceAllocationException, InsufficientAddressCapacityException,
-            InvalidParameterValueException, InternalErrorException {
-        Transaction txn = Transaction.currentTxn();
-        AccountVO account = null;
-        try {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Associate IP address called for user " + userId + " account " + accountId);
-            }
-            account = _accountDao.acquire(accountId);
+//    @Override
+//    @DB
+//    public String associateIpAddress(long userId, long accountId, long domainId, long zoneId) throws ResourceAllocationException, InsufficientAddressCapacityException,
+//            InvalidParameterValueException, InternalErrorException {
+//        Transaction txn = Transaction.currentTxn();
+//        AccountVO account = null;
+//        try {
+//            if (s_logger.isDebugEnabled()) {
+//                s_logger.debug("Associate IP address called for user " + userId + " account " + accountId);
+//            }
+//            account = _accountDao.acquire(accountId);
+//
+//            if (account == null) {
+//                s_logger.warn("Unable to lock account: " + accountId);
+//                throw new InternalErrorException("Unable to acquire account lock");
+//            }
+//
+//            if (s_logger.isDebugEnabled()) {
+//                s_logger.debug("Associate IP address lock acquired");
+//            }
+//
+//            // Check that the maximum number of public IPs for the given
+//            // accountId will not be exceeded
+//            if (_accountMgr.resourceLimitExceeded(account, ResourceType.public_ip)) {
+//                ResourceAllocationException rae = new ResourceAllocationException("Maximum number of public IP addresses for account: " + account.getAccountName()
+//                        + " has been exceeded.");
+//                rae.setResourceType("ip");
+//                throw rae;
+//            }
+//
+//            DomainRouterVO router = _routerDao.findBy(accountId, zoneId);
+//            if (router == null) {
+//                throw new InvalidParameterValueException("No router found for account: " + account.getAccountName() + ".");
+//            }
+//
+//            txn.start();
+//
+//            String ipAddress = null;
+//            Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(zoneId, accountId, domainId, VlanType.VirtualNetwork, false);
+//            
+//            if (ipAndVlan == null) {
+//                throw new InsufficientAddressCapacityException("Unable to find available public IP addresses");
+//            } else {
+//            	ipAddress = ipAndVlan.first();
+//            	_accountMgr.incrementResourceCount(accountId, ResourceType.public_ip);
+//            }
+//
+//            boolean success = true;
+//            String errorMsg = "";
+//
+//            List<String> ipAddrs = new ArrayList<String>();
+//            ipAddrs.add(ipAddress);
+//
+//            if (router.getState() == State.Running) {
+//                success = _networkMgr.associateIP(router, ipAddrs, true);
+//                if (!success) {
+//                    errorMsg = "Unable to assign public IP address.";
+//                }
+//            }
+//
+//            EventVO event = new EventVO();
+//            event.setUserId(userId);
+//            event.setAccountId(accountId);
+//            event.setType(EventTypes.EVENT_NET_IP_ASSIGN);
+//            event.setParameters("address=" + ipAddress + "\nsourceNat=" + false + "\ndcId=" + zoneId);
+//
+//            if (!success) {
+//                _publicIpAddressDao.unassignIpAddress(ipAddress);
+//                ipAddress = null;
+//                _accountMgr.decrementResourceCount(accountId, ResourceType.public_ip);
+//
+//                event.setLevel(EventVO.LEVEL_ERROR);
+//                event.setDescription(errorMsg);
+//                _eventDao.persist(event);
+//                txn.commit();
+//
+//                throw new InternalErrorException(errorMsg);
+//            } else {
+//                event.setDescription("Assigned a public IP address: " + ipAddress);
+//                _eventDao.persist(event);
+//            }
+//
+//            txn.commit();
+//            return ipAddress;
+//
+//        } catch (ResourceAllocationException rae) {
+//            s_logger.error("Associate IP threw a ResourceAllocationException.", rae);
+//            throw rae;
+//        } catch (InsufficientAddressCapacityException iace) {
+//            s_logger.error("Associate IP threw an InsufficientAddressCapacityException.", iace);
+//            throw iace;
+//        } catch (InvalidParameterValueException ipve) {
+//            s_logger.error("Associate IP threw an InvalidParameterValueException.", ipve);
+//            throw ipve;
+//        } catch (InternalErrorException iee) {
+//            s_logger.error("Associate IP threw an InternalErrorException.", iee);
+//            throw iee;
+//        } catch (Throwable t) {
+//            s_logger.error("Associate IP address threw an exception.", t);
+//            throw new InternalErrorException("Associate IP address exception");
+//        } finally {
+//            if (account != null) {
+//                _accountDao.release(accountId);
+//                s_logger.debug("Associate IP address lock released");
+//            }
+//        }
+//    }
 
-            if (account == null) {
-                s_logger.warn("Unable to lock account: " + accountId);
-                throw new InternalErrorException("Unable to acquire account lock");
-            }
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Associate IP address lock acquired");
-            }
-
-            // Check that the maximum number of public IPs for the given
-            // accountId will not be exceeded
-            if (_accountMgr.resourceLimitExceeded(account, ResourceType.public_ip)) {
-                ResourceAllocationException rae = new ResourceAllocationException("Maximum number of public IP addresses for account: " + account.getAccountName()
-                        + " has been exceeded.");
-                rae.setResourceType("ip");
-                throw rae;
-            }
-
-            DomainRouterVO router = _routerDao.findBy(accountId, zoneId);
-            if (router == null) {
-                throw new InvalidParameterValueException("No router found for account: " + account.getAccountName() + ".");
-            }
-
-            txn.start();
-
-            String ipAddress = null;
-            Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(zoneId, accountId, domainId, VlanType.VirtualNetwork, false);
-            
-            if (ipAndVlan == null) {
-                throw new InsufficientAddressCapacityException("Unable to find available public IP addresses");
-            } else {
-            	ipAddress = ipAndVlan.first();
-            	_accountMgr.incrementResourceCount(accountId, ResourceType.public_ip);
-            }
-
-            boolean success = true;
-            String errorMsg = "";
-
-            List<String> ipAddrs = new ArrayList<String>();
-            ipAddrs.add(ipAddress);
-
-            if (router.getState() == State.Running) {
-                success = _networkMgr.associateIP(router, ipAddrs, true);
-                if (!success) {
-                    errorMsg = "Unable to assign public IP address.";
-                }
-            }
-
-            EventVO event = new EventVO();
-            event.setUserId(userId);
-            event.setAccountId(accountId);
-            event.setType(EventTypes.EVENT_NET_IP_ASSIGN);
-            event.setParameters("address=" + ipAddress + "\nsourceNat=" + false + "\ndcId=" + zoneId);
-
-            if (!success) {
-                _publicIpAddressDao.unassignIpAddress(ipAddress);
-                ipAddress = null;
-                _accountMgr.decrementResourceCount(accountId, ResourceType.public_ip);
-
-                event.setLevel(EventVO.LEVEL_ERROR);
-                event.setDescription(errorMsg);
-                _eventDao.persist(event);
-                txn.commit();
-
-                throw new InternalErrorException(errorMsg);
-            } else {
-                event.setDescription("Assigned a public IP address: " + ipAddress);
-                _eventDao.persist(event);
-            }
-
-            txn.commit();
-            return ipAddress;
-
-        } catch (ResourceAllocationException rae) {
-            s_logger.error("Associate IP threw a ResourceAllocationException.", rae);
-            throw rae;
-        } catch (InsufficientAddressCapacityException iace) {
-            s_logger.error("Associate IP threw an InsufficientAddressCapacityException.", iace);
-            throw iace;
-        } catch (InvalidParameterValueException ipve) {
-            s_logger.error("Associate IP threw an InvalidParameterValueException.", ipve);
-            throw ipve;
-        } catch (InternalErrorException iee) {
-            s_logger.error("Associate IP threw an InternalErrorException.", iee);
-            throw iee;
-        } catch (Throwable t) {
-            s_logger.error("Associate IP address threw an exception.", t);
-            throw new InternalErrorException("Associate IP address exception");
-        } finally {
-            if (account != null) {
-                _accountDao.release(accountId);
-                s_logger.debug("Associate IP address lock released");
-            }
-        }
-    }
-
-    @Override
-    public long associateIpAddressAsync(long userId, long accountId, long domainId, long zoneId) {
-        AssociateIpAddressParam param = new AssociateIpAddressParam(userId, accountId, domainId, zoneId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(accountId);
-        job.setCmd("AssociateIpAddress");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(AssociateIPAddrCmd.getResultObjectName());
-        
-        return _asyncMgr.submitAsyncJob(job, true);
-    }
+//    @Override
+//    public long associateIpAddressAsync(long userId, long accountId, long domainId, long zoneId) {
+//        AssociateIpAddressParam param = new AssociateIpAddressParam(userId, accountId, domainId, zoneId);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//        job.setUserId(UserContext.current().getUserId());
+//        job.setAccountId(accountId);
+//        job.setCmd("AssociateIpAddress");
+//        job.setCmdInfo(gson.toJson(param));
+//        job.setCmdOriginator(AssociateIPAddrCmd.getResultObjectName());
+//        
+//        return _asyncMgr.submitAsyncJob(job, true);
+//    }
 
 //    @Override
 //    @DB
@@ -1699,19 +1698,19 @@ public class ManagementServerImpl implements ManagementServer {
 //        }
 //    }
 
-    @Override
-    public long disassociateIpAddressAsync(long userId, long accountId, String ipAddress) {
-        DisassociateIpAddressParam param = new DisassociateIpAddressParam(userId, accountId, ipAddress);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(accountId);
-        job.setCmd("DisassociateIpAddress");
-        job.setCmdInfo(gson.toJson(param));
-        
-        return _asyncMgr.submitAsyncJob(job, true);
-    }
+//    @Override
+//    public long disassociateIpAddressAsync(long userId, long accountId, String ipAddress) {
+//        DisassociateIpAddressParam param = new DisassociateIpAddressParam(userId, accountId, ipAddress);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//        job.setUserId(UserContext.current().getUserId());
+//        job.setAccountId(accountId);
+//        job.setCmd("DisassociateIpAddress");
+//        job.setCmdInfo(gson.toJson(param));
+//        
+//        return _asyncMgr.submitAsyncJob(job, true);
+//    }
 
     @Override
     public VolumeVO createVolume(long userId, long accountId, String name, long zoneId, long diskOfferingId, long startEventId, long size) throws InternalErrorException {
@@ -2830,17 +2829,6 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public HostVO getHostBy(long hostId) {
         return _hostDao.findById(hostId);
-    }
-
-    public void updateHost(long hostId, long guestOSCategoryId) throws InvalidParameterValueException {
-    	// Verify that the guest OS Category exists
-    	if (guestOSCategoryId > 0) {
-    		if (_guestOSCategoryDao.findById(guestOSCategoryId) == null) {
-    			throw new InvalidParameterValueException("Please specify a valid guest OS category.");
-    		}
-    	}
-    	
-    	_agentMgr.updateHost(hostId, guestOSCategoryId);
     }
     
 //    public boolean deleteHost(long hostId) {

@@ -59,6 +59,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
+import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateIPForwardingRuleCmd;
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.api.commands.DeletePortForwardingServiceRuleCmd;
@@ -92,6 +93,7 @@ import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -1384,6 +1386,150 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         }
 
         return true;
+    }
+    
+    
+    @Override
+    public String associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, InvalidParameterValueException, InternalErrorException  {
+    	String accountName = cmd.getAccountName();
+    	Long domainId = cmd.getDomainId();
+    	Long zoneId = cmd.getZoneId();
+    	Account account = (Account)UserContext.current().getAccountObject();
+    	Long userId = UserContext.current().getUserId();
+    	Long accountId = null;
+    	
+        if ((account == null) || isAdmin(account.getType())) {
+            if (domainId != null) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid domain id (" + domainId + ") given, unable to associate IP address.");
+                }
+                if (accountName != null) {
+                    Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                    if (userAccount != null) {
+                        accountId = userAccount.getId();
+                    } else {
+                        throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                }
+            } else if (account != null) {
+                // the admin is acquiring an IP address
+                accountId = account.getId();
+                domainId = account.getDomainId();
+            } else {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Account information is not specified.");
+            }
+        } else {
+            accountId = account.getId();
+            domainId = account.getDomainId();
+        }
+
+        if (userId == null) {
+            userId = Long.valueOf(1);
+        }
+        
+        
+        Transaction txn = Transaction.currentTxn();
+        AccountVO accountToLock = null;
+        try {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Associate IP address called for user " + userId + " account " + accountId);
+            }
+            accountToLock = _accountDao.acquire(accountId);
+
+            if (accountToLock == null) {
+                s_logger.warn("Unable to lock account: " + accountId);
+                throw new InternalErrorException("Unable to acquire account lock");
+            }
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Associate IP address lock acquired");
+            }
+
+            // Check that the maximum number of public IPs for the given
+            // accountId will not be exceeded
+            if (_accountMgr.resourceLimitExceeded(accountToLock, ResourceType.public_ip)) {
+                ResourceAllocationException rae = new ResourceAllocationException("Maximum number of public IP addresses for account: " + accountToLock.getAccountName()
+                        + " has been exceeded.");
+                rae.setResourceType("ip");
+                throw rae;
+            }
+
+            DomainRouterVO router = _routerDao.findBy(accountId, zoneId);
+            if (router == null) {
+                throw new InvalidParameterValueException("No router found for account: " + accountToLock.getAccountName() + ".");
+            }
+
+            txn.start();
+
+            String ipAddress = null;
+            Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(zoneId, accountId, domainId, VlanType.VirtualNetwork, false);
+            
+            if (ipAndVlan == null) {
+                throw new InsufficientAddressCapacityException("Unable to find available public IP addresses");
+            } else {
+            	ipAddress = ipAndVlan.first();
+            	_accountMgr.incrementResourceCount(accountId, ResourceType.public_ip);
+            }
+
+            boolean success = true;
+            String errorMsg = "";
+
+            List<String> ipAddrs = new ArrayList<String>();
+            ipAddrs.add(ipAddress);
+
+            if (router.getState() == State.Running) {
+                success = associateIP(router, ipAddrs, true);
+                if (!success) {
+                    errorMsg = "Unable to assign public IP address.";
+                }
+            }
+
+            EventVO event = new EventVO();
+            event.setUserId(userId);
+            event.setAccountId(accountId);
+            event.setType(EventTypes.EVENT_NET_IP_ASSIGN);
+            event.setParameters("address=" + ipAddress + "\nsourceNat=" + false + "\ndcId=" + zoneId);
+
+            if (!success) {
+                _ipAddressDao.unassignIpAddress(ipAddress);
+                ipAddress = null;
+                _accountMgr.decrementResourceCount(accountId, ResourceType.public_ip);
+
+                event.setLevel(EventVO.LEVEL_ERROR);
+                event.setDescription(errorMsg);
+                _eventDao.persist(event);
+                txn.commit();
+
+                throw new InternalErrorException(errorMsg);
+            } else {
+                event.setDescription("Assigned a public IP address: " + ipAddress);
+                _eventDao.persist(event);
+            }
+
+            txn.commit();
+            return ipAddress;
+        } catch (ResourceAllocationException rae) {
+            s_logger.error("Associate IP threw a ResourceAllocationException.", rae);
+            throw rae;
+        } catch (InsufficientAddressCapacityException iace) {
+            s_logger.error("Associate IP threw an InsufficientAddressCapacityException.", iace);
+            throw iace;
+        } catch (InvalidParameterValueException ipve) {
+            s_logger.error("Associate IP threw an InvalidParameterValueException.", ipve);
+            throw ipve;
+        } catch (InternalErrorException iee) {
+            s_logger.error("Associate IP threw an InternalErrorException.", iee);
+            throw iee;
+        } catch (Throwable t) {
+            s_logger.error("Associate IP address threw an exception.", t);
+            throw new InternalErrorException("Associate IP address exception");
+        } finally {
+            if (account != null) {
+                _accountDao.release(accountId);
+                s_logger.debug("Associate IP address lock released");
+            }
+        }
+        
     }
 
     @Override

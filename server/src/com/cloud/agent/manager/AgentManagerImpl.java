@@ -75,6 +75,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AddHostOrStorageCmd;
 import com.cloud.api.commands.DeleteHostCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
+import com.cloud.api.commands.UpdateHostCmd;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -1687,19 +1688,38 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
     }
     
-    public void updateHost(long hostId, long guestOSCategoryId) {
-    	GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
-    	Map<String, String> hostDetails = _hostDetailsDao.findDetails(hostId);
+    public void updateHost(UpdateHostCmd cmd) throws InvalidParameterValueException{
+    	Long hostId = cmd.getId();
+    	Long guestOSCategoryId = cmd.getOsCategoryId();
     	
-    	if (guestOSCategory != null) {
-    		// Save a new entry for guest.os.category.id
-    		hostDetails.put("guest.os.category.id", String.valueOf(guestOSCategory.getId()));
-    	} else {
-    		// Delete any existing entry for guest.os.category.id
-    		hostDetails.remove("guest.os.category.id");
+    	if (guestOSCategoryId != null) {
+
+            // Verify that the host exists
+        	HostVO host = _hostDao.findById(hostId);
+        	if (host == null) {
+        		throw new InvalidParameterValueException("Host with id " + hostId + " doesn't exist");
+        	}
+        	
+        	// Verify that the guest OS Category exists
+        	if (guestOSCategoryId > 0) {
+        		if (_guestOSCategoryDao.findById(guestOSCategoryId) == null) {
+        			throw new InvalidParameterValueException("Please specify a valid guest OS category.");
+        		}
+        	}
+        	
+        	GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
+        	Map<String, String> hostDetails = _hostDetailsDao.findDetails(hostId);
+        	
+        	if (guestOSCategory != null) {
+        		// Save a new entry for guest.os.category.id
+        		hostDetails.put("guest.os.category.id", String.valueOf(guestOSCategory.getId()));
+        	} else {
+        		// Delete any existing entry for guest.os.category.id
+        		hostDetails.remove("guest.os.category.id");
+        	}
+        	_hostDetailsDao.persist(hostId, hostDetails);
     	}
     	
-    	_hostDetailsDao.persist(hostId, hostDetails);
     }
 
     protected void updateHost(final HostVO host, final StartupCommand startup, final Host.Type type, final long msId) throws IllegalArgumentException {

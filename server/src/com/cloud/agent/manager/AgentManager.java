@@ -27,6 +27,7 @@ import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.commands.AddHostOrStorageCmd;
 import com.cloud.api.commands.DeleteHostCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
+import com.cloud.api.commands.UpdateHostCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
@@ -161,10 +162,9 @@ public interface AgentManager extends Manager {
 
 	/**
 	 * Updates a host
-	 * @param hostId
-	 * @param guestOSCategoryId
+	 * @param cmd
 	 */
-	void updateHost(long hostId, long guestOSCategoryId);
+	void updateHost(UpdateHostCmd cmd) throws InvalidParameterValueException;
 	
 	/**
      * Deletes a host

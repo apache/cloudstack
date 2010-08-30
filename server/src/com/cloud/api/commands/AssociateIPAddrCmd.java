@@ -25,10 +25,9 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 
-@Implementation(method="associateIpAddress", manager=Manager.ManagementServer)
+@Implementation(method="associateIP", manager=Manager.NetworkManager)
 public class AssociateIPAddrCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AssociateIPAddrCmd.class.getName());
-
     private static final String s_name = "associateipaddressresponse";
 
     /////////////////////////////////////////////////////
@@ -181,4 +180,10 @@ public class AssociateIPAddrCmd extends BaseCmd {
         return embeddedObject;
     }
     */
+    
+	@Override
+	public String getResponse() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

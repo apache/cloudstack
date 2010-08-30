@@ -404,8 +404,8 @@ public interface ManagementServer {
      * @throws InvalidParameterValueException if no router for that user exists in the zone specified
      * @throws InternalErrorException  if the new address could not be sent down to the router
      */
-    String associateIpAddress(long userId, long accountId, long domainId, long zoneId) throws ResourceAllocationException, InsufficientAddressCapacityException, InvalidParameterValueException, InternalErrorException;
-    long associateIpAddressAsync(long userId, long accountId, long domainId, long zoneId);
+//    String associateIpAddress(long userId, long accountId, long domainId, long zoneId) throws ResourceAllocationException, InsufficientAddressCapacityException, InvalidParameterValueException, InternalErrorException;
+//    long associateIpAddressAsync(long userId, long accountId, long domainId, long zoneId);
    
     
     /**
@@ -416,7 +416,7 @@ public interface ManagementServer {
      * @return success
      */
 //    boolean disassociateIpAddress(DisassociateIPAddrCmd cmd) throws PermissionDeniedException;
-    long disassociateIpAddressAsync(long userId, long accountId, String ipAddress);
+//    long disassociateIpAddressAsync(long userId, long accountId, String ipAddress);
    
 	/**
 	 * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated IP addresses.
@@ -808,12 +808,6 @@ public interface ManagementServer {
      */
     HostVO getHostBy(long hostId);
     
-    /**
-     * Updates a host
-     * @param hostId
-     * @param guestOSCategoryId
-     */
-    void updateHost(long hostId, long guestOSCategoryId) throws InvalidParameterValueException;
     
 //    /**
 //     * Deletes a host
