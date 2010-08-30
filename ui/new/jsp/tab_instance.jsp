@@ -551,7 +551,7 @@
 <!-- VM wizard (end)-->
 <!-- VM Wizard - Service Offering template (begin) -->
 <div class="vmpopup_offeringbox" id="vm_popup_service_offering_template" style="display: none">
-    <input type="radio" name="service_offering_radio" class="radio" />
+    <input type="radio" name="service_offering_radio" class="radio" checked />
     <label class="label" id="name">
     </label>
     <div class="vmpopup_offdescriptionbox">

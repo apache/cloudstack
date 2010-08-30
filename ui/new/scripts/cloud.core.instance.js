@@ -486,6 +486,9 @@ function clickInstanceGroupHeader($arrowIcon) {
 						    $t.find("input:radio[name=service_offering_radio]").val(offerings[i].id); 
 						    $t.find("#name").text(sanitizeXSS(unescape(offerings[i].name)));
 						    $t.find("#description").text(sanitizeXSS(unescape(offerings[i].displaytext))); 
+						    
+						    if (i > 0)
+						        $t.find("input:radio[name=service_offering_radio]").removeAttr("checked");	
 						
 						    //if(i == 0)
 						    //    $t.find("input:radio[name=service_offering_radio]").attr("checked", true);
