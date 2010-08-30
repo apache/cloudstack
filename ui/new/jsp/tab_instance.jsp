@@ -566,12 +566,12 @@
 <!-- VM Wizard - Service Offering template (end) -->
 <!-- VM Wizard - disk Offering template (begin)-->
 <div class="vmpopup_offeringbox" id="vm_popup_disk_offering_template_no" style="display: none">
-    <input type="radio" name="disk_offering_radio" class="radio" />
+    <input type="radio" name="disk_offering_radio" class="radio" value="none" checked />
     <label class="label">
         No Thanks</label>
 </div>
 <div class="vmpopup_offeringbox" id="vm_popup_disk_offering_template_custom" style="display: none">
-    <input type="radio" name="disk_offering_radio" class="radio" />
+    <input type="radio" name="disk_offering_radio" class="radio" value="custom" />
     <label class="label">
         Custom:</label>
     <label class="label1">

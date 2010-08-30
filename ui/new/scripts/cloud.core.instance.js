@@ -513,16 +513,13 @@ function clickInstanceGroupHeader($arrowIcon) {
 			        var $rootDiskOfferingContainer = $("#root_disk_offering_container").empty();
 			        
 			        //"no, thanks" radio button (only data disk offering has the radio button, root disk offering doesn't)		        
-		            var $t = $("#vm_popup_disk_offering_template_no").clone();
-		            $t.find("input:radio[name=disk_offering_radio]").val("no");
+		            var $t = $("#vm_popup_disk_offering_template_no").clone(); //value is set as "none" in tab_instance.tab		          
 		            $dataDiskOfferingContainer.append($t.show()); 
 			        	
 			        //"custom" radio button			        
-			        var $t = $("#vm_popup_disk_offering_template_custom").clone();
-			        $t.find("input:radio[name=disk_offering_radio]").val("custom");
+			        var $t = $("#vm_popup_disk_offering_template_custom").clone(); //value is set as "custom" in tab_instance.tab			        
 			        $dataDiskOfferingContainer.append($t.show());	
-			        var $t = $("#vm_popup_disk_offering_template_custom").clone();
-			        $t.find("input:radio[name=disk_offering_radio]").val("custom");
+			        var $t = $("#vm_popup_disk_offering_template_custom").clone(); //value is set as "custom" in tab_instance.tab	
 			        $rootDiskOfferingContainer.append($t.show());
 				    				    
 			        //var checked = "checked";
@@ -955,16 +952,15 @@ function clickInstanceGroupHeader($arrowIcon) {
 			    moreCriteria.push("&templateId="+$thisPopup.find("#step1 .rev_wiztemplistbox_selected").attr("id"));
     							
 			    moreCriteria.push("&serviceOfferingId="+$thisPopup.find("input:radio[name=service_offering_radio]:checked").val());
-    			    						
-			    if ($thisPopup.find("#wiz_blank").hasClass("rev_wizmid_selectedtempbut")) { //ISO
-			        var diskOfferingId = $thisPopup.find("#root_disk_offering_container input[name=rootdisk]:checked").val();
-				    moreCriteria.push("&diskOfferingId="+diskOfferingId);
-	            }
-			    else { //template
-			        var diskOfferingId = $thisPopup.find("#data_disk_offering_container input[name=datadisk]:checked").val();					    	    
-			        if(diskOfferingId != null && diskOfferingId != "")
-				        moreCriteria.push("&diskOfferingId="+diskOfferingId);	
-		        }							 
+    			
+    			var diskOfferingId;    						
+			    if ($thisPopup.find("#wiz_blank").hasClass("rev_wizmid_selectedtempbut"))  //ISO
+			        diskOfferingId = $thisPopup.find("#root_disk_offering_container input[name=disk_offering_radio]:checked").val();	
+			    else  //template
+			        diskOfferingId = $thisPopup.find("#data_disk_offering_container input[name=disk_offering_radio]:checked").val();				       
+		        			   
+		        if(diskOfferingId != null && diskOfferingId != "" && diskOfferingId != "none" && diskOfferingId != "custom")
+			        moreCriteria.push("&diskOfferingId="+diskOfferingId);						 
     						
 			    vmWizardClose();
     			
