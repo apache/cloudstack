@@ -143,7 +143,7 @@ public class ListVolumesCmd extends BaseCmd{
 
         List<VolumeVO> volumes = getManagementServer().searchForVolumes(c);
 
-        if (volumes == null) {
+        if (volumes == null || volumes.size()==0) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "unable to find volumes");
         }
 

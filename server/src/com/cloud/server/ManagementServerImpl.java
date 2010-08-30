@@ -5633,14 +5633,26 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         // Don't return DomR and ConsoleProxy volumes
+        /*
         sc.setParameters("domRNameLabel", "r-%");
         sc.setParameters("domPNameLabel", "v-%");
         sc.setParameters("domSNameLabel", "s-%");
-
+		*/
+        
         // Only return volumes that are not destroyed
         sc.setParameters("destroyed", false);
 
-        return _volumeDao.search(sc, searchFilter);
+        List<VolumeVO> allVolumes = _volumeDao.search(sc, searchFilter);
+        List<VolumeVO> returnableVolumes = new ArrayList<VolumeVO>(); //these are ones without domr and console proxy
+        
+        for(VolumeVO v:allVolumes)
+        {
+        	VMTemplateVO template = _templateDao.findById(v.getTemplateId());
+        	if(!template.getUniqueName().equalsIgnoreCase("routing"))
+        		returnableVolumes.add(v);       	
+        }
+        
+        return returnableVolumes;
     }
 
     @Override
