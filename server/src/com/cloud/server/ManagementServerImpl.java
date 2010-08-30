@@ -79,6 +79,7 @@ import com.cloud.api.commands.ListDiskOfferingsCmd;
 import com.cloud.api.commands.ListDomainChildrenCmd;
 import com.cloud.api.commands.ListDomainsCmd;
 import com.cloud.api.commands.ListEventsCmd;
+import com.cloud.api.commands.ListGuestOsCategoriesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
@@ -5906,11 +5907,11 @@ public class ManagementServerImpl implements ManagementServer {
 
         return _guestOSDao.search(sc, searchFilter);
     }
-    
-    public List<GuestOSCategoryVO> listGuestOSCategoriesByCriteria(Criteria c) 
-    {
-        Filter searchFilter = new Filter(GuestOSCategoryVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
-        Long id = (Long) c.getCriteria(Criteria.ID);
+
+    @Override
+    public List<GuestOSCategoryVO> listGuestOSCategoriesByCriteria(ListGuestOsCategoriesCmd cmd) {
+        Filter searchFilter = new Filter(GuestOSCategoryVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Long id = cmd.getId();
 
         SearchBuilder<GuestOSCategoryVO> sb = _guestOSCategoryDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);

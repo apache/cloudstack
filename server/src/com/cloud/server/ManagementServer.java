@@ -40,6 +40,7 @@ import com.cloud.api.commands.ListDiskOfferingsCmd;
 import com.cloud.api.commands.ListDomainChildrenCmd;
 import com.cloud.api.commands.ListDomainsCmd;
 import com.cloud.api.commands.ListEventsCmd;
+import com.cloud.api.commands.ListGuestOsCategoriesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
@@ -1279,7 +1280,7 @@ public interface ManagementServer {
      * Obtains a list of all guest OS categories.
      * @return list of GuestOSCategories
      */
-    List<GuestOSCategoryVO> listGuestOSCategoriesByCriteria(Criteria c);
+    List<GuestOSCategoryVO> listGuestOSCategoriesByCriteria(ListGuestOsCategoriesCmd cmd);
         
     /**
      * Logs out a user
