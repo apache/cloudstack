@@ -3101,6 +3101,53 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return true;
     }
 
+    protected String callHostPluginBase(String plugin, String cmd, String... params) {
+        Map<String, String> args = new HashMap<String, String>();
+        Session slaveSession = null;
+        Connection slaveConn = null;
+        try {
+            URL slaveUrl = null;
+            try {
+                slaveUrl = new URL("http://" + _host.ip);
+            } catch (MalformedURLException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            slaveConn = new Connection(slaveUrl, 1800);
+            slaveSession = Session.slaveLocalLoginWithPassword(slaveConn, _username, _password);
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Slave logon successful. session= " + slaveSession);
+            }
+            Host host = Host.getByUuid(slaveConn, _host.uuid);
+            for (int i = 0; i < params.length; i += 2) {
+                args.put(params[i], params[i + 1]);
+            }
+
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("callHostPlugin executing for command " + cmd + " with " + getArgsString(args));
+            }
+
+            String result = host.callPlugin(slaveConn, plugin, cmd, args);
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("callHostPlugin Result: " + result);
+            }
+            return result.replace("\n", "");
+        } catch (XenAPIException e) {
+            s_logger.warn("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to " + e.toString());
+        } catch (XmlRpcException e) {
+            s_logger.debug("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to " + e.getMessage());
+        } finally {
+            if( slaveSession != null) {
+                try {
+                    Session.localLogout(slaveConn);
+                } catch (Exception e) {
+                }
+            }
+        }
+        return null;
+    }
+
     protected String callHostPlugin(String cmd, String... params) {
         Map<String, String> args = new HashMap<String, String>();
         Session slaveSession = null;
@@ -3142,7 +3189,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         } finally {
             if( slaveSession != null) {
                 try {
-                    slaveSession.localLogout(slaveConn);
+                    Session.localLogout(slaveConn);
                 } catch (Exception e) {
                 }
             }
