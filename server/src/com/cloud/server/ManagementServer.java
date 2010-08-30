@@ -416,7 +416,7 @@ public interface ManagementServer {
      * @param ipAddress
      * @return success
      */
-    boolean disassociateIpAddress(DisassociateIPAddrCmd cmd) throws PermissionDeniedException;
+//    boolean disassociateIpAddress(DisassociateIPAddrCmd cmd) throws PermissionDeniedException;
     long disassociateIpAddressAsync(long userId, long accountId, String ipAddress);
    
 	/**

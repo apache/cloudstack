@@ -25,7 +25,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.BaseCmd.Manager;
 
-@Implementation(method="disassociateIpAddress", manager=Manager.ManagementServer)
+@Implementation(method="disassociateIpAddress", manager=Manager.NetworkManager)
 public class DisassociateIPAddrCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DisassociateIPAddrCmd.class.getName());
 

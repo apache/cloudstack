@@ -24,6 +24,7 @@ import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
 import com.cloud.api.commands.CreateIPForwardingRuleCmd;
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.api.commands.DeletePortForwardingServiceRuleCmd;
+import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.RemoveFromLoadBalancerRuleCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -241,4 +242,6 @@ public interface NetworkManager extends Manager {
     
     public boolean deleteNetworkRuleConfig(DeletePortForwardingServiceRuleCmd cmd) throws PermissionDeniedException;
 	
+    boolean disassociateIpAddress(DisassociateIPAddrCmd cmd) throws PermissionDeniedException;
+
 }

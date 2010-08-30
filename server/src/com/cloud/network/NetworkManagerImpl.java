@@ -62,6 +62,7 @@ import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
 import com.cloud.api.commands.CreateIPForwardingRuleCmd;
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.api.commands.DeletePortForwardingServiceRuleCmd;
+import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.RemoveFromLoadBalancerRuleCmd;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
@@ -78,6 +79,7 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -202,7 +204,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     @Inject UserVmDao _userVmDao;
     @Inject FirewallRulesDao _firewallRulesDao;
     @Inject NetworkRuleConfigDao _networkRuleConfigDao;
-
+    @Inject AccountVlanMapDao _accountVlanMapDao;
     long _routerTemplateId = -1;
     int _routerRamSize;
     // String _privateNetmask;
@@ -2977,6 +2979,106 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         }
 
         return true;
+    }
+
+    private Account findAccountByIpAddress(String ipAddress) {
+        IPAddressVO address = _ipAddressDao.findById(ipAddress);
+        if ((address != null) && (address.getAccountId() != null)) {
+            return _accountDao.findById(address.getAccountId());
+        }
+        return null;
+    }
+    
+    @Override
+    @DB
+    public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd) throws PermissionDeniedException, IllegalArgumentException {
+        Transaction txn = Transaction.currentTxn();
+        
+        Long userId = UserContext.current().getUserId();
+        Account account = (Account)UserContext.current().getAccountObject();
+        String ipAddress = cmd.getIpAddress();
+
+        // Verify input parameters
+        Account accountByIp = findAccountByIpAddress(ipAddress);
+        if(accountByIp == null) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find account owner for ip " + ipAddress);
+        }
+
+        Long accountId = accountByIp.getId();
+        if (account != null) {
+            if (!isAdmin(account.getType())) {
+                if (account.getId().longValue() != accountId.longValue()) {
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "account " + account.getAccountName() + " doesn't own ip address " + ipAddress);
+                }
+            } else if (!_domainDao.isChildDomain(account.getDomainId(), accountByIp.getDomainId())) {
+                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to disassociate IP address " + ipAddress + ", permission denied.");
+            }
+        }
+
+        // If command is executed via 8096 port, set userId to the id of System account (1)
+        if (userId == null) {
+            userId = Long.valueOf(1);
+        }
+
+        try {
+            IPAddressVO ipVO = _ipAddressDao.findById(ipAddress);
+            if (ipVO == null) {
+                return false;
+            }
+
+            if (ipVO.getAllocated() == null) {
+                return true;
+            }
+
+            AccountVO accountVO = _accountDao.findById(accountId);
+            if (accountVO == null) {
+                return false;
+            }
+          
+            if ((ipVO.getAccountId() == null) || (ipVO.getAccountId().longValue() != accountId)) {
+                // FIXME: is the user visible in the admin account's domain????
+                if (!BaseCmd.isAdmin(accountVO.getType())) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("permission denied disassociating IP address " + ipAddress + "; acct: " + accountId + "; ip (acct / dc / dom / alloc): "
+                                + ipVO.getAccountId() + " / " + ipVO.getDataCenterId() + " / " + ipVO.getDomainId() + " / " + ipVO.getAllocated());
+                    }
+                    throw new PermissionDeniedException("User/account does not own supplied address");
+                }
+            }
+
+            if (ipVO.getAllocated() == null) {
+                return true;
+            }
+
+            if (ipVO.isSourceNat()) {
+                throw new IllegalArgumentException("ip address is used for source nat purposes and can not be disassociated.");
+            }
+            
+            VlanVO vlan = _vlanDao.findById(ipVO.getVlanDbId());
+            if (!vlan.getVlanType().equals(VlanType.VirtualNetwork)) {
+            	throw new IllegalArgumentException("only ip addresses that belong to a virtual network may be disassociated.");
+            }
+			
+			//Check for account wide pool. It will have an entry for account_vlan_map. 
+            if (_accountVlanMapDao.findAccountVlanMap(accountId,ipVO.getVlanDbId()) != null){
+            	throw new PermissionDeniedException(ipAddress + " belongs to Account wide IP pool and cannot be disassociated");
+            }
+			
+            txn.start();
+            boolean success = releasePublicIpAddress(userId, ipAddress);
+            if (success)
+            	_accountMgr.decrementResourceCount(accountId, ResourceType.public_ip);
+            txn.commit();
+            return success;
+
+        } catch (PermissionDeniedException pde) {
+            throw pde;
+        } catch (IllegalArgumentException iae) {
+            throw iae;
+        } catch (Throwable t) {
+            s_logger.error("Disassociate IP address threw an exception.");
+            throw new IllegalArgumentException("Disassociate IP address threw an exception");
+        }
     }
 
 }
