@@ -37,6 +37,7 @@ import com.cloud.api.commands.ListCapacityCmd;
 import com.cloud.api.commands.ListCfgsByCmd;
 import com.cloud.api.commands.ListClustersCmd;
 import com.cloud.api.commands.ListDiskOfferingsCmd;
+import com.cloud.api.commands.ListDomainChildrenCmd;
 import com.cloud.api.commands.ListDomainsCmd;
 import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.api.commands.LockAccountCmd;
@@ -1362,7 +1363,7 @@ public interface ManagementServer {
 	 */
 	List<DomainVO> searchForDomains(ListDomainsCmd c) throws PermissionDeniedException;
 	
-	List<DomainVO> searchForDomainChildren(Criteria c);
+	List<DomainVO> searchForDomainChildren(ListDomainChildrenCmd cmd) throws PermissionDeniedException;
 
 	/**
 	 * create a new domain

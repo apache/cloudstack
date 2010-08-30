@@ -76,6 +76,7 @@ import com.cloud.api.commands.ListCapacityCmd;
 import com.cloud.api.commands.ListCfgsByCmd;
 import com.cloud.api.commands.ListClustersCmd;
 import com.cloud.api.commands.ListDiskOfferingsCmd;
+import com.cloud.api.commands.ListDomainChildrenCmd;
 import com.cloud.api.commands.ListDomainsCmd;
 import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.api.commands.LockAccountCmd;
@@ -6094,11 +6095,23 @@ public class ManagementServerImpl implements ManagementServer {
         return _domainDao.search(sc, searchFilter);
     }
 
-    public List<DomainVO> searchForDomainChildren(Criteria c) {
-        Filter searchFilter = new Filter(DomainVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
-        Long domainId = (Long) c.getCriteria(Criteria.ID);
-        String domainName = (String) c.getCriteria(Criteria.NAME);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
+    @Override
+    public List<DomainVO> searchForDomainChildren(ListDomainChildrenCmd cmd) throws PermissionDeniedException {
+        Filter searchFilter = new Filter(DomainVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Long domainId = cmd.getId();
+        String domainName = cmd.getDomainName();
+        Object keyword = cmd.getKeyword();
+
+        Account account = (Account)UserContext.current().getAccountObject();
+        if (account != null) {
+            if (domainId != null) {
+                if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Unable to list domains children for domain id " + domainId + ", permission denied.");
+                }
+            } else {
+                domainId = account.getDomainId();
+            }
+        }
 
         SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
 
