@@ -997,6 +997,18 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 	    	}
 	    	
 		}
+		
+		//if we have an ip range for vlan id=x, vlantype=y; we should
+		 //only allow adding another range with id=x for same type y
+		if(!vlanId.equals(Vlan.UNTAGGED))
+		{
+			VlanVO vlanHandle = _vlanDao.findByZoneAndVlanId(zoneId, vlanId);
+			
+			if(vlanHandle!=null && !vlanHandle.getVlanType().equals(vlanType))
+				throw new InvalidParameterValueException("This vlan id is already associated with the vlan type "+vlanHandle.getVlanType().toString()
+						+",whilst you are trying to associate it with vlan type "+vlanType.toString());
+		}
+		
     	
     	DataCenterVO zone;
     	if (zoneId == null || ((zone = _zoneDao.findById(zoneId)) == null)) {
