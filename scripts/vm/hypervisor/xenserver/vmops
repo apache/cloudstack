@@ -52,17 +52,7 @@ def gethostvmstats(session, args):
     result = hostvmstats.get_stats(session, collect_host_stats, consolidation_function, interval, start_time)
     return result
     
-@echo
-def find_bond(session, args):
-    nic = args['arg1']
-    try:
-        cmd = ["bash", "/opt/xensource/bin/find_bond.sh", nic]
-        txt = util.pread2(cmd)
-    except:
-        txt = ''
-    
-    return txt
-    
+   
 @echo
 def setup_iscsi(session, args):
    uuid=args['uuid']
@@ -428,40 +418,6 @@ def networkUsage(session, args):
 
     return txt
     
-@echo
-def setup_heartbeat_sr(session, args):
-    host = args['host']
-    sr = args['sr']
-    try:
-        cmd = ["bash", "/opt/xensource/bin/setup_heartbeat_sr.sh", host, sr]
-        txt = util.pread2(cmd)
-    except:
-        txt = ''
-    return txt
-   
-@echo
-def check_heartbeat(session, args):
-    host = args['host']
-    interval = args['interval']
-    try:
-       cmd = ["bash", "/opt/xensource/bin/check_heartbeat.sh", host, interval]
-       txt = util.pread2(cmd)
-    except:
-       txt=''
-    return txt
-    
-   
-@echo
-def heartbeat(session, args):
-    host = args['host']
-    interval = args['interval']
-    try: 
-       cmd = ["/bin/bash", "/opt/xensource/bin/launch_hb.sh", host, interval]
-       txt = util.pread2(cmd)
-    except:
-       txt='fail'
-    return txt
-
 def get_private_nic( args):
     session = get_xapi_session()
     vms = session.xenapi.VM.get_all()
@@ -1132,5 +1088,5 @@ def network_rules(session, args):
 
 
 if __name__ == "__main__":
-    XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_heartbeat_sr":setup_heartbeat_sr, "check_heartbeat":check_heartbeat, "heartbeat": heartbeat, "setup_iscsi":setup_iscsi, "find_bond": find_bond, "gethostvmstats": gethostvmstats, "getvncport": getvncport, "getgateway": getgateway, "getnetwork": getnetwork, "preparemigration": preparemigration, "setIptables": setIptables, "patchdomr": patchdomr, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  "ipassoc": ipassoc, "vm_data": vm_data, "savePassword": savePassword, "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, "checkMount": checkMount, "checkIscsi": checkIscsi, "networkUsage": networkUsage, "network_rules":network_rules, "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules, "destroy_network_rules_for_vm":destroy_network_rules_for_vm, "default_network_rules_systemvm":default_network_rules_systemvm, "get_rule_logs_for_vms":get_rule_logs_for_vms, "setLinkLocalIP":setLinkLocalIP})
+    XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, "getvncport": getvncport, "getgateway": getgateway, "getnetwork": getnetwork, "preparemigration": preparemigration, "setIptables": setIptables, "patchdomr": patchdomr, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  "ipassoc": ipassoc, "vm_data": vm_data, "savePassword": savePassword, "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, "checkMount": checkMount, "checkIscsi": checkIscsi, "networkUsage": networkUsage, "network_rules":network_rules, "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules, "destroy_network_rules_for_vm":destroy_network_rules_for_vm, "default_network_rules_systemvm":default_network_rules_systemvm, "get_rule_logs_for_vms":get_rule_logs_for_vms, "setLinkLocalIP":setLinkLocalIP})
 
