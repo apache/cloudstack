@@ -4080,8 +4080,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 s_logger.warn(msg);
                 return new Answer(cmd, false, msg);
             }
-            sr.setNameLabel(conn, pool.getUuid());
-            sr.setNameDescription(conn, pool.getName());
             long capacity = sr.getPhysicalSize(conn);
             long available = capacity - sr.getPhysicalUtilisation(conn);
             if (capacity == -1) {

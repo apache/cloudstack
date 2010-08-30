@@ -12,14 +12,14 @@ def get_stats(session, collect_host_stats, consolidation_function, interval, sta
     
     if collect_host_stats == "true" :
     	url = "http://localhost/rrd_updates?"
-   	url += "session_id=" + session
+   	url += "session_id=" + session._session
    	url += "&host=" + collect_host_stats
     	url += "&cf=" + consolidation_function
     	url += "&interval=" + str(interval)
     	url += "&start=" + str(int(time.time())-100)
     else :
     	url = "http://localhost/rrd_updates?"
-   	url += "session_id=" + session
+   	url += "session_id=" + session._session
    	url += "&host=" + collect_host_stats
     	url += "&cf=" + consolidation_function
     	url += "&interval=" + str(interval)
