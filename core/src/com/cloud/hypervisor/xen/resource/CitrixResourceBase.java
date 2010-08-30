@@ -3346,7 +3346,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return vlanNetwork;
     }
 
-    protected void disableVlanNetwork(Network network) throws InternalErrorException {
+    protected void disableVlanNetwork(Network network){
         try {
             Connection conn = getConnection();
             if (network.getVIFs(conn).isEmpty()) {
