@@ -33,6 +33,8 @@ import com.cloud.domain.DomainVO;
 import com.cloud.host.HostVO;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
@@ -178,6 +180,7 @@ public class ListVMsCmd extends BaseCmd {
             vmData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), vmInstance.getName()));
             vmData.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(vmInstance.getCreated())));
             vmData.add(new Pair<String, Object>(BaseCmd.Properties.IP_ADDRESS.getName(), vmInstance.getPrivateIpAddress()));
+            
             if (vmInstance.getState() != null) {
                 vmData.add(new Pair<String, Object>(BaseCmd.Properties.STATE.getName(), vmInstance.getState().toString()));
             }
@@ -258,7 +261,9 @@ public class ListVMsCmd extends BaseCmd {
                 vmData.add(new Pair<String, Object>(BaseCmd.Properties.NETWORK_KB_WRITE.getName(), networkKbWrite));
             }
             
-            vmData.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_ID.getName(),vmInstance.getGuestOSId()));
+            GuestOSCategoryVO guestOsCategory = getManagementServer().getGuestOsCategory(vmInstance.getGuestOSId());
+            if(guestOsCategory!=null)
+            	vmData.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_ID.getName(),guestOsCategory.getId()));
 
             //network groups
             vmData.add(new Pair<String, Object>(BaseCmd.Properties.NETWORK_GROUP_LIST.getName(), getManagementServer().getNetworkGroupsNamesForVm(vmInstance.getId())));

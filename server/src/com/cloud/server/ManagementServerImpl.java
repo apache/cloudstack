@@ -8632,6 +8632,10 @@ public class ManagementServerImpl implements ManagementServer {
         return capabilities;
     }
 
-
+    @Override
+    public GuestOSCategoryVO getGuestOsCategory(Long guestOsId)
+    {
+    	return _guestOSCategoryDao.findById(guestOsId);
+    }
 }
 
