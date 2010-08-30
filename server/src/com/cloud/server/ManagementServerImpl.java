@@ -5648,8 +5648,14 @@ public class ManagementServerImpl implements ManagementServer {
         for(VolumeVO v:allVolumes)
         {
         	VMTemplateVO template = _templateDao.findById(v.getTemplateId());
-        	if(!template.getUniqueName().equalsIgnoreCase("routing"))
-        		returnableVolumes.add(v);       	
+        	if(template!=null && template.getUniqueName().equalsIgnoreCase("routing"))
+        	{
+        		//do nothing
+        	}
+        	else
+        	{
+        		returnableVolumes.add(v);
+        	}
         }
         
         return returnableVolumes;
