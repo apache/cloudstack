@@ -431,13 +431,14 @@ else:
 
 # =================== Subst / installation of agent scripts project ========
 
-src_files = Utils.to_list(filelist("scripts/**",flat=True))
+src_files = Utils.to_list(filelist("scripts/** cloudstack-proprietary/scripts/**",flat=True))
 subst_files = [ x+".subst" for x in src_files ]
 inst_files = src_files
 for src,tgt,inst in zip(src_files,subst_files,inst_files):
 	tgen = bld(features='subst', name='scriptssubst', source=src, target=tgt)
 	tgen.dict = bld.env.get_merged_dict()
 	bld.path.find_or_declare(tgt)
+	if inst.startswith("cloudstack-proprietary"): inst = inst[len("cloudstack-proprietary")+1:]
 	bld.install_as("${AGENTLIBDIR}/%s"%inst, tgt, chmod=0755)
 
 # ================== End agent scripts ===================
