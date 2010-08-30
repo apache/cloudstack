@@ -285,6 +285,11 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
     }
 
+    protected VDI cloudVDIcopy(VDI vdi, SR sr) throws BadServerResponse, XenAPIException, XmlRpcException{
+        Connection conn = getConnection();
+        return vdi.copy(conn, sr);
+    }
+    
     protected void destroyStoppedVm() {
         Map<VM, VM.Record> vmentries = null;
         Connection conn = getConnection();
@@ -1725,7 +1730,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     s_logger.warn(msg);
                     return new DownloadAnswer(null, 0, msg, com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR, "", "", 0);
                 }
-                vmtmpltvdi = tmpltvdi.copy(conn, poolsr);
+                vmtmpltvdi = cloudVDIcopy(tmpltvdi, poolsr);
 
                 vmtmpltvdi.setNameLabel(conn, "Template " + cmd.getName());
                 // vmtmpltvdi.setNameDescription(conn, cmd.getDescription());
@@ -4875,7 +4880,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 srcVolume = getVDIbyUuid(volumeUUID);
 
                 // Copy the volume to secondary storage
-                destVolume = srcVolume.copy(conn, secondaryStorage);
+                destVolume = cloudVDIcopy(srcVolume, secondaryStorage);
             } else {
                 // Mount the volume folder
                 secondaryStorage = createNfsSRbyURI(new URI(secondaryStorageURL + "/volumes/" + volumeFolder), false);
@@ -4895,7 +4900,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
                 // Copy the volume to the primary storage pool
                 primaryStoragePool = getStorageRepository(conn, pool);
-                destVolume = srcVolume.copy(conn, primaryStoragePool);
+                destVolume = cloudVDIcopy(srcVolume, primaryStoragePool);
             }
 
             String srUUID;
@@ -5280,7 +5285,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
             // Look up the snapshot and copy it to secondary storage
             VDI snapshot = getVDIbyUuid(snapshotUUID);
-            privateTemplate = snapshot.copy(conn, secondaryStorage);
+            privateTemplate = cloudVDIcopy(snapshot, secondaryStorage);
 
             if (userSpecifiedName != null) {
                 privateTemplate.setNameLabel(conn, userSpecifiedName);
@@ -5534,7 +5539,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     if (vdi != null) {
                         s_logger.debug("Successfully created VDI on secondary storage SR " + temporarySROnSecondaryStorage.getNameLabel(conn) + " with uuid " + vhdUUID);
                         s_logger.debug("Copying VDI: " + vdi.getLocation(conn) + " from secondary to primary");
-                        VDI vdiOnPrimaryStorage = vdi.copy(conn, primaryStorageSR);
+                        VDI vdiOnPrimaryStorage = cloudVDIcopy(vdi, primaryStorageSR);
                         // vdi.copy introduces the vdi into the database. Don't
                         // need to do a scan on the primary
                         // storage.
