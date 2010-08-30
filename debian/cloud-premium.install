@@ -5,3 +5,11 @@
 /usr/share/cloud/setup/create-database-premium.sql
 /usr/share/cloud/setup/create-schema-premium.sql
 /usr/lib/cloud/agent/vms/systemvm-premium.iso
+/usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/check_heartbeat.sh
+/usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/find_bond.sh
+/usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/launch_hb.sh
+/usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/setup_heartbeat_sr.sh
+/usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/vmopspremium
+/usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/xenheartbeat.sh
+/usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/xenserver56/patch-premium
+/usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/xs_cleanup.sh
