@@ -4312,51 +4312,56 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 }
 
                 SCPClient scp = new SCPClient(sshConnection);
-                File file = new File(_patchPath);
-
-                Properties props = new Properties();
-                props.load(new FileInputStream(file));
 
                 String path = _patchPath.substring(0, _patchPath.lastIndexOf(File.separator) + 1);
-                for (Map.Entry<Object, Object> entry : props.entrySet()) {
-                    String k = (String) entry.getKey();
-                    String v = (String) entry.getValue();
-
-                    assert (k != null && k.length() > 0 && v != null && v.length() > 0) : "Problems with " + k + "=" + v;
-
-                    String[] tokens = v.split(",");
-                    String f = null;
-                    if (tokens.length == 3 && tokens[0].length() > 0) {
-                        if (tokens[0].startsWith("/")) {
-                            f = tokens[0];
-                        } else if (tokens[0].startsWith("~")) {
-                            String homedir = System.getenv("HOME");
-                            f = homedir + tokens[0].substring(1) + k;
-                        } else {
-                            f = path + tokens[0] + '/' + k;
-                        }
-                    } else {
-                        f = path + k;
-                    }
-                    String d = tokens[tokens.length - 1];
-                    f = f.replace('/', File.separatorChar);
-
-                    String p = "0755";
-                    if (tokens.length == 3) {
-                        p = tokens[1];
-                    } else if (tokens.length == 2) {
-                        p = tokens[0];
-                    }
-
-                    if (!new File(f).exists()) {
-                        s_logger.warn("We cannot locate " + f);
-                        continue;
-                    }
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Copying " + f + " to " + d + " on " + hr.address + " with permission " + p);
-                    }
-                    scp.put(f, d, p);
-
+                List<File> files = getPatchFiles();
+                if( files == null || files.isEmpty() ) {
+                    throw new CloudRuntimeException("Can not find patch file");
+                }
+                for( File file :files) {
+	                Properties props = new Properties();
+	                props.load(new FileInputStream(file));
+	
+	                for (Map.Entry<Object, Object> entry : props.entrySet()) {
+	                    String k = (String) entry.getKey();
+	                    String v = (String) entry.getValue();
+	
+	                    assert (k != null && k.length() > 0 && v != null && v.length() > 0) : "Problems with " + k + "=" + v;
+	
+	                    String[] tokens = v.split(",");
+	                    String f = null;
+	                    if (tokens.length == 3 && tokens[0].length() > 0) {
+	                        if (tokens[0].startsWith("/")) {
+	                            f = tokens[0];
+	                        } else if (tokens[0].startsWith("~")) {
+	                            String homedir = System.getenv("HOME");
+	                            f = homedir + tokens[0].substring(1) + k;
+	                        } else {
+	                            f = path + tokens[0] + '/' + k;
+	                        }
+	                    } else {
+	                        f = path + k;
+	                    }
+	                    String d = tokens[tokens.length - 1];
+	                    f = f.replace('/', File.separatorChar);
+	
+	                    String p = "0755";
+	                    if (tokens.length == 3) {
+	                        p = tokens[1];
+	                    } else if (tokens.length == 2) {
+	                        p = tokens[0];
+	                    }
+	
+	                    if (!new File(f).exists()) {
+	                        s_logger.warn("We cannot locate " + f);
+	                        continue;
+	                    }
+	                    if (s_logger.isDebugEnabled()) {
+	                        s_logger.debug("Copying " + f + " to " + d + " on " + hr.address + " with permission " + p);
+	                    }
+	                    scp.put(f, d, p);
+	
+	                }
                 }
 
             } catch (IOException e) {
@@ -4380,6 +4385,13 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             s_logger.warn(msg, e);
             throw new CloudRuntimeException("Unable to get host information ", e);
         }
+    }
+
+    protected List<File> getPatchFiles() {
+        List<File> files = new ArrayList<File>();
+        File file = new File(_patchPath);
+        files.add(file);
+        return files;
     }
 
     protected SR getSRByNameLabelandHost(String name) throws BadServerResponse, XenAPIException, XmlRpcException {
