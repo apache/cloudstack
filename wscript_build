@@ -384,52 +384,49 @@ if buildpremium:
 
 # ================== systemvm ISO creation ====================
 
-if bld.env.DISTRO not in ["Windows","Mac"]: # mkisofs only on windows
+def iso_up(task):
+	tgt = task.outputs[0].bldpath(task.env)
+	if _exists(tgt): _unlink(tgt)
+	inps = []
+	for inp in task.inputs:
+		if inp.id&3==Node.BUILD:
+			src = inp.bldpath(task.env)
+			srcname = src
+			srcname = "/".join(srcname.split("/")[1:]) # chop off default/
+		else:
+			src = inp.srcpath(task.env)
+			srcname = src
+			srcname = "/".join(srcname.split("/")[1:]) # chop off ../
+		# post-process the paths
+		inps.append(src)
+	return Utils.exec_command(
+		[
+			task.generator.env.MKISOFS,
+			"-quiet",
+			"-r",
+			"-o",tgt,
+		] + inps)
 
-	def iso_up(task):
-		tgt = task.outputs[0].bldpath(task.env)
-		if _exists(tgt): _unlink(tgt)
-		inps = []
-		for inp in task.inputs:
-			if inp.id&3==Node.BUILD:
-				src = inp.bldpath(task.env)
-				srcname = src
-				srcname = "/".join(srcname.split("/")[1:]) # chop off default/
-			else:
-				src = inp.srcpath(task.env)
-				srcname = src
-				srcname = "/".join(srcname.split("/")[1:]) # chop off ../
-			# post-process the paths
-			inps.append(src)
-		return Utils.exec_command(
-			[
-				#"echo",
-				"mkisofs",
-				"-quiet",
-				"-r",
-				"-o",tgt,
-			] + inps)
+tgen = bld(
+	rule   = iso_up,
+	source = "patch.tgz target/oss/systemvm.zip",
+	target = 'target/oss/systemvm.iso',
+	name   = 'systemvm_iso',
+	after  = 'systemvm_zip patch_tgz',
+)
+bld.process_after(tgen)
+bld.install_as("${AGENTLIBDIR}/vms/systemvm.iso", "target/oss/systemvm.iso")
 
+if buildpremium:
 	tgen = bld(
 		rule   = iso_up,
-		source = "patch.tgz target/oss/systemvm.zip",
-		target = 'target/oss/systemvm.iso',
-		name   = 'systemvm_iso',
-		after  = 'systemvm_zip patch_tgz',
+		source = "patch.tgz target/premium/systemvm.zip",
+		target = 'target/premium/systemvm.iso',
+		name   = 'systemvm-premium_iso',
+		after  = 'systemvm-premium_zip patch_tgz',
 	)
 	bld.process_after(tgen)
-	bld.install_as("${AGENTLIBDIR}/vms/systemvm.iso", "target/oss/systemvm.iso")
-	
-	if buildpremium:
-		tgen = bld(
-			rule   = iso_up,
-			source = "patch.tgz target/premium/systemvm.zip",
-			target = 'target/premium/systemvm.iso',
-			name   = 'systemvm-premium_iso',
-			after  = 'systemvm-premium_zip patch_tgz',
-		)
-		bld.process_after(tgen)
-		bld.install_as("${AGENTLIBDIR}/vms/systemvm-premium.iso", "target/premium/systemvm.iso")
+	bld.install_as("${AGENTLIBDIR}/vms/systemvm-premium.iso", "target/premium/systemvm.iso")
 
 # ================== End systemvm ISO creation ====================
 
