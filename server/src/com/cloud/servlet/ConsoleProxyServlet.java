@@ -78,7 +78,7 @@ public class ConsoleProxyServlet extends HttpServlet {
             HttpSession session = req.getSession(false);
             if(session == null) {
             	if(verifyRequest(params)) {
-            		userId = (String)params.get(BaseCmd.Properties.USER_ID.getName())[0];
+            		userId = (String)params.get("userId")[0];
     	            account = (String)params.get(BaseCmd.Properties.ACCOUNT.getName())[0];
             		accountObj = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName())[0];
             	} else {
@@ -87,11 +87,11 @@ public class ConsoleProxyServlet extends HttpServlet {
 					return;
             	}
             } else {
-	            userId = (String)session.getAttribute(BaseCmd.Properties.USER_ID.getName());
+	            userId = (String)session.getAttribute("userId");
 	            account = (String)session.getAttribute(BaseCmd.Properties.ACCOUNT.getName());
 	            accountObj = (Account)session.getAttribute(BaseCmd.Properties.ACCOUNT_OBJ.getName());
             }
-
+            
             // Do a sanity check here to make sure the user hasn't already been deleted
             if ((userId == null) || (account == null) || (accountObj == null) || !verifyUser(Long.valueOf(userId))) {
 				s_logger.info("Invalid user/account, reject console/thumbnail access");
