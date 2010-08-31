@@ -1,0 +1,13 @@
+#!/bin/sh -e
+### BEGIN INIT INFO
+# Provides:          cloud-passwd-srvr
+# Required-Start:    mountkernfs $local_fs cloud-early-config
+# Required-Stop:     $local_fs
+# Should-Start:      
+# Should-Stop:       
+# Default-Start:     S
+# Default-Stop:      0 6
+# Short-Description: Web server that sends passwords to User VMs
+### END INIT INFO
+
+bash /opt/cloud/bin/passwd_server&
