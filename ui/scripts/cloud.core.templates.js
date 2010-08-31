@@ -61,7 +61,7 @@ function showTemplatesTab() {
 		addIsoZoneField.append("<option value='-1'>All Zones</option>"); 
 	}
     $.ajax({
-	    data: "command=listZones&available=true&response=json",
+	    data: "command=listZones&available=true&response=json"+maxPageSize,
 	    dataType: "json",
 	    success: function(json) {		        
 		    var zones = json.listzonesresponse.zone;	 			     			    	
@@ -87,7 +87,7 @@ function showTemplatesTab() {
 	}
 	
 	$.ajax({
-		data: "command=listOsTypes&response=json",
+		data: "command=listOsTypes&response=json"+maxPageSize,
 		dataType: "json",
 		success: function(json) {
 			types = json.listostypesresponse.ostype;
@@ -104,7 +104,7 @@ function showTemplatesTab() {
 	});
 	
 	$.ajax({
-	    data: "command=listServiceOfferings&response=json",
+	    data: "command=listServiceOfferings&response=json"+maxPageSize,
 	    dataType: "json",
 	    success: function(json) {
 	        var items = json.listserviceofferingsresponse.serviceoffering;
@@ -117,7 +117,7 @@ function showTemplatesTab() {
 	});		
 	
 	$.ajax({
-	    data: "command=listDiskOfferings&response=json",
+	    data: "command=listDiskOfferings&response=json"+maxPageSize,
 	    dataType: "json",
 	    success: function(json) {
 	        var items = json.listdiskofferingsresponse.diskoffering;
