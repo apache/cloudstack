@@ -42,6 +42,7 @@ import com.cloud.api.commands.ListDomainsCmd;
 import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.api.commands.ListGuestOsCategoriesCmd;
 import com.cloud.api.commands.ListGuestOsCmd;
+import com.cloud.api.commands.ListHostsCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
@@ -58,8 +59,8 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.configuration.ConfigurationVO;
-import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
@@ -68,7 +69,6 @@ import com.cloud.dc.VlanVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventVO;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -896,10 +896,10 @@ public interface ManagementServer {
     /**
      * Searches for servers by the specified search criteria
      * Can search by: "name", "type", "state", "dataCenterId", "podId"
-     * @param c
+     * @param cmd
      * @return List of Hosts
      */
-    List<HostVO> searchForServers(Criteria c);
+    List<HostVO> searchForServers(ListHostsCmd cmd);
     
     /**
      * Searches for servers that are either Down or in Alert state

@@ -81,6 +81,7 @@ import com.cloud.api.commands.ListDomainsCmd;
 import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.api.commands.ListGuestOsCategoriesCmd;
 import com.cloud.api.commands.ListGuestOsCmd;
+import com.cloud.api.commands.ListHostsCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
@@ -3897,18 +3898,18 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<HostVO> searchForServers(Criteria c) {
-        Filter searchFilter = new Filter(HostVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+    public List<HostVO> searchForServers(ListHostsCmd cmd) {
+        Filter searchFilter = new Filter(HostVO.class, "id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
 
-        Object name = c.getCriteria(Criteria.NAME);
-        Object type = c.getCriteria(Criteria.TYPE);
-        Object state = c.getCriteria(Criteria.STATE);
-        Object zone = c.getCriteria(Criteria.DATACENTERID);
-        Object pod = c.getCriteria(Criteria.PODID);
-        Object cluster = c.getCriteria(Criteria.CLUSTERID);
-        Object id = c.getCriteria(Criteria.ID);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
+        Object name = cmd.getHostName();
+        Object type = cmd.getType();
+        Object state = cmd.getState();
+        Object zone = cmd.getZoneId();
+        Object pod = cmd.getPodId();
+        Object cluster = cmd.getClusterId();
+        Object id = cmd.getId();
+        Object keyword = cmd.getKeyword();
 
         if (keyword != null) {
             SearchCriteria<HostVO> ssc = _hostDao.createSearchCriteria();
