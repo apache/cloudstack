@@ -43,6 +43,8 @@ import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.api.commands.ListGuestOsCategoriesCmd;
 import com.cloud.api.commands.ListGuestOsCmd;
 import com.cloud.api.commands.ListHostsCmd;
+import com.cloud.api.commands.ListIsosCmd;
+import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
@@ -104,7 +106,6 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
@@ -1628,20 +1629,18 @@ public interface ManagementServer {
     List<VMTemplateVO> listPermittedTemplates(long accountId);
 
     /**
-     * Lists templates that match the specified criteria
-     * @param templateId - (optional) id of the template to return template host references for
-     * @param name a name (possibly partial) to search for
-     * @param keyword a keyword (using partial match) to search for, currently only searches name
-     * @param templateFilter - the category of template to return
-     * @param isIso whether this is an ISO search or non-ISO search
-     * @param bootable if null will return both bootable and non-bootable ISOs, else will return only one or the other, depending on the boolean value
-     * @param accountId parameter to use when searching for owner of template
-     * @param pageSize size of search results
-     * @param startIndex index in to search results to use
-     * @param zoneId optional zoneid to limit search
-     * @return list of templates
+     * List ISOs that match the specified criteria. 
+     * @param cmd The command that wraps the (optional) templateId, name, keyword, templateFilter, bootable, account, and zoneId parameters.
+     * @return list of ISOs
      */
-    List<VMTemplateVO> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long accountId, Integer pageSize, Long startIndex, Long zoneId) throws InvalidParameterValueException;
+    List<VMTemplateVO> listIsos(ListIsosCmd cmd) throws IllegalArgumentException, InvalidParameterValueException;
+
+    /**
+     * List templates that match the specified criteria. 
+     * @param cmd The command that wraps the (optional) templateId, name, keyword, templateFilter, bootable, account, and zoneId parameters.
+     * @return list of ISOs
+     */
+    List<VMTemplateVO> listTemplates(ListTemplatesCmd cmd) throws IllegalArgumentException, InvalidParameterValueException;
 
     /**
      * Search for disk offerings based on search criteria

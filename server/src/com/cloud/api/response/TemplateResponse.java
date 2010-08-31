@@ -4,6 +4,7 @@ import java.util.Date;
 
 import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
+import com.cloud.storage.Storage.ImageFormat;
 
 public class TemplateResponse implements ResponseObject {
     @Param(name="id")
@@ -21,11 +22,23 @@ public class TemplateResponse implements ResponseObject {
     @Param(name="created")
     private Date created;
 
+    @Param(name="removed")
+    private Date removed;
+
     @Param(name="isready", propName="ready")
     private boolean isReady;
 
     @Param(name="passwordenabled")
     private boolean passwordEnabled;
+
+    @Param(name="format")
+    private ImageFormat format;
+
+    @Param(name="bootable")
+    private boolean bootable;
+
+    @Param(name="isfeatured")
+    private boolean featured;
 
     @Param(name="crossZones")
     private boolean crossZones;
@@ -47,6 +60,18 @@ public class TemplateResponse implements ResponseObject {
 
     @Param(name="zonename")
     private String zoneName;
+
+    @Param(name="status")
+    private String status;
+
+    @Param(name="size")
+    private Long size;
+
+    @Param(name="jobid")
+    private Long jobId;
+
+    @Param(name="jobstatus")
+    private Integer jobStatus;
 
     @Param(name="domain")
     private String domainName;  
@@ -142,6 +167,14 @@ public class TemplateResponse implements ResponseObject {
         this.created = created;
     }
 
+    public Date getRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
+    }
+
     public boolean isReady() {
         return isReady;
     }
@@ -158,12 +191,68 @@ public class TemplateResponse implements ResponseObject {
         this.passwordEnabled = passwordEnabled;
     }
 
+    public ImageFormat getFormat() {
+        return format;
+    }
+
+    public void setFormat(ImageFormat format) {
+        this.format = format;
+    }
+
+    public boolean isBootable() {
+        return bootable;
+    }
+
+    public void setBootable(boolean bootable) {
+        this.bootable = bootable;
+    }
+
+    public boolean isFeatured() {
+        return featured;
+    }
+
+    public void setFeatured(boolean featured) {
+        this.featured = featured;
+    }
+
     public boolean isCrossZones() {
         return crossZones;
     }
 
     public void setCrossZones(boolean crossZones) {
         this.crossZones = crossZones;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Long getSize() {
+        return size;
+    }
+
+    public void setSize(Long size) {
+        this.size = size;
+    }
+
+    public Long getJobId() {
+        return jobId;
+    }
+
+    public void setJobId(Long jobId) {
+        this.jobId = jobId;
+    }
+
+    public Integer getJobStatus() {
+        return jobStatus;
+    }
+
+    public void setJobStatus(Integer jobStatus) {
+        this.jobStatus = jobStatus;
     }
 
     public long getDomainId() {

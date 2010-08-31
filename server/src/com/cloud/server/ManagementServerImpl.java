@@ -54,7 +54,6 @@ import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.AuthorizeNetworkGroupIngressCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
 import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
@@ -82,6 +81,8 @@ import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.api.commands.ListGuestOsCategoriesCmd;
 import com.cloud.api.commands.ListGuestOsCmd;
 import com.cloud.api.commands.ListHostsCmd;
+import com.cloud.api.commands.ListIsosCmd;
+import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
@@ -114,21 +115,20 @@ import com.cloud.async.executor.DeleteDomainParam;
 import com.cloud.async.executor.DeleteRuleParam;
 import com.cloud.async.executor.DeleteTemplateParam;
 import com.cloud.async.executor.DeployVMParam;
-import com.cloud.async.executor.DisassociateIpAddressParam;
 import com.cloud.async.executor.LoadBalancerParam;
 import com.cloud.async.executor.NetworkGroupIngressParam;
 import com.cloud.async.executor.SecurityGroupParam;
 import com.cloud.async.executor.UpdateLoadBalancerParam;
 import com.cloud.async.executor.VMOperationParam;
-import com.cloud.async.executor.VolumeOperationParam;
 import com.cloud.async.executor.VMOperationParam.VmOp;
+import com.cloud.async.executor.VolumeOperationParam;
 import com.cloud.async.executor.VolumeOperationParam.VolumeOp;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
-import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.consoleproxy.ConsoleProxyManager;
@@ -138,8 +138,8 @@ import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -203,21 +203,21 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Snapshot.SnapshotType;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.DiskTemplateDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -227,9 +227,9 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -251,12 +251,12 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -4181,7 +4181,66 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<VMTemplateVO> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long accountId, Integer pageSize, Long startIndex, Long zoneId) throws InvalidParameterValueException {
+    public List<VMTemplateVO> listIsos(ListIsosCmd cmd) throws IllegalArgumentException, InvalidParameterValueException {
+        TemplateFilter isoFilter = TemplateFilter.valueOf(cmd.getIsoFilter());
+        Long accountId = null;
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
+        if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
+            // validate domainId before proceeding
+            if ((domainId != null) && (accountName != null)) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new InvalidParameterValueException("Invalid domain id (" + domainId + ") given, unable to list events.");
+                }
+
+                Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                if (userAccount != null) {
+                    accountId = userAccount.getId();
+                } else {
+                    throw new InvalidParameterValueException("Failed to list ISOs.  Unable to find account " + accountName + " in domain " + domainId);
+                }
+            } else if (account != null) {
+                accountId = account.getId();
+            }
+        } else {
+            accountId = account.getId();
+        }
+
+        return listTemplates(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), accountId, cmd.getPageSizeVal().intValue(), cmd.getStartIndex(), cmd.getZoneId());
+    }
+
+    @Override
+    public List<VMTemplateVO> listTemplates(ListTemplatesCmd cmd) throws IllegalArgumentException, InvalidParameterValueException {
+        TemplateFilter templateFilter = TemplateFilter.valueOf(cmd.getTemplateFilter());
+        Long accountId = null;
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
+        if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
+            // validate domainId before proceeding
+            if ((domainId != null) && (accountName != null)) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new InvalidParameterValueException("Invalid domain id (" + domainId + ") given, unable to list events.");
+                }
+
+                Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                if (userAccount != null) {
+                    accountId = userAccount.getId();
+                } else {
+                    throw new InvalidParameterValueException("Failed to list ISOs.  Unable to find account " + accountName + " in domain " + domainId);
+                }
+            } else if (account != null) {
+                accountId = account.getId();
+            }
+        } else {
+            accountId = account.getId();
+        }
+
+        return listTemplates(cmd.getId(), cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, accountId, cmd.getPageSizeVal().intValue(), cmd.getStartIndex(), cmd.getZoneId());
+    }
+
+    private List<VMTemplateVO> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long accountId, Integer pageSize, Long startIndex, Long zoneId) throws InvalidParameterValueException {
         VMTemplateVO template = null;
     	if (templateId != null) {
     		template = _templateDao.findById(templateId);
