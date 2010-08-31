@@ -157,6 +157,7 @@
                 Step 5</div>
             <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
+            <div class="vmpopup_container_closebutton"></div>
         </div>
         <div class="vmpopup_container_mid">
             <div class="vmpopup_maincontentarea">
@@ -268,6 +269,7 @@
                 Step 5</div>
             <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
+            <div class="vmpopup_container_closebutton"></div>
         </div>
         <div class="vmpopup_container_mid">
             <div class="vmpopup_maincontentarea">
@@ -362,6 +364,7 @@
                 Step 5</div>
             <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
+            <div class="vmpopup_container_closebutton"></div>
         </div>
         <div class="vmpopup_container_mid">
             <div class="vmpopup_maincontentarea">
@@ -402,6 +405,7 @@
                 Step 5</div>
             <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
+            <div class="vmpopup_container_closebutton"></div>
         </div>
         <div class="vmpopup_container_mid">
             <div class="vmpopup_maincontentarea">
@@ -475,6 +479,7 @@
                 Step 5</div>
             <div class="vmpopup_steps" style="background: url(images/laststep_slectedbg.gif) no-repeat top left">
             </div>
+            <div class="vmpopup_container_closebutton"></div>
         </div>
         <div class="vmpopup_container_mid">
             <div class="vmpopup_maincontentarea">
