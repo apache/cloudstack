@@ -410,12 +410,12 @@ public class ConsoleProxyServlet extends HttpServlet {
             }
 
             if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-    			requestParameters.put(BaseCmd.Properties.USER_ID.getName(), new String[] { user.getId().toString() });
+    			requestParameters.put("userId", new String[] { user.getId().toString() });
                 requestParameters.put(BaseCmd.Properties.ACCOUNT.getName(), new String[] { account.getAccountName() });
                 requestParameters.put(BaseCmd.Properties.DOMAIN_ID.getName(), new String[] { account.getDomainId().toString() });
         		requestParameters.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { account });
     		} else {
-    			requestParameters.put(BaseCmd.Properties.USER_ID.getName(), new String[] { user.getId().toString() });
+    			requestParameters.put("userId", new String[] { user.getId().toString() });
                 requestParameters.put(BaseCmd.Properties.ACCOUNT.getName(), new String[] { account.getAccountName() });
     			requestParameters.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { account });
     		}           
