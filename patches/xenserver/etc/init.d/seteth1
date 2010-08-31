@@ -49,7 +49,11 @@ setup_common() {
   
   if [ "$BOOTPROTO" == "static" ]
   then
-  	replace_in_file /etc/sysconfig/network GATEWAY $GW
+    replace_in_file /etc/sysconfig/network GATEWAY $GW
+    if [ "$ETH2_IP" != "0.0.0.0" ]
+    then
+      replace_in_file /etc/sysconfig/network GATEWAYDEV "eth2"
+    fi
   else
     sed -i /GATEWAY/d /etc/sysconfig/network
   fi
