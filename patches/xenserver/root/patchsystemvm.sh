@@ -73,7 +73,7 @@ for i in $CMDLINE
     esac
 done
 
-if [ "$TYPE" == "consoleproxy" ] || [ "$TYPE" == "secstorage" ]  && [ -f /media/cdrom/systemvm.zip ]
+if [ "$TYPE" = "consoleproxy" ] || [ "$TYPE" = "secstorage" ]  && [ -f /media/cdrom/systemvm.zip ]
 then
   patch_console_proxy /media/cdrom/systemvm.zip
   if [ $? -gt 0 ]
@@ -87,33 +87,27 @@ fi
 #empty known hosts
 echo "" > /root/.ssh/known_hosts
 
-if [ "$TYPE" == "router" ]
-then
-  routing_svcs
-  if [ $? -gt 0 ]
-  then
-    printf "Failed to execute routing_svcs\n" >$logfile
-    exit 6
-  fi
-fi
-
-
-if [ "$TYPE" == "consoleproxy" ]
+if [ "$TYPE" = "consoleproxy" ]
 then
   consoleproxy_svcs
   if [ $? -gt 0 ]
   then
     printf "Failed to execute consoleproxy_svcs\n" >$logfile
-    exit 7
+    exit 6
   fi
-fi
-
-if [ "$TYPE" == "secstorage" ]
+elif [ "$TYPE" = "secstorage" ]
 then
   secstorage_svcs
   if [ $? -gt 0 ]
   then
     printf "Failed to execute secstorage_svcs\n" >$logfile
+    exit 7
+  fi
+else
+  routing_svcs
+  if [ $? -gt 0 ]
+  then
+    printf "Failed to execute routing_svcs\n" >$logfile
     exit 8
   fi
 fi
