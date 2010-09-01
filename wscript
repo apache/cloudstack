@@ -735,6 +735,12 @@ def deploydb(ctx,virttech=None):
 		after = after + file(p).read()
 		Utils.pprint("GREEN","Reading database code from %s"%p)
 
+	p = _join("setup","db","schema-level.sql")
+	if _exists(p):
+		p = dev_override(p)
+		after = after + file(p).read()
+		Utils.pprint("GREEN","Reading database code from %s"%p)
+
 	cmd = ["mysql","--user=%s"%dbuser,"-h",dbhost,"--password=%s"%dbpw]
 	Utils.pprint("GREEN","Deploying post-configuration database scripts to %s (user %s)"%(dbhost,dbuser))
 	Utils.pprint("BLUE"," ".join(cmd))
