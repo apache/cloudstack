@@ -931,6 +931,9 @@ public class ManagementServerImpl implements ManagementServer {
             // Mark the account's volumes as destroyed
             List<VolumeVO> volumes = _volumeDao.findDetachedByAccount(accountId);
             for (VolumeVO volume : volumes) {
+            	if(volume.getPoolId()==null){
+            		accountCleanupNeeded = true;
+            	}
             	_storageMgr.destroyVolume(volume);
             }
 
