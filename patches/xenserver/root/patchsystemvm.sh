@@ -40,6 +40,7 @@ secstorage_svcs() {
    chkconfig sshd on
    chkconfig httpd off
    cp /etc/sysconfig/iptables-secstorage /etc/sysconfig/iptables
+   scp 169.254.0.1:/usr/sbin/vhd-util /usr/sbin
    mkdir -p /var/log/cloud
 }
 
