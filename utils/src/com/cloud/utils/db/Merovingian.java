@@ -278,6 +278,8 @@ public class Merovingian {
     		
     		Ternary<Savepoint, Integer, Long> lock = _locks.get(key);
     		if (lock != null) {
+    			validLock = true;
+    			
         		if (lock.second() > 1) {
         			lock.second(lock.second() - 1);
         			if (s_logger.isTraceEnabled()) {
@@ -286,7 +288,6 @@ public class Merovingian {
         			return false;
         		}
         		
-    			validLock = true;
         		
                 if (s_logger.isDebugEnabled() && !_locks.keySet().iterator().next().equals(key)) {
                     s_logger.trace("Lock: Releasing out of order for " + key);
@@ -306,16 +307,17 @@ public class Merovingian {
 	    } catch (SQLException e) {
 	        s_logger.warn("unable to rollback for " + key);
 	    } finally {
-    		synchronized(s_memLocks) {
-    		    Pair<Lock, Integer> memLock = s_memLocks.get(key);
-    		    memLock.second(memLock.second() - 1);
-    		    if (memLock.second() <= 0) {
-    		        s_memLocks.remove(key);
-    		    }
-    		    
-    		    if(validLock)
+		    if(validLock) {
+	    		synchronized(s_memLocks) {
+	    		    Pair<Lock, Integer> memLock = s_memLocks.get(key);
+	    		    memLock.second(memLock.second() - 1);
+	    		    if (memLock.second() <= 0) {
+	    		        s_memLocks.remove(key);
+	    		    }
+	    		    
     		    	memLock.first().unlock();
-    		}
+	    		}
+		    }
 	    }
 		return true;
 	}
