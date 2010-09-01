@@ -12,9 +12,7 @@ for virttech in Utils.to_list(bld.path.ant_glob("*",dir=True)):
 		name   = '%s-patch_tgz'%virttech,
 		root = os.path.join("patches",virttech),
 		rename = lambda x: re.sub(".subst$","",x),
-		after = 'patchsubst',
 	)
-	bld.process_after(tgen)
 	if virttech != "xenserver":
 		# xenserver uses the patch.tgz file later to make an ISO, so we do not need to install it
 		bld.install_as("${AGENTLIBDIR}/scripts/vm/hypervisor/%s/patch.tgz"%virttech, "%s-patch.tgz"%virttech)

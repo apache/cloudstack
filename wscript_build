@@ -47,39 +47,16 @@ bld.install_files("${DOCDIR}","configure-info")
 
 # ==================== Java compilation ===========================
 
-sfl = lambda filespec: filelist(filespec,src=True,bld=False,dir=False,flat=True)
-
 # discover ant targets and properties
 antxmlfiles = _glob(_join("build","*.xml")) + _glob(_join("build","*.properties"))
 if buildpremium: antxmlfiles += _glob(_join("build","premium","*.xml")) + _glob(_join("cloudstack-proprietary","build","*.xml"))
 targets,antprops = Utils.discover_ant_targets_and_properties(antxmlfiles)
 
-javac_env = bld.env.copy()
-# FIXME trigger recompilation / cache avoidance when debuglevel changes.  ATM this does not happen.
-if antprops.get('debuglevel',None): javac_env.append_value("JAVACFLAGS",["-g:%s"%antprops['debuglevel']])
 Implementation_Version = bld.env.VERSION
 buildnumber = Utils.getbuildnumber()
 if buildnumber: Implementation_Version += "." + buildnumber
 
-# compile .class files using waf
-classpathentries = [ _join(builddir,x[2]) for x in targets ]
-javawclasspath = pathsep.join( classpathentries + [ _abspath(x) for x in bld.env.CLASSPATH.split(pathsep) ] )
-javac_tgens = [
-		bld( features='javac', name=name, srcdir=srcdir, outdir=classdir,
-		after=" ".join(deps), classpath=javawclasspath, env=javac_env )
-	for name,srcdir,classdir,jarpath,deps in targets ]
-[ bld.process_after(tgen) for tgen in javac_tgens ]
-
-# compile jar files using ant
-# ant only needs to be reinvoked if the version with build number changes
-# we here trim all the depended targets from the target list:
-build_targets = [ x[0] for x in targets ]
-nondep_build_targets = list ( set([ x[0] for x in targets ]) - set([ x for dependencies in [ y[4] for y in targets ] for x in dependencies ]) )
-ant_sources = " ".join(antxmlfiles + [ sfl(x[1] + "/**/*.java") for x in targets ])
-ant_jars = [ x[3] for x in targets ]
-
-# because build-console-viewer does not use compile-java macro, we have to hardcode it here
-
+# this is to trigger recompilation / cache avoidance if the relevant environment for ant changes
 ant_args = [
 	"-Dimpl.version=%s"%Implementation_Version,
 	"-Dtarget.dir=%s"%Utils.relpath(_join(builddir,"target")),
@@ -87,17 +64,20 @@ ant_args = [
 ]
 if not buildpremium: ant_args += ["-DOSS=true"]
 
-# this is to trigger recompilation / cache avoidance if the relevant environment for ant changes
 tgen = bld(features='subst', name='version-info', source="version-info.in", target="version-info")
-tgen.dict = { "Implementation_Version":Implementation_Version,"JAVACFLAGS":javac_env.JAVACFLAGS,"ant_args":ant_args }
+tgen.dict = { "Implementation_Version":Implementation_Version,"ant_args":ant_args }
 bld.install_files("${DOCDIR}","version-info")
 
-build_targets += ["version-info"]
-ant_sources += " version-info"
+# compile jar files using ant
+# ant only needs to be reinvoked if the version with build number changes
+# we here trim all the depended targets from the target list:
+build_targets = [ x[0] for x in targets ]
+nondep_build_targets = list ( set([ x[0] for x in targets ]) - set([ x for dependencies in [ y[4] for y in targets ] for x in dependencies ]) )
+ant_sources = " ".join(antxmlfiles + [ filelist(x[1] + "/**/*.java",src=True,bld=False,dir=False,flat=True) for x in targets ]) + ' version-info'
+ant_jars = [ x[3] for x in targets ]
 
 bld.path.ensure_dir_node_from_path("target/jar")
-tgen = bld(rule=Utils.runant, name='runant', source=ant_sources, target=ant_jars, anttgts = nondep_build_targets, antargs=ant_args, after=build_targets)
-bld.process_after(tgen)
+tgen = bld(rule=Utils.runant, name='runant', source=ant_sources, target=ant_jars, anttgts = nondep_build_targets, antargs=ant_args)
 
 # install jar files
 [ bld.install_files('${JAVADIR}',jar) for jar in ant_jars if _basename(jar).startswith("cloud-") ]
@@ -238,9 +218,7 @@ if bld.env.DISTRO not in ["Windows","Mac"]:
 		source = " ".join( [sources,artifacts,deps,systems] ),
 		target = 'target/oss/systemvm.zip',
 		name   = 'systemvm_zip',
-		after  = 'getsystemjars runant',
 	)
-	bld.process_after(tgen)
 	bld.install_files("${AGENTLIBDIR}/vms", "target/oss/systemvm.zip")
 
 if buildpremium:
@@ -249,9 +227,7 @@ if buildpremium:
 		source = " ".join( [premiumsources,premiumartifacts,thirdparties] ),
 		target = 'target/premium/systemvm.zip',
 		name   = 'systemvm-premium_zip',
-		after  = 'runant',
 	)
-	bld.process_after(tgen)
 	#no need to install the premium one, we have ISOs below
 	#bld.install_files("${AGENTLIBDIR}/vms", "systemvm-premium.zip")
 
@@ -292,10 +268,8 @@ if bld.env.DISTRO not in ["Windows","Mac"]:
 		source = "patches/xenserver-patch.tgz target/oss/systemvm.zip",
 		target = 'target/oss/systemvm.iso',
 		name   = 'systemvm_iso',
-		after  = 'systemvm_zip xenserver-patch_tgz',
 		rename = lambda x: x.split(sep)[-1].replace('xenserver-',''),
 	)
-	bld.process_after(tgen)
 	bld.install_as("${AGENTLIBDIR}/vms/systemvm.iso", "target/oss/systemvm.iso")
 
 if buildpremium:
@@ -304,10 +278,8 @@ if buildpremium:
 		source = "patches/xenserver-patch.tgz target/premium/systemvm.zip",
 		target = 'target/premium/systemvm.iso',
 		name   = 'systemvm-premium_iso',
-		after  = 'systemvm-premium_zip xenserver-patch_tgz',
 		rename = lambda x: x.split(sep)[-1].replace('xenserver-',''),
 	)
-	bld.process_after(tgen)
 	bld.install_as("${AGENTLIBDIR}/vms/systemvm-premium.iso", "target/premium/systemvm.iso")
 
 # ================== End systemvm ISO creation ====================
@@ -436,3 +408,8 @@ for vendor in _glob(_join("vendor","*")) + _glob(_join("cloudstack-proprietary",
 		bld.install_files_filtered("${MSCONF}/%s"%vendor,filelist("%s/tomcatconf/*"%vendor))
 
 # ====================== End vendor-specific plugins ====================
+
+
+# ====================== Magic! =========================================
+
+bld.use_the_magic()
