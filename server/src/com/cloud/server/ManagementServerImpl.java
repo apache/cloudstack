@@ -82,6 +82,7 @@ import com.cloud.api.commands.ListGuestOsCategoriesCmd;
 import com.cloud.api.commands.ListGuestOsCmd;
 import com.cloud.api.commands.ListHostsCmd;
 import com.cloud.api.commands.ListIsosCmd;
+import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -7421,10 +7422,30 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<UserVmVO> listLoadBalancerInstances(long loadBalancerId, boolean applied) {
+    public List<UserVmVO> listLoadBalancerInstances(ListLoadBalancerRuleInstancesCmd cmd) throws PermissionDeniedException {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long loadBalancerId = cmd.getId();
+        Boolean applied = cmd.isApplied();
+
+        if (applied == null) {
+            applied = Boolean.TRUE;
+        }
+
         LoadBalancerVO loadBalancer = _loadBalancerDao.findById(loadBalancerId);
         if (loadBalancer == null) {
             return null;
+        }
+
+        if (account != null) {
+            long lbAcctId = loadBalancer.getAccountId();
+            if (isAdmin(account.getType())) {
+                Account userAccount = _accountDao.findById(lbAcctId);
+                if (!_domainDao.isChildDomain(account.getDomainId(), userAccount.getDomainId())) {
+                    throw new PermissionDeniedException("Invalid load balancer rule id (" + loadBalancerId + ") given, unable to list load balancer instances.");
+                }
+            } else if (account.getId().longValue() != lbAcctId) {
+                throw new PermissionDeniedException("Unable to list load balancer instances, account " + account.getAccountName() + " does not own load balancer rule " + loadBalancer.getName());
+            }
         }
 
         List<UserVmVO> loadBalancerInstances = new ArrayList<UserVmVO>();

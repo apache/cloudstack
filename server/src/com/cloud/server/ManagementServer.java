@@ -44,6 +44,7 @@ import com.cloud.api.commands.ListGuestOsCategoriesCmd;
 import com.cloud.api.commands.ListGuestOsCmd;
 import com.cloud.api.commands.ListHostsCmd;
 import com.cloud.api.commands.ListIsosCmd;
+import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -1758,7 +1759,14 @@ public interface ManagementServer {
 
     LoadBalancerVO findLoadBalancer(Long accountId, String name);
     LoadBalancerVO findLoadBalancerById(long loadBalancerId);
-    List<UserVmVO> listLoadBalancerInstances(long loadBalancerId, boolean applied);
+
+    /**
+     * List instances that have either been applied to a load balancer or are eligible to be assigned to a load balancer.
+     * @param cmd
+     * @return list of vm instances that have been or can be applied to a load balancer
+     */
+    List<UserVmVO> listLoadBalancerInstances(ListLoadBalancerRuleInstancesCmd cmd) throws PermissionDeniedException;
+
     List<LoadBalancerVO> searchForLoadBalancers(Criteria c);
     boolean deleteLoadBalancer(long userId, long loadBalancerId);
     long deleteLoadBalancerAsync(long userId, long loadBalancerId);
