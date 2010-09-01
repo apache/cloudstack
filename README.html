@@ -743,6 +743,28 @@ See the files in the {{{debian/}}} folder.</pre>
 <div title="CloudStack run-time dependencies" creator="RuddO" modifier="RuddO" created="201008081310" tags="fixme" changecount="1">
 <pre>Not done yet!</pre>
 </div>
+<div title="Database migration infrastructure" creator="RuddO" modifier="RuddO" created="201009011837" modified="201009011852" changecount="14">
+<pre>To support incremental migration from one version to another without having to redeploy the database, the CloudStack supports an incremental schema migration mechanism for the database.
+!!!How does it work?
+When the database is deployed for the first time with [[waf deploydb]] or the command {{{cloud-setup-databases}}}, a row is written to the {{{configuration}}} table, named {{{schema.level}}} and containing the current schema level.  This schema level row comes from the file {{{setup/db/schema-level.sql}}} in the source (refer to the [[Installation paths]] topic to find out where this file is installed in a running system).
+
+This value is used by the database migrator {{{cloud-migrate-databases}}} (source {{{setup/bindir/cloud-migrate-databases.in}}}) to determine the starting schema level.  The database migrator has a series of classes -- each class represents a step in the migration process and is usually tied to the execution of a SQL file stored in {{{setup/db}}}.  To migrate the database, the database migrator:
+# walks the list of steps it knows about,
+# generates a list of steps sorted by the order they should be executed in,
+# executes each step in order
+# at the end of each step, records the new schema level to the database table {{{configuration}}}
+For more information, refer to the database migrator source -- it is documented.
+!!!What impact does this have on me as a developer?
+Whenever you need to evolve the schema of the database:
+# write a migration SQL script and store it in {{{setup/db}}},
+# include your schema changes in the appropriate SQL file {{{create-*.sql}}} too (as the database is expected to be at its latest evolved schema level right after deploying a fresh database)
+# write a class in {{{setup/bindir/cloud-migrate-databases.in}}}, describing the migration step; in detail:
+## the schema level your migration step expects the database to be in,
+## the schema level your migration step will leave your database in (presumably the latest schema level, which you will have to choose!),
+## and the name / description of the step
+# bump the schema level in {{{setup/db/schema-level.sql}}} to the latest schema level
+Otherwise, ''end-user migration will fail catastrophically''.</pre>
+</div>
 <div title="DefaultTiddlers" creator="RuddO" modifier="RuddO" created="201008072205" modified="201008072257" changecount="4">
 <pre>[[Welcome]]</pre>
 </div>
@@ -752,7 +774,7 @@ See the files in the {{{debian/}}} folder.</pre>
 <div title="Git" creator="RuddO" modifier="RuddO" created="201008081330" tags="fixme" changecount="1">
 <pre>Not done yet!</pre>
 </div>
-<div title="Hacking on the CloudStack" creator="RuddO" modifier="RuddO" created="201008072228" modified="201008081354" changecount="47">
+<div title="Hacking on the CloudStack" creator="RuddO" modifier="RuddO" created="201008072228" modified="201009011847" changecount="51">
 <pre>Start here if you want to learn the essentials to extend, modify and enhance the CloudStack.  This assumes that you've already familiarized yourself with CloudStack concepts, installation and configuration using the [[Getting started|Welcome]] instructions.
 * [[Obtain the source|Obtaining the source]]
 * [[Prepare your environment|Preparing your development environment]]
@@ -764,6 +786,7 @@ Extra developer information:
 * [[How to integrate with Eclipse]]
 * [[Starting over]]
 * [[Making a source release|waf dist]]
+* [[How to write database migration scripts|Database migration infrastructure]]
 </pre>
 </div>
 <div title="How to integrate with Eclipse" creator="RuddO" modifier="RuddO" created="201008081029" modified="201008081346" changecount="3">

@@ -582,6 +582,9 @@ fi
 %{_datadir}/%{name}/setup/index-212to213.sql
 %{_datadir}/%{name}/setup/postprocess-20to21.sql
 %{_datadir}/%{name}/setup/schema-20to21.sql
+%{_datadir}/%{name}/setup/schema-level.sql
+%{_datadir}/%{name}/setup/schema-21to22.sql
+%{_datadir}/%{name}/setup/data-21to22.sql
 %doc README
 %doc INSTALL
 %doc HACKING
