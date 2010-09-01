@@ -808,13 +808,13 @@ Any ant target added to the ant project files will automatically be detected -- 
 
 The reason we do this rather than use the native waf capabilities for building Java projects is simple: by using ant, we can leverage the support built-in for ant in [[Eclipse|How to integrate with Eclipse]] and many other &quot;&quot;&quot;IDEs&quot;&quot;&quot;.  Another reason to do this is because Java developers are familiar with ant, so adding a new JAR file or modifying what gets built into the existing JAR files is facilitated for Java developers.</pre>
 </div>
-<div title="Installation paths" creator="RuddO" modifier="RuddO" created="201008080025" modified="201008080028" changecount="6">
+<div title="Installation paths" creator="RuddO" modifier="RuddO" created="201008080025" modified="201009012342" changecount="8">
 <pre>The CloudStack build system installs files on a variety of paths, each
 one of which is selectable when building from source.
 * {{{$PREFIX}}}:
 ** the default prefix where the entire stack is installed
-** defaults to /usr/local on source builds
-** defaults to /usr on package builds
+** defaults to {{{/usr/local}}} on source builds as root, {{{$HOME/cloudstack}}} on source builds as a regular user, {{{C:\CloudStack}}} on Windows builds
+** defaults to {{{/usr}}} on package builds
 * {{{$SYSCONFDIR/cloud}}}:
 ** the prefix for CloudStack configuration files
 ** defaults to $PREFIX/etc/cloud on source builds
@@ -1172,9 +1172,9 @@ Cloud.com's contact information is:
 !Legal information
 //Unless otherwise specified// by Cloud.com, Inc., or in the sources themselves, [[this software is OSI certified Open Source Software distributed under the GNU General Public License, version 3|License statement]].  OSI Certified is a certification mark of the Open Source Initiative.  The software powering this documentation is &quot;&quot;&quot;BSD-licensed&quot;&quot;&quot; and obtained from [[TiddlyWiki.com|http://tiddlywiki.com/]].</pre>
 </div>
-<div title="Your development lifecycle" creator="RuddO" modifier="RuddO" created="201008080933" modified="201008081349" changecount="16">
+<div title="Your development lifecycle" creator="RuddO" modifier="RuddO" created="201008080933" modified="201009012343" changecount="17">
 <pre>This is the typical lifecycle that you would follow when hacking on a CloudStack component, assuming that your [[development environment has been set up|Preparing your development environment]]:
-# [[Configure|waf configure]] the source code&lt;br&gt;{{{./waf configure --prefix=/home/youruser/cloudstack}}}
+# [[Configure|waf configure]] the source code&lt;br&gt;{{{./waf configure}}}
 # [[Build|waf build]] and [[install|waf install]] the CloudStack
 ## {{{./waf install}}}
 ## [[How to perform these tasks from Eclipse|How to integrate with Eclipse]]
@@ -1252,7 +1252,7 @@ Makes an inventory of all build products in {{{artifacts/default}}}, and removes
 
 Contrast to [[waf distclean]].</pre>
 </div>
-<div title="waf configure" creator="RuddO" modifier="RuddO" created="201008080940" modified="201008081146" changecount="14">
+<div title="waf configure" creator="RuddO" modifier="RuddO" created="201008080940" modified="201009012344" changecount="15">
 <pre>{{{
 ./waf configure --prefix=/directory/that/you/have/write/permission/to
 }}}
@@ -1261,7 +1261,7 @@ This runs the file {{{wscript_configure}}}, which takes care of setting the  var
 !When / why should I run this?
 You run this command //once//, in preparation to building the stack, or every time you need to change a configure-time variable.  Once you find an acceptable set of configure-time variables, you should not need to run {{{configure}}} again.
 !What happens if I don't run it?
-For convenience reasons, if you forget to configure the source, waf will autoconfigure itself and select some sensible default configuration options.  By default, {{{PREFIX}}} is {{{/usr/local}}}, but you can set it e.g. to  {{{/home/youruser/cloudstack}}} if you plan to do a non-root install.  Be ware that you can later install the stack as a regular user, but most components need to //run// as root.
+For convenience reasons, if you forget to configure the source, waf will autoconfigure itself and select some sensible default configuration options.  By default, {{{PREFIX}}} is {{{/usr/local}}} if you configure as root (do this if you plan to do a non-root install), or {{{/home/youruser/cloudstack}}} if you configure as your regular user name.  Be ware that you can later install the stack as a regular user, but most components need to //run// as root.
 !What variables / options exist for configure?
 In general: refer to the output of {{{./waf configure --help}}}.
 
