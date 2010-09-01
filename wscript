@@ -342,6 +342,24 @@ def _install_files_filtered(self,destdir,listoffiles,**kwargs):
 	return ret
 Build.BuildContext.install_files_filtered = _install_files_filtered
 
+def _substitute(self,listoffiles,install_to=None,cwd=None,dict=None,name=None,**kwargs):
+	if cwd is None: cwd = self.path
+	tgenkwargs = {}
+	if name is not None: tgenkwargs["name"] = name
+	if isinstance(listoffiles,str) and '**' in listoffiles:
+		listoffiles = cwd.ant_glob(listoffiles,flat=True)
+	elif isinstance(listoffiles,str) and '*' in listoffiles:
+		listoffiles = [ n for x in listoffiles.split() for n in _glob(cwd.abspath() + os.sep + x.replace("/",os.sep))  ]
+	for src in Utils.to_list(listoffiles):
+		tgt = src + ".subst"
+		inst = src # Utils.relpath(src,relative_to) <- disabled
+		tgen = self(features='subst', source=src, target=tgt, **tgenkwargs)
+		if dict is not None: tgen.dict = dict
+		else: tgen.dict = self.env.get_merged_dict()
+		self.path.find_or_declare(tgt)
+		if install_to is not None: self.install_as("%s/%s"%(install_to,inst), tgt, **kwargs)
+Build.BuildContext.substitute = _substitute
+
 def _setownership(ctx,path,owner,group,mode=None):
 	def f(bld,path,owner,group,mode):
 		dochown = not Options.options.NOCHOWN \
@@ -382,6 +400,8 @@ Build.BuildContext.setownership = _setownership
 def set_options(opt):
 	"""Register command line options"""
 	opt.tool_options('gnu_dirs')
+	opt.tool_options('tar',tooldir='tools/waf')
+	opt.tool_options('mkisofs',tooldir='tools/waf')
 	if platform.system() not in ['Windows',"Darwin"]: opt.tool_options('compiler_cc')
 	opt.tool_options('python')
 	
@@ -486,6 +506,18 @@ def showconfig(conf):
 				Utils.pprint("BLUE","     %s"%v)
 			continue
 		Utils.pprint("BLUE","  %s:	%s"%(key,val))
+
+def _getconfig(self):
+	lines = []
+	for key,val in sorted(self.env.get_merged_dict().items()):
+		if "CLASSPATH" in key:
+			lines.append("  %s:"%key)
+			for v in val.split(pathsep):
+				lines.append("     %s"%v)
+			continue
+		lines.append("  %s:	%s"%(key,val))
+	return "\n".join(lines)
+Build.BuildContext.getconfig = _getconfig
 
 def list_targets(ctx):
         """return the list of buildable and installable targets"""

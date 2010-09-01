@@ -608,7 +608,7 @@
                     <strong id="vm_name"></strong>
                 </p>
                 <p id="ip_address_container">
-                    IP Address: <span id="ip_address"></span>
+                    <span id="label">IP Address:</span> <span id="ip_address"></span>
                 </p>
             </div>
             <div class="midmenu_inactionloader" id="spinning_wheel" style="display: none;">

@@ -116,6 +116,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         DestroySearch.and("updateTime", DestroySearch.entity().getUpdateTime(), SearchCriteria.Op.LT);
         DestroySearch.done();
 
+        
+        
         _updateTimeAttr = _allAttributes.get("updateTime");
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
     }

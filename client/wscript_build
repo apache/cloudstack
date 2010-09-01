@@ -1,0 +1,11 @@
+import Options
+
+start_path = bld.path.find_dir("WEB-INF")
+bld.install_files('${MSENVIRON}/webapps/client/WEB-INF',
+	start_path.ant_glob("**",src=True,bld=False,dir=False,flat=True),
+	cwd=start_path,relative_trick=True)
+
+if not Options.options.PRESERVECONFIG:
+	bld.install_files_filtered("${MSCONF}","tomcatconf/*")
+	bld.install_files("${MSCONF}",'tomcatconf/db.properties',chmod=0640)
+	bld.setownership("${MSCONF}/db.properties","root",bld.env.MSUSER)

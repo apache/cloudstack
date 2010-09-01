@@ -8,7 +8,7 @@
 import shutil,os
 import Utils,Node,Options,Logs,Scripting,Environment,Build,Configure
 from os import unlink as _unlink, makedirs as _makedirs, getcwd as _getcwd, chdir as _chdir
-from os.path import abspath as _abspath, basename as _basename, dirname as _dirname, exists as _exists, isdir as _isdir, split as _split, join as _join, sep, pathsep, pardir
+from os.path import abspath as _abspath, basename as _basename, dirname as _dirname, exists as _exists, isdir as _isdir, split as _split, join as _join, sep, pathsep, pardir, curdir
 from glob import glob as _glob
 try: set([1,2,3])
 except Exception: from Sets import set
@@ -42,17 +42,7 @@ sccsinfo = _join(sourcedir,"sccs-info")
 if _exists(sccsinfo): bld.install_files("${DOCDIR}","sccs-info")
 
 tgen = bld(features='subst', name='configure-info', source="configure-info.in", target="configure-info")
-def gen_configure_info():
-	lines = []
-	for key,val in sorted(bld.env.get_merged_dict().items()):
-		if "CLASSPATH" in key:
-			lines.append("  %s:"%key)
-			for v in val.split(pathsep):
-				lines.append("     %s"%v)
-			continue
-		lines.append("  %s:	%s"%(key,val))
-	return "\n".join(lines)
-tgen.dict = {"CONFIGUREVARS":gen_configure_info()}
+tgen.dict = {"CONFIGUREVARS":bld.getconfig()}
 bld.install_files("${DOCDIR}","configure-info")
 
 # ==================== Java compilation ===========================
@@ -117,69 +107,22 @@ bld.process_after(tgen)
 
 # =================== C / Python compilation =========================
 
-if bld.env.DISTRO not in ['Windows','Mac']:
-	# build / install declarations of the daemonization utility - except for Windows
-	bld(
-		name='daemonize',
-		features='cc cprogram',
-		source='daemonize/daemonize.c',
-		target='daemonize/cloud-daemonize')
-
-	# build / install declarations of vnet
-	files = """vnetd/connection.c vnetd/select.c vnetd/timer.c vnetd/spinlock.c vnetd/skbuff.c
-		vnetd/vnetd.c vnet-module/skb_util.c vnet-module/sxpr_util.c vnet-module/timer_util.c
-		vnet-module/etherip.c vnet-module/vnet.c vnet-module/vnet_eval.c vnet-module/vnet_forward.c
-		vnet-module/vif.c vnet-module/tunnel.c vnet-module/sa.c vnet-module/varp.c
-		libxutil/allocate.c libxutil/enum.c libxutil/file_stream.c libxutil/hash_table.c
-		libxutil/iostream.c libxutil/lexis.c libxutil/socket_stream.c libxutil/string_stream.c
-		libxutil/sxpr.c libxutil/sxpr_parser.c libxutil/sys_net.c libxutil/sys_string.c libxutil/util.c"""
-	files = [ "vnet/src/%s"%s for s in Utils.to_list(files) ]
-	bld(
-		name='vnetd',
-		features='cc cprogram',
-		source= files,
-		includes="vnet/src/libxutil vnet/src/vnet-module vnet/src/vnetd",
-		lib='dl pthread'.split(),
-		target='vnet/%s-vnetd'%bld.env.PACKAGE,
-		install_path="${SBINDIR}"
-		)
-	
-	obj = bld(features = 'py',name='pythonmodules')
-	obj.find_sources_in_dirs('python/lib', exts=['.py'])
+bld.recurse(["vnet","daemonize","python"],'build')
 
 # ===================== End C / Python compilation ==========================
 
 
 # ================ Third-party / dependency installation ===============
 
-bld.install_files('${JAVADIR}','deps/*.jar')
-if buildpremium: bld.install_files('${PREMIUMJAVADIR}','cloudstack-proprietary/thirdparty/*.jar')
+bld.recurse(["deps"],'build')
+if buildpremium: bld.recurse(['cloudstack-proprietary/thirdparty'],'build')
 
 # =================== End 3rdparty/dep install ========================
 
 
 # =================== Build install declaratoin of console proxy project ========
 
-# -> binary unsubstitutable files
-start_path = bld.path.find_dir("console-proxy")
-bld.install_files("${CPLIBDIR}",
-	start_path.ant_glob("images/**",src=True,bld=False,dir=False,flat=True),
-	cwd=start_path,relative_trick=True)
-
-# -> source files with tokens
-patterns = 'console-proxy/css/** console-proxy/js/** console-proxy/ui/** console-proxy/scripts/**'
-src_files = Utils.to_list(filelist(patterns,flat=True))
-subst_files = [ x+".subst" for x in src_files ]
-inst_files = [ Utils.relpath(x,"console-proxy") for x in src_files ]
-for src,tgt,inst in zip(src_files,subst_files,inst_files):
-	tgen = bld(features='subst', source=src, target=tgt)
-	tgen.dict = bld.env.get_merged_dict()
-	bld.path.find_or_declare(tgt)
-	bld.install_as("${CPLIBDIR}/%s"%inst, tgt)
-
-# -> configuration
-if not Options.options.PRESERVECONFIG:
-	bld.install_files_filtered("${CPSYSCONFDIR}",filelist("console-proxy/conf.dom0/*"))
+bld.recurse(["console-proxy"],'build')
 
 # ================== End console proxy ===================
 
@@ -187,74 +130,7 @@ if not Options.options.PRESERVECONFIG:
 # ================ Creation of patch.tgz's ============================
 
 # done here because the patches require substituted files
-patterns = "patches/**"
-src_files = Utils.to_list(filelist(patterns,flat=True))
-subst_files = [ x+".subst" for x in src_files ]
-inst_files = src_files
-for src,tgt,inst in zip(src_files,subst_files,inst_files):
-	tgen = bld(features='subst', name='patchsubst', source=src, target=tgt)
-	tgen.dict = bld.env.get_merged_dict()
-	bld.path.find_or_declare(tgt)
-
-# this is a clever little thing
-# given a list of nodes, build or source
-# construct a tar file containing them
-# rooted in the parameter root =, specified in the task generator
-# and renaming the names of the files according to a rename(x) function passed to the task generator as well
-# if a build node's result of rename() has the same name as a source node, the build node will take precedence
-# for as long as the build node appears later than the source node (this is an implementation detail of waf we are relying on)
-def tar_up(task):
-	tgt = task.outputs[0].bldpath(task.env)
-	if _exists(tgt): _unlink(tgt)
-	z = tarfile.open(tgt,"w:gz")
-	fileset = {}
-	for inp in task.inputs:
-		src = inp.srcpath(task.env)
-		if src.startswith(".."):
-			srcname = Utils.relpath(src,_join("..",".")) # file in source dir
-		else:
-			srcname = Utils.relpath(src,_join(task.env.variant(),".")) # file in artifacts dir
-		if task.generator.rename: srcname = task.generator.rename(srcname)
-		for dummy in task.generator.root.split("/"):
-			splittedname = srcname.split("/")
-			srcname = "/".join(splittedname[1:])
-		fileset[srcname] = src
-	for srcname,src in fileset.items():
-		ti = tarfile.TarInfo(srcname)
-		ti.mode = 0755
-		ti.size = os.path.getsize(src)
-		f = file(src)
-		z.addfile(ti,fileobj=f)
-		f.close()
-	z.close()
-	return 0
-
-for virttech in [ _basename(x) for x in _glob(_join("patches","*")) ]:
-	if virttech == "shared":
-		continue
-	patchfiles = filelist('patches/%s/** patches/shared/**'%virttech,src=True,bld=True,dir=False,flat=True)
-	tgen = bld(
-		rule   = tar_up,
-		source = patchfiles,
-		target = '%s-patch.tgz'%virttech,
-		name   = '%s-patch_tgz'%virttech,
-		root = "patches/%s"%virttech,
-		rename = lambda x: re.sub(".subst$","",x),
-		after = 'patchsubst',
-	)
-	bld.process_after(tgen)
-	if virttech != "xenserver":
-		# xenserver uses the patch.tgz file later to make an ISO, so we do not need to install it
-		bld.install_as("${AGENTLIBDIR}/scripts/vm/hypervisor/%s/patch.tgz"%virttech, "%s-patch.tgz"%virttech)
-
-tgen = bld(
-	rule = 'cp ${SRC} ${TGT}',
-	source = 'xenserver-patch.tgz',
-	target = 'patch.tgz',
-	after = 'xenserver-patch_tgz',
-	name = 'patch_tgz'
-)
-bld.process_after(tgen)
+bld.recurse(["patches"],'build')
 
 # ================== End creation of patch.tgz's ====================
 
@@ -386,7 +262,7 @@ if buildpremium:
 
 def iso_up(task):
 	tgt = task.outputs[0].bldpath(task.env)
-	if _exists(tgt): _unlink(tgt)
+	if os.path.exists(tgt): os.unlink(tgt)
 	inps = []
 	for inp in task.inputs:
 		if inp.id&3==Node.BUILD:
@@ -397,30 +273,32 @@ def iso_up(task):
 			src = inp.srcpath(task.env)
 			srcname = src
 			srcname = "/".join(srcname.split("/")[1:]) # chop off ../
-		# post-process the paths
 		inps.append(src)
-	return Utils.exec_command(
+	ret = Utils.exec_command(
 		[
 			task.generator.env.MKISOFS,
 			"-quiet",
 			"-r",
 			"-o",tgt,
-		] + inps)
+		] + inps, shell=False)
+	if ret != 0: return ret
 
-tgen = bld(
-	rule   = iso_up,
-	source = "patch.tgz target/oss/systemvm.zip",
-	target = 'target/oss/systemvm.iso',
-	name   = 'systemvm_iso',
-	after  = 'systemvm_zip patch_tgz',
-)
-bld.process_after(tgen)
-bld.install_as("${AGENTLIBDIR}/vms/systemvm.iso", "target/oss/systemvm.iso")
+if bld.env.DISTRO not in ["Windows","Mac"]:
+	# systemvm.zip cannot be built on Windows or Mac because system deps do not exist there
+	tgen = bld(
+		rule = iso_up,
+		source = "patches/patch.tgz target/oss/systemvm.zip",
+		target = 'target/oss/systemvm.iso',
+		name   = 'systemvm_iso',
+		after  = 'systemvm_zip patch_tgz',
+	)
+	bld.process_after(tgen)
+	bld.install_as("${AGENTLIBDIR}/vms/systemvm.iso", "target/oss/systemvm.iso")
 
 if buildpremium:
 	tgen = bld(
-		rule   = iso_up,
-		source = "patch.tgz target/premium/systemvm.zip",
+		rule = iso_up,
+		source = "patches/patch.tgz target/premium/systemvm.zip",
 		target = 'target/premium/systemvm.iso',
 		name   = 'systemvm-premium_iso',
 		after  = 'systemvm-premium_zip patch_tgz',
@@ -481,15 +359,8 @@ else:
 
 # =================== Subst / installation of agent scripts project ========
 
-src_files = Utils.to_list(filelist("scripts/** cloudstack-proprietary/scripts/**",flat=True))
-subst_files = [ x+".subst" for x in src_files ]
-inst_files = src_files
-for src,tgt,inst in zip(src_files,subst_files,inst_files):
-	tgen = bld(features='subst', name='scriptssubst', source=src, target=tgt)
-	tgen.dict = bld.env.get_merged_dict()
-	bld.path.find_or_declare(tgt)
-	if inst.startswith("cloudstack-proprietary"): inst = inst[len("cloudstack-proprietary")+1:]
-	bld.install_as("${AGENTLIBDIR}/%s"%inst, tgt, chmod=0755)
+bld.recurse(["scripts"],'build')
+if buildpremium: bld.recurse(["cloudstack-proprietary/scripts"],'build')
 
 # ================== End agent scripts ===================
 
@@ -506,94 +377,17 @@ bld.install_files_filtered("${SBINDIR}","*/sbindir/* cloudstack-proprietary/*/sb
 # ================== Installation of scripts / bindirs / configuration files ===========================
 
 # build / install declarations of test project
-if buildpremium:
-	proj = 'test'
-	start_path = bld.path.find_dir("cloudstack-proprietary/test/scripts")
-	bld.install_files('${LIBDIR}/${PACKAGE}/test',
-		start_path.ant_glob("**",src=True,bld=False,dir=False,flat=True),
-		cwd=start_path,relative_trick=True)
-	start_path = bld.path.find_dir("cloudstack-proprietary/test/metadata")
-	bld.install_files('${SHAREDSTATEDIR}/${PACKAGE}/test',
-		start_path.ant_glob("**",src=True,bld=False,dir=False,flat=True),
-		cwd=start_path,relative_trick=True)
-	if not Options.options.PRESERVECONFIG:
-		bld.install_files('${SYSCONFDIR}/%s/%s'%(bld.env.PACKAGE,proj),'cloudstack-proprietary/test/conf/*')
+if buildpremium: bld.recurse(["cloudstack-proprietary/test"],'build')
 
 # build / install declarations of server project <- this is actually now in client project
-start_path = bld.path.find_dir("client/WEB-INF")
-bld.install_files('${MSENVIRON}/webapps/client/WEB-INF',
-	start_path.ant_glob("**",src=True,bld=False,dir=False,flat=True),
-	cwd=start_path,relative_trick=True)
-if not Options.options.PRESERVECONFIG:
-	bld.install_files_filtered("${SERVERSYSCONFDIR}","server/conf/*")
+bld.recurse(["client","server"],'build')
+if buildpremium: bld.recurse(["cloudstack-proprietary/premium"],'build')
 
 # build / install declarations of agent project
-proj = 'agent'
-start_path = bld.path.find_dir(proj)
-bld.install_files("${AGENTLIBDIR}",
-	start_path.ant_glob("storagepatch/**",src=True,bld=False,dir=False,flat=True),
-	cwd=start_path,relative_trick=True)
-if not Options.options.PRESERVECONFIG:
-	bld.install_files_filtered("${AGENTSYSCONFDIR}","%s/conf/*"%proj)
+bld.recurse(["agent"],'build')
 
 # build / install declarations of client UI project
-
-# -> binary unsubstitutable files
-start_path = bld.path.find_dir("ui")
-bld.install_files("${MSENVIRON}/webapps/client",
-	start_path.ant_glob("*.ico **/*png **/*jpg **/*gif",src=True,bld=False,dir=False,flat=True),
-	cwd=start_path,relative_trick=True)
-
-# -> source files with tokens
-patterns = 'ui/*html ui/**/*html ui/**/*js ui/**/*css ui/**/*properties ui/**/*jsp'
-src_files = Utils.to_list(filelist(patterns,flat=True))
-subst_files = [ x+".subst" for x in src_files ]
-inst_files = [ Utils.relpath(x,"ui") for x in src_files ]
-for src,tgt,inst in zip(src_files,subst_files,inst_files):
-	tgen = bld(features='subst', source=src, target=tgt)
-	tgen.dict = bld.env.get_merged_dict()
-	bld.path.find_or_declare(tgt)
-	bld.install_as("${MSENVIRON}/webapps/client/%s"%inst, tgt)
-
-# -> minification of UI files
-def minifyjs(task):
-	tgt = task.outputs[0].bldpath(task.env)
-	inputfiles = []
-	outputfile = ['--js_output_file',tgt]
-	for inp in task.inputs:
-		src = inp.srcpath(task.env)
-		inputfiles.append(src)
-	newinputfiles = []
-	for inputfile in inputfiles:
-		if inputfile not in newinputfiles:
-			newinputfiles.append('--js')
-			newinputfiles.append(inputfile)
-	compilerjar = _join(sourcedir,'tools','gcc','compiler.jar')
-	return Utils.exec_command(["java",'-jar',compilerjar] + newinputfiles + outputfile,log=True)
-
-javascripts = [
-	['ui/scripts/jquery-1.4.2.min.js','ui/scripts/date.js'],
-	Utils.to_list(filelist('ui/scripts/jquery*js')),
-	['ui/scripts/cloud.core.js','ui/scripts/cloud.core.callbacks.js'],
-	Utils.to_list(filelist('ui/scripts/cloud*js')),
-]
-sourcefiles = []
-for lst in javascripts:
-	for x in lst:
-		if x not in sourcefiles: sourcefiles.append(x)
-tgen = bld(
-	rule   = minifyjs,
-	source = sourcefiles,
-	target = 'ui/scripts/cloud.min.js',
-	name   = 'minifyjs',
-)
-bld.install_files("${MSENVIRON}/webapps/client/scripts", "ui/scripts/cloud.min.js")
-
-# substitute and install generic tomcat config
-if not Options.options.PRESERVECONFIG:
-	bld.install_files_filtered("${MSCONF}","*/tomcatconf/* cloudstack-proprietary/*/tomcatconf/*")
-	bld.install_files("${MSCONF}",'client/tomcatconf/db.properties',chmod=0640)
-	bld.setownership("${MSCONF}/db.properties","root",bld.env.MSUSER)
+bld.recurse(["ui"],'build')
 
 # apply distro-specific config on top of the 'all' generic cloud-management config
 globspec = _join("*","distro",bld.env.DISTRO.lower(),"*") # matches premium/distro/centos/SYSCONFDIR
@@ -610,12 +404,7 @@ for dsdir in distrospecificdirs:
 	bld.install_files_filtered(dsdirwithvar, files,  cwd=start_path, relative_trick=True,chmod=mode)
 
 # build / install declarations of usage
-if buildpremium:
-	if not Options.options.PRESERVECONFIG:
-		#print filelist("usage/conf/* cloudstack-proprietary/usage/conf/*")
-		#assert False
-		bld.install_files_filtered("${USAGESYSCONFDIR}","usage/conf/* cloudstack-proprietary/usage/conf/*")
-		bld.symlink_as("${USAGESYSCONFDIR}/db.properties",Utils.subst_vars("${MSCONF}/db.properties",bld.env))
+if buildpremium: bld.recurse(["cloudstack-proprietary/usage"],'build')
 
 # install db data files
 bld.install_files_filtered("${SETUPDATADIR}",filelist("*/db/* cloudstack-proprietary/*/db/*",excl=Node.exclude_regs + "\ncloud-gate\ncloud-bridge"))

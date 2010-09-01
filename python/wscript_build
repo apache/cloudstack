@@ -1,0 +1,3 @@
+if bld.env.DISTRO not in ['Windows','Mac']:
+	obj = bld(features = 'py',name='pythonmodules')
+	obj.find_sources_in_dirs('lib', exts=['.py'])

@@ -518,13 +518,13 @@ function clickInstanceGroupHeader($arrowIcon) {
 			        //***** data disk offering: "no, thanks", "custom", existing disk offerings in database (begin) ****************************************************
 			        //"no, thanks" radio button (default radio button in data disk offering)		               
 		            var $t = $noDiskOfferingTemplate.clone(); 		            	     
-		            $t.find("input:radio").attr("name","data_disk_offering_radio").val("no");  
+		            $t.find("input:radio").attr("name","data_disk_offering_radio");  
 		            $t.find("#name").text("no, thanks"); 		            
 		            $dataDiskOfferingContainer.append($t.show()); 
 			        
 			        //"custom" radio button			        
 			        var $t = $customDiskOfferingTemplate.clone();  			        
-			        $t.find("input:radio").attr("name","data_disk_offering_radio").val("custom").removeAttr("checked");	
+			        $t.find("input:radio").attr("name","data_disk_offering_radio").removeAttr("checked");	
 			        $t.find("#name").text("custom:");	  			         
 			        $dataDiskOfferingContainer.append($t.show());	
 			        
@@ -947,25 +947,17 @@ function clickInstanceGroupHeader($arrowIcon) {
 		    
 		    }	
 		    
-		    if (currentStepInVmPopup == 5) { //last step
+		    if (currentStepInVmPopup == 5) { //last step		        
+		        // validate values							
+			    var isValid = true;									
+			    isValid &= validateString("Name", $thisPopup.find("#wizard_vm_name"), $thisPopup.find("#wizard_vm_name_errormsg"), true);	 //optional	
+			    isValid &= validateString("Group", $thisPopup.find("#wizard_vm_group"), $thisPopup.find("#wizard_vm_group_errormsg"), true); //optional					
+			    if (!isValid) return;		    
+		    
 			    // Create a new VM!!!!
 			    var moreCriteria = [];								
 			    moreCriteria.push("&zoneId="+$thisPopup.find("#wizard_zone").val());
-    			
-			    var name = trim($thisPopup.find("#wizard_vm_name").val());
-			    if (name != null && name.length > 0) 
-				    moreCriteria.push("&displayname="+encodeURIComponent(name));	
-    			
-			    var group = trim($thisPopup.find("#wizard_vm_group").val());
-			    if (group != null && group.length > 0) 
-				    moreCriteria.push("&group="+encodeURIComponent(group));			
-    			
-    			/*							
-			    if($thisPopup.find("#wizard_network_groups_container").css("display") != "none" && $thisPopup.find("#wizard_network_groups").val() != null) {
-			        var networkGroupList = $thisPopup.find("#wizard_network_groups").val().join(",");
-			        moreCriteria.push("&networkgrouplist="+encodeURIComponent(networkGroupList));	
-			    }				
-    			*/								
+    									
 			    moreCriteria.push("&templateId="+$thisPopup.find("#step1 .rev_wiztemplistbox_selected").attr("id"));
     							
 			    moreCriteria.push("&serviceOfferingId="+$thisPopup.find("input:radio[name=service_offering_radio]:checked").val());
@@ -976,14 +968,22 @@ function clickInstanceGroupHeader($arrowIcon) {
 			    else  //template
 			        diskOfferingId = $thisPopup.find("#data_disk_offering_container input[name=data_disk_offering_radio]:checked").val();				       
 		        			   
-		        if(diskOfferingId != null && diskOfferingId != "" && diskOfferingId != "none" && diskOfferingId != "custom")
+		        if(diskOfferingId != null && diskOfferingId != "" && diskOfferingId != "no" && diskOfferingId != "custom")
 			        moreCriteria.push("&diskOfferingId="+diskOfferingId);						 
+    			
+    			var name = trim($thisPopup.find("#wizard_vm_name").val());
+			    if (name != null && name.length > 0) 
+				    moreCriteria.push("&displayname="+encodeURIComponent(name));	
+    			
+			    var group = trim($thisPopup.find("#wizard_vm_group").val());
+			    if (group != null && group.length > 0) 
+				    moreCriteria.push("&group="+encodeURIComponent(group));		
     						
 			    vmWizardClose();
     			
     			var $t = $("#midmenu_item_vm").clone();
     			$t.find("#vm_name").text("Adding....");
-    			$t.find("#ip_address_container #label").hide();
+    			$t.find("#ip_address_container #label").html("&nbsp;");
     			$t.find("#content").addClass("inaction"); 
     			$t.find("#spinning_wheel").show();
     			$("#midmenu_container").append($t.show());
@@ -1014,6 +1014,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 										    $t.find("#spinning_wheel").hide();		
 										    if (result.jobstatus == 1) {
 											    // Succeeded	
+											    $t.find("#ip_address_container #label").text("IP Address:");
 											    $t.find("#info_icon").removeClass("error").show();
 						                        $t.data("afterActionInfo", ("Adding succeeded.")); 
 						                        if("virtualmachine" in result)	
