@@ -4,7 +4,7 @@ bld.substitute("*/**",name="patchsubst")
 
 for virttech in Utils.to_list(bld.path.ant_glob("*",dir=True)):
 	if virttech in ["shared","wscript_build"]: continue
-	patchfiles = bld.path.ant_glob('%s/** shared/**'%virttech,src=True,bld=True,dir=False,flat=True)
+	patchfiles = bld.path.ant_glob('shared/** %s/**'%virttech,src=False,bld=True,dir=False,flat=True)
 	tgen = bld(
 		features  = 'tar',#Utils.tar_up,
 		source = patchfiles,
