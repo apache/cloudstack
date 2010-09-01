@@ -47,8 +47,7 @@ untar() {
 
 uncompress() {
   local ft=$(file $1| awk -F" " '{print $2}')
-  local imgfile=${1%.*} #strip out trailing file suffix
-  local tmpfile=${imgfile}.tmp
+  local tmpfile=${1}.tmp
 
   case $ft in
   gzip)  gunzip -q -c $1 > $tmpfile
@@ -68,8 +67,8 @@ uncompress() {
     return 1 
   fi
  
-  mv $tmpfile $imgfile
-  printf "$imgfile"
+  rm $1
+  printf $tmpfile
 
   return 0
 }
@@ -143,37 +142,29 @@ then
  exit 2
 fi
 
+mkdir -p $tmpltfs
+
+if [ ! -f $tmpltimg ] 
+then
+  printf "root disk file $tmpltimg doesn't exist\n"
+  exit 3
+fi
+
 if [ -n "$cksum" ]
 then
   verify_cksum $cksum $tmpltimg
 fi
 
-#if [ ! -d /$tmpltfs ] 
-#then
-#  mkdir /$tmpltfs
-#  if [ $? -gt 0 ] 
-#  then
-#    printf "Failed to create user fs $tmpltfs\n" >&2
-#    exit 1
-#  fi
-#fi
-
 tmpltimg2=$(uncompress $tmpltimg)
-if [ $? -ne 0 ]
-then
-  rollback_if_needed $tmpltfs 2 "failed to uncompress $tmpltimg\n"
-fi
+rollback_if_needed $tmpltfs $? "failed to uncompress $tmpltimg\n"
 
-tmpltimg2=$(untar $tmpltimg2 /$tmpltfs vmi-root)
-if [ $? -ne 0 ]
-then
-  rollback_if_needed $tmpltfs 2 "tar archives not supported\n"
-fi
+tmpltimg2=$(untar $tmpltimg2)
+rollback_if_needed $tmpltfs $? "tar archives not supported\n"
 
-if [ ! -f $tmpltimg2 ] 
+if [ ${tmpltname%.vhd} = ${tmpltname} ]
 then
-  rollback_if_needed $tmpltfs 2 "root disk file $tmpltimg doesn't exist\n"
-  exit 3
+  vhd-util check -n ${tmpltimg2} > /dev/null
+  rollback_if_needed $tmpltfs $? "vhd tool check $tmpltimg2 failed\n"
 fi
 
 # need the 'G' suffix on volume size
@@ -196,11 +187,8 @@ then
   fi
 fi
 
-tgtfile=${tmpltfs}/vmi-root-${tmpltname}
-
 create_from_file $tmpltfs $tmpltimg2 $tmpltname $volsize $cleanup
 
-tgtfilename=$(echo $tmpltimg2 | awk -F"/" '{print $NF}') 
 touch /$tmpltfs/template.properties
 rollback_if_needed $tmpltfs $? "Failed to create template.properties file"
 echo -n "" > /$tmpltfs/template.properties

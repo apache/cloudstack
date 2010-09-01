@@ -397,10 +397,6 @@
       <fileset dir="${console-proxy.dir}/scripts">
       </fileset>
     </copy>
-    <copy todir="${console-proxy.dist.dir}">
-      <fileset dir="${console-proxy.dir}/scripts">
-      </fileset>
-    </copy>
     <copy todir="${console-proxy.dist.dir}/conf">
       <fileset dir="${console-proxy.dir}/conf">
       </fileset>

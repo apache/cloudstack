@@ -901,8 +901,9 @@ public class StorageManagerImpl implements StorageManager {
             
             return vols;
         } catch (Exception e) {
-        	s_logger.error("Unexpected exception ", e);
-        	
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(e.getMessage());
+            }
             if (rootCreated != null) {
                 destroyVolume(rootCreated);
             }
@@ -915,6 +916,9 @@ public class StorageManagerImpl implements StorageManager {
     public long createUserVM(Account account, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, ServiceOfferingVO offering, DiskOfferingVO diskOffering,
             List<StoragePoolVO> avoids, long size) {
         List<VolumeVO> volumes = create(account, vm, template, dc, pod, offering, diskOffering, avoids, size);
+        if( volumes == null || volumes.size() == 0) {
+            throw new CloudRuntimeException("Unable to create volume for " + vm.getName());
+        }
         
         for (VolumeVO v : volumes) {
         	long volumeId = v.getId();
