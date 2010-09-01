@@ -529,7 +529,7 @@
                                 <span id="wizard_review_disk_offering"></span>
                             </div>
                         </div>
-                         <div class="vmpopup_reviewbox_odd">
+                        <div class="vmpopup_reviewbox_odd">
                             <div class="vmopopup_reviewtextbox">
                                 <div class="vmpopup_reviewtick">
                                 </div>
@@ -537,7 +537,28 @@
                                     Network:</div>
                                 <span id="wizard_review_network"></span>
                             </div>
+                        </div>                        
+                        <div class="vmpopup_reviewbox_even">
+                            <div class="vmopopup_reviewtextbox">
+                                <div class="vmpopup_reviewtick">
+                                </div>
+                                <div class="vmopopup_review_label">
+                                    Name (optional):
+                                </div>
+                                <input class="text" type="text" id="wizard_vm_name" />
+                                <div id="wizard_vm_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;"></div>
+                            </div>
                         </div>
+                        <div class="vmpopup_reviewbox_odd">
+                            <div class="vmopopup_reviewtextbox">
+                                <div class="vmpopup_reviewtick">
+                                </div>
+                                <div class="vmopopup_review_label">
+                                    Group (optional):</div>
+                                <input class="text" type="text" id="wizard_vm_group" />
+                                <div id="wizard_vm_group_errormsg" class="dialog_formcontent_errormsg" style="display: none;"></div>
+                            </div>
+                        </div>             
                     </div>
                 </div>
                 <div class="vmpopup_navigationpanel">
@@ -570,7 +591,7 @@
 <!-- VM Wizard - Service Offering template (end) -->
 <!-- VM Wizard - disk Offering template (begin)-->
 <div class="vmpopup_offeringbox" id="vm_popup_disk_offering_template_no" style="display: none">
-    <input type="radio" class="radio" value="none" checked />
+    <input type="radio" class="radio" value="no" checked />
     <label class="label">
         No Thanks</label>
 </div>
