@@ -53,6 +53,7 @@ public class ListVMsCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.STATE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.GROUP, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HOST_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
@@ -82,6 +83,7 @@ public class ListVMsCmd extends BaseCmd {
         Long zoneId = (Long)params.get(BaseCmd.Properties.ZONE_ID.getName());
         Long podId = (Long)params.get(BaseCmd.Properties.POD_ID.getName());
         Long hostId = (Long)params.get(BaseCmd.Properties.HOST_ID.getName());
+        String group = (String)params.get(BaseCmd.Properties.GROUP.getName());
         String keyword = (String)params.get(BaseCmd.Properties.KEYWORD.getName());
         Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
         Integer pageSize = (Integer)params.get(BaseCmd.Properties.PAGESIZE.getName());
@@ -139,6 +141,14 @@ public class ListVMsCmd extends BaseCmd {
             
             if(zoneId != null)
             	c.addCriteria(Criteria.DATACENTERID, zoneId);
+
+            if(group != null)
+            {
+            	if(group.equals(""))
+            		c.addCriteria(Criteria.EMPTY_GROUP, group);
+            	else
+            		c.addCriteria(Criteria.GROUP, group);
+            }
 
             // ignore these search requests if it's not an admin
             if (isAdmin == true) {

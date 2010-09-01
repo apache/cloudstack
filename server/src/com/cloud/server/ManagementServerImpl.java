@@ -4989,7 +4989,6 @@ public class ManagementServerImpl implements ManagementServer {
     public List<UserVmVO> searchForUserVMs(Criteria c) {
         Filter searchFilter = new Filter(UserVmVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
         SearchBuilder<UserVmVO> sb = _userVmDao.createSearchBuilder();
-
         // some criteria matter for generating the join condition
         Object[] accountIds = (Object[]) c.getCriteria(Criteria.ACCOUNTID);
         Object domainId = c.getCriteria(Criteria.DOMAINID);
@@ -5006,7 +5005,8 @@ public class ManagementServerImpl implements ManagementServer {
         Object keyword = c.getCriteria(Criteria.KEYWORD);
         Object isAdmin = c.getCriteria(Criteria.ISADMIN);
         Object ipAddress = c.getCriteria(Criteria.IPADDRESS);
-
+        Object vmGroup = c.getCriteria(Criteria.GROUP);
+        Object emptyGroup = c.getCriteria(Criteria.EMPTY_GROUP);
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("accountIdEQ", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
@@ -5020,7 +5020,8 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("hostIdEQ", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("hostIdIN", sb.entity().getHostId(), SearchCriteria.Op.IN);
         sb.and("guestIP", sb.entity().getGuestIpAddress(), SearchCriteria.Op.EQ);
-
+        sb.and("groupEQ", sb.entity().getGroup(),SearchCriteria.Op.EQ);
+        
         if ((accountIds == null) && (domainId != null)) {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
@@ -5109,7 +5110,23 @@ public class ManagementServerImpl implements ManagementServer {
         if (ipAddress != null) {
             sc.setParameters("guestIP", ipAddress);
         }
+        
+        if(vmGroup!=null)
+        	sc.setParameters("groupEQ", vmGroup);
+        
+        if (emptyGroup!= null) 
+        {
+        	SearchBuilder<UserVmVO> emptyGroupSearch = _userVmDao.createSearchBuilder();
+        	emptyGroupSearch.and("group", emptyGroupSearch.entity().getGroup(), SearchCriteria.Op.EQ);
+        	emptyGroupSearch.or("null", emptyGroupSearch.entity().getGroup(), SearchCriteria.Op.NULL);
 
+        	SearchCriteria<UserVmVO> sc1 = _userVmDao.createSearchCriteria();
+        	sc1 = emptyGroupSearch.create();
+        	sc1.setParameters("group", "");
+        	
+        	sc.addAnd("group", SearchCriteria.Op.SC, sc1);
+        }
+        
         return _userVmDao.search(sc, searchFilter);
     }
 
