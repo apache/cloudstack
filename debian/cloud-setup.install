@@ -12,3 +12,4 @@
 /usr/share/cloud/setup/index-212to213.sql
 /usr/share/cloud/setup/postprocess-20to21.sql
 /usr/share/cloud/setup/schema-20to21.sql
+/usr/share/cloud/setup/schema-level.sql
