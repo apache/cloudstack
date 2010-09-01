@@ -468,6 +468,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         AgentAttache attache = createAttache(id, server, resource);
         if (!resource.IsRemoteAgent())
         	notifyMonitorsOfConnection(attache, startup);
+        else {
+        	 _hostDao.updateStatus(server, Event.AgentConnected, _nodeId);
+        }
         return attache;
     }
 
