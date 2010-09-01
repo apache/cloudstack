@@ -336,7 +336,10 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
 	    				
 		    			if(executor.getSyncSource() != null) {
 		    				_queueMgr.purgeItem(executor.getSyncSource().getId());
-		    				checkQueue(executor.getSyncSource().getQueueId());
+
+		    				// avoid kicking the queue inside job execution context to maintain better transaction
+		    				// boundaries between job executions
+		    				// checkQueue(executor.getSyncSource().getQueueId());
 		    			}
 	    			} else {
 	        			if(s_logger.isTraceEnabled())
@@ -353,7 +356,9 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
 		    			if(executor.getSyncSource() != null) {
 		    				_queueMgr.purgeItem(executor.getSyncSource().getId());
 		    				
-		    				checkQueue(executor.getSyncSource().getQueueId());
+		    				// avoid kicking the queue inside job execution context to maintain better transaction
+		    				// boundaries between job executions
+		    				// checkQueue(executor.getSyncSource().getQueueId());
 		    			}
     				} catch(Throwable ex) {
     					s_logger.fatal("Exception on exception, log it for record", ex);
@@ -379,7 +384,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
 	    			_queueMgr.purgeItem(item.getId());
 		    	} else {
 		    		if(s_logger.isDebugEnabled())
-		    			s_logger.debug("Schedule queued job-" + job.getId());
+		    			s_logger.debug("Schedule queued job-" + job.getId() + " for execution");
 		    		
 		    		executor.setFromPreviousSession(fromPreviousSession);
 		    		executor.setSyncSource(item);
@@ -403,7 +408,9 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
 					+ executor.getSyncSource().getContentId());
     		
 			_queueMgr.purgeItem(executor.getSyncSource().getId());
-			checkQueue(executor.getSyncSource().getQueueId());
+			
+			// avoid kicking the queue inside job execution context
+			// checkQueue(executor.getSyncSource().getQueueId());
     	}
     }
     

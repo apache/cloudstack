@@ -119,7 +119,7 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
     			}
     		} else {
     			if(s_logger.isDebugEnabled())
-    				s_logger.debug("There is a pending process in sync queue(id: " + queueId + ")");
+    				s_logger.debug("There is a pending process in sync queue(queue id: " + queueId + ")");
     		}
     		txt.commit();
     	} catch(Exception e) {
