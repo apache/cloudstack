@@ -548,11 +548,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             _dcDao.releasePrivateIpAddress(host.getPrivateIpAddress(), host.getDataCenterId(), null);
             AgentAttache attache = _agents.get(hostId);
             handleDisconnect(attache, Status.Event.Remove, false);
-            /*
+            
+            /*Disconnected agent needs special handling here*/
             host.setGuid(null);
             host.setClusterId(null);
             _hostDao.update(host.getId(), host);
-            */
+            
             _hostDao.remove(hostId);
             
             //delete the associated primary storage from db
