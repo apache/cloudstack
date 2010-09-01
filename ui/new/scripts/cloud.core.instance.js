@@ -641,9 +641,8 @@ function clickInstanceGroupHeader($arrowIcon) {
 		    $vmPopup.hide();
 		    $("#overlay_black").hide();					
 	    }
-    		
-    	
-	    $vmPopup.find("#vm_wizard_close").bind("click", function(event) {
+    		    	
+	    $vmPopup.find("#close_button").bind("click", function(event) {
 		    vmWizardClose();
 		    return false;
 	    });
