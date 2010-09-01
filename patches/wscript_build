@@ -10,7 +10,7 @@ for virttech in Utils.to_list(bld.path.ant_glob("*",dir=True)):
 		source = patchfiles,
 		target = '%s-patch.tgz'%virttech,
 		name   = '%s-patch_tgz'%virttech,
-		root = "patches/%s"%virttech,
+		root = os.path.join("patches",virttech),
 		rename = lambda x: re.sub(".subst$","",x),
 		after = 'patchsubst',
 	)
