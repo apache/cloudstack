@@ -7,7 +7,9 @@
 import platform
 import Utils,Node,Options,Logs,Scripting,Environment,Build,Configure
 from os import unlink as _unlink, makedirs as _makedirs, getcwd as _getcwd, chdir as _chdir
-from os.path import abspath as _abspath, basename as _basename, dirname as _dirname, exists as _exists, isdir as _isdir, split as _split, join as _join, sep, pathsep, pardir
+try: from os import getuid as _getuid
+except ImportError: pass
+from os.path import abspath as _abspath, basename as _basename, dirname as _dirname, exists as _exists, isdir as _isdir, split as _split, join as _join, expanduser as _expanduser, sep, pathsep, pardir
 from glob import glob as _glob
 
 
@@ -88,14 +90,6 @@ hard_deps = [
 ]
 
 
-conf.check_tool('misc')
-conf.check_tool("gnu_dirs")
-conf.check_tool('tar')
-conf.check_tool('mkisofs')
-conf.check_tool('java')
-conf.check_tool("python")
-conf.check_python_version((2,4,0))
-
 conf.check_message_1('Detecting distribution')
 if platform.system() == 'Windows': conf.env.DISTRO = "Windows"
 elif platform.system() == 'Darwin': conf.env.DISTRO = "Mac"
@@ -106,6 +100,22 @@ else: conf.env.DISTRO = "unknown"
 if conf.env.DISTRO == "unknown": c = "YELLOW"
 else: 				    c = "GREEN"
 conf.check_message_2(conf.env.DISTRO,c)
+
+conf.check_message_1('Detecting installation prefix')
+if conf.env.PREFIX == '/usr/local':
+	if conf.env.DISTRO == 'Windows':
+		conf.env.PREFIX = '/CloudStack'
+	elif _getuid() != 0: # not root
+		conf.env.PREFIX = _join(_expanduser("~"),"cloudstack")
+conf.check_message_2("%s"%conf.env.PREFIX,"GREEN")
+
+conf.check_tool('misc')
+conf.check_tool("gnu_dirs")
+conf.check_tool('tar')
+conf.check_tool('mkisofs')
+conf.check_tool('java')
+conf.check_tool("python")
+conf.check_python_version((2,4,0))
 
 if conf.env.DISTRO not in ["Windows","Mac"]:
 	conf.check_tool('compiler_cc')
