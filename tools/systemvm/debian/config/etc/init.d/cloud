@@ -1,14 +1,16 @@
-#!/bin/sh -e
+#!/bin/bash -e
 ### BEGIN INIT INFO
-# Provides:          cloud-passwd-srvr
+# Provides:          cloud
 # Required-Start:    mountkernfs $local_fs cloud-early-config
 # Required-Stop:     $local_fs
 # Should-Start:      
 # Should-Stop:       
-# Default-Start:     2345
-# Default-Stop:      2345
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
 # Short-Description: 	Start up the cloud.com service
 ### END INIT INFO
+
+#set -x
 
 if [ -f /mnt/cmdline ]
 then
@@ -34,7 +36,7 @@ then
   . /etc/init.d/functions
 fi
 
-if [ -f . /lib/lsb/init-functions ]
+if [ -f ./lib/lsb/init-functions ]
 then
   . /lib/lsb/init-functions
 fi
@@ -119,7 +121,7 @@ case "$1" in
  restart) stop
           start
  	  ;;
-       *) echo $"Usage: $0 {start|stop|status|restart}"
+       *) echo "Usage: $0 {start|stop|status|restart}"
 	  exit 1
 	  ;;
 esac

@@ -1,7 +1,14 @@
-#! /bin/bash
-# chkconfig: 35 11 90
-# description: pre-boot configuration using boot line parameters 
-#   This file exists in /etc/init.d/ 
+#!/bin/bash -e
+### BEGIN INIT INFO
+# Provides:          postinit
+# Required-Start:    mountkernfs $local_fs cloud-early-config
+# Required-Stop:     $local_fs
+# Should-Start:      
+# Should-Stop:       
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: 	post-init
+### END INIT INFO
 
 replace_in_file() {
   local filename=$1
@@ -24,6 +31,27 @@ setup_console_proxy() {
   public_ip=$ETH2_IP
   sed -i /$NAME/d /etc/hosts
   echo "$public_ip $NAME" >> /etc/hosts
+}
+
+start() {
+  case $TYPE in 
+     secstorage)
+         [ "$NAME" == "" ] && NAME=secstorage
+         setup_secstorage;
+	  ;;
+     consoleproxy)
+         [ "$NAME" == "" ] && NAME=consoleproxy
+         setup_console_proxy;
+	  ;;
+  esac
+}
+
+stop() {
+
+}
+
+status() {
+
 }
 
 CMDLINE=$(cat /proc/cmdline)
@@ -98,13 +126,18 @@ fi
 ETH1_IP=$(ifconfig eth1|grep 'inet addr:'|cut -d : -f 2|cut -d \  -f 1)
 ETH2_IP=$(ifconfig eth2|grep 'inet addr:'|cut -d : -f 2|cut -d \  -f 1)
 
-case $TYPE in 
-   secstorage)
-       [ "$NAME" == "" ] && NAME=secstorage
-       setup_secstorage;
-	;;
-   consoleproxy)
-       [ "$NAME" == "" ] && NAME=consoleproxy
-       setup_console_proxy;
-	;;
+
+case "$1" in
+   start) start
+	  ;;
+    stop) stop
+ 	  ;;
+    status) status
+ 	  ;;
+ restart) stop
+          start
+ 	  ;;
+       *) echo "Usage: $0 {start|stop|status|restart}"
+	  exit 1
+	  ;;
 esac

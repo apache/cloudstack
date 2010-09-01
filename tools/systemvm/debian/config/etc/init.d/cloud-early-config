@@ -1,4 +1,4 @@
-##!/bin/sh -e
+#!/bin/bash -e
 ### BEGIN INIT INFO
 # Provides:          cloud-early-config
 # Required-Start:    mountkernfs $local_fs
@@ -28,7 +28,7 @@ patch() {
   if [ -e /dev/xvdd ]; then
     mkdir -p /media/cdrom
     mount -o ro /dev/xvdd /media/cdrom
-    tar xzf /media/cdrom/patch.tgz -C /
+    #tar xzf /media/cdrom/patch.tgz -C /
     cat /proc/cmdline > /var/cache/cloud/cmdline
     /opt/cloud/bin/patchsystemvm.sh
     umount /media/cdrom
@@ -55,7 +55,7 @@ setup_interface() {
     fi
   fi
 
-  if [[ "$ip" != "0.0.0.0" && "$ip" != "" ]]
+  if [ "$ip" != "0.0.0.0" -a "$ip" != "" ]
   then
      echo "iface  $intf inet $bootproto" >> /etc/network/interfaces
      echo "  address $ip " >> /etc/network/interfaces
@@ -67,7 +67,8 @@ setup_interface() {
 }
 
 enable_fwding() {
-  echo $1 > /proc/sys/net/ipv4/ip_forward
+  echo "enable_fwding = $1"
+  echo "$1" > /proc/sys/net/ipv4/ip_forward
 }
 
 enable_svc() {
@@ -75,15 +76,15 @@ enable_svc() {
   local enabled=$2
 
   local cfg=/etc/default/${svc}
-  sed -i 's/ENABLED=.*$/ENABLED=$enabled/g' $cfg 
+  sed  -i "s/ENABLED=.*$/ENABLED=$enabled/" $cfg 
 }
 
 disable_hvc() {
-  [ ! -f /proc/xen ] && sed -i 's/^vc/#vc/' /etc/inittab && telinit q
+  [ ! -d /proc/xen ] && sed -i 's/^vc/#vc/' /etc/inittab && telinit q
+  [  -d /proc/xen ] && sed -i 's/^#vc/vc/' /etc/inittab && telinit q
 }
 
 setup_common() {
-  disable_hvc
   init_interfaces $1 $2 $3
   setup_interface "0" $ETH0_IP $ETH0_MASK $GW
   setup_interface "1" $ETH1_IP $ETH1_MASK $GW
@@ -105,7 +106,7 @@ setup_common() {
     echo "nameserver $NS2" >> /etc/dnsmasq-resolv.conf
     echo "nameserver $NS2" >> /etc/resolv.conf
   fi
-  if [[ -n "$MGMTNET"  && -n "$LOCAL_GW" ]]
+  if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
   then
     ip route add $MGMTNET via $LOCAL_GW dev eth1
   fi
@@ -180,7 +181,7 @@ setup_secstorage() {
   cp /etc/iptables/iptables-secstorage /etc/iptables/rules
   enable_fwding 0
   enable_svc haproxy 0
-  enable_fwding 0
+  enable_svc dnsmasq 0
 }
 
 setup_console_proxy() {
@@ -193,11 +194,12 @@ setup_console_proxy() {
   cp /etc/iptables/iptables-consoleproxy /etc/iptables/rules
   enable_fwding 0
   enable_svc haproxy 0
-  enable_fwding 0
+  enable_svc dnsmasq 0
   chkconfig apache2 off
 }
 
 start() {
+  patch
   case $TYPE in 
      router)
          [ "$NAME" == "" ] && NAME=router
@@ -216,7 +218,6 @@ start() {
          setup_console_proxy;
 	  ;;
   esac
-  patch
   return 0
 }
 
@@ -227,7 +228,6 @@ else
     CMDLINE=$(cat /proc/cmdline)
 fi
 
-disable_hvc
 
 TYPE="unknown"
 BOOTPROTO="static"

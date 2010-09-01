@@ -18,39 +18,35 @@ patch_console_proxy() {
 consoleproxy_svcs() {
    chkconfig cloud on
    chkconfig postinit on
-   chkconfig domr_webserver off
+   chkconfig cloud-passwd-srvr off
    chkconfig haproxy off ;
    chkconfig dnsmasq off
-   chkconfig sshd on
-   chkconfig httpd off
-   chkconfig nfs off
-   chkconfig nfslock off
-   chkconfig rpcbind off
-   chkconfig rpcidmap off
+   chkconfig ssh on
+   chkconfig apache2 off
+   chkconfig nfs-common off
+   chkconfig portmap off
    mkdir -p /var/log/cloud
 }
 
 secstorage_svcs() {
    chkconfig cloud on
    chkconfig postinit on
-   chkconfig domr_webserver off
+   chkconfig cloud-passwd-srvr off
    chkconfig haproxy off ;
    chkconfig dnsmasq off
-   chkconfig sshd on
-   chkconfig httpd off
+   chkconfig ssh on
+   chkconfig apache2 off
    mkdir -p /var/log/cloud
 }
 
 routing_svcs() {
    chkconfig cloud off
-   chkconfig domr_webserver on ; 
+   chkconfig cloud-passwd-srvr on ; 
    chkconfig haproxy on ; 
    chkconfig dnsmasq on
-   chkconfig sshd on
-   chkconfig nfs off
-   chkconfig nfslock off
-   chkconfig rpcbind off
-   chkconfig rpcidmap off
+   chkconfig ssh on
+   chkconfig nfs-common off
+   chkconfig portmap off
 }
 
 CMDLINE=$(cat /var/cache/cloud/cmdline)
