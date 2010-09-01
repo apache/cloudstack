@@ -53,16 +53,9 @@ def apply_tar(self):
 		node = self.path.find_resource(x)
 		if not node:raise Utils.WafError('cannot find input file %s for processing'%x)
 		ins.append(node)
-	if self.dict and not self.env['DICT_HASH']:
-		self.env=self.env.copy()
-		keys=list(self.dict.keys())
-		keys.sort()
-		lst=[self.dict[x]for x in keys]
-		self.env['DICT_HASH']=str(Utils.h_list(lst))
 	tsk=self.create_task('tar',ins,out)
 	tsk.fun=self.fun
 	tsk.dict=self.dict
-	tsk.dep_vars=['DICT_HASH']
 	tsk.install_path=self.install_path
 	tsk.chmod=self.chmod
 	if not tsk.env:
