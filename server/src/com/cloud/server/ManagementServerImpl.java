@@ -189,7 +189,6 @@ import com.cloud.network.dao.SecurityGroupDao;
 import com.cloud.network.dao.SecurityGroupVMMapDao;
 import com.cloud.network.security.IngressRuleVO;
 import com.cloud.network.security.NetworkGroupManager;
-import com.cloud.network.security.NetworkGroupRulesVO;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.network.security.dao.NetworkGroupDao;
 import com.cloud.offering.ServiceOffering;
@@ -8227,11 +8226,6 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public void deleteNetworkGroup(Long groupId, Long accountId) throws ResourceInUseException, PermissionDeniedException {
         _networkGroupMgr.deleteNetworkGroup(groupId, accountId);
-    }
-
-    @Override
-    public List<NetworkGroupRulesVO> searchForNetworkGroupRules(Criteria c) {
-        return _networkGroupMgr.searchForNetworkGroupRules(c);
     }
 
 	@Override

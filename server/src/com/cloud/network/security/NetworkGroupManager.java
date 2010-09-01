@@ -21,11 +21,11 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.cloud.api.commands.CreateNetworkGroupCmd;
+import com.cloud.api.commands.ListNetworkGroupsCmd;
 import com.cloud.api.commands.RevokeNetworkGroupIngressCmd;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
-import com.cloud.server.Criteria;
 import com.cloud.user.AccountVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
@@ -71,7 +71,7 @@ public interface NetworkGroupManager extends Manager {
      * The search terms are specified in the search criteria.
      * @return the list of network groups and associated ingress rules
      */
-    public List<NetworkGroupRulesVO> searchForNetworkGroupRules(Criteria c);
+    public List<NetworkGroupRulesVO> searchForNetworkGroupRules(ListNetworkGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException;
 
 	public void fullSync(long agentId, HashMap<String, Pair<Long, Long>> newGroupStates);
 	

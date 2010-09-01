@@ -90,7 +90,6 @@ import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.SecurityGroupVO;
 import com.cloud.network.security.IngressRuleVO;
-import com.cloud.network.security.NetworkGroupRulesVO;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
@@ -1913,13 +1912,6 @@ public interface ManagementServer {
 	 * @throws PermissionDeniedException
 	 */
 	void deleteNetworkGroup(Long groupId, Long accountId) throws ResourceInUseException, PermissionDeniedException;
-
-    /**
-     * Search for network groups and associated ingress rules for the given account, domain, group name, and/or keyword.
-     * The search terms are specified in the search criteria.
-     * @return the list of network groups and associated ingress rules
-     */
-    public List<NetworkGroupRulesVO> searchForNetworkGroupRules(Criteria c);
 
 	HostStats getHostStatistics(long hostId);
 	

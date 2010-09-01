@@ -46,6 +46,7 @@ import com.cloud.agent.manager.AgentManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CreateNetworkGroupCmd;
+import com.cloud.api.commands.ListNetworkGroupsCmd;
 import com.cloud.api.commands.RevokeNetworkGroupIngressCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.DomainVO;
@@ -61,7 +62,6 @@ import com.cloud.network.security.dao.NetworkGroupRulesDao;
 import com.cloud.network.security.dao.NetworkGroupVMMapDao;
 import com.cloud.network.security.dao.NetworkGroupWorkDao;
 import com.cloud.network.security.dao.VmRulesetLogDao;
-import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
@@ -80,6 +80,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.State;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 
 @Local(value={NetworkGroupManager.class})
@@ -496,7 +497,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 	}
 	
 	@Override
-	@DB
+	@DB @SuppressWarnings("rawtypes")
 	public boolean revokeNetworkGroupIngress(RevokeNetworkGroupIngressCmd cmd) {
 		
 		//input validation
@@ -1002,14 +1003,66 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 	}
 
     @Override
-    public List<NetworkGroupRulesVO> searchForNetworkGroupRules(Criteria c) {
-        Filter searchFilter = new Filter(NetworkGroupRulesVO.class, "id", true, c.getOffset(), c.getLimit());
-        Object accountId = c.getCriteria(Criteria.ACCOUNTID);
-        Object domainId = c.getCriteria(Criteria.DOMAINID);
-        Object networkGroup = c.getCriteria(Criteria.NETWORKGROUP);
-        Object instanceId = c.getCriteria(Criteria.INSTANCEID);
-        Object recursive = c.getCriteria(Criteria.ISRECURSIVE);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
+    public List<NetworkGroupRulesVO> searchForNetworkGroupRules(ListNetworkGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
+        Long accountId = null;
+        Long instanceId = cmd.getVirtualMachineId();
+        String networkGroup = cmd.getNetworkGroupName();
+        Boolean recursive = Boolean.FALSE;
+
+        // permissions check
+        if ((account == null) || isAdmin(account.getType())) {
+            if (domainId != null) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Unable to list network groups for account " + accountName + " in domain " + domainId + "; permission denied.");
+                }
+                if (accountName != null) {
+                    Account acct = _accountDao.findActiveAccount(accountName, domainId);
+                    if (acct != null) {
+                        accountId = acct.getId();
+                    } else {
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                }
+            } else if (instanceId != null) {
+                UserVmVO userVM = _userVMDao.findById(instanceId);
+                if (userVM == null) {
+                    throw new InvalidParameterValueException("Unable to list network groups for virtual machine instance " + instanceId + "; instance not found.");
+                }
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), userVM.getDomainId())) {
+                    throw new PermissionDeniedException("Unable to list network groups for virtual machine instance " + instanceId + "; permission denied.");
+                }
+            } else if (account != null) {
+                // either an admin is searching for their own group, or admin is listing all groups and the search needs to be restricted to domain admin's domain
+                if (networkGroup != null) {
+                    accountId = account.getId();
+                } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                    domainId = account.getDomainId();
+                    recursive = Boolean.TRUE;
+                }
+            }
+        } else {
+            if (instanceId != null) {
+                UserVmVO userVM = _userVMDao.findById(instanceId);
+                if (userVM == null) {
+                    throw new InvalidParameterValueException("Unable to list network groups for virtual machine instance " + instanceId + "; instance not found.");
+                }
+
+                if (account != null) {
+                    // check that the user is the owner of the VM (admin case was already verified
+                    if (account.getId().longValue() != userVM.getAccountId()) {
+                        throw new PermissionDeniedException("Unable to list network groups for virtual machine instance " + instanceId + "; permission denied.");
+                    }
+                }
+            } else {
+                accountId = ((account != null) ? account.getId() : null);
+            }
+        }
+
+        Filter searchFilter = new Filter(NetworkGroupRulesVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Object keyword = cmd.getKeyword();
 
         SearchBuilder<NetworkGroupRulesVO> sb = _networkGroupRulesDao.createSearchBuilder();
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);

@@ -1,5 +1,7 @@
 package com.cloud.api.response;
 
+import java.util.List;
+
 import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 
@@ -21,6 +23,9 @@ public class NetworkGroupResponse implements ResponseObject {
 
     @Param(name="domain")
     private String domainName;
+
+    @Param(name="ingressrule")
+    private List<IngressRuleResponse> ingressRules;
 
     public Long getId() {
         return id;
@@ -68,5 +73,13 @@ public class NetworkGroupResponse implements ResponseObject {
 
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    public List<IngressRuleResponse> getIngressRules() {
+        return ingressRules;
+    }
+
+    public void setIngressRules(List<IngressRuleResponse> ingressRules) {
+        this.ingressRules = ingressRules;
     }
 }
