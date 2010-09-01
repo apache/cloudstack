@@ -289,11 +289,11 @@ if bld.env.DISTRO not in ["Windows","Mac"]:
 	# systemvm.zip cannot be built on Windows or Mac because system deps do not exist there
 	tgen = bld(
 		rule = iso_up,
-		source = "patches/patch.tgz target/oss/systemvm.zip",
+		source = "patches/xenserver-patch.tgz target/oss/systemvm.zip",
 		target = 'target/oss/systemvm.iso',
 		name   = 'systemvm_iso',
-		after  = 'systemvm_zip patch_tgz',
-		rename = lambda x: x.split(sep)[-1],
+		after  = 'systemvm_zip xenserver-patch_tgz',
+		rename = lambda x: x.split(sep)[-1].replace('xenserver-',''),
 	)
 	bld.process_after(tgen)
 	bld.install_as("${AGENTLIBDIR}/vms/systemvm.iso", "target/oss/systemvm.iso")
@@ -301,11 +301,11 @@ if bld.env.DISTRO not in ["Windows","Mac"]:
 if buildpremium:
 	tgen = bld(
 		rule = iso_up,
-		source = "patches/patch.tgz target/premium/systemvm.zip",
+		source = "patches/xenserver-patch.tgz target/premium/systemvm.zip",
 		target = 'target/premium/systemvm.iso',
 		name   = 'systemvm-premium_iso',
-		after  = 'systemvm-premium_zip patch_tgz',
-		rename = lambda x: x.split(sep)[-1],
+		after  = 'systemvm-premium_zip xenserver-patch_tgz',
+		rename = lambda x: x.split(sep)[-1].replace('xenserver-',''),
 	)
 	bld.process_after(tgen)
 	bld.install_as("${AGENTLIBDIR}/vms/systemvm-premium.iso", "target/premium/systemvm.iso")
