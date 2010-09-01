@@ -26,6 +26,7 @@ import com.cloud.api.commands.CreateIPForwardingRuleCmd;
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.api.commands.DeletePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
+import com.cloud.api.commands.ListPortForwardingRulesCmd;
 import com.cloud.api.commands.RemoveFromLoadBalancerRuleCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -176,6 +177,13 @@ public interface NetworkManager extends Manager {
      * @return the newly created FirewallRuleVO if successful, null otherwise.
      */
     public FirewallRuleVO createPortForwardingRule(CreateIPForwardingRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, NetworkRuleConflictException;
+
+    /**
+     * List port forwarding rules assigned to an ip address
+     * @param cmd the command object holding the criteria for listing port forwarding rules (the ipAddress)
+     * @return list of port forwarding rules on the given address, empty list if no rules exist
+     */
+    public List<FirewallRuleVO> listPortForwardingRules(ListPortForwardingRulesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 
     /**
      * Create a load balancer rule from the given ipAddress/port to the given private port

@@ -64,6 +64,7 @@ import com.cloud.api.commands.CreateIPForwardingRuleCmd;
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.api.commands.DeletePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
+import com.cloud.api.commands.ListPortForwardingRulesCmd;
 import com.cloud.api.commands.RemoveFromLoadBalancerRuleCmd;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
@@ -1811,6 +1812,38 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         EventUtils.saveEvent(UserContext.current().getUserId(), userVM.getAccountId(), level, EventTypes.EVENT_NET_RULE_ADD, description);
 
         return newFwRule;
+    }
+
+    @Override
+    public List<FirewallRuleVO> listPortForwardingRules(ListPortForwardingRulesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        String ipAddress = cmd.getIpAddress();
+        Account account = (Account)UserContext.current().getAccountObject();
+
+        IPAddressVO ipAddressVO = _ipAddressDao.findById(ipAddress);
+        if (ipAddressVO == null) {
+            throw new InvalidParameterValueException("Unable to find IP address " + ipAddress);
+        }
+
+        Account addrOwner = _accountDao.findById(ipAddressVO.getAccountId());
+
+        // if an admin account was passed in, or no account was passed in, make sure we honor the accountName/domainId parameters
+        if ((account != null) && isAdmin(account.getType())) {
+            if (ipAddressVO.getAccountId() != null) {
+                if ((addrOwner != null) && !_domainDao.isChildDomain(account.getDomainId(), addrOwner.getDomainId())) {
+                    throw new PermissionDeniedException("Unable to list port forwarding rules for address " + ipAddress + ", permission denied for account " + account.getId());
+                }
+            } else {
+                throw new InvalidParameterValueException("Unable to list port forwarding rules for address " + ipAddress + ", address not in use.");
+            }
+        } else {
+            if (account != null) {
+                if ((ipAddressVO.getAccountId() == null) || (account.getId().longValue() != ipAddressVO.getAccountId().longValue())) {
+                    throw new PermissionDeniedException("Unable to list port forwarding rules for address " + ipAddress + ", permission denied for account " + account.getId());
+                }
+            }
+        }
+
+        return _rulesDao.listIPForwarding(cmd.getIpAddress(), true);
     }
 
     @Override

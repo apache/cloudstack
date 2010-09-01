@@ -4997,11 +4997,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<FirewallRuleVO> listIPForwarding(String publicIPAddress, boolean forwarding) {
-        return _firewallRulesDao.listIPForwarding(publicIPAddress, forwarding);
-    }
-
-    @Override
     public FirewallRuleVO updatePortForwardingRule(long userId, String publicIp, String privateIp, String publicPort, String privatePort, String protocol) {
         List<FirewallRuleVO> fwRules = _firewallRulesDao.listIPForwardingForUpdate(publicIp, publicPort, protocol);
         if ((fwRules != null) && (fwRules.size() == 1)) {

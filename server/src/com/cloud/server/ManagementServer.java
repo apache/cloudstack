@@ -1121,14 +1121,6 @@ public interface ManagementServer {
      * @return List of UserVMs.
      */
     List<UserVmVO> searchForUserVMs(Criteria c);
-    
-    /**
-     * Obtains a list of firewall rules by the specified IP address and forwarding flag.
-     * @param publicIPAddress
-     * @param forwarding
-     * @return
-     */
-    List<FirewallRuleVO> listIPForwarding(String publicIPAddress, boolean forwarding);
 
     /**
      * Update an existing port forwarding rule on the given public IP / public port for the given protocol
