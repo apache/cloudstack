@@ -44,6 +44,8 @@ function getDirectAttachUntaggedEnabled() { return g_directAttachedUntaggedEnabl
 //keyboard keycode
 var keycode_Enter = 13;
 
+//dropdown field size 
+var maxPageSize = "&pagesize=500"; 
 
 //XMLHttpResponse.status
 var ERROR_ACCESS_DENIED_DUE_TO_UNAUTHORIZED = 401;
