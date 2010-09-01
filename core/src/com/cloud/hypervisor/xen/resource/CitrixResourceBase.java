@@ -3101,7 +3101,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return true;
     }
 
-    protected String callHostPluginBase(String plugin, String cmd, String... params) {
+    protected String callHostPluginBase(String plugin, String cmd, int timeout, String... params) {
         Map<String, String> args = new HashMap<String, String>();
         Session slaveSession = null;
         Connection slaveConn = null;
@@ -3113,7 +3113,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-            slaveConn = new Connection(slaveUrl, 1800);
+            slaveConn = new Connection(slaveUrl, timeout);
             slaveSession = Session.slaveLocalLoginWithPassword(slaveConn, _username, _password);
 
             if (s_logger.isDebugEnabled()) {
@@ -3149,53 +3149,13 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
 
     protected String callHostPlugin(String cmd, String... params) {
-        Map<String, String> args = new HashMap<String, String>();
-        Session slaveSession = null;
-        Connection slaveConn = null;
-        try {
-            URL slaveUrl = null;
-            try {
-                slaveUrl = new URL("http://" + _host.ip);
-            } catch (MalformedURLException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            slaveConn = new Connection(slaveUrl, 1800);
-            slaveSession = Session.slaveLocalLoginWithPassword(slaveConn, _username, _password);
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Slave logon successful. session= " + slaveSession);
-            }
-            Host host = Host.getByUuid(slaveConn, _host.uuid);
-
-
-            for (int i = 0; i < params.length; i += 2) {
-                args.put(params[i], params[i + 1]);
-            }
-
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("callHostPlugin executing for command " + cmd + " with " + getArgsString(args));
-            }
-
-            String result = host.callPlugin(slaveConn, "vmops", cmd, args);
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("callHostPlugin Result: " + result);
-            }
-            return result.replace("\n", "");
-        } catch (XenAPIException e) {
-            s_logger.warn("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to " + e.toString());
-        } catch (XmlRpcException e) {
-            s_logger.debug("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to " + e.getMessage());
-        } finally {
-            if( slaveSession != null) {
-                try {
-                    Session.localLogout(slaveConn);
-                } catch (Exception e) {
-                }
-            }
-        }
-        return null;
+    	return callHostPluginBase("vmops", cmd, 300, params);
     }
+    
+    protected String callHostPluginWithTimeOut(String cmd, int timeout, String... params) {
+    	return callHostPluginBase("vmops", cmd, timeout, params);
+    }
+
 
     protected String getArgsString(Map<String, String> args) {
         StringBuilder argString = new StringBuilder();
@@ -5982,7 +5942,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             checksum = "";
         }
 
-        String result = callHostPlugin("post_create_private_template", "remoteTemplateMountPath", remoteTemplateMountPath, "templateDownloadFolder", templateDownloadFolder,
+        String result = callHostPluginWithTimeOut("post_create_private_template", 1800, "remoteTemplateMountPath", remoteTemplateMountPath, "templateDownloadFolder", templateDownloadFolder,
                 "templateInstallFolder", templateInstallFolder, "templateFilename", templateFilename, "templateName", templateName, "templateDescription", templateDescription,
                 "checksum", checksum, "virtualSize", String.valueOf(virtualSize), "templateId", String.valueOf(templateId));
 
@@ -6005,29 +5965,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return success;
     }
 
-    protected boolean waitForGC(String primaryStorageSRUuid, String previousSnapshotUuid, String firstBackupUuid, Boolean isISCSI) {
-        boolean success = false;
-        String result = callHostPlugin("validatePreviousSnapshotBackup", "primaryStorageSRUuid", primaryStorageSRUuid, "previousSnapshotUuid", previousSnapshotUuid,
-                "firstBackupUuid", firstBackupUuid, "isISCSI", isISCSI.toString());
-
-        if (result != null && !result.isEmpty()) {
-            String[] expectedActual = result.split("#");
-            String status = expectedActual[0];
-
-            if (expectedActual.length == 3) {
-                String expectedParentOfPreviousSnapshot = expectedActual[1];
-                String actualParentOfPreviousSnapshot = expectedActual[2];
-                if (status.equals("1") && expectedParentOfPreviousSnapshot.equals(actualParentOfPreviousSnapshot)) {
-                    success = true;
-                } else {
-                    s_logger.error("Could not backup snapshot because the previous snapshot hasn't been coalesced by XenServer GC." + "Expected parent of previous snapshot: "
-                            + expectedParentOfPreviousSnapshot + " Actual parent of previous snapshot: " + actualParentOfPreviousSnapshot);
-                }
-            }
-        }
-        return success;
-    }
-
     // Each argument is put in a separate line for readability.
     // Using more lines does not harm the environment.
     protected String backupSnapshot(String primaryStorageSRUuid, Long dcId, Long accountId, Long volumeId, String secondaryStorageMountPath, String snapshotUuid,
@@ -6043,7 +5980,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
         // Each argument is put in a separate line for readability.
         // Using more lines does not harm the environment.
-        String results = callHostPlugin("backupSnapshot", "primaryStorageSRUuid", primaryStorageSRUuid, "dcId", dcId.toString(), "accountId", accountId.toString(), "volumeId",
+        String results = callHostPluginWithTimeOut("backupSnapshot", 1800, "primaryStorageSRUuid", primaryStorageSRUuid, "dcId", dcId.toString(), "accountId", accountId.toString(), "volumeId",
                 volumeId.toString(), "secondaryStorageMountPath", secondaryStorageMountPath, "snapshotUuid", snapshotUuid, "prevSnapshotUuid", prevSnapshotUuid, "prevBackupUuid",
                 prevBackupUuid, "isFirstSnapshotOfRootVolume", isFirstSnapshotOfRootVolume.toString(), "isISCSI", isISCSI.toString());
 
@@ -6146,7 +6083,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
         String failureString = "Could not create volume from " + backedUpSnapshotUuid;
         templatePath = (templatePath == null) ? "" : templatePath;
-        String results = callHostPlugin("createVolumeFromSnapshot", "dcId", dcId.toString(), "accountId", accountId.toString(), "volumeId", volumeId.toString(),
+        String results = callHostPluginWithTimeOut("createVolumeFromSnapshot", 1800, "dcId", dcId.toString(), "accountId", accountId.toString(), "volumeId", volumeId.toString(),
                 "secondaryStorageMountPath", secondaryStorageMountPath, "backedUpSnapshotUuid", backedUpSnapshotUuid, "templatePath", templatePath, "templateDownloadFolder",
                 templateDownloadFolder, "isISCSI", isISCSI.toString());
 
