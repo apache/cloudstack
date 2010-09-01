@@ -268,17 +268,19 @@ def iso_up(task):
 		if inp.id&3==Node.BUILD:
 			src = inp.bldpath(task.env)
 			srcname = src
-			srcname = "/".join(srcname.split("/")[1:]) # chop off default/
+			srcname = sep.join(srcname.split(sep)[1:]) # chop off default/
 		else:
 			src = inp.srcpath(task.env)
 			srcname = src
-			srcname = "/".join(srcname.split("/")[1:]) # chop off ../
-		inps.append(src)
+			srcname = sep.join(srcname.split(sep)[1:]) # chop off ../
+                if task.generator.rename: srcname = task.generator.rename(srcname)
+                inps.append(srcname+'='+src)
 	ret = Utils.exec_command(
 		[
 			task.generator.env.MKISOFS,
 			"-quiet",
 			"-r",
+                        "-graft-points",
 			"-o",tgt,
 		] + inps, shell=False)
 	if ret != 0: return ret
@@ -291,6 +293,7 @@ if bld.env.DISTRO not in ["Windows","Mac"]:
 		target = 'target/oss/systemvm.iso',
 		name   = 'systemvm_iso',
 		after  = 'systemvm_zip patch_tgz',
+		rename = lambda x: x.split(sep)[-1],
 	)
 	bld.process_after(tgen)
 	bld.install_as("${AGENTLIBDIR}/vms/systemvm.iso", "target/oss/systemvm.iso")
@@ -302,6 +305,7 @@ if buildpremium:
 		target = 'target/premium/systemvm.iso',
 		name   = 'systemvm-premium_iso',
 		after  = 'systemvm-premium_zip patch_tgz',
+		rename = lambda x: x.split(sep)[-1],
 	)
 	bld.process_after(tgen)
 	bld.install_as("${AGENTLIBDIR}/vms/systemvm-premium.iso", "target/premium/systemvm.iso")
