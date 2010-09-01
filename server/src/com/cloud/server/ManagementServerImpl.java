@@ -83,6 +83,7 @@ import com.cloud.api.commands.ListGuestOsCmd;
 import com.cloud.api.commands.ListHostsCmd;
 import com.cloud.api.commands.ListIsosCmd;
 import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
+import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -7490,16 +7491,59 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<LoadBalancerVO> searchForLoadBalancers(Criteria c) {
-        Filter searchFilter = new Filter(LoadBalancerVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+    public List<LoadBalancerVO> searchForLoadBalancers(ListLoadBalancerRulesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        // do some parameter validation
+        Account account = (Account)UserContext.current().getAccountObject();
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        Long accountId = null;
+        Account ipAddressOwner = null;
+        String ipAddress = cmd.getPublicIp();
 
-        Object accountId = c.getCriteria(Criteria.ACCOUNTID);
-        Object id = c.getCriteria(Criteria.ID);
-        Object name = c.getCriteria(Criteria.NAME);
-        Object domainId = c.getCriteria(Criteria.DOMAINID);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
-        Object ipAddress = c.getCriteria(Criteria.IPADDRESS);
-        Object instanceId = c.getCriteria(Criteria.INSTANCEID);
+        if (ipAddress != null) {
+            IPAddressVO ipAddressVO = _publicIpAddressDao.findById(ipAddress);
+            if (ipAddressVO == null) {
+                throw new InvalidParameterValueException("Unable to list load balancers, IP address " + ipAddress + " not found.");
+            } else {
+                Long ipAddrAcctId = ipAddressVO.getAccountId();
+                if (ipAddrAcctId == null) {
+                    throw new InvalidParameterValueException("Unable to list load balancers, IP address " + ipAddress + " is not associated with an account.");
+                }
+                ipAddressOwner = _accountDao.findById(ipAddrAcctId);
+            }
+        }
+
+        if ((account == null) || isAdmin(account.getType())) {
+            // validate domainId before proceeding
+            if (domainId != null) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Unable to list load balancers for domain id " + domainId + ", permission denied.");
+                }
+                if (accountName != null) {
+                    Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                    if (userAccount != null) {
+                        accountId = userAccount.getId();
+                    } else {
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                }
+            } else if (ipAddressOwner != null) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), ipAddressOwner.getDomainId())) {
+                    throw new PermissionDeniedException("Unable to list load balancer rules for IP address " + ipAddress + ", permission denied.");
+                }
+            } else {
+                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+            }
+        } else {
+            accountId = account.getId();
+        }
+
+        Filter searchFilter = new Filter(LoadBalancerVO.class, "ipAddress", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        Object id = cmd.getId();
+        Object name = cmd.getLoadBalancerRuleName();
+        Object keyword = cmd.getKeyword();
+        Object instanceId = cmd.getVirtualMachineId();
 
         SearchBuilder<LoadBalancerVO> sb = _loadBalancerDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);

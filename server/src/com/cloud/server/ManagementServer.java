@@ -45,6 +45,7 @@ import com.cloud.api.commands.ListGuestOsCmd;
 import com.cloud.api.commands.ListHostsCmd;
 import com.cloud.api.commands.ListIsosCmd;
 import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
+import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -1767,7 +1768,14 @@ public interface ManagementServer {
      */
     List<UserVmVO> listLoadBalancerInstances(ListLoadBalancerRuleInstancesCmd cmd) throws PermissionDeniedException;
 
-    List<LoadBalancerVO> searchForLoadBalancers(Criteria c);
+    /**
+     * List load balancer rules based on the given criteria
+     * @param cmd the command that specifies the criteria to use for listing load balancers.  Load balancers can be listed
+     *            by id, name, public ip, and vm instance id
+     * @return list of load balancers that match the criteria
+     */
+    List<LoadBalancerVO> searchForLoadBalancers(ListLoadBalancerRulesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+
     boolean deleteLoadBalancer(long userId, long loadBalancerId);
     long deleteLoadBalancerAsync(long userId, long loadBalancerId);
 
