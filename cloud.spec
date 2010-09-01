@@ -560,6 +560,7 @@ fi
 %{_datadir}/%{name}/setup/index-212to213.sql
 %{_datadir}/%{name}/setup/postprocess-20to21.sql
 %{_datadir}/%{name}/setup/schema-20to21.sql
+%{_datadir}/%{name}/setup/schema-level.sql
 %doc README
 %doc HACKING
 %doc debian/copyright
