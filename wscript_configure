@@ -89,11 +89,12 @@ hard_deps = [
 
 
 conf.check_tool('misc')
-conf.check_tool('java')
 conf.check_tool("gnu_dirs")
+conf.check_tool('tar')
+conf.check_tool('mkisofs')
+conf.check_tool('java')
 conf.check_tool("python")
 conf.check_python_version((2,4,0))
-conf.find_program("mkisofs",mandatory=True,var='MKISOFS')
 
 conf.check_message_1('Detecting distribution')
 if platform.system() == 'Windows': conf.env.DISTRO = "Windows"

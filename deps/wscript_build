@@ -1,0 +1,1 @@
+bld.install_files('${JAVADIR}','*.jar')
