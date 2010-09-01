@@ -46,6 +46,7 @@ import com.cloud.api.commands.ListHostsCmd;
 import com.cloud.api.commands.ListIsosCmd;
 import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
 import com.cloud.api.commands.ListLoadBalancerRulesCmd;
+import com.cloud.api.commands.ListPodsByCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -882,10 +883,10 @@ public interface ManagementServer {
     /**
      * Searches for Pods by the specified search criteria
      * Can search by: pod name and/or zone name
-     * @param c
+     * @param cmd
      * @return List of Pods
      */
-    List<HostPodVO> searchForPods(Criteria c);
+    List<HostPodVO> searchForPods(ListPodsByCmd cmd);
     
     /**
      * Searches for Zones by the specified search criteria

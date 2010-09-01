@@ -84,6 +84,7 @@ import com.cloud.api.commands.ListHostsCmd;
 import com.cloud.api.commands.ListIsosCmd;
 import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
 import com.cloud.api.commands.ListLoadBalancerRulesCmd;
+import com.cloud.api.commands.ListPodsByCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -3948,14 +3949,14 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<HostPodVO> searchForPods(Criteria c) {
-        Filter searchFilter = new Filter(HostPodVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+    public List<HostPodVO> searchForPods(ListPodsByCmd cmd) {
+        Filter searchFilter = new Filter(HostPodVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<HostPodVO> sc = _hostPodDao.createSearchCriteria();
 
-        String podName = (String) c.getCriteria(Criteria.NAME);
-        Long id = (Long) c.getCriteria(Criteria.ID);
-        Long zoneId = (Long) c.getCriteria(Criteria.DATACENTERID);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
+        String podName = cmd.getPodName();
+        Long id = cmd.getId();
+        Long zoneId = cmd.getZoneId();
+        Object keyword = cmd.getKeyword();
 
         if (keyword != null) {
             SearchCriteria<HostPodVO> ssc = _hostPodDao.createSearchCriteria();

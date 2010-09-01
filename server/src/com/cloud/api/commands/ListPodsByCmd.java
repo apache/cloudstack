@@ -20,30 +20,22 @@ package com.cloud.api.commands;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseListCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.response.PodResponse;
 import com.cloud.dc.HostPodVO;
-import com.cloud.server.Criteria;
+import com.cloud.serializer.SerializerHelper;
 import com.cloud.test.PodZoneConfig;
-import com.cloud.utils.Pair;
 
-public class ListPodsByCmd extends BaseCmd {
+@Implementation(method="searchForPods")
+public class ListPodsByCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPodsByCmd.class.getName());
 
     private static final String s_name = "listpodsresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -79,60 +71,37 @@ public class ListPodsByCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-    	Long id = (Long)params.get(BaseCmd.Properties.ID.getName());
-    	String name = (String)params.get(BaseCmd.Properties.NAME.getName());
-    	Long zoneId = (Long)params.get(BaseCmd.Properties.ZONE_ID.getName());
-    	String keyword = (String)params.get(BaseCmd.Properties.KEYWORD.getName());
-    	
-    	Criteria c = new Criteria();
-    	
-    	if (keyword != null) {
-    		c.addCriteria(Criteria.KEYWORD, keyword);
-     	} else {
-     		c.addCriteria(Criteria.ID, id);
-            c.addCriteria(Criteria.NAME, name);
-            c.addCriteria(Criteria.DATACENTERID, zoneId);
-     	}
-        
-    	List<HostPodVO> pods = getManagementServer().searchForPods(c);
-        
-        if (pods == null) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to find pods for specified search criteria.");
-        }
-        
-        List<Pair<String, Object>> podTags = new ArrayList<Pair<String, Object>>();
-        Object[] podDataTags = new Object[pods.size()];
-        
-        int i = 0;
+    @Override @SuppressWarnings("unchecked")
+    public String getResponse() {
+        List<HostPodVO> pods = (List<HostPodVO>)getResponseObject();
+
+        List<PodResponse> response = new ArrayList<PodResponse>();
         for (HostPodVO pod : pods) {
-        	String[] ipRange = new String[2];
-        	if (pod.getDescription() != null && pod.getDescription().length() > 0) {
-        		ipRange = pod.getDescription().split("-");
-        	} else {
-        		ipRange[0] = pod.getDescription();
-        	}
-            List<Pair<String, Object>> podData = new ArrayList<Pair<String, Object>>();
-            podData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), pod.getId()));
-            podData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), pod.getName()));
-            podData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_ID.getName(), pod.getDataCenterId()));
-            podData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), PodZoneConfig.getZoneName(pod.getDataCenterId())));
-            podData.add(new Pair<String, Object>(BaseCmd.Properties.CIDR.getName(), pod.getCidrAddress() +"/" + pod.getCidrSize()));
-            podData.add(new Pair<String, Object>(BaseCmd.Properties.START_IP.getName(), ipRange[0]));
-            podData.add(new Pair<String, Object>(BaseCmd.Properties.END_IP.getName(), (ipRange.length > 1 && ipRange[1] != null) ? ipRange[1] : ""));
-            podData.add(new Pair<String, Object>(BaseCmd.Properties.GATEWAY.getName(), pod.getGateway()));
-            podDataTags[i++] = podData;
+            String[] ipRange = new String[2];
+            if (pod.getDescription() != null && pod.getDescription().length() > 0) {
+                ipRange = pod.getDescription().split("-");
+            } else {
+                ipRange[0] = pod.getDescription();
+            }
+
+            PodResponse podResponse = new PodResponse();
+            podResponse.setId(pod.getId());
+            podResponse.setName(pod.getName());
+            podResponse.setZoneId(pod.getDataCenterId());
+            podResponse.setZoneName(PodZoneConfig.getZoneName(pod.getDataCenterId()));
+            podResponse.setCidr(pod.getCidrAddress() +"/" + pod.getCidrSize());
+            podResponse.setStartIp(ipRange[0]);
+            podResponse.setEndIp(((ipRange.length > 1) && (ipRange[1] != null)) ? ipRange[1] : "");
+            podResponse.setGateway(pod.getGateway());
+
+            response.add(podResponse);
         }
-        Pair<String, Object> podTag = new Pair<String, Object>("pod", podDataTags);
-        podTags.add(podTag);
-        return podTags;
+
+        return SerializerHelper.toSerializedString(response);
     }
 }
