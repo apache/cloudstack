@@ -667,7 +667,6 @@ fi
 %{_javadir}/%{name}-server-extras.jar
 %{_sysconfdir}/%{name}/management/commands-ext.properties
 %{_sysconfdir}/%{name}/management/components-premium.xml
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/*
 %{_libdir}/%{name}/agent/vms/systemvm-premium.zip
 %{_datadir}/%{name}/setup/create-database-premium.sql
 %{_datadir}/%{name}/setup/create-schema-premium.sql
