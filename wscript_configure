@@ -102,7 +102,7 @@ else: 				    c = "GREEN"
 conf.check_message_2(conf.env.DISTRO,c)
 
 conf.check_message_1('Detecting installation prefix')
-if conf.env.PREFIX == '/usr/local':
+if Options.options.prefix == Options.default_prefix:
 	if conf.env.DISTRO == 'Windows':
 		conf.env.PREFIX = 'C:\\CloudStack'
 	elif _getuid() != 0: # not root
