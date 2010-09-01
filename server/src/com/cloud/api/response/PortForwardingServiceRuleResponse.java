@@ -19,6 +19,12 @@ public class PortForwardingServiceRuleResponse implements ResponseObject {
     @Param(name="portforwardingserviceid")
     private Long portForwardingServiceId;
 
+    @Param(name="jobid")
+    private Long jobId;
+
+    @Param(name="jobstatus")
+    private Integer jobStatus;
+
     public Long getPortForwardingServiceId() {
         return portForwardingServiceId;
     }
@@ -57,5 +63,21 @@ public class PortForwardingServiceRuleResponse implements ResponseObject {
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
+    }
+
+    public Long getJobId() {
+        return jobId;
+    }
+
+    public void setJobId(Long jobId) {
+        this.jobId = jobId;
+    }
+
+    public Integer getJobStatus() {
+        return jobStatus;
+    }
+
+    public void setJobStatus(Integer jobStatus) {
+        this.jobStatus = jobStatus;
     }
 }

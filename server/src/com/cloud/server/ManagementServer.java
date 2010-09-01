@@ -47,6 +47,7 @@ import com.cloud.api.commands.ListIsosCmd;
 import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
 import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.ListPodsByCmd;
+import com.cloud.api.commands.ListPortForwardingServiceRulesCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -1150,11 +1151,11 @@ public interface ManagementServer {
     IPAddressVO findIPAddressById(String ipAddress);
 
     /**
-     * Search for network rules given the search criteria.  For now only group id (security group id) is supported.
-     * @param c the search criteria including order by and max rows
-     * @return list of rules for the security group id specified in the search criteria
+     * Search for network rules given the search criteria.
+     * @param cmd the command containing the search criteria including port forwarding service id or rule id.
+     * @return list of rules for the port forwarding service id specified in the search criteria
      */
-    List<NetworkRuleConfigVO> searchForNetworkRules(Criteria c);
+    List<NetworkRuleConfigVO> searchForNetworkRules(ListPortForwardingServiceRulesCmd c) throws InvalidParameterValueException, PermissionDeniedException;
 
     /**
      * Saves an event with the specified parameters.

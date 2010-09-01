@@ -85,6 +85,7 @@ import com.cloud.api.commands.ListIsosCmd;
 import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
 import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.ListPodsByCmd;
+import com.cloud.api.commands.ListPortForwardingServiceRulesCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -5120,12 +5121,46 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<NetworkRuleConfigVO> searchForNetworkRules(Criteria c) {
-        Filter searchFilter = new Filter(NetworkRuleConfigVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+    public List<NetworkRuleConfigVO> searchForNetworkRules(ListPortForwardingServiceRulesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Long accountId = null;
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
+        Long groupId = cmd.getPortForwardingServiceId();
 
-        Object groupId = c.getCriteria(Criteria.GROUPID);
-        Object id = c.getCriteria(Criteria.ID);
-        Object accountId = c.getCriteria(Criteria.ACCOUNTID);
+        if ((account == null) || isAdmin(account.getType())) {
+            if (domainId != null) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Unable to list port forwarding service rules for domain " + domainId + ", permission denied.");
+                }
+                if (accountName != null) {
+                    Account userAcct = _accountDao.findActiveAccount(accountName, domainId);
+                    if (userAcct != null) {
+                        accountId = userAcct.getId();
+                    } else {
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                }
+            }
+        } else {
+            accountId = account.getId();
+        }
+
+        if ((groupId != null) && (accountId != null)) {
+            SecurityGroupVO sg = _securityGroupDao.findById(groupId);
+            if (sg != null) {
+                if ((sg.getAccountId() != null) && sg.getAccountId().longValue() != accountId.longValue()) {
+                    throw new PermissionDeniedException("Unable to list port forwarding service rules, account " + accountId + " does not own port forwarding service " + groupId);
+                }
+            } else {
+                throw new InvalidParameterValueException("Unable to find port forwarding service with id " + groupId);
+            }
+        }
+
+        Filter searchFilter = new Filter(NetworkRuleConfigVO.class, "id", true, null, null);
+
+        // search by rule id is also supported
+        Object id = cmd.getId();
 
         SearchBuilder<NetworkRuleConfigVO> sb = _networkRuleConfigDao.createSearchBuilder();
         if (id != null) {
