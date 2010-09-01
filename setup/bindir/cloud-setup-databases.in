@@ -352,3 +352,10 @@ if rootuser:
 		print "Applying file %s to the database on server %s:%s"%(p,host,port)
 		try: run_mysql(text,rootuser,rootpassword,host,port)
 		except CalledProcessError: sys.exit(22)
+
+	p = os.path.join(dbfilepath,"schema-level.sql")
+	if os.path.isfile(p):
+		text = file(p).read()
+		print "Applying file %s to the database on server %s:%s"%(p,host,port)
+		try: run_mysql(text,rootuser,rootpassword,host,port)
+		except CalledProcessError: sys.exit(22)
