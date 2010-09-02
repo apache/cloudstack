@@ -64,12 +64,14 @@ $(document).ready(function() {
 	            success: function(json) {	
 	                $midmenuContainer.empty();
 	                var items = json[jsonResponse1][jsonResponse2];
-	                for(var i=0; i<items.length;i++) {                
-                        var item = items[i];
-                        var $midmenuItem1 = $midmenuItem.clone();   
-                        $midmenuItem1.find("#description").text(item[descriptionProperty].substring(0,30));                     
-                        $midmenuContainer.append($midmenuItem1.show());
-                    }                     
+	                if(items != null && items.length > 0) {
+	                    for(var i=0; i<items.length;i++) {                
+                            var item = items[i];
+                            var $midmenuItem1 = $midmenuItem.clone();   
+                            $midmenuItem1.find("#description").text(item[descriptionProperty].substring(0,25));                     
+                            $midmenuContainer.append($midmenuItem1.show());
+                        }  
+                    }                   
                     //selectedItemType = jsonResponse2;	    
 	            }
 		    });		    
