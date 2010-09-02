@@ -110,7 +110,7 @@ ff02::3 ip6-allhosts
 EOF
 
   cat >> etc/network/interfaces << EOF
-auto lo
+auto lo eth0
 iface lo inet loopback
 
 # The primary network interface
@@ -324,7 +324,7 @@ packages() {
   DEBCONF_DB_OVERRIDE=’File{/root/config.dat}’
   export DEBIAN_FRONTEND DEBIAN_PRIORITY DEBCONF_DB_OVERRIDE
 
-  chroot .  apt-get --no-install-recommends -q -y --force-yes install rsyslog chkconfig insserv net-tools ifupdown vim-tiny netbase iptables openssh-server grub e2fsprogs dhcp3-client dnsmasq tcpdump socat wget apache2 python bzip2 sed gawk diff grep gzip less tar telnet xl2tpd traceroute openswan psmisc inetutils-ping arping httping dnsutils
+  chroot .  apt-get --no-install-recommends -q -y --force-yes install rsyslog chkconfig insserv net-tools ifupdown vim-tiny netbase iptables openssh-server grub e2fsprogs dhcp3-client dnsmasq tcpdump socat wget apache2 ssl-cert python bzip2 sed gawk diff grep gzip less tar telnet xl2tpd traceroute openswan psmisc inetutils-ping arping httping dnsutils zip unzip ethtool uuid
 
   chroot . apt-get --no-install-recommends -q -y --force-yes install haproxy nfs-common
 
@@ -343,10 +343,18 @@ password() {
   chroot . echo "root:$PASSWORD" | chroot . chpasswd
 }
 
+apache2() {
+   chroot . a2enmod ssl rewrite auth-basic auth-digest
+   chroot . a2ensite default-ssl
+   cp etc/apache2/sites-available/default etc/apache2/sites-available/default.orig
+   cp etc/apache2/sites-available/default-ssl etc/apache2/sites-available/default.orig
+}
+
 services() {
   mkdir -p ./var/www/html
   mkdir -p ./opt/cloud/bin
   mkdir -p ./var/cache/cloud
+  mkdir -p ./usr/share/cloud
   mkdir -p ./usr/local/cloud
   mkdir -p ./root/.ssh
   
@@ -372,10 +380,15 @@ cleanup() {
     rm -rf usr/share/locale/[a-d]*
     rm -rf usr/share/locale/[f-z]*
     rm -rf usr/share/doc/*
-    size=$(df  | grep $MOUNTPOINT | awk '{print $4}')
+    size=$(df   $MOUNTPOINT | awk '{print $4}' | grep -v Available)
     dd if=/dev/zero of=$MOUNTPOINT/zeros.img bs=1M count=$((((size-200000)) / 1000))
     rm -f $MOUNTPOINT/zeros.img
   fi
+}
+
+signature() {
+  (cd ${scriptdir}/config;  tar cvzf ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tgz *)
+  md5sum ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tgz |awk '{print $1}'  > ${MOUNTPOINT}/var/cache/cloud/cloud-scripts-signature
 }
 
 mkdir -p $IMAGENAME
@@ -438,8 +451,14 @@ password
 echo "*************CONFIGURING SERVICES********************"
 services
 
+echo "*************CONFIGURING APACHE********************"
+apache2
+
 echo "*************CLEANING UP********************"
 cleanup 
+
+echo "*************GENERATING SIGNATURE********************"
+signature
 
 cd $scriptdir
 
