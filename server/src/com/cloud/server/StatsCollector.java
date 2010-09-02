@@ -337,8 +337,10 @@ public class StatsCollector {
                     newCapacities.add(capacity);
 //                    _capacityDao.persist(capacity);
                 }
-
+                
+                long start = System.currentTimeMillis();
                 if (m_capacityCheckLock.lock(5)) { // 5 second timeout
+                	long lockTime = System.currentTimeMillis();
 		            if (s_logger.isTraceEnabled()) {
 		                s_logger.trace("recalculating system storage capacity");
 		            }
@@ -356,6 +358,9 @@ public class StatsCollector {
 		                }
 		            } finally {
                         m_capacityCheckLock.unlock();
+                        long end = System.currentTimeMillis();
+                        if (s_logger.isTraceEnabled())
+                        	s_logger.trace("CapacityCheckLock was held for " + (end - lockTime) + " ms; lock was acquired in " + (lockTime - start) + " ms");
 		            }
                     if (s_logger.isTraceEnabled()) {
                         s_logger.trace("done recalculating system storage capacity");
@@ -364,6 +369,9 @@ public class StatsCollector {
                     if (s_logger.isTraceEnabled()) {
                         s_logger.trace("not recalculating system storage capacity, unable to lock capacity table");
                     }
+                        long end = System.currentTimeMillis();
+                        if (s_logger.isTraceEnabled())
+                        	s_logger.trace("CapacityCheckerLock got timed out after " + (end - start) + " ms");
                 }
 			} catch (Throwable t) {
 				s_logger.error("Error trying to retrieve storage stats", t);

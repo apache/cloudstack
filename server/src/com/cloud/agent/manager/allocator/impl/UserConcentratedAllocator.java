@@ -155,7 +155,9 @@ public class UserConcentratedAllocator implements PodAllocator {
 
     private boolean dataCenterAndPodHasEnoughCapacity(long dataCenterId, long podId, long capacityNeeded, short capacityType, long[] hostCandidate) {
         List<CapacityVO> capacities = null;
+        long start = System.currentTimeMillis();
         if (m_capacityCheckLock.lock(120)) { // 2 minutes
+        	long lockTime = System.currentTimeMillis();
             try {
                 SearchCriteria sc = _capacityDao.createSearchCriteria();
                 sc.addAnd("capacityType", SearchCriteria.Op.EQ, capacityType);
@@ -164,9 +166,15 @@ public class UserConcentratedAllocator implements PodAllocator {
                 capacities = _capacityDao.search(sc, null);
             } finally {
                 m_capacityCheckLock.unlock();
+                long end = System.currentTimeMillis();
+                if (s_logger.isTraceEnabled())
+                	s_logger.trace("CapacityCheckLock was held for " + (end - lockTime) + " ms; lock was acquired in " + (lockTime - start) + " ms");
             }
         } else {
             s_logger.error("Unable to acquire synchronization lock for pod allocation");
+            long end = System.currentTimeMillis();
+            if (s_logger.isTraceEnabled())
+            	s_logger.trace("CapacityCheckerLock got timed out after " + (end - start) + " ms");
             
             // we now try to enforce reservation-style allocation, waiting time has been adjusted
             // to 2 minutes

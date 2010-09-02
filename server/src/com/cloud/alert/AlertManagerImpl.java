@@ -443,8 +443,10 @@ public class AlertManagerImpl implements AlertManager {
             newCapacities.add(newPrivateIPCapacity);
 //            _capacityDao.persist(newPrivateIPCapacity);
         }
-
+        
+        long start = System.currentTimeMillis();
         if (m_capacityCheckLock.lock(5)) { // 5 second timeout
+        	long lockTime = System.currentTimeMillis();
             try {
                 // delete the old records
                 _capacityDao.clearNonStorageCapacities();
@@ -454,6 +456,9 @@ public class AlertManagerImpl implements AlertManager {
                 }
             } finally {
                 m_capacityCheckLock.unlock();
+                long end = System.currentTimeMillis();
+                if (s_logger.isTraceEnabled())
+                	s_logger.trace("CapacityCheckLock was held for " + (end - lockTime) + " ms; lock was acquired in " + (lockTime - start) + " ms");
             }
 
             if (s_logger.isTraceEnabled()) {
@@ -463,6 +468,9 @@ public class AlertManagerImpl implements AlertManager {
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Skipping capacity check, unable to lock the capacity table for recalculation.");
             }
+            long end = System.currentTimeMillis();
+            if (s_logger.isTraceEnabled())
+            	s_logger.trace("CapacityCheckerLock got timed out after " + (end - start) + " ms");
         }
     }
 
