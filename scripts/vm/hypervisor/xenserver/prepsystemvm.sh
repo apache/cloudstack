@@ -107,7 +107,7 @@ secstorage_svcs() {
     
 
    cp ${path}/etc/sysconfig/iptables-secstorage ${path}/etc/sysconfig/iptables
-   cp /usr/sbin/vhd-util /usr/sbin
+   cp /usr/sbin/vhd-util ${path}/usr/sbin
    mkdir -p ${path}/var/log/cloud
 }
 

@@ -596,6 +596,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             AgentAttache attache = _agents.get(hostId);
             handleDisconnect(attache, Status.Event.Remove, false);
     		_hostDao.remove(secStorageHost.getId());
+            /*Disconnected agent needs special handling here*/
+    		secStorageHost.setGuid(null);
     		txn.commit();
     		return true;
     	}catch (Throwable t) {

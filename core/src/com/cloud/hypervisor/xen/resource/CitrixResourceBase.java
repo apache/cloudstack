@@ -1699,6 +1699,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
             /* Does the template exist in primary storage pool? If yes, no copy */
             VDI vmtmpltvdi = null;
+            VDI snapshotvdi = null;
 
             Set<VDI> vdis = VDI.getByNameLabel(conn, "Template " + cmd.getName());
 
@@ -1731,19 +1732,21 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     return new DownloadAnswer(null, 0, msg, com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR, "", "", 0);
                 }
                 vmtmpltvdi = cloudVDIcopy(tmpltvdi, poolsr);
-
-                vmtmpltvdi.setNameLabel(conn, "Template " + cmd.getName());
+                snapshotvdi = vmtmpltvdi.snapshot(conn, new HashMap<String, String>());
+                vmtmpltvdi.destroy(conn);
+                snapshotvdi.setNameLabel(conn, "Template " + cmd.getName());
                 // vmtmpltvdi.setNameDescription(conn, cmd.getDescription());
-                uuid = vmtmpltvdi.getUuid(conn);
+                uuid = snapshotvdi.getUuid(conn);
+                vmtmpltvdi = snapshotvdi;
 
             } else
                 uuid = vmtmpltvdi.getUuid(conn);
 
             // Determine the size of the template
-            long createdSize = vmtmpltvdi.getVirtualSize(conn);
+            long phySize = vmtmpltvdi.getPhysicalUtilisation(conn);
 
             DownloadAnswer answer = new DownloadAnswer(null, 100, cmd, com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED, uuid, uuid);
-            answer.setTemplateSize(createdSize);
+            answer.setTemplateSize(phySize);
 
             return answer;
 

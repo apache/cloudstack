@@ -789,7 +789,7 @@ public class StorageManagerImpl implements StorageManager {
             
             if (dataVol != null) {
                 StoragePoolVO pool = _storagePoolDao.findById(rootCreated.getPoolId());
-                dataCreated = createVolume(dataVol, vm, template, dc, pod, pool.getClusterId(), offering, diskOffering, avoids);
+                dataCreated = createVolume(dataVol, vm, null, dc, pod, pool.getClusterId(), offering, diskOffering, avoids);
                 if (dataCreated == null) {
                     throw new CloudRuntimeException("Unable to create " + dataVol);
                 }
