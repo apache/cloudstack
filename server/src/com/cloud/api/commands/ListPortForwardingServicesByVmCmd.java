@@ -29,6 +29,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.network.SecurityGroupVO;
+import com.cloud.serializer.SerializerHelper;
 import com.cloud.user.Account;
 
 @Implementation(method="searchForSecurityGroupsByVM")
@@ -103,7 +104,11 @@ public class ListPortForwardingServicesByVmCmd extends BaseListCmd {
                     pfsData.setDomainId(accountTemp.getDomainId());
                     pfsData.setDomainName(getManagementServer().findDomainIdById(accountTemp.getDomainId()).getName());
                 }
+
+                response.add(pfsData);
             }
         }
+
+        return SerializerHelper.toSerializedString(response);
     }
 }

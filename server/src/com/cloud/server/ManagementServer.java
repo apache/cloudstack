@@ -49,6 +49,7 @@ import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.ListPodsByCmd;
 import com.cloud.api.commands.ListPortForwardingServiceRulesCmd;
 import com.cloud.api.commands.ListPortForwardingServicesByVmCmd;
+import com.cloud.api.commands.ListPortForwardingServicesCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -1705,10 +1706,10 @@ public interface ManagementServer {
 
     /**
      * returns a list of security groups
-     * @param c
+     * @param cmd
      * @return a list of security groups
      */
-    List<SecurityGroupVO> searchForSecurityGroups(Criteria c);
+    List<SecurityGroupVO> searchForSecurityGroups(ListPortForwardingServicesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 
     /**
      * returns a list of security groups from a given ip and vm id

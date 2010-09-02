@@ -87,6 +87,7 @@ import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.ListPodsByCmd;
 import com.cloud.api.commands.ListPortForwardingServiceRulesCmd;
 import com.cloud.api.commands.ListPortForwardingServicesByVmCmd;
+import com.cloud.api.commands.ListPortForwardingServicesCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -7033,14 +7034,39 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<SecurityGroupVO> searchForSecurityGroups(Criteria c) {
-        Filter searchFilter = new Filter(SecurityGroupVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+    public List<SecurityGroupVO> searchForSecurityGroups(ListPortForwardingServicesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        // if an admin account was passed in, or no account was passed in, make sure we honor the accountName/domainId parameters
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long accountId = null;
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
 
-        Object domainId = c.getCriteria(Criteria.DOMAINID);
-        Object accountId = c.getCriteria(Criteria.ACCOUNTID);
-        Object name = c.getCriteria(Criteria.NAME);
-        Object id = c.getCriteria(Criteria.ID);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
+        if ((account == null) || isAdmin(account.getType())) {
+            // validate domainId before proceeding
+            if (domainId != null) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list port forwarding services.");
+                }
+                if (accountName != null) {
+                    Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                    if (userAccount != null) {
+                        accountId = userAccount.getId();
+                    } else {
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                }
+            } else {
+                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+            }
+        } else {
+            accountId = account.getId();
+        }
+
+        Filter searchFilter = new Filter(SecurityGroupVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        Object name = cmd.getPortForwardingServiceName();
+        Object id = cmd.getId();
+        Object keyword = cmd.getKeyword();
 
         SearchBuilder<SecurityGroupVO> sb = _securityGroupDao.createSearchBuilder();
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
