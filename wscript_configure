@@ -121,7 +121,7 @@ conf.check_python_version((2,4,0))
 conf.check_message_1('Detecting Python MySQL module')
 try: import MySQLdb
 except ImportError,e:
-	raise Configure.ConfigurationError, "The Python MySQLdb module could not be found.\nOn Linux: ./waf installrpmdeps or ./waf installdebdeps according to your distro's package format.\nOn Windows: Install MySQL on your machine, then install the Python MySQLdb module for Python %s.\nThe module for Python 2.6 / win32 is available here: http://soemin.googlecode.com/files/MySQL-python-1.2.3c1.win32-py2.6.exe"%conf.env.PYTHON_VERSION
+	raise Configure.ConfigurationError, "The Python MySQLdb module could not be found.\nOn Linux: ./waf installrpmdeps or ./waf installdebdeps according to your distro's package format.\nOn Windows: Install MySQL 5.1 on your machine, then install the Python MySQLdb module for Python %s.\nThe module for Python 2.6 / win32 / MySQL 5.1 is available here: http://soemin.googlecode.com/files/MySQL-python-1.2.3c1.win32-py2.6.exe"%conf.env.PYTHON_VERSION
 conf.check_message_2('MySQLdb','GREEN')
 
 if conf.env.DISTRO not in ["Windows","Mac"]:
