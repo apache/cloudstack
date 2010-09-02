@@ -758,7 +758,7 @@ def deploydb(ctx,virttech=None):
 		before = before + file(p).read()
 		Utils.pprint("GREEN","Reading database code from %s"%p)
 
-	cmd = ["mysql","--user=%s"%dbuser,"-h",dbhost,"--password=%s"%dbpw]
+	cmd = [ctx.env.MYSQL,"--user=%s"%dbuser,"-h",dbhost,"--password=%s"%dbpw]
 	Utils.pprint("GREEN","Deploying database scripts to %s (user %s)"%(dbhost,dbuser))
 	Utils.pprint("BLUE"," ".join(cmd))
 	p = _Popen(cmd,stdin=PIPE,stdout=None,stderr=None)
@@ -783,7 +783,7 @@ def deploydb(ctx,virttech=None):
 		after = after + file(p).read()
 		Utils.pprint("GREEN","Reading database code from %s"%p)
 
-	cmd = ["mysql","--user=%s"%dbuser,"-h",dbhost,"--password=%s"%dbpw]
+	cmd = [ctx.env.MYSQL,"--user=%s"%dbuser,"-h",dbhost,"--password=%s"%dbpw]
 	Utils.pprint("GREEN","Deploying post-configuration database scripts to %s (user %s)"%(dbhost,dbuser))
 	Utils.pprint("BLUE"," ".join(cmd))
 	p = _Popen(cmd,stdin=PIPE,stdout=None,stderr=None)

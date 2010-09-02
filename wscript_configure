@@ -112,7 +112,12 @@ conf.check_message_2("%s"%conf.env.PREFIX,"GREEN")
 conf.check_tool('misc')
 conf.check_tool("gnu_dirs")
 conf.check_tool('tar')
-conf.check_tool('mkisofs')
+try: conf.check_tool('mkisofs')
+except Configure.ConfigurationError,e:
+	raise Configure.ConfigurationError, "The program genisoimage (or mkisofs) could not be found.\nOn Linux: ./waf installrpmdeps or ./waf installdebdeps according to your distro's package format.\nOn Windows: Use cygwin to install the mkisofs package, then ensure that the program is in your PATH."
+try: conf.find_program('mysql',mandatory=True)
+except Configure.ConfigurationError,e:
+	raise Configure.ConfigurationError, "The program mysql (or mysql.exe) could not be found.\nOn Linux: ./waf installrpmdeps or ./waf installdebdeps according to your distro's package format.\nOn Windows: Install the MySQL client package and ensure that the mysql.exe program is in your PATH."
 conf.check_tool('java')
 conf.check_tool("python")
 conf.check_python_version((2,4,0))
