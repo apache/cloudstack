@@ -958,15 +958,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         				throw new InvalidParameterValueException("Zone " + zone.getName() + " already has pod VLANs. A zone may contain either pod VLANs or account VLANs, but not both.");
         			}
         		}
-        		
-        		// Make sure the specified account isn't already assigned to a VLAN in this zone
-        		List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAccountVlanMapsByAccount(accountId);
-        		for (AccountVlanMapVO accountVlanMap : accountVlanMaps) {
-        			VlanVO vlan = _vlanDao.findById(accountVlanMap.getVlanDbId());
-        			if (vlan.getDataCenterId() == zone.getId().longValue()) {
-        				throw new InvalidParameterValueException("The account " + account.getAccountName() + " is already assigned to the VLAN with ID " + vlan.getVlanId() + " in zone " + zone.getName() + ".");
-        			}
-        		}
     		} else if (podId != null) {
     			// Pod-wide VLANs must be untagged
         		if (!vlanId.equals(Vlan.UNTAGGED)) {
