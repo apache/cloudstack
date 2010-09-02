@@ -2725,6 +2725,8 @@ public class UserVmManagerImpl implements UserVmManager {
 	        	else
 	        	{
 	        		s_logger.debug("failed to create VM instance : " + name);
+	        		throw new InternalErrorException("We could not find a suitable pool for creating this directly attached vm");
+	        		
 	        	}
 	            return null;
 	        }
@@ -2757,7 +2759,7 @@ public class UserVmManagerImpl implements UserVmManager {
             _accountMgr.decrementResourceCount(account.getId(), ResourceType.volume, numVolumes);
 
 	        s_logger.error("Unable to create vm", th);
-	        throw new CloudRuntimeException("Unable to create vm", th);
+	        throw new CloudRuntimeException("Unable to create vm: "+th.getMessage(), th);
 	    }
 	}
     
