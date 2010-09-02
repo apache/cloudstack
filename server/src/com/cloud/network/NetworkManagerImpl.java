@@ -635,6 +635,9 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             }
             
             if (!found) {
+                event.setDescription("failed to create Domain Router : " + name);
+                event.setLevel(EventVO.LEVEL_ERROR);
+                _eventDao.persist(event);
                 throw new ExecutionException("Unable to create DomainRouter");
             }
             _routerDao.updateIf(router, Event.OperationSucceeded, null);

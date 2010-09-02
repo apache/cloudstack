@@ -617,6 +617,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             templateHostSC.addAnd("hostId", SearchCriteria.Op.EQ, secStorageHost.getId());
             _vmTemplateHostDao.remove(templateHostSC);
             
+            /*Disconnected agent needs special handling here*/
+    		secStorageHost.setGuid(null);
     		txn.commit();
     		return true;
     	}catch (Throwable t) {

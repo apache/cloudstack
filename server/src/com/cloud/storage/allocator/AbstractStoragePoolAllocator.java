@@ -147,7 +147,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 		if (!poolIsCorrectType(dskCh, pool, vm, offering)) {
 			return false;
 		}
-
+	
 		// check the used size against the total size, skip this host if it's greater than the configured
 		// capacity check "storage.capacity.threshold"
 		if (sc != null) {
@@ -179,35 +179,20 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 
 		for (VMTemplateStoragePoolVO templatePoolVO : templatePoolVOs) {
 			VMTemplateVO templateInPool = _templateDao.findById(templatePoolVO.getTemplateId());
-			int templateSizeMultiplier = 2;
 
 			if ((template != null) && !tmpinstalled && (templateInPool.getId() == template.getId())) {
 				tmpinstalled = true;
-				templateSizeMultiplier = 3;
 			}
 			
-			s_logger.debug("For template: " + templateInPool.getName() + ", using template size multiplier: " + templateSizeMultiplier);
-
 			long templateSize = templatePoolVO.getTemplateSize();
-			totalAllocatedSize += templateSizeMultiplier * (templateSize + _extraBytesPerVolume);
+			totalAllocatedSize += templateSize + _extraBytesPerVolume;
 		}
 
-		if ((template != null) && !tmpinstalled) {
-			// If the template that was passed into this allocator is not installed in the storage pool,
-			// add 3 * (template size on secondary storage) to the running total
-			HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(pool.getDataCenterId());
-			if (secondaryStorageHost == null) {
-				return false;
-			} else {
-				VMTemplateHostVO templateHostVO = _templateHostDao.findByHostTemplate(secondaryStorageHost.getId(), template.getId());
-				if (templateHostVO == null) {
-					return false;
-				} else {
-					s_logger.debug("For template: " + template.getName() + ", using template size multiplier: " + 3);
-					long templateSize = templateHostVO.getSize();
-					totalAllocatedSize += 3 * (templateSize + _extraBytesPerVolume);
-				}
-			}
+		if (template != null && !tmpinstalled ) {
+			// If the template that was passed into this allocator is not installed in the storage pool
+			// should add template size
+			// dskCh.getSize() should be template virtualsize
+			totalAllocatedSize += dskCh.getSize() + _extraBytesPerVolume;
 		}
 
 		long askingSize = dskCh.getSize();
