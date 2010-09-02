@@ -3978,9 +3978,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             SR.Record srr = sr.getRecord(conn);
             Set<PBD> pbds = sr.getPBDs(conn);
             if (pbds.size() == 0) {
-                String msg = "There is no PBDs for this SR: " + _host.uuid;
+                String msg = "There is no PBDs for this SR: " + srr.nameLabel + " on host:" + _host.uuid;
                 s_logger.warn(msg);
-                removeSR(sr);
                 return false;
             }
             Set<Host> hosts = null;
@@ -4034,15 +4033,11 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
     protected Answer execute(ModifyStoragePoolCommand cmd) {
         StoragePoolVO pool = cmd.getPool();
+        StoragePoolTO poolTO = new StoragePoolTO(pool);
         try {
             Connection conn = getConnection();
 
-            SR sr = getStorageRepository(conn, pool);
-            if (!checkSR(sr)) {
-                String msg = "ModifyStoragePoolCommand checkSR failed! host:" + _host.uuid + " pool: " + pool.getName() + pool.getHostAddress() + pool.getPath();
-                s_logger.warn(msg);
-                return new Answer(cmd, false, msg);
-            }
+            SR sr = getStorageRepository(conn, poolTO);
             long capacity = sr.getPhysicalSize(conn);
             long available = capacity - sr.getPhysicalUtilisation(conn);
             if (capacity == -1) {
@@ -4067,14 +4062,10 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
     protected Answer execute(DeleteStoragePoolCommand cmd) {
         StoragePoolVO pool = cmd.getPool();
+        StoragePoolTO poolTO = new StoragePoolTO(pool);
         try {
             Connection conn = getConnection();
-            SR sr = getStorageRepository(conn, pool);
-            if (!checkSR(sr)) {
-                String msg = "DeleteStoragePoolCommand checkSR failed! host:" + _host.uuid + " pool: " + pool.getName() + pool.getHostAddress() + pool.getPath();
-                s_logger.warn(msg);
-                return new Answer(cmd, false, msg);
-            }
+            SR sr = getStorageRepository(conn, poolTO);
             sr.setNameLabel(conn, pool.getUuid());
             sr.setNameDescription(conn, pool.getName());
 
@@ -4478,119 +4469,10 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             s_logger.warn(msg, e);
             throw new CloudRuntimeException(msg, e);
         }
-
     }
 
-    protected SR getIscsiSR(Connection conn, StoragePoolVO pool) {
-
-        synchronized (pool.getUuid().intern()) {
-            Map<String, String> deviceConfig = new HashMap<String, String>();
-            try {
-                String target = pool.getHostAddress().trim();
-                String path = pool.getPath().trim();
-                if (path.endsWith("/")) {
-                    path = path.substring(0, path.length() - 1);
-                }
-
-                String tmp[] = path.split("/");
-                if (tmp.length != 3) {
-                    String msg = "Wrong iscsi path " + pool.getPath() + " it should be /targetIQN/LUN";
-                    s_logger.warn(msg);
-                    throw new CloudRuntimeException(msg);
-                }
-                String targetiqn = tmp[1].trim();
-                String lunid = tmp[2].trim();
-                String scsiid = "";
-
-                Set<SR> srs = SR.getByNameLabel(conn, pool.getUuid());
-                for (SR sr : srs) {
-                    if (!SRType.LVMOISCSI.equals(sr.getType(conn)))
-                        continue;
-
-                    Set<PBD> pbds = sr.getPBDs(conn);
-                    if (pbds.isEmpty())
-                        continue;
-
-                    PBD pbd = pbds.iterator().next();
-
-                    Map<String, String> dc = pbd.getDeviceConfig(conn);
-
-                    if (dc == null)
-                        continue;
-
-                    if (dc.get("target") == null)
-                        continue;
-
-                    if (dc.get("targetIQN") == null)
-                        continue;
-
-                    if (dc.get("lunid") == null)
-                        continue;
-
-                    if (target.equals(dc.get("target")) && targetiqn.equals(dc.get("targetIQN")) && lunid.equals(dc.get("lunid"))) {
-                        return sr;
-                    }
-
-                }
-                deviceConfig.put("target", target);
-                deviceConfig.put("targetIQN", targetiqn);
-
-                Host host = Host.getByUuid(conn, _host.uuid);
-                SR sr = null;
-                try {
-                    sr = SR.create(conn, host, deviceConfig, new Long(0), pool.getUuid(), pool.getName(), SRType.LVMOISCSI.toString(), "user", true, new HashMap<String, String>());
-                } catch (XenAPIException e) {
-                    String errmsg = e.toString();
-                    if (errmsg.contains("SR_BACKEND_FAILURE_107")) {
-                        String lun[] = errmsg.split("<LUN>");
-                        boolean found = false;
-                        for (int i = 1; i < lun.length; i++) {
-                            int blunindex = lun[i].indexOf("<LUNid>") + 7;
-                            int elunindex = lun[i].indexOf("</LUNid>");
-                            String ilun = lun[i].substring(blunindex, elunindex);
-                            ilun = ilun.trim();
-                            if (ilun.equals(lunid)) {
-                                int bscsiindex = lun[i].indexOf("<SCSIid>") + 8;
-                                int escsiindex = lun[i].indexOf("</SCSIid>");
-                                scsiid = lun[i].substring(bscsiindex, escsiindex);
-                                scsiid = scsiid.trim();
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (!found) {
-                            String msg = "can not find LUN " + lunid + " in " + errmsg;
-                            s_logger.warn(msg);
-                            throw new CloudRuntimeException(msg);
-                        }
-                    } else {
-                        String msg = "Unable to create Iscsi SR  " + deviceConfig + " due to  " + e.toString();
-                        s_logger.warn(msg, e);
-                        throw new CloudRuntimeException(msg, e);
-                    }
-                }
-                deviceConfig.put("SCSIid", scsiid);
-                sr = SR.create(conn, host, deviceConfig, new Long(0), pool.getUuid(), pool.getName(), SRType.LVMOISCSI.toString(), "user", true, new HashMap<String, String>());
-                if( !checkSR(sr) ) {
-                    throw new Exception("no attached PBD");
-                }           
-                sr.scan(conn);
-                return sr;
-
-            } catch (XenAPIException e) {
-                String msg = "Unable to create Iscsi SR  " + deviceConfig + " due to  " + e.toString();
-                s_logger.warn(msg, e);
-                throw new CloudRuntimeException(msg, e);
-            } catch (Exception e) {
-                String msg = "Unable to create Iscsi SR  " + deviceConfig + " due to  " + e.getMessage();
-                s_logger.warn(msg, e);
-                throw new CloudRuntimeException(msg, e);
-            }
-        }
-    }
-
-    protected SR getIscsiSR(Connection conn, StoragePoolTO pool) {
-
+    protected SR getIscsiSR(StoragePoolTO pool) {
+        Connection conn = getConnection();
         synchronized (pool.getUuid().intern()) {
             Map<String, String> deviceConfig = new HashMap<String, String>();
             try {
@@ -4639,6 +4521,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                         if (checkSR(sr)) {
                             return sr;
                         }
+                        throw new CloudRuntimeException("SR check failed for storage pool: " + pool.getUuid() + "on host:" + _host.uuid);
                     }
 
                 }
@@ -4698,13 +4581,12 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
     }
 
-    protected SR getNfsSR(StoragePoolVO pool) {
+    protected SR getNfsSR(StoragePoolTO pool) {
         Connection conn = getConnection();
 
         Map<String, String> deviceConfig = new HashMap<String, String>();
         try {
-
-            String server = pool.getHostAddress();
+            String server = pool.getHost();
             String serverpath = pool.getPath();
             serverpath = serverpath.replace("//", "/");
             Set<SR> srs = SR.getAll(conn);
@@ -4733,59 +4615,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     if (checkSR(sr)) {
                         return sr;
                     }
-                }
-
-            }
-
-            deviceConfig.put("server", server);
-            deviceConfig.put("serverpath", serverpath);
-            Host host = Host.getByUuid(conn, _host.uuid);
-            SR sr = SR.create(conn, host, deviceConfig, new Long(0), pool.getUuid(), pool.getName(), SRType.NFS.toString(), "user", true, new HashMap<String, String>());
-            sr.scan(conn);
-            return sr;
-
-        } catch (XenAPIException e) {
-            String msg = "Unable to create NFS SR  " + deviceConfig + " due to  " + e.toString();
-            s_logger.warn(msg, e);
-            throw new CloudRuntimeException(msg, e);
-        } catch (Exception e) {
-            String msg = "Unable to create NFS SR  " + deviceConfig + " due to  " + e.getMessage();
-            s_logger.warn(msg);
-            throw new CloudRuntimeException(msg, e);
-        }
-    }
-
-    protected SR getNfsSR(Connection conn, StoragePoolTO pool) {
-        Map<String, String> deviceConfig = new HashMap<String, String>();
-
-        String server = pool.getHost();
-        String serverpath = pool.getPath();
-        serverpath = serverpath.replace("//", "/");
-        try {
-            Set<SR> srs = SR.getAll(conn);
-            for (SR sr : srs) {
-                if (!SRType.NFS.equals(sr.getType(conn)))
-                    continue;
-
-                Set<PBD> pbds = sr.getPBDs(conn);
-                if (pbds.isEmpty())
-                    continue;
-
-                PBD pbd = pbds.iterator().next();
-
-                Map<String, String> dc = pbd.getDeviceConfig(conn);
-
-                if (dc == null)
-                    continue;
-
-                if (dc.get("server") == null)
-                    continue;
-
-                if (dc.get("serverpath") == null)
-                    continue;
-
-                if (server.equals(dc.get("server")) && serverpath.equals(dc.get("serverpath"))) {
-                    return sr;
+                    throw new CloudRuntimeException("SR check failed for storage pool: " + pool.getUuid() + "on host:" + _host.uuid);
                 }
 
             }
@@ -4869,6 +4699,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     public CopyVolumeAnswer execute(final CopyVolumeCommand cmd) {
         String volumeUUID = cmd.getVolumePath();
         StoragePoolVO pool = cmd.getPool();
+        StoragePoolTO poolTO = new StoragePoolTO(pool);
         String secondaryStorageURL = cmd.getSecondaryStorageURL();
 
         URI uri = null;
@@ -4921,7 +4752,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 }
 
                 // Copy the volume to the primary storage pool
-                primaryStoragePool = getStorageRepository(conn, pool);
+                primaryStoragePool = getStorageRepository(conn, poolTO);
                 destVolume = cloudVDIcopy(srcVolume, primaryStoragePool);
             }
 
@@ -5801,40 +5632,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
         if (srs.size() > 1) {
             throw new CloudRuntimeException("More than one storage repository was found for pool with uuid: " + pool.getUuid());
-        }
-
-        if (srs.size() == 1) {
-            SR sr = srs.iterator().next();
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("SR retrieved for " + pool.getId() + " is mapped to " + sr.toString());
-            }
-
-            if (checkSR(sr)) {
-                return sr;
-            }
-        }
-
-        if (pool.getType() == StoragePoolType.NetworkFilesystem)
-            return getNfsSR(conn, pool);
-        else if (pool.getType() == StoragePoolType.IscsiLUN)
-            return getIscsiSR(conn, pool);
-        else
-            throw new CloudRuntimeException("The pool type: " + pool.getType().name() + " is not supported.");
-
-    }
-
-    protected SR getStorageRepository(Connection conn, StoragePoolVO pool) {
-        Set<SR> srs;
-        try {
-            srs = SR.getByNameLabel(conn, pool.getUuid());
-        } catch (XenAPIException e) {
-            throw new CloudRuntimeException("Unable to get SR " + pool.getUuid() + " due to " + e.toString(), e);
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Unable to get SR " + pool.getUuid() + " due to " + e.getMessage(), e);
-        }
-
-        if (srs.size() > 1) {
-            throw new CloudRuntimeException("More than one storage repository was found for pool with uuid: " + pool.getUuid());
         } else if (srs.size() == 1) {
             SR sr = srs.iterator().next();
             if (s_logger.isDebugEnabled()) {
@@ -5844,14 +5641,16 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             if (checkSR(sr)) {
                 return sr;
             }
+            throw new CloudRuntimeException("SR check failed for storage pool: " + pool.getUuid() + "on host:" + _host.uuid);
+        } else {
+	
+	        if (pool.getType() == StoragePoolType.NetworkFilesystem)
+	            return getNfsSR(pool);
+	        else if (pool.getType() == StoragePoolType.IscsiLUN)
+	            return getIscsiSR(pool);
+	        else
+	            throw new CloudRuntimeException("The pool type: " + pool.getType().name() + " is not supported.");
         }
-
-        if (pool.getPoolType() == StoragePoolType.NetworkFilesystem)
-            return getNfsSR(pool);
-        else if (pool.getPoolType() == StoragePoolType.IscsiLUN)
-            return getIscsiSR(conn, pool);
-        else
-            throw new CloudRuntimeException("The pool type: " + pool.getPoolType().name() + " is not supported.");
 
     }
 
