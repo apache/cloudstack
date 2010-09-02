@@ -22,6 +22,9 @@ public class SecurityGroupResponse implements ResponseObject {
     @Param(name="domain")
     private String domainName;
 
+    @Param(name="ipaddress")
+    private String ipAddress;
+
     public Long getId() {
         return id;
     }
@@ -68,5 +71,13 @@ public class SecurityGroupResponse implements ResponseObject {
 
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
     }
 }

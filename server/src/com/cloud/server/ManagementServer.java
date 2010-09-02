@@ -48,6 +48,7 @@ import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
 import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.ListPodsByCmd;
 import com.cloud.api.commands.ListPortForwardingServiceRulesCmd;
+import com.cloud.api.commands.ListPortForwardingServicesByVmCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -1714,7 +1715,7 @@ public interface ManagementServer {
      * @param c
      * @return a list of security groups
      */
-    Map<String, List<SecurityGroupVO>> searchForSecurityGroupsByVM(Criteria c);
+    Map<String, List<SecurityGroupVO>> searchForSecurityGroupsByVM(ListPortForwardingServicesByVmCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 
     /**
      * Create a security group, a group of network rules (port, private port, protocol, algorithm) that can be applied in mass to a VM

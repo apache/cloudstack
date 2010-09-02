@@ -24,30 +24,18 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseListCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.network.SecurityGroupVO;
-import com.cloud.server.Criteria;
 import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
-import com.cloud.utils.Pair;
 
-public class ListPortForwardingServicesByVmCmd extends BaseCmd {
+@Implementation(method="searchForSecurityGroupsByVM")
+public class ListPortForwardingServicesByVmCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPortForwardingServicesByVmCmd.class.getName());
 
     private static final String s_name = "listportforwardingservicesbyvmresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IP_ADDRESS, Boolean.FALSE));
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VIRTUAL_MACHINE_ID, Boolean.TRUE));
-
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -90,89 +78,32 @@ public class ListPortForwardingServicesByVmCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        Long domainId = (Long)params.get(BaseCmd.Properties.DOMAIN_ID.getName());
-        String accountName = (String)params.get(BaseCmd.Properties.ACCOUNT.getName());
-        String ipAddress = (String)params.get(BaseCmd.Properties.IP_ADDRESS.getName());
-        Long vmId = (Long)params.get(BaseCmd.Properties.VIRTUAL_MACHINE_ID.getName());
-        String keyword = (String)params.get(BaseCmd.Properties.KEYWORD.getName());
+    @Override @SuppressWarnings("unchecked")
+    public String getResponse() {
+        Map<String, List<SecurityGroupVO>> portForwardingServices = (Map<String, List<SecurityGroupVO>>)getResponseObject();
 
-        Long accountId = null;
-        if ((account == null) || isAdmin(account.getType())) {
-            // validate domainId before proceeding
-            if (domainId != null) {
-                if ((account != null) && !getManagementServer().isChildDomain(account.getDomainId(), domainId)) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid domain id (" + domainId + ") given, unable to list port forwarding services.");
-                }
-                if (accountName != null) {
-                    Account userAccount = getManagementServer().findAccountByName(accountName, domainId);
-                    if (userAccount != null) {
-                        accountId = userAccount.getId();
-                    } else {
-                        throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                }
-            }
-        } else {
-            accountId = account.getId();
-        }
-
-        UserVm userVm = getManagementServer().findUserVMInstanceById(vmId);
-        if (userVm == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Internal error, unable to find virtual machine " + vmId + " for listing port forwarding services.");
-        }
-
-        if ((accountId != null) && (userVm.getAccountId() != accountId.longValue())) {
-            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to list port forwarding services, account " + accountId + " does not own virtual machine " + vmId);
-        }
-
-        Criteria c = new Criteria("id", Boolean.TRUE, null, null);
-        
-        c.addCriteria(Criteria.INSTANCEID, vmId);
-        if (keyword != null) {
-        	c.addCriteria(Criteria.KEYWORD, keyword);
-        } else {
-        	c.addCriteria(Criteria.ADDRESS, ipAddress);
-        }
-
-        Map<String, List<SecurityGroupVO>> groups = getManagementServer().searchForSecurityGroupsByVM(c);
-
-        if (groups == null) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error searching for port forwarding services");
-        }
-
-        List<Pair<String, Object>> groupsTags = new ArrayList<Pair<String, Object>>();
-        List<Object> groupTagList = new ArrayList<Object>();
-        for (String addr : groups.keySet()) {
-            List<SecurityGroupVO> appliedGroup = groups.get(addr);
+        List<SecurityGroupResponse> response = new ArrayList<SecurityGroupResponse>();
+        for (String addr : portForwardingServices.keySet()) {
+            List<SecurityGroupVO> appliedGroup = portForwardingServices.get(addr);
             for (SecurityGroupVO group : appliedGroup) {
-                List<Pair<String, Object>> groupData = new ArrayList<Pair<String, Object>>();
-                groupData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.valueOf(group.getId()).toString()));
-                groupData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), group.getName()));
-                groupData.add(new Pair<String, Object>(BaseCmd.Properties.DESCRIPTION.getName(), group.getDescription()));
-                groupData.add(new Pair<String, Object>(BaseCmd.Properties.IP_ADDRESS.getName(), addr));
+                SecurityGroupResponse pfsData = new SecurityGroupResponse();
+                pfsData.setId(group.getId());
+                pfsData.setName(group.getName());
+                pfsData.setDescription(group.getDescription());
+                pfsData.setIpAddress(addr);
 
                 Account accountTemp = getManagementServer().findAccountById(group.getAccountId());
                 if (accountTemp != null) {
-                    groupData.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT.getName(), accountTemp.getAccountName()));
-                    groupData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), accountTemp.getDomainId()));
-                    groupData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), getManagementServer().findDomainIdById(accountTemp.getDomainId()).getName()));
-                } 
-                groupTagList.add(groupData);
+                    pfsData.setAccountName(accountTemp.getAccountName());
+                    pfsData.setDomainId(accountTemp.getDomainId());
+                    pfsData.setDomainName(getManagementServer().findDomainIdById(accountTemp.getDomainId()).getName());
+                }
             }
         }
-        Object[] groupTag = groupTagList.toArray();
-        Pair<String, Object> eventTag = new Pair<String, Object>("portforwardingservice", groupTag);
-        groupsTags.add(eventTag);
-        return groupsTags;
     }
 }

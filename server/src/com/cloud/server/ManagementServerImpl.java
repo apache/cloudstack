@@ -86,6 +86,7 @@ import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
 import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.ListPodsByCmd;
 import com.cloud.api.commands.ListPortForwardingServiceRulesCmd;
+import com.cloud.api.commands.ListPortForwardingServicesByVmCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -7081,14 +7082,47 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public Map<String, List<SecurityGroupVO>> searchForSecurityGroupsByVM(Criteria c) {
-        Filter searchFilter = new Filter(SecurityGroupVMMapVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+    public Map<String, List<SecurityGroupVO>> searchForSecurityGroupsByVM(ListPortForwardingServicesByVmCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
+        Long accountId = null;
+
+        if ((account == null) || isAdmin(account.getType())) {
+            // validate domainId before proceeding
+            if (domainId != null) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Unable to list port forwarding services for domain " + domainId + ", permission denied.");
+                }
+                if (accountName != null) {
+                    Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                    if (userAccount != null) {
+                        accountId = userAccount.getId();
+                    } else {
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                }
+            }
+        } else {
+            accountId = account.getId();
+        }
+
+        Object ipAddress = cmd.getIpAddress();
+        Long instanceId = cmd.getVirtualMachineId();
+        UserVm userVm = _userVmDao.findById(instanceId);
+        if (userVm == null) {
+            throw new InvalidParameterValueException("Internal error, unable to find virtual machine " + instanceId + " for listing port forwarding services.");
+        }
+
+        if ((accountId != null) && (userVm.getAccountId() != accountId.longValue())) {
+            throw new PermissionDeniedException("Unable to list port forwarding services, account " + accountId + " does not own virtual machine " + instanceId);
+        }
+
+        Filter searchFilter = new Filter(SecurityGroupVMMapVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<SecurityGroupVMMapVO> sc = _securityGroupVMMapDao.createSearchCriteria();
 
-        Object instanceId = c.getCriteria(Criteria.INSTANCEID);
-        Object ipAddress = c.getCriteria(Criteria.ADDRESS);
         // TODO: keyword search on vm name?  vm group?  what makes sense here?  We can't search directly on 'name' as that's not a field of SecurityGroupVMMapVO.
-        //Object keyword = c.getCriteria(Criteria.KEYWORD);
+        //Object keyword = cmd.getKeyword();
 
         /*
         if (keyword != null) {
