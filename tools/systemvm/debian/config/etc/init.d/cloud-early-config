@@ -25,13 +25,35 @@ EOF
 }
 
 patch() {
+  local PATCH_MOUNT=/media/cdrom
+  local patchfile=$PATCH_MOUNT/cloud-scripts.tgz
+  local md5file=/var/cache/cloud/cloud-scripts-signature
+  local shouldpatch=false
+  mkdir -p $PATCH_MOUNT
   if [ -e /dev/xvdd ]; then
-    mkdir -p /media/cdrom
-    mount -o ro /dev/xvdd /media/cdrom
-    #tar xzf /media/cdrom/patch.tgz -C /
+    mount -o ro /dev/xvdd $PATCH_MOUNT
+    local oldmd5=
+    [ -f ${md5file} ] && oldmd5=$(cat ${md5file})
+    local newmd5=
+    [ -f ${patchfile} ] && newmd5=$(md5sum ${patchfile} | awk '{print $1}')
+ 
+   if [ "$oldmd5" != "$newmd5" ] && [ -f ${patchfile} ] && [ "$newmd5" != "" ]
+    then
+      shouldpatch=true
+      logger -t cloud "Patching  scripts"
+      tar xzf $patchfile -C ${path}
+      echo ${newmd5} > ${md5file}
+    fi
     cat /proc/cmdline > /var/cache/cloud/cmdline
-    /opt/cloud/bin/patchsystemvm.sh
-    umount /media/cdrom
+    logger -t cloud "Patching  cloud service"
+    /opt/cloud/bin/patchsystemvm.sh $PATCH_MOUNT 
+    umount $PATCH_MOUNT
+    if [ "$shouldpatch" == "true" ] 
+    then
+      logger -t cloud "Rebooting system since we patched init scripts"
+      sleep 2
+      reboot
+    fi
   fi
   if [ -f /mnt/cmdline ]; then
     cat /mnt/cmdline > /var/cache/cloud/cmdline
@@ -297,6 +319,7 @@ case "$1" in
 start)
 
 	log_action_begin_msg "Executing cloud-early-config"
+        logger -t cloud "Executing cloud-early-config"
 	if start; then
 	    log_action_end_msg $?
 	else

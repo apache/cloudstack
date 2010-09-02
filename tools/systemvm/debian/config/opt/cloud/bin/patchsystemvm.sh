@@ -51,6 +51,7 @@ routing_svcs() {
 
 CMDLINE=$(cat /var/cache/cloud/cmdline)
 TYPE="router"
+PATCH_MOUNT=$1
 
 for i in $CMDLINE
   do
@@ -66,9 +67,9 @@ for i in $CMDLINE
     esac
 done
 
-if [ "$TYPE" == "consoleproxy" ] || [ "$TYPE" == "secstorage" ]  && [ -f /media/cdrom/systemvm.zip ]
+if [ "$TYPE" == "consoleproxy" ] || [ "$TYPE" == "secstorage" ]  && [ -f ${PATCH_MOUNT}/systemvm.zip ]
 then
-  patch_console_proxy /media/cdrom/systemvm.zip
+  patch_console_proxy ${PATCH_MOUNT}/systemvm.zip
   if [ $? -gt 0 ]
   then
     printf "Failed to apply patch systemvm\n" >$logfile
