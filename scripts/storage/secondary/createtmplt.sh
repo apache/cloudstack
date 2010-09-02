@@ -161,10 +161,13 @@ rollback_if_needed $tmpltfs $? "failed to uncompress $tmpltimg\n"
 tmpltimg2=$(untar $tmpltimg2)
 rollback_if_needed $tmpltfs $? "tar archives not supported\n"
 
-if [ ${tmpltname%.vhd} = ${tmpltname} ]
+if [ ${tmpltname%.vhd} != ${tmpltname} ]
 then
-  vhd-util check -n ${tmpltimg2} > /dev/null
-  rollback_if_needed $tmpltfs $? "vhd tool check $tmpltimg2 failed\n"
+  if  which  vhd-util 2>/dev/null
+  then 
+    vhd-util check -n ${tmpltimg2} > /dev/null
+    rollback_if_needed $tmpltfs $? "vhd tool check $tmpltimg2 failed\n"
+  fi
 fi
 
 # need the 'G' suffix on volume size
