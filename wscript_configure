@@ -161,6 +161,7 @@ else:
 	else:
 		conf.env.TOMCATHOME = _join(conf.env.DATADIR,'tomcat6')
 		conf.check_message_2("%s (assumed presence of Tomcat there)"%conf.env.TOMCATHOME,"GREEN")
+if not _exists(conf.env.TOMCATHOME): conf.fatal("Tomcat directory %s not found.  Cannot proceed."%conf.env.TOMCATHOME)
 
 conf.env.AGENTPATH = _join(conf.env.PACKAGE,"agent")
 conf.env.CPPATH = _join(conf.env.PACKAGE,"console-proxy")
