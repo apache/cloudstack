@@ -251,6 +251,7 @@ CREATE TABLE `cloud`.`volumes` (
   `recreatable` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is this volume recreatable?',
   `destroyed` tinyint(1) COMMENT 'indicates whether the volume was destroyed by the user or not',
   `created` datetime COMMENT 'Date Created',
+  `attached` datetime COMMENT 'Date Attached',
   `updated` datetime COMMENT 'Date updated for attach/detach',
   `removed` datetime COMMENT 'Date removed.  not null if removed',
   `status` varchar(32) COMMENT 'Async API volume creation status',

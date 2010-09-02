@@ -194,6 +194,7 @@ public class ListVolumesCmd extends BaseCmd{
             volumeData.add(new Pair<String, Object>(BaseCmd.Properties.SIZE.getName(), virtualSizeInBytes));
 
             volumeData.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(volume.getCreated())));
+            volumeData.add(new Pair<String, Object>(BaseCmd.Properties.ATTACHED.getName(), getDateString(volume.getAttached())));
             volumeData.add(new Pair<String, Object>(BaseCmd.Properties.STATE.getName(),volume.getStatus()));
             
             Account accountTemp = getManagementServer().findAccountById(volume.getAccountId());

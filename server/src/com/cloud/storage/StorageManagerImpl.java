@@ -19,7 +19,11 @@ package com.cloud.storage;
 
 import java.net.URI;
 import java.net.UnknownHostException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
@@ -29,6 +33,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -122,8 +127,12 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
+import com.cloud.user.UserContext;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
@@ -188,6 +197,7 @@ public class StorageManagerImpl implements StorageManager {
     @Inject protected VMTemplateDao _templateDao;
     @Inject protected VMTemplateHostDao _templateHostDao;
     @Inject protected ServiceOfferingDao _offeringDao;
+    @Inject protected UserDao _userDao;
     
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     protected SearchBuilder<StoragePoolVO> PoolsUsedByVmSearch;
@@ -921,6 +931,17 @@ public class StorageManagerImpl implements StorageManager {
         }
         
         for (VolumeVO v : volumes) {
+        	
+        	//when the user vm is created, the volume is attached upon creation
+        	//set the attached datetime
+        	try{
+        		v.setAttached(new Date());
+        		_volsDao.update(v.getId(), v);
+        	}catch(Exception e)
+        	{
+        		s_logger.warn("Error updating the attached value for volume "+v.getId()+":"+e);
+        	}
+        	
         	long volumeId = v.getId();
         	// Create an event
         	long sizeMB = v.getSize() / (1024 * 1024);

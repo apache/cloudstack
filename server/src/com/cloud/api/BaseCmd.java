@@ -153,6 +153,7 @@ public abstract class BaseCmd {
         CPU_ALLOCATED("cpuallocated", BaseCmd.TYPE_LONG, "cpuallocated"),
         CPU_USED("cpuused", BaseCmd.TYPE_LONG, "cpuused"),
         CREATED("created", BaseCmd.TYPE_DATE, "created"),
+        ATTACHED("attached", BaseCmd.TYPE_DATE, "attached"),
         CROSS_ZONES("crossZones", BaseCmd.TYPE_BOOLEAN, "crosszones"),
         DAILY_MAX("dailymax", BaseCmd.TYPE_INT, "dailyMax"),
         DATA_DISK_OFFERING_ID("datadiskofferingid", BaseCmd.TYPE_LONG, "dataDiskOfferingId"),
