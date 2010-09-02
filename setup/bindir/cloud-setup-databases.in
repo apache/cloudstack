@@ -301,7 +301,9 @@ if rootuser:
 
 	replacements = (
 		("CREATE USER cloud identified by 'cloud';",
-			""),	
+			"CREATE USER %s@`localhost` identified by '%s'; CREATE USER %s@`%%` identified by '%s';"%(
+					(user,password,user,password)
+				)),
 		("cloud identified by 'cloud';",
 			"%s identified by '%s';"%(user,password)),
 		("cloud@`localhost` identified by 'cloud'",
