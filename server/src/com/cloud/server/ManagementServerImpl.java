@@ -88,6 +88,7 @@ import com.cloud.api.commands.ListPodsByCmd;
 import com.cloud.api.commands.ListPortForwardingServiceRulesCmd;
 import com.cloud.api.commands.ListPortForwardingServicesByVmCmd;
 import com.cloud.api.commands.ListPortForwardingServicesCmd;
+import com.cloud.api.commands.ListPreallocatedLunsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -8357,13 +8358,12 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
 	@Override
-	public List<PreallocatedLunVO> getPreAllocatedLuns(Criteria c)
-	{
-       Filter searchFilter = new Filter(PreallocatedLunVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+	public List<PreallocatedLunVO> getPreAllocatedLuns(ListPreallocatedLunsCmd cmd)	{
+       Filter searchFilter = new Filter(PreallocatedLunVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<PreallocatedLunVO> sc = _lunDao.createSearchCriteria();
 
-        Object targetIqn = c.getCriteria(Criteria.TARGET_IQN);
-        Object scope = c.getCriteria(Criteria.SCOPE);
+        Object targetIqn = cmd.getTargetIqn();
+        Object scope = cmd.getScope();
 
         if (targetIqn != null) {
             sc.addAnd("targetIqn", SearchCriteria.Op.EQ, targetIqn);
@@ -8371,24 +8371,19 @@ public class ManagementServerImpl implements ManagementServer {
         
         if (scope == null || scope.toString().equalsIgnoreCase("ALL")) {
             return _lunDao.search(sc, searchFilter);
-        }
-        else if(scope.toString().equalsIgnoreCase("ALLOCATED"))
-        {
+        } else if(scope.toString().equalsIgnoreCase("ALLOCATED")) {
         	sc.addAnd("volumeId", SearchCriteria.Op.NNULL);
         	sc.addAnd("taken", SearchCriteria.Op.NNULL);
         	
         	return _lunDao.search(sc, searchFilter);
-        }
-        else if(scope.toString().equalsIgnoreCase("FREE"))
-        {
+        } else if(scope.toString().equalsIgnoreCase("FREE")) {
         	sc.addAnd("volumeId", SearchCriteria.Op.NULL);
         	sc.addAnd("taken", SearchCriteria.Op.NULL);
         	
         	return _lunDao.search(sc, searchFilter);
         }
-        
-		return null;
 
+		return null;
 	}
 
 	@Override

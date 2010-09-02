@@ -50,6 +50,7 @@ import com.cloud.api.commands.ListPodsByCmd;
 import com.cloud.api.commands.ListPortForwardingServiceRulesCmd;
 import com.cloud.api.commands.ListPortForwardingServicesByVmCmd;
 import com.cloud.api.commands.ListPortForwardingServicesCmd;
+import com.cloud.api.commands.ListPreallocatedLunsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -1931,7 +1932,7 @@ public interface ManagementServer {
 	 */
 	boolean isLocalStorageActiveOnHost(HostVO host);
 	
-	public List<PreallocatedLunVO> getPreAllocatedLuns(Criteria c);
+	public List<PreallocatedLunVO> getPreAllocatedLuns(ListPreallocatedLunsCmd cmd);
 	
 	public String getNetworkGroupsNamesForVm(long vmId);
 	
