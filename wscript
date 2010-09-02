@@ -786,6 +786,8 @@ def run(args):
 		"-Dcatalina.home=" + conf.env.MSENVIRON,
 		"-Djava.io.tmpdir="+_join(conf.env.MSENVIRON,"temp"), ]
 
+	if not _exists(_join(conf.env.BINDIR,"cloud-setup-databases")): Scripting.install(conf)
+
 	cp = [conf.env.MSCONF]
 	cp += _glob(_join(conf.env.MSENVIRON,'bin',"*.jar"))
 	cp += _glob(_join(conf.env.MSENVIRON,'lib',"*.jar"))
@@ -800,8 +802,6 @@ def run(args):
 	#vendorconfs = _glob(  _join(conf.env.MSCONF,"vendor","*")  )
 	#if vendorconfs: cp = plugins + cp
 
-	#Scripting.install(conf)
-
 	run_java("org.apache.catalina.startup.Bootstrap",cp,options,["start"])
 
 def debug(ctx):
@@ -812,12 +812,14 @@ def debug(ctx):
 def run_agent(args):
 	"""runs the management server"""
 	conf = _getbuildcontext()
+	if not _exists(_join(conf.env.LIBEXECDIR,"agent-runner")): Scripting.install(conf)
 	_check_call("sudo",[_join(conf.env.LIBEXECDIR,"agent-runner")])
 
 @throws_command_errors
 def run_console_proxy(args):
 	"""runs the management server"""
 	conf = _getbuildcontext()
+	if not _exists(_join(conf.env.LIBEXECDIR,"console-proxy-runner")): Scripting.install(conf)
 	_check_call("sudo",[_join(conf.env.LIBEXECDIR,"console-proxy-runner")])
 
 def simulate_agent(args):
@@ -844,7 +846,7 @@ def simulate_agent(args):
 	cp += [conf.env.DEPSCLASSPATH]
 	cp += [conf.env.AGENTSIMULATORCLASSPATH]
 
-	#Scripting.install(conf)
+	if not _exists(_join(conf.env.LIBEXECDIR,"agent-runner")): Scripting.install(conf)
 
 	run_java("com.cloud.agent.AgentSimulator",cp,arguments=args)
 
