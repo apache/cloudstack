@@ -56,6 +56,7 @@ public class LibvirtVMDef {
 		private String _initrd;
 		private String _root;
 		private String _cmdline;
+		
 		private List<bootOrder> _bootdevs = new ArrayList<bootOrder>();
 		private String _machine;
 		public void setGuestType (guestType type) {
@@ -79,6 +80,7 @@ public class LibvirtVMDef {
 		public void setBootOrder(bootOrder order) {
 			_bootdevs.add(order);
 		}
+		
 		@Override
         public String toString () {
 			if (_type == guestType.KVM) {
@@ -249,10 +251,25 @@ public class LibvirtVMDef {
 			}
 		}
 		
+		enum diskFmtType {
+			RAW("raw"),
+			QCOW2("qcow2");
+			String _fmtType;
+			diskFmtType(String fmt) {
+				_fmtType = fmt;
+			}
+			@Override
+            public String toString() {
+				return _fmtType;
+			}
+		}
+
+		
 		private deviceType _deviceType; /*floppy, disk, cdrom*/
 		private diskType _diskType;
 		private String _sourcePath;
 		private String _diskLabel;
+		private diskFmtType _diskFmtType;
 		private diskBus _bus;
 		private boolean _readonly = false;
 		private boolean _shareable = false;
@@ -260,13 +277,13 @@ public class LibvirtVMDef {
 		public void setDeviceType(deviceType deviceType) {
 			_deviceType = deviceType;
 		}
-		public void defFileBasedDisk(String filePath, String diskLabel, diskBus bus) {
+		public void defFileBasedDisk(String filePath, String diskLabel, diskBus bus, diskFmtType diskFmtType) {
 			_diskType = diskType.FILE;
 			_deviceType = deviceType.DISK;
 			_sourcePath = filePath;
 			_diskLabel = diskLabel;
 			_bus = bus;
-
+			_diskFmtType = diskFmtType;
 		}
 		public void defBlockBasedDisk(String diskName, String diskLabel, diskBus bus) {
 			_diskType = diskType.BLOCK;
@@ -302,6 +319,8 @@ public class LibvirtVMDef {
 			}
 			diskBuilder.append(" type='" + _diskType + "'");
 			diskBuilder.append(">\n");
+			diskBuilder.append("<driver name='qemu'" + " type='" + _diskFmtType + "'/>\n");
+			
 			if (_diskType == diskType.FILE) {
 				diskBuilder.append("<source ");
 				if (_sourcePath != null) {
@@ -599,11 +618,11 @@ public class LibvirtVMDef {
 		devices.setEmulatorPath("/usr/bin/qemu-kvm");
 		
 		diskDef hda = new diskDef();
-		hda.defFileBasedDisk("/path/to/hda1", "hda", diskDef.diskBus.IDE);
+		hda.defFileBasedDisk("/path/to/hda1", "hda", diskDef.diskBus.IDE, diskDef.diskFmtType.RAW);
 		devices.addDevice(hda);
 		
 		diskDef hdb = new diskDef();
-		hdb.defFileBasedDisk("/path/to/hda2", "hdb",  diskDef.diskBus.IDE);
+		hdb.defFileBasedDisk("/path/to/hda2", "hdb",  diskDef.diskBus.IDE, diskDef.diskFmtType.RAW);
 		devices.addDevice(hdb);
 		
 		interfaceDef pubNic = new interfaceDef();

@@ -2091,12 +2091,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			isoPath = isoVol.getPath();
 		
 			diskDef iso = new diskDef();
-			iso.defFileBasedDisk(isoPath, "hdc", diskDef.diskBus.IDE);
+			iso.defFileBasedDisk(isoPath, "hdc", diskDef.diskBus.IDE, diskDef.diskFmtType.RAW);
 			iso.setDeviceType(diskDef.deviceType.CDROM);
 			isoXml = iso.toString();
 		} else {
 			diskDef iso = new diskDef();
-			iso.defFileBasedDisk(null, "hdc", diskDef.diskBus.IDE);
+			iso.defFileBasedDisk(null, "hdc", diskDef.diskBus.IDE, diskDef.diskFmtType.RAW);
 			iso.setDeviceType(diskDef.deviceType.CDROM);
 			isoXml = iso.toString();
 		}
@@ -2148,9 +2148,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		diskDef disk = new diskDef();
 		String guestOSType = getGuestType(vmName);
 		if (isGuestPVEnabled(guestOSType)) {
-			disk.defFileBasedDisk(sourceFile, diskDev, diskDef.diskBus.VIRTIO);
+			disk.defFileBasedDisk(sourceFile, diskDev, diskDef.diskBus.VIRTIO, diskDef.diskFmtType.QCOW2);
 		} else {
-			disk.defFileBasedDisk(sourceFile, diskDev, diskDef.diskBus.SCSI);
+			disk.defFileBasedDisk(sourceFile, diskDev, diskDef.diskBus.SCSI, diskDef.diskFmtType.QCOW2);
 		}
 		String xml = disk.toString();
 		return attachOrDetachDevice(attach, vmName, xml);
@@ -2931,11 +2931,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
          String datadiskPath = tmplVol.getKey();
 	
 		diskDef hda = new diskDef();
-		hda.defFileBasedDisk(rootkPath, "hda", diskDef.diskBus.IDE);
+		hda.defFileBasedDisk(rootkPath, "hda", diskDef.diskBus.IDE, diskDef.diskFmtType.QCOW2);
 		disks.add(hda);
 		
 		diskDef hdb = new diskDef();
-		hdb.defFileBasedDisk(datadiskPath, "hdb",  diskDef.diskBus.IDE);
+		hdb.defFileBasedDisk(datadiskPath, "hdb",  diskDef.diskBus.IDE, diskDef.diskFmtType.RAW);
 		disks.add(hdb);
 		
 		return disks;
@@ -2970,25 +2970,24 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		
 		
 		diskDef hda = new diskDef();
-		hda.defFileBasedDisk(rootVolume.getPath(), "hda", diskBusType);
+		hda.defFileBasedDisk(rootVolume.getPath(), "hda", diskBusType, diskDef.diskFmtType.QCOW2);
 		disks.add(hda);
 		
 		/*Centos doesn't support scsi hotplug. For other host OSes, we attach the disk after the vm is running, so that we can hotplug it.*/
 		if (dataVolume != null) {
 			diskDef hdb = new diskDef();
-			hdb.defFileBasedDisk(dataVolume.getPath(), "hdb", diskBusType);
+			hdb.defFileBasedDisk(dataVolume.getPath(), "hdb", diskBusType, diskDef.diskFmtType.QCOW2);
 			if (!isCentosHost()) {
 				hdb.setAttachDeferred(true);
 			}
 			disks.add(hdb);
 		}
-		
-		if (isoPath != null) {
-			diskDef hdc = new diskDef();
-			hdc.defFileBasedDisk(isoPath, "hdc", diskDef.diskBus.IDE);
-			hdc.setDeviceType(diskDef.deviceType.CDROM);
-			disks.add(hdc);
-		}
+
+		diskDef hdc = new diskDef();
+		hdc.defFileBasedDisk(isoPath, "hdc", diskDef.diskBus.IDE, diskDef.diskFmtType.RAW);
+		hdc.setDeviceType(diskDef.deviceType.CDROM);
+		disks.add(hdc);
+	
 		return disks;
     }
     
