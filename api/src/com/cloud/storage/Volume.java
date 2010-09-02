@@ -17,6 +17,8 @@
  */
 package com.cloud.storage;
 
+import java.util.Date;
+
 import com.cloud.domain.PartOf;
 import com.cloud.template.BasedOn;
 import com.cloud.user.OwnedBy;
@@ -86,4 +88,8 @@ public interface Volume extends PartOf, OwnedBy, BasedOn {
 	void setSourceId(Long sourceId);
 
 	Long getSourceId();
+
+	Date getAttached();
+
+	void setAttached(Date attached);
 }

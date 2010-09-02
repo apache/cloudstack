@@ -234,6 +234,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     	volume.setInstanceId(vmId);
     	volume.setDeviceId(deviceId);
     	volume.setUpdated(new Date());
+    	volume.setAttached(new Date());
     	update(volumeId, volume);
     }
     
@@ -243,6 +244,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     	volume.setInstanceId(null);
         volume.setDeviceId(null);
     	volume.setUpdated(new Date());
+    	volume.setAttached(null);
     	update(volumeId, volume);
     }
     
