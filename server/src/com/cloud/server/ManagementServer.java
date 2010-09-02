@@ -51,6 +51,7 @@ import com.cloud.api.commands.ListPortForwardingServiceRulesCmd;
 import com.cloud.api.commands.ListPortForwardingServicesByVmCmd;
 import com.cloud.api.commands.ListPortForwardingServicesCmd;
 import com.cloud.api.commands.ListPreallocatedLunsCmd;
+import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -1245,10 +1246,10 @@ public interface ManagementServer {
     /**
      * Obtains a list of IP Addresses by the specified search criteria.
      * Can search by: "userId", "dataCenterId", "address"
-     * @param sc
+     * @param cmd the command that wraps the search criteria
      * @return List of IPAddresses
      */
-    List<IPAddressVO> searchForIPAddresses(Criteria c);
+    List<IPAddressVO> searchForIPAddresses(ListPublicIpAddressesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
     /**
      * Obtains a list of billing records by the specified search criteria.

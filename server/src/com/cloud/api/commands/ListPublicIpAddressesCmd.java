@@ -20,41 +20,25 @@ package com.cloud.api.commands;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseListCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.response.IPAddressResponse;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
-import com.cloud.domain.DomainVO;
 import com.cloud.network.IPAddressVO;
-import com.cloud.server.Criteria;
+import com.cloud.serializer.SerializerHelper;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
+import com.cloud.user.UserContext;
 
-public class ListPublicIpAddressesCmd extends BaseCmd {
+@Implementation(method="searchForIPAddresses")
+public class ListPublicIpAddressesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPublicIpAddressesCmd.class.getName());
 
     private static final String s_name = "listpublicipaddressesresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ALLOCATED_ONLY, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.FOR_VIRTUAL_NETWORK, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IP_ADDRESS, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VLAN_DB_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
-
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -122,127 +106,44 @@ public class ListPublicIpAddressesCmd extends BaseCmd {
         return s_name;
     }
 
-    @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
+    @Override @SuppressWarnings("unchecked")
+    public String getResponse() {
+        List<IPAddressVO> ipAddresses = (List<IPAddressVO>)getResponseObject();
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-    	String accountName = (String) params.get(BaseCmd.Properties.ACCOUNT.getName());
-    	Long domainId = (Long) params.get(BaseCmd.Properties.DOMAIN_ID.getName());
-        Account account = (Account) params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        Boolean allocatedOnly = (Boolean) params.get(BaseCmd.Properties.ALLOCATED_ONLY.getName());
-        Long zoneId = (Long) params.get(BaseCmd.Properties.ZONE_ID.getName());
-        Long vlanDbId = (Long) params.get(BaseCmd.Properties.VLAN_DB_ID.getName());
-        String ip = (String) params.get(BaseCmd.Properties.IP_ADDRESS.getName());
-        String keyword = (String)params.get(BaseCmd.Properties.KEYWORD.getName());
-        Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
-        Integer pageSize = (Integer)params.get(BaseCmd.Properties.PAGESIZE.getName());
-        Boolean forVirtualNetwork = (Boolean) params.get(BaseCmd.Properties.FOR_VIRTUAL_NETWORK.getName());
-        boolean isAdmin = false;
+        List<IPAddressResponse> response = new ArrayList<IPAddressResponse>();
+        for (IPAddressVO ipAddress : ipAddresses) {
+            VlanVO vlan  = getManagementServer().findVlanById(ipAddress.getVlanDbId());
+            boolean forVirtualNetworks = vlan.getVlanType().equals(VlanType.VirtualNetwork);
 
-        if (allocatedOnly == null)
-        	allocatedOnly = new Boolean(true);
-
-        Long accountId = null;
-        if ((account == null) || isAdmin(account.getType())) {
-            isAdmin = true;
-            // validate domainId before proceeding
-            if (domainId != null) {
-                if ((account != null) && !getManagementServer().isChildDomain(account.getDomainId(), domainId)) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid domain id (" + domainId + ") given, unable to list IP addresses.");
-                }
-                if (accountName != null) {
-                    Account userAccount = getManagementServer().findAccountByName(accountName, domainId);
-                    if (userAccount != null) {
-                        accountId = userAccount.getId();
-                    } else {
-                        throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                }
-            } else {
-                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
-            }
-        } else {
-            accountId = account.getId();
-        }
-
-        Long[] accountIds = null;
-        if (accountId != null) {
-            accountIds = new Long[1];
-            accountIds[0] = accountId;
-        }
-
-        Long startIndex = Long.valueOf(0);
-        int pageSizeNum = 50;
-    	if (pageSize != null) {
-    		pageSizeNum = pageSize.intValue();
-    	}
-        if (page != null) {
-            int pageNum = page.intValue();
-            if (pageNum > 0) {
-                startIndex = Long.valueOf(pageSizeNum * (pageNum-1));
-            }
-        }
-
-        Criteria c = new Criteria("address", Boolean.FALSE, startIndex, Long.valueOf(pageSizeNum));
-
-        c.addCriteria(Criteria.ACCOUNTID, accountIds);
-        if (allocatedOnly) {
-        	c.addCriteria(Criteria.ISALLOCATED, allocatedOnly.booleanValue());
-        }
-
-        if (keyword != null) {
-        	c.addCriteria(Criteria.KEYWORD, keyword);
-        } else {
-            if (isAdmin) {
-                c.addCriteria(Criteria.DOMAINID, domainId);
-                c.addCriteria(Criteria.VLAN, vlanDbId);
-            }
-            c.addCriteria(Criteria.FOR_VIRTUAL_NETWORK, forVirtualNetwork);
-        	c.addCriteria(Criteria.DATACENTERID, zoneId);
-            c.addCriteria(Criteria.IPADDRESS, ip);
-        }
-
-        List<IPAddressVO> result = getManagementServer().searchForIPAddresses(c);
-
-        if (result == null) {
-            throw new ServerApiException(BaseCmd.NET_LIST_ERROR, "unable to find IP Addresses for account: " + accountId);
-        }
-        List<Pair<String, Object>> ipAddrTags = new ArrayList<Pair<String, Object>>();
-        Object[] ipTag = new Object[result.size()];
-        int i = 0;
-        for (IPAddressVO ipAddress : result) {
-        	VlanVO vlan  = getManagementServer().findVlanById(ipAddress.getVlanDbId());
-        	boolean forVirtualNetworks = vlan.getVlanType().equals(VlanType.VirtualNetwork);
-        	
-            List<Pair<String, Object>> ipAddrData = new ArrayList<Pair<String, Object>>();
-            ipAddrData.add(new Pair<String, Object>(BaseCmd.Properties.IP_ADDRESS.getName(), ipAddress.getAddress()));
+            IPAddressResponse ipResponse = new IPAddressResponse();
+            ipResponse.setIpAddress(ipAddress.getAddress());
             if (ipAddress.getAllocated() != null) {
-                ipAddrData.add(new Pair<String, Object>(BaseCmd.Properties.ALLOCATED.getName(), getDateString(ipAddress.getAllocated())));
+                ipResponse.setAllocated(ipAddress.getAllocated());
             }
-            ipAddrData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_ID.getName(), Long.valueOf(ipAddress.getDataCenterId()).toString()));
-            ipAddrData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), getManagementServer().findDataCenterById(ipAddress.getDataCenterId()).getName()));
-            ipAddrData.add(new Pair<String, Object>(BaseCmd.Properties.IS_SOURCE_NAT.getName(), Boolean.valueOf(ipAddress.isSourceNat()).toString()));
+            ipResponse.setZoneId(ipAddress.getDataCenterId());
+            ipResponse.setZoneName(getManagementServer().findDataCenterById(ipAddress.getDataCenterId()).getName());
+            ipResponse.setSourceNat(ipAddress.isSourceNat());
+
             //get account information
             Account accountTemp = getManagementServer().findAccountById(ipAddress.getAccountId());
             if (accountTemp !=null){
-            	ipAddrData.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT.getName(), accountTemp.getAccountName()));
-                ipAddrData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), accountTemp.getDomainId()));
-                ipAddrData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), getManagementServer().findDomainIdById(accountTemp.getDomainId()).getName()));
+                ipResponse.setAccountName(accountTemp.getAccountName());
+                ipResponse.setDomainId(accountTemp.getDomainId());
+                ipResponse.setDomainName(getManagementServer().findDomainIdById(accountTemp.getDomainId()).getName());
             } 
             
-            ipAddrData.add(new Pair<String, Object>(BaseCmd.Properties.FOR_VIRTUAL_NETWORK.getName(), forVirtualNetworks));
+            ipResponse.setForVirtualNetwork(forVirtualNetworks);
+
             //show this info to admin only
-            if (isAdmin == true) {
-            	ipAddrData.add(new Pair<String, Object>(BaseCmd.Properties.VLAN_DB_ID.getName(), Long.valueOf(ipAddress.getVlanDbId()).toString()));
-                ipAddrData.add(new Pair<String, Object>(BaseCmd.Properties.VLAN_ID.getName(), getManagementServer().findVlanById(ipAddress.getVlanDbId()).getVlanId()));
+            Account account = (Account)UserContext.current().getAccountObject();
+            if ((account == null)  || isAdmin(account.getType())) {
+                ipResponse.setVlanId(ipAddress.getVlanDbId());
+                ipResponse.setVlanName(getManagementServer().findVlanById(ipAddress.getVlanDbId()).getVlanId());
             }
-            ipTag[i++] = ipAddrData;
+
+            response.add(ipResponse);
         }
-        Pair<String, Object> ipAddrTag = new Pair<String, Object>("publicipaddress", ipTag);
-        ipAddrTags.add(ipAddrTag);
-        return ipAddrTags;
+
+        return SerializerHelper.toSerializedString(response);
     }
 }
