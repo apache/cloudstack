@@ -3,7 +3,7 @@
 # createtmplt.sh -- install a template
 
 usage() {
-  printf "Usage: %s: -t <template-fs> -n <templatename> -f <root disk file> -s <size in Gigabytes> -c <md5 cksum> -d <descr> -h  [-u]\n" $(basename $0) >&2
+  printf "Usage: %s: -t <template-fs> -n <templatename> -f <root disk file> -c <md5 cksum> -d <descr> -h  [-u]\n" $(basename $0) >&2
 }
 
 
@@ -67,7 +67,7 @@ uncompress() {
     return 1 
   fi
  
-  rm $1
+  rm -f $1
   printf $tmpfile
 
   return 0
@@ -77,16 +77,10 @@ create_from_file() {
   local tmpltfs=$1
   local tmpltimg=$2
   local tmpltname=$3
-  local volsize=$4
-  local cleanup=$5
 
   #copy the file to the disk
   mv $tmpltimg /$tmpltfs/$tmpltname
 
-#  if [ "$cleanup" == "true" ]
-#  then
-#    rm -f $tmpltimg
-#  fi
 }
 
 tflag=
@@ -112,7 +106,6 @@ do
 		tmpltimg="$OPTARG"
 		;;
   s)	sflag=1
-		volsize="$OPTARG"
 		;;
   c)	cflag=1
 		cksum="$OPTARG"
@@ -170,27 +163,9 @@ then
   fi
 fi
 
-# need the 'G' suffix on volume size
-if [ ${volsize:(-1)} != G ]
-then
-  volsize=${volsize}G
-fi
+imgsize=$(ls -l $tmpltimg2| awk -F" " '{print $5}')
 
-#determine source file size -- it needs to be less than or equal to volsize
-imgsize=$(ls -lh $tmpltimg2| awk -F" " '{print $5}')
-if [ ${imgsize:(-1)} == G ] 
-then
-  imgsize=${imgsize%G} #strip out the G 
-  imgsize=${imgsize%.*} #...and any decimal part
-  let imgsize=imgsize+1 # add 1 to compensate for decimal part
-  volsizetmp=${volsize%G}
-  if [ $volsizetmp -lt $imgsize ]
-  then
-    volsize=${imgsize}G  
-  fi
-fi
-
-create_from_file $tmpltfs $tmpltimg2 $tmpltname $volsize $cleanup
+create_from_file $tmpltfs $tmpltimg2 $tmpltname
 
 touch /$tmpltfs/template.properties
 rollback_if_needed $tmpltfs $? "Failed to create template.properties file"
@@ -198,13 +173,10 @@ echo -n "" > /$tmpltfs/template.properties
 
 today=$(date '+%m_%d_%Y')
 echo "filename=$tmpltname" > /$tmpltfs/template.properties
-echo "snapshot.name=$today" >> /$tmpltfs/template.properties
 echo "description=$descr" >> /$tmpltfs/template.properties
-echo "name=$tmpltname" >> /$tmpltfs/template.properties
 echo "checksum=$cksum" >> /$tmpltfs/template.properties
 echo "hvm=$hvm" >> /$tmpltfs/template.properties
-echo "volume.size=$volsize" >> /$tmpltfs/template.properties
-
+echo "size=$imgsize" >> /$tmpltfs/template.properties
 
 if [ "$cleanup" == "true" ]
 then
