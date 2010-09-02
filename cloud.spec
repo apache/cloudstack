@@ -182,12 +182,11 @@ Summary:   Cloud.com setup tools
 Obsoletes: vmops-setup < %{version}-%{release}
 Requires: java >= 1.6.0
 Requires: python
-Requires: mysql
+Requires: MySQL-python
 Requires: %{name}-utils = %{version}-%{release}
 Requires: %{name}-server = %{version}-%{release}
 Requires: %{name}-deps = %{version}-%{release}
 Requires: %{name}-python = %{version}-%{release}
-Requires: MySQL-python
 Group:     System Environment/Libraries
 %description setup
 The Cloud.com setup tools let you set up your Management Server and Usage Server.

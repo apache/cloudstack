@@ -9,6 +9,7 @@ from random import choice
 import string
 from optparse import OptionParser
 import commands
+import MySQLdb
 
 # ---- This snippet of code adds the sources path and the waf configured PYTHONDIR to the Python path ----
 # ---- We do this so cloud_utils can be looked up in the following order:
@@ -128,22 +129,34 @@ def get_creds(parser,options,args):
 	host,port = parse_hostport(hostinfo)
 	return (user,password,host,port)
 
-def run_mysql(text,user,password,host,port,extraargs=None):
-  cmd = ["mysql",
-    "--user=%s"%user,
-    "--host=%s"%host,
-  ]
-  if password: 
-    cmd.append("--password=%s"%password)
-  if password: 
-    cmd.append("--port=%s"%port)
-  if extraargs:
-    cmd.extend(extraargs)
-    
-  p = subprocess.Popen(cmd,stdin=subprocess.PIPE)
-  p.communicate(text)
-  ret = p.wait()
-  if ret != 0: raise CalledProcessError(ret,cmd)
+def run_mysql(text,user,password,host,port,debug=False):
+  kwargs = {}
+  kwargs['host'] = host
+  kwargs['user'] = user
+  if password: kwargs['passwd']   = password
+  if port: kwargs['port']   = port
+
+  conn = MySQLdb.connect(**kwargs)
+  cur = conn.cursor()
+  import re
+  exp = re.compile("DELIMITER (.*)$",re.M)
+  pairs = [";"]+[x.strip() for x in exp.split(text)]
+  delims = []
+  chunks = []
+  while pairs:
+      delims.append( pairs[0] )
+      chunks.append( pairs[1] )
+      pairs = pairs[2:]
+
+  for delim,chunk in zip(delims,chunks):
+      for stmt in chunk.split(delim):
+	stmt = stmt.strip()
+	if not stmt: continue
+	if debug: print stmt
+	cur.execute(stmt)
+  cur.close()
+  conn.commit()
+  conn.close()
 
 def ifaces():
     status,lines = commands.getstatusoutput('LANG=C /sbin/ip address show')
@@ -239,8 +252,8 @@ if options.serversetup and not os.path.isfile(options.serversetup):
 	e("%s is not a valid file"%options.serversetup)
 
 
-dbfilepath = "@SETUPDATADIR@"
-dbppaths = [ os.path.join("@MSCONF@","db.properties") ] # , os.path.join("@USAGESYSCONFDIR@","db.properties") ]
+dbfilepath = r"@SETUPDATADIR@"
+dbppaths = [ os.path.join(r"@MSCONF@","db.properties") ] # , os.path.join("@USAGESYSCONFDIR@","db.properties") ]
 dbppaths = [ x for x in dbppaths if os.path.exists(x) ]
 if not dbppaths:
 	print "No services to set up installed on this system.  Refusing to continue."
@@ -249,28 +262,29 @@ if not dbppaths:
 #run sanity checks
 # checkutc()
 checkdbserverhostname(host)
-checkhostname()
+if sys.platform != "win32": checkhostname()
 try: checkselinux()
 except OSError,e:
 	if e.errno == 2: pass
 	else: raise
-checknetwork()
+if sys.platform != 'win32': checknetwork()
 
 
 #initialize variables
-ipaddr = firstip(ifaces())
+if sys.platform != 'win32': ipaddr = firstip(ifaces())
+else: ipaddr = None
 if not ipaddr: ipaddr='127.0.0.1'
 
 
 if rootuser:
 	print "Testing specified deployment credentials on server %s:%s"%(host,port)
-	try: run_mysql("SELECT * from mysql.user limit 0",rootuser,rootpassword,host,port)
+        try: run_mysql("SELECT * from mysql.user limit 0",rootuser,rootpassword,host,port,debug=options.debug)
 	except CalledProcessError:
 		print "The deployment credentials you specified are not valid.  Refusing to continue."
 		sys.exit(19)
 else:
 	print "Testing specified connection credentials on server %s:%s"%(host,port)
-	try: run_mysql("SELECT * from cloud.user limit 0",user,password,host,port)
+        try: run_mysql("SELECT * from cloud.user limit 0",user,password,host,port,debug=options.debug)
 	except CalledProcessError:
 		print "The connection credentials you specified are not valid.  Refusing to continue."
 		sys.exit(19)
@@ -315,22 +329,27 @@ if rootuser:
 		if not os.path.exists(p): continue
 		text = file(p).read()
 		for t,r in replacements: text = text.replace(t,r)
-		print "Applying file %s to the database on server %s:%s"%(p,host,port)
-		try: run_mysql(text,rootuser,rootpassword,host,port)
+                print "Applying file %s to the database on server %s:%s"%(p,host,port)
+		try: run_mysql(text,rootuser,rootpassword,host,port,debug=options.debug)
 		except CalledProcessError: sys.exit(20)
 		
 	if options.serversetup:
-		systemjars = "@SYSTEMJARS@".split()
-		pipe = subprocess.Popen(["build-classpath"]+systemjars,stdout=subprocess.PIPE)
-		systemcp,throwaway = pipe.communicate()
-		systemcp = systemcp.strip()
-		if pipe.wait(): # this means that build-classpath failed miserably
-			systemcp = "@SYSTEMCLASSPATH@"
-		pcp = os.path.pathsep.join( glob.glob( os.path.join ( "@PREMIUMJAVADIR@" , "*" ) ) )
-		mscp = "@MSCLASSPATH@"
-		depscp = "@DEPSCLASSPATH@"
 		conf = os.path.dirname(dbppaths[0])
-		classpath = os.path.pathsep.join([pcp,systemcp,depscp,mscp,conf])
+		pcp = os.path.pathsep.join( glob.glob( os.path.join ( r"@PREMIUMJAVADIR@" , "*" ) ) )
+		if sys.platform == 'win32':
+			mscp = r"@MSCLASSPATH@"
+			depscp = r"@DEPSCLASSPATH@"
+			classpath = os.path.pathsep.join([pcp,depscp,mscp,conf])
+		else:
+			systemjars = r"@SYSTEMJARS@".split()
+			pipe = subprocess.Popen(["build-classpath"]+systemjars,stdout=subprocess.PIPE)
+			systemcp,throwaway = pipe.communicate()
+			systemcp = systemcp.strip()
+			if pipe.wait(): # this means that build-classpath failed miserably
+				systemcp = r"@SYSTEMCLASSPATH@"
+			mscp = r"@MSCLASSPATH@"
+			depscp = r"@DEPSCLASSPATH@"
+			classpath = os.path.pathsep.join([pcp,systemcp,depscp,mscp,conf])
 		print "Performing unattended automated setup using file %s"%options.serversetup
 		cmd = ["java","-cp",classpath,"com.cloud.test.DatabaseConfig",options.serversetup]
 		if options.debug: print "Running command: %s"%" ".join(cmd)
@@ -343,19 +362,19 @@ if rootuser:
 			p = os.path.join(dbfilepath,"%s.sql"%f)
 			text = file(p).read()
 			print "Applying file %s to the database on server %s:%s"%(p,host,port)
-			try: run_mysql(text,rootuser,rootpassword,host,port)
+                        try: run_mysql(text,rootuser,rootpassword,host,port,debug=options.debug)
 			except CalledProcessError: sys.exit(22)
 
 	for f in ["templates.%s"%virttech,"create-index-fk"]:
 		p = os.path.join(dbfilepath,"%s.sql"%f)
 		text = file(p).read()
 		print "Applying file %s to the database on server %s:%s"%(p,host,port)
-		try: run_mysql(text,rootuser,rootpassword,host,port)
+                try: run_mysql(text,rootuser,rootpassword,host,port,debug=options.debug)
 		except CalledProcessError: sys.exit(22)
 
 	p = os.path.join(dbfilepath,"schema-level.sql")
 	if os.path.isfile(p):
 		text = file(p).read()
 		print "Applying file %s to the database on server %s:%s"%(p,host,port)
-		try: run_mysql(text,rootuser,rootpassword,host,port)
+                try: run_mysql(text,rootuser,rootpassword,host,port,debug=options.debug)
 		except CalledProcessError: sys.exit(22)

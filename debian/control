@@ -128,7 +128,7 @@ Provides: vmops-setup
 Conflicts: vmops-setup
 Replaces: vmops-setup
 Architecture: any
-Depends: openjdk-6-jre, python, cloud-utils (= ${source:Version}), mysql-client, cloud-deps (= ${source:Version}), cloud-server (= ${source:Version}), cloud-python (= ${source:Version}), python-mysqldb
+Depends: openjdk-6-jre, python, cloud-utils (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-server (= ${source:Version}), cloud-python (= ${source:Version}), python-mysqldb
 Description: Cloud.com client
  The Cloud.com setup tools let you set up your Management Server and Usage Server.
 

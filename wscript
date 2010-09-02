@@ -731,64 +731,26 @@ def installdebdeps(context):
 
 @throws_command_errors
 def deploydb(ctx,virttech=None):
-	if not virttech: raise Utils.WafError('use deploydb_xenserver or deploydb_kvm rather than deploydb')
+	if not virttech: raise Utils.WafError('use deploydb_xenserver, deploydb_vmware or deploydb_kvm rather than deploydb')
 	
 	ctx = _getbuildcontext()
-	srcdir = ctx.path.abspath()
-	builddir = ctx.path.abspath(ctx.env)
+	setupdatabases = _join(ctx.env.BINDIR,"cloud-setup-databases")
+	serversetup = _join(ctx.env.SETUPDATADIR,"server-setup.xml")
 	
-	dbhost = ctx.env.DBHOST
-	dbuser = ctx.env.DBUSER
-	dbpw   = ctx.env.DBPW
-	dbdir  = ctx.env.DBDIR
+	if not _exists(setupdatabases): # Needs install!
+		Scripting.install(ctx)
+
+	cmd = [
+		ctx.env.PYTHON,
+		setupdatabases,
+		"cloud@%s"%ctx.env.DBHOST,
+		virttech,
+		"--auto=%s"%serversetup,
+                "--deploy-as=%s:%s"%(ctx.env.DBUSER,ctx.env.DBPW),
+		]
 	
-	if not _exists(_join(builddir,"client","tomcatconf","db.properties")): raise Utils.WafError("Please build at least once to generate the db.properties configuration file")
-
-	cp = []
-	cp += [ _join(builddir,"client","tomcatconf") ]
-	cp += [ _join("test","conf") ]
-	cp += _glob(_join(builddir,"target", "jar", "*.jar"))
-	cp += [ctx.env.CLASSPATH]
-	cp = pathsep.join(cp)
-
-	before = ""
-	for f in ["create-database","create-schema"]:
-		p = _join("setup","db",f+".sql")
-		p = dev_override(p)
-		before = before + file(p).read()
-		Utils.pprint("GREEN","Reading database code from %s"%p)
-
-	cmd = [ctx.env.MYSQL,"--user=%s"%dbuser,"-h",dbhost,"--password=%s"%dbpw]
-	Utils.pprint("GREEN","Deploying database scripts to %s (user %s)"%(dbhost,dbuser))
 	Utils.pprint("BLUE"," ".join(cmd))
-	p = _Popen(cmd,stdin=PIPE,stdout=None,stderr=None)
-	p.communicate(before)
-	retcode = p.wait()
-	if retcode: raise CalledProcessError(retcode,cmd)
-	
-	serversetup = dev_override(_join("setup","db","server-setup.xml"))
-	Utils.pprint("GREEN","Configuring database with com.cloud.test.DatabaseConfig")
-	run_java("com.cloud.test.DatabaseConfig",cp,['-Dlog4j.configuration=log4j-stdout.properties'],[serversetup])
-
-	after = ""
-	for f in ["templates.%s"%virttech,"create-index-fk"]:
-		p = _join("setup","db",f+".sql")
-		p = dev_override(p)
-		after = after + file(p).read()
-		Utils.pprint("GREEN","Reading database code from %s"%p)
-
-	p = _join("setup","db","schema-level.sql")
-	if _exists(p):
-		p = dev_override(p)
-		after = after + file(p).read()
-		Utils.pprint("GREEN","Reading database code from %s"%p)
-
-	cmd = [ctx.env.MYSQL,"--user=%s"%dbuser,"-h",dbhost,"--password=%s"%dbpw]
-	Utils.pprint("GREEN","Deploying post-configuration database scripts to %s (user %s)"%(dbhost,dbuser))
-	Utils.pprint("BLUE"," ".join(cmd))
-	p = _Popen(cmd,stdin=PIPE,stdout=None,stderr=None)
-	p.communicate(after)
-	retcode = p.wait()
+	retcode = Utils.exec_command(cmd,shell=False,stdout=None,stderr=None,log=True)
 	if retcode: raise CalledProcessError(retcode,cmd)
 	
 def deploydb_xenserver(ctx):
