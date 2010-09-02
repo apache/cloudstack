@@ -189,7 +189,7 @@ public class GlobalLock {
 					
 					// release holding position in intern map when we released the DB connection
 					releaseRef();
-					notifyAll();
+					notify();
 				}
 				
 				if(s_logger.isTraceEnabled())
