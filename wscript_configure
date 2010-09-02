@@ -137,6 +137,10 @@ if conf.env.DISTRO in ['Windows']:
 for a in "DBHOST DBUSER DBPW DBDIR".split():
 	conf.env[a] = getattr(Options.options, a, '')
 
+try: conf.check_tool("tomcat")
+except Configure.ConfigurationError,e:
+	conf.fatal("Tomcat directory %r not found.  Either install Tomcat using ./waf installrpmdeps or ./waf installdebdeps, or manually install Tomcat to a directory in your system and set the environment variable TOMCAT_HOME to point to it."%conf.env.TOMCATHOME)
+
 conf.check_message_1('Determining management server user name')
 msuser = getattr(Options.options, 'MSUSER', '')
 if msuser:
@@ -149,26 +153,6 @@ else:
 	else:
 		conf.env.MSUSER = conf.env.PACKAGE
 		conf.check_message_2("%s (Linux default)"%conf.env.MSUSER,"GREEN")
-
-conf.check_message_1('Detecting Tomcat')
-tomcathome = getattr(Options.options, 'TOMCATHOME', '')
-if tomcathome:
-	conf.env.TOMCATHOME = tomcathome
-	conf.check_message_2("%s (forced through --with-tomcat)"%conf.env.TOMCATHOME,"GREEN")
-else:
-	if    "TOMCAT_HOME" in conf.environ and conf.environ['TOMCAT_HOME'].strip():
-		conf.env.TOMCATHOME = conf.environ["TOMCAT_HOME"]
-		conf.check_message_2("%s (got through environment variable %%TOMCAT_HOME%%)"%conf.env.TOMCATHOME,"GREEN")
-	elif  "CATALINA_HOME" in conf.environ and conf.environ['CATALINA_HOME'].strip():
-		conf.env.TOMCATHOME = conf.environ['CATALINA_HOME']
-		conf.check_message_2("%s (got through environment variable %%CATALINA_HOME%%)"%conf.env.TOMCATHOME,"GREEN")
-	elif _isdir("/usr/share/tomcat6"):
-		conf.env.TOMCATHOME = "/usr/share/tomcat6"
-		conf.check_message_2("%s (detected existence of system directory)"%conf.env.TOMCATHOME,"GREEN")
-	else:
-		conf.env.TOMCATHOME = _join(conf.env.DATADIR,'tomcat6')
-		conf.check_message_2("%s (assumed presence of Tomcat there)"%conf.env.TOMCATHOME,"GREEN")
-if not _exists(conf.env.TOMCATHOME): conf.fatal("Tomcat directory %s not found.  Either install Tomcat using ./waf installrpmdeps or ./waf installdebdeps, or manually install Tomcat to a directory in your system and set the environment variable TOMCAT_HOME to point to it."%conf.env.TOMCATHOME)
 
 conf.env.AGENTPATH = _join(conf.env.PACKAGE,"agent")
 conf.env.CPPATH = _join(conf.env.PACKAGE,"console-proxy")

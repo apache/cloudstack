@@ -404,16 +404,13 @@ def set_options(opt):
 	opt.tool_options('mkisofs',tooldir='tools/waf')
 	if platform.system() not in ['Windows',"Darwin"]: opt.tool_options('compiler_cc')
 	opt.tool_options('python')
+	opt.tool_options('tomcat',tooldir='tools/waf')
 	
         inst_dir = opt.get_option_group('--bindir') # get the group that contains bindir
 	inst_dir.add_option('--javadir', # add javadir to the group that contains bindir
 		help = 'Java class and jar files [Default: ${DATADIR}/java]',
 		default = '',
 		dest = 'JAVADIR')
-	inst_dir.add_option('--with-tomcat', # add javadir to the group that contains bindir
-		help = 'Path to installed Tomcat 6 environment [Default: ${DATADIR}/tomcat6 (unless %%CATALINA_HOME%% is set)]',
-		default = '',
-		dest = 'TOMCATHOME')
         inst_dir = opt.get_option_group('--srcdir') # get the group that contains the srcdir
 	inst_dir.add_option('--with-db-host', # add javadir to the group that contains bindir
 		help = 'Database host to use for waf deploydb [Default: 127.0.0.1]',
