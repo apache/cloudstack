@@ -615,7 +615,7 @@ long milliseconds = new Date().getTime();
                 <div class="grid_headertitles">
                     Name</div>
             </div>
-            <div class="grid_genheader_cell" style="width: 15%;">
+            <div class="grid_genheader_cell" style="width: 13%;">
                 <div class="grid_headertitles">
                     Type</div>
             </div>
@@ -707,7 +707,7 @@ long milliseconds = new Date().getTime();
             <div class="netgrid_celltitles" id="volume_name">
                 Name</div>
         </div>
-        <div class="grid_smallgenrow_cell" style="width: 15%;">
+        <div class="grid_smallgenrow_cell" style="width: 13%;">
             <div class="netgrid_celltitles" id="volume_type">
                 Type</div>
         </div>

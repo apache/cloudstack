@@ -79,7 +79,12 @@ function clickInstanceGroupHeader($arrowIcon) {
             asyncJobResponse: "changeserviceforvirtualmachineresponse",
             dialogBeforeActionFn : doChangeService,
             afterActionSeccessFn: setMidmenuItemVm
-        }          
+        },
+        "Change Group": {
+            isAsyncJob: false,            
+            dialogBeforeActionFn : doChangeGroup,
+            afterActionSeccessFn: setMidmenuItemVm
+        }              
     }            
         
     function doAttachISO($t, selectedItemIds, listAPIMap) {   
@@ -231,8 +236,33 @@ function clickInstanceGroupHeader($arrowIcon) {
 				$(this).dialog("close"); 
 			} 
 		}).dialog("open");
-     }
-   
+    }
+    
+    function doChangeGroup($t, selectedItemIds, listAPIMap) { 
+		$("#dialog_change_group")
+		.dialog('option', 'buttons', { 						
+			"Confirm": function() { 	
+			    var thisDialog = $(this);
+		        thisDialog.dialog("close"); 
+														
+				// validate values
+		        var isValid = true;					
+		        isValid &= validateString("Group", thisDialog.find("#change_group_name"), thisDialog.find("#change_group_name_errormsg"), true); //group name is optional								
+		        if (!isValid) return;
+		        
+		        for(var id in selectedItemIds) {				
+		            var $midMenuItem = selectedItemIds[id];
+		            var jsonObj = $midMenuItem.data("jsonObj");		
+		            var group = trim(thisDialog.find("#change_group_name").val());
+                    var apiCommand = "command=updateVirtualMachine&id="+id+"&group="+encodeURIComponent(group);          
+                    doAction(id, $t, apiCommand, listAPIMap);
+                }
+			}, 
+			"Cancel": function() { 
+				$(this).dialog("close"); 
+			} 
+		}).dialog("open");	
+    }
    
     function updateVirtualMachineStateInRightPanel(state) {
         if(state == "Running")
@@ -442,6 +472,12 @@ function clickInstanceGroupHeader($arrowIcon) {
         
         activateDialog($("#dialog_change_service_offering").dialog({ 
 		    width: 600,
+		    autoOpen: false,
+		    modal: true,
+		    zIndex: 2000
+	    }));
+        
+        activateDialog($("#dialog_change_group").dialog({ 
 		    autoOpen: false,
 		    modal: true,
 		    zIndex: 2000

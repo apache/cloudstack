@@ -677,3 +677,23 @@
         </form>
     </div>
 </div>
+
+<!-- Change Group Dialog -->
+<div id="dialog_change_group" title="Change Group" style="display:none">
+    <p>
+        Please specify the new group you want to assign to your Virtual Instance. If no such group exists, a new one will be created
+        for you.</p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+                <label for="change_group_name">
+                    Group Name:</label>
+                <input class="text" type="text" name="change_group_name" id="change_group_name" />
+                <div id="change_group_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
