@@ -68,6 +68,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.SecondaryStorageVmVO;
@@ -337,6 +338,7 @@ public class AlertManagerImpl implements AlertManager {
             s_logger.trace("recalculating system capacity");
         }
         List<CapacityVO> newCapacities = new ArrayList<CapacityVO>();
+        
 
         // get all hosts..
         SearchCriteria sc = _hostDao.createSearchCriteria();
@@ -444,34 +446,59 @@ public class AlertManagerImpl implements AlertManager {
 //            _capacityDao.persist(newPrivateIPCapacity);
         }
         
-        long start = System.currentTimeMillis();
-        if (m_capacityCheckLock.lock(5)) { // 5 second timeout
-        	long lockTime = System.currentTimeMillis();
-            try {
-                // delete the old records
-                _capacityDao.clearNonStorageCapacities();
+//        long start = System.currentTimeMillis();
+        
+        Transaction txn = Transaction.currentTxn();
+        try {
+        	txn.start();
+        	// delete the old records
+            _capacityDao.clearNonStorageCapacities();
 
-                for (CapacityVO newCapacity : newCapacities) {
-                    _capacityDao.persist(newCapacity);
-                }
-            } finally {
-                m_capacityCheckLock.unlock();
-                long end = System.currentTimeMillis();
-                if (s_logger.isTraceEnabled())
-                	s_logger.trace("CapacityCheckLock was held for " + (end - lockTime) + " ms; lock was acquired in " + (lockTime - start) + " ms");
+            for (CapacityVO newCapacity : newCapacities) {
+            	s_logger.trace("Executing capacity update");
+                _capacityDao.persist(newCapacity);
+                s_logger.trace("Done with capacity update");
             }
-
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("done recalculating system capacity");
-            }
-        } else {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Skipping capacity check, unable to lock the capacity table for recalculation.");
-            }
-            long end = System.currentTimeMillis();
-            if (s_logger.isTraceEnabled())
-            	s_logger.trace("CapacityCheckerLock got timed out after " + (end - start) + " ms");
+            txn.commit();
+            s_logger.trace("");
+        } catch (Exception ex) {
+        	txn.rollback();
+        	s_logger.error("Unable to start transaction for capacity update");
+        }finally {
+        	txn.close();
         }
+        
+        
+        
+//        if (m_capacityCheckLock.lock(5)) { // 5 second timeout
+//        	long lockTime = System.currentTimeMillis();
+//            try {
+//                // delete the old records
+//                _capacityDao.clearNonStorageCapacities();
+//
+//                for (CapacityVO newCapacity : newCapacities) {
+//                    _capacityDao.persist(newCapacity);
+//                }
+//                txn.commit();
+//            } finally {
+//                m_capacityCheckLock.unlock();
+//                long end = System.currentTimeMillis();
+//                if (s_logger.isTraceEnabled())
+//                	s_logger.trace("CapacityCheckLock was held for " + (end - lockTime) + " ms; lock was acquired in " + (lockTime - start) + " ms");
+//            }
+//
+//            if (s_logger.isTraceEnabled()) {
+//                s_logger.trace("done recalculating system capacity");
+//            }
+//        } else {
+//        	txn.rollback();
+//            if (s_logger.isTraceEnabled()) {
+//                s_logger.trace("Skipping capacity check, unable to lock the capacity table for recalculation.");
+//            }
+//            long end = System.currentTimeMillis();
+//            if (s_logger.isTraceEnabled())
+//            	s_logger.trace("CapacityCheckerLock got timed out after " + (end - start) + " ms");
+//        }
     }
 
     class CapacityChecker extends TimerTask {
@@ -645,6 +672,7 @@ public class AlertManagerImpl implements AlertManager {
         // TODO:  make sure this handles SSL transport (useAuth is true) and regular
         public void sendAlert(short alertType, long dataCenterId, Long podId, String subject, String content) throws MessagingException, UnsupportedEncodingException {
             AlertVO alert = null;
+            
             if ((alertType != AlertManager.ALERT_TYPE_HOST) &&
                 (alertType != AlertManager.ALERT_TYPE_USERVM) &&
                 (alertType != AlertManager.ALERT_TYPE_DOMAIN_ROUTER) &&
@@ -653,7 +681,7 @@ public class AlertManagerImpl implements AlertManager {
                 (alertType != AlertManager.ALERT_TYPE_MANAGMENT_NODE)) {
                 alert = _alertDao.getLastAlert(alertType, dataCenterId, podId);
             }
-
+            
             if (alert == null) {
                 // set up a new alert
                 AlertVO newAlert = new AlertVO();

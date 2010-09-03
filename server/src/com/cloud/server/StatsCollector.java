@@ -61,6 +61,7 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmStats;
@@ -338,41 +339,68 @@ public class StatsCollector {
 //                    _capacityDao.persist(capacity);
                 }
                 
-                long start = System.currentTimeMillis();
-                if (m_capacityCheckLock.lock(5)) { // 5 second timeout
-                	long lockTime = System.currentTimeMillis();
-		            if (s_logger.isTraceEnabled()) {
+                Transaction txn = Transaction.currentTxn();
+                try {
+                	if (s_logger.isTraceEnabled()) {
 		                s_logger.trace("recalculating system storage capacity");
 		            }
-		            try {
-		                // now update the capacity table with the new stats
-		                // FIXME: the right way to do this is to register a listener (see RouterStatsListener)
-		                //        for the host stats, send the Watch<something>Command at a regular interval
-		                //        to collect the stats from an agent and update the database as needed.  The
-		                //        listener model has connects/disconnects to keep things in sync much better
-		                //        than this model right now
-		                _capacityDao.clearStorageCapacities();
+                	txn.start();
+                	 _capacityDao.clearStorageCapacities();
 
 		                for (CapacityVO newCapacity : newCapacities) {
+		                	s_logger.trace("Executing capacity update");
 		                    _capacityDao.persist(newCapacity);
+		                    s_logger.trace("Done with capacity update");
 		                }
-		            } finally {
-                        m_capacityCheckLock.unlock();
-                        long end = System.currentTimeMillis();
-                        if (s_logger.isTraceEnabled())
-                        	s_logger.trace("CapacityCheckLock was held for " + (end - lockTime) + " ms; lock was acquired in " + (lockTime - start) + " ms");
-		            }
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("done recalculating system storage capacity");
-                    }
-                } else {
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("not recalculating system storage capacity, unable to lock capacity table");
-                    }
-                        long end = System.currentTimeMillis();
-                        if (s_logger.isTraceEnabled())
-                        	s_logger.trace("CapacityCheckerLock got timed out after " + (end - start) + " ms");
+		                txn.commit();
+                } catch (Exception ex) {
+                	txn.rollback();
+                	s_logger.error("Unable to start transaction for storage capacity update");
+                }finally {
+                	txn.close();
                 }
+                
+//                
+//                
+//                
+//                long start = System.currentTimeMillis();
+//                if (m_capacityCheckLock.lock(5)) { // 5 second timeout
+//                	long lockTime = System.currentTimeMillis();
+//		            if (s_logger.isTraceEnabled()) {
+//		                s_logger.trace("recalculating system storage capacity");
+//		            }
+//		            try {
+//		                // now update the capacity table with the new stats
+//		                // FIXME: the right way to do this is to register a listener (see RouterStatsListener)
+//		                //        for the host stats, send the Watch<something>Command at a regular interval
+//		                //        to collect the stats from an agent and update the database as needed.  The
+//		                //        listener model has connects/disconnects to keep things in sync much better
+//		                //        than this model right now
+//		                _capacityDao.clearStorageCapacities();
+//
+//		                for (CapacityVO newCapacity : newCapacities) {
+//		                	s_logger.trace("Executing capacity update");
+//		                    _capacityDao.persist(newCapacity);
+//		                    s_logger.trace("Done with capacity update");
+//		                }
+//		                txn.commit();
+//		            } finally {
+//                        m_capacityCheckLock.unlock();
+//                        long end = System.currentTimeMillis();
+//                        if (s_logger.isTraceEnabled())
+//                        	s_logger.trace("CapacityCheckLock was held for " + (end - lockTime) + " ms; lock was acquired in " + (lockTime - start) + " ms");
+//		            }
+//                    if (s_logger.isTraceEnabled()) {
+//                        s_logger.trace("done recalculating system storage capacity");
+//                    }
+//                } else {
+//                    if (s_logger.isTraceEnabled()) {
+//                        s_logger.trace("not recalculating system storage capacity, unable to lock capacity table");
+//                    }
+//                        long end = System.currentTimeMillis();
+//                        if (s_logger.isTraceEnabled())
+//                        	s_logger.trace("CapacityCheckerLock got timed out after " + (end - start) + " ms");
+//                }
 			} catch (Throwable t) {
 				s_logger.error("Error trying to retrieve storage stats", t);
 			}
