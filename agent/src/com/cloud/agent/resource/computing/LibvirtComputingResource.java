@@ -151,6 +151,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.NetworkEnums.RouterPrivateIpStrategy;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
+import com.cloud.storage.StorageLayer;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
@@ -158,9 +159,14 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume.StorageResourceType;
 import com.cloud.storage.Volume.VolumeType;
+import com.cloud.storage.template.Processor;
+import com.cloud.storage.template.Processor.FormatInfo;
+import com.cloud.storage.template.QCOW2Processor;
 import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.template.TemplateLocation;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
@@ -207,6 +213,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private final String _SSHPRVKEYPATH = _SSHKEYSPATH + File.separator + "id_rsa.cloud";
     private final String _SSHPUBKEYPATH = _SSHKEYSPATH + File.separator + "id_rsa.pub.cloud";
     private final String _mountPoint = "/mnt";
+    StorageLayer _storage;
     
 	private static final class KeyValueInterpreter extends OutputInterpreter {
 		private final Map<String, String> map = new HashMap<String, String>();
@@ -682,6 +689,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		} catch (LibvirtException e) {
 			
 		}
+		
+		try {
+            Class<?> clazz = Class.forName("com.cloud.storage.JavaStorageLayer");
+            _storage = (StorageLayer)ComponentLocator.inject(clazz);
+            _storage.configure("StorageLayer", params);
+        } catch (ClassNotFoundException e) {
+            throw new ConfigurationException("Unable to find class " + "com.cloud.storage.JavaStorageLayer");
+        }
+
 		
 		_can_bridge_firewall = can_bridge_firewall();
 		
@@ -1183,59 +1199,91 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	}
     }
     protected CreatePrivateTemplateAnswer execute(CreatePrivateTemplateCommand cmd) {
-    	 String secondaryStorageURL = cmd.getSecondaryStorageURL();
-         String snapshotUUID = cmd.getSnapshotPath();
+    	String secondaryStorageURL = cmd.getSecondaryStorageURL();
+    	StorageVol snapshotVol = null;
+    	String snapshotUUID = cmd.getSnapshotPath();
+    	
+        StoragePool secondaryStorage = null;
+        try {
+       	 String templateFolder = cmd.getAccountId() + File.separator + cmd.getTemplateId() + File.separator;
+       	 String templateInstallFolder = "/template/tmpl/" + templateFolder;
 
-         StoragePool secondaryStorage = null;
-         StoragePool privateTemplStorage = null;
-         StorageVol privateTemplateVol = null;
-         StorageVol snapshotVol = null;
-         try {
-        	 String templateFolder = cmd.getAccountId() + File.separator + cmd.getTemplateId() + File.separator;
-        	 String templateInstallFolder = "/template/tmpl/" + templateFolder;
-        	  
-        	 secondaryStorage = getNfsSPbyURI(_conn, new URI(secondaryStorageURL));
-        	 /*TODO: assuming all the storage pools mounted under _mountPoint, the mount point should be got from pool.dumpxml*/
-        	 String mountPath = _mountPoint + File.separator + secondaryStorage.getUUIDString() + templateInstallFolder;
-        	 File mpfile = new File(mountPath);
-        	 if (!mpfile.exists()) {
-        		 mpfile.mkdirs();
-        	 }
-        	 
-        	 
-        	 // Create a SR for the secondary storage installation folder
-        	 privateTemplStorage = getNfsSPbyURI(_conn, new URI(secondaryStorageURL + templateInstallFolder));
-        	 snapshotVol = getVolume(snapshotUUID);
-        	 
-        	 LibvirtStorageVolumeDef vol = new LibvirtStorageVolumeDef(UUID.randomUUID().toString(), snapshotVol.getInfo().capacity, volFormat.QCOW2, null, null);
-        	 s_logger.debug(vol.toString());
-        	 privateTemplateVol = copyVolume(privateTemplStorage, vol, snapshotVol);
+       	 secondaryStorage = getNfsSPbyURI(_conn, new URI(secondaryStorageURL));
+       	 /*TODO: assuming all the storage pools mounted under _mountPoint, the mount point should be got from pool.dumpxml*/
+       	 String tmpltPath = _mountPoint + File.separator + secondaryStorage.getUUIDString() + templateInstallFolder;
+       	 _storage.mkdirs(tmpltPath);
 
-        	 return new CreatePrivateTemplateAnswer(cmd,
-        			 true,
-        			 null,
-        			 templateInstallFolder + privateTemplateVol.getName(),
-        			 privateTemplateVol.getInfo().capacity/1024*1024, /*in Mega unit*/
-        			 privateTemplateVol.getName(),
-        			 ImageFormat.QCOW2);
-         } catch (URISyntaxException e) {
-        	 return new CreatePrivateTemplateAnswer(cmd,
-        			 false,
-        			 e.toString(),
-        			 null,
-        			 0,
-        			 null,
-        			 null);
-         } catch (LibvirtException e) {
-        	 s_logger.debug("Failed to get secondary storage pool: " + e.toString());
-        	 return new CreatePrivateTemplateAnswer(cmd,
-        			 false,
-        			 e.toString(),
-        			 null,
-        			 0,
-        			 null,
-        			 null);
-         }
+       	 snapshotVol = getVolume(snapshotUUID);
+       	 String snapshotPath =  snapshotVol.getPath();
+       	 
+       	 Script.runSimpleBashScript("qemu-img convert -f qcow2 -O qcow2 " + snapshotPath + " " + tmpltPath + File.separator + cmd.getUniqueName() + ".qcow2");
+       	 Script.runSimpleBashScript("touch " + tmpltPath + File.separator + "template.properties");
+       	 Script.runSimpleBashScript("chmod +r " + tmpltPath + File.separator + cmd.getUniqueName() + ".qcow2");
+       	 Script.runSimpleBashScript("chmod +r " + tmpltPath + File.separator + "template.properties");
+       	 
+       	 Map<String, Object> params = new HashMap<String, Object>();
+       	 params.put(StorageLayer.InstanceConfigKey, _storage);
+       	 Processor qcow2Processor = new QCOW2Processor();
+
+       	 qcow2Processor.configure("QCOW2 Processor", params);
+
+       	 FormatInfo info = qcow2Processor.process(tmpltPath, null, cmd.getUniqueName());
+
+       	 TemplateLocation loc = new TemplateLocation(_storage, tmpltPath);
+       	 loc.create(1, true, cmd.getUniqueName());
+       	 loc.addFormat(info);
+       	 loc.save();
+
+       	 return new CreatePrivateTemplateAnswer(cmd,
+       			 true,
+       			 null,
+       			 templateInstallFolder + cmd.getUniqueName() + ".qcow2",
+       			 info.virtualSize,
+       			 cmd.getUniqueName(),
+       			 ImageFormat.QCOW2);
+        } catch (URISyntaxException e) {
+       	 return new CreatePrivateTemplateAnswer(cmd,
+       			 false,
+       			 e.toString(),
+       			 null,
+       			 0,
+       			 null,
+       			 null);
+        } catch (LibvirtException e) {
+       	 s_logger.debug("Failed to get secondary storage pool: " + e.toString());
+       	 return new CreatePrivateTemplateAnswer(cmd,
+       			 false,
+       			 e.toString(),
+       			 null,
+       			 0,
+       			 null,
+       			 null);
+        } catch (InternalErrorException e) {
+       	 return new CreatePrivateTemplateAnswer(cmd,
+       			 false,
+       			 e.toString(),
+       			 null,
+       			 0,
+       			 null,
+       			 null);
+		} catch (IOException e) {
+			return new CreatePrivateTemplateAnswer(cmd,
+      			 false,
+      			 e.toString(),
+      			 null,
+      			 0,
+      			 null,
+      			 null);
+		} catch (ConfigurationException e) {
+			return new CreatePrivateTemplateAnswer(cmd,
+	       			 false,
+	       			 e.toString(),
+	       			 null,
+	       			 0,
+	       			 null,
+	       			 null);
+		}
+
     }
     
     private StoragePool getNfsSPbyURI(Connect conn, URI uri) throws LibvirtException {
