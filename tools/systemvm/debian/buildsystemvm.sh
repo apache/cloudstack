@@ -114,7 +114,7 @@ auto lo eth0
 iface lo inet loopback
 
 # The primary network interface
-iface eth0 inet dhcp
+iface eth0 inet static
 
 EOF
 }
@@ -151,6 +151,8 @@ EOF
 
 
 fixgrub() {
+  kern=$(basename $(ls  boot/vmlinuz-*))
+  ver=${kern#vmlinuz-}
   cat > boot/grub/menu.lst << EOF
 default 0
 timeout 2
@@ -160,10 +162,10 @@ color cyan/blue white/blue
 # kopt=root=LABEL=ROOT ro
 
 ## ## End Default Options ##
-title		Debian GNU/Linux, kernel 2.6.32-5-686-bigmem 
+title		Debian GNU/Linux, kernel $ver
 root		(hd0,0)
-kernel		/boot/vmlinuz-2.6.32-5-686-bigmem root=LABEL=ROOT ro console=tty0 xencons=ttyS0,115200 console=hvc0 quiet
-initrd		/boot/initrd.img-2.6.32-5-686-bigmem
+kernel		/boot/$kern root=LABEL=ROOT ro console=tty0 xencons=ttyS0,115200 console=hvc0 quiet
+initrd		/boot/initrd.img-$ver
 
 ### END DEBIAN AUTOMAGIC KERNELS LIST
 EOF
@@ -186,6 +188,7 @@ EOF
 }
 
 fixacpid() {
+  mkdir -p etc/acpi/events
   cat >> etc/acpi/events/power << EOF
 event=button/power.*
 action=/usr/local/sbin/power.sh "%e"
@@ -198,6 +201,10 @@ EOF
 }
 
 fixiptables() {
+cat >> etc/modules << EOF
+nf_conntrack
+nf_conntrack_ipv4
+EOF
 cat > etc/init.d/iptables-persistent << EOF
 #!/bin/sh
 ### BEGIN INIT INFO
@@ -344,10 +351,10 @@ password() {
 }
 
 apache2() {
-   chroot . a2enmod ssl rewrite auth-basic auth-digest
+   chroot . a2enmod ssl rewrite auth_basic auth_digest
    chroot . a2ensite default-ssl
    cp etc/apache2/sites-available/default etc/apache2/sites-available/default.orig
-   cp etc/apache2/sites-available/default-ssl etc/apache2/sites-available/default.orig
+   cp etc/apache2/sites-available/default-ssl etc/apache2/sites-available/default-ssl.orig
 }
 
 services() {
@@ -387,7 +394,7 @@ cleanup() {
 }
 
 signature() {
-  (cd ${scriptdir}/config;  tar cvzf ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tgz *)
+  (cd ${scriptdir}/config;  tar czf ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tgz *)
   md5sum ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tgz |awk '{print $1}'  > ${MOUNTPOINT}/var/cache/cloud/cloud-scripts-signature
 }
 
@@ -398,7 +405,7 @@ IMAGELOC=$LOCATION/$IMAGENAME.img
 scriptdir=$(dirname $PWD/$0)
 
 rm -f $IMAGELOC
-
+begin=$(date +%s)
 echo "*************INSTALLING BASEIMAGE********************"
 baseimage
 
@@ -465,4 +472,7 @@ cd $scriptdir
 umount $MOUNTPOINT/proc
 umount $MOUNTPOINT/dev
 umount $MOUNTPOINT
+fin=$(date +%s)
+t=$((fin-begin))
+echo "Finished building image $IMAGELOC in $t seconds"
 
