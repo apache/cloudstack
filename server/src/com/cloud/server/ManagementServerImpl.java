@@ -88,6 +88,7 @@ import com.cloud.api.commands.ListPortForwardingServiceRulesCmd;
 import com.cloud.api.commands.ListPortForwardingServicesByVmCmd;
 import com.cloud.api.commands.ListPortForwardingServicesCmd;
 import com.cloud.api.commands.ListPreallocatedLunsCmd;
+import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -5567,26 +5568,54 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<IPAddressVO> searchForIPAddresses(Criteria c) {
-        Filter searchFilter = new Filter(IPAddressVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+    public List<IPAddressVO> searchForIPAddresses(ListPublicIpAddressesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
+        Long accountId = null;
 
-        Object[] accountIds = (Object[]) c.getCriteria(Criteria.ACCOUNTID);
-        Object zone = c.getCriteria(Criteria.DATACENTERID);
-        Object address = c.getCriteria(Criteria.IPADDRESS);
-        Object domainId = c.getCriteria(Criteria.DOMAINID);
-        Object vlan = c.getCriteria(Criteria.VLAN);
-        Object isAllocated = c.getCriteria(Criteria.ISALLOCATED);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
-        Object forVirtualNetwork  = c.getCriteria(Criteria.FOR_VIRTUAL_NETWORK);
+        if ((account == null) || isAdmin(account.getType())) {
+            // validate domainId before proceeding
+            if (domainId != null) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Unable to list IP addresses for domain " + domainId + ", permission denied.");
+                }
+
+                if (accountName != null) {
+                    Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                    if (userAccount != null) {
+                        accountId = userAccount.getId();
+                    } else {
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                }
+            } else {
+                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+            }
+        } else {
+            accountId = account.getId();
+        }
+
+        Boolean isAllocated = cmd.isAllocatedOnly();
+        if (isAllocated == null) {
+            isAllocated = Boolean.TRUE;
+        }
+
+        Filter searchFilter = new Filter(IPAddressVO.class, "address", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        Object zone = cmd.getZoneId();
+        Object address = cmd.getIpAddress();
+        Object vlan = cmd.getVlanId();
+        Object keyword = cmd.getKeyword();
+        Object forVirtualNetwork  = cmd.isForVirtualNetwork();
 
         SearchBuilder<IPAddressVO> sb = _publicIpAddressDao.createSearchBuilder();
         sb.and("accountIdEQ", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
-        sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("address", sb.entity().getAddress(), SearchCriteria.Op.LIKE);
         sb.and("vlanDbId", sb.entity().getVlanDbId(), SearchCriteria.Op.EQ);
 
-        if ((accountIds == null) && (domainId != null)) {
+        if ((accountId == null) && (domainId != null)) {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
@@ -5604,12 +5633,8 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         SearchCriteria<IPAddressVO> sc = sb.create();
-        if (accountIds != null) {
-            if ((accountIds.length == 1) && (accountIds[0] != null)) {
-                sc.setParameters("accountIdEQ", accountIds[0]);
-            } else {
-                sc.setParameters("accountIdIN", accountIds);
-            }
+        if (accountId != null) {
+            sc.setParameters("accountIdEQ", accountId);
         } else if (domainId != null) {
             DomainVO domain = _domainDao.findById((Long)domainId);
             sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
