@@ -25,6 +25,8 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseListCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.configuration.ResourceCount.ResourceType;
@@ -34,7 +36,8 @@ import com.cloud.server.Criteria;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
-public class ListResourceLimitsCmd extends BaseCmd {
+@Implementation(method="searchForLimits")
+public class ListResourceLimitsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListResourceLimitsCmd.class.getName());
 
     private static final String s_name = "listresourcelimitsresponse";
@@ -95,9 +98,9 @@ public class ListResourceLimitsCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
+
     @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
+    public String getResponse() {
     }
 
     @Override
