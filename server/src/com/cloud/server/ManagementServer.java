@@ -1094,7 +1094,7 @@ public interface ManagementServer {
      * @param zoneId
      * @return true if success
      */
-    long deleteIsoAsync(long userId, long isoId, Long zoneId) throws InvalidParameterValueException;
+//    long deleteIsoAsync(long userId, long isoId, Long zoneId) throws InvalidParameterValueException;
     
     /**
      * Finds a template by the specified ID.

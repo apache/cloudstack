@@ -21,7 +21,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 
-import com.cloud.api.commands.CreateTemplateCmd;
+import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.DetachIsoCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
@@ -30,14 +30,12 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.storage.Storage.FileSystem;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Storage.FileSystem;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
-import com.cloud.user.Account;
 import com.cloud.utils.component.Manager;
 
 /**
@@ -119,7 +117,7 @@ public interface TemplateManager extends Manager {
      * @param zoneId - optional. If specified, will only delete the template from the specified zone's secondary storage server.
      * @return true if success
      */
-    boolean delete(long userId, long templateId, Long zoneId, long startEventId) throws InternalErrorException;
+    boolean delete(long userId, long templateId, Long zoneId) throws InternalErrorException;
     
     boolean detachIso(DetachIsoCmd cmd) throws InternalErrorException, InvalidParameterValueException;
     /**
@@ -137,5 +135,16 @@ public interface TemplateManager extends Manager {
     
     boolean templateIsDeleteable(VMTemplateHostVO templateHostRef);
  
+    /**
+     * Deletes a template
+     * @param cmd
+     */
     boolean deleteTemplate(DeleteTemplateCmd cmd) throws InvalidParameterValueException, InternalErrorException;
+    
+    /**
+     * Deletes a template
+     * @param cmd
+     */
+    boolean deleteIso(DeleteIsoCmd cmd) throws InvalidParameterValueException, InternalErrorException;
+    
 }

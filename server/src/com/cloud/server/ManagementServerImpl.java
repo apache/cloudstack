@@ -63,7 +63,6 @@ import com.cloud.api.commands.CreatePortForwardingServiceCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
-import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.EnableAccountCmd;
@@ -120,7 +119,6 @@ import com.cloud.async.executor.CopyTemplateParam;
 import com.cloud.async.executor.CreateOrUpdateRuleParam;
 import com.cloud.async.executor.DeleteDomainParam;
 import com.cloud.async.executor.DeleteRuleParam;
-import com.cloud.async.executor.DeleteTemplateParam;
 import com.cloud.async.executor.DeployVMParam;
 import com.cloud.async.executor.LoadBalancerParam;
 import com.cloud.async.executor.NetworkGroupIngressParam;
@@ -1025,7 +1023,7 @@ public class ManagementServerImpl implements ManagementServer {
             boolean allTemplatesDeleted = true;
             for (VMTemplateVO template : userTemplates) {
             	try {
-            		allTemplatesDeleted = _tmpltMgr.delete(userId, template.getId(), null, 0);
+            		allTemplatesDeleted = _tmpltMgr.delete(userId, template.getId(), null);
             	} catch (InternalErrorException e) {
             		s_logger.warn("Failed to delete template while removing account: " + template.getName() + " due to: " + e.getMessage());
             		allTemplatesDeleted = false;
@@ -4818,38 +4816,38 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job);
     }
     
-    @Override
-    public long deleteIsoAsync(long userId, long isoId, Long zoneId) throws InvalidParameterValueException {
-    	UserVO user = _userDao.findById(userId);
-    	if (user == null) {
-    		throw new InvalidParameterValueException("Please specify a valid user.");
-    	}
-    	
-    	VMTemplateVO iso = _templateDao.findById(isoId);
-    	if (iso == null) {
-    		throw new InvalidParameterValueException("Please specify a valid ISO.");
-    	}
-    	
-    	if (iso.getFormat() != ImageFormat.ISO) {
-    		throw new InvalidParameterValueException("Please specify a valid ISO.");
-    	}
-    	
-    	if (zoneId != null && (_hostDao.findSecondaryStorageHost(zoneId) == null)) {
-    		throw new InvalidParameterValueException("Failed to find a secondary storage host in the specified zone.");
-    	}
-    	
-    	DeleteTemplateParam param = new DeleteTemplateParam(userId, isoId, zoneId, 0);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-    	job.setUserId(UserContext.current().getUserId());
-    	job.setAccountId(iso.getAccountId());
-        job.setCmd("DeleteTemplate");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(DeleteIsoCmd.getStaticName());
-        
-        return _asyncMgr.submitAsyncJob(job);
-    }
+//    @Override
+//    public long deleteIsoAsync(long userId, long isoId, Long zoneId) throws InvalidParameterValueException {
+//    	UserVO user = _userDao.findById(userId);
+//    	if (user == null) {
+//    		throw new InvalidParameterValueException("Please specify a valid user.");
+//    	}
+//    	
+//    	VMTemplateVO iso = _templateDao.findById(isoId);
+//    	if (iso == null) {
+//    		throw new InvalidParameterValueException("Please specify a valid ISO.");
+//    	}
+//    	
+//    	if (iso.getFormat() != ImageFormat.ISO) {
+//    		throw new InvalidParameterValueException("Please specify a valid ISO.");
+//    	}
+//    	
+//    	if (zoneId != null && (_hostDao.findSecondaryStorageHost(zoneId) == null)) {
+//    		throw new InvalidParameterValueException("Failed to find a secondary storage host in the specified zone.");
+//    	}
+//    	
+//    	DeleteTemplateParam param = new DeleteTemplateParam(userId, isoId, zoneId, 0);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//    	job.setUserId(UserContext.current().getUserId());
+//    	job.setAccountId(iso.getAccountId());
+//        job.setCmd("DeleteTemplate");
+//        job.setCmdInfo(gson.toJson(param));
+//        job.setCmdOriginator(DeleteIsoCmd.getStaticName());
+//        
+//        return _asyncMgr.submitAsyncJob(job);
+//    }
 
     @Override
     public VMTemplateVO findTemplateById(long templateId) {

@@ -29,8 +29,6 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.GNOME.Accessibility._ValueStub;
-import org.GNOME.Bonobo._UnknownStub;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -40,6 +38,7 @@ import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.manager.AgentManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.DetachIsoCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
@@ -61,17 +60,17 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage.FileSystem;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Storage.FileSystem;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -596,7 +595,7 @@ public class TemplateManagerImpl implements TemplateManager {
     }
     
     @Override
-    public boolean delete(long userId, long templateId, Long zoneId, long startEventId) throws InternalErrorException {
+    public boolean delete(long userId, long templateId, Long zoneId) throws InternalErrorException {
     	boolean success = true;
     	VMTemplateVO template = _tmpltDao.findById(templateId);
     	if (template == null || template.getRemoved() != null) {
@@ -667,7 +666,7 @@ public class TemplateManagerImpl implements TemplateManager {
 					}
 					
 					String zoneParams = params + "\ndcId=" + sZoneId;
-					saveEvent(userId, account.getId(), account.getDomainId(), eventType, description + template.getName() + " succesfully deleted.", EventVO.LEVEL_INFO, zoneParams, startEventId);
+					saveEvent(userId, account.getId(), account.getDomainId(), eventType, description + template.getName() + " succesfully deleted.", EventVO.LEVEL_INFO, zoneParams, 0);
 				} finally {
 					if (lock != null) {
 						_tmpltHostDao.release(lock.getId());
@@ -1008,8 +1007,36 @@ public class TemplateManagerImpl implements TemplateManager {
     	if (zoneId != null && (_hostDao.findSecondaryStorageHost(zoneId) == null)) {
     		throw new InvalidParameterValueException("Failed to find a secondary storage host in the specified zone.");
     	}
-
-    	long eventId = EventUtils.saveScheduledEvent(userId, account.getId(), EventTypes.EVENT_TEMPLATE_DELETE, "Scheduling the template for deletion");
-    	return delete(userId, templateId, zoneId, eventId);
+    	return delete(userId, templateId, zoneId);
+	}
+	
+	@Override
+    public boolean deleteIso(DeleteIsoCmd cmd) throws InvalidParameterValueException, InternalErrorException{
+		
+        Long templateId = cmd.getId();
+        Long userId = UserContext.current().getUserId();
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long zoneId = (Long)cmd.getZoneId();
+        
+        VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
+        if (template == null) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find iso with id " + templateId);
+        }
+        
+        userId = accountAndUserValidation(account, userId, null, template, "Unable to delete iso " );
+        
+    	UserVO user = _userDao.findById(userId);
+    	if (user == null) {
+    		throw new InvalidParameterValueException("Please specify a valid user.");
+    	}
+    	
+    	if (template.getFormat() != ImageFormat.ISO) {
+    		throw new InvalidParameterValueException("Please specify a valid iso.");
+    	}
+    	
+    	if (zoneId != null && (_hostDao.findSecondaryStorageHost(zoneId) == null)) {
+    		throw new InvalidParameterValueException("Failed to find a secondary storage host in the specified zone.");
+    	}
+    	return delete(userId, templateId, zoneId);
 	}
 }
