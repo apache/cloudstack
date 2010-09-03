@@ -1390,7 +1390,6 @@ public class StorageManagerImpl implements StorageManager {
             boolean success = addPoolToHost(h.getId(), pool);
             if (success) {
                 poolHosts.add(h);
-                break;
             }
         }
 
