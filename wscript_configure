@@ -112,6 +112,7 @@ conf.check_message_2("%s"%conf.env.PREFIX,"GREEN")
 conf.check_tool('misc')
 conf.check_tool("gnu_dirs")
 conf.check_tool('tar')
+conf.check_tool('usermgmt')
 try: conf.check_tool('mkisofs')
 except Configure.ConfigurationError,e:
 	raise Configure.ConfigurationError, "The program genisoimage (or mkisofs) could not be found.\nOn Linux: ./waf installrpmdeps or ./waf installdebdeps according to your distro's package format.\nOn Windows: Use cygwin to install the mkisofs package, then ensure that the program is in your PATH."

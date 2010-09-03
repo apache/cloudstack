@@ -287,6 +287,8 @@ if buildpremium:
 
 # =================== Empty directory / symlink creation on install target ====================
 
+bld.createuser(bld.env.MSUSER,bld.env.MSENVIRON,'/bin/sh')
+
 # 7. make log and cache dirs (this actually runs first)
 if bld.env.DISTRO in 'Windows Mac': pass
 else:

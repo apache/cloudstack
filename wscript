@@ -199,14 +199,6 @@ def _getbuildnumber(): # FIXME implement for git
 		return rev
 Utils.getbuildnumber = _getbuildnumber
 
-def _subst_add_destdir(x,bld):
-	a = "${DESTDIR}" + x
-	a = a.replace("${DESTDIR}",Options.options.destdir)
-	a = Utils.subst_vars(a,bld.env)
-	if a.startswith("//"): a = a[1:]
-	return a
-Build.BuildContext.subst_add_destdir = staticmethod(_subst_add_destdir)
-
 def mkdir_p(directory):
 	if not _isdir(directory):
 		Utils.pprint("GREEN","Creating directory %s and necessary parents"%directory)
@@ -360,48 +352,12 @@ def _substitute(self,listoffiles,install_to=None,cwd=None,dict=None,name=None,**
 		if install_to is not None: self.install_as("%s/%s"%(install_to,inst), tgt, **kwargs)
 Build.BuildContext.substitute = _substitute
 
-def _setownership(ctx,path,owner,group,mode=None):
-	def f(bld,path,owner,group,mode):
-		dochown = not Options.options.NOCHOWN \
-				and hasattr(os,"getuid") and os.getuid() == 0 \
-				and _chown \
-				and _chmod \
-				and pwd \
-				and grp \
-				and stat
-		if not dochown: return
-		
-		try: uid = pwd.getpwnam(owner).pw_uid
-		except KeyError,e: raise Utils.WafError("If installing as root, please either create a %s user or use the --nochown parameter of waf install to install the files as root"%owner)
-		try: gid = grp.getgrnam(group).gr_gid
-		except KeyError,e: raise Utils.WafError("If installing as root, please either create a %s group or use the --nochown parameter of waf install to install the files as root"%group)
-		
-		path = _subst_add_destdir(path,bld)
-		current_uid,current_gid = os.stat(path).st_uid,os.stat(path).st_gid
-		if current_uid != uid:
-			Utils.pprint("GREEN","* setting owner of %s to UID %s"%(path,uid))
-			_chown(path,uid,current_gid)
-			current_uid = uid
-		if current_gid != gid:
-			Utils.pprint("GREEN","* setting group of %s to GID %s"%(path,gid))
-			_chown(path,current_uid,gid)
-			current_gid = gid
-		if mode is not None:
-			current_mode = stat.S_IMODE(os.stat(path).st_mode)
-			if current_mode != mode:
-				Utils.pprint("GREEN","* adjusting permissions on %s to mode %o"%(path,mode))
-				_chmod(path,mode)
-				current_mode = mode
-	
-	if Options.is_install:
-		ctx.add_post_fun(lambda ctx: f(ctx,path,owner,group,mode))
-Build.BuildContext.setownership = _setownership
-
 def set_options(opt):
 	"""Register command line options"""
 	opt.tool_options('gnu_dirs')
 	opt.tool_options('tar',tooldir='tools/waf')
 	opt.tool_options('mkisofs',tooldir='tools/waf')
+	opt.tool_options('usermgmt',tooldir='tools/waf')
 	if platform.system() not in ['Windows',"Darwin"]: opt.tool_options('compiler_cc')
 	opt.tool_options('python')
 	opt.tool_options('tomcat',tooldir='tools/waf')
@@ -439,11 +395,6 @@ def set_options(opt):
 		default = False,
 		dest = 'NODEPCHECK')
         inst_dir = opt.get_option_group('--force') # get the group that contains the force
-	inst_dir.add_option('--nochown',
-		action='store_true',
-		help = 'skip chown and chmod upon install (skipped on Windows or by non-root users by default)',
-		default = False,
-		dest = 'NOCHOWN')
 	inst_dir.add_option('--preserve-config',
 		action='store_true',
 		help = 'do not install configuration files',
