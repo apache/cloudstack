@@ -2188,7 +2188,7 @@ public interface ManagementServer {
 	boolean checkIfMaintenable(long hostId);
 
     Map<String, String> listCapabilities();
-	GuestOSCategoryVO getGuestOsCategory(Long guestOsId);
+	GuestOSVO getGuestOs(Long guestOsId);
 	VolumeVO findVolumeByInstanceAndDeviceId(long instanceId, long deviceId);
 	VolumeVO getRootVolume(Long instanceId);
 }

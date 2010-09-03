@@ -199,6 +199,7 @@ public abstract class BaseCmd {
         GROUP("group", BaseCmd.TYPE_STRING, "group"),
         GROUP_ID("group", BaseCmd.TYPE_LONG, "groupId"),
         GROUP_IDS("groupids", BaseCmd.TYPE_STRING, "groupIds"),
+        GUEST_OS_ID("guestosid", BaseCmd.TYPE_LONG, "guestOsId"),
         HA_ENABLE("haenable", BaseCmd.TYPE_BOOLEAN, "haEnable"),
         HAS_CHILD("haschild", BaseCmd.TYPE_BOOLEAN, "haschild"),
         HOST_ID("hostid", BaseCmd.TYPE_LONG, "hostId"),

@@ -34,6 +34,7 @@ import com.cloud.host.HostVO;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
@@ -272,10 +273,11 @@ public class ListVMsCmd extends BaseCmd {
                 long networkKbWrite = (long)vmStats.getNetworkWriteKBs();
                 vmData.add(new Pair<String, Object>(BaseCmd.Properties.NETWORK_KB_WRITE.getName(), networkKbWrite));
             }
+            vmData.add(new Pair<String, Object>(BaseCmd.Properties.GUEST_OS_ID.getName(), vmInstance.getGuestOSId()));
             
-            GuestOSCategoryVO guestOsCategory = getManagementServer().getGuestOsCategory(vmInstance.getGuestOSId());
-            if(guestOsCategory!=null)
-            	vmData.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_ID.getName(),guestOsCategory.getId()));
+            GuestOSVO guestOs = getManagementServer().getGuestOs(vmInstance.getGuestOSId());
+            if(guestOs!=null)
+            	vmData.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_ID.getName(),guestOs.getCategoryId()));
 
             //network groups
             vmData.add(new Pair<String, Object>(BaseCmd.Properties.NETWORK_GROUP_LIST.getName(), getManagementServer().getNetworkGroupsNamesForVm(vmInstance.getId())));
