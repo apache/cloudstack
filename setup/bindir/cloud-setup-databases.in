@@ -11,6 +11,10 @@ from optparse import OptionParser
 import commands
 import MySQLdb
 
+# squelch mysqldb spurious warnings
+import warnings
+warnings.simplefilter('ignore')
+
 # ---- This snippet of code adds the sources path and the waf configured PYTHONDIR to the Python path ----
 # ---- We do this so cloud_utils can be looked up in the following order:
 # ---- 1) Sources directory
