@@ -198,6 +198,7 @@ import com.cloud.storage.StorageStats;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Snapshot.SnapshotType;
@@ -8675,6 +8676,12 @@ public class ManagementServerImpl implements ManagementServer {
     public GuestOSCategoryVO getGuestOsCategory(Long guestOsId)
     {
     	return _guestOSCategoryDao.findById(guestOsId);
+    }
+    
+    @Override
+    public VolumeVO getRootVolume(Long instanceId)
+    {
+    	return _volumeDao.findByInstanceAndType(instanceId, Volume.VolumeType.ROOT).get(0);
     }
 }
 

@@ -34,7 +34,10 @@ import com.cloud.host.HostVO;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
@@ -276,6 +279,13 @@ public class ListVMsCmd extends BaseCmd {
 
             //network groups
             vmData.add(new Pair<String, Object>(BaseCmd.Properties.NETWORK_GROUP_LIST.getName(), getManagementServer().getNetworkGroupsNamesForVm(vmInstance.getId())));
+            
+            //root device related
+            VolumeVO rootVolume = getManagementServer().findRootVolume(vmInstance.getId());
+            vmData.add(new Pair<String, Object>(BaseCmd.Properties.ROOT_DEVICE_ID.getName(), rootVolume.getDeviceId()));
+            
+            StoragePoolVO storagePool = getManagementServer().findPoolById(rootVolume.getPoolId());
+            vmData.add(new Pair<String, Object>(BaseCmd.Properties.ROOT_DEVICE_TYPE.getName(), storagePool.getPoolType().toString()));
             
             vmTag[i++] = vmData;
         }

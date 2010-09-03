@@ -2190,4 +2190,5 @@ public interface ManagementServer {
     Map<String, String> listCapabilities();
 	GuestOSCategoryVO getGuestOsCategory(Long guestOsId);
 	VolumeVO findVolumeByInstanceAndDeviceId(long instanceId, long deviceId);
+	VolumeVO getRootVolume(Long instanceId);
 }
