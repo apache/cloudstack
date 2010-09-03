@@ -84,7 +84,17 @@ function clickInstanceGroupHeader($arrowIcon) {
             isAsyncJob: false,            
             dialogBeforeActionFn : doChangeGroup,
             afterActionSeccessFn: setMidmenuItemVm
-        }              
+        },
+        "Enable HA": {
+            isAsyncJob: false,            
+            dialogBeforeActionFn : doEnableHA,
+            afterActionSeccessFn: setMidmenuItemVm
+        },
+        "Disable HA": {
+            isAsyncJob: false,            
+            dialogBeforeActionFn : doDisableHA,
+            afterActionSeccessFn: setMidmenuItemVm
+        }                 
     }            
         
     function doAttachISO($t, selectedItemIds, listAPIMap) {   
@@ -263,6 +273,50 @@ function clickInstanceGroupHeader($arrowIcon) {
 			} 
 		}).dialog("open");	
     }
+   
+    function doEnableHA($t, selectedItemIds, listAPIMap) {            
+		var message = "<p>Please confirm you want to enable HA for your virtual machine. Once HA is enabled, your Virtual Instance will be automatically restarted in the event it is detected to have failed.</p>";
+			
+        $("#dialog_confirmation")
+		.html(message)
+		.dialog('option', 'buttons', { 						
+			"Confirm": function() { 
+				$(this).dialog("close"); 
+				for(var id in selectedItemIds) {					
+				    var $midMenuItem = selectedItemIds[id];
+		            var jsonObj = $midMenuItem.data("jsonObj");				            
+                    var apiCommand = "command=updateVirtualMachine&id="+id+"&haenable=true";          
+                    doAction(id, $t, apiCommand, listAPIMap);
+				}					    
+			}, 
+			"Cancel": function() { 
+				$(this).dialog("close"); 
+			} 
+		}).dialog("open");
+    }
+    
+    function doDisableHA($t, selectedItemIds, listAPIMap) {            
+		var message = "<p>Please confirm you want to disable HA for your virtual machine. Once HA is disabled, your Virtual Instance will no longer be be automatically restarted in the event of a failure.</p>";
+			
+        $("#dialog_confirmation")
+		.html(message)
+		.dialog('option', 'buttons', { 						
+			"Confirm": function() { 
+				$(this).dialog("close"); 
+				for(var id in selectedItemIds) {					
+				    var $midMenuItem = selectedItemIds[id];
+		            var jsonObj = $midMenuItem.data("jsonObj");				            
+                    var apiCommand = "command=updateVirtualMachine&id="+id+"&haenable=false";          
+                    doAction(id, $t, apiCommand, listAPIMap);
+				}					    
+			}, 
+			"Cancel": function() { 
+				$(this).dialog("close"); 
+			} 
+		}).dialog("open");
+    }
+   
+   
    
     function updateVirtualMachineStateInRightPanel(state) {
         if(state == "Running")
