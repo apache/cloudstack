@@ -92,10 +92,10 @@ import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
+import com.cloud.host.Host.Type;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.Host.Type;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
@@ -495,6 +495,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         return hosts;
     }
     
+    @Override
     @DB
     public boolean deleteHost(long hostId) {
         Transaction txn = Transaction.currentTxn();
@@ -523,7 +524,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
                         PoolEjectCommand eject = new PoolEjectCommand(host.getGuid());
                         Answer answer = easySend(thostId, eject);
                         if( answer == null || !answer.getResult()) {
-                            s_logger.debug("Eject Host: " + hostId + " from " + thostId + " failed due to " + answer.getDetails());
+                            s_logger.debug("Eject Host: " + hostId + " from " + thostId + " failed due to " + (answer != null ? answer.getDetails() : "no answer"));
                             continue;
                         }
                         break;
@@ -1070,6 +1071,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     	return null;
     }
     
+    @Override
     public Long getGuestOSCategoryId(long hostId) {
     	HostVO host = _hostDao.findById(hostId);
     	if (host == null) {
@@ -1101,6 +1103,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             _investigate = investigate;
         }
 
+        @Override
         public void run() {
             try {
                 handleDisconnect(_attache, _event, _investigate);
@@ -1565,6 +1568,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
     }
     
+    @Override
     public void updateHost(long hostId, long guestOSCategoryId) {
     	GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
     	Map<String, String> hostDetails = _hostDetailsDao.findDetails(hostId);
@@ -1800,6 +1804,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             this.actionDelegate = actionDelegate;
         }
 
+        @Override
         public void run() {
             try {
                 if (s_logger.isDebugEnabled()) {
