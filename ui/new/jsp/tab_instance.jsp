@@ -1,5 +1,5 @@
 <!--
-<script type="text/javascript" src="scripts/cloud.core.instances.js"></script>
+<script type="text/javascript" src="scripts/cloud.core.instance.js"></script>
 -->
 
 <%@ page import="java.util.*" %>

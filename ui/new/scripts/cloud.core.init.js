@@ -54,9 +54,25 @@ $(document).ready(function() {
         return false;
     });
     
+    
+    function setMidmenuItem(jsonObj, $midmenuItem1, toRightPanelFn) {  
+        $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));                             
+        $midmenuItem1.data("id", jsonObj.id); 
+        $midmenuItem1.data("jsonObj", jsonObj);  
+        $midmenuItem1.data("toRightPanelFn", toRightPanelFn);
+        
+//        $midmenuItem1.bind("click", function(event) { 
+//            var $t = $(this);     
+//            toRightPanelFn($t);	 
+//            return false;
+//        }); 
+    }
+    
     var $midmenuItem = $("#midmenu_item");
-    function listMidMenuItems(leftmenuId, apiName, jsonResponse1, jsonResponse2, descriptionProperty) { 
+    function listMidMenuItems(leftmenuId, apiName, jsonResponse1, jsonResponse2, descriptionProperty, rightPanelJSP, toRightPanelFn) { 
         $("#"+leftmenuId).bind("click", function(event) {
+            $("#right_panel").load(rightPanelJSP);
+        
             $.ajax({
 	            cache: false,
 	            data: createURL("command="+apiName+"&response=json"),
@@ -68,18 +84,20 @@ $(document).ready(function() {
 	                    for(var i=0; i<items.length;i++) {                
                             var item = items[i];
                             var $midmenuItem1 = $midmenuItem.clone();   
+                            $midmenuItem1.data("jsonObj", item);
                             $midmenuItem1.find("#description").text(item[descriptionProperty].substring(0,25));                     
                             $midmenuContainer.append($midmenuItem1.show());
+                            setMidmenuItem(item, $midmenuItem1, toRightPanelFn);  
                         }  
-                    }                   
-                    //selectedItemType = jsonResponse2;	    
+                    }  
 	            }
-		    });		    
+		    });	
+		   
             return false;
         });
     }
-    listMidMenuItems("leftmenu_event", "listEvents", "listeventsresponse", "event", "description");
-    listMidMenuItems("leftmenu_alert", "listAlerts", "listalertsresponse", "alert", "description");
+    listMidMenuItems("leftmenu_event", "listEvents", "listeventsresponse", "event", "description", "jsp/tab_event.jsp", loadEventToRigntPanelFn);
+    //listMidMenuItems("leftmenu_alert", "listAlerts", "listalertsresponse", "alert", "description", loadAlertToRightPanel);
    
     
     
