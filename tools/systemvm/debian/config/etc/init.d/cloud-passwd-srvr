@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash 
 ### BEGIN INIT INFO
 # Provides:          cloud-passwd-srvr
 # Required-Start:    mountkernfs $local_fs cloud-early-config
@@ -10,4 +10,52 @@
 # Short-Description: Web server that sends passwords to User VMs
 ### END INIT INFO
 
-bash /opt/cloud/bin/passwd_server&
+
+ENABLED=0
+[ -e /etc/default/cloud-passwd-srvr ] && . /etc/default/cloud-passwd-srvr
+
+start() {
+  [ "$ENABLED" != 0 ]  || exit 0 
+  nohup bash /opt/cloud/bin/passwd_server&
+}
+
+getpid() {
+  pid=$(ps -ef | grep passwd_server | grep -v grep | awk '{print $2}')
+  echo $pid
+}
+
+stop_socat() {
+  spid=$(pidof socat)
+  [ "$spid" != "" ] && kill -9 $spid && echo "Killed socat (pid=$spid)" 
+  return 0
+}
+
+stop () {
+  stop_socat
+  pid=$(getpid)
+  [ "$pid" != "" ] && kill -9 $pid && echo "Stopped password server (pid=$pid)" && stop_socat && return 0
+  echo "Password server is not running" && return 0
+}
+
+status () {
+  pid=$(getpid)
+  [ "$pid" != "" ] && echo "Password server is running (pid=$pid)" && return 0
+  echo "Password server is not running" && return 0
+}
+
+case "$1" in
+   start) start
+	  ;;
+    stop) stop
+ 	  ;;
+    status) status
+ 	  ;;
+ restart) stop
+          start
+ 	  ;;
+       *) echo "Usage: $0 {start|stop|status|restart}"
+	  exit 1
+	  ;;
+esac
+
+exit 0

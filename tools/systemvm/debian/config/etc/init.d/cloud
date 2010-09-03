@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash 
 ### BEGIN INIT INFO
 # Provides:          cloud
 # Required-Start:    mountkernfs $local_fs cloud-early-config
@@ -12,12 +12,16 @@
 
 #set -x
 
+ENABLED=0
+[ -e /etc/default/cloud ] && . /etc/default/cloud
+
 if [ -f /mnt/cmdline ]
 then
     CMDLINE=$(cat /mnt/cmdline)
 else
     CMDLINE=$(cat /proc/cmdline)
 fi
+
 TYPE="router"
 for i in $CMDLINE
   do
@@ -110,6 +114,8 @@ status() {
   echo "cloud.com service (type=$TYPE) is running: process id: $pids"
   return 0
 }
+
+[ "$ENABLED" != 0 ] || exit 0 
 
 case "$1" in
    start) start

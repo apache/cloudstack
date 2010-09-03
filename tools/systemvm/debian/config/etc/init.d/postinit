@@ -47,11 +47,11 @@ start() {
 }
 
 stop() {
-
+   echo ""
 }
 
 status() {
-
+   echo ""
 }
 
 CMDLINE=$(cat /proc/cmdline)

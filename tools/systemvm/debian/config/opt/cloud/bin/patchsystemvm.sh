@@ -25,6 +25,8 @@ consoleproxy_svcs() {
    chkconfig apache2 off
    chkconfig nfs-common off
    chkconfig portmap off
+   echo "cloud postinit ssh" > /var/cache/cloud/enabled_svcs
+   echo "cloud-passwd-srvr haproxy dnsmasq apache2 nfs-common portmap" > /var/cache/cloud/disabled_svcs
    mkdir -p /var/log/cloud
 }
 
@@ -36,6 +38,8 @@ secstorage_svcs() {
    chkconfig dnsmasq off
    chkconfig ssh on
    chkconfig apache2 off
+   echo "cloud postinit ssh nfs-common portmap" > /var/cache/cloud/enabled_svcs
+   echo "cloud-passwd-srvr haproxy dnsmasq" > /var/cache/cloud/disabled_svcs
    mkdir -p /var/log/cloud
 }
 
@@ -47,6 +51,8 @@ routing_svcs() {
    chkconfig ssh on
    chkconfig nfs-common off
    chkconfig portmap off
+   echo "cloud-passwd-srvr ssh dnsmasq haproxy apache2" > /var/cache/cloud/enabled_svcs
+   echo "cloud nfs-common portmap" > /var/cache/cloud/disabled_svcs
 }
 
 CMDLINE=$(cat /var/cache/cloud/cmdline)

@@ -1,6 +1,8 @@
 #!/bin/bash
 
-# set -x
+# set -x 
+
+PASSWD_FILE=/var/cache/cloud/passwords
 
 #replace a line in a file of the form key=value
 #   $1 filename
@@ -26,7 +28,7 @@ get_value() {
 
 ip=$1
 
-logger "serve_password called to service a request for $ip."
+logger -t cloud "serve_password called to service a request for $ip."
 
 while read input
 do
@@ -47,23 +49,23 @@ done
 
 if [ "$request" == "send_my_password" ]
 then
-	password=$(get_value /root/passwords $ip)
+	password=$(get_value $PASSWD_FILE $ip)
 	if [ "$password" == "" ]
 	then
-		logger "send_password_to_domu sent bad_request to $ip."
+		logger -t cloud "serve_password sent bad_request to $ip."
 		echo "bad_request"
 	else
-		logger "send_password_to_domu sent a password to $ip."
+		logger -t cloud "serve_password sent a password to $ip."
 		echo $password
 	fi
 else
 	if [ "$request" == "saved_password" ]
 	then
-		replace_in_file /root/passwords $ip "saved_password"
-		logger "send_password_to_domu sent saved_password to $ip."
+		replace_in_file $PASSWD_FILE $ip "saved_password"
+		logger -t cloud "serve_password sent saved_password to $ip."
 		echo "saved_password"
 	else
-		logger "send_password_to_domu sent bad_request to $ip."
+		logger -t cloud "serve_password sent bad_request to $ip."
 		echo "bad_request"
 	fi
 fi

@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash 
 ### BEGIN INIT INFO
 # Provides:          cloud-early-config
 # Required-Start:    mountkernfs $local_fs
@@ -58,6 +58,7 @@ patch() {
   if [ -f /mnt/cmdline ]; then
     cat /mnt/cmdline > /var/cache/cloud/cmdline
   fi
+  return 0
 }
 
 setup_interface() {
@@ -80,8 +81,11 @@ setup_interface() {
   if [ "$ip" != "0.0.0.0" -a "$ip" != "" ]
   then
      echo "iface  $intf inet $bootproto" >> /etc/network/interfaces
-     echo "  address $ip " >> /etc/network/interfaces
-     echo "  netmask $mask" >> /etc/network/interfaces
+     if [ "$bootproto" == "static" ]
+     then
+       echo "  address $ip " >> /etc/network/interfaces
+       echo "  netmask $mask" >> /etc/network/interfaces
+     fi
   fi
 
   ifdown $intf
@@ -89,7 +93,7 @@ setup_interface() {
 }
 
 enable_fwding() {
-  echo "enable_fwding = $1"
+  logger -t cloud "enable_fwding = $1"
   echo "$1" > /proc/sys/net/ipv4/ip_forward
 }
 
@@ -97,6 +101,7 @@ enable_svc() {
   local svc=$1
   local enabled=$2
 
+  logger -t cloud "Enable service ${svc} = $enabled"
   local cfg=/etc/default/${svc}
   sed  -i "s/ENABLED=.*$/ENABLED=$enabled/" $cfg 
 }
@@ -137,34 +142,7 @@ setup_common() {
   ip route add default via $GW
 }
 
-setup_router() {
-  setup_common eth0 eth1 eth2
-  [ -z $DHCP_RANGE ] && DHCP_RANGE=$ETH0_IP
-  if [ -n "$DOMAIN" ]
-  then
-    #send domain name to dhcp clients
-    sed -i s/[#]*dhcp-option=15.*$/dhcp-option=15,\"$DOMAIN\"/ /etc/dnsmasq.conf
-    #DNS server will append $DOMAIN to local queries
-    sed -r -i s/^[#]?domain=.*$/domain=$DOMAIN/ /etc/dnsmasq.conf
-    #answer all local domain queries
-    sed  -i -e "s/^[#]*local=.*$/local=\/$DOMAIN\//" /etc/dnsmasq.conf
-  fi
-  sed -i -e "s/^dhcp-range=.*$/dhcp-range=$DHCP_RANGE,static/" /etc/dnsmasq.conf
-  sed -i -e "s/^[#]*listen-address=.*$/listen-address=$ETH0_IP/" /etc/dnsmasq.conf
-  sed -i  /gateway/d /etc/hosts
-  echo "$ETH0_IP $NAME" >> /etc/hosts
-  [ -f /etc/httpd/conf/httpd.conf ] && sed -i -e "s/^Listen.*$/Listen $ETH0_IP:80/" /etc/httpd/conf/httpd.conf
-  [ -f /etc/httpd/conf.d/ssl.conf ] && mv /etc/httpd/conf.d/ssl.conf /etc/httpd/conf.d/ssl.conf.bak
-  [ -f /etc/ssh/sshd_config ] && sed -i -e "s/^[#]*ListenAddress.*$/ListenAddress $ETH1_IP/" /etc/ssh/sshd_config
-  
-  enable_svc dnsmasq 1
-  enable_svc haproxy 1
-  enable_fwding 1
-  cp /etc/iptables/iptables-router /etc/iptables/rules
-}
-
-setup_dhcpsrvr() {
-  setup_common eth0 eth1
+setup_dnsmasq() {
   [ -z $DHCP_RANGE ] && DHCP_RANGE=$ETH0_IP
   [ -z $DOMAIN ] && DOMAIN="cloudnine.internal"
   if [ -n "$DOMAIN" ]
@@ -177,15 +155,44 @@ setup_dhcpsrvr() {
     sed  -i -e "s/^[#]*local=.*$/local=\/$DOMAIN\//" /etc/dnsmasq.conf
   fi
   sed -i -e "s/^dhcp-range=.*$/dhcp-range=$DHCP_RANGE,static/" /etc/dnsmasq.conf
-  sed -i -e "s/^[#]*dhcp-option=option:router.*$/dhcp-option=option:router,$GW/" /etc/dnsmasq.conf
-  #for now set up ourself as the dns server as well
-  #echo "dhcp-option=6,$NS1,$NS2" >> /etc/dnsmasq.conf
+  sed -i -e "s/^[#]*listen-address=.*$/listen-address=$ETH0_IP/" /etc/dnsmasq.conf
+
+}
+
+setup_sshd(){
+  [ -f /etc/ssh/sshd_config ] && sed -i -e "s/^[#]*ListenAddress.*$/ListenAddress $ETH1_IP/" /etc/ssh/sshd_config
+}
+
+setup_router() {
+  setup_common eth0 eth1 eth2
+  setup_dnsmasq
+
   sed -i  /gateway/d /etc/hosts
   echo "$ETH0_IP $NAME" >> /etc/hosts
-  [ -f /etc/httpd/conf/httpd.conf ] && sed -i -e "s/^Listen.*$/Listen $ETH0_IP:80/" /etc/httpd/conf/httpd.conf
-  [ -f /etc/httpd/conf.d/ssl.conf ] && mv /etc/httpd/conf.d/ssl.conf /etc/httpd/conf.d/ssl.conf.bak
 
+  setup_sshd 
+
+  enable_svc dnsmasq 1
+  enable_svc haproxy 1
+  enable_svc cloud-passwd-srvr 1
+  enable_svc cloud 0
+  enable_fwding 1
+  cp /etc/iptables/iptables-router /etc/iptables/rules
+}
+
+setup_dhcpsrvr() {
+  setup_common eth0 eth1
+  setup_dnsmasq
+
+  sed -i  /gateway/d /etc/hosts
+  echo "$ETH0_IP $NAME" >> /etc/hosts
+
+  setup_sshd 
+
+  enable_svc dnsmasq 1
   enable_svc haproxy 0
+  enable_svc cloud-passwd-srvr 1
+  enable_svc cloud 0
   enable_fwding 0
   cp /etc/iptables/iptables-router /etc/iptables/rules
 }
@@ -196,14 +203,13 @@ setup_secstorage() {
   public_ip=$ETH2_IP
   [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH1_IP
   echo "$public_ip $NAME" >> /etc/hosts
-  [ -f /etc/httpd/conf/httpd.conf ] && sed -i -e "s/^Listen.*:80$/Listen $public_ip:80/" /etc/httpd/conf/httpd.conf
-  [ -f /etc/httpd/conf/httpd.conf ] && sed -i -e "s/^Listen.*:443$/Listen $public_ip:443/" /etc/httpd/conf/httpd.conf
 
-  sed 's/ENABLED=.*$/ENABLED=0/g' /etc/default/haproxy
   cp /etc/iptables/iptables-secstorage /etc/iptables/rules
   enable_fwding 0
   enable_svc haproxy 0
   enable_svc dnsmasq 0
+  enable_svc cloud-passwd-srvr 0
+  enable_svc cloud 1
 }
 
 setup_console_proxy() {
@@ -212,12 +218,23 @@ setup_console_proxy() {
   [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH1_IP
   sed -i  /gateway/d /etc/hosts
   echo "$public_ip $NAME" >> /etc/hosts
-  sed 's/ENABLED=.*$/ENABLED=0/g' /etc/default/haproxy
   cp /etc/iptables/iptables-consoleproxy /etc/iptables/rules
+
   enable_fwding 0
   enable_svc haproxy 0
   enable_svc dnsmasq 0
-  chkconfig apache2 off
+  enable_svc cloud-passwd-srvr 0
+  enable_svc cloud 1
+}
+
+setup_default() {
+  cat > /etc/network/interfaces << EOF
+auto lo eth0
+iface lo inet loopback
+
+iface eth0 inet dhcp
+
+EOF
 }
 
 start() {
@@ -239,10 +256,15 @@ start() {
          [ "$NAME" == "" ] && NAME=consoleproxy
          setup_console_proxy;
 	  ;;
+     unknown)
+         [ "$NAME" == "" ] && NAME=systemvm
+         setup_default;
+          ;;
   esac
   return 0
 }
 
+disable_hvc
 if [ -f /mnt/cmdline ]
 then
     CMDLINE=$(cat /mnt/cmdline)
@@ -335,7 +357,7 @@ stop)
 force-reload|restart)
 
 	log_warning_msg "Running $0  is deprecated because it may not enable again some interfaces"
-	log_action_begin_msg "Reconfiguring network interfaces"
+	log_action_begin_msg "Executing cloud-early-config"
 	if start; then
 	    log_action_end_msg $?
 	else

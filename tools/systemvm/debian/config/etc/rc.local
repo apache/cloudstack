@@ -1,0 +1,15 @@
+#/bin/bash
+
+[ ! -f /var/cache/cloud/enabled_svcs ] && touch /var/cache/cloud/enabled_svcs
+for svc in $(cat /var/cache/cloud/enabled_svcs) 
+do
+   logger -t cloud "Starting $svc"
+   service $svc start
+done
+
+[ ! -f /var/cache/cloud/disabled_svcs ] && touch /var/cache/cloud/disabled_svcs
+for svc in $(cat /var/cache/cloud/disabled_svcs) 
+do
+   logger -t cloud "Stopping $svc"
+   service $svc stop
+done
