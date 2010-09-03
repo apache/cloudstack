@@ -40,8 +40,8 @@ public class VolumeOperationParam {
 	// Used for Attach, Detach, and Delete
 	private long volumeId;
 	private long eventId;
-	private Long deviceId;
-
+	private long deviceId;
+	
 	public VolumeOperationParam() {
 	}
 	
@@ -117,11 +117,11 @@ public class VolumeOperationParam {
         return eventId;
     }
 
-    public void setDeviceId(Long deviceId) {
+    public void setDeviceId(long deviceId) {
         this.deviceId = deviceId;
     }
 
-    public Long getDeviceId() {
+    public long getDeviceId() {
         return deviceId;
     }
 

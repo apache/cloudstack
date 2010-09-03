@@ -1985,12 +1985,12 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public void detachVolumeFromVM(long volumeId, long startEventId) throws InternalErrorException {
-        _vmMgr.detachVolumeFromVM(volumeId, startEventId);
+    public void detachVolumeFromVM(long volumeId, long startEventId, long deviceId, long instanceId) throws InternalErrorException {
+        _vmMgr.detachVolumeFromVM(volumeId, startEventId, deviceId, instanceId);
     }
 
     @Override
-    public long detachVolumeFromVMAsync(long volumeId) throws InvalidParameterValueException {
+    public long detachVolumeFromVMAsync(long volumeId, long deviceId, long instanceId) throws InvalidParameterValueException {
         VolumeVO volume = _volumeDao.findById(volumeId);
 
         // Check that the volume is a data volume
@@ -2022,6 +2022,8 @@ public class ManagementServerImpl implements ManagementServer {
         param.setAccountId(volume.getAccountId());
         param.setOp(VolumeOp.Detach);
         param.setVolumeId(volumeId);
+        param.setDeviceId(deviceId);
+        param.setVmId(instanceId);
         param.setEventId(eventId);
 
         Gson gson = GsonHelper.getBuilder().create();

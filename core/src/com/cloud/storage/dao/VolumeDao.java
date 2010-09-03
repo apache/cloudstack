@@ -46,4 +46,5 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long> {
     List<VolumeVO> listRemovedButNotDestroyed();
     List<VolumeVO> findCreatedByInstance(long id);
     List<VolumeVO> findByPoolId(long poolId);
+	List<VolumeVO> findByInstanceAndDeviceId(long instanceId, long deviceId);
 }

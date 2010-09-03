@@ -615,8 +615,8 @@ public interface ManagementServer {
      * @volumeId
      * @throws InvalidParameterValueException, InternalErrorException
      */
-    void detachVolumeFromVM(long volumeId, long startEventId) throws InternalErrorException;
-    long detachVolumeFromVMAsync(long volumeId) throws InvalidParameterValueException;
+    void detachVolumeFromVM(long volumeId, long startEventId, long deviceId, long instanceId) throws InternalErrorException;
+    long detachVolumeFromVMAsync(long volumeId, long deviceId, long instanceId) throws InvalidParameterValueException;
     
     /**
      * Attaches an ISO to the virtual CDROM device of the specified VM. Will fail if the VM already has an ISO mounted.

@@ -418,10 +418,28 @@ public class UserVmManagerImpl implements UserVmManager {
     }
     
     @Override
-    public void detachVolumeFromVM(long volumeId, long startEventId) throws InternalErrorException {
-    	VolumeVO volume = _volsDao.findById(volumeId);
+    public void detachVolumeFromVM(long volumeId, long startEventId, long deviceId, long instanceId) throws InternalErrorException {
+    	VolumeVO volume = null;
     	
-    	Long vmId = volume.getInstanceId();
+    	if(volumeId!=0)
+    	{
+    		volume = _volsDao.findById(volumeId);
+    	}
+    	else
+    	{
+    		volume = _volsDao.findByInstanceAndDeviceId(instanceId, deviceId).get(0);
+    	}
+    	
+    	Long vmId = null;
+    	
+    	if(instanceId!=0)
+    	{
+    		vmId = volume.getInstanceId();
+    	}
+    	else
+    	{
+    		vmId = instanceId;
+    	}
     	
     	if (vmId == null) {
     		return;
@@ -454,7 +472,7 @@ public class UserVmManagerImpl implements UserVmManager {
     	Answer answer = null;
     	
     	if (sendCommand) {
-			AttachVolumeCommand cmd = new AttachVolumeCommand(false, vm.getInstanceName(), volume.getPoolType(), volume.getFolder(), volume.getPath(), volume.getName(), volume.getDeviceId());
+			AttachVolumeCommand cmd = new AttachVolumeCommand(false, vm.getInstanceName(), volume.getPoolType(), volume.getFolder(), volume.getPath(), volume.getName(), deviceId!=0 ? deviceId : volume.getDeviceId());
 			
 			try {
     			answer = _agentMgr.send(vm.getHostId(), cmd);
