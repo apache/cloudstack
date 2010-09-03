@@ -22,8 +22,10 @@ import java.util.List;
 import com.cloud.api.commands.CreateSnapshotPolicyCmd;
 import com.cloud.api.commands.DeleteSnapshotCmd;
 import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
+import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
@@ -134,11 +136,10 @@ public interface SnapshotManager extends Manager {
 
     /**
      * Get the recurring snapshots scheduled for this volume currently along with the time at which they are scheduled 
-     * @param volumeId The volume for which the snapshots are required.
-     * @param policyId Show snapshots for only this policy.
+     * @param cmd the command wrapping the volumeId (volume for which the snapshots are required) and policyId (to show snapshots for only this policy).
      * @return The list of snapshot schedules.
      */
-    public List<SnapshotScheduleVO> findRecurringSnapshotSchedule(Long volumeId, Long policyId);
+    public List<SnapshotScheduleVO> findRecurringSnapshotSchedule(ListRecurringSnapshotScheduleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 
 	SnapshotPolicyVO getPolicyForVolumeByInterval(long volumeId, short interval);
 

@@ -210,7 +210,6 @@ import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotPolicyVO;
-import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
@@ -7984,14 +7983,6 @@ public class ManagementServerImpl implements ManagementServer {
 	    return intervalTypes;
 	}
 	
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public List<SnapshotScheduleVO> findRecurringSnapshotSchedule(Long volumeId, Long policyId) {
-	    return _snapMgr.findRecurringSnapshotSchedule(volumeId, policyId);
-	}
-
 	@Override
 	public List<SnapshotPolicyVO> listSnapshotPolicies(long volumeId) {
     	if( _volumeDao.findById(volumeId) == null){

@@ -105,7 +105,6 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
-import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
@@ -1817,7 +1816,7 @@ public interface ManagementServer {
     String[] getApiConfig();
     StoragePoolVO findPoolById(Long id);
 	List<? extends StoragePoolVO> searchForStoragePools(Criteria c);
-	
+
 	/**
 	 * List all snapshot policies which are created for the specified volume
 	 * @param volumeId
@@ -1825,20 +1824,7 @@ public interface ManagementServer {
 	 */
 	List<SnapshotPolicyVO> listSnapshotPolicies(long volumeId);
 	SnapshotPolicyVO findSnapshotPolicyById(Long policyId);
-	
-	/**
-	 * Deletes snapshot scheduling policies
-	 */
-//	boolean deleteSnapshotPolicies(long userId, List<Long> policyIds) throws InvalidParameterValueException;
 
-	/**
-	 * Get the recurring snapshots scheduled for this volume currently along with the time at which they are scheduled
-	 * @param volumeId The volume for which the snapshots are required.
-	 * @param policyId Show snapshots for only this policy.
-	 * @return The list of snapshot schedules.
-	 */
-    List<SnapshotScheduleVO> findRecurringSnapshotSchedule(Long volumeId, Long policyId);
-    
 	/**
 	 * Return whether a domain is a child domain of a given domain.
 	 * @param parentId
@@ -1846,25 +1832,23 @@ public interface ManagementServer {
 	 * @return True if the domainIds are equal, or if the second domain is a child of the first domain.  False otherwise.
 	 */
     boolean isChildDomain(Long parentId, Long childId);
-	
-    
+
     /**
      * List interval types the specified snapshot belongs to
      * @param snapshotId
      * @return
      */
     String getSnapshotIntervalTypes(long snapshotId);
-    
-    
+
 	List<SecondaryStorageVmVO> searchForSecondaryStorageVm(Criteria c);
-    
+
 	/**
 	 * Returns back a SHA1 signed response
 	 * @param userId -- id for the user
 	 * @return -- ArrayList of <CloudId+Signature>
 	 */
     ArrayList<String> getCloudIdentifierResponse(GetCloudIdentifierCmd cmd) throws InvalidParameterValueException;
-    
+
     NetworkGroupVO findNetworkGroupByName(Long accountId, String groupName);
 
     /**
