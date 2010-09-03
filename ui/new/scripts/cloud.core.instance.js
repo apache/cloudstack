@@ -450,6 +450,11 @@ function clickInstanceGroupHeader($arrowIcon) {
 	                                var instances = json.listvirtualmachinesresponse.virtualmachine;                               
                                     for(var i=0; i<instances.length;i++) {                
                                         var instance = instances[i];
+                                        var instanceGroup = instance.group;
+                                        if(instanceGroup == null || instanceGroup == "")
+                                            instanceGroup = "(no group name)";                                                                       
+                                        if(instanceGroup != groupName)
+                                            continue;                                        
                                         var $midmenuItemVm1 = $midmenuItemVm.clone();                                                                                                                               
                                         setMidmenuItemVm(instance, $midmenuItemVm1);  
                                         $("#midmenu_container").append($midmenuItemVm1.show());
