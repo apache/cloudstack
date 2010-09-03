@@ -188,9 +188,6 @@ newhost = raw_input().strip()
 if newhost: host = newhost
 confopts["host"] = host
 
-confopts["private.network.device"] = dev
-confopts["public.network.device"] = dev
-
 for opt,val in confopts.items():
 	line = "=".join([opt,val])
 	if opt not in confposes: lines.append(line)
@@ -205,11 +202,15 @@ stderr("Cloud Console Proxy setup completed successfully")
 
 stderr("Starting the Cloud Console Proxy")
 try:
+	m = service("@PACKAGE@-console-proxy","stop")
+	print m.stdout + m.stderr
+except CalledProcessError,e:
+	print e.stdout + e.stderr
+
+try:
 	m = service("@PACKAGE@-console-proxy","start")
 	print m.stdout + m.stderr
 except CalledProcessError,e:
 	print e.stdout + e.stderr
 	bail(E_CPFAILEDTOSTART,"@PACKAGE@-console-proxy failed to start")
-
-
 # FIXMES: 1) nullify networkmanager on ubuntu (asking the user first) and enable the networking service permanently
