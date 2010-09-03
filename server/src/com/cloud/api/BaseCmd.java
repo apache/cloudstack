@@ -309,6 +309,8 @@ public abstract class BaseCmd {
         RESOURCE_TYPE("resourcetype", BaseCmd.TYPE_INT, "resourcetype"),
         RESPONSE_TYPE("response",BaseCmd.TYPE_STRING,"response"),
         ROOT_DISK_OFFERING_ID("rootdiskofferingid", BaseCmd.TYPE_LONG, "rootDiskOfferingId"),
+        ROOT_DEVICE_ID("rootdeviceid", BaseCmd.TYPE_LONG, "rootDeviceId"),
+        ROOT_DEVICE_TYPE("rootdevicetype", BaseCmd.TYPE_STRING, "rootDeviceType"),
         RULE_ID("ruleid", BaseCmd.TYPE_LONG, "ruleId"),
         RUNNING_VMS("runningvms", BaseCmd.TYPE_LONG, "runningvms"),
         SCHEDULE("schedule", BaseCmd.TYPE_STRING, "schedule"),
