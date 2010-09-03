@@ -27,7 +27,6 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.user.Account;
