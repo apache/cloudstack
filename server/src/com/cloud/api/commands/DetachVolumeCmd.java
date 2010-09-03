@@ -60,6 +60,7 @@ public class DetachVolumeCmd extends BaseCmd {
     	Long volumeId = (Long) params.get(BaseCmd.Properties.ID.getName());
     	Long deviceId = (Long) params.get(BaseCmd.Properties.DEVICE_ID.getName());
     	Long instanceId = (Long) params.get(BaseCmd.Properties.VIRTUAL_MACHINE_ID.getName());
+    	VolumeVO volume = null;
     	
     	if((volumeId==null && (deviceId==null && instanceId==null)) || (volumeId!=null && (deviceId!=null || instanceId!=null)) || (volumeId==null && (deviceId==null || instanceId==null)))
     	{
@@ -85,9 +86,18 @@ public class DetachVolumeCmd extends BaseCmd {
     	}
 
     	// Check that the volume ID is valid
-    	VolumeVO volume = getManagementServer().findVolumeById(volumeId);
-    	if (volume == null)
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId);
+    	if(volumeId != 0)
+    	{
+    		volume = getManagementServer().findVolumeById(volumeId);
+    		if (volume == null)
+    			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId);
+    	}
+    	else
+    	{
+    		volume = getManagementServer().findVolumeByInstanceAndDeviceId(instanceId, deviceId);
+    		if (volume == null)
+    			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId);
+    	}
 
     	// If the account is not an admin, check that the volume is owned by the account that was passed in
     	if (!isAdmin) {

@@ -432,7 +432,7 @@ public class UserVmManagerImpl implements UserVmManager {
     	
     	Long vmId = null;
     	
-    	if(instanceId!=0)
+    	if(instanceId==0)
     	{
     		vmId = volume.getInstanceId();
     	}

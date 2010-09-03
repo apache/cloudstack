@@ -1991,7 +1991,11 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public long detachVolumeFromVMAsync(long volumeId, long deviceId, long instanceId) throws InvalidParameterValueException {
-        VolumeVO volume = _volumeDao.findById(volumeId);
+    	VolumeVO volume = null;
+    	if(volumeId!=0)
+    		volume = _volumeDao.findById(volumeId);
+    	else
+    		volume = _volumeDao.findByInstanceAndDeviceId(instanceId, deviceId).get(0);
 
         // Check that the volume is a data volume
         if (volume.getVolumeType() != VolumeType.DATADISK) {
@@ -5556,6 +5560,20 @@ public class ManagementServerImpl implements ManagementServer {
              return volume;
          }
          else {
+             return null;
+         }
+    }
+    
+    @Override
+    public VolumeVO findVolumeByInstanceAndDeviceId(long instanceId, long deviceId) 
+    {
+         VolumeVO volume = _volumeDao.findByInstanceAndDeviceId(instanceId, deviceId).get(0);
+         if (volume != null && !volume.getDestroyed() && volume.getRemoved() == null) 
+         {
+             return volume;
+         }
+         else 
+         {
              return null;
          }
     }
