@@ -111,19 +111,32 @@ if Options.options.prefix == Options.default_prefix:
 conf.check_message_2("%s"%conf.env.PREFIX,"GREEN")
 
 conf.check_tool('misc')
+
 conf.check_tool("gnu_dirs")
+if conf.env.distro == 'Windows':
+	# waf uses slashes somewhere along the line in some paths.  we fix them on windows.
+	for pth in [ x for x in conf.env.get_merged_dict().keys() if x.endswith("DIR") ]:
+		if not pth: continue
+		if not conf.env[pth]: continue
+		conf.env[pth] = conf.env[pth].replace("/","\\")
+
 conf.check_tool('tar')
 try: conf.check_tool('mkisofs')
 except Configure.ConfigurationError,e:
 	raise Configure.ConfigurationError, "The program genisoimage (or mkisofs) could not be found.\nOn Linux: ./waf installrpmdeps or ./waf installdebdeps according to your distro's package format.\nOn Windows: Use cygwin to install the mkisofs package, then ensure that the program is in your PATH."
 conf.check_tool('java')
+
 conf.check_tool("python")
 conf.check_python_version((2,4,0))
+
 conf.check_message_1('Detecting Python MySQL module')
 try: import MySQLdb
 except ImportError,e:
 	raise Configure.ConfigurationError, "The Python MySQLdb module could not be found.\nOn Linux: ./waf installrpmdeps or ./waf installdebdeps according to your distro's package format.\nOn Windows: Install MySQL 5.1 on your machine, then install the Python MySQLdb module for Python %s.\nThe module for Python 2.6 / win32 / MySQL 5.1 is available here: http://soemin.googlecode.com/files/MySQL-python-1.2.3c1.win32-py2.6.exe"%conf.env.PYTHON_VERSION
 conf.check_message_2('MySQLdb','GREEN')
+conf.check_message_1('Database info for developer setup')
+for a in "DBHOST DBUSER DBPW".split(): conf.env[a] = getattr(Options.options, a, '')
+conf.check_message_2("user: %r, password: %r, host: %r"%(conf.env.DBUSER,conf.env.DBPW,conf.env.DBHOST),'GREEN')
 
 try: conf.check_tool("tomcat")
 except Configure.ConfigurationError,e:
@@ -151,9 +164,6 @@ if conf.env.DISTRO in ['Windows','Mac']:
 	conf.env.PREMIUMJAVADIR = conf.env.JAVADIR
 	conf.env.PLUGINJAVADIR = conf.env.JAVADIR
 	conf.env.SYSTEMJAVADIR = conf.env.JAVADIR
-	# waf uses slashes somewhere along the line in some paths.  we fix them on windows.
-	for pth in [ x for x in conf.env.get_merged_dict().keys() if x.endswith("DIR") ]:
-		conf.env[pth] = conf.env[pth].replace("/","\\")
 else:
 	conf.check_tool('compiler_cc')
 	conf.check_cc(lib='pthread')
@@ -171,10 +181,6 @@ else:
 	conf.env.PREMIUMJAVADIR = _join(conf.env.JAVADIR,"%s-premium"%conf.env.PACKAGE)
 	conf.env.PLUGINJAVADIR = _join(conf.env.JAVADIR,"%s-plugins"%conf.env.PACKAGE)
 	conf.env.SYSTEMJAVADIR = "/usr/share/java"
-
-conf.check_message_1('Database info for developer setup')
-for a in "DBHOST DBUSER DBPW".split(): conf.env[a] = getattr(Options.options, a, '')
-conf.check_message_2("user: %r, password: %r, host: %r"%(conf.env.DBUSER,conf.env.DBPW,conf.env.DBHOST),'GREEN')
 
 in_javadir = lambda name: _join(conf.env.JAVADIR,_basename(name)) # $PREFIX/share/java
 in_system_javadir = lambda name: _join(conf.env.SYSTEMJAVADIR,name) # /usr/share/java
