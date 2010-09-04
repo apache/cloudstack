@@ -9,7 +9,6 @@ APPNAME = 'cloud'
 import shutil,os
 import email,time
 import optparse
-import platform
 import Utils,Node,Options,Logs,Scripting,Environment,Build,Configure
 from subprocess import Popen as _Popen,PIPE
 import os
@@ -358,9 +357,9 @@ def set_options(opt):
 	opt.tool_options('tar',tooldir='tools/waf')
 	opt.tool_options('mkisofs',tooldir='tools/waf')
 	opt.tool_options('usermgmt',tooldir='tools/waf')
-	if platform.system() not in ['Windows',"Darwin"]: opt.tool_options('compiler_cc')
 	opt.tool_options('python')
 	opt.tool_options('tomcat',tooldir='tools/waf')
+	if Options.platform not in ['darwin',"win32"]: opt.tool_options('compiler_cc')
 	
         inst_dir = opt.get_option_group('--bindir') # get the group that contains bindir
 	inst_dir.add_option('--javadir', # add javadir to the group that contains bindir

@@ -1,4 +1,5 @@
 import Utils
+import Options
 import tarfile
 from TaskGen import feature, before
 import Task
@@ -33,7 +34,7 @@ def tar_up(task):
 		ti.mode = 0755
 		ti.size = os.path.getsize(src)
                 openmode = 'r'
-                if sys.platform == 'win32': openmode = openmode + 'b'
+                if Options.platform == 'win32': openmode = openmode + 'b'
                 f = file(src,openmode)
 		z.addfile(ti,fileobj=f)
 		f.close()

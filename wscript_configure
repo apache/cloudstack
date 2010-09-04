@@ -4,7 +4,6 @@
 	- detects Tomcat (on Windows)
 	- detects or configures directories according to command-line options"""
 
-import platform
 import Utils,Node,Options,Logs,Scripting,Environment,Build,Configure
 from os import unlink as _unlink, makedirs as _makedirs, getcwd as _getcwd, chdir as _chdir
 try: from os import getuid as _getuid
@@ -91,8 +90,8 @@ hard_deps = [
 
 
 conf.check_message_1('Detecting distribution')
-if platform.system() == 'Windows': conf.env.DISTRO = "Windows"
-elif platform.system() == 'Darwin': conf.env.DISTRO = "Mac"
+if Options.platform == 'win32': conf.env.DISTRO = "Windows"
+elif Options.platform == 'darwin': conf.env.DISTRO = "Mac"
 elif _exists("/etc/network"): conf.env.DISTRO = "Ubuntu"
 elif _exists("/etc/fedora-release"): conf.env.DISTRO = "Fedora"
 elif _exists("/etc/centos-release") or _exists("/etc/redhat-release"): conf.env.DISTRO = "CentOS"
