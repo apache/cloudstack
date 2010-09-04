@@ -354,28 +354,24 @@ Build.BuildContext.substitute = _substitute
 def set_options(opt):
 	"""Register command line options"""
 	opt.tool_options('gnu_dirs')
+	opt.tool_options('python')
 	opt.tool_options('tar',tooldir='tools/waf')
 	opt.tool_options('mkisofs',tooldir='tools/waf')
-	opt.tool_options('usermgmt',tooldir='tools/waf')
-	opt.tool_options('python')
+	if Options.platform not in ['darwin','win32']: opt.tool_options('usermgmt',tooldir='tools/waf')
+	if Options.platform not in ['darwin','win32']: opt.tool_options('javadir',tooldir='tools/waf')
 	opt.tool_options('tomcat',tooldir='tools/waf')
 	if Options.platform not in ['darwin',"win32"]: opt.tool_options('compiler_cc')
 	
-        inst_dir = opt.get_option_group('--bindir') # get the group that contains bindir
-	inst_dir.add_option('--javadir', # add javadir to the group that contains bindir
-		help = 'Java class and jar files [Default: ${DATADIR}/java]',
-		default = '',
-		dest = 'JAVADIR')
-        inst_dir = opt.get_option_group('--srcdir') # get the group that contains the srcdir
-	inst_dir.add_option('--with-db-host', # add javadir to the group that contains bindir
+        inst_dir = opt.get_option_group('--srcdir')
+	inst_dir.add_option('--with-db-host',
 		help = 'Database host to use for waf deploydb [Default: 127.0.0.1]',
 		default = '127.0.0.1',
 		dest = 'DBHOST')
-	inst_dir.add_option('--with-db-user', # add javadir to the group that contains bindir
+	inst_dir.add_option('--with-db-user',
 		help = 'Database user to use for waf deploydb [Default: root]',
 		default = 'root',
 		dest = 'DBUSER')
-	inst_dir.add_option('--with-db-pw', # add javadir to the group that contains bindir
+	inst_dir.add_option('--with-db-pw',
 		help = 'Database password to use for waf deploydb [Default: ""]',
 		default = '',
 		dest = 'DBPW')
@@ -393,7 +389,7 @@ def set_options(opt):
 		help = 'does ---no-dep-check',
 		default = False,
 		dest = 'NODEPCHECK')
-        inst_dir = opt.get_option_group('--force') # get the group that contains the force
+        inst_dir = opt.get_option_group('--force')
 	inst_dir.add_option('--preserve-config',
 		action='store_true',
 		help = 'do not install configuration files',
@@ -402,7 +398,7 @@ def set_options(opt):
 
 	debugopts = optparse.OptionGroup(opt.parser,'run/debug options')
 	opt.add_option_group(debugopts)
-	debugopts.add_option('--debug-port', # add javadir to the group that contains bindir
+	debugopts.add_option('--debug-port',
 		help = 'Port on which the debugger will listen when running waf debug [Default: 8787]',
 		default = '8787',
 		dest = 'DEBUGPORT')
@@ -419,15 +415,15 @@ def set_options(opt):
 	
 	rpmopts = optparse.OptionGroup(opt.parser,'RPM/DEB build options')
 	opt.add_option_group(rpmopts)
-	rpmopts.add_option('--build-number', # add javadir to the group that contains bindir
+	rpmopts.add_option('--build-number',
 		help = 'Build number [Default: SVN revision number for builds from checkouts, or empty for builds from source releases]',
 		default = '',
 		dest = 'BUILDNUMBER')
-	rpmopts.add_option('--prerelease', # add javadir to the group that contains bindir
+	rpmopts.add_option('--prerelease',
 		help = 'Branch name to append to the release number (if specified, alter release number to be a prerelease); this option requires --build-number=X [Default: nothing]',
 		default = '',
 		dest = 'PRERELEASE')
-	rpmopts.add_option('--skip-dist', # add javadir to the group that contains bindir
+	rpmopts.add_option('--skip-dist',
 		action='store_true',
 		help = 'Normally, dist() is called during package build.  This makes the package build assume that a distribution tarball has already been made, and use that.  This option is also valid during distcheck and dist.',
 		default = False,
@@ -435,7 +431,7 @@ def set_options(opt):
 	
 	distopts = optparse.OptionGroup(opt.parser,'dist options')
 	opt.add_option_group(distopts)
-	distopts.add_option('--oss', # add javadir to the group that contains bindir
+	distopts.add_option('--oss',
 		help = 'Only include open source components',
 		action = 'store_true',
 		default = False,
@@ -757,14 +753,14 @@ def debug(ctx):
 
 @throws_command_errors
 def run_agent(args):
-	"""runs the management server"""
+	"""runs the agent""" # FIXME: make this use the run/debug options
 	conf = _getbuildcontext()
 	if not _exists(_join(conf.env.LIBEXECDIR,"agent-runner")): Scripting.install(conf)
 	_check_call("sudo",[_join(conf.env.LIBEXECDIR,"agent-runner")])
 
 @throws_command_errors
 def run_console_proxy(args):
-	"""runs the management server"""
+	"""runs the console proxy""" # FIXME: make this use the run/debug options
 	conf = _getbuildcontext()
 	if not _exists(_join(conf.env.LIBEXECDIR,"console-proxy-runner")): Scripting.install(conf)
 	_check_call("sudo",[_join(conf.env.LIBEXECDIR,"console-proxy-runner")])

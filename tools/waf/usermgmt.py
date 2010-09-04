@@ -6,13 +6,15 @@ import Task
 import os
 
 def detect(conf):
-	if Options.platform == 'win32': return
+	if Options.platform == 'win32': raise Utils.WafError('the usermgmt tool only works on Linux')
+	if Options.platform == 'darwin': raise Utils.WafError('the usermgmt tool only works on Linux')
 	path_list = ["/usr/local/sbin","/usr/sbin","/sbin"] + os.environ.get('PATH','').split(os.pathsep)
 	conf.find_program("useradd",var='USERADD',mandatory=True,path_list=path_list)
 	conf.find_program("userdel",var='USERDEL',mandatory=True,path_list=path_list)
 
 def set_options(opt):
-	if Options.platform == 'win32': return
+	if Options.platform == 'win32': raise Utils.WafError('the usermgmt tool only works on Linux')
+	if Options.platform == 'darwin': raise Utils.WafError('the usermgmt tool only works on Linux')
 	og = opt.get_option_group('--force')
 	og.add_option('--nochown',
 		action = 'store_true',
@@ -30,6 +32,7 @@ Build.BuildContext.subst_add_destdir = staticmethod(_subst_add_destdir)
 
 def _setownership(ctx,path,owner,group,mode=None):
 	if Options.platform == 'win32': return
+	if Options.platform == 'darwin': return
 	if not hasattr(os,"getuid"): return
 	if os.getuid() != 0: return
 	if Options.options.NOUSERMGMT: return
@@ -71,6 +74,7 @@ Build.BuildContext.setownership = _setownership
 
 def _createuser(ctx,user,homedir,shell):
 	if Options.platform == 'win32': return
+	if Options.platform == 'darwin': return
 	if not hasattr(os,"getuid"): return
 	if os.getuid() != 0: return
 	if Options.options.NOUSERMGMT: return
