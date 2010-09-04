@@ -93,7 +93,7 @@ $(document).ready(function() {
     listMidMenuItems("leftmenu_event", "listEvents", "listeventsresponse", "event", "description", "jsp/tab_event.jsp", loadEventToRigntPanelFn);
     //listMidMenuItems("leftmenu_alert", "listAlerts", "listalertsresponse", "alert", "description", loadAlertToRightPanel);
     listMidMenuItems("leftmenu_account", "listAccounts", "listaccountsresponse", "account", "name", "jsp/tab_account.jsp", loadAccountToRigntPanelFn);
-   
+    listMidMenuItems("leftmenu_volume", "listVolumes", "listvolumesresponse", "volume", "name", "jsp/tab_volume.jsp", loadVolumeToRigntPanelFn);
     
     
     

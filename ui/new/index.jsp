@@ -35,6 +35,8 @@
     <script type="text/javascript" src="scripts/cloud.core.event.js"></script>
   
     <script type="text/javascript" src="scripts/cloud.core.account.js"></script>
+    
+    <script type="text/javascript" src="scripts/cloud.core.volume.js"></script>
   
     <title>Cloud.com CloudStack</title>
 </head>
