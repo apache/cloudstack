@@ -113,7 +113,7 @@ conf.check_message_2("%s"%conf.env.PREFIX,"GREEN")
 conf.check_tool('misc')
 
 conf.check_tool("gnu_dirs")
-if conf.env.distro == 'Windows':
+if conf.env.DISTRO == 'Windows':
 	# waf uses slashes somewhere along the line in some paths.  we fix them on windows.
 	for pth in [ x for x in conf.env.get_merged_dict().keys() if x.endswith("DIR") ]:
 		if not pth: continue
@@ -154,17 +154,15 @@ if conf.env.DISTRO in ['Windows','Mac']:
 	conf.env.MSCONF  = _join(conf.env.TOMCATHOME,"conf")
 	conf.env.MSLOGDIR = _join(conf.env.TOMCATHOME,"logs")
 	conf.env.MSMNTDIR = _join(conf.env.TOMCATHOME,"mnt")
+        conf.env.JAVADIR = _join(conf.env.MSENVIRON,"lib")
+	conf.env.PREMIUMJAVADIR = conf.env.JAVADIR
+	conf.env.PLUGINJAVADIR = conf.env.JAVADIR
+	conf.env.SYSTEMJAVADIR = conf.env.JAVADIR
 else:
 	conf.env.MSENVIRON = _join(conf.env.DATADIR,conf.env.MSPATH)
 	conf.env.MSCONF    = _join(conf.env.SYSCONFDIR,conf.env.MSPATH)
 	conf.env.MSLOGDIR = _join(conf.env.LOCALSTATEDIR,"log",conf.env.MSPATH)
 	conf.env.MSMNTDIR = _join(conf.env.SHAREDSTATEDIR,conf.env.PACKAGE,"mnt")
-
-if conf.env.DISTRO in ['Windows','Mac']:
-	conf.env.PREMIUMJAVADIR = conf.env.JAVADIR
-	conf.env.PLUGINJAVADIR = conf.env.JAVADIR
-	conf.env.SYSTEMJAVADIR = conf.env.JAVADIR
-else:
 	conf.check_tool('compiler_cc')
 	conf.check_cc(lib='pthread')
 	conf.check_cc(lib='dl')
