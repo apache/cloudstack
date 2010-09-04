@@ -33,6 +33,8 @@
     <script type="text/javascript" src="scripts/cloud.core.instance.js"></script>
     
     <script type="text/javascript" src="scripts/cloud.core.event.js"></script>
+    
+    <script type="text/javascript" src="scripts/cloud.core.alert.js"></script>
   
     <script type="text/javascript" src="scripts/cloud.core.account.js"></script>
     

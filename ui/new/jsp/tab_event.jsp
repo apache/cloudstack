@@ -93,4 +93,4 @@
         </div>       
     </div>
 </div>
-<!-- VM detail panel (end) -->
+<!-- event detail panel (end) -->
