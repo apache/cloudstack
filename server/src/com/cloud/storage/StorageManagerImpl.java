@@ -1654,7 +1654,8 @@ public class StorageManagerImpl implements StorageManager {
                     }
                 }
                 s_logger.debug("Trying to execute Command: " + cmd + " on host: " + hostId + " try: " + tryCount);
-                answer = _agentMgr.send(hostId, cmd);
+                // set 120 min timeout for storage related command
+                answer = _agentMgr.send(hostId, cmd, 120*60*1000);
                 
                 if (answer != null && answer.getResult()) {
                     return answer;

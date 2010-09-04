@@ -231,7 +231,8 @@ public class TemplateManagerImpl implements TemplateManager {
                     s_logger.debug("Downloading " + templateId + " via " + vo.getHostId());
                 }
             	dcmd.setLocalPath(vo.getLocalPath());
-                DownloadAnswer answer = (DownloadAnswer)_agentMgr.easySend(vo.getHostId(), dcmd);
+            	// set 120 min timeout for this command
+                DownloadAnswer answer = (DownloadAnswer)_agentMgr.easySend(vo.getHostId(), dcmd, 120*60*1000);
                 if (answer != null) {
             		templateStoragePoolRef.setDownloadPercent(templateStoragePoolRef.getDownloadPercent());
             		templateStoragePoolRef.setDownloadState(answer.getDownloadStatus());

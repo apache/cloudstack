@@ -210,4 +210,6 @@ public interface AgentManager extends Manager {
     public boolean reconnect(final long hostId) throws AgentUnavailableException;
     
     public List<HostVO> discoverHosts(long dcId, Long podId, Long clusterId, URI url, String username, String password) throws DiscoveryException;
+
+	Answer easySend(Long hostId, Command cmd, int timeout);
 }

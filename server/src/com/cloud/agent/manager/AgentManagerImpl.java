@@ -1114,11 +1114,16 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             }
         }
     }
+    
+    @Override
+    public Answer easySend(final Long hostId, final Command cmd) {   	
+    	return easySend(hostId, cmd, _wait);
+    }
 
     @Override
-    public Answer easySend(final Long hostId, final Command cmd) {
+    public Answer easySend(final Long hostId, final Command cmd, int timeout) {
         try {
-            final Answer answer = send(hostId, cmd, _wait);
+            final Answer answer = send(hostId, cmd, timeout);
             if (answer == null) {
                 s_logger.warn("send returns null answer");
                 return null;
