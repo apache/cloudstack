@@ -59,6 +59,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -255,6 +256,7 @@ public class StatsCollector {
 	}
 
 	class StorageCollector implements Runnable {
+		@DB
 		public void run() {
 			try {
 				SearchCriteria sc = _hostDao.createSearchCriteria();
@@ -347,11 +349,11 @@ public class StatsCollector {
                 	txn.start();
                 	 _capacityDao.clearStorageCapacities();
 
-		                for (CapacityVO newCapacity : newCapacities) {
-		                	s_logger.trace("Executing capacity update");
-		                    _capacityDao.persist(newCapacity);
-		                    s_logger.trace("Done with capacity update");
-		                }
+	                for (CapacityVO newCapacity : newCapacities) {
+	                	s_logger.trace("Executing capacity update");
+	                    _capacityDao.persist(newCapacity);
+	                    s_logger.trace("Done with capacity update");
+	                }
 		                txn.commit();
                 } catch (Exception ex) {
                 	txn.rollback();

@@ -66,6 +66,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -325,7 +326,7 @@ public class AlertManagerImpl implements AlertManager {
         }
     }
 
-    @Override
+    @Override @DB
     public void recalculateCapacity() {
         // FIXME: the right way to do this is to register a listener (see RouterStatsListener, VMSyncListener)
         //        for the vm sync state.  The listener model has connects/disconnects to keep things in sync much better
@@ -460,7 +461,6 @@ public class AlertManagerImpl implements AlertManager {
                 s_logger.trace("Done with capacity update");
             }
             txn.commit();
-            s_logger.trace("");
         } catch (Exception ex) {
         	txn.rollback();
         	s_logger.error("Unable to start transaction for capacity update");
