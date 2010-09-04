@@ -60,12 +60,6 @@ $(document).ready(function() {
         $midmenuItem1.data("id", jsonObj.id); 
         $midmenuItem1.data("jsonObj", jsonObj);  
         $midmenuItem1.data("toRightPanelFn", toRightPanelFn);
-        
-//        $midmenuItem1.bind("click", function(event) { 
-//            var $t = $(this);     
-//            toRightPanelFn($t);	 
-//            return false;
-//        }); 
     }
     
     var $midmenuItem = $("#midmenu_item");
@@ -98,6 +92,7 @@ $(document).ready(function() {
     }
     listMidMenuItems("leftmenu_event", "listEvents", "listeventsresponse", "event", "description", "jsp/tab_event.jsp", loadEventToRigntPanelFn);
     //listMidMenuItems("leftmenu_alert", "listAlerts", "listalertsresponse", "alert", "description", loadAlertToRightPanel);
+    listMidMenuItems("leftmenu_account", "listAccounts", "listaccountsresponse", "account", "name", "jsp/tab_account.jsp", loadAccountToRigntPanelFn);
    
     
     

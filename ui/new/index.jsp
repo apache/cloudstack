@@ -34,6 +34,8 @@
     
     <script type="text/javascript" src="scripts/cloud.core.event.js"></script>
   
+    <script type="text/javascript" src="scripts/cloud.core.account.js"></script>
+  
     <title>Cloud.com CloudStack</title>
 </head>
 <body>
