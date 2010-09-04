@@ -373,7 +373,6 @@ if [ "$1" == "1" ] ; then
     /sbin/chkconfig --add %{name}-management > /dev/null 2>&1 || true
     /sbin/chkconfig --level 345 %{name}-management on > /dev/null 2>&1 || true
 fi
-test -f %{_sharedstatedir}/%{name}/management/.ssh/id_rsa || su - %{name} -c 'yes "" 2>/dev/null | ssh-keygen -t rsa -q -N ""' < /dev/null
 
 
 

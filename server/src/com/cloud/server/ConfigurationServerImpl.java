@@ -420,9 +420,11 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
             String homeDir = Script.runSimpleBashScript("echo ~");
             if (homeDir == "~") {
-                s_logger.warn("No home directory was detected.  Trouble with SSH keys ahead.");
-                return;
+                s_logger.error("No home directory was detected.  Set the HOME environment variable to point to your user profile or home directory.");
+                throw new RuntimeException("No home directory was detected.  Set the HOME environment variable to point to your user profile or home directory.");
             }
+
+            String keygenOutput = Script.runSimpleBashScript("if [ -f ~/.ssh/id_rsa ] ; then true ; else yes '' | ssh-keygen -t rsa -q -O no-pty ; fi");
 
             File privkeyfile = new File(homeDir + "/.ssh/id_rsa");
             File pubkeyfile  = new File(homeDir + "/.ssh/id_rsa.pub");
@@ -431,8 +433,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 new DataInputStream(new FileInputStream(privkeyfile)).readFully(arr1);
             } catch (EOFException e) {
             } catch (Exception e) {
-                s_logger.warn("Cannot read the private key file",e);
-                return;
+                s_logger.error("Cannot read the private key file",e);
+                throw new RuntimeException("Cannot read the private key file");
             }
             String privateKey = new String(arr1).trim();
             byte[] arr2 = new byte[4094]; // configuration table column value size
@@ -441,7 +443,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             } catch (EOFException e) {			    
             } catch (Exception e) {
                 s_logger.warn("Cannot read the public key file",e);
-                return;
+                throw new RuntimeException("Cannot read the public key file");
             }
             String publicKey  = new String(arr2).trim();
 
@@ -458,7 +460,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     s_logger.debug("Private key inserted into database");
                 }
             } catch (SQLException ex) {
-                s_logger.warn("SQL of the private key failed",ex);
+                s_logger.error("SQL of the private key failed",ex);
+                throw new RuntimeException("SQL of the private key failed");
             }
 
             try {
@@ -468,7 +471,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     s_logger.debug("Public key inserted into database");
                 }
             } catch (SQLException ex) {
-                s_logger.warn("SQL of the public key failed",ex);
+                s_logger.error("SQL of the public key failed",ex);
+                throw new RuntimeException("SQL of the public key failed");
             }
         }
     }
