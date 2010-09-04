@@ -702,11 +702,11 @@ Once this command is done, the packages will be built in the directory {{{artifa
 # As a non-root user, run the command {{{./waf deb}}} in the source directory.
 Once this command is done, the packages will be built in the directory {{{artifacts/debbuild}}}.</pre>
 </div>
-<div title="Building from the source and installing directly from there" creator="RuddO" modifier="RuddO" created="201008080022" modified="201008081327" changecount="14">
+<div title="Building from the source and installing directly from there" creator="RuddO" modifier="RuddO" created="201008080022" modified="201009040156" changecount="15">
 <pre>!Obtain the source for the CloudStack
 If you aren't reading this from a local copy of the source code, see [[Obtaining the source]].
-!Prepare your development environment
-See [[Preparing your development environment]].
+!Prepare your environment
+See [[Preparing your environment]].
 !Configure the build on the builder machine
 As non-root, run the command {{{./waf configure}}}.  See [[waf configure]] to discover configuration options for that command.
 !Build the CloudStack on the builder machine
@@ -737,11 +737,74 @@ See the files in the {{{debian/}}} folder.</pre>
 <div title="CloudStack" creator="RuddO" modifier="RuddO" created="201008072205" changecount="1">
 <pre>The Cloud.com CloudStack is an open source software product that enables the deployment, management, and configuration of multi-tier and multi-tenant infrastructure cloud services by enterprises and service providers.</pre>
 </div>
-<div title="CloudStack build dependencies" creator="RuddO" modifier="RuddO" created="201008081310" tags="fixme" changecount="1">
-<pre>Not done yet!</pre>
+<div title="CloudStack build dependencies" creator="RuddO" modifier="RuddO" created="201008081310" modified="201009040201" changecount="16">
+<pre>Prior to building the CloudStack, you need to install the following software packages in your system:
+# Sun Java 1.6
+## You must install the Java Development Kit with {{{javac}}}, not just the Java Runtime Environment
+## The commands {{{java}}} and {{{javac}}} must be found in your {{{PATH}}}
+# Apache Tomcat
+## If you are using the official Apache binary distribution, set the environment variable {{{TOMCAT_HOME}}} to point to the Apache Tomcat directory
+# MySQL
+## At the very minimum, you need to have the client and libraries installed
+## If your development machine is also going to be the database server, you need to have the server installed and running as well
+# Python 2.6
+## Ensure that the {{{python}}} command is in your {{{PATH}}}
+## Do ''not'' install Cygwin Python!
+# The MySQLdb module for Python 2.6
+## If you use Windows, you can find a [[pre-built package here|http://soemin.googlecode.com/files/MySQL-python-1.2.3c1.win32-py2.6.exe]]
+# bash
+# coreutils
+!Installing the dependencies on Windows
+Some of the packages in the above list are only available on Windows through Cygwin.  If that is your case, install them using Cygwin and remember to include the Cygwin {{{bin/}}} directory in your PATH.
+
+Do not install Cygwin Python!  Use the Python for Windows official installer instead.
+!Additional dependencies for Linux development environments
+# GCC (only needed on Linux)
+# glibc-devel / glibc-dev
+# The Java packages (usually available in your distribution):
+## commons-collections
+## commons-dbcp
+## commons-logging
+## commons-logging-api
+## commons-pool
+## commons-httpclient
+## ws-commons-util</pre>
 </div>
-<div title="CloudStack run-time dependencies" creator="RuddO" modifier="RuddO" created="201008081310" tags="fixme" changecount="1">
-<pre>Not done yet!</pre>
+<div title="CloudStack run-time dependencies" creator="RuddO" modifier="RuddO" created="201008081310" modified="201009040200" tags="fixme" changecount="10">
+<pre>The following software / programs must be correctly installed in the machines where you will run a CloudStack component.  This list is by no means complete yet, but it will be soon.
+!Dependencies common to all components of the CloudStack
+# bash
+# coreutils
+# useradd
+# userdel
+# Sun Java 1.6
+## You must install the Java Development Kit with {{{javac}}}, not just the Java Runtime Environment
+## The commands {{{java}}} and {{{javac}}} must be found in your {{{PATH}}}
+# Python 2.6
+## Ensure that the {{{python}}} command is in your {{{PATH}}}
+## Do ''not'' install Cygwin Python!
+# The Java packages (usually available in your distribution):
+## commons-collections
+## commons-dbcp
+## commons-logging
+## commons-logging-api
+## commons-pool
+## commons-httpclient
+## ws-commons-util
+!!Installing the dependencies on Windows
+Some of the packages in the above list are only available on Windows through Cygwin.  If that is your case, install them using Cygwin and remember to include the Cygwin {{{bin/}}} directory in your PATH.
+
+Do not install Cygwin Python!  Use the Python for Windows official installer instead.
+!Management Server-specific dependencies
+# Apache Tomcat
+## If you are using the official Apache binary distribution, set the environment variable {{{TOMCAT_HOME}}} to point to the Apache Tomcat directory
+# MySQL
+## At the very minimum, you need to have the client and libraries installed
+## If you will be running the Management Server in the same machine that will run the database server, you need to have the server installed and running as well
+# The MySQLdb module for Python 2.6
+## If you use Windows, you can find a [[pre-built package here|http://soemin.googlecode.com/files/MySQL-python-1.2.3c1.win32-py2.6.exe]] 
+# openssh-clients (provides the ssh-keygen command)
+# mkisofs (provides the genisoimage command)</pre>
 </div>
 <div title="Database migration infrastructure" creator="RuddO" modifier="RuddO" created="201009011837" modified="201009011852" changecount="14">
 <pre>To support incremental migration from one version to another without having to redeploy the database, the CloudStack supports an incremental schema migration mechanism for the database.
@@ -774,10 +837,10 @@ Otherwise, ''end-user migration will fail catastrophically''.</pre>
 <div title="Git" creator="RuddO" modifier="RuddO" created="201008081330" tags="fixme" changecount="1">
 <pre>Not done yet!</pre>
 </div>
-<div title="Hacking on the CloudStack" creator="RuddO" modifier="RuddO" created="201008072228" modified="201009011847" changecount="51">
+<div title="Hacking on the CloudStack" creator="RuddO" modifier="RuddO" created="201008072228" modified="201009040156" changecount="52">
 <pre>Start here if you want to learn the essentials to extend, modify and enhance the CloudStack.  This assumes that you've already familiarized yourself with CloudStack concepts, installation and configuration using the [[Getting started|Welcome]] instructions.
 * [[Obtain the source|Obtaining the source]]
-* [[Prepare your environment|Preparing your development environment]]
+* [[Prepare your environment|Preparing your environment]]
 * [[Get acquainted with the development lifecycle|Your development lifecycle]]
 * [[Familiarize yourself with our development conventions|Development conventions]]
 Extra developer information:
@@ -924,7 +987,7 @@ This will create a folder called {{{cloudstack-oss}}} in your current folder.
 !Browsing the source code online
 You can browse the CloudStack source code through [[our CGit Web interface|http://git.cloud.com/cloudstack-oss]].</pre>
 </div>
-<div title="Preparing your development environment" creator="RuddO" modifier="RuddO" created="201008081133" modified="201008081159" changecount="7">
+<div title="Preparing your environment" creator="RuddO" modifier="RuddO" created="201008081133" modified="201009040156" changecount="8">
 <pre>!Install the build dependencies on the machine where you will compile the CloudStack
 !!Fedora / CentOS
 The command [[waf installrpmdeps]] issued from the source tree gets it done.
@@ -1172,8 +1235,8 @@ Cloud.com's contact information is:
 !Legal information
 //Unless otherwise specified// by Cloud.com, Inc., or in the sources themselves, [[this software is OSI certified Open Source Software distributed under the GNU General Public License, version 3|License statement]].  OSI Certified is a certification mark of the Open Source Initiative.  The software powering this documentation is &quot;&quot;&quot;BSD-licensed&quot;&quot;&quot; and obtained from [[TiddlyWiki.com|http://tiddlywiki.com/]].</pre>
 </div>
-<div title="Your development lifecycle" creator="RuddO" modifier="RuddO" created="201008080933" modified="201009012343" changecount="17">
-<pre>This is the typical lifecycle that you would follow when hacking on a CloudStack component, assuming that your [[development environment has been set up|Preparing your development environment]]:
+<div title="Your development lifecycle" creator="RuddO" modifier="RuddO" created="201008080933" modified="201009040158" changecount="18">
+<pre>This is the typical lifecycle that you would follow when hacking on a CloudStack component, assuming that your [[development environment has been set up|Preparing your environment]]:
 # [[Configure|waf configure]] the source code&lt;br&gt;{{{./waf configure}}}
 # [[Build|waf build]] and [[install|waf install]] the CloudStack
 ## {{{./waf install}}}
