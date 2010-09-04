@@ -94,6 +94,7 @@ $(document).ready(function() {
     listMidMenuItems("leftmenu_alert", "listAlerts", "listalertsresponse", "alert", "description", "jsp/tab_alert.jsp", loadAlertToRigntPanelFn);
     listMidMenuItems("leftmenu_account", "listAccounts", "listaccountsresponse", "account", "name", "jsp/tab_account.jsp", loadAccountToRigntPanelFn);
     listMidMenuItems("leftmenu_volume", "listVolumes", "listvolumesresponse", "volume", "name", "jsp/tab_volume.jsp", loadVolumeToRigntPanelFn);
+    listMidMenuItems("leftmenu_snapshot", "listSnapshots", "listsnapshotsresponse", "snapshot", "name", "jsp/tab_snapshot.jsp", loadSnapshotToRigntPanelFn);
     
     
     
