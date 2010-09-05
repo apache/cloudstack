@@ -256,7 +256,7 @@ public class StatsCollector {
 	}
 
 	class StorageCollector implements Runnable {
-		@DB
+		
 		public void run() {
 			try {
 				SearchCriteria sc = _hostDao.createSearchCriteria();
@@ -341,7 +341,7 @@ public class StatsCollector {
 //                    _capacityDao.persist(capacity);
                 }
                 
-                Transaction txn = Transaction.currentTxn();
+                Transaction txn = Transaction.open(Transaction.CLOUD_DB);
                 try {
                 	if (s_logger.isTraceEnabled()) {
 		                s_logger.trace("recalculating system storage capacity");
@@ -354,7 +354,7 @@ public class StatsCollector {
 	                    _capacityDao.persist(newCapacity);
 	                    s_logger.trace("Done with capacity update");
 	                }
-		                txn.commit();
+		            txn.commit();
                 } catch (Exception ex) {
                 	txn.rollback();
                 	s_logger.error("Unable to start transaction for storage capacity update");
