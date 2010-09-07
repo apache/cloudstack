@@ -238,7 +238,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 		
 		String[] defaultRouteList = defaultRoute.split("\\s+");
 		
-		if (defaultRouteList.length != 7) {
+		if (defaultRouteList.length < 5) {
 			return null;
 		}
 		
