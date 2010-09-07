@@ -3175,11 +3175,11 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
             Ternary<SR, VDI, VolumeVO> mount = mounts.get(0);
 
-            Set<VM> templates = VM.getByNameLabel(conn, "Debian Lenny 5.0 (32-bit)");
+            Set<VM> templates = VM.getByNameLabel(conn, "CentOS 5.3");
             if (templates.size() == 0) {
-                templates = VM.getByNameLabel(conn, "Debian Lenny 5.0 (32-bit)");
+                templates = VM.getByNameLabel(conn, "CentOS 5.3 (64-bit)");
                 if (templates.size() == 0) {
-                    String msg = " can not find template Debian Lenny 5.0 (32-bit) ";
+                    String msg = " can not find template CentOS 5.3 ";
                     s_logger.warn(msg);
                     return msg;
                 }
