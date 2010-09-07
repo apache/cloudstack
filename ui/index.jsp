@@ -25,7 +25,7 @@ long milliseconds = new Date().getTime();
 		- Default Cloud.com styling of the site.  This file contains the easiest portion of the site
         that can be styled to your companie's need such as logo, top navigation, and dialogs.		
 	-->
-	<link rel= "stylesheet" href="css/cloud_custom.css" type="text/css" />
+	<link rel="stylesheet" href="css/cloud_custom.css" type="text/css" />
 	
 	<!-- Javascripts -->
 	
