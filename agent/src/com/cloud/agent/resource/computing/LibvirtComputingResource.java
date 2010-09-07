@@ -1218,8 +1218,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
        	 
        	 Script.runSimpleBashScript("qemu-img convert -f qcow2 -O qcow2 " + snapshotPath + " " + tmpltPath + File.separator + cmd.getUniqueName() + ".qcow2");
        	 Script.runSimpleBashScript("touch " + tmpltPath + File.separator + "template.properties");
-       	 Script.runSimpleBashScript("chmod +r " + tmpltPath + File.separator + cmd.getUniqueName() + ".qcow2");
-       	 Script.runSimpleBashScript("chmod +r " + tmpltPath + File.separator + "template.properties");
+       	 Script.runSimpleBashScript("chmod a+r " + tmpltPath + File.separator + cmd.getUniqueName() + ".qcow2");
+       	 Script.runSimpleBashScript("chmod a+r " + tmpltPath + File.separator + "template.properties");
        	 
        	 Map<String, Object> params = new HashMap<String, Object>();
        	 params.put(StorageLayer.InstanceConfigKey, _storage);
