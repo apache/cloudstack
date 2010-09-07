@@ -37,7 +37,6 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -50,7 +49,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
-import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
@@ -76,7 +74,6 @@ public class UserConcentratedAllocator implements PodAllocator {
     @Inject VMInstanceDao _vmInstanceDao;
     
     Random _rand = new Random(System.currentTimeMillis());
-    private final GlobalLock m_capacityCheckLock = GlobalLock.getInternLock("capacity.check");
     private int _hoursToSkipStoppedVMs = 24;
     
     private int _secStorageVmRamSize = 1024;
@@ -156,30 +153,14 @@ public class UserConcentratedAllocator implements PodAllocator {
 
     private boolean dataCenterAndPodHasEnoughCapacity(long dataCenterId, long podId, long capacityNeeded, short capacityType, long[] hostCandidate) {
         List<CapacityVO> capacities = null;
-        if (m_capacityCheckLock.lock(120)) { // 2 minutes
-            try {
-                SearchCriteria<CapacityVO> sc = _capacityDao.createSearchCriteria();
-                sc.addAnd("capacityType", SearchCriteria.Op.EQ, capacityType);
-                sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, dataCenterId);
-                sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
-                capacities = _capacityDao.search(sc, null);
-            } finally {
-                m_capacityCheckLock.unlock();
-            }
-        } else {
-            s_logger.error("Unable to acquire synchronization lock for pod allocation");
-            
-            // we now try to enforce reservation-style allocation, waiting time has been adjusted
-            // to 2 minutes
-            return false;
-
-/*
-            // If we can't lock the table, just return that there is enough capacity and allow instance creation to fail on the agent
-            // if there is not enough capacity.  All that does is skip the optimization of checking for capacity before sending the
-            // command to the agent.
-            return true;
-*/
-        }
+        
+        SearchCriteria<CapacityVO> sc = _capacityDao.createSearchCriteria();
+        sc.addAnd("capacityType", SearchCriteria.Op.EQ, capacityType);
+        sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, dataCenterId);
+        sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
+        s_logger.trace("Executing search");
+        capacities = _capacityDao.search(sc, null);
+        s_logger.trace("Done with a search");
 
         boolean enoughCapacity = false;
         if (capacities != null) {

@@ -19,11 +19,7 @@ package com.cloud.storage;
 
 import java.net.URI;
 import java.net.UnknownHostException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
@@ -33,7 +29,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -94,9 +89,9 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
-import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.Host.Type;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -127,12 +122,9 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
-import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
@@ -1805,7 +1797,8 @@ public class StorageManagerImpl implements StorageManager {
                     }
                 }
                 s_logger.debug("Trying to execute Command: " + cmd + " on host: " + hostId + " try: " + tryCount);
-                answer = _agentMgr.send(hostId, cmd);
+                // set 120 min timeout for storage related command
+                answer = _agentMgr.send(hostId, cmd, 120*60*1000);
                 
                 if (answer != null && answer.getResult()) {
                     return answer;
@@ -1963,8 +1956,6 @@ public class StorageManagerImpl implements StorageManager {
     {
         boolean destroyVolumes = false;
         long count = 1;
-        long consoleProxyId = 0;
-        long ssvmId = 0;
         try 
         {
         	//1. Get the primary storage record
@@ -2023,9 +2014,20 @@ public class StorageManagerImpl implements StorageManager {
         				{
         					if(destroyVolumes)
         					{
-        						//proxy vm is stopped, and we have another ps available 
-        						//get the id for restart
-        						consoleProxyId = vmInstance.getId();        						
+        						//create a dummy event
+        						long eventId1 = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_START, "starting console proxy with Id: "+vmInstance.getId());
+        						
+        						//Restore config val for consoleproxy.restart to true
+        						_configMgr.updateConfiguration(userId, "consoleproxy.restart", "true");
+        						
+        						if(_consoleProxyMgr.startProxy(vmInstance.getId(), eventId1)==null)
+        						{
+        							s_logger.warn("There was an error starting the console proxy id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance");
+        			            	primaryStorage.setStatus(Status.ErrorInMaintenance);
+        			        		_storagePoolDao.persist(primaryStorage);
+        							return false;				
+        						}
+        						  						
         					}
         				}
         			}
@@ -2064,9 +2066,15 @@ public class StorageManagerImpl implements StorageManager {
         				{
         					if(destroyVolumes)
         					{
-        						//ss vm is stopped, and we have another ps available 				
-        						//get the id for restart
-        						ssvmId = vmInstance.getId();
+        						//create a dummy event and restart the ssvm immediately
+        						long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_START, "starting ssvm with Id: "+vmInstance.getId());
+        						if(_secStorageMgr.startSecStorageVm(vmInstance.getId(), eventId)==null)
+        						{
+        							s_logger.warn("There was an error starting the ssvm id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance");
+        			            	primaryStorage.setStatus(Status.ErrorInMaintenance);
+        			        		_storagePoolDao.persist(primaryStorage);
+        							return false;
+        						}
         					}
         				}
 
@@ -2100,34 +2108,7 @@ public class StorageManagerImpl implements StorageManager {
         		_volsDao.remove(vol.getId());
         	}
         	
-        	//5. Restart all the system vms conditionally
-        	if(destroyVolumes) //this means we have another ps. Ok to restart
-        	{
-				//create a dummy event
-				long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_START, "starting ssvm with Id: "+ssvmId);
-				if(_secStorageMgr.startSecStorageVm(ssvmId, eventId)==null)
-				{
-					s_logger.warn("There was an error starting the ssvm id: "+ssvmId+" on another storage pool, cannot enable primary storage maintenance");
-	            	primaryStorage.setStatus(Status.ErrorInMaintenance);
-	        		_storagePoolDao.persist(primaryStorage);
-					return false;
-				}
-				
-				//create a dummy event
-				long eventId1 = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_START, "starting console proxy with Id: "+consoleProxyId);
-				
-				//Restore config val for consoleproxy.restart to true
-				_configMgr.updateConfiguration(userId, "consoleproxy.restart", "true");
-				
-				if(_consoleProxyMgr.startProxy(consoleProxyId, eventId1)==null)
-				{
-					s_logger.warn("There was an error starting the console proxy id: "+consoleProxyId+" on another storage pool, cannot enable primary storage maintenance");
-	            	primaryStorage.setStatus(Status.ErrorInMaintenance);
-	        		_storagePoolDao.persist(primaryStorage);
-					return false;				}
-        	}
-        	
-        	//6. Update the status
+        	//5. Update the status
         	primaryStorage.setStatus(Status.Maintenance);
         	_storagePoolDao.persist(primaryStorage);
         	

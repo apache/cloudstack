@@ -3480,8 +3480,12 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             return false;
         return true;
     }
-
     protected String callHostPlugin(String plugin, String cmd, String... params) {
+        //default time out is 300 s
+        return callHostPluginWithTimeOut(plugin, cmd, 300, params);
+    }
+
+    protected String callHostPluginWithTimeOut(String plugin, String cmd, int timeout, String... params) {
         Map<String, String> args = new HashMap<String, String>();
         Session slaveSession = null;
         Connection slaveConn = null;
@@ -3493,7 +3497,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-            slaveConn = new Connection(slaveUrl, 1800);
+            slaveConn = new Connection(slaveUrl, timeout);
             slaveSession = Session.slaveLocalLoginWithPassword(slaveConn, _username, _password);
 
             if (s_logger.isDebugEnabled()) {
@@ -6205,7 +6209,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             checksum = "";
         }
 
-        String result = callHostPlugin("vmopsSnapshot", "post_create_private_template", "remoteTemplateMountPath", remoteTemplateMountPath, "templateDownloadFolder", templateDownloadFolder,
+        String result = callHostPluginWithTimeOut("vmopsSnapshot", "post_create_private_template", 110*60, "remoteTemplateMountPath", remoteTemplateMountPath, "templateDownloadFolder", templateDownloadFolder,
                 "templateInstallFolder", templateInstallFolder, "templateFilename", templateFilename, "templateName", templateName, "templateDescription", templateDescription,
                 "checksum", checksum, "virtualSize", String.valueOf(virtualSize), "templateId", String.valueOf(templateId));
 
@@ -6243,7 +6247,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
         // Each argument is put in a separate line for readability.
         // Using more lines does not harm the environment.
-        String results = callHostPlugin("vmopsSnapshot", "backupSnapshot", "primaryStorageSRUuid", primaryStorageSRUuid, "dcId", dcId.toString(), "accountId", accountId.toString(), "volumeId",
+        String results = callHostPluginWithTimeOut("vmopsSnapshot", "backupSnapshot", 110*60, "primaryStorageSRUuid", primaryStorageSRUuid, "dcId", dcId.toString(), "accountId", accountId.toString(), "volumeId",
                 volumeId.toString(), "secondaryStorageMountPath", secondaryStorageMountPath, "snapshotUuid", snapshotUuid, "prevSnapshotUuid", prevSnapshotUuid, "prevBackupUuid",
                 prevBackupUuid, "isFirstSnapshotOfRootVolume", isFirstSnapshotOfRootVolume.toString(), "isISCSI", isISCSI.toString());
 
@@ -6346,7 +6350,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
         String failureString = "Could not create volume from " + backedUpSnapshotUuid;
         templatePath = (templatePath == null) ? "" : templatePath;
-        String results = callHostPlugin("vmopsSnapshot", "createVolumeFromSnapshot", "dcId", dcId.toString(), "accountId", accountId.toString(), "volumeId", volumeId.toString(),
+        String results = callHostPluginWithTimeOut("vmopsSnapshot","createVolumeFromSnapshot", 110*60, "dcId", dcId.toString(), "accountId", accountId.toString(), "volumeId", volumeId.toString(),
                 "secondaryStorageMountPath", secondaryStorageMountPath, "backedUpSnapshotUuid", backedUpSnapshotUuid, "templatePath", templatePath, "templateDownloadFolder",
                 templateDownloadFolder, "isISCSI", isISCSI.toString());
 

@@ -61,6 +61,7 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmStats;
@@ -99,7 +100,7 @@ public class StatsCollector {
 	long storageStatsInterval = -1L;
 	long volumeStatsInterval = -1L;
 
-	private final GlobalLock m_capacityCheckLock = GlobalLock.getInternLock("capacity.check");
+	//private final GlobalLock m_capacityCheckLock = GlobalLock.getInternLock("capacity.check");
 
     public static StatsCollector getInstance() {
         return s_instance;
@@ -335,32 +336,25 @@ public class StatsCollector {
 //                    _capacityDao.persist(capacity);
                 }
 
-                if (m_capacityCheckLock.lock(5)) { // 5 second timeout
-		            if (s_logger.isTraceEnabled()) {
+                Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+                try {
+                	if (s_logger.isTraceEnabled()) {
 		                s_logger.trace("recalculating system storage capacity");
 		            }
-		            try {
-		                // now update the capacity table with the new stats
-		                // FIXME: the right way to do this is to register a listener (see RouterStatsListener)
-		                //        for the host stats, send the Watch<something>Command at a regular interval
-		                //        to collect the stats from an agent and update the database as needed.  The
-		                //        listener model has connects/disconnects to keep things in sync much better
-		                //        than this model right now
-		                _capacityDao.clearStorageCapacities();
+                	txn.start();
+                	 _capacityDao.clearStorageCapacities();
 
-		                for (CapacityVO newCapacity : newCapacities) {
-		                    _capacityDao.persist(newCapacity);
-		                }
-		            } finally {
-                        m_capacityCheckLock.unlock();
-		            }
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("done recalculating system storage capacity");
-                    }
-                } else {
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("not recalculating system storage capacity, unable to lock capacity table");
-                    }
+	                for (CapacityVO newCapacity : newCapacities) {
+	                	s_logger.trace("Executing capacity update");
+	                    _capacityDao.persist(newCapacity);
+	                    s_logger.trace("Done with capacity update");
+	                }
+		            txn.commit();
+                } catch (Exception ex) {
+                	txn.rollback();
+                	s_logger.error("Unable to start transaction for storage capacity update");
+                }finally {
+                	txn.close();
                 }
 			} catch (Throwable t) {
 				s_logger.error("Error trying to retrieve storage stats", t);
