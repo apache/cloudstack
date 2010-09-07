@@ -95,6 +95,7 @@ import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -2169,7 +2170,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         final HashSet<Host> avoid = new HashSet<Host>();
 
         final HostVO fromHost = _hostDao.findById(router.getHostId());
-        if (fromHost.getClusterId() == null) {
+        if (fromHost.getHypervisorType() != Hypervisor.Type.KVM && fromHost.getClusterId() == null) {
             s_logger.debug("The host is not in a cluster");
             return null;
         }
