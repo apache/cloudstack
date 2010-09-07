@@ -15,7 +15,7 @@
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
         <img src="images/instancetitle_icons.gif" alt="Instance" /></div>
-    <h1 id="vm_name">
+    <h1 id="vm_name">Instance
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">

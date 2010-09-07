@@ -12,6 +12,14 @@
 %>
 
 <!-- event detail panel (begin) -->
+<div class="main_title" id="right_panel_header">
+    <!--  
+    <div class="main_titleicon">
+        <img src="images/instancetitle_icons.gif" alt="Instance" /></div>
+    -->
+    <h1>Event
+    </h1>
+</div>
 <div class="contentbox" id="right_panel_content">
     <div class="info_detailbox errorbox" id="after_action_info_container" style="display:none">
         <p id="after_action_info"></p>
