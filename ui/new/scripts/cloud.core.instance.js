@@ -452,7 +452,7 @@ function clickInstanceGroupHeader($arrowIcon) {
                                         var instance = instances[i];
                                         var instanceGroup = instance.group;
                                         if(instanceGroup == null || instanceGroup == "")
-                                            instanceGroup = "(no group name)";                                                                       
+                                            instanceGroup = noGroupName;                                                                       
                                         if(instanceGroup != groupName)
                                             continue;                                        
                                         var $midmenuItemVm1 = $midmenuItemVm.clone();                                                                                                                               
