@@ -299,6 +299,21 @@ public class StorageManagerImpl implements StorageManager {
                 return vols;
             }
             
+            //if we have a system vm
+            //get the storage pool
+            //if pool is in maintenance
+            //add to recreate vols, and continue
+            if(vm.getType().equals(VirtualMachine.Type.ConsoleProxy) || vm.getType().equals(VirtualMachine.Type.DomainRouter) || vm.getType().equals(VirtualMachine.Type.SecondaryStorageVm))
+            {
+            	StoragePoolVO sp = _storagePoolDao.findById(vol.getPoolId());
+            	
+            	if(sp.getStatus().equals(Status.PrepareForMaintenance))
+            	{
+            		recreateVols.add(vol);
+            		continue;
+            	}
+            }
+            
             StoragePoolHostVO ph = _storagePoolHostDao.findByPoolHost(vol.getPoolId(), host.getId());
             if (ph == null) {
                 if (s_logger.isDebugEnabled()) {
@@ -1954,7 +1969,7 @@ public class StorageManagerImpl implements StorageManager {
     @DB
     public boolean preparePrimaryStorageForMaintenance(long primaryStorageId, long userId) 
     {
-        boolean destroyVolumes = false;
+        //boolean destroyVolumes = false;
         long count = 1;
         try 
         {
@@ -1971,10 +1986,10 @@ public class StorageManagerImpl implements StorageManager {
         	//if they do, then we can migrate over the system vms to them, destroy volumes for sys vms
         	//if they dont, then do NOT destroy the volumes on this one
         	count = _storagePoolDao.countBy(primaryStorage.getId(), Status.Up);
-        	if(count>1)
-        	{
-        		destroyVolumes = true;
-        	}
+//        	if(count>1)
+//        	{
+//        		destroyVolumes = true;
+//        	}
         	
         	//2. Get a list of all the volumes within this storage pool
         	List<VolumeVO> allVolumes = _volsDao.findByPoolId(primaryStorageId);
@@ -1992,9 +2007,9 @@ public class StorageManagerImpl implements StorageManager {
         			//if the instance is of type consoleproxy, call the console proxy
         			if(vmInstance.getType().equals(VirtualMachine.Type.ConsoleProxy))
         			{
-        				//add this volume to be removed if flag=true
-        				if(destroyVolumes)
-        					markedVolumes.add(volume);
+//        				//add this volume to be removed if flag=true
+//        				if(destroyVolumes)
+//        					markedVolumes.add(volume);
         				
         				//make sure it is not restarted again, update config to set flag to false
         				_configMgr.updateConfiguration(userId, "consoleproxy.restart", "false");
@@ -2012,8 +2027,8 @@ public class StorageManagerImpl implements StorageManager {
             			}
         				else
         				{
-        					if(destroyVolumes)
-        					{
+//        					if(destroyVolumes)
+//        					{
         						//create a dummy event
         						long eventId1 = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_START, "starting console proxy with Id: "+vmInstance.getId());
         						
@@ -2028,7 +2043,7 @@ public class StorageManagerImpl implements StorageManager {
         							return false;				
         						}
         						  						
-        					}
+//        					}
         				}
         			}
         			
@@ -2048,9 +2063,9 @@ public class StorageManagerImpl implements StorageManager {
         			//if the instance is of type secondary storage vm, call the secondary storage vm manager
         			if(vmInstance.getType().equals(VirtualMachine.Type.SecondaryStorageVm))
         			{           				
-        				//add this volume to be removed if flag=true
-        				if(destroyVolumes)
-        					markedVolumes.add(volume);
+//        				//add this volume to be removed if flag=true
+//        				if(destroyVolumes)
+//        					markedVolumes.add(volume);
         				
         				//create a dummy event
         				long eventId1 = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_STOP, "stopping ssvm with Id: "+vmInstance.getId());
@@ -2064,8 +2079,8 @@ public class StorageManagerImpl implements StorageManager {
         				}
         				else
         				{
-        					if(destroyVolumes)
-        					{
+//        					if(destroyVolumes)
+//        					{
         						//create a dummy event and restart the ssvm immediately
         						long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_START, "starting ssvm with Id: "+vmInstance.getId());
         						if(_secStorageMgr.startSecStorageVm(vmInstance.getId(), eventId)==null)
@@ -2075,7 +2090,7 @@ public class StorageManagerImpl implements StorageManager {
         			        		_storagePoolDao.persist(primaryStorage);
         							return false;
         						}
-        					}
+//        					}
         				}
 
         			}
@@ -2083,9 +2098,9 @@ public class StorageManagerImpl implements StorageManager {
            			//if the instance is of type domain router vm, call the network manager
         			if(vmInstance.getType().equals(VirtualMachine.Type.DomainRouter))
         			{   
-        				//add this volume to be removed if flag=true
-        				if(destroyVolumes)
-        					markedVolumes.add(volume);
+//        				//add this volume to be removed if flag=true
+//        				if(destroyVolumes)
+//        					markedVolumes.add(volume);
         				
         				//create a dummy event
         				long eventId2 = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_STOP, "stopping domain router with Id: "+vmInstance.getId());
@@ -2096,6 +2111,18 @@ public class StorageManagerImpl implements StorageManager {
         	            	primaryStorage.setStatus(Status.ErrorInMaintenance);
         	        		_storagePoolDao.persist(primaryStorage);
         					return false;
+        				}
+           				else
+        				{
+    						//create a dummy event and restart the ssvm immediately
+    						long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_START, "starting ssvm with Id: "+vmInstance.getId());
+    						if(_secStorageMgr.startSecStorageVm(vmInstance.getId(), eventId)==null)
+    						{
+    							s_logger.warn("There was an error starting the ssvm id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance");
+    			            	primaryStorage.setStatus(Status.ErrorInMaintenance);
+    			        		_storagePoolDao.persist(primaryStorage);
+    							return false;
+    						}
         				}
         			}
 
