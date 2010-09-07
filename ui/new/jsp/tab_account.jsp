@@ -12,13 +12,20 @@
 %>
 
 <!-- account detail panel (begin) -->
+<div class="main_title" id="right_panel_header">
+    <div class="main_titleicon">
+        <img src="images/accountstitle_icons.gif" alt="Accounts" /></div>
+    <h1>Accounts</h1>
+</div>
+
 <div class="contentbox" id="right_panel_content">
     <div class="info_detailbox errorbox" id="after_action_info_container" style="display:none">
         <p id="after_action_info"></p>
     </div>
     <div class="tabbox" style="margin-top:15px;">
         <div class="content_tabs on">
-            <%=t.t("Details")%></div>        
+            <%=t.t("Details")%></div>
+        <div class="grid_actionbox" style="margin:-4px 0 0 0;"></div>       
     </div>
     <div class="grid_container">
         <div class="grid_rows odd">

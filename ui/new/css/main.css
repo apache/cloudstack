@@ -2021,10 +2021,10 @@ a:visited {
 }
 
 .grid_actionbox {
-	width:33px;
-	height:15px;
+	width:35px;
+	height:17px;
 	float:right;
-	background:url(../images/gird_actions.gif) no-repeat top left;
+	background:url(../images/gird_actions.png) no-repeat top left;
 	margin:2px 10px 0 0;
 	padding:0;
 	cursor:pointer;
@@ -2032,5 +2032,5 @@ a:visited {
 }
 
 .grid_actionbox:hover {
-	background:url(../images/gird_actions_hover.gif) no-repeat top left;
+	background:url(../images/gird_actions_hover.png) no-repeat top left;
 }

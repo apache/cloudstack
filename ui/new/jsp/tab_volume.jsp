@@ -18,7 +18,8 @@
     </div>
     <div class="tabbox" style="margin-top:15px;">
         <div class="content_tabs on">
-            <%=t.t("Details")%></div>        
+            <%=t.t("Details")%></div>  
+        <div class="grid_actionbox" style="margin:-4px 0 0 0;"></div>        
     </div>
     <div class="grid_container">
         <div class="grid_rows odd">
