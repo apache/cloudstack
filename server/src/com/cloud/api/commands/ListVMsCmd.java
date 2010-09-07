@@ -165,6 +165,14 @@ public class ListVMsCmd extends BaseCmd {
         }
 
         for (UserVm vmInstance : virtualMachines) {
+    
+        	//if the account is deleted, do not return the user vm 
+        	Account currentVmAccount = getManagementServer().getAccount(vmInstance.getAccountId());
+        	if(currentVmAccount.getRemoved()!=null)
+        	{
+        		continue; //not returning this vm
+        	}
+        	
             List<Pair<String, Object>> vmData = new ArrayList<Pair<String, Object>>();
             AsyncJobVO asyncJob = getManagementServer().findInstancePendingAsyncJob("vm_instance", vmInstance.getId());
             if(asyncJob != null) {
