@@ -108,7 +108,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 				if (isos != null && isos.length > 0) {
 					isoSelect.empty();
 					for (var i = 0; i < isos.length; i++) {
-						isoSelect.append("<option value='"+isos[i].id+"'>"+sanitizeXSS(isos[i].displaytext)+"</option>");;
+						isoSelect.append("<option value='"+isos[i].id+"'>"+fromdb(isos[i].displaytext)+"</option>");;
 					}
 				}
 			}
@@ -196,7 +196,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 				var name = trim(thisDialog.find("#change_instance_name").val());
 				
 				for(var id in selectedItemIds) {
-		           var apiCommand = "command=updateVirtualMachine&id="+id+"&displayName="+encodeURIComponent(escape(name));		     
+		           var apiCommand = "command=updateVirtualMachine&id="+id+"&displayName="+todb(name);		     
 		           doAction(id, $t, apiCommand, listAPIMap);
 		        }	
 			}, 
@@ -217,7 +217,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 				
 				if (offerings != null && offerings.length > 0) {
 					for (var i = 0; i < offerings.length; i++) {
-						var option = $("<option value='" + offerings[i].id + "'>" + sanitizeXSS(unescape(offerings[i].displaytext)) + "</option>").data("name", sanitizeXSS(unescape(offerings[i].name)));
+						var option = $("<option value='" + offerings[i].id + "'>" + fromdb(offerings[i].displaytext) + "</option>").data("name", fromdb(offerings[i].name));
 						offeringSelect.append(option); 
 					}
 				} 
@@ -264,7 +264,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 		            var $midMenuItem = selectedItemIds[id];
 		            var jsonObj = $midMenuItem.data("jsonObj");		
 		            var group = trim(thisDialog.find("#change_group_name").val());
-                    var apiCommand = "command=updateVirtualMachine&id="+id+"&group="+encodeURIComponent(group);          
+                    var apiCommand = "command=updateVirtualMachine&id="+id+"&group="+todb(group);          
                     doAction(id, $t, apiCommand, listAPIMap);
                 }
 			}, 
@@ -558,7 +558,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 				    var $zoneSelect = $vmPopup.find("#wizard_zone").empty();					
 				    if (zones != null && zones.length > 0) {
 					    for (var i = 0; i < zones.length; i++) {
-						    $zoneSelect.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 
+						    $zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
 					    }
 				    }				
 				    listTemplatesInVmPopup();	
@@ -582,15 +582,15 @@ function clickInstanceGroupHeader($arrowIcon) {
 						    
 						    var $t = $serviceOfferingTemplate.clone();  						  
 						    $t.find("input:radio[name=service_offering_radio]").val(offerings[i].id); 
-						    $t.find("#name").text(sanitizeXSS(unescape(offerings[i].name)));
-						    $t.find("#description").text(sanitizeXSS(unescape(offerings[i].displaytext))); 
+						    $t.find("#name").text(fromdb(offerings[i].name));
+						    $t.find("#description").text(fromdb(offerings[i].displaytext)); 
 						    
 						    if (i > 0)
 						        $t.find("input:radio[name=service_offering_radio]").removeAttr("checked");	
 						
 						    //if(i == 0)
 						    //    $t.find("input:radio[name=service_offering_radio]").attr("checked", true);
-						    //var listItem = $("<li><input class='radio' type='radio' name='service' id='service' value='"+offerings[i].id+"'" + checked + "/><label style='width:500px;font-size:11px;' for='service'>"+sanitizeXSS(unescape(offerings[i].displaytext))+"</label></li>");
+						    //var listItem = $("<li><input class='radio' type='radio' name='service' id='service' value='"+offerings[i].id+"'" + checked + "/><label style='width:500px;font-size:11px;' for='service'>"+fromdb(offerings[i].displaytext)+"</label></li>");
 						    $container.append($t.show());	
 					    }
 					    //Safari and Chrome are not smart enough to make checkbox checked if html markup is appended by JQuery.append(). So, the following 2 lines are added.		
@@ -628,8 +628,8 @@ function clickInstanceGroupHeader($arrowIcon) {
 				        for (var i = 0; i < offerings.length; i++) {	
 					        var $t = $existingDiskOfferingTemplate.clone(); 
 					        $t.find("input:radio").attr("name","data_disk_offering_radio").val(offerings[i].id).removeAttr("checked");	 	
-					        $t.find("#name").text(sanitizeXSS(unescape(noNull(offerings[i].name))));
-					        $t.find("#description").text(sanitizeXSS(noNull(unescape(offerings[i].displaytext)))); 	 
+					        $t.find("#name").text(fromdb(noNull(offerings[i].name)));
+					        $t.find("#description").text(fromdb(offerings[i].displaytext)); 	 
 					        $dataDiskOfferingContainer.append($t.show());	
 				        }
 			        }
@@ -655,8 +655,8 @@ function clickInstanceGroupHeader($arrowIcon) {
 					        $t.find("input:radio").attr("name","root_disk_offering_radio").val(offerings[i].id);	 
 					        if(i > 0) //default is the 1st existing disk offering. If there is no existing disk offering, default to "custom" radio button
 					            $t.find("input:radio").removeAttr("checked");	 	
-					        $t.find("#name").text(sanitizeXSS(unescape(noNull(offerings[i].name))));
-					        $t.find("#description").text(sanitizeXSS(noNull(unescape(offerings[i].displaytext)))); 	 
+					        $t.find("#name").text(fromdb(offerings[i].name));
+					        $t.find("#description").text(fromdb(offerings[i].displaytext)); 	 
 					        $rootDiskOfferingContainer.append($t.show());	
 				        }
 			        }
@@ -684,14 +684,14 @@ function clickInstanceGroupHeader($arrowIcon) {
 						    var html = 
 							    "<li>"
 								    +"<input class='radio' type='radio' name='rootdisk' id='rootdisk' value='"+offerings[i].id+"'" + ((i==0)?"checked":"") + "/>"
-								    +"<label style='width:500px;font-size:11px;' for='disk'>"+sanitizeXSS(unescape(offerings[i].displaytext))+"</label>"
+								    +"<label style='width:500px;font-size:11px;' for='disk'>"+fromdb(offerings[i].displaytext)+"</label>"
 						       +"</li>";
 						    $("#wizard_root_disk_offering").append(html);
 						
 						    var html2 = 
 						    "<li>"
 							    +"<input class='radio' type='radio' name='datadisk' id='datadisk' value='"+offerings[i].id+"'" + "/>"
-							    +"<label style='width:500px;font-size:11px;' for='disk'>"+sanitizeXSS(unescape(offerings[i].displaytext))+"</label>"
+							    +"<label style='width:500px;font-size:11px;' for='disk'>"+fromdb(offerings[i].displaytext)+"</label>"
 					       +"</li>";
 						    $("#wizard_data_disk_offering").append(html2);																		
 					    }
@@ -843,8 +843,8 @@ function clickInstanceGroupHeader($arrowIcon) {
 
 						    var html = '<div class="'+divClass+'" id="'+items[i].id+'">'
 									      +'<div class="'+getIconForOS(items[i].ostypename)+'"></div>'
-									      +'<div class="rev_wiztemp_listtext">'+sanitizeXSS(items[i].displaytext)+'</div>'
-									      +'<div class="rev_wiztemp_ownertext">'+sanitizeXSS(items[i].account)+'</div>'
+									      +'<div class="rev_wiztemp_listtext">'+fromdb(items[i].displaytext)+'</div>'
+									      +'<div class="rev_wiztemp_ownertext">'+fromdb(items[i].account)+'</div>'
 								      +'</div>';
 						    container.append(html);
 					    }						
@@ -1067,11 +1067,11 @@ function clickInstanceGroupHeader($arrowIcon) {
     			
     			var name = trim($thisPopup.find("#wizard_vm_name").val());
 			    if (name != null && name.length > 0) 
-				    moreCriteria.push("&displayname="+encodeURIComponent(name));	
+				    moreCriteria.push("&displayname="+todb(name));	
     			
 			    var group = trim($thisPopup.find("#wizard_vm_group").val());
 			    if (group != null && group.length > 0) 
-				    moreCriteria.push("&group="+encodeURIComponent(group));		
+				    moreCriteria.push("&group="+todb(group));		
     						
 			    vmWizardClose();
     			
@@ -1131,7 +1131,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 											    // Failed
 											    $t.find("#vm_name").text("Adding failed");
 											    $t.find("#info_icon").addClass("error").show();
-						                        $t.data("afterActionInfo", ("Adding failed. Reason: " + sanitizeXSS(result.jobresult)));   	
+						                        $t.data("afterActionInfo", ("Adding failed. Reason: " + fromdb(result.jobresult)));   	
 						                        $t.bind("click", function(event) {  
                                                     $rightPanelContent.find("#after_action_info").text($(this).data("afterActionInfo"));
                                                     $rightPanelContent.find("#after_action_info_container").addClass("errorbox");
