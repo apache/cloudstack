@@ -1511,6 +1511,10 @@ public class UserVmManagerImpl implements UserVmManager {
                 podsToAvoid.add(pod.first().getId());
             }
 
+            if(pod == null){
+                throw new ResourceAllocationException("Create VM " + ((vm == null) ? vmId : vm.toString()) + " failed. There are no pods with enough CPU/memory");
+            }
+            
             if ((vm == null) || (poolid == 0)) {
                 throw new ResourceAllocationException("Create VM " + ((vm == null) ? vmId : vm.toString()) + " failed due to no Storage Pool is available");
             }
