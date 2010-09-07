@@ -142,7 +142,7 @@ public class UserConcentratedAllocator implements PodAllocator {
         }
         
         if (availablePods.size() == 0) {
-            s_logger.debug("There are no pods with enough memory/CPU capacity in zone" + zone.getName());
+            s_logger.debug("There are no pods with enough memory/CPU capacity in zone " + zone.getName());
             return null;
         } else {
         	// Return a random pod
