@@ -2033,8 +2033,7 @@ public class StorageManagerImpl implements StorageManager {
     			            	primaryStorage.setStatus(Status.ErrorInMaintenance);
     			        		_storagePoolDao.persist(primaryStorage);
     							return false;				
-    						}
-    						  						
+    						}	  						
         				}
         			}
         			
