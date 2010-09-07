@@ -384,21 +384,21 @@ function clickInstanceGroupHeader($arrowIcon) {
         
         var jsonObj = $t.data("jsonObj");     
         var vmName = getVmName(jsonObj.name, jsonObj.displayname);        
-        $rightPanelHeader.find("#vm_name").text(vmName);	
+        $rightPanelHeader.find("#vm_name").text(fromdb(vmName));	
         updateVirtualMachineStateInRightPanel(jsonObj.state);	
         $rightPanelContent.find("#ipAddress").text(jsonObj.ipaddress);
-        $rightPanelContent.find("#zoneName").text(jsonObj.zonename);
-        $rightPanelContent.find("#templateName").text(jsonObj.templatename);
-        $rightPanelContent.find("#serviceOfferingName").text(jsonObj.serviceofferingname);		                                			                                
+        $rightPanelContent.find("#zoneName").text(fromdb(jsonObj.zonename));
+        $rightPanelContent.find("#templateName").text(fromdb(jsonObj.templatename));
+        $rightPanelContent.find("#serviceOfferingName").text(fromdb(jsonObj.serviceofferingname));		                                			                                
         if(jsonObj.haenable == "true")
             $rightPanelContent.find("#ha").removeClass("cross_icon").addClass("tick_icon").show();
         else
             $rightPanelContent.find("#ha").removeClass("tick_icon").addClass("cross_icon").show();		                                
         $rightPanelContent.find("#created").text(jsonObj.created);
-        $rightPanelContent.find("#account").text(jsonObj.account);
-        $rightPanelContent.find("#domain").text(jsonObj.domain);
-        $rightPanelContent.find("#hostName").text(jsonObj.hostname);
-        $rightPanelContent.find("#group").text(jsonObj.group);	
+        $rightPanelContent.find("#account").text(fromdb(jsonObj.account));
+        $rightPanelContent.find("#domain").text(fromdb(jsonObj.domain));
+        $rightPanelContent.find("#hostName").text(fromdb(jsonObj.hostname));
+        $rightPanelContent.find("#group").text(fromdb(jsonObj.group));	
         if(jsonObj.isoid != null && jsonObj.isoid.length > 0)
             $rightPanelContent.find("#iso").removeClass("cross_icon").addClass("tick_icon").show();
         else
