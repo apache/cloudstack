@@ -142,7 +142,12 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             return false;
         }
             
-		
+		//if pool is NOT in up state, return false
+        if(!pool.getStatus().equals(com.cloud.host.Status.Up))//this is the pool status
+        {
+        	return false;
+        }	
+        
 		// Check that the pool type is correct
 		if (!poolIsCorrectType(dskCh, pool, vm, offering)) {
 			return false;
