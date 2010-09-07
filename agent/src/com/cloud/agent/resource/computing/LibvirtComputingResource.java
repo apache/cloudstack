@@ -1311,7 +1311,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
          try {
 			StoragePool secondaryStoragePool = getNfsSPbyURI(_conn, new URI(secondaryStoragePoolURL));
 			String ssPmountPath = _mountPoint + File.separator + secondaryStoragePool.getUUIDString();
-			snapshotDestPath = ssPmountPath + File.separator + dcId + File.separator + "snapshots" + File.separator + accountId + File.separator + volumeId; 
+			snapshotDestPath = ssPmountPath + File.separator + "snapshots" + File.separator +  dcId + File.separator + accountId + File.separator + volumeId; 
 			Script command = new Script(_manageSnapshotPath, _timeout, s_logger);
 			command.add("-b", snapshotPath);
 			command.add("-n", snapshotName);
@@ -1367,7 +1367,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	try {
     		StoragePool secondaryStoragePool = getNfsSPbyURI(_conn, new URI(cmd.getSecondaryStoragePoolURL()));
 			String ssPmountPath = _mountPoint + File.separator + secondaryStoragePool.getUUIDString();
-			String snapshotDestPath = ssPmountPath + File.separator + dcId + File.separator + "snapshots" + File.separator + accountId + File.separator + volumeId;
+			String snapshotDestPath = ssPmountPath + File.separator + "snapshots"  + File.separator + dcId + File.separator + accountId + File.separator + volumeId;
 			
 			final Script command = new Script(_manageSnapshotPath, _timeout, s_logger);
 			command.add("-d", snapshotDestPath);
@@ -1389,11 +1389,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	try {
     		StoragePool secondaryStoragePool = getNfsSPbyURI(_conn, new URI(cmd.getSecondaryStoragePoolURL()));
 			String ssPmountPath = _mountPoint + File.separator + secondaryStoragePool.getUUIDString();
-			String snapshotDestPath = ssPmountPath + File.separator + dcId + File.separator + "snapshots" + File.separator + accountId + File.separator + volumeId;
+			String snapshotDestPath = ssPmountPath + File.separator + "snapshots" + File.separator +  dcId + File.separator + accountId + File.separator + volumeId;
 			
 			final Script command = new Script(_manageSnapshotPath, _timeout, s_logger);
 			command.add("-d", snapshotDestPath);
 			command.add("-n", cmd.getSnapshotName());
+			command.add("-f");
 			command.execute();
     	} catch (LibvirtException e) {
     		return new Answer(cmd, false, e.toString());
