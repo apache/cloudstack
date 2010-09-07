@@ -24,6 +24,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase;
@@ -44,7 +45,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 	 private String _setupAgentPath;
 	 private ConfigurationDao _configDao;
 	 private String _hostIp;
-	 private int _waitTime = 10;
+	 private int _waitTime = 3; /*wait for 3 minutes*/
 	 @Inject HostDao _hostDao = null;
 	 
 	@Override
@@ -244,6 +245,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 		for (int i = 0 ; i < _waitTime; i++) {
 			
 			if (host.getStatus() != Status.Up) {
+				s_logger.debug("Wait host comes back, try: " + i);
 				try {
 					Thread.sleep(60000);
 				} catch (InterruptedException e) {
@@ -253,9 +255,11 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 				return;
 			}
 		}
-
+		
+		
+		_hostDao.updateStatus(host, Event.AgentDisconnected, msId);
 		/*Timeout, throw warning msg to user*/
-		throw new DiscoveryException("Agent " + host.getId() + ":" + host.getPublicIpAddress() + " does not come back, It may connect to server later, if not, please check the agent log");
+		throw new DiscoveryException("Host " + host.getId() + ":" + host.getPrivateIpAddress() + " does not come back, It may connect to server later, if not, please check the agent log on this host");
 	}
 	
 	@Override
