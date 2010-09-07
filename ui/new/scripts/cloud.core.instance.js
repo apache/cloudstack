@@ -961,11 +961,11 @@ function clickInstanceGroupHeader($arrowIcon) {
 		    event.stopPropagation();	
 		    var $thisPopup = $vmPopup;		    		
 		    if (currentStepInVmPopup == 1) { //select a template		
-		        // prevent a person from moving on if no templates are selected	    
-//		        if($thisPopup.find("#step1 #template_container .rev_wiztemplistbox_selected").length == 0) {			        
-//		            $thisPopup.find("#step1 #wiz_message").show();
-//		            return false;
-//		        }
+		        // prevent a person from moving on if no templates are selected	  
+		        if($thisPopup.find("#step1 #template_container .rev_wiztemplistbox_selected").length == 0) {			        
+		            $thisPopup.find("#step1 #wiz_message").show();
+		            return false;
+		        }
                    	 
 			    if ($thisPopup.find("#wiz_blank").hasClass("rev_wizmid_selectedtempbut")) {  //ISO
 			        $thisPopup.find("#step3_label").text("Root Disk Offering");
@@ -999,11 +999,11 @@ function clickInstanceGroupHeader($arrowIcon) {
     		
 		    if (currentStepInVmPopup == 2) { //service offering
 		        // prevent a person from moving on if no service offering is selected
-//		        if($thisPopup.find("input:radio[name=service_offering_radio]:checked").length == 0) {
-//		            $thisPopup.find("#step2 #wiz_message #wiz_message_text").text("Please select a service offering to continue");
-//		            $thisPopup.find("#step2 #wiz_message").show();
-//			        return false;
-//			    }
+		        if($thisPopup.find("input:radio[name=service_offering_radio]:checked").length == 0) {
+		            $thisPopup.find("#step2 #wiz_message #wiz_message_text").text("Please select a service offering to continue");
+		            $thisPopup.find("#step2 #wiz_message").show();
+			        return false;
+			    }
                
                 $thisPopup.find("#wizard_review_service_offering").text($thisPopup.find("input:radio[name=service_offering_radio]:checked").next().text());
 
