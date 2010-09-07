@@ -5,17 +5,20 @@
 # $3 : the hostname
 
 wait_for_dnsmasq () {
-  local _pid=$(/sbin/pidof dnsmasq)
+  local _pid=$(pidof dnsmasq)
   for i in 0 1 2 3 4 5 6 7 8 9 10
   do
     sleep 1
-    _pid=$(/sbin/pidof dnsmasq)
+    _pid=$(pidof dnsmasq)
     [ "$_pid" != "" ] && break;
   done
   [ "$_pid" != "" ] && return 0;
   echo "edithosts: timed out waiting for dnsmasq to start"
   return 1
 }
+
+[ ! -f /etc/dhcphosts.txt ] && touch /etc/dhcphosts.txt
+[ ! -f /var/lib/misc/dnsmasq.leases ] && touch /var/lib/misc/dnsmasq.leases
 
 #delete any previous entries from the dhcp hosts file
 sed -i  /$1/d /etc/dhcphosts.txt 
@@ -39,7 +42,7 @@ sed -i  /"$3"/d /etc/hosts
 echo "$2 $3" >> /etc/hosts
 
 # make dnsmasq re-read files
-pid=$(/sbin/pidof dnsmasq)
+pid=$(pidof dnsmasq)
 if [ "$pid" != "" ]
 then
   service dnsmasq restart

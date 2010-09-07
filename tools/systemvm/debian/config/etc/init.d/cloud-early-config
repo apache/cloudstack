@@ -28,10 +28,12 @@ patch() {
   local PATCH_MOUNT=/media/cdrom
   local patchfile=$PATCH_MOUNT/cloud-scripts.tgz
   local md5file=/var/cache/cloud/cloud-scripts-signature
+  local privkey=$PATCH_MOUNT/authorized_keys
   local shouldpatch=false
   mkdir -p $PATCH_MOUNT
   if [ -e /dev/xvdd ]; then
     mount -o ro /dev/xvdd $PATCH_MOUNT
+    [ -f $privkey ] && cp -f $privkey /root/.ssh/ && chmod go-rwx /root/.ssh/authorized_keys
     local oldmd5=
     [ -f ${md5file} ] && oldmd5=$(cat ${md5file})
     local newmd5=
