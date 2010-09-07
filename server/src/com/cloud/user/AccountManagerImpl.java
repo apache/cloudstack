@@ -29,6 +29,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.ListResourceLimitsCmd;
 import com.cloud.api.commands.UpdateResourceLimitCmd;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
@@ -37,6 +38,7 @@ import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.server.Criteria;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.dao.AccountDao;
@@ -261,6 +263,7 @@ public class AccountManagerImpl implements AccountManager {
     
     @Override
     public List<ResourceLimitVO> searchForLimits(Criteria c) {
+        Long id = (Long) c.getCriteria(Criteria.ID);
         Long domainId = (Long) c.getCriteria(Criteria.DOMAINID);
         Long accountId = (Long) c.getCriteria(Criteria.ACCOUNTID);
         ResourceType type = (ResourceType) c.getCriteria(Criteria.TYPE);
@@ -289,6 +292,7 @@ public class AccountManagerImpl implements AccountManager {
         	SearchBuilder<ResourceLimitVO> sb = _resourceLimitDao.createSearchBuilder();
         	sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
         	sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
+            sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
 
         	SearchCriteria<ResourceLimitVO> sc = sb.create();
 
@@ -299,7 +303,11 @@ public class AccountManagerImpl implements AccountManager {
         	if (type != null) {
         		sc.setParameters("type", type);
         	}
-        	
+
+        	if (id != null) {
+        	    sc.setParameters("id", id);
+        	}
+
         	// Listing all limits for an account
         	if (type == null) {
         		//List<ResourceLimitVO> userLimits = _resourceLimitDao.search(sc, searchFilter);
@@ -358,6 +366,74 @@ public class AccountManagerImpl implements AccountManager {
         return limits;
     }
 
+    @Override
+    public List<ResourceLimitVO> searchForLimits(ListResourceLimitsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        Long accountId = null;
+        Account account = (Account)UserContext.current().getAccountObject();
+
+        if ((account == null) ||
+            (account.getType() == Account.ACCOUNT_TYPE_ADMIN) ||
+            (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
+            (account.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN)) {
+
+            if (accountName != null) {
+                // Look up limits for the specified account
+
+                if (domainId == null) {
+                    throw new InvalidParameterValueException("Failed to list limits for account " + accountName + " no domain id specified.");
+                }
+
+                Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                
+                if (userAccount == null) {
+                    throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                } else if (account != null && (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || account.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN)) {
+                    // If this is a non-root admin, make sure that the admin and the user account belong in the same domain or
+                    // that the user account's domain is a child domain of the parent
+                    if (account.getDomainId() != userAccount.getDomainId() && !_domainDao.isChildDomain(account.getDomainId(), userAccount.getDomainId())) {
+                        throw new PermissionDeniedException("You do not have permission to access limits for this account: " + accountName);
+                    }
+                }
+                
+                accountId = userAccount.getId();
+                domainId = null;
+            } else if (domainId != null) {
+                // Look up limits for the specified domain
+                accountId = null;
+            } else if (account == null) {
+                // Look up limits for the ROOT domain
+                domainId = DomainVO.ROOT_DOMAIN;
+            } else {
+                // Look up limits for the admin's account
+                accountId = account.getId();
+                domainId = null;
+            }
+        } else {
+            // Look up limits for the user's account
+            accountId = account.getId();
+            domainId = null;
+        }       
+
+        // Map resource type
+        ResourceType resourceType = null;
+        Integer type = cmd.getResourceType();
+        try {
+            if (type != null) {
+                resourceType = ResourceType.values()[type];
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new InvalidParameterValueException("Invalid resource type " + type + " given.  Please specify a valid resource type.");
+        }
+
+        Criteria c = new Criteria("id", Boolean.FALSE, cmd.getStartIndex(), cmd.getPageSizeVal());
+        c.addCriteria(Criteria.ID, cmd.getId());
+        c.addCriteria(Criteria.DOMAINID, domainId);
+        c.addCriteria(Criteria.ACCOUNTID, accountId);
+        c.addCriteria(Criteria.TYPE, resourceType);
+        return searchForLimits(c);
+    }
 
     @Override
     public ResourceLimitVO updateResourceLimit(UpdateResourceLimitCmd cmd) throws InvalidParameterValueException  {
