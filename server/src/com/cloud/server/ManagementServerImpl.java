@@ -89,6 +89,7 @@ import com.cloud.api.commands.ListPortForwardingServicesByVmCmd;
 import com.cloud.api.commands.ListPortForwardingServicesCmd;
 import com.cloud.api.commands.ListPreallocatedLunsCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
+import com.cloud.api.commands.ListRoutersCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -5318,17 +5319,37 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<DomainRouterVO> searchForRouters(Criteria c) {
-        Filter searchFilter = new Filter(DomainRouterVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+    public List<DomainRouterVO> searchForRouters(ListRoutersCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
+        Long accountId = null;
+        Account account = (Account)UserContext.current().getAccountObject();
 
-        Object[] accountIds = (Object[]) c.getCriteria(Criteria.ACCOUNTID);
-        Object name = c.getCriteria(Criteria.NAME);
-        Object state = c.getCriteria(Criteria.STATE);
-        Object zone = c.getCriteria(Criteria.DATACENTERID);
-        Object pod = c.getCriteria(Criteria.PODID);
-        Object hostId = c.getCriteria(Criteria.HOSTID);
-        Object domainId = c.getCriteria(Criteria.DOMAINID);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
+        // validate domainId before proceeding
+        if (domainId != null) {
+            if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list routers");
+            }
+            if (accountName != null) {
+                Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                if (userAccount != null) {
+                    accountId = userAccount.getId();
+                } else {
+                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find account " + accountName + " in domain " + domainId);
+                }
+            }
+        } else {
+            domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+        }
+
+        Filter searchFilter = new Filter(DomainRouterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        Object name = cmd.getRouterName();
+        Object state = cmd.getState();
+        Object zone = cmd.getZoneId();
+        Object pod = cmd.getPodId();
+        Object hostId = cmd.getHostId();
+        Object keyword = cmd.getKeyword();
 
         SearchBuilder<DomainRouterVO> sb = _routerDao.createSearchBuilder();
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
@@ -5338,7 +5359,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
 
-        if ((accountIds == null) && (domainId != null)) {
+        if ((accountId == null) && (domainId != null)) {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
@@ -5360,8 +5381,8 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("name", "%" + name + "%");
         }
 
-        if (accountIds != null) {
-            sc.setParameters("accountId", accountIds);
+        if (accountId != null) {
+            sc.setParameters("accountId", accountId);
         } else if (domainId != null) {
             DomainVO domain = _domainDao.findById((Long)domainId);
             sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");

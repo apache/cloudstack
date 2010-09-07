@@ -52,6 +52,7 @@ import com.cloud.api.commands.ListPortForwardingServicesByVmCmd;
 import com.cloud.api.commands.ListPortForwardingServicesCmd;
 import com.cloud.api.commands.ListPreallocatedLunsCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
+import com.cloud.api.commands.ListRoutersCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -1196,10 +1197,10 @@ public interface ManagementServer {
     /**
      * Obtains a list of routers by the specified search criteria.
      * Can search by: "userId", "name", "state", "dataCenterId", "podId", "hostId"
-     * @param c
+     * @param cmd
      * @return List of DomainRouters.
      */
-    List<DomainRouterVO> searchForRouters(Criteria c);
+    List<DomainRouterVO> searchForRouters(ListRoutersCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
     List<ConsoleProxyVO> searchForConsoleProxy(Criteria c);
     
@@ -1492,15 +1493,6 @@ public interface ManagementServer {
      * @return LimitVO object
      */
     ResourceLimitVO findLimitById(long limitId);
-    
-    /**
-     * Searches for Limits.
-     * @param domainId
-     * @param accountId
-     * @param type
-     * @return a list of Limits
-     */
-//    List<ResourceLimitVO> searchForLimits(Criteria c);
     
     /**
 	 * Finds the correct limit for an account. I.e. if an account's limit is not present, it will check the account's domain, and as a last resort use the global limit.
