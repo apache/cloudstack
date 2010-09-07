@@ -988,6 +988,90 @@ a:visited {
 	color:#FFF;
 }
 
+.revwiz_loadingbox {
+	width:180px;
+	height:50px;
+	position:absolute;
+	background:#FFF repeat top left;
+	border:1px solid #999;
+	z-index:1100;
+	top:47%;
+	left:45%;
+}
+
+.revwiz_loadingbox p{
+	width:auto;
+	height:auto;
+	float:left;
+	text-align:left;
+	color:#666;
+	font-weight:normal;
+	font-size:25px;
+	margin:10px 0 0 20px;
+	display:inline;
+}
+
+
+.revwiz_message_container {
+	width:300px;
+	height:auto;
+	position:absolute;
+	background:url(../images/loading_messagebg.gif) #d3d3d3 repeat-x top left;
+	border:1px solid #CCC;
+	z-index:1100;
+	top:47%;
+	left:45%;
+	display:inline;
+	margin:0;
+	padding:0;
+}
+
+
+.revwiz_message_top {
+	width:99%;
+	height:auto;
+	float:left;
+	margin:0;
+	padding:2px 5px 0 5px;
+	overflow:hidden;
+}
+
+.revwiz_message_top p {
+	width:auto;
+	height:25px;
+	margin:0;
+	padding:0;
+	color:#333;
+	text-align:left;
+	font-weight:normal;
+	font-size:11px;
+	display:inline;
+}
+
+.revwiz_message_bottom {
+	width:100%;
+	height:20px;
+	float:left;
+	margin:0;
+	padding:0;
+	
+}
+
+
+.revwizcontinue_button {
+	width:60px;
+	height:17px;
+	float:right;
+	margin-right:5px;
+	padding:0;
+	background:url(../images/vm_continuebutton.gif) no-repeat top left;
+	text-decoration:none;
+}
+
+.revwizcontinue_button:hover {
+	background:url(../images/vm_continuebutton_hover.gif) no-repeat top left;
+}
+
 .revwiz_formcontent_title {
 	width:800px;
 	height:auto;
