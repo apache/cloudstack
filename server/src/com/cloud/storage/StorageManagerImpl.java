@@ -1963,8 +1963,6 @@ public class StorageManagerImpl implements StorageManager {
     {
         boolean destroyVolumes = false;
         long count = 1;
-        long consoleProxyId = 0;
-        long ssvmId = 0;
         try 
         {
         	//1. Get the primary storage record
@@ -2023,9 +2021,20 @@ public class StorageManagerImpl implements StorageManager {
         				{
         					if(destroyVolumes)
         					{
-        						//proxy vm is stopped, and we have another ps available 
-        						//get the id for restart
-        						consoleProxyId = vmInstance.getId();        						
+        						//create a dummy event
+        						long eventId1 = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_START, "starting console proxy with Id: "+vmInstance.getId());
+        						
+        						//Restore config val for consoleproxy.restart to true
+        						_configMgr.updateConfiguration(userId, "consoleproxy.restart", "true");
+        						
+        						if(_consoleProxyMgr.startProxy(vmInstance.getId(), eventId1)==null)
+        						{
+        							s_logger.warn("There was an error starting the console proxy id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance");
+        			            	primaryStorage.setStatus(Status.ErrorInMaintenance);
+        			        		_storagePoolDao.persist(primaryStorage);
+        							return false;				
+        						}
+        						  						
         					}
         				}
         			}
@@ -2064,9 +2073,15 @@ public class StorageManagerImpl implements StorageManager {
         				{
         					if(destroyVolumes)
         					{
-        						//ss vm is stopped, and we have another ps available 				
-        						//get the id for restart
-        						ssvmId = vmInstance.getId();
+        						//create a dummy event and restart the ssvm immediately
+        						long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_START, "starting ssvm with Id: "+vmInstance.getId());
+        						if(_secStorageMgr.startSecStorageVm(vmInstance.getId(), eventId)==null)
+        						{
+        							s_logger.warn("There was an error starting the ssvm id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance");
+        			            	primaryStorage.setStatus(Status.ErrorInMaintenance);
+        			        		_storagePoolDao.persist(primaryStorage);
+        							return false;
+        						}
         					}
         				}
 
@@ -2100,34 +2115,7 @@ public class StorageManagerImpl implements StorageManager {
         		_volsDao.remove(vol.getId());
         	}
         	
-        	//5. Restart all the system vms conditionally
-        	if(destroyVolumes) //this means we have another ps. Ok to restart
-        	{
-				//create a dummy event
-				long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_START, "starting ssvm with Id: "+ssvmId);
-				if(_secStorageMgr.startSecStorageVm(ssvmId, eventId)==null)
-				{
-					s_logger.warn("There was an error starting the ssvm id: "+ssvmId+" on another storage pool, cannot enable primary storage maintenance");
-	            	primaryStorage.setStatus(Status.ErrorInMaintenance);
-	        		_storagePoolDao.persist(primaryStorage);
-					return false;
-				}
-				
-				//create a dummy event
-				long eventId1 = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_START, "starting console proxy with Id: "+consoleProxyId);
-				
-				//Restore config val for consoleproxy.restart to true
-				_configMgr.updateConfiguration(userId, "consoleproxy.restart", "true");
-				
-				if(_consoleProxyMgr.startProxy(consoleProxyId, eventId1)==null)
-				{
-					s_logger.warn("There was an error starting the console proxy id: "+consoleProxyId+" on another storage pool, cannot enable primary storage maintenance");
-	            	primaryStorage.setStatus(Status.ErrorInMaintenance);
-	        		_storagePoolDao.persist(primaryStorage);
-					return false;				}
-        	}
-        	
-        	//6. Update the status
+        	//5. Update the status
         	primaryStorage.setStatus(Status.Maintenance);
         	_storagePoolDao.persist(primaryStorage);
         	
