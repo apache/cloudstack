@@ -171,7 +171,8 @@ def ifaces():
 
 def ip(iface):
     status,lines = commands.getstatusoutput('LANG=C /sbin/ip address show %s'%iface)
-    assert status == 0
+    if status != 0: return False
+    #used to say: assert status == 0 but it caused a bug in ifaces without IP
     lines = [ l for l in lines.splitlines() if l.startswith('    inet ') ]
     if not lines: return None
     toks = lines[0].split()

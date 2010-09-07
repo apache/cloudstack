@@ -165,6 +165,14 @@ function createURL(url) {
     return url +"&response=json&sessionkey=" + g_sessionKey;
 }
 
+function fromdb(val) {
+    return sanitizeXSS(unescape(noNull(val)));
+}
+
+function todb(val) {
+    return encodeURIComponent(escape(display));
+}
+
 
 
 
@@ -790,16 +798,16 @@ function sanitizeXSS(val) {
 
 function getVmName(p_vmName, p_vmDisplayname) {
     if(p_vmDisplayname == null)
-        return sanitizeXSS(p_vmName);
+        return sanitizeXSS(unescape(p_vmName));
     var vmName = null;
 	if (isAdmin()) {
 		if (p_vmDisplayname != p_vmName) {
-			vmName = p_vmName + "(" + sanitizeXSS(p_vmDisplayname) + ")";
+			vmName = p_vmName + "(" + sanitizeXSS(unescape(p_vmDisplayname)) + ")";
 		} else {
 			vmName = p_vmName;
 		}
 	} else {
-		vmName = sanitizeXSS(p_vmDisplayname);
+		vmName = sanitizeXSS(unescape(p_vmDisplayname));
 	}
 	return vmName;
 }

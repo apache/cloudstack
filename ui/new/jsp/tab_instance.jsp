@@ -15,7 +15,7 @@
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
         <img src="images/instancetitle_icons.gif" alt="Instance" /></div>
-    <h1 id="vm_name">
+    <h1 id="vm_name">Instance
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
@@ -30,7 +30,8 @@
         <div class="content_tabs off">
             <%=t.t("Statistics")%></div>
     </div>
-    <div class="grid_container">
+    <!--VM details start here-->
+    <div class="grid_container" style="display:none;">
         <div class="grid_rows odd">
             <div class="vm_statusbox">
                 <div class="vm_consolebox">
@@ -138,6 +139,52 @@
                 </div>
             </div>
         </div>
+    </div>
+    <!--VM details ends here-->
+    
+    <!--Volume start here-->
+    <div class="grid_container" style="display:block;">
+    	<div class="grid_header">
+        	<div class="grid_header_title">i-2-7-JW</div>
+            <div class="grid_actionbox"></div>
+        </div>
+        <div class="grid_rows even">
+            <div class="grid_row_cell" style="width: 20%;">
+                <div class="row_celltitles">
+                    ID:</div>
+            </div>
+            <div class="grid_row_cell" style="width: 79%;">
+                <div class="row_celltitles">6</div>
+            </div>
+        </div>
+        <div class="grid_rows odd">
+            <div class="grid_row_cell" style="width: 20%;">
+                <div class="row_celltitles">
+                    Type:</div>
+            </div>
+            <div class="grid_row_cell" style="width: 79%;">
+                <div class="row_celltitles">Root (Shared)</div>
+            </div>
+        </div>
+        <div class="grid_rows even">
+            <div class="grid_row_cell" style="width: 20%;">
+                <div class="row_celltitles">
+                    Size:</div>
+            </div>
+            <div class="grid_row_cell" style="width: 79%;">
+                <div class="row_celltitles">8 GB</div>
+            </div>
+        </div>
+        <div class="grid_rows odd">
+            <div class="grid_row_cell" style="width: 20%;">
+                <div class="row_celltitles">
+                    Created:</div>
+            </div>
+            <div class="grid_row_cell" style="width: 79%;">
+                <div class="row_celltitles">09/03/2010  15:06:04</div>
+            </div>
+        </div>
+    
     </div>
 </div>
 <!-- VM detail panel (end) -->

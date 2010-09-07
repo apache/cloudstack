@@ -1467,7 +1467,7 @@ a:visited {
 	height:auto;
 	float:left;
 	margin:0 0 5px 10px;
-	padding:0;
+	padding:0 0 10px 0;
 	list-style:none;
 }
 
@@ -1479,7 +1479,7 @@ a:visited {
 	color:#CCC;
 	font-size:11px;
 	font-weight:normal;
-	margin:6px 0 0 0;
+	margin:8px 0 0 0;
 	padding:0;
 	list-style:none;
 }
@@ -1998,7 +1998,39 @@ a:visited {
 	color:#a90000;
 }
 
-.thanks box {
-		
+.grid_header {
+	width:100%;
+	height:20px;
+	float:left;
+	background:url(../images/grid_headerbg.gif) repeat-x top left;
+	margin:0;
+	padding:0;
 }
 
+.grid_header_title {
+	width:auto;
+	height:auto;
+	float:left;
+	margin:4px 0 0 10px;
+	display:inline;
+	color:#434343;
+	text-align:left;
+	font-weight:bold;
+	font-size:11px;
+	padding:0;
+}
+
+.grid_actionbox {
+	width:33px;
+	height:15px;
+	float:right;
+	background:url(../images/gird_actions.gif) no-repeat top left;
+	margin:2px 10px 0 0;
+	padding:0;
+	cursor:pointer;
+	cursor:hand;
+}
+
+.grid_actionbox:hover {
+	background:url(../images/gird_actions_hover.gif) no-repeat top left;
+}
