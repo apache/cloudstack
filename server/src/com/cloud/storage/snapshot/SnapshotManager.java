@@ -23,6 +23,7 @@ import com.cloud.api.commands.CreateSnapshotPolicyCmd;
 import com.cloud.api.commands.DeleteSnapshotCmd;
 import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
+import com.cloud.api.commands.ListSnapshotPoliciesCmd;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -121,6 +122,13 @@ public interface SnapshotManager extends Manager {
      * List all policies which are assigned to the specified volume
      */
     List<SnapshotPolicyVO> listPoliciesforVolume(long volumeId);
+
+    /**
+     * list all snapshot policies assigned to the specified volume
+     * @param cmd the command that specifies the volume criteria
+     * @return list of snapshot policies
+     */
+    List<SnapshotPolicyVO> listPoliciesforVolume(ListSnapshotPoliciesCmd cmd) throws InvalidParameterValueException;
     
     /**
      * List all policies to which a specified snapshot belongs. For ex: A snapshot 

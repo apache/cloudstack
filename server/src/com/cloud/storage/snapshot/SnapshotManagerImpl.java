@@ -47,6 +47,7 @@ import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeleteSnapshotCmd;
 import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
+import com.cloud.api.commands.ListSnapshotPoliciesCmd;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -779,22 +780,16 @@ public class SnapshotManagerImpl implements SnapshotManager {
         
     }
     
-    protected Long checkAccountPermissions(long targetAccountId,long targetDomainId,String targetDesc,long targetId) throws ServerApiException
-	{
+    private Long checkAccountPermissions(long targetAccountId,long targetDomainId,String targetDesc,long targetId) throws ServerApiException {
     	Long accountId = null;
-	
+
     	Account account = (Account)UserContext.current().getAccountObject();
-    	if (account != null) 
-    	{
-    		if (!isAdmin(account.getType())) 
-    		{
-    			if (account.getId().longValue() != targetAccountId) 
-    			{
+    	if (account != null) {
+    		if (!isAdmin(account.getType())) {
+    			if (account.getId().longValue() != targetAccountId) {
     				throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find a " + targetDesc + " with id " + targetId + " for this account");
     			}
-    		} 
-    		else if (!_domainDao.isChildDomain(account.getDomainId(), targetDomainId)) 
-    		{
+    		} else if (!_domainDao.isChildDomain(account.getDomainId(), targetDomainId)) {
     			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to perform operation for " + targetDesc + " with id " + targetId + ", permission denied.");
     		}
     		accountId = account.getId();
@@ -1294,6 +1289,17 @@ public class SnapshotManagerImpl implements SnapshotManager {
         }
         _eventDao.persist(event);
         return success;
+    }
+
+    @Override
+    public List<SnapshotPolicyVO> listPoliciesforVolume(ListSnapshotPoliciesCmd cmd) throws InvalidParameterValueException {
+        Long volumeId = cmd.getVolumeId();
+        VolumeVO volume = _volsDao.findById(volumeId);
+        if (volume == null) {
+            throw new InvalidParameterValueException("Unable to find a volume with id " + volumeId);
+        }
+        checkAccountPermissions(volume.getAccountId(), volume.getDomainId(), "volume", volumeId);
+        return listPoliciesforVolume(cmd.getVolumeId());
     }
 
     @Override

@@ -19,6 +19,9 @@ public class SnapshotPolicyResponse implements ResponseObject {
     @Param(name="maxsnaps")
     private int maxSnaps;
 
+    @Param(name="timezone")
+    private String timezone;
+
     public Long getId() {
         return id;
     }
@@ -57,5 +60,13 @@ public class SnapshotPolicyResponse implements ResponseObject {
 
     public void setMaxSnaps(int maxSnaps) {
         this.maxSnaps = maxSnaps;
+    }
+
+    public String getTimezone() {
+        return timezone;
+    }
+
+    public void setTimezone(String timezone) {
+        this.timezone = timezone;
     }
 }

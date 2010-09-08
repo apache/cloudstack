@@ -8012,14 +8012,6 @@ public class ManagementServerImpl implements ManagementServer {
 	    return intervalTypes;
 	}
 	
-	@Override
-	public List<SnapshotPolicyVO> listSnapshotPolicies(long volumeId) {
-    	if( _volumeDao.findById(volumeId) == null){
-    		return null;
-    	}
-		return _snapMgr.listPoliciesforVolume(volumeId);
-	}
-    
     @Override
     public boolean isChildDomain(Long parentId, Long childId) {
         return _domainDao.isChildDomain(parentId, childId);

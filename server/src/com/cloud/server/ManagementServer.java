@@ -1810,12 +1810,6 @@ public interface ManagementServer {
     StoragePoolVO findPoolById(Long id);
 	List<? extends StoragePoolVO> searchForStoragePools(Criteria c);
 
-	/**
-	 * List all snapshot policies which are created for the specified volume
-	 * @param volumeId
-	 * @return
-	 */
-	List<SnapshotPolicyVO> listSnapshotPolicies(long volumeId);
 	SnapshotPolicyVO findSnapshotPolicyById(Long policyId);
 
 	/**
