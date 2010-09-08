@@ -57,6 +57,7 @@ import com.cloud.api.commands.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListSnapshotsCmd;
 import com.cloud.api.commands.ListStoragePoolsCmd;
 import com.cloud.api.commands.ListSystemVMsCmd;
+import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -1595,25 +1596,11 @@ public interface ManagementServer {
     List<DiskOfferingVO> findPrivateDiskOffering();
 
     /**
-     * Update the permissions on a template.  A private template can be made public, or individual accounts can be granted permission to launch instances from the template.
-     * @param templateId
-     * @param operation
-     * @param isPublic
-     * @param isFeatured
-     * @param accountNames
-     * @return
-     * @throws InvalidParameterValueException
-     * @throws PermissionDeniedException
-     * @throws InternalErrorException
-     */
-//    boolean updateTemplatePermissions(long templateId, String operation, Boolean isPublic, Boolean isFeatured, List<String> accountNames) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException;
-
-    /**
      * List the permissions on a template.  This will return a list of account names that have been granted permission to launch instances from the template.
-     * @param templateId
+     * @param cmd the command wrapping the search criteria (template id)
      * @return list of account names that have been granted permission to launch instances from the template
      */
-    List<String> listTemplatePermissions(long templateId);
+    List<String> listTemplatePermissions(ListTemplateOrIsoPermissionsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 
     /**
      * List private templates for which the given account/domain has been granted permission to launch instances

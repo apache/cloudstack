@@ -10,7 +10,7 @@ public class ListIsoPermissionsCmd extends ListTemplateOrIsoPermissionsCmd {
     	return "listisopermissionsresponse";
     }
     
-	protected String getMediaType() {
+	public String getMediaType() {
     	return "iso";
     }
 	

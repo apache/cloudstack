@@ -28,7 +28,7 @@ public class ListTemplatePermissionsCmd extends ListTemplateOrIsoPermissionsCmd 
     	return "listtemplatepermissionsresponse";
     }
     
-	protected String getMediaType() {
+	public String getMediaType() {
     	return "template";
     }
 	

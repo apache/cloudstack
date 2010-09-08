@@ -93,6 +93,7 @@ import com.cloud.api.commands.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListSnapshotsCmd;
 import com.cloud.api.commands.ListStoragePoolsCmd;
 import com.cloud.api.commands.ListSystemVMsCmd;
+import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -6861,10 +6862,56 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<String> listTemplatePermissions(long templateId) {
-        List<String> accountNames = new ArrayList<String>();
-        
-        List<LaunchPermissionVO> permissions = _launchPermissionDao.findByTemplate(templateId);
+    public List<String> listTemplatePermissions(ListTemplateOrIsoPermissionsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long domainId = cmd.getDomainId();
+        String acctName = cmd.getAccountName();
+        Long id = cmd.getId();
+        Long accountId = null;
+
+        if ((account == null) || account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+            // validate domainId before proceeding
+            if (domainId != null) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list " + cmd.getMediaType() + " permissions.");
+                }
+                if (acctName != null) {
+                    Account userAccount = _accountDao.findActiveAccount(acctName, domainId);
+                    if (userAccount != null) {
+                        accountId = userAccount.getId();
+                    } else {
+                        throw new PermissionDeniedException("Unable to find account " + acctName + " in domain " + domainId);
+                    }
+                }
+            }
+        } else {
+            accountId = account.getId();
+        }
+
+        VMTemplateVO template = _templateDao.findById(id.longValue());
+        if (template == null || !templateIsCorrectType(template)) {
+            throw new InvalidParameterValueException("unable to find " + cmd.getMediaType() + " with id " + id);
+        }
+
+        if (accountId != null && !template.isPublicTemplate()) {
+            if (account.getType() == Account.ACCOUNT_TYPE_NORMAL && template.getAccountId() != accountId) {
+                throw new PermissionDeniedException("unable to list permissions for " + cmd.getMediaType() + " with id " + id);
+            } else if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+                DomainVO accountDomain = _domainDao.findById(account.getDomainId());
+                Account templateAccount = _accountDao.findById(template.getAccountId());
+                DomainVO templateDomain = _domainDao.findById(templateAccount.getDomainId());                    
+                if (!templateDomain.getPath().contains(accountDomain.getPath())) {
+                    throw new PermissionDeniedException("unable to list permissions for " + cmd.getMediaType() + " with id " + id);
+                }
+            }                                    
+        }
+
+        if (id == Long.valueOf(1)) {
+            throw new PermissionDeniedException("unable to list permissions for " + cmd.getMediaType() + " with id " + id);
+        }
+
+        List<String> accountNames = new ArrayList<String>();        
+        List<LaunchPermissionVO> permissions = _launchPermissionDao.findByTemplate(id);
         if ((permissions != null) && !permissions.isEmpty()) {
             for (LaunchPermissionVO permission : permissions) {
                 Account acct = _accountDao.findById(permission.getAccountId());
