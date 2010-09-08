@@ -57,7 +57,6 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AuthorizeNetworkGroupIngressCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
 import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
-import com.cloud.api.commands.CopyTemplateCmd;
 import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
@@ -100,9 +99,7 @@ import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.RemovePortForwardingServiceCmd;
-import com.cloud.api.commands.StartRouterCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
-import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
@@ -118,8 +115,6 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.async.dao.AsyncJobDao;
-import com.cloud.async.executor.AttachISOParam;
-import com.cloud.async.executor.CopyTemplateParam;
 import com.cloud.async.executor.CreateOrUpdateRuleParam;
 import com.cloud.async.executor.DeleteDomainParam;
 import com.cloud.async.executor.DeleteRuleParam;
@@ -220,7 +215,6 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeStats;
@@ -682,62 +676,62 @@ public class ManagementServerImpl implements ManagementServer {
         }
     }
 
-    @Override
-    public boolean prepareForMaintenance(long hostId) {
-        try {
-            return _agentMgr.maintain(hostId);
-        } catch (AgentUnavailableException e) {
-            return false;
-        }
-    }
+//    @Override
+//    public boolean prepareForMaintenance(long hostId) {
+//        try {
+//            return _agentMgr.maintain(hostId);
+//        } catch (AgentUnavailableException e) {
+//            return false;
+//        }
+//    }
+//
+//    @Override
+//    public long prepareForMaintenanceAsync(long hostId) throws InvalidParameterValueException {
+//    	HostVO host = _hostDao.findById(hostId);
+//    	
+//    	if (host == null) {
+//            s_logger.debug("Unable to find host " + hostId);
+//            throw new InvalidParameterValueException("Unable to find host with ID: " + hostId + ". Please specify a valid host ID.");
+//        }
+//        
+//        if (_hostDao.countBy(host.getPodId(), Status.PrepareForMaintenance, Status.ErrorInMaintenance, Status.Maintenance) > 0) {
+//            throw new InvalidParameterValueException("There are other servers in maintenance mode.");
+//        }
+//        
+//        if (_storageMgr.isLocalStorageActiveOnHost(host)) {
+//        	throw new InvalidParameterValueException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
+//        }
+//    	
+//        Long param = new Long(hostId);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//        job.setUserId(UserContext.current().getUserId());
+//        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
+//        job.setCmd("PrepareMaintenance");
+//        job.setCmdInfo(gson.toJson(param));
+//        job.setCmdOriginator(PrepareForMaintenanceCmd.getResultObjectName());
+//        return _asyncMgr.submitAsyncJob(job);
+//    }
 
-    @Override
-    public long prepareForMaintenanceAsync(long hostId) throws InvalidParameterValueException {
-    	HostVO host = _hostDao.findById(hostId);
-    	
-    	if (host == null) {
-            s_logger.debug("Unable to find host " + hostId);
-            throw new InvalidParameterValueException("Unable to find host with ID: " + hostId + ". Please specify a valid host ID.");
-        }
-        
-        if (_hostDao.countBy(host.getPodId(), Status.PrepareForMaintenance, Status.ErrorInMaintenance, Status.Maintenance) > 0) {
-            throw new InvalidParameterValueException("There are other servers in maintenance mode.");
-        }
-        
-        if (_storageMgr.isLocalStorageActiveOnHost(host)) {
-        	throw new InvalidParameterValueException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
-        }
-    	
-        Long param = new Long(hostId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-        job.setCmd("PrepareMaintenance");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(PrepareForMaintenanceCmd.getResultObjectName());
-        return _asyncMgr.submitAsyncJob(job);
-    }
-
-    @Override
-    public boolean maintenanceCompleted(long hostId) {
-        return _agentMgr.cancelMaintenance(hostId);
-    }
-
-    @Override
-    public long maintenanceCompletedAsync(long hostId) {
-        Long param = new Long(hostId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-        job.setCmd("CompleteMaintenance");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(CancelMaintenanceCmd.getResultObjectName());
-        return _asyncMgr.submitAsyncJob(job);
-    }
+//    @Override
+//    public boolean maintenanceCompleted(long hostId) {
+//        return _agentMgr.cancelMaintenance(hostId);
+//    }
+//
+//    @Override
+//    public long maintenanceCompletedAsync(long hostId) {
+//        Long param = new Long(hostId);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//        job.setUserId(UserContext.current().getUserId());
+//        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
+//        job.setCmd("CompleteMaintenance");
+//        job.setCmdInfo(gson.toJson(param));
+//        job.setCmdOriginator(CancelMaintenanceCmd.getResultObjectName());
+//        return _asyncMgr.submitAsyncJob(job);
+//    }
 
     @Override
     public String updateAdminPassword(long userId, String oldPassword, String newPassword) {
@@ -1916,77 +1910,77 @@ public class ManagementServerImpl implements ManagementServer {
 //        return succeed;
 //    }
 
-    @Override
-    public void attachVolumeToVM(long vmId, long volumeId, Long deviceId, long startEventId) throws InternalErrorException {
-        _vmMgr.attachVolumeToVM(vmId, volumeId, deviceId, startEventId);
-    }
-
-    @Override
-    public long attachVolumeToVMAsync(long vmId, long volumeId, Long deviceId) throws InvalidParameterValueException {
-        VolumeVO volume = _volumeDao.findById(volumeId);
-
-        // Check that the volume is a data volume
-        if (volume == null || volume.getVolumeType() != VolumeType.DATADISK) {
-            throw new InvalidParameterValueException("Please specify a valid data volume.");
-        }
-
-        // Check that the volume is stored on shared storage
-        if (!_storageMgr.volumeOnSharedStoragePool(volume)) {
-            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
-        }
-
-        // Check that the VM is a UserVM
-        UserVmVO vm = _userVmDao.findById(vmId);
-        if (vm == null || vm.getType() != VirtualMachine.Type.User) {
-            throw new InvalidParameterValueException("Please specify a valid User VM.");
-        }
-        
-        // Check that the VM is in the correct state
-        if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
-        	throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
-        }
-
-        // Check that the volume is not currently attached to any VM
-        if (volume.getInstanceId() != null) {
-            throw new InvalidParameterValueException("Please specify a volume that is not attached to any VM.");
-        }
-
-        // Check that the volume is not destroyed
-        if (volume.getDestroyed()) {
-            throw new InvalidParameterValueException("Please specify a volume that is not destroyed.");
-        }
-
-        // Check that the VM has less than 6 data volumes attached
-        List<VolumeVO> existingDataVolumes = _volumeDao.findByInstanceAndType(vmId, VolumeType.DATADISK);
-        if (existingDataVolumes.size() >= 6) {
-            throw new InvalidParameterValueException("The specified VM already has the maximum number of data disks (6). Please specify another VM.");
-        }
-        
-        // Check that the VM and the volume are in the same zone
-        if (vm.getDataCenterId() != volume.getDataCenterId()) {
-        	throw new InvalidParameterValueException("Please specify a VM that is in the same zone as the volume.");
-        }
-        long eventId = EventUtils.saveScheduledEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_ATTACH, "attaching volume: "+volumeId+" to Vm: "+vmId);
-        VolumeOperationParam param = new VolumeOperationParam();
-        param.setUserId(1);
-        param.setAccountId(volume.getAccountId());
-        param.setOp(VolumeOp.Attach);
-        param.setVmId(vmId);
-        param.setVolumeId(volumeId);
-        param.setEventId(eventId);
-        param.setDeviceId(deviceId);
-
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(vm.getAccountId());
-        job.setCmd("VolumeOperation");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator("virtualmachine");
-        
-        return _asyncMgr.submitAsyncJob(job);
-    }
+//    @Override
+//    public void attachVolumeToVM(long vmId, long volumeId, Long deviceId, long startEventId) throws InternalErrorException {
+//        _vmMgr.attachVolumeToVM(vmId, volumeId, deviceId, startEventId);
+//    }
+//
+//    @Override
+//    public long attachVolumeToVMAsync(long vmId, long volumeId, Long deviceId) throws InvalidParameterValueException {
+//        VolumeVO volume = _volumeDao.findById(volumeId);
+//
+//        // Check that the volume is a data volume
+//        if (volume == null || volume.getVolumeType() != VolumeType.DATADISK) {
+//            throw new InvalidParameterValueException("Please specify a valid data volume.");
+//        }
+//
+//        // Check that the volume is stored on shared storage
+//        if (!_storageMgr.volumeOnSharedStoragePool(volume)) {
+//            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
+//        }
+//
+//        // Check that the VM is a UserVM
+//        UserVmVO vm = _userVmDao.findById(vmId);
+//        if (vm == null || vm.getType() != VirtualMachine.Type.User) {
+//            throw new InvalidParameterValueException("Please specify a valid User VM.");
+//        }
+//        
+//        // Check that the VM is in the correct state
+//        if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
+//        	throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
+//        }
+//
+//        // Check that the volume is not currently attached to any VM
+//        if (volume.getInstanceId() != null) {
+//            throw new InvalidParameterValueException("Please specify a volume that is not attached to any VM.");
+//        }
+//
+//        // Check that the volume is not destroyed
+//        if (volume.getDestroyed()) {
+//            throw new InvalidParameterValueException("Please specify a volume that is not destroyed.");
+//        }
+//
+//        // Check that the VM has less than 6 data volumes attached
+//        List<VolumeVO> existingDataVolumes = _volumeDao.findByInstanceAndType(vmId, VolumeType.DATADISK);
+//        if (existingDataVolumes.size() >= 6) {
+//            throw new InvalidParameterValueException("The specified VM already has the maximum number of data disks (6). Please specify another VM.");
+//        }
+//        
+//        // Check that the VM and the volume are in the same zone
+//        if (vm.getDataCenterId() != volume.getDataCenterId()) {
+//        	throw new InvalidParameterValueException("Please specify a VM that is in the same zone as the volume.");
+//        }
+//        long eventId = EventUtils.saveScheduledEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_ATTACH, "attaching volume: "+volumeId+" to Vm: "+vmId);
+//        VolumeOperationParam param = new VolumeOperationParam();
+//        param.setUserId(1);
+//        param.setAccountId(volume.getAccountId());
+//        param.setOp(VolumeOp.Attach);
+//        param.setVmId(vmId);
+//        param.setVolumeId(volumeId);
+//        param.setEventId(eventId);
+//        param.setDeviceId(deviceId);
+//
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//        job.setUserId(UserContext.current().getUserId());
+//        job.setAccountId(vm.getAccountId());
+//        job.setCmd("VolumeOperation");
+//        job.setCmdInfo(gson.toJson(param));
+//        job.setCmdOriginator("virtualmachine");
+//        
+//        return _asyncMgr.submitAsyncJob(job);
+//    }
 
 //    @Override
 //    public void detachVolumeFromVM(long volumeId, long startEventId) throws InternalErrorException {
@@ -8451,67 +8445,67 @@ public class ManagementServerImpl implements ManagementServer {
 			return false;
 	}
 
-	public boolean preparePrimaryStorageForMaintenance(long primaryStorageId, long userId) {
-		return	_storageMgr.preparePrimaryStorageForMaintenance(primaryStorageId, userId);
-
-	}
-
-	public long preparePrimaryStorageForMaintenanceAsync(long primaryStorageId) throws InvalidParameterValueException 
-	{
-    	StoragePoolVO primaryStorage = _poolDao.findById(primaryStorageId);
-    	
-    	if (primaryStorage == null) {
-            s_logger.debug("Unable to find primary storage id: " + primaryStorageId);
-            throw new InvalidParameterValueException("Unable to find storage pool with ID: " + primaryStorageId + ". Please specify a valid primary storage ID.");
-        }
-        
-        if (_poolDao.countBy(primaryStorage.getId(), Status.PrepareForMaintenance, Status.ErrorInMaintenance, Status.Maintenance) > 0) {
-            throw new InvalidParameterValueException("There are other primary storages in maintenance mode.");
-        }
-        
-        //set the state to maintenance
-        primaryStorage.setStatus(Status.PrepareForMaintenance);
-        _poolDao.persist(primaryStorage);
-        
-        Long param = new Long(primaryStorageId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-        job.setCmd("PreparePrimaryStorageMaintenance");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(PreparePrimaryStorageForMaintenanceCmd.getResultObjectName());
-        return _asyncMgr.submitAsyncJob(job);
-
-	}
+//	public boolean preparePrimaryStorageForMaintenance(long primaryStorageId, long userId) {
+//		return	_storageMgr.preparePrimaryStorageForMaintenance(primaryStorageId, userId);
+//
+//	}
+//
+//	public long preparePrimaryStorageForMaintenanceAsync(long primaryStorageId) throws InvalidParameterValueException 
+//	{
+//    	StoragePoolVO primaryStorage = _poolDao.findById(primaryStorageId);
+//    	
+//    	if (primaryStorage == null) {
+//            s_logger.debug("Unable to find primary storage id: " + primaryStorageId);
+//            throw new InvalidParameterValueException("Unable to find storage pool with ID: " + primaryStorageId + ". Please specify a valid primary storage ID.");
+//        }
+//        
+//        if (_poolDao.countBy(primaryStorage.getId(), Status.PrepareForMaintenance, Status.ErrorInMaintenance, Status.Maintenance) > 0) {
+//            throw new InvalidParameterValueException("There are other primary storages in maintenance mode.");
+//        }
+//        
+//        //set the state to maintenance
+//        primaryStorage.setStatus(Status.PrepareForMaintenance);
+//        _poolDao.persist(primaryStorage);
+//        
+//        Long param = new Long(primaryStorageId);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//        job.setUserId(UserContext.current().getUserId());
+//        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
+//        job.setCmd("PreparePrimaryStorageMaintenance");
+//        job.setCmdInfo(gson.toJson(param));
+//        job.setCmdOriginator(PreparePrimaryStorageForMaintenanceCmd.getResultObjectName());
+//        return _asyncMgr.submitAsyncJob(job);
+//
+//	}
 	
-    public boolean cancelPrimaryStorageMaintenance(long primaryStorageId, long userId)
-    {
-		return	_storageMgr.cancelPrimaryStorageForMaintenance(primaryStorageId, userId);
-    }
-	
-	public long cancelPrimaryStorageMaintenanceAsync(long primaryStorageId) throws InvalidParameterValueException 
-	{
-    	StoragePoolVO primaryStorage = _poolDao.findById(primaryStorageId);
-    	
-    	if (primaryStorage == null) {
-            s_logger.debug("Unable to find primary storage id: " + primaryStorageId);
-            throw new InvalidParameterValueException("Unable to find storage pool with ID: " + primaryStorageId + ". Please specify a valid primary storage ID.");
-        }
-        
-        Long param = new Long(primaryStorageId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-        job.setCmd("CancelPrimaryStorageMaintenance");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(CancelPrimaryStorageMaintenanceCmd.getResultObjectName());
-        return _asyncMgr.submitAsyncJob(job);
-
-	}
+//    public boolean cancelPrimaryStorageMaintenance(long primaryStorageId, long userId)
+//    {
+//		return	_storageMgr.cancelPrimaryStorageForMaintenance(primaryStorageId, userId);
+//    }
+//	
+//	public long cancelPrimaryStorageMaintenanceAsync(long primaryStorageId) throws InvalidParameterValueException 
+//	{
+//    	StoragePoolVO primaryStorage = _poolDao.findById(primaryStorageId);
+//    	
+//    	if (primaryStorage == null) {
+//            s_logger.debug("Unable to find primary storage id: " + primaryStorageId);
+//            throw new InvalidParameterValueException("Unable to find storage pool with ID: " + primaryStorageId + ". Please specify a valid primary storage ID.");
+//        }
+//        
+//        Long param = new Long(primaryStorageId);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//        job.setUserId(UserContext.current().getUserId());
+//        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
+//        job.setCmd("CancelPrimaryStorageMaintenance");
+//        job.setCmdInfo(gson.toJson(param));
+//        job.setCmdOriginator(CancelPrimaryStorageMaintenanceCmd.getResultObjectName());
+//        return _asyncMgr.submitAsyncJob(job);
+//
+//	}
 
 	@Override
 	public boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException {

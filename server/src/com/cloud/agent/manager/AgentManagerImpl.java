@@ -73,7 +73,9 @@ import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AddHostOrStorageCmd;
+import com.cloud.api.commands.CancelMaintenanceCmd;
 import com.cloud.api.commands.DeleteHostCmd;
+import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
 import com.cloud.api.commands.UpdateHostCmd;
 import com.cloud.capacity.CapacityVO;
@@ -117,6 +119,7 @@ import com.cloud.resource.Discoverer;
 import com.cloud.resource.ServerResource;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
@@ -218,6 +221,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
     @Inject
     protected UpgradeManager _upgradeMgr = null;
+    
+    @Inject
+    protected StorageManager _storageMgr = null;
 
     protected int _retry = 2;
 
@@ -1321,6 +1327,19 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         disconnect(hostId, Event.ResetRequested, false);
         return true;
     }
+    
+    @Override
+    public boolean cancelMaintenance(CancelMaintenanceCmd cmd) throws InvalidParameterValueException{
+    	Long hostId = cmd.getId();
+    	
+        //verify input parameters
+    	HostVO host = _hostDao.findById(hostId);
+    	if (host == null || host.getRemoved() != null) {
+    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Host with id " + hostId.toString() + " doesn't exist");
+    	}
+    	
+    	return cancelMaintenance(hostId);
+    }
 
     @Override
     public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException {
@@ -1409,6 +1428,31 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
 
         return true;
+    }
+    
+    @Override
+    public boolean maintain(PrepareForMaintenanceCmd cmd) throws InvalidParameterValueException {
+    	Long hostId = cmd.getId();
+    	HostVO host = _hostDao.findById(hostId);
+    	
+    	if (host == null) {
+            s_logger.debug("Unable to find host " + hostId);
+            throw new InvalidParameterValueException("Unable to find host with ID: " + hostId + ". Please specify a valid host ID.");
+        }
+        
+        if (_hostDao.countBy(host.getPodId(), Status.PrepareForMaintenance, Status.ErrorInMaintenance, Status.Maintenance) > 0) {
+            throw new InvalidParameterValueException("There are other servers in maintenance mode.");
+        }
+        
+        if (_storageMgr.isLocalStorageActiveOnHost(host)) {
+        	throw new InvalidParameterValueException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
+        }
+        
+        try{
+        	return maintain(hostId);
+        }catch (AgentUnavailableException e) {
+        	return false;
+        }
     }
 
     public boolean checkCIDR(Host.Type type, HostPodVO pod,  String serverPrivateIP, String serverPrivateNetmask) {

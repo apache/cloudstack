@@ -64,6 +64,7 @@ import com.cloud.agent.manager.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.AttachVolumeCmd;
 import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.DestroyVMCmd;
 import com.cloud.api.commands.DetachVolumeCmd;
@@ -344,10 +345,86 @@ public class UserVmManagerImpl implements UserVmManager {
     }
     
     @Override
-    public void attachVolumeToVM(long vmId, long volumeId, Long deviceId, long startEventId) throws InternalErrorException {
-    	VolumeVO volume = _volsDao.findById(volumeId);
-    	UserVmVO vm = _vmDao.findById(vmId);
+    public void attachVolumeToVM(AttachVolumeCmd command) throws InternalErrorException, InvalidParameterValueException {
+    	Long vmId = command.getVirtualMachineId();
+    	Long volumeId = command.getId();
+    	Long deviceId = command.getDeviceId();
+    	Account account = (Account)UserContext.current().getAccountObject();
     	
+    	// Check that the volume ID is valid
+    	VolumeVO volume = _volsDao.findById(volumeId);
+        // Check that the volume is a data volume
+        if (volume == null || volume.getVolumeType() != VolumeType.DATADISK) {
+            throw new InvalidParameterValueException("Please specify a valid data volume.");
+        }
+
+        // Check that the volume is stored on shared storage
+        if (!_storageMgr.volumeOnSharedStoragePool(volume)) {
+            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
+        }
+        
+        // Check that the volume is not currently attached to any VM
+        if (volume.getInstanceId() != null) {
+            throw new InvalidParameterValueException("Please specify a volume that is not attached to any VM.");
+        }
+
+        // Check that the volume is not destroyed
+        if (volume.getDestroyed()) {
+            throw new InvalidParameterValueException("Please specify a volume that is not destroyed.");
+        }
+
+    	// Check that the virtual machine ID is valid and it's a user vm
+    	UserVmVO vm = _vmDao.findById(vmId);
+    	if (vm == null || vm.getType() != VirtualMachine.Type.User) {
+            throw new InvalidParameterValueException("Please specify a valid User VM.");
+        }
+    	
+        // Check that the VM is in the correct state
+        if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
+        	throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
+        }
+
+        // Check that the device ID is valid
+        if( deviceId != null ) {
+            if(deviceId.longValue() == 0) {
+                throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, "deviceId can't be 0, which is used by Root device");
+            }
+        }
+        
+        // Check that the VM has less than 6 data volumes attached
+        List<VolumeVO> existingDataVolumes = _volsDao.findByInstanceAndType(vmId, VolumeType.DATADISK);
+        if (existingDataVolumes.size() >= 6) {
+            throw new InvalidParameterValueException("The specified VM already has the maximum number of data disks (6). Please specify another VM.");
+        }
+        
+        // Check that the VM and the volume are in the same zone
+        if (vm.getDataCenterId() != volume.getDataCenterId()) {
+        	throw new InvalidParameterValueException("Please specify a VM that is in the same zone as the volume.");
+        }
+        
+        //Verify account information
+        if (volume.getAccountId() != vm.getAccountId()) {
+        	throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, "virtual machine and volume belong to different accounts, can not attach");
+        }
+    	
+    	// If the account is not an admin, check that the volume and the virtual machine are owned by the account that was passed in
+    	if (account != null) {
+    	    if (!isAdmin(account.getType())) {
+                if (account.getId().longValue() != volume.getAccountId())
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
+
+                if (account.getId().longValue() != vm.getAccountId())
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find VM with ID: " + vmId + " for account: " + account.getAccountName());
+    	    } else {
+    	        if (!_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId()) ||
+    	            !_domainDao.isChildDomain(account.getDomainId(), vm.getDomainId())) {
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to attach volume " + volumeId + " to virtual machine instance " + vmId + ", permission denied.");
+    	        }
+    	    }
+    	}
+
+        long startEventId = EventUtils.saveScheduledEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_ATTACH, "attaching volume: "+volumeId+" to Vm: "+vmId);
+
         EventVO event = new EventVO();
         event.setType(EventTypes.EVENT_VOLUME_ATTACH);
         event.setUserId(1L);

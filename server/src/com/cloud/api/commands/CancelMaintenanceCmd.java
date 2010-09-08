@@ -20,13 +20,13 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 
-@Implementation(method="maintenanceCompleted", manager=Manager.ManagementServer)
-public class CancelMaintenanceCmd extends BaseCmd  {
+@Implementation(method="cancelMaintenance", manager=Manager.AgentManager)
+public class CancelMaintenanceCmd extends BaseAsyncCmd  {
     public static final Logger s_logger = Logger.getLogger(CancelMaintenanceCmd.class.getName());
 
     private static final String s_name = "cancelhostmaintenanceresponse";
@@ -84,4 +84,10 @@ public class CancelMaintenanceCmd extends BaseCmd  {
         return returnValues;
     }
     */
+    
+	@Override
+	public String getResponse() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

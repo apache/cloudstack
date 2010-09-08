@@ -25,7 +25,9 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.commands.AddHostOrStorageCmd;
+import com.cloud.api.commands.CancelMaintenanceCmd;
 import com.cloud.api.commands.DeleteHostCmd;
+import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
 import com.cloud.api.commands.UpdateHostCmd;
 import com.cloud.dc.DataCenterVO;
@@ -199,6 +201,7 @@ public interface AgentManager extends Manager {
      * @return true if it was able to put the agent into maintenance mode.  false if not.
      */
     boolean maintain(long hostId) throws AgentUnavailableException;
+    boolean maintain(PrepareForMaintenanceCmd cmd) throws InvalidParameterValueException;
     
     boolean maintenanceFailed(long hostId);
     
@@ -209,6 +212,7 @@ public interface AgentManager extends Manager {
      * @return true if it's done.  false if not.
      */
     boolean cancelMaintenance(long hostId);
+    boolean cancelMaintenance(CancelMaintenanceCmd cmd) throws InvalidParameterValueException;
 
     /**
      * Check to see if a virtual machine can be upgraded to the given service offering

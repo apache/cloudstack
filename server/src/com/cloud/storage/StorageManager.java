@@ -22,9 +22,11 @@ import java.util.List;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
 import com.cloud.api.commands.CreateStoragePoolCmd;
 import com.cloud.api.commands.DeletePoolCmd;
 import com.cloud.api.commands.DeleteVolumeCmd;
+import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -282,13 +284,13 @@ public interface StorageManager extends Manager {
      * Enable maintenance for primary storage
      * @return
      */
-    public boolean preparePrimaryStorageForMaintenance(long primaryStorageId, long userId);
+    public boolean preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) throws InvalidParameterValueException;
     
     /**
      * Complete maintenance for primary storage
      * @return
      */
-    public boolean cancelPrimaryStorageForMaintenance(long primaryStorageId, long userId);
+    public boolean cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws InvalidParameterValueException;
 
 	public StoragePoolVO updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException;
 }

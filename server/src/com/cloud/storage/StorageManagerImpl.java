@@ -64,9 +64,11 @@ import com.cloud.agent.manager.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
 import com.cloud.api.commands.CreateStoragePoolCmd;
 import com.cloud.api.commands.DeletePoolCmd;
 import com.cloud.api.commands.DeleteVolumeCmd;
+import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobExecutor;
@@ -1929,15 +1931,17 @@ public class StorageManagerImpl implements StorageManager {
     
     @Override
     @DB
-    public boolean preparePrimaryStorageForMaintenance(long primaryStorageId, long userId) 
-    {
+    public boolean preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) {
+    	Long primaryStorageId = cmd.getId();
+    	Long userId = UserContext.current().getUserId();
+    	
         boolean destroyVolumes = false;
         long count = 1;
         long consoleProxyId = 0;
         long ssvmId = 0;
         try 
         {
-        	//1. Get the primary storage record
+        	//1. Get the primary storage record and perform validation check
         	StoragePoolVO primaryStorage = _storagePoolDao.findById(primaryStorageId);
         	
         	if(primaryStorage == null)
@@ -1945,6 +1949,10 @@ public class StorageManagerImpl implements StorageManager {
         		s_logger.warn("The primary storage does not exist");
         		return false;
         	}	
+        	
+        	if (!primaryStorage.getStatus().equals(Status.Up)) {
+    			throw new InvalidParameterValueException("Primary storage with id " + primaryStorageId + " is not ready for migration, as the status is:" + primaryStorage.getStatus().toString());
+        	}
         	
         	//check to see if other ps exist
         	//if they do, then we can migrate over the system vms to them, destroy volumes for sys vms
@@ -2124,16 +2132,22 @@ public class StorageManagerImpl implements StorageManager {
 
 	@Override
 	@DB
-	public boolean cancelPrimaryStorageForMaintenance(long primaryStorageId,long userId) 
-	{
-    	//1. Get the primary storage record
+	public boolean cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws InvalidParameterValueException{
+		Long primaryStorageId = cmd.getId();
+		Long userId = UserContext.current().getUserId();
+		
+    	//1. Get the primary storage record and perform validation check
     	StoragePoolVO primaryStorage = _storagePoolDao.findById(primaryStorageId);
     	
     	if(primaryStorage == null)
     	{
     		s_logger.warn("The primary storage does not exist");
-    		return false;
-    	}	
+    		throw new InvalidParameterValueException("Primary storage doesn't exist");
+    	}
+    	
+    	if (!primaryStorage.getStatus().equals(Status.Maintenance)) {
+    		throw new InvalidParameterValueException("Primary storage with id " + primaryStorageId + " is not ready for migration, as the status is:" + primaryStorage.getStatus().toString());
+    	}
 		
        	//2. Get a list of all the volumes within this storage pool
     	List<VolumeVO> allVolumes = _volsDao.findByPoolId(primaryStorageId);

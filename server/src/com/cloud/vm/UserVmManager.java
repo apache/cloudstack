@@ -22,6 +22,7 @@ import java.util.List;
 
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.AttachVolumeCmd;
 import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.DestroyVMCmd;
 import com.cloud.api.commands.DetachVolumeCmd;
@@ -119,11 +120,10 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
     
     /**
      * Attaches the specified volume to the specified VM
-     * @param vmId
-     * @param volumeId
-     * @throws InternalErrorException
+     * @param cmd
+     * @throws InternalErrorException, InvalidParameterValueException
      */
-    void attachVolumeToVM(long vmId, long volumeId, Long deviceId, long startEventId) throws InternalErrorException;
+    void attachVolumeToVM(AttachVolumeCmd cmd) throws InternalErrorException, InvalidParameterValueException;
     
     /**
      * Detaches the specified volume from the VM it is currently attached to.

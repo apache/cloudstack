@@ -363,8 +363,8 @@ public interface ManagementServer {
      * @param hostId id of the host to bring down.
      * @return true if the operation succeeds.
      */
-    boolean prepareForMaintenance(long hostId);
-    long prepareForMaintenanceAsync(long hostId) throws InvalidParameterValueException;
+//    boolean prepareForMaintenance(long hostId);
+//    long prepareForMaintenanceAsync(long hostId) throws InvalidParameterValueException;
     
     /**
      * prepares a primary storage for maintenance. 
@@ -372,8 +372,8 @@ public interface ManagementServer {
      * @param primaryStorageId id of the storage to bring down.
      * @return true if the operation succeeds.
      */
-    boolean preparePrimaryStorageForMaintenance(long primaryStorageId, long userId);
-    long preparePrimaryStorageForMaintenanceAsync(long primaryStorageId) throws InvalidParameterValueException;
+//    boolean preparePrimaryStorageForMaintenance(long primaryStorageId, long userId);
+//    long preparePrimaryStorageForMaintenanceAsync(long primaryStorageId) throws InvalidParameterValueException;
 
     /**
      * cancels primary storage from maintenance. 
@@ -393,8 +393,8 @@ public interface ManagementServer {
      * @param hostId
      * @return true if the state changed worked.  false if not.
      */
-    boolean maintenanceCompleted(long hostId);
-    long maintenanceCompletedAsync(long hostId);
+//    boolean maintenanceCompleted(long hostId);
+//    long maintenanceCompletedAsync(long hostId);
     
     /**
      * Gets Host/VM statistics for a given host
@@ -600,8 +600,8 @@ public interface ManagementServer {
      * @param volumeId
      * @throws InvalidParameterValueException, InternalErrorException
      */
-    void attachVolumeToVM(long vmId, long volumeId, Long deviceId, long startEventId) throws InternalErrorException;
-    long attachVolumeToVMAsync(long vmId, long volumeId, Long deviceId) throws InvalidParameterValueException;
+//    void attachVolumeToVM(long vmId, long volumeId, Long deviceId, long startEventId) throws InternalErrorException;
+//    long attachVolumeToVMAsync(long vmId, long volumeId, Long deviceId) throws InvalidParameterValueException;
     
     /**
      * Detaches the specified volume from the VM it is currently attached to. If it is not attached to any VM, will return true.
