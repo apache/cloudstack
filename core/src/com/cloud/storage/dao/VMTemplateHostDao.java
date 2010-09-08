@@ -18,9 +18,11 @@
 
 package com.cloud.storage.dao;
 
+import java.util.Date;
 import java.util.List;
 
 import com.cloud.storage.VMTemplateHostVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.db.GenericDao;
 
 public interface VMTemplateHostDao extends GenericDao<VMTemplateHostVO, Long> {
@@ -41,6 +43,9 @@ public interface VMTemplateHostDao extends GenericDao<VMTemplateHostVO, Long> {
     List<VMTemplateHostVO> listByTemplatePool(long templateId, long poolId);
 
     void update(VMTemplateHostVO instance);
+    
+    void updateUploadStatus(long hostId, long templateId, int uploadPercent, Status uploadState,
+			String jobId, String uploadUrl );
 
     List<VMTemplateHostVO> listByTemplateStatus(long templateId, VMTemplateHostVO.Status downloadState);
 
@@ -53,4 +58,6 @@ public interface VMTemplateHostDao extends GenericDao<VMTemplateHostVO, Long> {
     List<VMTemplateHostVO> listDestroyed(long hostId);
 
     boolean templateAvailable(long templateId, long hostId);
+
+	List<VMTemplateHostVO> listByTemplateUploadStatus(long templateId,Status UploadState);
 }

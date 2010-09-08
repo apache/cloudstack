@@ -48,6 +48,7 @@ import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
+import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResource;
@@ -58,6 +59,8 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.template.DownloadManager;
 import com.cloud.storage.template.DownloadManagerImpl;
 import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.template.UploadManager;
+import com.cloud.storage.template.UploadManagerImpl;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -85,6 +88,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     Random _rand = new Random(System.currentTimeMillis());
     
     DownloadManager _dlMgr;
+    UploadManager _upldMgr;
 	private String _configSslScr;
 	private String _configAuthScr;
 	private String _publicIp;
@@ -111,6 +115,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return _dlMgr.handleDownloadCommand((DownloadProgressCommand)cmd);
         } else if (cmd instanceof DownloadCommand) {
             return _dlMgr.handleDownloadCommand((DownloadCommand)cmd);
+        }else if (cmd instanceof UploadCommand) {        	
+            return _upldMgr.handleUploadCommand((UploadCommand)cmd);
         } else if (cmd instanceof GetStorageStatsCommand) {
         	return execute((GetStorageStatsCommand)cmd);
         } else if (cmd instanceof CheckHealthCommand) {
@@ -413,6 +419,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             _params.put(StorageLayer.InstanceConfigKey, _storage);
             _dlMgr = new DownloadManagerImpl();
             _dlMgr.configure("DownloadManager", _params);
+            _upldMgr = new UploadManagerImpl();
+            _upldMgr.configure("UploadManager", params);
         } catch (ConfigurationException e) {
             s_logger.warn("Caught problem while configuring DownloadManager", e);
             return false;

@@ -66,6 +66,7 @@ import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
+import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -98,6 +99,7 @@ public class TemplateManagerImpl implements TemplateManager {
     @Inject StoragePoolHostDao _poolHostDao;
     @Inject EventDao _eventDao;
     @Inject DownloadMonitor _downloadMonitor;
+    @Inject UploadMonitor _uploadMonitor;
     @Inject UserAccountDao _userAccountDao;
     @Inject AccountDao _accountDao;
     @Inject UserDao _userDao;
@@ -109,7 +111,7 @@ public class TemplateManagerImpl implements TemplateManager {
     @Inject SnapshotDao _snapshotDao;
     long _routerTemplateId = -1;
     @Inject StorageManager _storageMgr;
-    protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
+    protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;	
     
 
     @Override
@@ -143,6 +145,11 @@ public class TemplateManagerImpl implements TemplateManager {
         _accountMgr.incrementResourceCount(userAccount.getAccountId(), ResourceType.template);
         
         return id;
+    }
+    
+    @Override
+    public void extract(VMTemplateVO template, String url, VMTemplateHostVO tmpltHostRef, Long zoneId){
+    	_uploadMonitor.extractTemplate(template, url, tmpltHostRef, zoneId);
     }
     
     @Override @DB

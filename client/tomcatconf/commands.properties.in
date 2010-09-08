@@ -61,6 +61,7 @@ deleteTemplate=com.cloud.api.commands.DeleteTemplateCmd;15
 listTemplates=com.cloud.api.commands.ListTemplatesCmd;15
 updateTemplatePermissions=com.cloud.api.commands.UpdateTemplatePermissionsCmd;15
 listTemplatePermissions=com.cloud.api.commands.ListTemplatePermissionsCmd;15
+extractTemplate=com.cloud.api.commands.ExtractTemplateCmd;15
 
 #### iso commands
 attachIso=com.cloud.api.commands.AttachIsoCmd;15

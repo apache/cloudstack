@@ -2186,5 +2186,13 @@ public interface ManagementServer {
 	boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException;
 	
 	boolean checkIfMaintenable(long hostId);
+	/**
+	 * Extracts the template to a particular location.
+	 * @param url - the url  where the template needs to be extracted to
+	 * @param zoneId - zone id of the template
+	 * @param template id - the id of the template
+	 *  
+	 */
+	void extractTemplate(String url, Long templateId, Long zoneId) throws URISyntaxException;
 
 }

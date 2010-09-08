@@ -53,12 +53,14 @@ import com.cloud.agent.api.storage.ShareAnswer;
 import com.cloud.agent.api.storage.ShareCommand;
 import com.cloud.agent.api.storage.UpgradeDiskAnswer;
 import com.cloud.agent.api.storage.UpgradeDiskCommand;
+import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.template.DownloadManager;
 import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.template.UploadManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
@@ -112,6 +114,7 @@ public abstract class StorageResource extends ServerResourceBase implements Serv
 	protected String _zfsScriptsDir;
 
 	protected DownloadManager _downloadManager;
+	protected UploadManager _uploadManager;
 
 	protected Map<Long, VolumeSnapshotRequest> _volumeHourlySnapshotRequests = new HashMap<Long, VolumeSnapshotRequest>();
     protected Map<Long, VolumeSnapshotRequest> _volumeDailySnapshotRequests = new HashMap<Long, VolumeSnapshotRequest>();
@@ -127,6 +130,8 @@ public abstract class StorageResource extends ServerResourceBase implements Serv
         	return execute((PrimaryStorageDownloadCommand)cmd);
         } else if (cmd instanceof DownloadCommand) {
             return execute((DownloadCommand)cmd);
+        }else if (cmd instanceof UploadCommand) {
+                return execute((UploadCommand)cmd);
         } else if (cmd instanceof GetStorageStatsCommand) {
             return execute((GetStorageStatsCommand)cmd);
         } else if (cmd instanceof UpgradeDiskCommand) {
@@ -159,6 +164,11 @@ public abstract class StorageResource extends ServerResourceBase implements Serv
     protected Answer execute(final PrimaryStorageDownloadCommand cmd) {
     	return Answer.createUnsupportedCommandAnswer(cmd);
     }
+
+	private Answer execute(UploadCommand cmd) {	
+		s_logger.warn(" Nitin got the cmd " +cmd);
+		return _uploadManager.handleUploadCommand(cmd);
+	}
     
     protected Answer execute(final DownloadCommand cmd) {
     	return _downloadManager.handleDownloadCommand(cmd);

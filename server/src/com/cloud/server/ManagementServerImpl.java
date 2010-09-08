@@ -4691,6 +4691,42 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
+    public void extractTemplate(String url, Long templateId, Long zoneId) throws URISyntaxException{
+    
+        URI uri = new URI(url);
+        if ( (uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("ftp") )) {
+           throw new IllegalArgumentException("Unsupported scheme for url: " + url);
+        }
+        String host = uri.getHost();
+        
+        try {
+        	InetAddress hostAddr = InetAddress.getByName(host);
+        	if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress() ) {
+        		throw new IllegalArgumentException("Illegal host specified in url");
+        	}
+        	if (hostAddr instanceof Inet6Address) {
+        		throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
+        	}
+        } catch (UnknownHostException uhe) {
+        	throw new IllegalArgumentException("Unable to resolve " + host);
+        }
+        
+    	if (_dcDao.findById(zoneId) == null) {
+    		throw new IllegalArgumentException("Please specify a valid zone.");
+    	}
+        
+        VMTemplateVO template = findTemplateById(templateId);
+        
+        VMTemplateHostVO tmpltHostRef = findTemplateHostRef(templateId, zoneId);
+        if (tmpltHostRef != null && tmpltHostRef.getDownloadState() != com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED){
+        	throw new IllegalArgumentException("The template hasnt been downloaded ");
+        }
+        
+        _tmpltMgr.extract(template, url, tmpltHostRef, zoneId);
+        
+    }
+    
+    @Override
     public Long createTemplate(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) throws InvalidParameterValueException,IllegalArgumentException, ResourceAllocationException {
         try
         {

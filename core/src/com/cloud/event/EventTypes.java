@@ -79,6 +79,9 @@ public class EventTypes {
 	public static final String EVENT_TEMPLATE_DOWNLOAD_START = "TEMPLATE.DOWNLOAD.START";
 	public static final String EVENT_TEMPLATE_DOWNLOAD_SUCCESS = "TEMPLATE.DOWNLOAD.SUCCESS";
 	public static final String EVENT_TEMPLATE_DOWNLOAD_FAILED = "TEMPLATE.DOWNLOAD.FAILED";
+	public static final String EVENT_TEMPLATE_UPLOAD_FAILED = "TEMPLATE.UPLOAD.FAILED";
+	public static final String EVENT_TEMPLATE_UPLOAD_START = "TEMPLATE.UPLOAD.START";
+	public static final String EVENT_TEMPLATE_UPLOAD_SUCCESS = "TEMPLATE.UPLOAD.SUCCESS";
 	
 	// Volume Events
 	public static final String EVENT_VOLUME_CREATE = "VOLUME.CREATE";

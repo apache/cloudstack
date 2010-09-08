@@ -150,6 +150,8 @@
         </manager>
         <manager name="download manager" class="com.vmops.storage.download.DownloadMonitorImpl">
         </manager>
+        <manager name="upload manager" class="com.cloud.storage.upload.UploadMonitorImpl">
+        </manager>
         <manager name="console proxy manager" class="com.vmops.consoleproxy.ConsoleProxyManagerImpl">
         </manager>
         <manager name="vm manager" class="com.vmops.vm.UserVmManagerImpl"/>
