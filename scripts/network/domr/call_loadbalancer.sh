@@ -26,7 +26,7 @@ copy_haproxy() {
   local domRIp=$1
   local cfg=$2
 
-  scp -P 3922 -q -o StrictHostKeyChecking=no -i $CERT $cfg root@$domRIp:/etc/haproxy/haproxy.cfg.new
+  scp -P 3922 -q -o StrictHostKeyChecking=no -i $cert $cfg root@$domRIp:/etc/haproxy/haproxy.cfg.new
   return $?
 }
 
@@ -56,7 +56,7 @@ do
   esac
 done
 
-CERT="$(dirname $0)/id_rsa"
+cert="/root/.ssh/id_rsa.cloud"
 
 if [ "$iflag$fflag" != "11" ]
 then
@@ -79,5 +79,5 @@ then
   exit 1
 fi
 	
-ssh -p 3922 -q -o StrictHostKeyChecking=no -i $CERT root@$domRIp "/root/loadbalancer.sh $*"
+ssh -p 3922 -q -o StrictHostKeyChecking=no -i $cert root@$domRIp "/root/loadbalancer.sh $*"
 exit $?	
