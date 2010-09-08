@@ -95,6 +95,7 @@ import com.cloud.api.commands.ListStoragePoolsCmd;
 import com.cloud.api.commands.ListSystemVMsCmd;
 import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
+import com.cloud.api.commands.ListUsersCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
@@ -3762,16 +3763,26 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<UserAccountVO> searchForUsers(Criteria c) {
-        Filter searchFilter = new Filter(UserAccountVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+    public List<UserAccountVO> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long domainId = cmd.getDomainId();
+        if (domainId != null) {
+            if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list users.");
+            }
+        } else {
+            // default domainId to the admin's domain
+            domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+        }
 
-        Object id = c.getCriteria(Criteria.ID);
-        Object username = c.getCriteria(Criteria.USERNAME);
-        Object type = c.getCriteria(Criteria.TYPE);
-        Object domainId = c.getCriteria(Criteria.DOMAINID);
-        Object account = c.getCriteria(Criteria.ACCOUNTNAME);
-        Object state = c.getCriteria(Criteria.STATE);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
+        Filter searchFilter = new Filter(UserAccountVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        Object id = cmd.getId();
+        Object username = cmd.getUsername();
+        Object type = cmd.getAccountType();
+        Object accountName = cmd.getAccountName();
+        Object state = cmd.getState();
+        Object keyword = cmd.getKeyword();
 
         SearchBuilder<UserAccountVO> sb = _userAccountDao.createSearchBuilder();
         sb.and("username", sb.entity().getUsername(), SearchCriteria.Op.LIKE);
@@ -3781,7 +3792,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.LIKE);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
 
-        if ((account == null) && (domainId != null)) {
+        if ((accountName == null) && (domainId != null)) {
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId());
@@ -3814,8 +3825,8 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("type", type);
         }
 
-        if (account != null) {
-            sc.setParameters("accountName", "%" + account + "%");
+        if (accountName != null) {
+            sc.setParameters("accountName", "%" + accountName + "%");
             if (domainId != null) {
                 sc.setParameters("domainId", domainId);
             }

@@ -59,6 +59,7 @@ import com.cloud.api.commands.ListStoragePoolsCmd;
 import com.cloud.api.commands.ListSystemVMsCmd;
 import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
+import com.cloud.api.commands.ListUsersCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
@@ -870,10 +871,10 @@ public interface ManagementServer {
     /** revisit
      * Searches for users by the specified search criteria
      * Can search by: "id", "username", "account", "domainId", "type"
-     * @param c
+     * @param cmd
      * @return List of UserAccounts
      */
-    List<UserAccountVO> searchForUsers(Criteria c);
+    List<UserAccountVO> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException;
     
     /**
      * Searches for Service Offerings by the specified search criteria

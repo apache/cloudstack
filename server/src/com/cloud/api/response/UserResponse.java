@@ -59,7 +59,11 @@ public class UserResponse implements ResponseObject {
     @Param(name="timezone")
     private String timezone;
 
-    // TODO:  user keys?
+    @Param(name="apikey")
+    private String apiKey;
+
+    @Param(name="secretkey")
+    private String secretKey;
 
     public Long getId() {
         return id;
@@ -155,5 +159,21 @@ public class UserResponse implements ResponseObject {
 
     public void setTimezone(String timezone) {
         this.timezone = timezone;
+    }
+
+    public String getApiKey() {
+        return apiKey;
+    }
+
+    public void setApiKey(String apiKey) {
+        this.apiKey = apiKey;
+    }
+
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    public void setSecretKey(String secretKey) {
+        this.secretKey = secretKey;
     }
 }
