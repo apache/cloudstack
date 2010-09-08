@@ -1364,7 +1364,7 @@ public class StorageManagerImpl implements StorageManager {
         }
         
         List<StoragePoolVO> pools = _storagePoolDao.listPoolByHostPath(storageHost, hostPath);
-        if (!pools.isEmpty()) {
+        if (!pools.isEmpty() && pools.get(0).getRemoved()==null) {
             Long oldPodId = pools.get(0).getPodId();
             throw new ResourceInUseException("Storage pool " + uri + " already in use by another pod (id=" + oldPodId + ")", "StoragePool", uri.toASCIIString());
         }
@@ -1379,6 +1379,14 @@ public class StorageManagerImpl implements StorageManager {
         }
         long poolId = _storagePoolDao.getNextInSequence(Long.class, "id");
         String uuid = UUID.nameUUIDFromBytes(new String(storageHost + hostPath).getBytes()).toString();
+        
+        List<StoragePoolVO> spHandles = _storagePoolDao.findIfDuplicatePoolsExistByUUID(uuid);
+        if(spHandles!=null && spHandles.size()>0)
+        {
+        	s_logger.debug("Another active pool with the same uuid already exists");
+        	throw new ResourceInUseException("Another active pool with the same uuid already exists");
+        }
+        
         s_logger.debug("In createPool Setting poolId - " +poolId+ " uuid - " +uuid+ " zoneId - " +zoneId+ " podId - " +podId+ " poolName - " +poolName);
         pool.setId(poolId);
         pool.setUuid(uuid);
