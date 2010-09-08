@@ -648,8 +648,9 @@
         Custom:</label>
     <label class="label1">
         Disk Size:</label>
-    <input type="text" name="disksize" class="text" />
-    <span>GB</span>
+    <input type="text" id="custom_disk_size" class="text" />
+    <span>MB</span>
+    <div id="custom_disk_size_errormsg" class="dialog_formcontent_errormsg" style="display: none;">    
 </div>
 <div class="vmpopup_offeringbox" id="vm_popup_disk_offering_template_existing" style="display: none">
     <input type="radio" class="radio" checked />

@@ -955,12 +955,12 @@ function clickInstanceGroupHeader($arrowIcon) {
 		    listTemplatesInVmPopup();
 		    return false;
 	    });  
-    	
+    		
 	    $vmPopup.find("#next_step").bind("click", function(event) {
 		    event.preventDefault();
 		    event.stopPropagation();	
 		    var $thisPopup = $vmPopup;		    		
-		    if (currentStepInVmPopup == 1) { //select a template		
+		    if (currentStepInVmPopup == 1) { //select a template/ISO		    		
 		        // prevent a person from moving on if no templates are selected	  
 		        if($thisPopup.find("#step1 #template_container .rev_wiztemplistbox_selected").length == 0) {			        
 		            $thisPopup.find("#step1 #wiz_message").show();
@@ -971,30 +971,15 @@ function clickInstanceGroupHeader($arrowIcon) {
 			        $thisPopup.find("#step3_label").text("Root Disk Offering");
 			        $thisPopup.find("#root_disk_offering_container").show();
 			        $thisPopup.find("#data_disk_offering_container").hide();			       
-			    } else {  //template
+			    } 
+			    else {  //template
 			        $thisPopup.find("#step3_label").text("Data Disk Offering");
 			        $thisPopup.find("#data_disk_offering_container").show();
 			        $thisPopup.find("#root_disk_offering_container").hide();			       
 			    }	
     			
     			$thisPopup.find("#wizard_review_zone").text($thisPopup.find("#wizard_zone option:selected").text());    	
-    			$thisPopup.find("#wizard_review_template").text($thisPopup.find("#step1 .rev_wiztemplistbox_selected .rev_wiztemp_listtext").text());
-    							
-//			    $thisPopup.find("#wizard_review_service_offering").text($thisPopup.find("#wizard_service_offering input[name=service]:checked").next().text());
-//			    $thisPopup.find("#wizard_review_zone").text($thisPopup.find("#wizard_zone option:selected").text());
-//			    $thisPopup.find("#wizard_review_name").text($thisPopup.find("#wizard_vm_name").val());
-//			    $thisPopup.find("#wizard_review_group").text($thisPopup.find("#wizard_vm_group").val());
-//    			
-//			    if($thisPopup.find("#wizard_network_groups_container").css("display") != "none" && $thisPopup.find("#wizard_network_groups").val() != null) {
-//			        var networkGroupList = $thisPopup.find("#wizard_network_groups").val().join(",");
-//			        $thisPopup.find("#wizard_review_network_groups_p").show();
-//			        $thisPopup.find("#wizard_review_network_groups").text(networkGroupList);				    
-//			    } else {
-//			        $thisPopup.find("#wizard_review_network_groups_p").hide();
-//			        $thisPopup.find("#wizard_review_network_groups").text("");
-//			    }								
-
-
+    			$thisPopup.find("#wizard_review_template").text($thisPopup.find("#step1 .rev_wiztemplistbox_selected .rev_wiztemp_listtext").text()); 
 		    }			
     		
 		    if (currentStepInVmPopup == 2) { //service offering
@@ -1009,31 +994,28 @@ function clickInstanceGroupHeader($arrowIcon) {
 
 		    }			
     		
-		    if(currentStepInVmPopup ==3) { //disk offering
-		        /*
-		        // validate values
-			    var isValid = true;		
-			    isValid &= validateString("Name", $thisPopup.find("#wizard_vm_name"), $thisPopup.find("#wizard_vm_name_errormsg"), true);
-			    isValid &= validateString("Group", $thisPopup.find("#wizard_vm_group"), $thisPopup.find("#wizard_vm_group_errormsg"), true);				
-			    if (!isValid) return;	
-			    */		
-			    
-			    /*
-			    // prevent a person from moving on if no radio button is selected
-		        if($thisPopup.find("input:radio[name=disk_offering_radio]:checked").length == 0) {
-		            $thisPopup.find("#step2 #wiz_message #wiz_message_text").text("Please select a disk offering to continue");
-		            $thisPopup.find("#step2 #wiz_message").show();
-			        return false;
-			    }	
-			    */	   	
-    		   
+		    if(currentStepInVmPopup ==3) { //disk offering	 
 		        if($thisPopup.find("#wiz_blank").hasClass("rev_wizmid_selectedtempbut"))  { //ISO
 		            $thisPopup.find("#wizard_review_disk_offering_label").text("Root Disk Offering:");
 			        $thisPopup.find("#wizard_review_disk_offering").text($thisPopup.find("#root_disk_offering_container input[name=root_disk_offering_radio]:checked").next().text());	
 			    }
 			    else { //template
+			        var checkedRadioButton = $thisPopup.find("#data_disk_offering_container input[name=data_disk_offering_radio]:checked");			        
+			        			    
+			        // validate values
+			        var isValid = true;		
+			        if(checkedRadioButton.parent().attr("id") == "vm_popup_disk_offering_template_custom")			    
+			            isValid &= validateNumber("Disk Size", $thisPopup.find("#custom_disk_size"), $thisPopup.find("#custom_disk_size_errormsg"), null, null, false);	//required	
+			        else
+			            isValid &= validateNumber("Disk Size", $thisPopup.find("#custom_disk_size"), $thisPopup.find("#custom_disk_size_errormsg"), null, null, true);	//optional		    		
+			        if (!isValid) return;
+			        
 			        $thisPopup.find("#wizard_review_disk_offering_label").text("Data Disk Offering:");
-			        $thisPopup.find("#wizard_review_disk_offering").text($thisPopup.find("#data_disk_offering_container input[name=data_disk_offering_radio]:checked").next().text());
+			        
+			        var diskOfferingName = checkedRadioButton.next().text();
+			        if(checkedRadioButton.parent().attr("id") == "vm_popup_disk_offering_template_custom")
+			            diskOfferingName += (" " + $thisPopup.find("#data_disk_offering_container input[name=data_disk_offering_radio]:checked").next().next().next().val() + " MB");
+			        $thisPopup.find("#wizard_review_disk_offering").text(diskOfferingName);
 			    }	
 		    }	
 		    	
@@ -1060,10 +1042,14 @@ function clickInstanceGroupHeader($arrowIcon) {
 			    if ($thisPopup.find("#wiz_blank").hasClass("rev_wizmid_selectedtempbut"))  //ISO
 			        diskOfferingId = $thisPopup.find("#root_disk_offering_container input[name=root_disk_offering_radio]:checked").val();	
 			    else  //template
-			        diskOfferingId = $thisPopup.find("#data_disk_offering_container input[name=data_disk_offering_radio]:checked").val();				       
-		        			   
+			        diskOfferingId = $thisPopup.find("#data_disk_offering_container input[name=data_disk_offering_radio]:checked").val();	
 		        if(diskOfferingId != null && diskOfferingId != "" && diskOfferingId != "no" && diskOfferingId != "custom")
 			        moreCriteria.push("&diskOfferingId="+diskOfferingId);						 
+    			    			
+    			var customDiskSize = $thisPopup.find("#custom_disk_size").val(); //unit is MB
+    			if(customDiskSize != null && customDiskSize.length > 0)
+    			    moreCriteria.push("&size="+customDiskSize);	    			
+    		   
     			
     			var name = trim($thisPopup.find("#wizard_vm_name").val());
 			    if (name != null && name.length > 0) 
