@@ -3326,7 +3326,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             vlanNetwork = getNetworkByName(name);
             if (vlanNetwork == null) { // Can't find it, then create it.
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Creating VLAN for " + tag + " on host " + _host.ip);
+                    s_logger.debug("Creating VLAN Network for " + tag + " on host " + _host.ip);
                 }
                 Network.Record nwr = new Network.Record();
                 nwr.nameLabel = name;
@@ -3356,6 +3356,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             if (!untaggedPif.getCurrentlyAttached(conn)) {
                 untaggedPif.plug(conn);
             }
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Created VLAN " + tag + " on host " + _host.ip);
+            }
         }
 
         return vlanNetwork;
@@ -3363,12 +3366,26 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
     protected void disableVlanNetwork(Network network){
         try {
-            Connection conn = getConnection();
+            Connection conn = getConnection();         
             if (network.getVIFs(conn).isEmpty()) {
                 Iterator<PIF> pifs = network.getPIFs(conn).iterator();
                 while (pifs.hasNext()) {
-                    PIF pif = pifs.next();
-                    pif.unplug(conn);
+                    PIF pif = pifs.next();                   
+                    try {
+                        pif.unplug(conn);
+                    } catch (XenAPIException e) {
+                    	continue;
+                    }
+                    long tag = pif.getVLAN(conn);
+                    VLAN vlan = pif.getVLANMasterOf(conn);
+                    String uuid = vlan.getUuid(conn);
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Destroying VLAN, tag: " + tag + " uuid:" + uuid + " on host " + _host.ip);
+                    }
+                    vlan.destroy(conn);
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Destroyed VLAN, tag: " + tag + " uuid:" + uuid + " on host " + _host.ip);
+                    }
                 }
             }
         } catch (XenAPIException e) {
