@@ -2070,45 +2070,45 @@ public class ManagementServerImpl implements ManagementServer {
             	EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ISO_DETACH, "Failed to detach ISO from VM with ID: " + vmId, null, startEventId);
             }
         }
-
         return success;
     }
+    
 
-    @Override
-    public long attachISOToVMAsync(long vmId, long userId, long isoId) throws InvalidParameterValueException {
-        UserVmVO vm = _userVmDao.findById(vmId);
-        if (vm == null) {
-            throw new InvalidParameterValueException("Unable to find VM with ID " + vmId);
-        }
-
-        VMTemplateVO iso = _templateDao.findById(isoId);
-        if (iso == null || !iso.getFormat().equals(ImageFormat.ISO)) {
-            throw new InvalidParameterValueException("Unable to find ISO with id " + isoId);
-        }
-
-        AccountVO account = _accountDao.findById(vm.getAccountId());
-        if (account == null) {
-            throw new InvalidParameterValueException("Unable to find account for VM with ID " + vmId);
-        }
-        
-        State vmState = vm.getState();
-        if (vmState != State.Running && vmState != State.Stopped) {
-        	throw new InvalidParameterValueException("Please specify a VM that is either Stopped or Running.");
-        }
-        
-        long eventId = EventUtils.saveScheduledEvent(userId, account.getId(), EventTypes.EVENT_ISO_ATTACH, "attaching ISO: "+isoId+" to Vm: "+vmId);
-        
-        AttachISOParam param = new AttachISOParam(vmId, userId, isoId, true);
-        param.setEventId(eventId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-		AsyncJobVO job = new AsyncJobVO();
-		job.setUserId(UserContext.current().getUserId());
-		job.setAccountId(vm.getAccountId());
-		job.setCmd("AttachISO");
-		job.setCmdInfo(gson.toJson(param));
-		return _asyncMgr.submitAsyncJob(job, true);
-	}
+//    @Override
+//    public long attachISOToVMAsync(long vmId, long userId, long isoId) throws InvalidParameterValueException {
+//        UserVmVO vm = _userVmDao.findById(vmId);
+//        if (vm == null) {
+//            throw new InvalidParameterValueException("Unable to find VM with ID " + vmId);
+//        }
+//
+//        VMTemplateVO iso = _templateDao.findById(isoId);
+//        if (iso == null || !iso.getFormat().equals(ImageFormat.ISO)) {
+//            throw new InvalidParameterValueException("Unable to find ISO with id " + isoId);
+//        }
+//
+//        AccountVO account = _accountDao.findById(vm.getAccountId());
+//        if (account == null) {
+//            throw new InvalidParameterValueException("Unable to find account for VM with ID " + vmId);
+//        }
+//        
+//        State vmState = vm.getState();
+//        if (vmState != State.Running && vmState != State.Stopped) {
+//        	throw new InvalidParameterValueException("Please specify a VM that is either Stopped or Running.");
+//        }
+//        
+//        long eventId = EventUtils.saveScheduledEvent(userId, account.getId(), EventTypes.EVENT_ISO_ATTACH, "attaching ISO: "+isoId+" to Vm: "+vmId);
+//        
+//        AttachISOParam param = new AttachISOParam(vmId, userId, isoId, true);
+//        param.setEventId(eventId);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//		AsyncJobVO job = new AsyncJobVO();
+//		job.setUserId(UserContext.current().getUserId());
+//		job.setAccountId(vm.getAccountId());
+//		job.setCmd("AttachISO");
+//		job.setCmdInfo(gson.toJson(param));
+//		return _asyncMgr.submitAsyncJob(job, true);
+//	}
 
 //    @Override
 //    public long detachISOFromVMAsync(long vmId, long userId) throws InvalidParameterValueException {
@@ -2532,50 +2532,50 @@ public class ManagementServerImpl implements ManagementServer {
 //        return _vmMgr.startVirtualMachine(userId, vmId, isoPath, 0);
 //    }
 
-    @Override
-    public long startVirtualMachineAsync(long userId, long vmId, String isoPath) {
-        
-        UserVmVO userVm = _userVmDao.findById(vmId);
-
-        long eventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_VM_START, "starting Vm with Id: "+vmId);
-        
-        VMOperationParam param = new VMOperationParam(userId, vmId, isoPath, eventId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-    	job.setUserId(UserContext.current().getUserId());
-    	job.setAccountId(userVm.getAccountId());
-        job.setCmd("StartVM");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(StartVMCmd.getResultObjectName());
-        return _asyncMgr.submitAsyncJob(job, true);
-    }
+//    @Override
+//    public long startVirtualMachineAsync(long userId, long vmId, String isoPath) {
+//        
+//        UserVmVO userVm = _userVmDao.findById(vmId);
+//
+//        long eventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_VM_START, "starting Vm with Id: "+vmId);
+//        
+//        VMOperationParam param = new VMOperationParam(userId, vmId, isoPath, eventId);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//    	job.setUserId(UserContext.current().getUserId());
+//    	job.setAccountId(userVm.getAccountId());
+//        job.setCmd("StartVM");
+//        job.setCmdInfo(gson.toJson(param));
+//        job.setCmdOriginator(StartVMCmd.getResultObjectName());
+//        return _asyncMgr.submitAsyncJob(job, true);
+//    }
 
 //    @Override
 //    public boolean stopVirtualMachine(long userId, long vmId) {
 //        return _vmMgr.stopVirtualMachine(userId, vmId);
 //    }
 
-    @Override
-    public long stopVirtualMachineAsync(long userId, long vmId) {
-        
-        UserVmVO userVm = _userVmDao.findById(vmId);
-
-        long eventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_VM_STOP, "stopping Vm with Id: "+vmId);
-        
-        VMOperationParam param = new VMOperationParam(userId, userVm.getAccountId(), vmId, null, eventId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-    	job.setUserId(UserContext.current().getUserId());
-    	job.setAccountId(userVm.getAccountId());
-        job.setCmd("StopVM");
-        job.setCmdInfo(gson.toJson(param));
-        
-        // use the same result result object name as StartVMCmd
-        job.setCmdOriginator(StartVMCmd.getResultObjectName());
-        return _asyncMgr.submitAsyncJob(job, true);
-    }
+//    @Override
+//    public long stopVirtualMachineAsync(long userId, long vmId) {
+//        
+//        UserVmVO userVm = _userVmDao.findById(vmId);
+//
+//        long eventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_VM_STOP, "stopping Vm with Id: "+vmId);
+//        
+//        VMOperationParam param = new VMOperationParam(userId, userVm.getAccountId(), vmId, null, eventId);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//    	job.setUserId(UserContext.current().getUserId());
+//    	job.setAccountId(userVm.getAccountId());
+//        job.setCmd("StopVM");
+//        job.setCmdInfo(gson.toJson(param));
+//        
+//        // use the same result result object name as StartVMCmd
+//        job.setCmdOriginator(StartVMCmd.getResultObjectName());
+//        return _asyncMgr.submitAsyncJob(job, true);
+//    }
 
 //    @Override
 //    public boolean rebootVirtualMachine(long userId, long vmId) {
@@ -2733,69 +2733,69 @@ public class ManagementServerImpl implements ManagementServer {
         return _networkMgr.startRouter(routerId, startEventId);
     }
 
-    @Override
-    public long startRouterAsync(long routerId) {
-        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_START, "starting Router with Id: "+routerId);
-
-        VMOperationParam param = new VMOperationParam(0, routerId, null, eventId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-        job.setCmd("StartRouter");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(StartRouterCmd.getResultObjectName());
-        return _asyncMgr.submitAsyncJob(job, true);
-    }
+//    @Override
+//    public long startRouterAsync(long routerId) {
+//        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_START, "starting Router with Id: "+routerId);
+//
+//        VMOperationParam param = new VMOperationParam(0, routerId, null, eventId);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//        job.setUserId(UserContext.current().getUserId());
+//        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
+//        job.setCmd("StartRouter");
+//        job.setCmdInfo(gson.toJson(param));
+//        job.setCmdOriginator(StartRouterCmd.getResultObjectName());
+//        return _asyncMgr.submitAsyncJob(job, true);
+//    }
 
     @Override
     public boolean stopRouter(long routerId, long startEventId) {
         return _networkMgr.stopRouter(routerId, startEventId);
     }
 
-    @Override
-    public long stopRouterAsync(long routerId) {
-        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_STOP, "stopping Router with Id: "+routerId);
-        VMOperationParam param = new VMOperationParam(0, routerId, null, eventId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-        job.setCmd("StopRouter");
-        job.setCmdInfo(gson.toJson(param));
-        // use the same result object name as StartRouterCmd
-        job.setCmdOriginator(StartRouterCmd.getResultObjectName());
-        
-        return _asyncMgr.submitAsyncJob(job, true);
-    }
+//    @Override
+//    public long stopRouterAsync(long routerId) {
+//        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_STOP, "stopping Router with Id: "+routerId);
+//        VMOperationParam param = new VMOperationParam(0, routerId, null, eventId);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//        job.setUserId(UserContext.current().getUserId());
+//        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
+//        job.setCmd("StopRouter");
+//        job.setCmdInfo(gson.toJson(param));
+//        // use the same result object name as StartRouterCmd
+//        job.setCmdOriginator(StartRouterCmd.getResultObjectName());
+//        
+//        return _asyncMgr.submitAsyncJob(job, true);
+//    }
 
     @Override
     public boolean rebootRouter(long routerId, long startEventId) throws InternalErrorException {
         return _networkMgr.rebootRouter(routerId, startEventId);
     }
 
-    @Override
-    public long rebootRouterAsync(long routerId) {
-        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_REBOOT, "rebooting Router with Id: "+routerId);
-        VMOperationParam param = new VMOperationParam(0, routerId, null, eventId);
-        Gson gson = GsonHelper.getBuilder().create();
+//    @Override
+//    public long rebootRouterAsync(long routerId) {
+//        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_REBOOT, "rebooting Router with Id: "+routerId);
+//        VMOperationParam param = new VMOperationParam(0, routerId, null, eventId);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//        job.setUserId(UserContext.current().getUserId());
+//        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
+//        job.setCmd("RebootRouter");
+//        job.setCmdInfo(gson.toJson(param));
+//        // use the same result object name as StartRouterCmd
+//        job.setCmdOriginator(StartRouterCmd.getResultObjectName());
+//        return _asyncMgr.submitAsyncJob(job, true);
+//    }
 
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-        job.setCmd("RebootRouter");
-        job.setCmdInfo(gson.toJson(param));
-        // use the same result object name as StartRouterCmd
-        job.setCmdOriginator(StartRouterCmd.getResultObjectName());
-        return _asyncMgr.submitAsyncJob(job, true);
-    }
-
-    @Override
-    public boolean destroyRouter(long routerId) {
-        return _networkMgr.destroyRouter(routerId);
-    }
+//    @Override
+//    public boolean destroyRouter(long routerId) {
+//        return _networkMgr.destroyRouter(routerId);
+//    }
 
     @Override
     public DomainRouterVO findDomainRouterBy(long accountId, long dataCenterId) {
@@ -4755,67 +4755,67 @@ public class ManagementServerImpl implements ManagementServer {
 		}
 		return success;
     }
-    
-    @Override
-    public long copyTemplateAsync(long userId, long templateId, long sourceZoneId, long destZoneId) throws InvalidParameterValueException {
-    	UserVO user = _userDao.findById(userId);
-    	if (user == null) {
-    		throw new InvalidParameterValueException("Please specify a valid user.");
-    	}
-    	
-    	VMTemplateVO template = _templateDao.findById(templateId);
-    	if (template == null) {
-    		throw new InvalidParameterValueException("Please specify a valid template/ISO.");
-    	}
-    	
-    	if (template.getFormat().equals(ImageFormat.ISO) && template.getName().equals("xs-tools.iso")) {
-    		throw new InvalidParameterValueException("The XenServer Tools ISO cannot be copied.");
-    	}
-    	
-    	DataCenterVO sourceZone = _dcDao.findById(sourceZoneId);
-    	if (sourceZone == null) {
-    		throw new InvalidParameterValueException("Please specify a valid source zone.");
-    	}
-    	
-    	DataCenterVO destZone = _dcDao.findById(destZoneId);
-    	if (destZone == null) {
-    		throw new InvalidParameterValueException("Please specify a valid destination zone.");
-    	}
-    	
-    	if (sourceZoneId == destZoneId) {
-    		throw new InvalidParameterValueException("Please specify different source and destination zones.");
-    	}
-    	
-    	HostVO srcSecHost = _hostDao.findSecondaryStorageHost(sourceZoneId);
-    	
-    	if (srcSecHost == null) {
-    		throw new InvalidParameterValueException("Source zone is not ready");
-    	}
-    	
-    	if (_hostDao.findSecondaryStorageHost(destZoneId) == null) {
-    		throw new InvalidParameterValueException("Destination zone is not ready.");
-    	}
-    	
-       	VMTemplateHostVO srcTmpltHost = null;
-        srcTmpltHost = _templateHostDao.findByHostTemplate(srcSecHost.getId(), templateId);
-        if (srcTmpltHost == null || srcTmpltHost.getDestroyed() || srcTmpltHost.getDownloadState() != VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-        	throw new InvalidParameterValueException("Please specify a template that is installed on secondary storage host: " + srcSecHost.getName());
-        }
-        
-        long eventId = EventUtils.saveScheduledEvent(userId, template.getAccountId(), EventTypes.EVENT_TEMPLATE_COPY, "copying template with Id: "+templateId+" from zone: "+sourceZoneId+" to: "+destZoneId);
-        
-        CopyTemplateParam param = new CopyTemplateParam(userId, templateId, sourceZoneId, destZoneId, eventId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-    	job.setUserId(UserContext.current().getUserId());
-    	job.setAccountId(template.getAccountId());
-        job.setCmd("CopyTemplate");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(CopyTemplateCmd.getStaticName());
-        
-        return _asyncMgr.submitAsyncJob(job);
-    }
+//    
+//    @Override
+//    public long copyTemplateAsync(long userId, long templateId, long sourceZoneId, long destZoneId) throws InvalidParameterValueException {
+//    	UserVO user = _userDao.findById(userId);
+//    	if (user == null) {
+//    		throw new InvalidParameterValueException("Please specify a valid user.");
+//    	}
+//    	
+//    	VMTemplateVO template = _templateDao.findById(templateId);
+//    	if (template == null) {
+//    		throw new InvalidParameterValueException("Please specify a valid template/ISO.");
+//    	}
+//    	
+//    	if (template.getFormat().equals(ImageFormat.ISO) && template.getName().equals("xs-tools.iso")) {
+//    		throw new InvalidParameterValueException("The XenServer Tools ISO cannot be copied.");
+//    	}
+//    	
+//    	DataCenterVO sourceZone = _dcDao.findById(sourceZoneId);
+//    	if (sourceZone == null) {
+//    		throw new InvalidParameterValueException("Please specify a valid source zone.");
+//    	}
+//    	
+//    	DataCenterVO destZone = _dcDao.findById(destZoneId);
+//    	if (destZone == null) {
+//    		throw new InvalidParameterValueException("Please specify a valid destination zone.");
+//    	}
+//    	
+//    	if (sourceZoneId == destZoneId) {
+//    		throw new InvalidParameterValueException("Please specify different source and destination zones.");
+//    	}
+//    	
+//    	HostVO srcSecHost = _hostDao.findSecondaryStorageHost(sourceZoneId);
+//    	
+//    	if (srcSecHost == null) {
+//    		throw new InvalidParameterValueException("Source zone is not ready");
+//    	}
+//    	
+//    	if (_hostDao.findSecondaryStorageHost(destZoneId) == null) {
+//    		throw new InvalidParameterValueException("Destination zone is not ready.");
+//    	}
+//    	
+//       	VMTemplateHostVO srcTmpltHost = null;
+//        srcTmpltHost = _templateHostDao.findByHostTemplate(srcSecHost.getId(), templateId);
+//        if (srcTmpltHost == null || srcTmpltHost.getDestroyed() || srcTmpltHost.getDownloadState() != VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+//        	throw new InvalidParameterValueException("Please specify a template that is installed on secondary storage host: " + srcSecHost.getName());
+//        }
+//        
+//        long eventId = EventUtils.saveScheduledEvent(userId, template.getAccountId(), EventTypes.EVENT_TEMPLATE_COPY, "copying template with Id: "+templateId+" from zone: "+sourceZoneId+" to: "+destZoneId);
+//        
+//        CopyTemplateParam param = new CopyTemplateParam(userId, templateId, sourceZoneId, destZoneId, eventId);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//    	job.setUserId(UserContext.current().getUserId());
+//    	job.setAccountId(template.getAccountId());
+//        job.setCmd("CopyTemplate");
+//        job.setCmdInfo(gson.toJson(param));
+//        job.setCmdOriginator(CopyTemplateCmd.getStaticName());
+//        
+//        return _asyncMgr.submitAsyncJob(job);
+//    }
     
 //    @Override
 //    public long deleteIsoAsync(long userId, long isoId, Long zoneId) throws InvalidParameterValueException {

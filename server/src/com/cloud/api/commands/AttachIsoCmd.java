@@ -25,7 +25,7 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 
-@Implementation(method="attachISOToVM", manager=Manager.ManagementServer)
+@Implementation(method="attachIso", manager=Manager.TemplateManager)
 public class AttachIsoCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AttachIsoCmd.class.getName());
 
@@ -63,6 +63,12 @@ public class AttachIsoCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
+    
+	@Override
+	public String getResponse() {
+		// TODO Add the response object as per executor
+		return null;
+	}
 
     /*
     @Override

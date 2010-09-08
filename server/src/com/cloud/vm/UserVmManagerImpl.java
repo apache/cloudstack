@@ -1210,52 +1210,52 @@ public class UserVmManagerImpl implements UserVmManager {
         	throw new InvalidParameterValueException("Unable to find a service offering with id " + serviceOfferingId);
         }
             
-            // Check that the VM is stopped
-            if (!vmInstance.getState().equals(State.Stopped)) {
-                s_logger.warn("Unable to upgrade virtual machine " + vmInstance.toString() + " in state " + vmInstance.getState());
-                throw new InvalidParameterValueException("Unable to upgrade virtual machine " + vmInstance.toString() + " in state " + vmInstance.getState() + "; make sure the virtual machine is stopped and not in an error state before upgrading.");
+        // Check that the VM is stopped
+        if (!vmInstance.getState().equals(State.Stopped)) {
+            s_logger.warn("Unable to upgrade virtual machine " + vmInstance.toString() + " in state " + vmInstance.getState());
+            throw new InvalidParameterValueException("Unable to upgrade virtual machine " + vmInstance.toString() + " in state " + vmInstance.getState() + "; make sure the virtual machine is stopped and not in an error state before upgrading.");
+        }
+        
+        // Check if the service offering being upgraded to is what the VM is already running with
+        if (vmInstance.getServiceOfferingId() == newServiceOffering.getId()) {
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("Not upgrading vm " + vmInstance.toString() + " since it already has the requested service offering (" + newServiceOffering.getName() + ")");
             }
             
-            // Check if the service offering being upgraded to is what the VM is already running with
-            if (vmInstance.getServiceOfferingId() == newServiceOffering.getId()) {
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Not upgrading vm " + vmInstance.toString() + " since it already has the requested service offering (" + newServiceOffering.getName() + ")");
-                }
-                
-                throw new InvalidParameterValueException("Not upgrading vm " + vmInstance.toString() + " since it already has the requested service offering (" + newServiceOffering.getName() + ")");
-            }
-            
-            // Check that the service offering being upgraded to has the same Guest IP type as the VM's current service offering
-            ServiceOfferingVO currentServiceOffering = _offeringDao.findById(vmInstance.getServiceOfferingId());
-            if (!currentServiceOffering.getGuestIpType().equals(newServiceOffering.getGuestIpType())) {
-            	String errorMsg = "The service offering being upgraded to has a guest IP type: " + newServiceOffering.getGuestIpType();
-            	errorMsg += ". Please select a service offering with the same guest IP type as the VM's current service offering (" + currentServiceOffering.getGuestIpType() + ").";
-            	throw new InvalidParameterValueException(errorMsg);
-            }
-            
-            // Check that the service offering being upgraded to has the same storage pool preference as the VM's current service offering
-            if (currentServiceOffering.getUseLocalStorage() != newServiceOffering.getUseLocalStorage()) {
-                throw new InvalidParameterValueException("Unable to upgrade virtual machine " + vmInstance.toString() + ", cannot switch between local storage and shared storage service offerings.  Current offering useLocalStorage=" +
-                       currentServiceOffering.getUseLocalStorage() + ", target offering useLocalStorage=" + newServiceOffering.getUseLocalStorage());
-            }
+            throw new InvalidParameterValueException("Not upgrading vm " + vmInstance.toString() + " since it already has the requested service offering (" + newServiceOffering.getName() + ")");
+        }
+        
+        // Check that the service offering being upgraded to has the same Guest IP type as the VM's current service offering
+        ServiceOfferingVO currentServiceOffering = _offeringDao.findById(vmInstance.getServiceOfferingId());
+        if (!currentServiceOffering.getGuestIpType().equals(newServiceOffering.getGuestIpType())) {
+        	String errorMsg = "The service offering being upgraded to has a guest IP type: " + newServiceOffering.getGuestIpType();
+        	errorMsg += ". Please select a service offering with the same guest IP type as the VM's current service offering (" + currentServiceOffering.getGuestIpType() + ").";
+        	throw new InvalidParameterValueException(errorMsg);
+        }
+        
+        // Check that the service offering being upgraded to has the same storage pool preference as the VM's current service offering
+        if (currentServiceOffering.getUseLocalStorage() != newServiceOffering.getUseLocalStorage()) {
+            throw new InvalidParameterValueException("Unable to upgrade virtual machine " + vmInstance.toString() + ", cannot switch between local storage and shared storage service offerings.  Current offering useLocalStorage=" +
+                   currentServiceOffering.getUseLocalStorage() + ", target offering useLocalStorage=" + newServiceOffering.getUseLocalStorage());
+        }
 
-            // Check that there are enough resources to upgrade the service offering
-            if (!_agentMgr.isVirtualMachineUpgradable(vmInstance, newServiceOffering)) {
-               throw new InvalidParameterValueException("Unable to upgrade virtual machine, not enough resources available for an offering of " +
-                       newServiceOffering.getCpu() + " cpu(s) at " + newServiceOffering.getSpeed() + " Mhz, and " + newServiceOffering.getRamSize() + " MB of memory");
-            }
-            
-            // Check that the service offering being upgraded to has all the tags of the current service offering
-            List<String> currentTags = _configMgr.csvTagsToList(currentServiceOffering.getTags());
-            List<String> newTags = _configMgr.csvTagsToList(newServiceOffering.getTags());
-            if (!newTags.containsAll(currentTags)) {
-            	throw new InvalidParameterValueException("Unable to upgrade virtual machine; the new service offering does not have all the tags of the " +
-            											 "current service offering. Current service offering tags: " + currentTags + "; " +
-            											 "new service offering tags: " + newTags);
-            }
+        // Check that there are enough resources to upgrade the service offering
+        if (!_agentMgr.isVirtualMachineUpgradable(vmInstance, newServiceOffering)) {
+           throw new InvalidParameterValueException("Unable to upgrade virtual machine, not enough resources available for an offering of " +
+                   newServiceOffering.getCpu() + " cpu(s) at " + newServiceOffering.getSpeed() + " Mhz, and " + newServiceOffering.getRamSize() + " MB of memory");
+        }
+        
+        // Check that the service offering being upgraded to has all the tags of the current service offering
+        List<String> currentTags = _configMgr.csvTagsToList(currentServiceOffering.getTags());
+        List<String> newTags = _configMgr.csvTagsToList(newServiceOffering.getTags());
+        if (!newTags.containsAll(currentTags)) {
+        	throw new InvalidParameterValueException("Unable to upgrade virtual machine; the new service offering does not have all the tags of the " +
+        											 "current service offering. Current service offering tags: " + currentTags + "; " +
+        											 "new service offering tags: " + newTags);
+        }
 
-            // FIXME:  save this eventId somewhere as part of the async process?
-			/*long eventId = */EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_UPGRADE, "upgrading Vm with Id: "+vmInstance.getId());
+        // FIXME:  save this eventId somewhere as part of the async process?
+		/*long eventId = */EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_UPGRADE, "upgrading Vm with Id: "+vmInstance.getId());
  
             vmInstance.setServiceOfferingId(serviceOfferingId);
             vmInstance.setHaEnabled(_serviceOfferingDao.findById(serviceOfferingId).getOfferHA());

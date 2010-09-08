@@ -20,15 +20,13 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.async.executor.CopyTemplateResultObject;
-import com.cloud.serializer.SerializerHelper;
 
-@Implementation(method="copyTemplate", manager=Manager.ManagementServer)
-public class CopyIsoCmd extends BaseCmd {
+@Implementation(method="copyIso", manager=Manager.TemplateManager)
+public class CopyIsoCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(CopyIsoCmd.class.getName());
     private static final String s_name = "copyisoresponse";
 
@@ -138,12 +136,19 @@ public class CopyIsoCmd extends BaseCmd {
     }
     */
     
-    protected long getInstanceIdFromJobSuccessResult(String result) {
-    	CopyTemplateResultObject resultObject = (CopyTemplateResultObject)SerializerHelper.fromSerializedString(result);
-		if (resultObject != null) {
-			return resultObject.getId();
-		}
-
-		return 0;
+//  protected long getInstanceIdFromJobSuccessResult(String result) {
+//  	CopyTemplateResultObject resultObject = (CopyTemplateResultObject)SerializerHelper.fromSerializedString(result);
+//		if (resultObject != null) {
+//			return resultObject.getId();
+//		}
+//
+//		return 0;
+//	}
+    
+	@Override
+	public String getResponse() {
+		// TODO Add the response object as per executor
+		return null;
 	}
+
 }

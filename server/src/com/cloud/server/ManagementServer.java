@@ -619,7 +619,7 @@ public interface ManagementServer {
      * @return
      */
     boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach, long startEventId);
-    long attachISOToVMAsync(long vmId, long userId, long isoId) throws InvalidParameterValueException;
+//    long attachISOToVMAsync(long vmId, long userId, long isoId) throws InvalidParameterValueException;
 //    long detachISOFromVMAsync(long vmId, long userId) throws InvalidParameterValueException;
 
     /**
@@ -658,7 +658,7 @@ public interface ManagementServer {
      * @throws ConcurrentOperationException
      */
     //UserVm startVirtualMachine(long userId, long vmId, String isoPath) throws InternalErrorException, ExecutionException, StorageUnavailableException, ConcurrentOperationException;
-    long startVirtualMachineAsync(long userId, long vmId, String isoPath);
+//    long startVirtualMachineAsync(long userId, long vmId, String isoPath);
     
     /**
      * Stops a Virtual Machine
@@ -668,7 +668,7 @@ public interface ManagementServer {
      * @return true if successfully stopped, false otherwise
      */
     //boolean stopVirtualMachine(long userId, long vmId);
-    long stopVirtualMachineAsync(long userId, long vmId);
+//    long stopVirtualMachineAsync(long userId, long vmId);
     
     /**
      * Reboots a Virtual Machine
@@ -744,7 +744,7 @@ public interface ManagementServer {
      * @return DomainRouter if successfully started, false otherwise
      */
 	DomainRouter startRouter(long routerId, long startEventId) throws InternalErrorException;
-	long startRouterAsync(long routerId);
+//	long startRouterAsync(long routerId);
 	
 	/**
 	 * Stops a Domain Router
@@ -753,7 +753,7 @@ public interface ManagementServer {
 	 * @return true if successfully stopped, false otherwise
 	 */
 	boolean stopRouter(long routerId, long startEventId);
-	long stopRouterAsync(long routerId);
+//	long stopRouterAsync(long routerId);
 	
 	/**
 	 * Reboots a Domain Router
@@ -762,7 +762,7 @@ public interface ManagementServer {
 	 * @return true if successfully rebooted, false otherwise
 	 */
 	boolean rebootRouter(long routerId, long startEventId) throws InternalErrorException;
-	long rebootRouterAsync(long routerId);
+//	long rebootRouterAsync(long routerId);
 	
 	/**
 	 * Destroys a Domain Router
@@ -770,7 +770,7 @@ public interface ManagementServer {
 	 * @param routerId
 	 * @return true if successfully destroyed, false otherwise
 	 */
-	boolean destroyRouter(long routerId);
+//	boolean destroyRouter(long routerId);
     
     /**
      * Finds a domain router by user and data center
@@ -1086,7 +1086,7 @@ public interface ManagementServer {
      * @throws InternalErrorException
      */
     boolean copyTemplate(long userId, long templateId, long sourceZoneId, long destZoneId, long startEventId) throws InternalErrorException;
-    long copyTemplateAsync(long userId, long templateId, long sourceZoneId, long destZoneId) throws InvalidParameterValueException;
+//    long copyTemplateAsync(long userId, long templateId, long sourceZoneId, long destZoneId) throws InvalidParameterValueException;
     
     /**
      * Deletes an ISO from all secondary storage servers

@@ -65,11 +65,15 @@ import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.api.commands.DeletePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
+import com.cloud.api.commands.RebootRouterCmd;
 import com.cloud.api.commands.RemoveFromLoadBalancerRuleCmd;
+import com.cloud.api.commands.StartRouterCmd;
+import com.cloud.api.commands.StopRouterCmd;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
+import com.cloud.async.executor.VMOperationParam;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -116,6 +120,7 @@ import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.SecurityGroupDao;
 import com.cloud.network.dao.SecurityGroupVMMapDao;
 import com.cloud.offering.ServiceOffering.GuestIpType;
+import com.cloud.serializer.GsonHelper;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
@@ -161,6 +166,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.google.gson.Gson;
 
 /**
  * NetworkManagerImpl implements NetworkManager.
@@ -792,6 +798,24 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         	return null;
         }
     }
+    
+    @Override
+    public DomainRouterVO startRouter(StartRouterCmd cmd) throws InvalidParameterValueException{
+    	Long routerId = cmd.getId();
+    	Account account = (Account)UserContext.current().getAccountObject();
+    	
+	    //verify parameters
+        DomainRouterVO router = _routerDao.findById(routerId);
+        if (router == null) {
+        	throw new InvalidParameterValueException ("Unable to find a domain router with id " + routerId);
+        }
+        if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), router.getDomainId())) {
+            throw new ServerApiException (BaseCmd.PARAM_ERROR, "Invalid domain router id (" + routerId + ") given, unable to start router.");
+        }
+        
+    	long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_START, "starting Router with Id: "+routerId);
+    	return startRouter(routerId, eventId);
+    }
 
     @Override @DB
     public DomainRouterVO start(long routerId, long startEventId) throws StorageUnavailableException, ConcurrentOperationException {
@@ -1209,6 +1233,27 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         
         return stop(_routerDao.findById(routerId), eventId);
     }
+    
+    
+    @Override
+    public boolean stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException{
+	    Long routerId = cmd.getId();
+        Account account = (Account)UserContext.current().getAccountObject();
+
+	    // verify parameters
+        DomainRouterVO router = _routerDao.findById(routerId);
+        if (router == null) {
+        	throw new InvalidParameterValueException ("Unable to find a domain router with id " + routerId);
+        }
+
+        if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), router.getDomainId())) {
+            throw new InvalidParameterValueException ("Invalid domain router id (" + routerId + ") given, unable to stop router.");
+        }
+        
+        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_STOP, "stopping Router with Id: "+routerId);
+        
+        return stopRouter(routerId, eventId);
+    }
 
     @DB
 	public void processStopOrRebootAnswer(final DomainRouterVO router, Answer answer) {
@@ -1331,6 +1376,25 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         } else {
             return startRouter(routerId, 0) != null;
         }
+    }
+    
+    @Override
+    public boolean rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException{
+    	Long routerId = cmd.getId();
+    	Account account = (Account)UserContext.current().getAccountObject();
+    	
+        //verify parameters
+        DomainRouterVO router = _routerDao.findById(routerId);
+        if (router == null) {
+        	throw new InvalidParameterValueException("Unable to find a domain router with id " + routerId);
+        }
+
+        if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), router.getDomainId())) {
+            throw new InvalidParameterValueException("Invalid domain router id (" + routerId + ") given, unable to reboot router.");
+        }
+        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_REBOOT, "rebooting Router with Id: "+routerId);
+        
+    	return rebootRouter(routerId, eventId);
     }
 
     @Override

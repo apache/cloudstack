@@ -21,6 +21,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 
+import com.cloud.api.commands.AttachIsoCmd;
+import com.cloud.api.commands.CopyIsoCmd;
+import com.cloud.api.commands.CopyTemplateCmd;
 import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.DetachIsoCmd;
@@ -109,6 +112,8 @@ public interface TemplateManager extends Manager {
      * @throws InvalidParameterValueException 
      */
     boolean copy(long userId, long templateId, long sourceZoneId, long destZoneId, long startEventId) throws InternalErrorException, StorageUnavailableException, InvalidParameterValueException;
+    boolean copyIso(CopyIsoCmd cmd) throws InvalidParameterValueException, StorageUnavailableException;
+    boolean copyTemplate(CopyTemplateCmd cmd) throws InvalidParameterValueException, StorageUnavailableException;
     
     /**
      * Deletes a template from secondary storage servers
@@ -120,6 +125,9 @@ public interface TemplateManager extends Manager {
     boolean delete(long userId, long templateId, Long zoneId) throws InternalErrorException;
     
     boolean detachIso(DetachIsoCmd cmd) throws InternalErrorException, InvalidParameterValueException;
+    
+    boolean attachIso(AttachIsoCmd cmd) throws InternalErrorException, InvalidParameterValueException;
+    
     /**
      * Lists templates in the specified storage pool that are not being used by any VM.
      * @param pool

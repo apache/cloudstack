@@ -38,6 +38,9 @@ import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.manager.AgentManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.AttachIsoCmd;
+import com.cloud.api.commands.CopyIsoCmd;
+import com.cloud.api.commands.CopyTemplateCmd;
 import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.DetachIsoCmd;
@@ -60,6 +63,7 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.FileSystem;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
@@ -67,6 +71,7 @@ import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
@@ -506,22 +511,35 @@ public class TemplateManagerImpl implements TemplateManager {
     	HostVO srcSecHost = _storageMgr.getSecondaryStorageHost(sourceZoneId);
     	HostVO dstSecHost = _storageMgr.getSecondaryStorageHost(destZoneId);
     	DataCenterVO destZone = _dcDao.findById(destZoneId);
+    	
+    	DataCenterVO sourceZone = _dcDao.findById(sourceZoneId);
+		if (sourceZone == null) {
+			throw new InvalidParameterValueException("Please specify a valid source zone.");
+		}
+		
+		DataCenterVO dstZone = _dcDao.findById(destZoneId);
+		if (dstZone == null) {
+			throw new InvalidParameterValueException("Please specify a valid destination zone.");
+		}
+		
+    	if (sourceZoneId == destZoneId) {
+    		throw new InvalidParameterValueException("Please specify different source and destination zones.");
+    	}
+    	
     	if (srcSecHost == null) {
     		throw new StorageUnavailableException("Source zone is not ready");
     	}
     	if (dstSecHost == null) {
     		throw new StorageUnavailableException("Destination zone is not ready");
     	}
-    	VMTemplateVO vmTemplate = _tmpltDao.findById(templateId);
-    	if (vmTemplate == null) {
-    		throw new InvalidParameterValueException("Invalid or illegal template id");
-    	}
     	
+    	VMTemplateVO vmTemplate = _tmpltDao.findById(templateId);
     	VMTemplateHostVO srcTmpltHost = null;
         srcTmpltHost = _tmpltHostDao.findByHostTemplate(srcSecHost.getId(), templateId);
-        if (srcTmpltHost == null) {
-        	throw new InvalidParameterValueException("Template " + vmTemplate.getName() + " not associated with " + srcSecHost.getName());
-        }
+        if (srcTmpltHost == null || srcTmpltHost.getDestroyed() || srcTmpltHost.getDownloadState() != VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+	      	throw new InvalidParameterValueException("Please specify a template that is installed on secondary storage host: " + srcSecHost.getName());
+	      }
+        
         EventVO event = new EventVO();
         event.setUserId(userId);
         event.setAccountId(vmTemplate.getAccountId());
@@ -592,6 +610,61 @@ public class TemplateManagerImpl implements TemplateManager {
     	
         saveEvent(userId, account.getId(), account.getDomainId(), copyEventType, copyEventDescription, EventVO.LEVEL_INFO, params, startEventId);
     	return true;
+    }
+      
+    @Override
+    public boolean copyIso(CopyIsoCmd cmd) throws InvalidParameterValueException, StorageUnavailableException {
+    	Long isoId = cmd.getId();
+    	Long userId = UserContext.current().getUserId();
+    	Long sourceZoneId = cmd.getSourceZoneId();
+    	Long destZoneId = cmd.getDestinationZoneId();
+    	Account account = (Account)UserContext.current().getAccountObject();
+    	
+        //Verify parameters
+        VMTemplateVO iso = _tmpltDao.findById(isoId);
+        if (iso == null) {
+            throw new InvalidParameterValueException("Unable to find ISO with id " + isoId);
+        }
+        
+        boolean isIso = Storage.ImageFormat.ISO.equals(iso.getFormat());
+        if (!isIso) {
+        	throw new InvalidParameterValueException("Please specify a valid ISO.");
+        }
+        
+        //Verify account information
+        String errMsg = "Unable to copy ISO " + isoId;
+        userId = accountAndUserValidation(account, userId, null, iso, errMsg);
+        
+        long eventId = EventUtils.saveScheduledEvent(userId, iso.getAccountId(), EventTypes.EVENT_ISO_COPY, "copying iso with Id: " + isoId +" from zone: " + sourceZoneId +" to: " + destZoneId);
+        return copy(userId, isoId, sourceZoneId, destZoneId, eventId);
+    }
+    
+    
+    @Override
+    public boolean copyTemplate(CopyTemplateCmd cmd) throws InvalidParameterValueException, StorageUnavailableException {
+    	Long templateId = cmd.getId();
+    	Long userId = UserContext.current().getUserId();
+    	Long sourceZoneId = cmd.getSourceZoneId();
+    	Long destZoneId = cmd.getDestinationZoneId();
+    	Account account = (Account)UserContext.current().getAccountObject();
+        
+        //Verify parameters
+        VMTemplateVO template = _tmpltDao.findById(templateId);
+        if (template == null) {
+            throw new InvalidParameterValueException("Unable to find template with id");
+        }
+        
+        boolean isIso = Storage.ImageFormat.ISO.equals(template.getFormat());
+        if (isIso) {
+        	throw new InvalidParameterValueException("Please specify a valid template.");
+        }
+        
+        //Verify account information
+        String errMsg = "Unable to copy template " + templateId;
+        userId = accountAndUserValidation(account, userId, null, template, errMsg);
+        
+        long eventId = EventUtils.saveScheduledEvent(userId, template.getAccountId(), EventTypes.EVENT_TEMPLATE_COPY, "copying template with Id: " + templateId+" from zone: " + sourceZoneId +" to: " + destZoneId);
+        return copy(userId, templateId, sourceZoneId, destZoneId, eventId);
     }
     
     @Override
@@ -893,10 +966,6 @@ public class TemplateManagerImpl implements TemplateManager {
             throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, "Unable to find a virtual machine with id " + vmId);
         }
         
-        String errMsg = "Unable to detach ISO from virtual machine ";
-
-        userId = accountAndUserValidation(account, userId, vmInstanceCheck, null, errMsg);
-        
         UserVm userVM = _userVmDao.findById(vmId);
         if (userVM == null) {
             throw new InvalidParameterValueException("Please specify a valid VM.");
@@ -912,8 +981,40 @@ public class TemplateManagerImpl implements TemplateManager {
         	throw new InvalidParameterValueException("Please specify a VM that is either Stopped or Running.");
         }
         
+        String errMsg = "Unable to detach ISO " + isoId + " from virtual machine";
+        userId = accountAndUserValidation(account, userId, vmInstanceCheck, null, errMsg);
+        
         return attachISOToVM(vmId, userId, isoId, false); //attach=false => detach
 
+	}
+	
+	@Override
+	public boolean attachIso(AttachIsoCmd cmd) throws InternalErrorException, InvalidParameterValueException {
+        Account account = (Account) UserContext.current().getAccountObject();
+        Long userId = UserContext.current().getUserId();
+        Long vmId = cmd.getVirtualMachineId();
+        Long isoId = cmd.getId();
+        
+    	// Verify input parameters
+    	UserVmVO vmInstanceCheck = _userVmDao.findById(vmId);
+    	if (vmInstanceCheck == null) {
+            throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
+        }
+    	
+    	VMTemplateVO iso = _tmpltDao.findById(isoId);
+    	if (iso == null) {
+            throw new ServerApiException (BaseCmd.PARAM_ERROR, "Unable to find an ISO with id " + isoId);
+    	}
+    	
+        State vmState = vmInstanceCheck.getState();
+        if (vmState != State.Running && vmState != State.Stopped) {
+        	throw new InvalidParameterValueException("Please specify a VM that is either Stopped or Running.");
+        }
+        
+        String errMsg = "Unable to attach ISO" + isoId + "to virtual machine " + vmId;
+        userId = accountAndUserValidation(account, userId, vmInstanceCheck, iso, errMsg);
+        
+        return attachISOToVM(vmId, userId, isoId, true);
 	}
 
     private boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach) {
@@ -953,16 +1054,31 @@ public class TemplateManagerImpl implements TemplateManager {
     }
 
 	private Long accountAndUserValidation(Account account, Long userId, UserVmVO vmInstanceCheck, VMTemplateVO template, String msg) {
-		if (account != null) {
-            if (!isAdmin(account.getType())) {
-                if (account.getId().longValue() != vmInstanceCheck.getAccountId()) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, msg + vmInstanceCheck!=null ? vmInstanceCheck.getName():template.getName() + " for this account");
-                }
-            } else if (!_domainDao.isChildDomain(account.getDomainId(), vmInstanceCheck.getDomainId())) {
-                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, msg + vmInstanceCheck!=null ? vmInstanceCheck.getName():template.getName() + ", permission denied.");
-            }
-        }
+		
+    	if (account != null) {
+    	    if (!isAdmin(account.getType())) {
+				if ((vmInstanceCheck != null) && (account.getId().longValue() != vmInstanceCheck.getAccountId())) {
+		            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, msg + ". Permission denied.");
+		        }
 
+	    		if ((template != null) && (!template.isPublicTemplate() && (account.getId().longValue() != template.getAccountId()) && (!template.getName().startsWith("xs-tools")))) {
+                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, msg + ". Permission denied.");
+                }
+                
+    	    } else {
+    	        if ((vmInstanceCheck != null) && !_domainDao.isChildDomain(account.getDomainId(), vmInstanceCheck.getDomainId())) {
+                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, msg + ". Permission denied.");
+    	        }
+    	        // FIXME:  if template/ISO owner is null we probably need to throw some kind of exception
+    	        
+    	        if (template != null) {
+    	        	Account templateOwner = _accountDao.findById(template.getId());
+	    	        if ((templateOwner != null) && !_domainDao.isChildDomain(account.getDomainId(), templateOwner.getDomainId())) {
+	                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, msg + ". Permission denied.");
+	    	        }
+    	        }
+    	    }
+    	}
         // If command is executed via 8096 port, set userId to the id of System account (1)
         if (userId == null)
             userId = new Long(1);

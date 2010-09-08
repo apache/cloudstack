@@ -27,7 +27,10 @@ import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.api.commands.DeletePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
+import com.cloud.api.commands.RebootRouterCmd;
 import com.cloud.api.commands.RemoveFromLoadBalancerRuleCmd;
+import com.cloud.api.commands.StartRouterCmd;
+import com.cloud.api.commands.StopRouterCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.VlanVO;
@@ -107,15 +110,21 @@ public interface NetworkManager extends Manager {
     
     DomainRouterVO startRouter(long routerId, long eventId);
     
+    DomainRouterVO startRouter(StartRouterCmd cmd) throws InvalidParameterValueException;
+    
     boolean releaseRouter(long routerId);
     
     boolean destroyRouter(long routerId);
     
     boolean stopRouter(long routerId, long eventId);
     
+    boolean stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException;
+    
     boolean getRouterStatistics(long vmId, Map<String, long[]> netStats, Map<String, long[]> diskStats);
 
     boolean rebootRouter(long routerId, long eventId);
+    
+    boolean rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException;
     /**
      * @param hostId get all of the virtual machine routers on a host.
      * @return collection of VirtualMachineRouter

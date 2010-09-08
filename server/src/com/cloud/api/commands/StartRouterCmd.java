@@ -18,29 +18,19 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
-import com.cloud.vm.DomainRouterVO;
 
-public class StartRouterCmd extends BaseCmd {
+
+@Implementation(method="startRouter", manager=Manager.NetworkManager)
+public class StartRouterCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(StartRouterCmd.class.getName());
-
     private static final String s_name = "startrouterresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -68,34 +58,36 @@ public class StartRouterCmd extends BaseCmd {
     public static String getResultObjectName() {
     	return "router"; 
     }
+
+//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
+//	    Long routerId = (Long)params.get(BaseCmd.Properties.ID.getName());
+//        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
+//
+//	    //verify parameters
+//        DomainRouterVO router = getManagementServer().findDomainRouterById(routerId);
+//        if (router == null) {
+//        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a domain router with id " + routerId);
+//        }
+//        if ((account != null) && !getManagementServer().isChildDomain(account.getDomainId(), router.getDomainId())) {
+//            throw new ServerApiException (BaseCmd.PARAM_ERROR, "Invalid domain router id (" + routerId + ") given, unable to start router.");
+//        }
+//
+//        long jobId = getManagementServer().startRouterAsync(routerId.longValue());
+//        if (jobId == 0) {
+//        	s_logger.warn("Unable to schedule async-job for StartRouter comamnd");
+//        } else {
+//	        if(s_logger.isDebugEnabled())
+//	        	s_logger.debug("StartRouter command has been accepted, job id: " + jobId);
+//        }
+//	    
+//	    List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
+//	    returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
+//	    return returnValues;
+//    }
     
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
-
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-	    Long routerId = (Long)params.get(BaseCmd.Properties.ID.getName());
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-
-	    //verify parameters
-        DomainRouterVO router = getManagementServer().findDomainRouterById(routerId);
-        if (router == null) {
-        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a domain router with id " + routerId);
-        }
-        if ((account != null) && !getManagementServer().isChildDomain(account.getDomainId(), router.getDomainId())) {
-            throw new ServerApiException (BaseCmd.PARAM_ERROR, "Invalid domain router id (" + routerId + ") given, unable to start router.");
-        }
-
-        long jobId = getManagementServer().startRouterAsync(routerId.longValue());
-        if (jobId == 0) {
-        	s_logger.warn("Unable to schedule async-job for StartRouter comamnd");
-        } else {
-	        if(s_logger.isDebugEnabled())
-	        	s_logger.debug("StartRouter command has been accepted, job id: " + jobId);
-        }
-	    
-	    List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-	    returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-	    return returnValues;
-    }
+	@Override
+	public String getResponse() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
