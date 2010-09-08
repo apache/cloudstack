@@ -12,7 +12,6 @@
 /usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/id_rsa.cloud
 /usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/make_migratable.sh
 /usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/network_info.sh
-/usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/networkUsage.sh
 /usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/setup_iscsi.sh
 /usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/setupxenserver.sh
 /usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/vmops
