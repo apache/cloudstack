@@ -23,15 +23,16 @@
         <p id="after_action_info"></p>
     </div>
     <div class="tabbox" style="margin-top:15px;">
-        <div class="content_tabs on">
+        <div class="content_tabs on" id="tab_details">
             <%=t.t("Details")%></div>
-        <div class="content_tabs off">
+        <div class="content_tabs off" id="tab_volume">
             <%=t.t("Volume")%></div>
-        <div class="content_tabs off">
+        <div class="content_tabs off" id="tab_statistics">
             <%=t.t("Statistics")%></div>
     </div>
-    <!--VM details start here-->
-    <div class="grid_container" style="display:none;">
+    
+    <!--Details tab (start)-->
+    <div class="grid_container" style="display:block;" id="tab_content_details">
         <div class="grid_rows odd">
             <div class="vm_statusbox">
                 <div class="vm_consolebox">
@@ -140,10 +141,10 @@
             </div>
         </div>
     </div>
-    <!--VM details ends here-->
+    <!--Details tab (end)-->
     
-    <!--Volume start here-->
-    <div class="grid_container" style="display:block;">
+    <!--Volume tab (start)-->
+    <div class="grid_container" style="display:none;" id="tab_content_volume">
     	<div class="grid_header">
         	<div class="grid_header_title">i-2-7-JW</div>
             <div class="grid_actionbox"></div>
@@ -186,6 +187,13 @@
         </div>
     
     </div>
+    <!--Volume tab (end)-->
+    
+    <!--Statistics tab (start)-->
+    <div class="grid_container" style="display:none;" id="tab_content_statistics">
+    statistics....
+    </div>    
+    <!--Statistics tab (start)-->
 </div>
 <!-- VM detail panel (end) -->
 <!-- VM wizard (begin)-->

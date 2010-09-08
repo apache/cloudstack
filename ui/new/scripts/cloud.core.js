@@ -170,7 +170,7 @@ function fromdb(val) {
 }
 
 function todb(val) {
-    return encodeURIComponent(escape(display));
+    return encodeURIComponent(escape(val));
 }
 
 
