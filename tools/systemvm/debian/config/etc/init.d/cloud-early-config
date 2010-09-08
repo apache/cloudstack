@@ -162,17 +162,27 @@ setup_dnsmasq() {
 }
 
 setup_sshd(){
-  [ -f /etc/ssh/sshd_config ] && sed -i -e "s/^[#]*ListenAddress.*$/ListenAddress $ETH1_IP/" /etc/ssh/sshd_config
+  local ip=$1
+  [ -f /etc/ssh/sshd_config ] && sed -i -e "s/^[#]*ListenAddress.*$/ListenAddress $ip/" /etc/ssh/sshd_config
+}
+
+setup_apache2() {
+  [ -f /etc/apache2/sites-available/default ] && sed -i -e "s/<VirtualHost.*>/<VirtualHost $ETH0_IP:80>/" /etc/apache2/sites-available/default
+  [ -f /etc/apache2/sites-available/default-ssl ] && sed -i -e "s/<VirtualHost.*>/<VirtualHost $ETH0_IP:443>/" /etc/apache2/sites-available/default-ssl
+  [ -f /etc/apache2/ports.conf ] && sed -i -e "s/Listen .*:80/Listen $ETH0_IP:80/g" /etc/apache2/ports.conf
+  [ -f /etc/apache2/ports.conf ] && sed -i -e "s/Listen .*:443/Listen $ETH0_IP:443/g" /etc/apache2/ports.conf
+  [ -f /etc/apache2/ports.conf ] && sed -i -e "s/NameVirtualHost .*:80/NameVirtualHost $ETH0_IP:80/g" /etc/apache2/ports.conf
 }
 
 setup_router() {
   setup_common eth0 eth1 eth2
   setup_dnsmasq
+  setup_apache2
 
   sed -i  /gateway/d /etc/hosts
   echo "$ETH0_IP $NAME" >> /etc/hosts
 
-  setup_sshd 
+  setup_sshd $ETH1_IP
 
   enable_svc dnsmasq 1
   enable_svc haproxy 1
@@ -185,11 +195,12 @@ setup_router() {
 setup_dhcpsrvr() {
   setup_common eth0 eth1
   setup_dnsmasq
+  setup_apache2
 
   sed -i  /gateway/d /etc/hosts
   echo "$ETH0_IP $NAME" >> /etc/hosts
 
-  setup_sshd 
+  setup_sshd $ETH1_IP
 
   enable_svc dnsmasq 1
   enable_svc haproxy 0
@@ -207,12 +218,15 @@ setup_secstorage() {
   echo "$public_ip $NAME" >> /etc/hosts
 
   cp /etc/iptables/iptables-secstorage /etc/iptables/rules
+  setup_sshd $ETH0_IP
+
   enable_fwding 0
   enable_svc haproxy 0
   enable_svc dnsmasq 0
   enable_svc cloud-passwd-srvr 0
   enable_svc cloud 1
 }
+
 
 setup_console_proxy() {
   setup_common eth0 eth1 eth2
@@ -221,6 +235,7 @@ setup_console_proxy() {
   sed -i  /gateway/d /etc/hosts
   echo "$public_ip $NAME" >> /etc/hosts
   cp /etc/iptables/iptables-consoleproxy /etc/iptables/rules
+  setup_sshd $ETH0_IP
 
   enable_fwding 0
   enable_svc haproxy 0

@@ -1,4 +1,4 @@
-<VirtualHost *:80>
+<VirtualHost 10.1.1.1:80>
 	ServerAdmin webmaster@localhost
 
 	DocumentRoot /var/www/html

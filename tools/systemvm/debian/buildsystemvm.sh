@@ -331,7 +331,7 @@ packages() {
   DEBCONF_DB_OVERRIDE=’File{/root/config.dat}’
   export DEBIAN_FRONTEND DEBIAN_PRIORITY DEBCONF_DB_OVERRIDE
 
-  chroot .  apt-get --no-install-recommends -q -y --force-yes install rsyslog chkconfig insserv net-tools ifupdown vim-tiny netbase iptables openssh-server grub e2fsprogs dhcp3-client dnsmasq tcpdump socat wget apache2 ssl-cert python bzip2 sed gawk diff grep gzip less tar telnet xl2tpd traceroute openswan psmisc inetutils-ping arping httping dnsutils zip unzip ethtool uuid
+  chroot .  apt-get --no-install-recommends -q -y --force-yes install rsyslog chkconfig insserv net-tools ifupdown vim-tiny netbase iptables openssh-server grub e2fsprogs dhcp3-client dnsmasq tcpdump socat wget apache2 ssl-cert python bzip2 sed gawk diff grep gzip less tar telnet xl2tpd traceroute openswan psmisc inetutils-ping iputils-arping httping dnsutils zip unzip ethtool uuid
 
   chroot . apt-get --no-install-recommends -q -y --force-yes install haproxy nfs-common
 

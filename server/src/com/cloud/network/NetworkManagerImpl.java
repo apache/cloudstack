@@ -1831,11 +1831,11 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         _offering = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, useLocalStorage, true, null);
         _offering.setUniqueName("Cloud.Com-SoftwareRouter");
         _offering = _serviceOfferingDao.persistSystemServiceOffering(_offering);
-        _template = _templateDao.findById(_routerTemplateId);
+        _template = _templateDao.findRoutingTemplate();
         if (_template == null) {
         	s_logger.error("Unable to find system vm template.");
-        	
-            // throw new ConfigurationException("Unable to find the template for the router: " + _routerTemplateId);
+        } else {
+        	_routerTemplateId = _template.getId();
         }
         
         _publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmPublicNetwork, TrafficType.Public, null);

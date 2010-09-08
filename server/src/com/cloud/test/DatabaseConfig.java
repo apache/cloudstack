@@ -771,6 +771,11 @@ public class DatabaseConfig {
         int diskSpace = Integer.parseInt(_currentObjectParams.get("diskSpace"));
 //        boolean mirroring = Boolean.parseBoolean(_currentObjectParams.get("mirrored"));
         String tags = _currentObjectParams.get("tags");
+        String useLocal = _currentObjectParams.get("useLocal");
+        boolean local = false;
+        if (useLocal != null) {
+        	local = Boolean.parseBoolean(useLocal);
+        }
         
         if (tags != null && tags.length() > 0) {
             String[] tokens = tags.split(",");
@@ -782,6 +787,7 @@ public class DatabaseConfig {
             tags = newTags.toString();
         }
         DiskOfferingVO diskOffering = new DiskOfferingVO(domainId, name, displayText, diskSpace, tags);
+        diskOffering.setUseLocalStorage(local);
         DiskOfferingDaoImpl offering = ComponentLocator.inject(DiskOfferingDaoImpl.class);
         try {
             offering.persist(diskOffering);

@@ -753,7 +753,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
     
     protected Pair<VM, String> createVmFromTemplate(Connection conn, VirtualMachineTO vmSpec, Host host) throws XenAPIException, XmlRpcException {
-        String guestOsTypeName = CitrixHelper.getGuestOsType(vmSpec.getOs());
+        String guestOsTypeName = getGuestOsType(vmSpec.getOs());
         Set<VM> templates = VM.getByNameLabel(conn, guestOsTypeName);
         assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
         VM template = templates.iterator().next();
@@ -2517,7 +2517,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         Set<VM> templates;
         VM vm = null;
         String stdType = cmd.getGuestOSDescription();
-        String guestOsTypeName = CitrixHelper.getGuestOsType(stdType);
+        String guestOsTypeName = getGuestOsType(stdType);
         templates = VM.getByNameLabel(conn, guestOsTypeName);
         assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
         VM template = templates.iterator().next();

@@ -45,7 +45,7 @@ public class CitrixHelper {
         _guestOsMap.put("CentOS 5.3 (64-bit)", "CentOS 5.3 x64");
         _guestOsMap.put("CentOS 5.4 (32-bit)", "CentOS 5.4");
         _guestOsMap.put("CentOS 5.4 (64-bit)", "CentOS 5.4 x64");
-        _guestOsMap.put("Debian Lenny 5.0 (32-bit)", "Debian Lenny 5.0");
+        _guestOsMap.put("Debian Lenny 5.0 (32-bit)", "Debian Lenny 5.0 (32-bit)");
         _guestOsMap.put("Oracle Enterprise Linux 5.0 (32-bit)", "Oracle Enterprise Linux 5.0");
         _guestOsMap.put("Oracle Enterprise Linux 5.0 (64-bit)", "Oracle Enterprise Linux 5.0 x64");
         _guestOsMap.put("Oracle Enterprise Linux 5.1 (32-bit)", "Oracle Enterprise Linux 5.1");
@@ -106,7 +106,7 @@ public class CitrixHelper {
         _guestOsList.add("CentOS 5.3 x64");
         _guestOsList.add("CentOS 5.4");
         _guestOsList.add("CentOS 5.4 x64");
-        _guestOsList.add("Debian Lenny 5.0");
+        _guestOsList.add("Debian Lenny 5.0 (32-bit)");
         _guestOsList.add("Oracle Enterprise Linux 5.0");
         _guestOsList.add("Oracle Enterprise Linux 5.0 x64");
         _guestOsList.add("Oracle Enterprise Linux 5.1");
@@ -158,6 +158,6 @@ public class CitrixHelper {
     }
 
     public static String getGuestOsType(long guestOsId) {
-        return _guestOsMap.get(guestOsId-1);
+        return _guestOsList.get((int) (guestOsId-1));
     }
 }
