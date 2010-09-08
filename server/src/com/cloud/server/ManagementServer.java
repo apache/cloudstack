@@ -53,6 +53,7 @@ import com.cloud.api.commands.ListPortForwardingServicesCmd;
 import com.cloud.api.commands.ListPreallocatedLunsCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListRoutersCmd;
+import com.cloud.api.commands.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -873,10 +874,10 @@ public interface ManagementServer {
     /**
      * Searches for Service Offerings by the specified search criteria
      * Can search by: "name"
-     * @param c
+     * @param cmd
      * @return List of ServiceOfferings
      */
-    List<ServiceOfferingVO> searchForServiceOfferings(Criteria c);
+    List<ServiceOfferingVO> searchForServiceOfferings(ListServiceOfferingsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
     /**
      * Searches for Clusters by the specified search criteria

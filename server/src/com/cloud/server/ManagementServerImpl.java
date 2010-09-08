@@ -90,6 +90,7 @@ import com.cloud.api.commands.ListPortForwardingServicesCmd;
 import com.cloud.api.commands.ListPreallocatedLunsCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListRoutersCmd;
+import com.cloud.api.commands.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -3833,14 +3834,14 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<ServiceOfferingVO> searchForServiceOfferings(Criteria c) {
-        Filter searchFilter = new Filter(ServiceOfferingVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+    public List<ServiceOfferingVO> searchForServiceOfferings(ListServiceOfferingsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Filter searchFilter = new Filter(ServiceOfferingVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<ServiceOfferingVO> sc = _offeringsDao.createSearchCriteria();
 
-        Object name = c.getCriteria(Criteria.NAME);
-        Object vmIdObj = c.getCriteria(Criteria.INSTANCEID);
-        Object id = c.getCriteria(Criteria.ID);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
+        Object name = cmd.getServiceOfferingName();
+        Object id = cmd.getId();
+        Object keyword = cmd.getKeyword();
+        Long vmId = cmd.getVirtualMachineId();
 
         if (keyword != null) {
             SearchCriteria<ServiceOfferingVO> ssc = _offeringsDao.createSearchCriteria();
@@ -3848,6 +3849,25 @@ public class ManagementServerImpl implements ManagementServer {
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        } else if (vmId != null) {
+            Account account = (Account)UserContext.current().getAccountObject();
+
+            UserVmVO vmInstance = _userVmDao.findById(vmId);
+            if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
+                throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+            }
+            if ((account != null) && !isAdmin(account.getType())) {
+                if (account.getId().longValue() != vmInstance.getAccountId()) {
+                    throw new PermissionDeniedException("unable to find a virtual machine with id " + vmId + " for this account");
+                }
+            }
+
+            ServiceOfferingVO offering = _offeringsDao.findById(vmInstance.getServiceOfferingId());
+            sc.addAnd("id", SearchCriteria.Op.NEQ, offering.getId());
+            
+            // Only return offerings with the same Guest IP type and storage pool preference
+            sc.addAnd("guestIpType", SearchCriteria.Op.EQ, offering.getGuestIpType());
+            sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, offering.getUseLocalStorage());
         }
 
         if (id != null) {
@@ -3858,21 +3878,9 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }
 
-        if (vmIdObj != null) {
-            UserVmVO vm = _userVmDao.findById((Long) vmIdObj);
-            if (vm != null) {
-                ServiceOfferingVO offering = _offeringsDao.findById(vm.getServiceOfferingId());
-                sc.addAnd("id", SearchCriteria.Op.NEQ, offering.getId());
-                
-                // Only return offerings with the same Guest IP type and storage pool preference
-                sc.addAnd("guestIpType", SearchCriteria.Op.EQ, offering.getGuestIpType());
-                sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, offering.getUseLocalStorage());
-            }
-        }
-
         return _offeringsDao.search(sc, searchFilter);
     }
-    
+
     @Override
     public List<ClusterVO> searchForClusters(ListClustersCmd cmd) {
         Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
