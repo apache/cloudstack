@@ -20,12 +20,14 @@ package com.cloud.user;
 
 import java.util.List;
 
+import com.cloud.api.commands.ListResourceLimitsCmd;
 import com.cloud.api.commands.UpdateResourceLimitCmd;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.server.Criteria;
 import com.cloud.utils.component.Manager;
 
@@ -93,19 +95,22 @@ public interface AccountManager extends Manager {
 	 */
 	public long getResourceCount(AccountVO account, ResourceType type);
 	
-	/**
-	 * Updates an existing resource limit with the specified details. If a limit doesn't exist, will create one.
-	 * @param domainId
-	 * @param accountId
-	 * @param type
-	 * @param max
-	 * @return
-	 * @throws InvalidParameterValueException
-	 */
-//	public ResourceLimitVO updateResourceLimit(Long domainId, Long accountId, ResourceType type, Long max) throws InvalidParameterValueException;
-
 	List<ResourceLimitVO> searchForLimits(Criteria c);
 
+	/**
+	 * Search for resource limits for the given id and/or account and/or type and/or domain.
+	 * @param cmd the command wrapping the id, type, account, and domain
+	 * @return a list of limits that match the criteria
+	 * @throws InvalidParameterValueException
+	 * @throws PermissionDeniedException
+	 */
+	List<ResourceLimitVO> searchForLimits(ListResourceLimitsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+
+    /**
+     * Updates an existing resource limit with the specified details. If a limit doesn't exist, will create one.
+     * @param cmd the command that wraps the domainId, accountId, type, and max parameters
+     * @return the updated/created resource limit
+     * @throws InvalidParameterValueException
+     */
 	ResourceLimitVO updateResourceLimit(UpdateResourceLimitCmd cmd) throws InvalidParameterValueException;
-	
 }

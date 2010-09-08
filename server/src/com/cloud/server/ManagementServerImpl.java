@@ -89,6 +89,9 @@ import com.cloud.api.commands.ListPortForwardingServicesByVmCmd;
 import com.cloud.api.commands.ListPortForwardingServicesCmd;
 import com.cloud.api.commands.ListPreallocatedLunsCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
+import com.cloud.api.commands.ListRoutersCmd;
+import com.cloud.api.commands.ListServiceOfferingsCmd;
+import com.cloud.api.commands.ListSnapshotsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -210,7 +213,6 @@ import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotPolicyVO;
-import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
@@ -3833,14 +3835,14 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<ServiceOfferingVO> searchForServiceOfferings(Criteria c) {
-        Filter searchFilter = new Filter(ServiceOfferingVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+    public List<ServiceOfferingVO> searchForServiceOfferings(ListServiceOfferingsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Filter searchFilter = new Filter(ServiceOfferingVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<ServiceOfferingVO> sc = _offeringsDao.createSearchCriteria();
 
-        Object name = c.getCriteria(Criteria.NAME);
-        Object vmIdObj = c.getCriteria(Criteria.INSTANCEID);
-        Object id = c.getCriteria(Criteria.ID);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
+        Object name = cmd.getServiceOfferingName();
+        Object id = cmd.getId();
+        Object keyword = cmd.getKeyword();
+        Long vmId = cmd.getVirtualMachineId();
 
         if (keyword != null) {
             SearchCriteria<ServiceOfferingVO> ssc = _offeringsDao.createSearchCriteria();
@@ -3848,6 +3850,25 @@ public class ManagementServerImpl implements ManagementServer {
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        } else if (vmId != null) {
+            Account account = (Account)UserContext.current().getAccountObject();
+
+            UserVmVO vmInstance = _userVmDao.findById(vmId);
+            if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
+                throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+            }
+            if ((account != null) && !isAdmin(account.getType())) {
+                if (account.getId().longValue() != vmInstance.getAccountId()) {
+                    throw new PermissionDeniedException("unable to find a virtual machine with id " + vmId + " for this account");
+                }
+            }
+
+            ServiceOfferingVO offering = _offeringsDao.findById(vmInstance.getServiceOfferingId());
+            sc.addAnd("id", SearchCriteria.Op.NEQ, offering.getId());
+            
+            // Only return offerings with the same Guest IP type and storage pool preference
+            sc.addAnd("guestIpType", SearchCriteria.Op.EQ, offering.getGuestIpType());
+            sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, offering.getUseLocalStorage());
         }
 
         if (id != null) {
@@ -3858,21 +3879,9 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }
 
-        if (vmIdObj != null) {
-            UserVmVO vm = _userVmDao.findById((Long) vmIdObj);
-            if (vm != null) {
-                ServiceOfferingVO offering = _offeringsDao.findById(vm.getServiceOfferingId());
-                sc.addAnd("id", SearchCriteria.Op.NEQ, offering.getId());
-                
-                // Only return offerings with the same Guest IP type and storage pool preference
-                sc.addAnd("guestIpType", SearchCriteria.Op.EQ, offering.getGuestIpType());
-                sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, offering.getUseLocalStorage());
-            }
-        }
-
         return _offeringsDao.search(sc, searchFilter);
     }
-    
+
     @Override
     public List<ClusterVO> searchForClusters(ListClustersCmd cmd) {
         Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -5319,17 +5328,37 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<DomainRouterVO> searchForRouters(Criteria c) {
-        Filter searchFilter = new Filter(DomainRouterVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+    public List<DomainRouterVO> searchForRouters(ListRoutersCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
+        Long accountId = null;
+        Account account = (Account)UserContext.current().getAccountObject();
 
-        Object[] accountIds = (Object[]) c.getCriteria(Criteria.ACCOUNTID);
-        Object name = c.getCriteria(Criteria.NAME);
-        Object state = c.getCriteria(Criteria.STATE);
-        Object zone = c.getCriteria(Criteria.DATACENTERID);
-        Object pod = c.getCriteria(Criteria.PODID);
-        Object hostId = c.getCriteria(Criteria.HOSTID);
-        Object domainId = c.getCriteria(Criteria.DOMAINID);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
+        // validate domainId before proceeding
+        if (domainId != null) {
+            if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list routers");
+            }
+            if (accountName != null) {
+                Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                if (userAccount != null) {
+                    accountId = userAccount.getId();
+                } else {
+                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find account " + accountName + " in domain " + domainId);
+                }
+            }
+        } else {
+            domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+        }
+
+        Filter searchFilter = new Filter(DomainRouterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        Object name = cmd.getRouterName();
+        Object state = cmd.getState();
+        Object zone = cmd.getZoneId();
+        Object pod = cmd.getPodId();
+        Object hostId = cmd.getHostId();
+        Object keyword = cmd.getKeyword();
 
         SearchBuilder<DomainRouterVO> sb = _routerDao.createSearchBuilder();
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
@@ -5339,7 +5368,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
 
-        if ((accountIds == null) && (domainId != null)) {
+        if ((accountId == null) && (domainId != null)) {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
@@ -5361,8 +5390,8 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("name", "%" + name + "%");
         }
 
-        if (accountIds != null) {
-            sc.setParameters("accountId", accountIds);
+        if (accountId != null) {
+            sc.setParameters("accountId", accountId);
         } else if (domainId != null) {
             DomainVO domain = _domainDao.findById((Long)domainId);
             sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
@@ -6556,43 +6585,54 @@ public class ManagementServerImpl implements ManagementServer {
     public SnapshotVO createTemplateSnapshot(Long userId, long volumeId) {
         return _vmMgr.createTemplateSnapshot(userId, volumeId);
     }
-    
+
     @Override
     public boolean destroyTemplateSnapshot(Long userId, long snapshotId) {
         return _vmMgr.destroyTemplateSnapshot(userId, snapshotId);
     }
 
-//    @Override
-//    public long deleteSnapshotAsync(long userId, long snapshotId) {
-//    	Snapshot snapshot = findSnapshotById(snapshotId);
-//        long volumeId = snapshot.getVolumeId();
-//        List<SnapshotPolicyVO> policies = _snapMgr.listPoliciesforSnapshot(snapshotId);
-//        
-//        // Return the job id of the last destroySnapshotAsync job which actually destroys the snapshot.
-//        // The rest of the async jobs just update the db and don't really do any meaningful thing.
-//        long finalJobId = 0;
-//        for (SnapshotPolicyVO policy : policies) {
-//            finalJobId = _snapMgr.destroySnapshotAsync(userId, volumeId, snapshotId, policy.getId());
-//        }
-//        return finalJobId;
-//    }
-
-
     @Override
-    public List<SnapshotVO> listSnapshots(Criteria c, String interval) throws InvalidParameterValueException {
-        Filter searchFilter = new Filter(SnapshotVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+    public List<SnapshotVO> listSnapshots(ListSnapshotsCmd cmd) throws InvalidParameterValueException {
+        Long volumeId = cmd.getVolumeId();
+
+        // Verify parameters
+        if(volumeId != null){
+            VolumeVO volume = _volumeDao.findById(volumeId);
+            if (volume == null) {
+                throw new InvalidParameterValueException("unable to find a volume with id " + volumeId);
+            }
+            checkAccountPermissions(volume.getAccountId(), volume.getDomainId(), "volume", volumeId);
+        }
+
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
+        Long accountId = null;
+        if ((account == null) || isAdmin(account.getType())) {
+            if(account != null && account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)
+                accountId = account.getId();
+            if (domainId != null && accountName != null) {
+                Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                if (userAccount != null) {
+                    accountId = userAccount.getId();
+                }
+            }
+        } else {
+            accountId = account.getId();
+        }
+
+        Filter searchFilter = new Filter(SnapshotVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<SnapshotVO> sc = _snapshotDao.createSearchCriteria();
 
-        Object volumeId = c.getCriteria(Criteria.VOLUMEID);
-        Object name = c.getCriteria(Criteria.NAME);
-        Object id = c.getCriteria(Criteria.ID);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
-        Object accountId = c.getCriteria(Criteria.ACCOUNTID);
-        Object snapshotTypeStr = c.getCriteria(Criteria.TYPE);
-        
+        Object name = cmd.getSnapshotName();
+        Object id = cmd.getId();
+        Object keyword = cmd.getKeyword();
+        Object snapshotTypeStr = cmd.getSnapshotType();
+        String interval = cmd.getIntervalType();
+
         sc.addAnd("status", SearchCriteria.Op.EQ, Snapshot.Status.BackedUp);
-        
-        if(volumeId != null){
+
+        if (volumeId != null) {
             sc.addAnd("volumeId", SearchCriteria.Op.EQ, volumeId);
         }
         
@@ -6621,12 +6661,12 @@ public class ManagementServerImpl implements ManagementServer {
                 throw new InvalidParameterValueException("Unsupported snapshot type " + snapshotTypeStr);
             }
             sc.addAnd("snapshotType", SearchCriteria.Op.EQ, snapshotType.ordinal());
-        }
-        else {
+        } else {
             // Show only MANUAL and RECURRING snapshot types
             sc.addAnd("snapshotType", SearchCriteria.Op.NEQ, Snapshot.SnapshotType.TEMPLATE.ordinal());
         }
-        if(interval != null && volumeId != null) {
+
+        if (interval != null && volumeId != null) {
             IntervalType intervalType =  DateUtil.IntervalType.getIntervalType(interval);
             if(intervalType == null) {
                 throw new InvalidParameterValueException("Unsupported interval type " + intervalType);
@@ -7984,22 +8024,6 @@ public class ManagementServerImpl implements ManagementServer {
 	    return intervalTypes;
 	}
 	
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public List<SnapshotScheduleVO> findRecurringSnapshotSchedule(Long volumeId, Long policyId) {
-	    return _snapMgr.findRecurringSnapshotSchedule(volumeId, policyId);
-	}
-
-	@Override
-	public List<SnapshotPolicyVO> listSnapshotPolicies(long volumeId) {
-    	if( _volumeDao.findById(volumeId) == null){
-    		return null;
-    	}
-		return _snapMgr.listPoliciesforVolume(volumeId);
-	}
-    
     @Override
     public boolean isChildDomain(Long parentId, Long childId) {
         return _domainDao.isChildDomain(parentId, childId);
@@ -8542,5 +8566,23 @@ public class ManagementServerImpl implements ManagementServer {
 		
         return deleteUserInternal(userId);
 	}
+
+	private Long checkAccountPermissions(long targetAccountId, long targetDomainId, String targetDesc, long targetId) throws ServerApiException {
+        Long accountId = null;
+
+        Account account = (Account)UserContext.current().getAccountObject();
+        if (account != null) {
+            if (!isAdmin(account.getType())) {
+                if (account.getId().longValue() != targetAccountId) {
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find a " + targetDesc + " with id " + targetId + " for this account");
+                }
+            } else if (!_domainDao.isChildDomain(account.getDomainId(), targetDomainId)) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to perform operation for " + targetDesc + " with id " + targetId + ", permission denied.");
+            }
+            accountId = account.getId();
+        }
+    
+        return accountId;
+    }
 }
 

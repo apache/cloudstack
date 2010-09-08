@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
 import java.util.TimeZone;
 
 import javax.ejb.Local;
@@ -47,6 +46,8 @@ import com.cloud.api.commands.CreateSnapshotPolicyCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeleteSnapshotCmd;
 import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
+import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
+import com.cloud.api.commands.ListSnapshotPoliciesCmd;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -62,11 +63,11 @@ import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.serializer.GsonHelper;
-import com.cloud.server.ManagementServer;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.Snapshot.Status;
@@ -779,22 +780,16 @@ public class SnapshotManagerImpl implements SnapshotManager {
         
     }
     
-    protected Long checkAccountPermissions(long targetAccountId,long targetDomainId,String targetDesc,long targetId) throws ServerApiException
-	{
+    private Long checkAccountPermissions(long targetAccountId, long targetDomainId, String targetDesc, long targetId) throws ServerApiException {
     	Long accountId = null;
-	
+
     	Account account = (Account)UserContext.current().getAccountObject();
-    	if (account != null) 
-    	{
-    		if (!isAdmin(account.getType())) 
-    		{
-    			if (account.getId().longValue() != targetAccountId) 
-    			{
+    	if (account != null) {
+    		if (!isAdmin(account.getType())) {
+    			if (account.getId().longValue() != targetAccountId) {
     				throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find a " + targetDesc + " with id " + targetId + " for this account");
     			}
-    		} 
-    		else if (!_domainDao.isChildDomain(account.getDomainId(), targetDomainId)) 
-    		{
+    		} else if (!_domainDao.isChildDomain(account.getDomainId(), targetDomainId)) {
     			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to perform operation for " + targetDesc + " with id " + targetId + ", permission denied.");
     		}
     		accountId = account.getId();
@@ -802,7 +797,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
 	
     	return accountId;
 	}
-    
+
 	private static boolean isAdmin(short accountType) {
 	    return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
 	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
@@ -811,8 +806,6 @@ public class SnapshotManagerImpl implements SnapshotManager {
 
     @Override @DB
     public boolean deleteSnapshot(DeleteSnapshotCmd cmd) {
-    	
-    	Account account = (Account)UserContext.current().getAccountObject();
     	Long userId = UserContext.current().getUserId();
     	Long snapshotId = cmd.getId();
     	
@@ -834,22 +827,19 @@ public class SnapshotManagerImpl implements SnapshotManager {
             userId = Long.valueOf(1);
         }
         
-        long volumeId = snapshotCheck.getVolumeId();
         List<SnapshotPolicyVO> policies = listPoliciesforSnapshot(snapshotId);
         
         boolean status = true; 
         for (SnapshotPolicyVO policy : policies) {
             status = deleteSnapshotInternal(snapshotId,policy.getId(),userId);
             
-            if(!status)
-            {
+            if (!status) {
             	s_logger.warn("Failed to delete snapshot");
             	throw new ServerApiException(BaseCmd.INTERNAL_ERROR,"Failed to delete snapshot:"+snapshotId);
             }
         }
 
         return status;
-
     }
 
 	private boolean deleteSnapshotInternal(Long snapshotId, Long policyId, Long userId) {
@@ -1302,6 +1292,17 @@ public class SnapshotManagerImpl implements SnapshotManager {
     }
 
     @Override
+    public List<SnapshotPolicyVO> listPoliciesforVolume(ListSnapshotPoliciesCmd cmd) throws InvalidParameterValueException {
+        Long volumeId = cmd.getVolumeId();
+        VolumeVO volume = _volsDao.findById(volumeId);
+        if (volume == null) {
+            throw new InvalidParameterValueException("Unable to find a volume with id " + volumeId);
+        }
+        checkAccountPermissions(volume.getAccountId(), volume.getDomainId(), "volume", volumeId);
+        return listPoliciesforVolume(cmd.getVolumeId());
+    }
+
+    @Override
     public List<SnapshotPolicyVO> listPoliciesforVolume(long volumeId) {
         return _snapshotPolicyDao.listByVolumeId(volumeId);
     }
@@ -1400,12 +1401,34 @@ public class SnapshotManagerImpl implements SnapshotManager {
         }
         return success;
     }
-    
+
     /**
      * {@inheritDoc}
      */
     @Override
-    public List<SnapshotScheduleVO> findRecurringSnapshotSchedule(Long volumeId, Long policyId) {
+    public List<SnapshotScheduleVO> findRecurringSnapshotSchedule(ListRecurringSnapshotScheduleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Long volumeId = cmd.getVolumeId();
+        Long policyId = cmd.getSnapshotPolicyId();
+        Account account = (Account)UserContext.current().getAccountObject();
+
+        //Verify parameters
+        VolumeVO volume = _volsDao.findById(volumeId);
+        if (volume == null) {
+            throw new InvalidParameterValueException("Failed to list snapshot schedule, unable to find a volume with id " + volumeId);
+        }
+
+        if (account != null) {
+            long volAcctId = volume.getAccountId();
+            if (isAdmin(account.getType())) {
+                Account userAccount = _accountDao.findById(Long.valueOf(volAcctId));
+                if (!_domainDao.isChildDomain(account.getDomainId(), userAccount.getDomainId())) {
+                    throw new PermissionDeniedException("Unable to list snapshot schedule for volume " + volumeId + ", permission denied.");
+                }
+            } else if (account.getId().longValue() != volAcctId) {
+                throw new PermissionDeniedException("Unable to list snapshot schedule, account " + account.getAccountName() + " does not own volume id " + volAcctId);
+            }
+        }
+
         // List only future schedules, not past ones.
         List<SnapshotScheduleVO> snapshotSchedules = new ArrayList<SnapshotScheduleVO>();
         if (policyId == null) {
@@ -1415,22 +1438,19 @@ public class SnapshotManagerImpl implements SnapshotManager {
                     _snapshotScheduleDao.getCurrentSchedule(volumeId, policyInstance.getId(), false);
                 snapshotSchedules.add(snapshotSchedule);
             }
-        }
-        else {
+        } else {
             snapshotSchedules.add(_snapshotScheduleDao.getCurrentSchedule(volumeId, policyId, false));
         }
         return snapshotSchedules;
     }
-    
+
 	@Override
-	public SnapshotPolicyVO getPolicyForVolumeByInterval(long volumeId,
-			short interval) {
+	public SnapshotPolicyVO getPolicyForVolumeByInterval(long volumeId, short interval) {
 	    return _snapshotPolicyDao.findOneByVolumeInterval(volumeId, interval);
 	}
-        
+
 	@Override
-    public boolean configure(String name, Map<String, Object> params)
-    throws ConfigurationException {
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
 
         ComponentLocator locator = ComponentLocator.getCurrentLocator();

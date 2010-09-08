@@ -52,6 +52,9 @@ import com.cloud.api.commands.ListPortForwardingServicesByVmCmd;
 import com.cloud.api.commands.ListPortForwardingServicesCmd;
 import com.cloud.api.commands.ListPreallocatedLunsCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
+import com.cloud.api.commands.ListRoutersCmd;
+import com.cloud.api.commands.ListServiceOfferingsCmd;
+import com.cloud.api.commands.ListSnapshotsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -105,7 +108,6 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
-import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
@@ -873,10 +875,10 @@ public interface ManagementServer {
     /**
      * Searches for Service Offerings by the specified search criteria
      * Can search by: "name"
-     * @param c
+     * @param cmd
      * @return List of ServiceOfferings
      */
-    List<ServiceOfferingVO> searchForServiceOfferings(Criteria c);
+    List<ServiceOfferingVO> searchForServiceOfferings(ListServiceOfferingsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
     /**
      * Searches for Clusters by the specified search criteria
@@ -1197,10 +1199,10 @@ public interface ManagementServer {
     /**
      * Obtains a list of routers by the specified search criteria.
      * Can search by: "userId", "name", "state", "dataCenterId", "podId", "hostId"
-     * @param c
+     * @param cmd
      * @return List of DomainRouters.
      */
-    List<DomainRouterVO> searchForRouters(Criteria c);
+    List<DomainRouterVO> searchForRouters(ListRoutersCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
     List<ConsoleProxyVO> searchForConsoleProxy(Criteria c);
     
@@ -1495,15 +1497,6 @@ public interface ManagementServer {
     ResourceLimitVO findLimitById(long limitId);
     
     /**
-     * Searches for Limits.
-     * @param domainId
-     * @param accountId
-     * @param type
-     * @return a list of Limits
-     */
-//    List<ResourceLimitVO> searchForLimits(Criteria c);
-    
-    /**
 	 * Finds the correct limit for an account. I.e. if an account's limit is not present, it will check the account's domain, and as a last resort use the global limit.
 	 * @param type
 	 * @param accountId
@@ -1573,11 +1566,11 @@ public interface ManagementServer {
     
     /**
      * List all snapshots of a disk volume. Optionaly lists snapshots created by specified interval
-     * @param c the search criteria (order by, limit, etc.)
+     * @param cmd the command containing the search criteria (order by, limit, etc.)
      * @return list of snapshots
      * @throws InvalidParameterValueException
      */
-    List<SnapshotVO> listSnapshots(Criteria c, String interval) throws InvalidParameterValueException;
+    List<SnapshotVO> listSnapshots(ListSnapshotsCmd cmd) throws InvalidParameterValueException;
 
     /**
      * find a single snapshot by id
@@ -1809,36 +1802,12 @@ public interface ManagementServer {
      */
     long updateLoadBalancerRuleAsync(long userId, long accountId, long loadBalancerId, String name, String description, String privatePort, String algorithm);
 
-//    void assignToLoadBalancer(long userId, long loadBalancerId, List<Long> instanceIds) throws NetworkRuleConflictException, InternalErrorException, PermissionDeniedException, InvalidParameterValueException;
-//    long assignToLoadBalancerAsync(long userId, long loadBalancerId, List<Long> instanceIds, Map<String, String> params);
-//    boolean removeFromLoadBalancer(long userId, long loadBalancerId, List<Long> instanceIds) throws InvalidParameterValueException;
-//    long removeFromLoadBalancerAsync(long userId, long loadBalancerId, List<Long> instanceIds);
-
     String[] getApiConfig();
     StoragePoolVO findPoolById(Long id);
 	List<? extends StoragePoolVO> searchForStoragePools(Criteria c);
-	
-	/**
-	 * List all snapshot policies which are created for the specified volume
-	 * @param volumeId
-	 * @return
-	 */
-	List<SnapshotPolicyVO> listSnapshotPolicies(long volumeId);
-	SnapshotPolicyVO findSnapshotPolicyById(Long policyId);
-	
-	/**
-	 * Deletes snapshot scheduling policies
-	 */
-//	boolean deleteSnapshotPolicies(long userId, List<Long> policyIds) throws InvalidParameterValueException;
 
-	/**
-	 * Get the recurring snapshots scheduled for this volume currently along with the time at which they are scheduled
-	 * @param volumeId The volume for which the snapshots are required.
-	 * @param policyId Show snapshots for only this policy.
-	 * @return The list of snapshot schedules.
-	 */
-    List<SnapshotScheduleVO> findRecurringSnapshotSchedule(Long volumeId, Long policyId);
-    
+	SnapshotPolicyVO findSnapshotPolicyById(Long policyId);
+
 	/**
 	 * Return whether a domain is a child domain of a given domain.
 	 * @param parentId
@@ -1846,25 +1815,23 @@ public interface ManagementServer {
 	 * @return True if the domainIds are equal, or if the second domain is a child of the first domain.  False otherwise.
 	 */
     boolean isChildDomain(Long parentId, Long childId);
-	
-    
+
     /**
      * List interval types the specified snapshot belongs to
      * @param snapshotId
      * @return
      */
     String getSnapshotIntervalTypes(long snapshotId);
-    
-    
+
 	List<SecondaryStorageVmVO> searchForSecondaryStorageVm(Criteria c);
-    
+
 	/**
 	 * Returns back a SHA1 signed response
 	 * @param userId -- id for the user
 	 * @return -- ArrayList of <CloudId+Signature>
 	 */
     ArrayList<String> getCloudIdentifierResponse(GetCloudIdentifierCmd cmd) throws InvalidParameterValueException;
-    
+
     NetworkGroupVO findNetworkGroupByName(Long accountId, String groupName);
 
     /**
