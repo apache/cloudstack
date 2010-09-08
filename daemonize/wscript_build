@@ -1,0 +1,7 @@
+if bld.env.DISTRO not in ['Windows','Mac']:
+	# build / install declarations of the daemonization utility - except for Windows
+	bld(
+		name='daemonize',
+		features='cc cprogram',
+		source='daemonize.c',
+		target='cloud-daemonize')

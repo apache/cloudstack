@@ -615,8 +615,8 @@ public interface ManagementServer {
      * @volumeId
      * @throws InvalidParameterValueException, InternalErrorException
      */
-    void detachVolumeFromVM(long volumeId, long startEventId) throws InternalErrorException;
-    long detachVolumeFromVMAsync(long volumeId) throws InvalidParameterValueException;
+    void detachVolumeFromVM(long volumeId, long startEventId, long deviceId, long instanceId) throws InternalErrorException;
+    long detachVolumeFromVMAsync(long volumeId, long deviceId, long instanceId) throws InvalidParameterValueException;
     
     /**
      * Attaches an ISO to the virtual CDROM device of the specified VM. Will fail if the VM already has an ISO mounted.
@@ -1836,14 +1836,14 @@ public interface ManagementServer {
      * @param tags Comma separated string to indicate special tags for the disk offering.
      * @return the created disk offering, null if failed to create
      */
-    DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException;
+    DiskOfferingVO createDiskOffering(long userId, long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException;
 
     /**
      * Delete a disk offering
      * @param id id of the disk offering to delete
      * @return true if deleted, false otherwise
      */
-    boolean deleteDiskOffering(long id);
+    boolean deleteDiskOffering(long userId, long id);
     
     /**
      * Update a disk offering
@@ -2195,4 +2195,8 @@ public interface ManagementServer {
 	 */
 	void extractTemplate(String url, Long templateId, Long zoneId) throws URISyntaxException;
 
+    Map<String, String> listCapabilities();
+	GuestOSVO getGuestOs(Long guestOsId);
+	VolumeVO findVolumeByInstanceAndDeviceId(long instanceId, long deviceId);
+	VolumeVO getRootVolume(Long instanceId);
 }

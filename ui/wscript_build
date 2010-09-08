@@ -1,0 +1,41 @@
+import Utils, os
+
+# binary unsubstitutable files:
+bld.install_files("${MSENVIRON}/webapps/client",bld.path.ant_glob("*.ico **/*png **/*jpg **/*gif",src=True,bld=False,dir=False,flat=True),cwd=bld.path,relative_trick=True)
+
+# text substitutable files (substitute with tokens from the environment bld.env):
+bld.substitute('*html **/*html **/*js **/*css **/*properties **/*jsp *jsp',install_to="${MSENVIRON}/webapps/client")
+
+# -> minification of UI files
+def minifyjs(task):
+	tgt = task.outputs[0].bldpath(task.env)
+	inputfiles = []
+	outputfile = ['--js_output_file',tgt]
+	for inp in task.inputs:
+		src = inp.srcpath(task.env)
+		inputfiles.append(src)
+	newinputfiles = []
+	for inputfile in inputfiles:
+		if inputfile not in newinputfiles:
+			newinputfiles.append('--js')
+			newinputfiles.append(inputfile)
+	compilerjar = os.path.join(bld.srcnode.abspath(),'tools','gcc','compiler.jar')
+	return Utils.exec_command(["java",'-jar',compilerjar] + newinputfiles + outputfile,log=True)
+
+javascripts = [
+	['scripts/jquery-1.4.2.min.js','scripts/date.js'],
+	Utils.to_list(bld.path.ant_glob('scripts/jquery*js')),
+	['scripts/cloud.core.js','scripts/cloud.core.callbacks.js'],
+	Utils.to_list(bld.path.ant_glob('scripts/cloud*js')),
+]
+sourcefiles = []
+for lst in javascripts:
+	for x in lst:
+		if x not in sourcefiles: sourcefiles.append(x)
+tgen = bld(
+	rule   = minifyjs,
+	source = sourcefiles,
+	target = 'scripts/cloud.min.js',
+	name   = 'minifyjs',
+)
+bld.install_files("${MSENVIRON}/webapps/client/scripts", "scripts/cloud.min.js")

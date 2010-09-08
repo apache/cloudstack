@@ -303,7 +303,7 @@ public class DownloadManagerImpl implements DownloadManager {
         }
 
         // add options common to ISO and template
-        String extension = dnld.getFormat().toString().toLowerCase();
+        String extension = dnld.getFormat().getFileExtension();
         String templateName = "";
         if( extension.equals("iso")) {
             templateName = jobs.get(jobId).getTmpltName().trim().replace(" ", "_");
@@ -353,6 +353,7 @@ public class DownloadManagerImpl implements DownloadManager {
 			try {
 				info = processor.process(templatePath, null, templateName);
 			} catch (InternalErrorException e) {
+				s_logger.error("Template process exception ", e);
 				return e.toString();
 			}
             if (info != null) {
@@ -781,6 +782,11 @@ public class DownloadManagerImpl implements DownloadManager {
         processor = new QCOW2Processor();
         processor.configure("QCOW2 Processor", params);
         processors.add(processor);
+
+        processor = new VmdkProcessor();
+        processor.configure("VMDK Processor", params);
+        processors.add(processor);
+        
         // Add more processors here.
         threadPool = Executors.newFixedThreadPool(numInstallThreads);
         return true;

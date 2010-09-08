@@ -82,8 +82,8 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -121,7 +121,6 @@ import com.cloud.network.dao.SecurityGroupVMMapDao;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
@@ -129,18 +128,18 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
-import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
-import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Snapshot.SnapshotType;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.DiskTemplateDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -419,10 +418,28 @@ public class UserVmManagerImpl implements UserVmManager {
     }
     
     @Override
-    public void detachVolumeFromVM(long volumeId, long startEventId) throws InternalErrorException {
-    	VolumeVO volume = _volsDao.findById(volumeId);
+    public void detachVolumeFromVM(long volumeId, long startEventId, long deviceId, long instanceId) throws InternalErrorException {
+    	VolumeVO volume = null;
     	
-    	Long vmId = volume.getInstanceId();
+    	if(volumeId!=0)
+    	{
+    		volume = _volsDao.findById(volumeId);
+    	}
+    	else
+    	{
+    		volume = _volsDao.findByInstanceAndDeviceId(instanceId, deviceId).get(0);
+    	}
+    	
+    	Long vmId = null;
+    	
+    	if(instanceId==0)
+    	{
+    		vmId = volume.getInstanceId();
+    	}
+    	else
+    	{
+    		vmId = instanceId;
+    	}
     	
     	if (vmId == null) {
     		return;
@@ -455,7 +472,7 @@ public class UserVmManagerImpl implements UserVmManager {
     	Answer answer = null;
     	
     	if (sendCommand) {
-			AttachVolumeCommand cmd = new AttachVolumeCommand(false, vm.getInstanceName(), volume.getPoolType(), volume.getFolder(), volume.getPath(), volume.getName(), volume.getDeviceId());
+			AttachVolumeCommand cmd = new AttachVolumeCommand(false, vm.getInstanceName(), volume.getPoolType(), volume.getFolder(), volume.getPath(), volume.getName(), deviceId!=0 ? deviceId : volume.getDeviceId());
 			
 			try {
     			answer = _agentMgr.send(vm.getHostId(), cmd);
@@ -686,6 +703,7 @@ public class UserVmManagerImpl implements UserVmManager {
         }
         
         boolean started = false;
+       
         Transaction txn = Transaction.currentTxn();
         try {
             
@@ -736,6 +754,11 @@ public class UserVmManagerImpl implements UserVmManager {
 	        VolumeVO vol = rootVols.get(0);
 
 	        List<VolumeVO> vols = _volsDao.findCreatedByInstance(vm.getId());
+	        List<VolumeVO> vos = new ArrayList<VolumeVO>();
+	        /*compete with take snapshot*/
+	        for (VolumeVO userVmVol : vols) {
+	        	vos.add(_volsDao.lock(userVmVol.getId(), true));
+	        }
 
             Answer answer = null;
             int retry = _retry;
@@ -1488,6 +1511,10 @@ public class UserVmManagerImpl implements UserVmManager {
                 podsToAvoid.add(pod.first().getId());
             }
 
+            if(pod == null){
+                throw new ResourceAllocationException("Create VM " + ((vm == null) ? vmId : vm.toString()) + " failed. There are no pods with enough CPU/memory");
+            }
+            
             if ((vm == null) || (poolid == 0)) {
                 throw new ResourceAllocationException("Create VM " + ((vm == null) ? vmId : vm.toString()) + " failed due to no Storage Pool is available");
             }
@@ -2215,7 +2242,7 @@ public class UserVmManagerImpl implements UserVmManager {
     @Override @DB
     public SnapshotVO createTemplateSnapshot(long userId, long volumeId) {
         SnapshotVO createdSnapshot = null;
-        VolumeVO volume = _volsDao.findById(volumeId);
+        VolumeVO volume = _volsDao.lock(volumeId, true);
         
         Long id = null;
         
@@ -2719,6 +2746,8 @@ public class UserVmManagerImpl implements UserVmManager {
 	        	else
 	        	{
 	        		s_logger.debug("failed to create VM instance : " + name);
+	        		throw new InternalErrorException("We could not find a suitable pool for creating this directly attached vm");
+	        		
 	        	}
 	            return null;
 	        }
@@ -2751,7 +2780,7 @@ public class UserVmManagerImpl implements UserVmManager {
             _accountMgr.decrementResourceCount(account.getId(), ResourceType.volume, numVolumes);
 
 	        s_logger.error("Unable to create vm", th);
-	        throw new CloudRuntimeException("Unable to create vm", th);
+	        throw new CloudRuntimeException("Unable to create vm: "+th.getMessage(), th);
 	    }
 	}
     

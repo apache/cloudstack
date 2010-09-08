@@ -70,7 +70,8 @@ public class StoragePoolMonitor implements Listener {
     public boolean processConnect(HostVO host, StartupCommand cmd) {
     	if (cmd instanceof StartupRoutingCommand) {
     		StartupRoutingCommand scCmd = (StartupRoutingCommand)cmd;
-    		if (scCmd.getHypervisorType() == Hypervisor.Type.XenServer || scCmd.getHypervisorType() ==  Hypervisor.Type.KVM) {
+    		if (scCmd.getHypervisorType() == Hypervisor.Type.XenServer || scCmd.getHypervisorType() ==  Hypervisor.Type.KVM ||
+				scCmd.getHypervisorType() == Hypervisor.Type.VmWare) {
     			List<StoragePoolVO> pools = _poolDao.listBy(host.getDataCenterId(), host.getPodId(), host.getClusterId());
     			for (StoragePoolVO pool : pools) {
     				Long hostId = host.getId();

@@ -107,6 +107,7 @@
   <property name="meld.home" location="/usr/local/bin" />
   <property name="assertion" value="-da" />
 
+
   <!-- directories for testing -->
   <property name="test.target.dir" location="${target.dir}/test" />
   <property name="test.classes.dir" location="${test.target.dir}/classes" />
@@ -393,10 +394,6 @@
       <fileset dir="${console-proxy.dir}/scripts">
       </fileset>
     </copy>
-    <copy todir="${console-proxy.dist.dir}">
-      <fileset dir="${console-proxy.dir}/scripts">
-      </fileset>
-    </copy>
     <copy todir="${console-proxy.dist.dir}/conf">
       <fileset dir="${console-proxy.dir}/conf">
       </fileset>
@@ -518,17 +515,14 @@
   </target>
 
 
-  <target name="build-kvm-domr-patch" depends="-init">
+  <target name="build-systemvm-patch" depends="-init">
+    <mkdir dir="${dist.dir}" />
     <tar destfile="${dist.dir}/patch.tar">
-      <tarfileset dir="${base.dir}/patches/kvm" filemode="755">
+      <tarfileset dir="${base.dir}/patches/systemvm" filemode="755">
         <include name="**/*"/>
         <exclude name="**/.classpath" />
         <exclude name="**/.project" />
-      </tarfileset>
-      <tarfileset dir="${base.dir}/patches/shared" filemode="755">
-        <include name="**/*"/>
-        <exclude name="**/.classpath" />
-        <exclude name="**/.project" />
+        <exclude name="**/wscript_build" />
       </tarfileset>
     </tar>
     <gzip destfile="${dist.dir}/patch.tgz" src="${dist.dir}/patch.tar"/>

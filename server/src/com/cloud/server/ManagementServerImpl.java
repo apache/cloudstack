@@ -101,15 +101,15 @@ import com.cloud.async.executor.SecurityGroupParam;
 import com.cloud.async.executor.UpdateLoadBalancerParam;
 import com.cloud.async.executor.UpgradeVMParam;
 import com.cloud.async.executor.VMOperationParam;
-import com.cloud.async.executor.VMOperationParam.VmOp;
 import com.cloud.async.executor.VolumeOperationParam;
+import com.cloud.async.executor.VMOperationParam.VmOp;
 import com.cloud.async.executor.VolumeOperationParam.VolumeOp;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
-import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
+import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.consoleproxy.ConsoleProxyManager;
@@ -119,8 +119,8 @@ import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -175,7 +175,6 @@ import com.cloud.network.security.NetworkGroupRulesVO;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.network.security.dao.NetworkGroupDao;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.auth.UserAuthenticator;
@@ -188,13 +187,10 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
-import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.FileSystem;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
@@ -202,9 +198,13 @@ import com.cloud.storage.StorageStats;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume.VolumeType;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Snapshot.SnapshotType;
+import com.cloud.storage.Storage.FileSystem;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.DiskTemplateDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -215,9 +215,9 @@ import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
@@ -239,12 +239,12 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -921,6 +921,9 @@ public class ManagementServerImpl implements ManagementServer {
             // Mark the account's volumes as destroyed
             List<VolumeVO> volumes = _volumeDao.findDetachedByAccount(accountId);
             for (VolumeVO volume : volumes) {
+            	if(volume.getPoolId()==null){
+            		accountCleanupNeeded = true;
+            	}
             	_storageMgr.destroyVolume(volume);
             }
 
@@ -1983,13 +1986,17 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public void detachVolumeFromVM(long volumeId, long startEventId) throws InternalErrorException {
-        _vmMgr.detachVolumeFromVM(volumeId, startEventId);
+    public void detachVolumeFromVM(long volumeId, long startEventId, long deviceId, long instanceId) throws InternalErrorException {
+        _vmMgr.detachVolumeFromVM(volumeId, startEventId, deviceId, instanceId);
     }
 
     @Override
-    public long detachVolumeFromVMAsync(long volumeId) throws InvalidParameterValueException {
-        VolumeVO volume = _volumeDao.findById(volumeId);
+    public long detachVolumeFromVMAsync(long volumeId, long deviceId, long instanceId) throws InvalidParameterValueException {
+    	VolumeVO volume = null;
+    	if(volumeId!=0)
+    		volume = _volumeDao.findById(volumeId);
+    	else
+    		volume = _volumeDao.findByInstanceAndDeviceId(instanceId, deviceId).get(0);
 
         // Check that the volume is a data volume
         if (volume.getVolumeType() != VolumeType.DATADISK) {
@@ -2020,6 +2027,8 @@ public class ManagementServerImpl implements ManagementServer {
         param.setAccountId(volume.getAccountId());
         param.setOp(VolumeOp.Detach);
         param.setVolumeId(volumeId);
+        param.setDeviceId(deviceId);
+        param.setVmId(instanceId);
         param.setEventId(eventId);
 
         Gson gson = GsonHelper.getBuilder().create();
@@ -4402,6 +4411,7 @@ public class ManagementServerImpl implements ManagementServer {
         SearchBuilder<AccountVO> sb = _accountDao.createSearchBuilder();
         sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("nid", sb.entity().getId(), SearchCriteria.Op.NEQ);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("needsCleanup", sb.entity().getNeedsCleanup(), SearchCriteria.Op.EQ);
@@ -4433,6 +4443,9 @@ public class ManagementServerImpl implements ManagementServer {
 
             // I want to join on user_vm.domain_id = domain.id where domain.path like 'foo%'
             sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+            sc.setParameters("nid", 1L);
+        } else {
+        	sc.setParameters("nid", 1L);
         }
 
         if (type != null) {
@@ -5021,7 +5034,6 @@ public class ManagementServerImpl implements ManagementServer {
     public List<UserVmVO> searchForUserVMs(Criteria c) {
         Filter searchFilter = new Filter(UserVmVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
         SearchBuilder<UserVmVO> sb = _userVmDao.createSearchBuilder();
-
         // some criteria matter for generating the join condition
         Object[] accountIds = (Object[]) c.getCriteria(Criteria.ACCOUNTID);
         Object domainId = c.getCriteria(Criteria.DOMAINID);
@@ -5038,7 +5050,8 @@ public class ManagementServerImpl implements ManagementServer {
         Object keyword = c.getCriteria(Criteria.KEYWORD);
         Object isAdmin = c.getCriteria(Criteria.ISADMIN);
         Object ipAddress = c.getCriteria(Criteria.IPADDRESS);
-
+        Object vmGroup = c.getCriteria(Criteria.GROUP);
+        Object emptyGroup = c.getCriteria(Criteria.EMPTY_GROUP);
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("accountIdEQ", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
@@ -5052,7 +5065,8 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("hostIdEQ", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("hostIdIN", sb.entity().getHostId(), SearchCriteria.Op.IN);
         sb.and("guestIP", sb.entity().getGuestIpAddress(), SearchCriteria.Op.EQ);
-
+        sb.and("groupEQ", sb.entity().getGroup(),SearchCriteria.Op.EQ);
+        
         if ((accountIds == null) && (domainId != null)) {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
@@ -5141,7 +5155,23 @@ public class ManagementServerImpl implements ManagementServer {
         if (ipAddress != null) {
             sc.setParameters("guestIP", ipAddress);
         }
+        
+        if(vmGroup!=null)
+        	sc.setParameters("groupEQ", vmGroup);
+        
+        if (emptyGroup!= null) 
+        {
+        	SearchBuilder<UserVmVO> emptyGroupSearch = _userVmDao.createSearchBuilder();
+        	emptyGroupSearch.and("group", emptyGroupSearch.entity().getGroup(), SearchCriteria.Op.EQ);
+        	emptyGroupSearch.or("null", emptyGroupSearch.entity().getGroup(), SearchCriteria.Op.NULL);
 
+        	SearchCriteria<UserVmVO> sc1 = _userVmDao.createSearchCriteria();
+        	sc1 = emptyGroupSearch.create();
+        	sc1.setParameters("group", "");
+        	
+        	sc.addAnd("group", SearchCriteria.Op.SC, sc1);
+        }
+        
         return _userVmDao.search(sc, searchFilter);
     }
 
@@ -5570,6 +5600,20 @@ public class ManagementServerImpl implements ManagementServer {
              return null;
          }
     }
+    
+    @Override
+    public VolumeVO findVolumeByInstanceAndDeviceId(long instanceId, long deviceId) 
+    {
+         VolumeVO volume = _volumeDao.findByInstanceAndDeviceId(instanceId, deviceId).get(0);
+         if (volume != null && !volume.getDestroyed() && volume.getRemoved() == null) 
+         {
+             return volume;
+         }
+         else 
+         {
+             return null;
+         }
+    }
 
 
     @Override
@@ -5665,14 +5709,32 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         // Don't return DomR and ConsoleProxy volumes
+        /*
         sc.setParameters("domRNameLabel", "r-%");
         sc.setParameters("domPNameLabel", "v-%");
         sc.setParameters("domSNameLabel", "s-%");
-
+		*/
+        
         // Only return volumes that are not destroyed
         sc.setParameters("destroyed", false);
 
-        return _volumeDao.search(sc, searchFilter);
+        List<VolumeVO> allVolumes = _volumeDao.search(sc, searchFilter);
+        List<VolumeVO> returnableVolumes = new ArrayList<VolumeVO>(); //these are ones without domr and console proxy
+        
+        for(VolumeVO v:allVolumes)
+        {
+        	VMTemplateVO template = _templateDao.findById(v.getTemplateId());
+        	if(template!=null && template.getUniqueName().equalsIgnoreCase("routing"))
+        	{
+        		//do nothing
+        	}
+        	else
+        	{
+        		returnableVolumes.add(v);
+        	}
+        }
+        
+        return returnableVolumes;
     }
 
     @Override
@@ -6868,14 +6930,14 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException {
+    public DiskOfferingVO createDiskOffering(long userId, long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException {
         if (numGibibytes!=0 && numGibibytes < 1) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
         } else if (numGibibytes > _maxVolumeSizeInGb) {
         	throw new InvalidParameterValueException("The maximum size for a disk is " + _maxVolumeSizeInGb + " Gb.");
         }
 
-        return _configMgr.createDiskOffering(domainId, name, description, numGibibytes, tags);
+        return _configMgr.createDiskOffering(userId, domainId, name, description, numGibibytes, tags);
     }
 
     @Override
@@ -6884,8 +6946,8 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean deleteDiskOffering(long id) {
-        return _diskOfferingDao.remove(Long.valueOf(id));
+    public boolean deleteDiskOffering(long userId, long id) {
+        return _configMgr.deleteDiskOffering(userId, id);
     }
 
     @Override
@@ -8626,6 +8688,36 @@ public class ManagementServerImpl implements ManagementServer {
 		return false;
 	}
 
+    @Override
+    public Map<String, String> listCapabilities() {
+        Map<String, String> capabilities = new HashMap<String, String>();
+        
+        String networkGroupsEnabled = _configs.get("direct.attach.network.groups.enabled");
+        if(networkGroupsEnabled == null) 
+            networkGroupsEnabled = "false";             
 
+        capabilities.put("networkGroupsEnabled", networkGroupsEnabled);
+        
+        final Class<?> c = this.getClass();
+        String fullVersion = c.getPackage().getImplementationVersion();
+        String version = "unknown"; 
+        if(fullVersion.length() > 0){
+            version = fullVersion.substring(0,fullVersion.lastIndexOf("."));
+        }
+        capabilities.put("cloudStackVersion", version);
+        return capabilities;
+    }
+
+    @Override
+    public GuestOSVO getGuestOs(Long guestOsId)
+    {
+    	return _guestOSDao.findById(guestOsId);
+    }
+    
+    @Override
+    public VolumeVO getRootVolume(Long instanceId)
+    {
+    	return _volumeDao.findByInstanceAndType(instanceId, Volume.VolumeType.ROOT).get(0);
+    }
 }
 

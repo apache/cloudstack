@@ -30,6 +30,7 @@ public class CreateCommand extends Command {
     private DiskCharacteristics diskCharacteristics;
     private String templateUrl;
     private long size;
+    private String instanceName;
     
     protected CreateCommand() {
         super();
@@ -63,6 +64,7 @@ public class CreateCommand extends Command {
         this.pool = new StoragePoolTO(pool);
         this.templateUrl = null;
         this.size = size;
+        //this.instanceName = vm.getInstanceName();
     }
     
     @Override
@@ -88,5 +90,9 @@ public class CreateCommand extends Command {
     
     public long getSize(){
     	return this.size;
+    }
+    
+    public String getInstanceName() {
+    	return instanceName;
     }
 }

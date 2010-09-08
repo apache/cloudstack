@@ -15,6 +15,17 @@ config_httpd_conf() {
   echo "</VirtualHost>" >> /etc/httpd/conf/httpd.conf
 }
 
+config_apache2_conf() {
+  local ip=$1
+  local srvr=$2
+  cp -f /etc/apache2/sites-available/default.orig /etc/apache2/sites-available/default
+  cp -f /etc/apache2/sites-available/default-ssl.orig /etc/apache2/sites-available/default-ssl
+  sed -i -e "s/VirtualHost.*:80$/VirtualHost $ip:80/" /etc/httpd/conf/httpd.conf
+  sed -i  's/_default_/$ip/' /etc/apache2/sites-available/default-ssl
+  sed -i  's/ssl-cert-snakeoil.key/realhostip.key/' /etc/apache2/sites-available/default-ssl
+  sed -i  's/ssl-cert-snakeoil.pem/realhostip.crt/' /etc/apache2/sites-available/default-ssl
+}
+
 copy_certs() {
   local certdir=$(dirname $0)/certs
   local mydir=$(dirname $0)
@@ -25,16 +36,37 @@ copy_certs() {
   return 1
 }
 
+copy_certs_apache2() {
+  local certdir=$(dirname $0)/certs
+  local mydir=$(dirname $0)
+  if [ -d $certdir ] && [ -f $certdir/realhostip.key ] &&  [ -f $certdir/realhostip.crt ] ; then
+      cp $certdir/realhostip.key /etc/ssl/private/   &&  cp $certdir/realhostip.crt /etc/ssl/certs/
+      return $?
+  fi
+  return 1
+}
+
 if [ $# -ne 2 ] ; then
 	echo $"Usage: `basename $0` ipaddr servername "
 	exit 0
 fi
 
-copy_certs
+if [ -d /etc/apache2 ]
+then
+  copy_certs_apache2
+else
+  copy_certs
+fi
+
 if [ $? -ne 0 ]
 then
   echo "Failed to copy certificates"
   exit 2
 fi
 
-config_httpd_conf $1 $2
+if [ -d /etc/apache2 ]
+then
+  config_apache2_conf $1 $2
+else
+  config_httpd_conf $1 $2
+fi

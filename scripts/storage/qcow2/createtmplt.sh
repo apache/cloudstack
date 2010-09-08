@@ -78,6 +78,23 @@ create_from_file() {
   then
     rm -f $tmpltimg
   fi
+  chmod a+r /$tmpltfs/$tmpltname
+}
+
+create_from_snapshot() {
+  local tmpltImg=$1
+  local snapshotName=$2
+  local tmpltfs=$3
+  local tmpltname=$4
+
+  cloud-qemu-img convert -f qcow2 -O qcow2 -s $snapshotName $tmpltImg /$tmpltfs/$tmpltname >& /dev/null
+  if [ $? -gt 0 ]
+  then
+     printf "Failed to create template /$tmplfs/$tmpltname from snapshot $snapshotName on disk $tmpltImg "
+     exit 2
+  fi
+
+  chmod a+r /$tmpltfs/$tmpltname
 }
 
 tflag=
@@ -89,8 +106,9 @@ hvm=false
 cleanup=false
 dflag=
 cflag=
+snapshotName=
 
-while getopts 'uht:n:f:s:c:d:' OPTION
+while getopts 'uht:n:f:sc:d:' OPTION
 do
   case $OPTION in
   t)	tflag=1
@@ -103,10 +121,10 @@ do
 		tmpltimg="$OPTARG"
 		;;
   s)	sflag=1
-		volsize="$OPTARG"
+		sflag=1
 		;;
   c)	cflag=1
-		cksum="$OPTARG"
+		snapshotName="$OPTARG"
 		;;
   d)	dflag=1
 		descr="$OPTARG"
@@ -118,12 +136,6 @@ do
 		;;
   esac
 done
-
-if [ "$tflag$nflag$fflag" != "111" ]
-then
- usage
- exit 2
-fi
 
 
 if [ ! -d /$tmpltfs ] 
@@ -148,9 +160,15 @@ then
   printf "failed to uncompress $tmpltimg\n"
 fi
 
-create_from_file $tmpltfs $tmpltimg $tmpltname
+if [ "$sflag" == "1" ]
+then
+   create_from_snapshot  $tmpltimg $snapshotName $tmpltfs $tmpltname
+else
+   create_from_file $tmpltfs $tmpltimg $tmpltname
+fi
 
 touch /$tmpltfs/template.properties
+chmod a+r /$tmpltfs/template.properties
 echo -n "" > /$tmpltfs/template.properties
 
 today=$(date '+%m_%d_%Y')

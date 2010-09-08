@@ -450,12 +450,13 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
                     tmpltHost.setDownloadPercent(100);
                     tmpltHost.setDownloadState(Status.DOWNLOADED);
                     tmpltHost.setInstallPath(templateInfo.get(uniqueName).getInstallPath());
+                    tmpltHost.setSize(templateInfo.get(uniqueName).getSize());
                     tmpltHost.setLastUpdated(new Date());
 					_vmTemplateHostDao.update(tmpltHost.getId(), tmpltHost);
 				} else {
-					VMTemplateHostVO templtHost = new VMTemplateHostVO(sserverId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, templateInfo.get(uniqueName).getInstallPath(), tmplt.getUrl());
-					templtHost.setSize(templateInfo.get(uniqueName).getSize());
-					_vmTemplateHostDao.persist(templtHost);
+				    tmpltHost = new VMTemplateHostVO(sserverId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, templateInfo.get(uniqueName).getInstallPath(), tmplt.getUrl());
+					tmpltHost.setSize(templateInfo.get(uniqueName).getSize());
+					_vmTemplateHostDao.persist(tmpltHost);
 				}
 				templateInfo.remove(uniqueName);
 				continue;

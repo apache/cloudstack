@@ -37,7 +37,9 @@ public class DetachVolumeCmd extends BaseCmd {
 
     static {
     	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DEVICE_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VIRTUAL_MACHINE_ID, Boolean.FALSE));
     }
 
     public String getName() {
@@ -56,6 +58,23 @@ public class DetachVolumeCmd extends BaseCmd {
     public List<Pair<String, Object>> execute(Map<String, Object> params) {
     	Account account = (Account) params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
     	Long volumeId = (Long) params.get(BaseCmd.Properties.ID.getName());
+    	Long deviceId = (Long) params.get(BaseCmd.Properties.DEVICE_ID.getName());
+    	Long instanceId = (Long) params.get(BaseCmd.Properties.VIRTUAL_MACHINE_ID.getName());
+    	VolumeVO volume = null;
+    	
+    	if((volumeId==null && (deviceId==null && instanceId==null)) || (volumeId!=null && (deviceId!=null || instanceId!=null)) || (volumeId==null && (deviceId==null || instanceId==null)))
+    	{
+    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please provide either a volume id, or a tuple(device id, instance id)");
+    	}
+
+    	if(volumeId!=null)
+    	{
+    		deviceId = instanceId = Long.valueOf("0");
+    	}
+    	else
+    	{
+    		volumeId = Long.valueOf("0");;
+    	}
     	
     	boolean isAdmin;
     	if (account == null) {
@@ -67,9 +86,18 @@ public class DetachVolumeCmd extends BaseCmd {
     	}
 
     	// Check that the volume ID is valid
-    	VolumeVO volume = getManagementServer().findVolumeById(volumeId);
-    	if (volume == null)
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId);
+    	if(volumeId != 0)
+    	{
+    		volume = getManagementServer().findVolumeById(volumeId);
+    		if (volume == null)
+    			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId);
+    	}
+    	else
+    	{
+    		volume = getManagementServer().findVolumeByInstanceAndDeviceId(instanceId, deviceId);
+    		if (volume == null)
+    			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId);
+    	}
 
     	// If the account is not an admin, check that the volume is owned by the account that was passed in
     	if (!isAdmin) {
@@ -82,7 +110,7 @@ public class DetachVolumeCmd extends BaseCmd {
     	}
 
     	try {
-    		long jobId = getManagementServer().detachVolumeFromVMAsync(volumeId);
+    		long jobId = getManagementServer().detachVolumeFromVMAsync(volumeId,deviceId,instanceId);
 
     		if (jobId == 0) {
             	s_logger.warn("Unable to schedule async-job for DetachVolume comamnd");

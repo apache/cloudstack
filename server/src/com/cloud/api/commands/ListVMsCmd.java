@@ -33,7 +33,12 @@ import com.cloud.domain.DomainVO;
 import com.cloud.host.HostVO;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
@@ -51,6 +56,7 @@ public class ListVMsCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.STATE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.GROUP, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HOST_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
@@ -80,6 +86,7 @@ public class ListVMsCmd extends BaseCmd {
         Long zoneId = (Long)params.get(BaseCmd.Properties.ZONE_ID.getName());
         Long podId = (Long)params.get(BaseCmd.Properties.POD_ID.getName());
         Long hostId = (Long)params.get(BaseCmd.Properties.HOST_ID.getName());
+        String group = (String)params.get(BaseCmd.Properties.GROUP.getName());
         String keyword = (String)params.get(BaseCmd.Properties.KEYWORD.getName());
         Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
         Integer pageSize = (Integer)params.get(BaseCmd.Properties.PAGESIZE.getName());
@@ -138,6 +145,14 @@ public class ListVMsCmd extends BaseCmd {
             if(zoneId != null)
             	c.addCriteria(Criteria.DATACENTERID, zoneId);
 
+            if(group != null)
+            {
+            	if(group.equals(""))
+            		c.addCriteria(Criteria.EMPTY_GROUP, group);
+            	else
+            		c.addCriteria(Criteria.GROUP, group);
+            }
+
             // ignore these search requests if it's not an admin
             if (isAdmin == true) {
     	        c.addCriteria(Criteria.DOMAINID, domainId);
@@ -167,6 +182,14 @@ public class ListVMsCmd extends BaseCmd {
         }
 
         for (UserVm vmInstance : virtualMachines) {
+    
+        	//if the account is deleted, do not return the user vm 
+        	Account currentVmAccount = getManagementServer().getAccount(vmInstance.getAccountId());
+        	if(currentVmAccount.getRemoved()!=null)
+        	{
+        		continue; //not returning this vm
+        	}
+        	
             List<Pair<String, Object>> vmData = new ArrayList<Pair<String, Object>>();
             AsyncJobVO asyncJob = getManagementServer().findInstancePendingAsyncJob("vm_instance", vmInstance.getId());
             if(asyncJob != null) {
@@ -178,6 +201,7 @@ public class ListVMsCmd extends BaseCmd {
             vmData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), vmInstance.getName()));
             vmData.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(vmInstance.getCreated())));
             vmData.add(new Pair<String, Object>(BaseCmd.Properties.IP_ADDRESS.getName(), vmInstance.getPrivateIpAddress()));
+            
             if (vmInstance.getState() != null) {
                 vmData.add(new Pair<String, Object>(BaseCmd.Properties.STATE.getName(), vmInstance.getState().toString()));
             }
@@ -257,11 +281,21 @@ public class ListVMsCmd extends BaseCmd {
                 long networkKbWrite = (long)vmStats.getNetworkWriteKBs();
                 vmData.add(new Pair<String, Object>(BaseCmd.Properties.NETWORK_KB_WRITE.getName(), networkKbWrite));
             }
+            vmData.add(new Pair<String, Object>(BaseCmd.Properties.GUEST_OS_ID.getName(), vmInstance.getGuestOSId()));
             
-            vmData.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_ID.getName(),vmInstance.getGuestOSId()));
+            GuestOSVO guestOs = getManagementServer().getGuestOs(vmInstance.getGuestOSId());
+            if(guestOs!=null)
+            	vmData.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_ID.getName(),guestOs.getCategoryId()));
 
             //network groups
             vmData.add(new Pair<String, Object>(BaseCmd.Properties.NETWORK_GROUP_LIST.getName(), getManagementServer().getNetworkGroupsNamesForVm(vmInstance.getId())));
+            
+            //root device related
+            VolumeVO rootVolume = getManagementServer().findRootVolume(vmInstance.getId());
+            vmData.add(new Pair<String, Object>(BaseCmd.Properties.ROOT_DEVICE_ID.getName(), rootVolume.getDeviceId()));
+            
+            StoragePoolVO storagePool = getManagementServer().findPoolById(rootVolume.getPoolId());
+            vmData.add(new Pair<String, Object>(BaseCmd.Properties.ROOT_DEVICE_TYPE.getName(), storagePool.getPoolType().toString()));
             
             vmTag[i++] = vmData;
         }

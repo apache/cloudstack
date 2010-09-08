@@ -635,6 +635,9 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             }
             
             if (!found) {
+                event.setDescription("failed to create Domain Router : " + name);
+                event.setLevel(EventVO.LEVEL_ERROR);
+                _eventDao.persist(event);
                 throw new ExecutionException("Unable to create DomainRouter");
             }
             _routerDao.updateIf(router, Event.OperationSucceeded, null);
@@ -1830,7 +1833,9 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         _offering = _serviceOfferingDao.persistSystemServiceOffering(_offering);
         _template = _templateDao.findById(_routerTemplateId);
         if (_template == null) {
-            throw new ConfigurationException("Unable to find the template for the router: " + _routerTemplateId);
+        	s_logger.error("Unable to find system vm template.");
+        	
+            // throw new ConfigurationException("Unable to find the template for the router: " + _routerTemplateId);
         }
         
         _publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmPublicNetwork, TrafficType.Public, null);

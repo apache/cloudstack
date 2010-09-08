@@ -142,10 +142,10 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             _configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Virtual Networking", 1, 512, 500, "Small Instance, Virtual Networking, $0.05 per hour", false, false, true, null);
             _configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Virtual Networking", 1, 1024, 1000, "Medium Instance, Virtual Networking, $0.10 per hour", false, false, true, null);
 			// Save default disk offerings
-			_configMgr.createDiskOffering(DomainVO.ROOT_DOMAIN, "Small", "Small Disk, 5 GB", 5, null);
-			_configMgr.createDiskOffering(DomainVO.ROOT_DOMAIN, "Medium", "Medium Disk, 20 GB", 20, null);
-			_configMgr.createDiskOffering(DomainVO.ROOT_DOMAIN, "Large", "Large Disk, 100 GB", 100, null);
-			_configMgr.createDiskOffering(DomainVO.ROOT_DOMAIN, "Private", "Private Disk", 0, null);
+			_configMgr.createDiskOffering(User.UID_SYSTEM, DomainVO.ROOT_DOMAIN, "Small", "Small Disk, 5 GB", 5, null);
+			_configMgr.createDiskOffering(User.UID_SYSTEM, DomainVO.ROOT_DOMAIN, "Medium", "Medium Disk, 20 GB", 20, null);
+			_configMgr.createDiskOffering(User.UID_SYSTEM, DomainVO.ROOT_DOMAIN, "Large", "Large Disk, 100 GB", 100, null);
+			_configMgr.createDiskOffering(User.UID_SYSTEM, DomainVO.ROOT_DOMAIN, "Private", "Private Disk", 0, null);
 			
 			   //Add default manual snapshot policy
             SnapshotPolicyVO snapPolicy = new SnapshotPolicyVO(0L, "00", "GMT", (short)4, 0);
@@ -238,7 +238,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 		
 		String[] defaultRouteList = defaultRoute.split("\\s+");
 		
-		if (defaultRouteList.length != 7) {
+		if (defaultRouteList.length < 5) {
 			return null;
 		}
 		
@@ -420,9 +420,11 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
             String homeDir = Script.runSimpleBashScript("echo ~");
             if (homeDir == "~") {
-                s_logger.warn("No home directory was detected.  Trouble with SSH keys ahead.");
-                return;
+                s_logger.error("No home directory was detected.  Set the HOME environment variable to point to your user profile or home directory.");
+                throw new RuntimeException("No home directory was detected.  Set the HOME environment variable to point to your user profile or home directory.");
             }
+
+            String keygenOutput = Script.runSimpleBashScript("if [ -f ~/.ssh/id_rsa ] ; then true ; else yes '' | ssh-keygen -t rsa -q -O no-pty ; fi");
 
             File privkeyfile = new File(homeDir + "/.ssh/id_rsa");
             File pubkeyfile  = new File(homeDir + "/.ssh/id_rsa.pub");
@@ -431,8 +433,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 new DataInputStream(new FileInputStream(privkeyfile)).readFully(arr1);
             } catch (EOFException e) {
             } catch (Exception e) {
-                s_logger.warn("Cannot read the private key file",e);
-                return;
+                s_logger.error("Cannot read the private key file",e);
+                throw new RuntimeException("Cannot read the private key file");
             }
             String privateKey = new String(arr1).trim();
             byte[] arr2 = new byte[4094]; // configuration table column value size
@@ -441,7 +443,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             } catch (EOFException e) {			    
             } catch (Exception e) {
                 s_logger.warn("Cannot read the public key file",e);
-                return;
+                throw new RuntimeException("Cannot read the public key file");
             }
             String publicKey  = new String(arr2).trim();
 
@@ -458,7 +460,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     s_logger.debug("Private key inserted into database");
                 }
             } catch (SQLException ex) {
-                s_logger.warn("SQL of the private key failed",ex);
+                s_logger.error("SQL of the private key failed",ex);
+                throw new RuntimeException("SQL of the private key failed");
             }
 
             try {
@@ -468,7 +471,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     s_logger.debug("Public key inserted into database");
                 }
             } catch (SQLException ex) {
-                s_logger.warn("SQL of the public key failed",ex);
+                s_logger.error("SQL of the public key failed",ex);
+                throw new RuntimeException("SQL of the public key failed");
             }
         }
     }

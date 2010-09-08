@@ -124,7 +124,11 @@ public class DirectAgentAttache extends AgentAttache {
 	    public synchronized void run() {
 	        try {
 	            ServerResource resource = _resource;
-
+	            
+	            if (resource.IsRemoteAgent()) {
+	            	return;
+	            }
+	            
 	            if (resource != null) {
         	        PingCommand cmd = resource.getCurrentStatus(_id);
         	        if (cmd == null) {

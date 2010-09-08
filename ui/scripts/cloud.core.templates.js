@@ -87,7 +87,7 @@ function showTemplatesTab() {
 	}
 	
 	$.ajax({
-	        data: createURL("command=listOsTypes&response=json"),
+	        data: createURL("command=listOsTypes&response=json"+maxPageSize),
 		dataType: "json",
 		success: function(json) {
 			types = json.listostypesresponse.ostype;
@@ -104,7 +104,7 @@ function showTemplatesTab() {
 	});
 	
 	$.ajax({
-	    data: createURL("command=listServiceOfferings&response=json"),
+	    data: createURL("command=listServiceOfferings&response=json"+maxPageSize),
 	    dataType: "json",
 	    success: function(json) {
 	        var items = json.listserviceofferingsresponse.serviceoffering;
@@ -117,7 +117,7 @@ function showTemplatesTab() {
 	});		
 	
 	$.ajax({
-	    data: createURL("command=listDiskOfferings&response=json"),
+	    data: createURL("command=listDiskOfferings&response=json"+maxPageSize),
 	    dataType: "json",
 	    success: function(json) {
 	        var items = json.listdiskofferingsresponse.diskoffering;

@@ -230,14 +230,21 @@ public class TemplateManagerImpl implements TemplateManager {
                 return templateStoragePoolRef;
             }
             String url = origUrl + "/" + templateHostRef.getInstallPath();
-            PrimaryStorageDownloadCommand dcmd = new PrimaryStorageDownloadCommand(template.getUniqueName(), url, template.getFormat(), template.getAccountId(), pool.getId(), pool.getUuid());
+            PrimaryStorageDownloadCommand dcmd = new PrimaryStorageDownloadCommand(template.getUniqueName(), url, template.getFormat(), 
+            	template.getAccountId(), pool.getId(), pool.getUuid());
+            HostVO secondaryStorageHost = _hostDao.findSecondaryStorageHost(pool.getDataCenterId());
+            assert(secondaryStorageHost != null);
+            dcmd.setSecondaryStorageUrl(secondaryStorageHost.getStorageUrl());
+            // TODO temporary hacking, hard-coded to NFS primary data store
+            dcmd.setPrimaryStorageUrl("nfs://" + pool.getHostAddress() + pool.getPath());
             
             for (StoragePoolHostVO vo : vos) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Downloading " + templateId + " via " + vo.getHostId());
                 }
             	dcmd.setLocalPath(vo.getLocalPath());
-                DownloadAnswer answer = (DownloadAnswer)_agentMgr.easySend(vo.getHostId(), dcmd);
+            	// set 120 min timeout for this command
+                DownloadAnswer answer = (DownloadAnswer)_agentMgr.easySend(vo.getHostId(), dcmd, 120*60*1000);
                 if (answer != null) {
             		templateStoragePoolRef.setDownloadPercent(templateStoragePoolRef.getDownloadPercent());
             		templateStoragePoolRef.setDownloadState(answer.getDownloadStatus());

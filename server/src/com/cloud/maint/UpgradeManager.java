@@ -43,7 +43,7 @@ public interface UpgradeManager extends Manager {
     /**
      * @return the URL to download the new agent.
      */
-    String getAgentUrl();
+//    String getAgentUrl();
     
 
 }

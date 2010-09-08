@@ -4,10 +4,11 @@
 	- detects Tomcat (on Windows)
 	- detects or configures directories according to command-line options"""
 
-import platform
 import Utils,Node,Options,Logs,Scripting,Environment,Build,Configure
 from os import unlink as _unlink, makedirs as _makedirs, getcwd as _getcwd, chdir as _chdir
-from os.path import abspath as _abspath, basename as _basename, dirname as _dirname, exists as _exists, isdir as _isdir, split as _split, join as _join, sep, pathsep, pardir
+try: from os import getuid as _getuid
+except ImportError: pass
+from os.path import abspath as _abspath, basename as _basename, dirname as _dirname, exists as _exists, isdir as _isdir, split as _split, join as _join, expanduser as _expanduser, sep, pathsep, pardir
 from glob import glob as _glob
 
 
@@ -88,15 +89,11 @@ hard_deps = [
 ]
 
 
-conf.check_tool('misc')
-conf.check_tool('java')
-conf.check_tool("gnu_dirs")
-conf.check_tool("python")
-conf.check_python_version((2,4,0))
+conf.env.VERSION = Utils.g_module.VERSION
 
 conf.check_message_1('Detecting distribution')
-if platform.system() == 'Windows': conf.env.DISTRO = "Windows"
-elif platform.system() == 'Darwin': conf.env.DISTRO = "Mac"
+if Options.platform == 'win32': conf.env.DISTRO = "Windows"
+elif Options.platform == 'darwin': conf.env.DISTRO = "Mac"
 elif _exists("/etc/network"): conf.env.DISTRO = "Ubuntu"
 elif _exists("/etc/fedora-release"): conf.env.DISTRO = "Fedora"
 elif _exists("/etc/centos-release") or _exists("/etc/redhat-release"): conf.env.DISTRO = "CentOS"
@@ -105,50 +102,45 @@ if conf.env.DISTRO == "unknown": c = "YELLOW"
 else: 				    c = "GREEN"
 conf.check_message_2(conf.env.DISTRO,c)
 
-if conf.env.DISTRO not in ["Windows","Mac"]:
-	conf.check_tool('compiler_cc')
-	conf.check_cc(lib='pthread')
-	conf.check_cc(lib='dl')
+conf.check_message_1('Detecting installation prefix')
+if Options.options.prefix == Options.default_prefix:
+	if conf.env.DISTRO == 'Windows':
+		conf.env.PREFIX = 'C:\\CloudStack'
+	elif _getuid() != 0: # not root
+		conf.env.PREFIX = _join(_expanduser("~"),"cloudstack")
+conf.check_message_2("%s"%conf.env.PREFIX,"GREEN")
 
-# waf uses slashes somewhere along the line in some paths.  we fix them on windows.
-if conf.env.DISTRO in ['Windows']:
+conf.check_tool('misc')
+
+conf.check_tool("gnu_dirs")
+if conf.env.DISTRO == 'Windows':
+	# waf uses slashes somewhere along the line in some paths.  we fix them on windows.
 	for pth in [ x for x in conf.env.get_merged_dict().keys() if x.endswith("DIR") ]:
+		if not pth: continue
+		if not conf.env[pth]: continue
 		conf.env[pth] = conf.env[pth].replace("/","\\")
 
-for a in "DBHOST DBUSER DBPW DBDIR".split():
-	conf.env[a] = getattr(Options.options, a, '')
+conf.check_tool('tar')
+try: conf.check_tool('mkisofs')
+except Configure.ConfigurationError,e:
+	raise Configure.ConfigurationError, "The program genisoimage (or mkisofs) could not be found.\nOn Linux: ./waf installrpmdeps or ./waf installdebdeps according to your distro's package format.\nOn Windows: Use cygwin to install the mkisofs package, then ensure that the program is in your PATH."
+conf.check_tool('java')
 
-conf.check_message_1('Determining management server user name')
-msuser = getattr(Options.options, 'MSUSER', '')
-if msuser:
-	conf.env.MSUSER = msuser
-	conf.check_message_2("%s (forced through --tomcat-user)"%conf.env.MSUSER,"GREEN")
-else:
-	if conf.env.DISTRO in ['Windows','Mac']:
-		conf.env.MSUSER = 'root'
-		conf.check_message_2("%s (not used on Windows or Mac)"%conf.env.MSUSER,"GREEN")
-	else:
-		conf.env.MSUSER = conf.env.PACKAGE
-		conf.check_message_2("%s (Linux default)"%conf.env.MSUSER,"GREEN")
+conf.check_tool("python")
+conf.check_python_version((2,4,0))
 
-conf.check_message_1('Detecting Tomcat')
-tomcathome = getattr(Options.options, 'TOMCATHOME', '')
-if tomcathome:
-	conf.env.TOMCATHOME = tomcathome
-	conf.check_message_2("%s (forced through --with-tomcat)"%conf.env.TOMCATHOME,"GREEN")
-else:
-	if    "TOMCAT_HOME" in conf.environ and conf.environ['TOMCAT_HOME'].strip():
-		conf.env.TOMCATHOME = conf.environ["TOMCAT_HOME"]
-		conf.check_message_2("%s (got through environment variable %%TOMCAT_HOME%%)"%conf.env.TOMCATHOME,"GREEN")
-	elif  "CATALINA_HOME" in conf.environ and conf.environ['CATALINA_HOME'].strip():
-		conf.env.TOMCATHOME = conf.environ['CATALINA_HOME']
-		conf.check_message_2("%s (got through environment variable %%CATALINA_HOME%%)"%conf.env.TOMCATHOME,"GREEN")
-	elif _isdir("/usr/share/tomcat6"):
-		conf.env.TOMCATHOME = "/usr/share/tomcat6"
-		conf.check_message_2("%s (detected existence of system directory)"%conf.env.TOMCATHOME,"GREEN")
-	else:
-		conf.env.TOMCATHOME = _join(conf.env.DATADIR,'tomcat6')
-		conf.check_message_2("%s (assumed presence of Tomcat there)"%conf.env.TOMCATHOME,"GREEN")
+conf.check_message_1('Detecting Python MySQL module')
+try: import MySQLdb
+except ImportError,e:
+	raise Configure.ConfigurationError, "The Python MySQLdb module could not be found.\nOn Linux: ./waf installrpmdeps or ./waf installdebdeps according to your distro's package format.\nOn Windows: Install MySQL 5.1 on your machine, then install the Python MySQLdb module for Python %s.\nThe module for Python 2.6 / win32 / MySQL 5.1 is available here: http://soemin.googlecode.com/files/MySQL-python-1.2.3c1.win32-py2.6.exe"%conf.env.PYTHON_VERSION
+conf.check_message_2('MySQLdb','GREEN')
+conf.check_message_1('Database info for developer setup')
+for a in "DBHOST DBUSER DBPW".split(): conf.env[a] = getattr(Options.options, a, '')
+conf.check_message_2("user: %r, password: %r, host: %r"%(conf.env.DBUSER,conf.env.DBPW,conf.env.DBHOST),'GREEN')
+
+try: conf.check_tool("tomcat")
+except Configure.ConfigurationError,e:
+	conf.fatal("Tomcat directory %r not found.  Either install Tomcat using ./waf installrpmdeps or ./waf installdebdeps, or manually install Tomcat to a directory in your system and set the environment variable TOMCAT_HOME to point to it."%conf.env.TOMCATHOME)
 
 conf.env.AGENTPATH = _join(conf.env.PACKAGE,"agent")
 conf.env.CPPATH = _join(conf.env.PACKAGE,"console-proxy")
@@ -162,32 +154,28 @@ if conf.env.DISTRO in ['Windows','Mac']:
 	conf.env.MSCONF  = _join(conf.env.TOMCATHOME,"conf")
 	conf.env.MSLOGDIR = _join(conf.env.TOMCATHOME,"logs")
 	conf.env.MSMNTDIR = _join(conf.env.TOMCATHOME,"mnt")
+        conf.env.JAVADIR = _join(conf.env.MSENVIRON,"lib")
+	conf.env.PREMIUMJAVADIR = conf.env.JAVADIR
+	conf.env.PLUGINJAVADIR = conf.env.JAVADIR
+	conf.env.SYSTEMJAVADIR = conf.env.JAVADIR
 else:
 	conf.env.MSENVIRON = _join(conf.env.DATADIR,conf.env.MSPATH)
 	conf.env.MSCONF    = _join(conf.env.SYSCONFDIR,conf.env.MSPATH)
 	conf.env.MSLOGDIR = _join(conf.env.LOCALSTATEDIR,"log",conf.env.MSPATH)
 	conf.env.MSMNTDIR = _join(conf.env.SHAREDSTATEDIR,conf.env.PACKAGE,"mnt")
-
-conf.env.PIDDIR = _join(conf.env.LOCALSTATEDIR,"run")
-conf.env.LOCKDIR = _join(conf.env.LOCALSTATEDIR,"lock","subsys")
-
-conf.check_message_1('Detecting JAVADIR')
-javadir = getattr(Options.options, 'JAVADIR', '')
-if javadir:
-	conf.env.JAVADIR = javadir
-	conf.check_message_2("%s (forced through --javadir)"%conf.env.JAVADIR,"GREEN")
-elif conf.env.DISTRO in ['Windows','Mac']:
-	conf.env.JAVADIR = _join(conf.env['TOMCATHOME'],'lib')
-	conf.check_message_2("%s (using Tomcat's lib/ directory)"%conf.env.JAVADIR,"GREEN")
-else:
-	conf.env.JAVADIR = _join(conf.env.DATADIR,'java')
-	conf.check_message_2("%s (using default ${DATADIR}/java directory)"%conf.env.JAVADIR,"GREEN")
-
-if conf.env.DISTRO in ["Windows","Mac"]:
-	conf.env.PREMIUMJAVADIR = conf.env.JAVADIR
-	conf.env.PLUGINJAVADIR = conf.env.JAVADIR
-	conf.env.SYSTEMJAVADIR = conf.env.JAVADIR
-else: 
+	conf.check_tool('compiler_cc')
+	conf.check_cc(lib='pthread')
+	conf.check_cc(lib='dl')
+	conf.check_tool('usermgmt')
+	conf.check_message_1('Determining management server user name')
+	msuser = getattr(Options.options, 'MSUSER', '')
+	if msuser:
+		conf.env.MSUSER = msuser
+		conf.check_message_2("%s (forced through --tomcat-user)"%conf.env.MSUSER,"GREEN")
+	else:
+		conf.env.MSUSER = conf.env.PACKAGE
+		conf.check_message_2("%s (Linux default)"%conf.env.MSUSER,"GREEN")
+	conf.check_tool("javadir")
 	conf.env.PREMIUMJAVADIR = _join(conf.env.JAVADIR,"%s-premium"%conf.env.PACKAGE)
 	conf.env.PLUGINJAVADIR = _join(conf.env.JAVADIR,"%s-plugins"%conf.env.PACKAGE)
 	conf.env.SYSTEMJAVADIR = "/usr/share/java"
@@ -195,6 +183,30 @@ else:
 in_javadir = lambda name: _join(conf.env.JAVADIR,_basename(name)) # $PREFIX/share/java
 in_system_javadir = lambda name: _join(conf.env.SYSTEMJAVADIR,name) # /usr/share/java
 in_premiumjavadir = lambda name: _join(conf.env.PREMIUMJAVADIR,name) # $PREFIX/share/java/cloud-premium
+
+conf.env.AGENTLIBDIR = Utils.subst_vars(_join("${LIBDIR}","${AGENTPATH}"),conf.env)
+conf.env.AGENTSYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${AGENTPATH}"),conf.env)
+conf.env.AGENTLOGDIR = Utils.subst_vars(_join("${LOCALSTATEDIR}","log","${AGENTPATH}"),conf.env)
+
+conf.env.USAGELOGDIR = Utils.subst_vars(_join("${LOCALSTATEDIR}","log","${USAGEPATH}"),conf.env)
+conf.env.USAGESYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${USAGEPATH}"),conf.env)
+
+conf.env.CPLIBDIR = Utils.subst_vars(_join("${LIBDIR}","${CPPATH}"),conf.env)
+conf.env.CPSYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${CPPATH}"),conf.env)
+conf.env.CPLOGDIR = Utils.subst_vars(_join("${LOCALSTATEDIR}","log","${CPPATH}"),conf.env)
+
+conf.env.MSLOG = _join(conf.env.MSLOGDIR,"management-server.log")
+conf.env.APISERVERLOG = _join(conf.env.MSLOGDIR,"api-server.log")
+conf.env.AGENTLOG = _join(conf.env.AGENTLOGDIR,"agent.log")
+conf.env.USAGELOG = _join(conf.env.USAGELOGDIR,"usage.log")
+conf.env.CPLOG = _join(conf.env.CPLOGDIR,"console-proxy.log")
+
+conf.env.SETUPDATADIR = Utils.subst_vars(_join("${DATADIR}","${SETUPPATH}"),conf.env)
+
+conf.env.SERVERSYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${SERVERPATH}"),conf.env)
+conf.env.PIDDIR = _join(conf.env.LOCALSTATEDIR,"run")
+conf.env.LOCKDIR = _join(conf.env.LOCALSTATEDIR,"lock","subsys")
+
 
 conf.check_message_1('Building classpaths')
 
@@ -246,30 +258,7 @@ compilecp+= _glob(_join(conf.env.TOMCATHOME,'lib',"*.jar"))
 conf.env.CLASSPATH = pathsep.join(compilecp)
 conf.check_message_2('Done','GREEN')
 
-conf.env.VERSION = Utils.g_module.VERSION
-
-conf.env.AGENTLIBDIR = Utils.subst_vars(_join("${LIBDIR}","${AGENTPATH}"),conf.env)
-conf.env.AGENTSYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${AGENTPATH}"),conf.env)
-conf.env.AGENTLOGDIR = Utils.subst_vars(_join("${LOCALSTATEDIR}","log","${AGENTPATH}"),conf.env)
-
-conf.env.USAGELOGDIR = Utils.subst_vars(_join("${LOCALSTATEDIR}","log","${USAGEPATH}"),conf.env)
-conf.env.USAGESYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${USAGEPATH}"),conf.env)
-
-conf.env.CPLIBDIR = Utils.subst_vars(_join("${LIBDIR}","${CPPATH}"),conf.env)
-conf.env.CPSYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${CPPATH}"),conf.env)
-conf.env.CPLOGDIR = Utils.subst_vars(_join("${LOCALSTATEDIR}","log","${CPPATH}"),conf.env)
-
-conf.env.MSLOG = _join(conf.env.MSLOGDIR,"management-server.log")
-conf.env.APISERVERLOG = _join(conf.env.MSLOGDIR,"api-server.log")
-conf.env.AGENTLOG = _join(conf.env.AGENTLOGDIR,"agent.log")
-conf.env.USAGELOG = _join(conf.env.USAGELOGDIR,"usage.log")
-conf.env.CPLOG = _join(conf.env.CPLOGDIR,"console-proxy.log")
-
-conf.env.SETUPDATADIR = Utils.subst_vars(_join("${DATADIR}","${SETUPPATH}"),conf.env)
-
-conf.env.SERVERSYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${SERVERPATH}"),conf.env)
-
-	# log4j config and property config files require backslash escapes on Windows
+# log4j config and property config files require backslash escapes on Windows
 if conf.env.DISTRO in ["Windows"]:
 	for log in "MSLOG APISERVERLOG AGENTLIBDIR USAGELOG AGENTLOG".split(): conf.env[log] = conf.env[log].replace("\\","\\\\")
 

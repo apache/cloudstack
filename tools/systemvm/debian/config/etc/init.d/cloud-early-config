@@ -1,0 +1,376 @@
+#!/bin/bash 
+### BEGIN INIT INFO
+# Provides:          cloud-early-config
+# Required-Start:    mountkernfs $local_fs
+# Required-Stop:     $local_fs
+# Should-Start:      
+# Should-Stop:       
+# Default-Start:     S
+# Default-Stop:      0 6
+# Short-Description: configure according to cmdline
+### END INIT INFO
+
+PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
+
+[ -x /sbin/ifup ] || exit 0
+
+. /lib/lsb/init-functions
+
+init_interfaces() {
+  cat > /etc/network/interfaces << EOF
+auto lo $1 $2 $3
+iface lo inet loopback
+
+EOF
+}
+
+patch() {
+  local PATCH_MOUNT=/media/cdrom
+  local patchfile=$PATCH_MOUNT/cloud-scripts.tgz
+  local md5file=/var/cache/cloud/cloud-scripts-signature
+  local privkey=$PATCH_MOUNT/authorized_keys
+  local shouldpatch=false
+  mkdir -p $PATCH_MOUNT
+  if [ -e /dev/xvdd ]; then
+    mount -o ro /dev/xvdd $PATCH_MOUNT
+    [ -f $privkey ] && cp -f $privkey /root/.ssh/ && chmod go-rwx /root/.ssh/authorized_keys
+    local oldmd5=
+    [ -f ${md5file} ] && oldmd5=$(cat ${md5file})
+    local newmd5=
+    [ -f ${patchfile} ] && newmd5=$(md5sum ${patchfile} | awk '{print $1}')
+ 
+   if [ "$oldmd5" != "$newmd5" ] && [ -f ${patchfile} ] && [ "$newmd5" != "" ]
+    then
+      shouldpatch=true
+      logger -t cloud "Patching  scripts"
+      tar xzf $patchfile -C ${path}
+      echo ${newmd5} > ${md5file}
+    fi
+    cat /proc/cmdline > /var/cache/cloud/cmdline
+    logger -t cloud "Patching  cloud service"
+    /opt/cloud/bin/patchsystemvm.sh $PATCH_MOUNT 
+    umount $PATCH_MOUNT
+    if [ "$shouldpatch" == "true" ] 
+    then
+      logger -t cloud "Rebooting system since we patched init scripts"
+      sleep 2
+      reboot
+    fi
+  fi
+  if [ -f /mnt/cmdline ]; then
+    cat /mnt/cmdline > /var/cache/cloud/cmdline
+  fi
+  return 0
+}
+
+setup_interface() {
+  local intfnum=$1
+  local ip=$2
+  local mask=$3
+  local gw=$4
+  local intf=eth${intfnum} 
+  local bootproto="static"
+
+
+  if [ "$BOOTPROTO" == "dhcp" ]
+  then
+    if [ "$intfnum" != "0" ]
+    then
+       bootproto="dhcp"
+    fi
+  fi
+
+  if [ "$ip" != "0.0.0.0" -a "$ip" != "" ]
+  then
+     echo "iface  $intf inet $bootproto" >> /etc/network/interfaces
+     if [ "$bootproto" == "static" ]
+     then
+       echo "  address $ip " >> /etc/network/interfaces
+       echo "  netmask $mask" >> /etc/network/interfaces
+     fi
+  fi
+
+  ifdown $intf
+  ifup $intf
+}
+
+enable_fwding() {
+  logger -t cloud "enable_fwding = $1"
+  echo "$1" > /proc/sys/net/ipv4/ip_forward
+}
+
+enable_svc() {
+  local svc=$1
+  local enabled=$2
+
+  logger -t cloud "Enable service ${svc} = $enabled"
+  local cfg=/etc/default/${svc}
+  sed  -i "s/ENABLED=.*$/ENABLED=$enabled/" $cfg 
+}
+
+disable_hvc() {
+  [ ! -d /proc/xen ] && sed -i 's/^vc/#vc/' /etc/inittab && telinit q
+  [  -d /proc/xen ] && sed -i 's/^#vc/vc/' /etc/inittab && telinit q
+}
+
+setup_common() {
+  init_interfaces $1 $2 $3
+  setup_interface "0" $ETH0_IP $ETH0_MASK $GW
+  setup_interface "1" $ETH1_IP $ETH1_MASK $GW
+  setup_interface "2" $ETH2_IP $ETH2_MASK $GW
+  
+  echo $NAME > /etc/hostname
+  echo 'AVAHI_DAEMON_DETECT_LOCAL=0' > /etc/default/avahi-daemon
+  hostname $NAME
+  
+  #Nameserver
+  if [ -n "$NS1" ]
+  then
+    echo "nameserver $NS1" > /etc/dnsmasq-resolv.conf
+    echo "nameserver $NS1" > /etc/resolv.conf
+  fi
+  
+  if [ -n "$NS2" ]
+  then
+    echo "nameserver $NS2" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $NS2" >> /etc/resolv.conf
+  fi
+  if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
+  then
+    ip route add $MGMTNET via $LOCAL_GW dev eth1
+  fi
+
+  ip route  delete default 
+  ip route add default via $GW
+}
+
+setup_dnsmasq() {
+  [ -z $DHCP_RANGE ] && DHCP_RANGE=$ETH0_IP
+  [ -z $DOMAIN ] && DOMAIN="cloudnine.internal"
+  if [ -n "$DOMAIN" ]
+  then
+    #send domain name to dhcp clients
+    sed -i s/[#]*dhcp-option=15.*$/dhcp-option=15,\"$DOMAIN\"/ /etc/dnsmasq.conf
+    #DNS server will append $DOMAIN to local queries
+    sed -r -i s/^[#]?domain=.*$/domain=$DOMAIN/ /etc/dnsmasq.conf
+    #answer all local domain queries
+    sed  -i -e "s/^[#]*local=.*$/local=\/$DOMAIN\//" /etc/dnsmasq.conf
+  fi
+  sed -i -e "s/^dhcp-range=.*$/dhcp-range=$DHCP_RANGE,static/" /etc/dnsmasq.conf
+  sed -i -e "s/^[#]*listen-address=.*$/listen-address=$ETH0_IP/" /etc/dnsmasq.conf
+
+}
+
+setup_sshd(){
+  [ -f /etc/ssh/sshd_config ] && sed -i -e "s/^[#]*ListenAddress.*$/ListenAddress $ETH1_IP/" /etc/ssh/sshd_config
+}
+
+setup_router() {
+  setup_common eth0 eth1 eth2
+  setup_dnsmasq
+
+  sed -i  /gateway/d /etc/hosts
+  echo "$ETH0_IP $NAME" >> /etc/hosts
+
+  setup_sshd 
+
+  enable_svc dnsmasq 1
+  enable_svc haproxy 1
+  enable_svc cloud-passwd-srvr 1
+  enable_svc cloud 0
+  enable_fwding 1
+  cp /etc/iptables/iptables-router /etc/iptables/rules
+}
+
+setup_dhcpsrvr() {
+  setup_common eth0 eth1
+  setup_dnsmasq
+
+  sed -i  /gateway/d /etc/hosts
+  echo "$ETH0_IP $NAME" >> /etc/hosts
+
+  setup_sshd 
+
+  enable_svc dnsmasq 1
+  enable_svc haproxy 0
+  enable_svc cloud-passwd-srvr 1
+  enable_svc cloud 0
+  enable_fwding 0
+  cp /etc/iptables/iptables-router /etc/iptables/rules
+}
+
+setup_secstorage() {
+  setup_common eth0 eth1 eth2
+  sed -i  /gateway/d /etc/hosts
+  public_ip=$ETH2_IP
+  [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH1_IP
+  echo "$public_ip $NAME" >> /etc/hosts
+
+  cp /etc/iptables/iptables-secstorage /etc/iptables/rules
+  enable_fwding 0
+  enable_svc haproxy 0
+  enable_svc dnsmasq 0
+  enable_svc cloud-passwd-srvr 0
+  enable_svc cloud 1
+}
+
+setup_console_proxy() {
+  setup_common eth0 eth1 eth2
+  public_ip=$ETH2_IP
+  [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH1_IP
+  sed -i  /gateway/d /etc/hosts
+  echo "$public_ip $NAME" >> /etc/hosts
+  cp /etc/iptables/iptables-consoleproxy /etc/iptables/rules
+
+  enable_fwding 0
+  enable_svc haproxy 0
+  enable_svc dnsmasq 0
+  enable_svc cloud-passwd-srvr 0
+  enable_svc cloud 1
+}
+
+setup_default() {
+  cat > /etc/network/interfaces << EOF
+auto lo eth0
+iface lo inet loopback
+
+iface eth0 inet dhcp
+
+EOF
+}
+
+start() {
+  patch
+  case $TYPE in 
+     router)
+         [ "$NAME" == "" ] && NAME=router
+         setup_router
+	  ;;
+     dhcpsrvr)
+         [ "$NAME" == "" ] && NAME=dhcpsrvr
+         setup_dhcpsrvr
+	  ;;
+     secstorage)
+         [ "$NAME" == "" ] && NAME=secstorage
+         setup_secstorage;
+	  ;;
+     consoleproxy)
+         [ "$NAME" == "" ] && NAME=consoleproxy
+         setup_console_proxy;
+	  ;;
+     unknown)
+         [ "$NAME" == "" ] && NAME=systemvm
+         setup_default;
+          ;;
+  esac
+  return 0
+}
+
+disable_hvc
+if [ -f /mnt/cmdline ]
+then
+    CMDLINE=$(cat /mnt/cmdline)
+else
+    CMDLINE=$(cat /proc/cmdline)
+fi
+
+
+TYPE="unknown"
+BOOTPROTO="static"
+
+for i in $CMDLINE
+  do
+    # search for foo=bar pattern and cut out foo
+    KEY=$(echo $i | cut -d= -f1)
+    VALUE=$(echo $i | cut -d= -f2)
+    case $KEY in 
+      eth0ip)
+          ETH0_IP=$VALUE
+          ;;
+      eth1ip)
+          ETH1_IP=$VALUE
+          ;;
+      eth2ip)
+          ETH2_IP=$VALUE
+          ;;
+      gateway)
+          GW=$VALUE
+          ;;
+      eth0mask)
+          ETH0_MASK=$VALUE
+          ;;
+      eth1mask)
+          ETH1_MASK=$VALUE
+          ;;
+      eth2mask)
+          ETH2_MASK=$VALUE
+          ;;
+      dns1)
+          NS1=$VALUE
+          ;;
+      dns2)
+          NS2=$VALUE
+          ;;
+      domain)
+          DOMAIN=$VALUE
+          ;;
+      mgmtcidr)
+          MGMTNET=$VALUE
+          ;;
+      localgw)
+          LOCAL_GW=$VALUE
+          ;;
+      template)
+        TEMPLATE=$VALUE
+      	;;
+      name)
+	NAME=$VALUE
+	;;
+      dhcprange)
+        DHCP_RANGE=$(echo $VALUE | tr ':' ',')
+      	;;
+      bootproto)
+        BOOTPROTO=$VALUE 
+      	;;
+      type)
+        TYPE=$VALUE	
+	;;
+    esac
+done
+
+
+case "$1" in
+start)
+
+	log_action_begin_msg "Executing cloud-early-config"
+        logger -t cloud "Executing cloud-early-config"
+	if start; then
+	    log_action_end_msg $?
+	else
+	    log_action_end_msg $?
+	fi
+	;;
+
+stop)
+	log_action_begin_msg "Stopping cloud-early-config (noop)"
+	log_action_end_msg 0
+	;;
+
+force-reload|restart)
+
+	log_warning_msg "Running $0  is deprecated because it may not enable again some interfaces"
+	log_action_begin_msg "Executing cloud-early-config"
+	if start; then
+	    log_action_end_msg $?
+	else
+	    log_action_end_msg $?
+	fi
+	;;
+
+*)
+	echo "Usage: /etc/init.d/cloud-early-config {start|stop}"
+	exit 1
+	;;
+esac
+
+exit 0

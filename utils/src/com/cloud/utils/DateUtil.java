@@ -18,6 +18,7 @@
 
 package com.cloud.utils;
 
+import java.net.URI;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -235,14 +236,12 @@ public class DateUtil {
     		throw new CloudRuntimeException("Incorrect interval: "+type.toString());
     	}
 
-
     	return scheduleTime.getTime();
     }
 
 	
 	// test only
 	public static void main(String[] args) {
-		
 		TimeZone localTimezone = Calendar.getInstance().getTimeZone();
 		TimeZone gmtTimezone = TimeZone.getTimeZone("GMT");
 		TimeZone estTimezone = TimeZone.getTimeZone("EST");
