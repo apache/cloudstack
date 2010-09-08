@@ -118,7 +118,7 @@ setup_dhcpsrvr() {
   sed -i -e "s/^dhcp-range=.*$/dhcp-range=$DHCP_RANGE,static/" /etc/dnsmasq.conf
   sed -i -e "s/^[#]*dhcp-option=option:router.*$/dhcp-option=option:router,$GW/" /etc/dnsmasq.conf
   #for now set up ourself as the dns server as well
-  #echo "dhcp-option=6,$NS1,$NS2" >> /etc/dnsmasq.conf
+  sed -i s/[#]*dhcp-option=6.*$/dhcp-option=6,\"$NS1\",\"$NS2\"/ /etc/dnsmasq.conf
   sed -i  /gateway/d /etc/hosts
   echo "$ETH0_IP $NAME" >> /etc/hosts
   [ -f /etc/httpd/conf/httpd.conf ] && sed -i -e "s/^Listen.*$/Listen $ETH0_IP:80/" /etc/httpd/conf/httpd.conf
@@ -143,7 +143,25 @@ setup_console_proxy() {
   echo "$public_ip $NAME" >> /etc/hosts
 }
 
-CMDLINE=$(cat /proc/cmdline)
+if [ -f /mnt/cmdline ]
+then
+  CMDLINE=$(cat /mnt/cmdline)
+else
+  CMDLINE=$(cat /proc/cmdline)
+fi
+
+ 
+if [ ! -d /root/.ssh ]
+then
+  mkdir /root/.ssh
+  chmod 700 /root/.ssh
+fi
+if [ -f /mnt/id_rsa.pub ]
+then
+  cat /mnt/id_rsa.pub > /root/.ssh/authorized_keys
+  chmod 600 /root/.ssh/authorized_keys
+fi
+
 TYPE="router"
 BOOTPROTO="static"
 

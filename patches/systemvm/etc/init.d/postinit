@@ -26,7 +26,14 @@ setup_console_proxy() {
   echo "$public_ip $NAME" >> /etc/hosts
 }
 
-CMDLINE=$(cat /proc/cmdline)
+
+if [ -f /mnt/cmdline ]
+then
+    CMDLINE=$(cat /mnt/cmdline)
+else
+    CMDLINE=$(cat /proc/cmdline)
+fi
+
 TYPE="router"
 BOOTPROTO="static"
 
