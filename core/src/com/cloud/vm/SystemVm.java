@@ -15,31 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.api.response;
+package com.cloud.vm;
 
-import com.cloud.api.ResponseObject;
-import com.cloud.serializer.Param;
+import java.util.Date;
 
-public class GuestOSCategoryResponse implements ResponseObject {
-    @Param(name="id")
-    private Long id;
-
-    @Param(name="name")
-    private String name;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
+public interface SystemVm extends VirtualMachine {
+    public String getGateway();
+    public String getDns1();
+    public String getDns2();
+    public String getDomain();
+    public String getPublicIpAddress();
+    public String getPublicNetmask();
+    public String getPublicMacAddress();
+    public Long getVlanDbId();
+    public String getVlanId();
+    public String getPrivateNetmask();
+    public int getRamSize();
+    public int getActiveSession();
+    public Date getLastUpdateTime();
 }

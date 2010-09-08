@@ -21,11 +21,13 @@ import java.util.Date;
 
 import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
-import com.cloud.vm.State;
 
-public class DomainRouterResponse implements ResponseObject {
+public class SystemVmResponse implements ResponseObject {
     @Param(name="id")
     private Long id;
+
+    @Param(name="systemvmtype")
+    private String systemVmType;
 
     @Param(name="jobid")
     private Long jobId;
@@ -81,15 +83,6 @@ public class DomainRouterResponse implements ResponseObject {
     @Param(name="publicnetmask")
     private String publicNetmask;
 
-    @Param(name="guestipaddress")
-    private String guestIpAddress;
-
-    @Param(name="guestMacAddress")
-    private String guestMacAddress;
-
-    @Param(name="guestNetmask")
-    private String guestNetmask;
-
     @Param(name="templateid")
     private Long templateId;
 
@@ -97,16 +90,10 @@ public class DomainRouterResponse implements ResponseObject {
     private Date created;
 
     @Param(name="state")
-    private State state;
+    private String state;
 
-    @Param(name="account")
-    private String accountName;
-
-    @Param(name="domainid")
-    private Long domainId;
-
-    @Param(name="domain")
-    private String domainName;
+    @Param(name="activeviewersessions")
+    private Integer activeViewerSessions;
 
     public Long getId() {
         return id;
@@ -114,6 +101,14 @@ public class DomainRouterResponse implements ResponseObject {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getSystemVmType() {
+        return systemVmType;
+    }
+
+    public void setSystemVmType(String systemVmType) {
+        this.systemVmType = systemVmType;
     }
 
     public Long getJobId() {
@@ -260,30 +255,6 @@ public class DomainRouterResponse implements ResponseObject {
         this.publicNetmask = publicNetmask;
     }
 
-    public String getGuestIpAddress() {
-        return guestIpAddress;
-    }
-
-    public void setGuestIpAddress(String guestIpAddress) {
-        this.guestIpAddress = guestIpAddress;
-    }
-
-    public String getGuestMacAddress() {
-        return guestMacAddress;
-    }
-
-    public void setGuestMacAddress(String guestMacAddress) {
-        this.guestMacAddress = guestMacAddress;
-    }
-
-    public String getGuestNetmask() {
-        return guestNetmask;
-    }
-
-    public void setGuestNetmask(String guestNetmask) {
-        this.guestNetmask = guestNetmask;
-    }
-
     public Long getTemplateId() {
         return templateId;
     }
@@ -300,35 +271,19 @@ public class DomainRouterResponse implements ResponseObject {
         this.created = created;
     }
 
-    public State getState() {
+    public String getState() {
         return state;
     }
 
-    public void setState(State state) {
+    public void setState(String state) {
         this.state = state;
     }
 
-    public String getAccountName() {
-        return accountName;
+    public Integer getActiveViewerSessions() {
+        return activeViewerSessions;
     }
 
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public void setDomainId(Long domainId) {
-        this.domainId = domainId;
-    }
-
-    public String getDomainName() {
-        return domainName;
-    }
-
-    public void setDomainName(String domainName) {
-        this.domainName = domainName;
+    public void setActiveViewerSessions(Integer activeViewerSessions) {
+        this.activeViewerSessions = activeViewerSessions;
     }
 }

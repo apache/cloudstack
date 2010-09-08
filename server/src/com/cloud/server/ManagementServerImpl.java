@@ -91,6 +91,8 @@ import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListRoutersCmd;
 import com.cloud.api.commands.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListSnapshotsCmd;
+import com.cloud.api.commands.ListStoragePoolsCmd;
+import com.cloud.api.commands.ListSystemVMsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -7843,20 +7845,20 @@ public class ManagementServerImpl implements ManagementServer {
     public List<ClusterVO> listClusterByPodId(long podId) {
         return _clusterDao.listByPodId(podId);
     }
-    
-//    @Override
-//    public ClusterVO createCluster(long dcId, long podId, String name) {
-//        ClusterVO cluster = new ClusterVO(dcId, podId, name);
-//        try {
-//            cluster = _clusterDao.persist(cluster);
-//        } catch (Exception e) {
-//            cluster = _clusterDao.findBy(name, podId);
-//            if (cluster == null) {
-//                throw new CloudRuntimeException("Unable to create cluster " + name + " in pod " + podId + " and data center " + dcId, e);
-//            }
-//        }
-//        return cluster;
-//    }
+
+    @Override
+    public List<? extends StoragePoolVO> searchForStoragePools(ListStoragePoolsCmd cmd) {
+        Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
+        c.addCriteria(Criteria.NAME, cmd.getStoragePoolName());
+        c.addCriteria(Criteria.CLUSTERID, cmd.getClusterId());
+        c.addCriteria(Criteria.ADDRESS, cmd.getIpAddress());
+        c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
+        c.addCriteria(Criteria.PATH, cmd.getPath());
+        c.addCriteria(Criteria.PODID, cmd.getPodId());
+        c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());
+
+        return searchForStoragePools(c);
+    }
 
     @Override
     public List<? extends StoragePoolVO> searchForStoragePools(Criteria c) {
@@ -8144,7 +8146,34 @@ public class ManagementServerImpl implements ManagementServer {
 
         return _secStorageVmDao.search(sc, searchFilter);
     }
-	
+
+	@Override @SuppressWarnings({"unchecked", "rawtypes"})
+	public List<? extends VMInstanceVO> searchForSystemVm(ListSystemVMsCmd cmd) {
+        Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
+        c.addCriteria(Criteria.ID, cmd.getId());
+        c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());
+        c.addCriteria(Criteria.PODID, cmd.getPodId());
+        c.addCriteria(Criteria.HOSTID, cmd.getHostId());
+        c.addCriteria(Criteria.NAME, cmd.getSystemVmName());
+        c.addCriteria(Criteria.STATE, cmd.getState());
+
+        String type = cmd.getSystemVmType();
+        List systemVMs = new ArrayList();
+
+        if (type == null) { //search for all vm types
+            systemVMs.addAll(searchForConsoleProxy(c));
+            systemVMs.addAll(searchForSecondaryStorageVm(c));
+        } else if((type != null) && (type.equalsIgnoreCase("secondarystoragevm"))) { // search for ssvm
+            systemVMs.addAll(searchForSecondaryStorageVm(c));
+        } else if((type != null) && (type.equalsIgnoreCase("consoleproxy"))) { // search for consoleproxy
+            systemVMs.addAll(searchForConsoleProxy(c));
+        }
+
+        return (List<? extends VMInstanceVO>)systemVMs;
+	}
+
 	@Override
 	public VMInstanceVO findSystemVMById(long instanceId) {
 		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(instanceId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);

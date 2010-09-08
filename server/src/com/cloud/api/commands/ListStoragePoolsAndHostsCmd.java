@@ -25,12 +25,15 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseListCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.host.Host;
 import com.cloud.server.ManagementServer;
 import com.cloud.utils.Pair;
 
-public class ListStoragePoolsAndHostsCmd extends BaseCmd{
+@Implementation(method="")
+public class ListStoragePoolsAndHostsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListStoragePoolsAndHostsCmd.class.getName());
 
     private static final String s_name = "liststoragepoolsandhostsresponse";
@@ -115,8 +118,7 @@ public class ListStoragePoolsAndHostsCmd extends BaseCmd{
     }
 
     @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
+    public String getResponse() {
     }
 
     @Override

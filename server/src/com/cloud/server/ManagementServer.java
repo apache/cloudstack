@@ -55,6 +55,8 @@ import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListRoutersCmd;
 import com.cloud.api.commands.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListSnapshotsCmd;
+import com.cloud.api.commands.ListStoragePoolsCmd;
+import com.cloud.api.commands.ListSystemVMsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -1806,6 +1808,13 @@ public interface ManagementServer {
     StoragePoolVO findPoolById(Long id);
 	List<? extends StoragePoolVO> searchForStoragePools(Criteria c);
 
+	/**
+	 * List storage pools that match the given criteria
+	 * @param cmd the command that wraps the search criteria (zone, pod, name, IP address, path, and cluster id)
+	 * @return a list of storage pools that match the given criteria
+	 */
+	List<? extends StoragePoolVO> searchForStoragePools(ListStoragePoolsCmd cmd);
+
 	SnapshotPolicyVO findSnapshotPolicyById(Long policyId);
 
 	/**
@@ -1826,6 +1835,13 @@ public interface ManagementServer {
 	List<SecondaryStorageVmVO> searchForSecondaryStorageVm(Criteria c);
 
 	/**
+	 * List system VMs by the given search criteria
+	 * @param cmd the command that wraps the search criteria (host, name, state, type, zone, pod, and/or id)
+	 * @return the list of system vms that match the given criteria
+	 */
+    List<? extends VMInstanceVO> searchForSystemVm(ListSystemVMsCmd cmd);
+
+    /**
 	 * Returns back a SHA1 signed response
 	 * @param userId -- id for the user
 	 * @return -- ArrayList of <CloudId+Signature>

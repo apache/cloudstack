@@ -15,30 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.vm;
-
-import java.util.Date;
 
 /**
  *  ConsoleProxy is a system VM instance that is used 
  *  to proxy VNC traffic
  */
-public interface ConsoleProxy extends VirtualMachine {
-	
-	public String getGateway();
-	public String getDns1();
-	public String getDns2();
-    public String getDomain();
-	public String getPublicIpAddress();
-	public String getPublicNetmask();
-	public String getPublicMacAddress();
-	public Long getVlanDbId();
-	public String getVlanId();
-	public String getPrivateNetmask();
-	public int getRamSize();
-	public int getActiveSession();
-    public Date getLastUpdateTime();
+public interface ConsoleProxy extends SystemVm {
     public byte[] getSessionDetails();
 }
 
