@@ -1998,6 +1998,9 @@ public class StorageManagerImpl implements StorageManager {
         	{
         		VMInstanceVO vmInstance = _vmInstanceDao.findById(volume.getInstanceId());
         		
+        		if(vmInstance == null)
+        			continue;
+        		
         		//shut down the running vms
         		if(vmInstance.getState().equals(State.Running) || vmInstance.getState().equals(State.Stopped) || vmInstance.getState().equals(State.Stopping) || vmInstance.getState().equals(State.Starting))
         		{
