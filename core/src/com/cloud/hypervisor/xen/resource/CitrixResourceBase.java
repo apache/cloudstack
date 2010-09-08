@@ -3376,23 +3376,14 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     } catch (XenAPIException e) {
                     	continue;
                     }
-                    long tag = pif.getVLAN(conn);
-                    VLAN vlan = pif.getVLANMasterOf(conn);
-                    String uuid = vlan.getUuid(conn);
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Destroying VLAN, tag: " + tag + " uuid:" + uuid + " on host " + _host.ip);
-                    }
-                    vlan.destroy(conn);
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Destroyed VLAN, tag: " + tag + " uuid:" + uuid + " on host " + _host.ip);
-                    }
+
                 }
             }
         } catch (XenAPIException e) {
-            String msg = "Unable to disable VLAN network due to " + e.toString();
+            String msg = e.getClass() + " Unable to disable VLAN network due to " + e.toString();
             s_logger.warn(msg, e);
-        } catch (Exception e) {
-            String msg = "Unable to disable VLAN network due to " + e.getMessage();
+        } catch (XmlRpcException e) {
+            String msg = e.getClass() + " Unable to disable VLAN network due to " + e.getMessage();
             s_logger.warn(msg, e);
         }
     }
