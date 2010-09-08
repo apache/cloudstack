@@ -234,6 +234,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     protected int _wait;
     protected IAgentControl _agentControl;
     protected boolean _isRemoteAgent = false;
+    
 
     protected final XenServerHost _host = new XenServerHost();
 
@@ -270,69 +271,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         s_statesTable.put(Types.VmPowerState.UNKNOWN, State.Unknown);
         s_statesTable.put(Types.VmPowerState.UNRECOGNIZED, State.Unknown);
     }
-    private static HashMap<String, String> _guestOsType = new HashMap<String, String>(50);
-    static {
-        _guestOsType.put("CentOS 4.5 (32-bit)", "CentOS 4.5");
-        _guestOsType.put("CentOS 4.6 (32-bit)", "CentOS 4.6");
-        _guestOsType.put("CentOS 4.7 (32-bit)", "CentOS 4.7");
-        _guestOsType.put("CentOS 4.8 (32-bit)", "CentOS 4.8");
-        _guestOsType.put("CentOS 5.0 (32-bit)", "CentOS 5.0");
-        _guestOsType.put("CentOS 5.0 (64-bit)", "CentOS 5.0 x64");
-        _guestOsType.put("CentOS 5.1 (32-bit)", "CentOS 5.1");
-        _guestOsType.put("CentOS 5.1 (64-bit)", "CentOS 5.1 x64");
-        _guestOsType.put("CentOS 5.2 (32-bit)", "CentOS 5.2");
-        _guestOsType.put("CentOS 5.2 (64-bit)", "CentOS 5.2 x64");
-        _guestOsType.put("CentOS 5.3 (32-bit)", "CentOS 5.3");
-        _guestOsType.put("CentOS 5.3 (64-bit)", "CentOS 5.3 x64");
-        _guestOsType.put("CentOS 5.4 (32-bit)", "CentOS 5.4");
-        _guestOsType.put("CentOS 5.4 (64-bit)", "CentOS 5.4 x64");
-        _guestOsType.put("Debian Lenny 5.0 (32-bit)", "Debian Lenny 5.0");
-        _guestOsType.put("Oracle Enterprise Linux 5.0 (32-bit)", "Oracle Enterprise Linux 5.0");
-        _guestOsType.put("Oracle Enterprise Linux 5.0 (64-bit)", "Oracle Enterprise Linux 5.0 x64");
-        _guestOsType.put("Oracle Enterprise Linux 5.1 (32-bit)", "Oracle Enterprise Linux 5.1");
-        _guestOsType.put("Oracle Enterprise Linux 5.1 (64-bit)", "Oracle Enterprise Linux 5.1 x64");
-        _guestOsType.put("Oracle Enterprise Linux 5.2 (32-bit)", "Oracle Enterprise Linux 5.2");
-        _guestOsType.put("Oracle Enterprise Linux 5.2 (64-bit)", "Oracle Enterprise Linux 5.2 x64");
-        _guestOsType.put("Oracle Enterprise Linux 5.3 (32-bit)", "Oracle Enterprise Linux 5.3");
-        _guestOsType.put("Oracle Enterprise Linux 5.3 (64-bit)", "Oracle Enterprise Linux 5.3 x64");
-        _guestOsType.put("Oracle Enterprise Linux 5.4 (32-bit)", "Oracle Enterprise Linux 5.4");
-        _guestOsType.put("Oracle Enterprise Linux 5.4 (64-bit)", "Oracle Enterprise Linux 5.4 x64");
-        _guestOsType.put("Red Hat Enterprise Linux 4.5 (32-bit)", "Red Hat Enterprise Linux 4.5");
-        _guestOsType.put("Red Hat Enterprise Linux 4.6 (32-bit)", "Red Hat Enterprise Linux 4.6");
-        _guestOsType.put("Red Hat Enterprise Linux 4.7 (32-bit)", "Red Hat Enterprise Linux 4.7");
-        _guestOsType.put("Red Hat Enterprise Linux 4.8 (32-bit)", "Red Hat Enterprise Linux 4.8");
-        _guestOsType.put("Red Hat Enterprise Linux 5.0 (32-bit)", "Red Hat Enterprise Linux 5.0");
-        _guestOsType.put("Red Hat Enterprise Linux 5.0 (64-bit)", "Red Hat Enterprise Linux 5.0 x64");
-        _guestOsType.put("Red Hat Enterprise Linux 5.1 (32-bit)", "Red Hat Enterprise Linux 5.1");
-        _guestOsType.put("Red Hat Enterprise Linux 5.1 (64-bit)", "Red Hat Enterprise Linux 5.1 x64");
-        _guestOsType.put("Red Hat Enterprise Linux 5.2 (32-bit)", "Red Hat Enterprise Linux 5.2");
-        _guestOsType.put("Red Hat Enterprise Linux 5.2 (64-bit)", "Red Hat Enterprise Linux 5.2 x64");
-        _guestOsType.put("Red Hat Enterprise Linux 5.3 (32-bit)", "Red Hat Enterprise Linux 5.3");
-        _guestOsType.put("Red Hat Enterprise Linux 5.3 (64-bit)", "Red Hat Enterprise Linux 5.3 x64");
-        _guestOsType.put("Red Hat Enterprise Linux 5.4 (32-bit)", "Red Hat Enterprise Linux 5.4");
-        _guestOsType.put("Red Hat Enterprise Linux 5.4 (64-bit)", "Red Hat Enterprise Linux 5.4 x64");
-        _guestOsType.put("SUSE Linux Enterprise Server 9 SP4 (32-bit)", "SUSE Linux Enterprise Server 9 SP4");
-        _guestOsType.put("SUSE Linux Enterprise Server 10 SP1 (32-bit)", "SUSE Linux Enterprise Server 10 SP1");
-        _guestOsType.put("SUSE Linux Enterprise Server 10 SP1 (64-bit)", "SUSE Linux Enterprise Server 10 SP1 x64");
-        _guestOsType.put("SUSE Linux Enterprise Server 10 SP2 (32-bit)", "SUSE Linux Enterprise Server 10 SP2");
-        _guestOsType.put("SUSE Linux Enterprise Server 10 SP2 (64-bit)", "SUSE Linux Enterprise Server 10 SP2 x64");
-        _guestOsType.put("SUSE Linux Enterprise Server 10 SP3 (64-bit)", "Other install media");
-        _guestOsType.put("SUSE Linux Enterprise Server 11 (32-bit)", "SUSE Linux Enterprise Server 11");
-        _guestOsType.put("SUSE Linux Enterprise Server 11 (64-bit)", "SUSE Linux Enterprise Server 11 x64");
-        _guestOsType.put("Windows 7 (32-bit)", "Windows 7");
-        _guestOsType.put("Windows 7 (64-bit)", "Windows 7 x64");
-        _guestOsType.put("Windows Server 2003 (32-bit)", "Windows Server 2003");
-        _guestOsType.put("Windows Server 2003 (64-bit)", "Windows Server 2003 x64");
-        _guestOsType.put("Windows Server 2008 (32-bit)", "Windows Server 2008");
-        _guestOsType.put("Windows Server 2008 (64-bit)", "Windows Server 2008 x64");
-        _guestOsType.put("Windows Server 2008 R2 (64-bit)", "Windows Server 2008 R2 x64");
-        _guestOsType.put("Windows 2000 SP4 (32-bit)", "Windows 2000 SP4");
-        _guestOsType.put("Windows Vista (32-bit)", "Windows Vista");
-        _guestOsType.put("Windows XP SP2 (32-bit)", "Windows XP SP2");
-        _guestOsType.put("Windows XP SP3 (32-bit)", "Windows XP SP3");
-        _guestOsType.put("Other install media", "Other install media");
-      
-    }
+    
     
     protected boolean isRefNull(XenAPIObject object) {
         return (object == null || object.toWireString().equals("OpaqueRef:NULL"));
@@ -814,7 +753,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
     
     protected Pair<VM, String> createVmFromTemplate(Connection conn, VirtualMachineTO vmSpec, Host host) throws XenAPIException, XmlRpcException {
-        String guestOsTypeName = getGuestOsType(vmSpec.getOs());
+        String guestOsTypeName = CitrixHelper.getGuestOsType(vmSpec.getOs());
         Set<VM> templates = VM.getByNameLabel(conn, guestOsTypeName);
         assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
         VM template = templates.iterator().next();
@@ -1171,7 +1110,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             bootArgs += " pod=" + _pod;
             bootArgs += " localgw=" + _localGateway;
             String result = startSystemVM(vmName, storage.getVlanId(), network, cmd.getVolumes(), bootArgs, storage.getGuestMacAddress(), storage.getGuestIpAddress(), storage
-                    .getPrivateMacAddress(), storage.getPublicMacAddress(), cmd.getProxyCmdPort(), storage.getRamSize());
+                    .getPrivateMacAddress(), storage.getPublicMacAddress(), cmd.getProxyCmdPort(), storage.getRamSize(), storage.getGuestOSId());
             if (result == null) {
                 return new StartSecStorageVmAnswer(cmd);
             }
@@ -2578,7 +2517,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         Set<VM> templates;
         VM vm = null;
         String stdType = cmd.getGuestOSDescription();
-        String guestOsTypeName = getGuestOsType(stdType);
+        String guestOsTypeName = CitrixHelper.getGuestOsType(stdType);
         templates = VM.getByNameLabel(conn, guestOsTypeName);
         assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
         VM template = templates.iterator().next();
@@ -2596,9 +2535,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return vm;
     }
 
-    protected String getGuestOsType(String stdType) {
-        return _guestOsType.get(stdType);
-    }
+
 
     public boolean joinPool(String address, String username, String password) {
         Connection conn = getConnection();
@@ -3142,7 +3079,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             String bootArgs = cmd.getBootArgs();
 
             String result = startSystemVM(vmName, router.getVlanId(), network, cmd.getVolumes(), bootArgs, router.getGuestMacAddress(), router.getPrivateIpAddress(), router
-                    .getPrivateMacAddress(), router.getPublicMacAddress(), 3922, router.getRamSize());
+                    .getPrivateMacAddress(), router.getPublicMacAddress(), 3922, router.getRamSize(), router.getGuestOSId());
             if (result == null) {
                 networkUsage(router.getPrivateIpAddress(), "create", null);
                 return new StartRouterAnswer(cmd);
@@ -3157,7 +3094,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
 
     protected String startSystemVM(String vmName, String vlanId, Network nw0, List<VolumeVO> vols, String bootArgs, String guestMacAddr, String privateIp, String privateMacAddr,
-            String publicMacAddr, int cmdPort, long ramSize) {
+            String publicMacAddr, int cmdPort, long ramSize, long guestOsId) {
 
     	setupLinkLocalNetwork();
         VM vm = null;
@@ -3175,14 +3112,12 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
             Ternary<SR, VDI, VolumeVO> mount = mounts.get(0);
 
-            Set<VM> templates = VM.getByNameLabel(conn, "CentOS 5.3");
+            Set<VM> templates = VM.getByNameLabel(conn, CitrixHelper.getGuestOsType(guestOsId));
             if (templates.size() == 0) {
-                templates = VM.getByNameLabel(conn, "CentOS 5.3 (64-bit)");
-                if (templates.size() == 0) {
-                    String msg = " can not find template CentOS 5.3 ";
-                    s_logger.warn(msg);
-                    return msg;
-                }
+            	String msg = " can not find systemvm template " + CitrixHelper.getGuestOsType(guestOsId) ;
+            	s_logger.warn(msg);
+            	return msg;
+
             }
 
             VM template = templates.iterator().next();
@@ -3343,7 +3278,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             bootArgs += " localgw=" + _localGateway;
 
             String result = startSystemVM(vmName, proxy.getVlanId(), network, cmd.getVolumes(), bootArgs, proxy.getGuestMacAddress(), proxy.getGuestIpAddress(), proxy
-                    .getPrivateMacAddress(), proxy.getPublicMacAddress(), cmd.getProxyCmdPort(), proxy.getRamSize());
+                    .getPrivateMacAddress(), proxy.getPublicMacAddress(), cmd.getProxyCmdPort(), proxy.getRamSize(), proxy.getGuestOSId());
             if (result == null) {
                 return new StartConsoleProxyAnswer(cmd);
             }
@@ -6503,4 +6438,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             return virtualSize;
         }
     }
+
+	protected String getGuestOsType(String stdType) {
+		return CitrixHelper.getGuestOsType(stdType);
+	}
 }
