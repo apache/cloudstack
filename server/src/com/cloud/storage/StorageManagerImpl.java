@@ -1364,7 +1364,7 @@ public class StorageManagerImpl implements StorageManager {
         }
         
         List<StoragePoolVO> pools = _storagePoolDao.listPoolByHostPath(storageHost, hostPath);
-        if (!pools.isEmpty() && pools.get(0).getRemoved()==null) {
+        if (!pools.isEmpty()) {
             Long oldPodId = pools.get(0).getPodId();
             throw new ResourceInUseException("Storage pool " + uri + " already in use by another pod (id=" + oldPodId + ")", "StoragePool", uri.toASCIIString());
         }
