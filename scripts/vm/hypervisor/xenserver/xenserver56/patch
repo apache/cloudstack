@@ -21,7 +21,6 @@ vmopsSnapshot=..,0755,/etc/xapi.d/plugins
 xs_cleanup.sh=..,0755,/opt/xensource/bin
 systemvm.iso=../../../../../vms,0644,/opt/xensource/packages/iso
 hostvmstats.py=..,0755,/opt/xensource/sm
-id_rsa.cloud=..,0600,/opt/xensource/bin
 id_rsa.cloud=..,0600,/root/.ssh
 network_info.sh=..,0755,/opt/xensource/bin
 prepsystemvm.sh=..,0755,/opt/xensource/bin

@@ -18,7 +18,7 @@ check_gw() {
   return $?;
 }
 
-cert="$(dirname $0)/id_rsa"
+cert="/root/.ssh/id_rsa.cloud"
 
 create_usage_rules () {
   local dRIp=$1
