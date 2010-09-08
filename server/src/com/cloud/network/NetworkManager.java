@@ -24,6 +24,7 @@ import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateIPForwardingRuleCmd;
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
+import com.cloud.api.commands.DeleteLoadBalancerRuleCmd;
 import com.cloud.api.commands.DeletePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
@@ -31,6 +32,7 @@ import com.cloud.api.commands.RebootRouterCmd;
 import com.cloud.api.commands.RemoveFromLoadBalancerRuleCmd;
 import com.cloud.api.commands.StartRouterCmd;
 import com.cloud.api.commands.StopRouterCmd;
+import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.VlanVO;
@@ -229,6 +231,9 @@ public interface NetworkManager extends Manager {
                                                                        InvalidParameterValueException;
 
     public boolean removeFromLoadBalancer(RemoveFromLoadBalancerRuleCmd cmd) throws InvalidParameterValueException;
+    
+    public boolean deleteLoadBalancerRule(DeleteLoadBalancerRuleCmd cmd) throws InvalidParameterValueException;
+    public LoadBalancerVO updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd) throws InvalidParameterValueException;
     
     /**
      * Add a DHCP entry on the domr dhcp server

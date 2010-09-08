@@ -5033,87 +5033,87 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job);
     }
 
-    @Override @DB
-    public LoadBalancerVO updateLoadBalancerRule(long userId, LoadBalancerVO loadBalancer, String privatePort, String algorithm) {
-        String updatedPrivatePort = ((privatePort == null) ? loadBalancer.getPrivatePort() : privatePort);
-        String updatedAlgorithm = ((algorithm == null) ? loadBalancer.getAlgorithm() : algorithm);
+//    @Override @DB
+//    public LoadBalancerVO updateLoadBalancerRule(long userId, LoadBalancerVO loadBalancer, String privatePort, String algorithm) {
+//        String updatedPrivatePort = ((privatePort == null) ? loadBalancer.getPrivatePort() : privatePort);
+//        String updatedAlgorithm = ((algorithm == null) ? loadBalancer.getAlgorithm() : algorithm);
+//
+//        Transaction txn = Transaction.currentTxn();
+//        try {
+//            txn.start();
+//            loadBalancer.setPrivatePort(updatedPrivatePort);
+//            loadBalancer.setAlgorithm(updatedAlgorithm);
+//            _loadBalancerDao.update(loadBalancer.getId(), loadBalancer);
+//
+//            List<FirewallRuleVO> fwRules = _firewallRulesDao.listByLoadBalancerId(loadBalancer.getId());
+//            if ((fwRules != null) && !fwRules.isEmpty()) {
+//                for (FirewallRuleVO fwRule : fwRules) {
+//                    fwRule.setPrivatePort(updatedPrivatePort);
+//                    fwRule.setAlgorithm(updatedAlgorithm);
+//                    _firewallRulesDao.update(fwRule.getId(), fwRule);
+//                }
+//            }
+//            txn.commit();
+//        } catch (RuntimeException ex) {
+//            s_logger.warn("Unhandled exception trying to update load balancer rule", ex);
+//            txn.rollback();
+//            throw ex;
+//        } finally {
+//            txn.close();
+//        }
+//
+//        // now that the load balancer has been updated, reconfigure the HA Proxy on the router with all the LB rules 
+//        List<FirewallRuleVO> allLbRules = new ArrayList<FirewallRuleVO>();
+//        IPAddressVO ipAddress = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
+//        List<IPAddressVO> ipAddrs = _networkMgr.listPublicIpAddressesInVirtualNetwork(loadBalancer.getAccountId(), ipAddress.getDataCenterId(), null);
+//        for (IPAddressVO ipv : ipAddrs) {
+//            List<FirewallRuleVO> rules = _firewallRulesDao.listIPForwarding(ipv.getAddress(), false);
+//            allLbRules.addAll(rules);
+//        }
+//
+//        IPAddressVO ip = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
+//        DomainRouterVO router = _routerDao.findBy(ip.getAccountId(), ip.getDataCenterId());
+//        _networkMgr.updateFirewallRules(loadBalancer.getIpAddress(), allLbRules, router);
+//        return _loadBalancerDao.findById(loadBalancer.getId());
+//    }
 
-        Transaction txn = Transaction.currentTxn();
-        try {
-            txn.start();
-            loadBalancer.setPrivatePort(updatedPrivatePort);
-            loadBalancer.setAlgorithm(updatedAlgorithm);
-            _loadBalancerDao.update(loadBalancer.getId(), loadBalancer);
+//    @Override
+//    public LoadBalancerVO updateLoadBalancerRule(LoadBalancerVO loadBalancer, String name, String description) throws InvalidParameterValueException {
+//        if ((name == null) && (description == null)) {
+//            return loadBalancer; // nothing to do
+//        }
+//
+//        LoadBalancerVO lbForUpdate = _loadBalancerDao.createForUpdate();
+//        // make sure the name's not already in use
+//        if (name != null) {
+//            LoadBalancerVO existingLB = _loadBalancerDao.findByAccountAndName(loadBalancer.getAccountId(), name);
+//            if ((existingLB != null) && (existingLB.getId().longValue() != loadBalancer.getId().longValue())) {
+//                throw new InvalidParameterValueException("Unable to update load balancer " + loadBalancer.getName() + " with new name " + name + ", the name is already in use.");
+//            }
+//            lbForUpdate.setName(name);
+//        }
+//
+//        if (description != null) {
+//            lbForUpdate.setDescription(description);
+//        }
+//        _loadBalancerDao.update(loadBalancer.getId(), lbForUpdate);
+//        return _loadBalancerDao.findById(loadBalancer.getId());
+//    }
 
-            List<FirewallRuleVO> fwRules = _firewallRulesDao.listByLoadBalancerId(loadBalancer.getId());
-            if ((fwRules != null) && !fwRules.isEmpty()) {
-                for (FirewallRuleVO fwRule : fwRules) {
-                    fwRule.setPrivatePort(updatedPrivatePort);
-                    fwRule.setAlgorithm(updatedAlgorithm);
-                    _firewallRulesDao.update(fwRule.getId(), fwRule);
-                }
-            }
-            txn.commit();
-        } catch (RuntimeException ex) {
-            s_logger.warn("Unhandled exception trying to update load balancer rule", ex);
-            txn.rollback();
-            throw ex;
-        } finally {
-            txn.close();
-        }
-
-        // now that the load balancer has been updated, reconfigure the HA Proxy on the router with all the LB rules 
-        List<FirewallRuleVO> allLbRules = new ArrayList<FirewallRuleVO>();
-        IPAddressVO ipAddress = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
-        List<IPAddressVO> ipAddrs = _networkMgr.listPublicIpAddressesInVirtualNetwork(loadBalancer.getAccountId(), ipAddress.getDataCenterId(), null);
-        for (IPAddressVO ipv : ipAddrs) {
-            List<FirewallRuleVO> rules = _firewallRulesDao.listIPForwarding(ipv.getAddress(), false);
-            allLbRules.addAll(rules);
-        }
-
-        IPAddressVO ip = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
-        DomainRouterVO router = _routerDao.findBy(ip.getAccountId(), ip.getDataCenterId());
-        _networkMgr.updateFirewallRules(loadBalancer.getIpAddress(), allLbRules, router);
-        return _loadBalancerDao.findById(loadBalancer.getId());
-    }
-
-    @Override
-    public LoadBalancerVO updateLoadBalancerRule(LoadBalancerVO loadBalancer, String name, String description) throws InvalidParameterValueException {
-        if ((name == null) && (description == null)) {
-            return loadBalancer; // nothing to do
-        }
-
-        LoadBalancerVO lbForUpdate = _loadBalancerDao.createForUpdate();
-        // make sure the name's not already in use
-        if (name != null) {
-            LoadBalancerVO existingLB = _loadBalancerDao.findByAccountAndName(loadBalancer.getAccountId(), name);
-            if ((existingLB != null) && (existingLB.getId().longValue() != loadBalancer.getId().longValue())) {
-                throw new InvalidParameterValueException("Unable to update load balancer " + loadBalancer.getName() + " with new name " + name + ", the name is already in use.");
-            }
-            lbForUpdate.setName(name);
-        }
-
-        if (description != null) {
-            lbForUpdate.setDescription(description);
-        }
-        _loadBalancerDao.update(loadBalancer.getId(), lbForUpdate);
-        return _loadBalancerDao.findById(loadBalancer.getId());
-    }
-
-    @Override
-    public long updateLoadBalancerRuleAsync(long userId, long accountId, long loadBalancerId, String name, String description, String privatePort, String algorithm) {
-        UpdateLoadBalancerParam param = new UpdateLoadBalancerParam(userId, loadBalancerId, name, description, privatePort, algorithm);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(accountId);
-        job.setCmd("UpdateLoadBalancerRule");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator("loadbalancer");
-
-        return _asyncMgr.submitAsyncJob(job);
-    }
+//    @Override
+//    public long updateLoadBalancerRuleAsync(long userId, long accountId, long loadBalancerId, String name, String description, String privatePort, String algorithm) {
+//        UpdateLoadBalancerParam param = new UpdateLoadBalancerParam(userId, loadBalancerId, name, description, privatePort, algorithm);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//        job.setUserId(UserContext.current().getUserId());
+//        job.setAccountId(accountId);
+//        job.setCmd("UpdateLoadBalancerRule");
+//        job.setCmdInfo(gson.toJson(param));
+//        job.setCmdOriginator("loadbalancer");
+//
+//        return _asyncMgr.submitAsyncJob(job);
+//    }
 
     @Override
     public FirewallRuleVO findForwardingRuleById(Long ruleId) {
@@ -7460,115 +7460,115 @@ public class ManagementServerImpl implements ManagementServer {
 //        return _asyncMgr.submitAsyncJob(job, true);
 //    }
 
-    @Override @DB
-    public boolean deleteLoadBalancer(long userId, long loadBalancerId) {
-        Transaction txn = Transaction.currentTxn();
-        LoadBalancerVO loadBalancer = null;
-        LoadBalancerVO loadBalancerLock = null;
-        try {
-            loadBalancer = _loadBalancerDao.findById(loadBalancerId);
-            if (loadBalancer == null) {
-                return false;
-            }
-
-            IPAddressVO ipAddress = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
-            if (ipAddress == null) {
-                return false;
-            }
-
-            DomainRouterVO router = _routerDao.findBy(ipAddress.getAccountId(), ipAddress.getDataCenterId());
-            List<FirewallRuleVO> fwRules = _firewallRulesDao.listByLoadBalancerId(loadBalancerId);
-
-            txn.start();
-
-            if ((fwRules != null) && !fwRules.isEmpty()) {
-                for (FirewallRuleVO fwRule : fwRules) {
-                    fwRule.setEnabled(false);
-                    _firewallRulesDao.update(fwRule.getId(), fwRule);
-                }
-
-                List<FirewallRuleVO> allLbRules = new ArrayList<FirewallRuleVO>();
-                List<IPAddressVO> ipAddrs = _networkMgr.listPublicIpAddressesInVirtualNetwork(loadBalancer.getAccountId(), ipAddress.getDataCenterId(), null);
-                for (IPAddressVO ipv : ipAddrs) {
-                    List<FirewallRuleVO> rules = _firewallRulesDao.listIPForwarding(ipv.getAddress(), false);
-                    allLbRules.addAll(rules);
-                }
-
-                _networkMgr.updateFirewallRules(loadBalancer.getIpAddress(), allLbRules, router);
-
-                // firewall rules are updated, lock the load balancer as the mappings are updated
-                loadBalancerLock = _loadBalancerDao.acquire(loadBalancerId);
-                if (loadBalancerLock == null) {
-                    s_logger.warn("deleteLoadBalancer: failed to lock load balancer " + loadBalancerId + ", deleting mappings anyway...");
-                }
-
-                // remove all loadBalancer->VM mappings
-                _loadBalancerVMMapDao.remove(loadBalancerId);
-
-                // Save and create the event
-                String description;
-                String type = EventTypes.EVENT_NET_RULE_DELETE;
-                String ruleName = "load balancer";
-                String level = EventVO.LEVEL_INFO;
-                Account account = _accountDao.findById(loadBalancer.getAccountId());
-
-                for (FirewallRuleVO updatedRule : fwRules) {
-                    _firewallRulesDao.remove(updatedRule.getId());
-
-                    description = "deleted " + ruleName + " rule [" + updatedRule.getPublicIpAddress() + ":" + updatedRule.getPublicPort() + "]->["
-                                  + updatedRule.getPrivateIpAddress() + ":" + updatedRule.getPrivatePort() + "]" + " " + updatedRule.getProtocol();
-
-                    EventUtils.saveEvent(userId, account.getId(), level, type, description);
-                }
-            }
-
-            txn.commit();
-        } catch (Exception ex) {
-            txn.rollback();
-            s_logger.error("Unexpected exception deleting load balancer " + loadBalancerId, ex);
-            return false;
-        } finally {
-            if (loadBalancerLock != null) {
-                _loadBalancerDao.release(loadBalancerId);
-            }
-        }
-
-        boolean success = _loadBalancerDao.remove(loadBalancerId);
-
-        // save off an event for removing the security group
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(loadBalancer.getAccountId());
-        event.setType(EventTypes.EVENT_LOAD_BALANCER_DELETE);
-        if (success) {
-            event.setLevel(EventVO.LEVEL_INFO);
-            String params = "id="+loadBalancer.getId();
-            event.setParameters(params);
-            event.setDescription("Successfully deleted load balancer " + loadBalancer.getName() + " (id:" + loadBalancer.getId() + ")");
-        } else {
-            event.setLevel(EventVO.LEVEL_ERROR);
-            event.setDescription("Failed to delete load balancer " + loadBalancer.getName() + " (id:" + loadBalancer.getId() + ")");
-        }
-        _eventDao.persist(event);
-        return success;
-    }
-
-    @Override
-    public long deleteLoadBalancerAsync(long userId, long loadBalancerId) {
-        LoadBalancerVO loadBalancer = _loadBalancerDao.findById(loadBalancerId);
-        IPAddressVO ipAddress = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
-        DomainRouterVO router = _routerDao.findBy(loadBalancer.getAccountId(), ipAddress.getDataCenterId());
-        LoadBalancerParam param = new LoadBalancerParam(userId, router.getId(), loadBalancerId, null);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-    	job.setUserId(UserContext.current().getUserId());
-    	job.setAccountId(loadBalancer.getAccountId());
-        job.setCmd("DeleteLoadBalancer");
-        job.setCmdInfo(gson.toJson(param));
-        
-        return _asyncMgr.submitAsyncJob(job, true);
-    }
+//    @Override @DB
+//    public boolean deleteLoadBalancer(long userId, long loadBalancerId) {
+//        Transaction txn = Transaction.currentTxn();
+//        LoadBalancerVO loadBalancer = null;
+//        LoadBalancerVO loadBalancerLock = null;
+//        try {
+//            loadBalancer = _loadBalancerDao.findById(loadBalancerId);
+//            if (loadBalancer == null) {
+//                return false;
+//            }
+//
+//            IPAddressVO ipAddress = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
+//            if (ipAddress == null) {
+//                return false;
+//            }
+//
+//            DomainRouterVO router = _routerDao.findBy(ipAddress.getAccountId(), ipAddress.getDataCenterId());
+//            List<FirewallRuleVO> fwRules = _firewallRulesDao.listByLoadBalancerId(loadBalancerId);
+//
+//            txn.start();
+//
+//            if ((fwRules != null) && !fwRules.isEmpty()) {
+//                for (FirewallRuleVO fwRule : fwRules) {
+//                    fwRule.setEnabled(false);
+//                    _firewallRulesDao.update(fwRule.getId(), fwRule);
+//                }
+//
+//                List<FirewallRuleVO> allLbRules = new ArrayList<FirewallRuleVO>();
+//                List<IPAddressVO> ipAddrs = _networkMgr.listPublicIpAddressesInVirtualNetwork(loadBalancer.getAccountId(), ipAddress.getDataCenterId(), null);
+//                for (IPAddressVO ipv : ipAddrs) {
+//                    List<FirewallRuleVO> rules = _firewallRulesDao.listIPForwarding(ipv.getAddress(), false);
+//                    allLbRules.addAll(rules);
+//                }
+//
+//                _networkMgr.updateFirewallRules(loadBalancer.getIpAddress(), allLbRules, router);
+//
+//                // firewall rules are updated, lock the load balancer as the mappings are updated
+//                loadBalancerLock = _loadBalancerDao.acquire(loadBalancerId);
+//                if (loadBalancerLock == null) {
+//                    s_logger.warn("deleteLoadBalancer: failed to lock load balancer " + loadBalancerId + ", deleting mappings anyway...");
+//                }
+//
+//                // remove all loadBalancer->VM mappings
+//                _loadBalancerVMMapDao.remove(loadBalancerId);
+//
+//                // Save and create the event
+//                String description;
+//                String type = EventTypes.EVENT_NET_RULE_DELETE;
+//                String ruleName = "load balancer";
+//                String level = EventVO.LEVEL_INFO;
+//                Account account = _accountDao.findById(loadBalancer.getAccountId());
+//
+//                for (FirewallRuleVO updatedRule : fwRules) {
+//                    _firewallRulesDao.remove(updatedRule.getId());
+//
+//                    description = "deleted " + ruleName + " rule [" + updatedRule.getPublicIpAddress() + ":" + updatedRule.getPublicPort() + "]->["
+//                                  + updatedRule.getPrivateIpAddress() + ":" + updatedRule.getPrivatePort() + "]" + " " + updatedRule.getProtocol();
+//
+//                    EventUtils.saveEvent(userId, account.getId(), level, type, description);
+//                }
+//            }
+//
+//            txn.commit();
+//        } catch (Exception ex) {
+//            txn.rollback();
+//            s_logger.error("Unexpected exception deleting load balancer " + loadBalancerId, ex);
+//            return false;
+//        } finally {
+//            if (loadBalancerLock != null) {
+//                _loadBalancerDao.release(loadBalancerId);
+//            }
+//        }
+//
+//        boolean success = _loadBalancerDao.remove(loadBalancerId);
+//
+//        // save off an event for removing the security group
+//        EventVO event = new EventVO();
+//        event.setUserId(userId);
+//        event.setAccountId(loadBalancer.getAccountId());
+//        event.setType(EventTypes.EVENT_LOAD_BALANCER_DELETE);
+//        if (success) {
+//            event.setLevel(EventVO.LEVEL_INFO);
+//            String params = "id="+loadBalancer.getId();
+//            event.setParameters(params);
+//            event.setDescription("Successfully deleted load balancer " + loadBalancer.getName() + " (id:" + loadBalancer.getId() + ")");
+//        } else {
+//            event.setLevel(EventVO.LEVEL_ERROR);
+//            event.setDescription("Failed to delete load balancer " + loadBalancer.getName() + " (id:" + loadBalancer.getId() + ")");
+//        }
+//        _eventDao.persist(event);
+//        return success;
+//    }
+//
+//    @Override
+//    public long deleteLoadBalancerAsync(long userId, long loadBalancerId) {
+//        LoadBalancerVO loadBalancer = _loadBalancerDao.findById(loadBalancerId);
+//        IPAddressVO ipAddress = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
+//        DomainRouterVO router = _routerDao.findBy(loadBalancer.getAccountId(), ipAddress.getDataCenterId());
+//        LoadBalancerParam param = new LoadBalancerParam(userId, router.getId(), loadBalancerId, null);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//    	job.setUserId(UserContext.current().getUserId());
+//    	job.setAccountId(loadBalancer.getAccountId());
+//        job.setCmd("DeleteLoadBalancer");
+//        job.setCmdInfo(gson.toJson(param));
+//        
+//        return _asyncMgr.submitAsyncJob(job, true);
+//    }
 
     @Override
     public List<UserVmVO> listLoadBalancerInstances(ListLoadBalancerRuleInstancesCmd cmd) throws PermissionDeniedException {

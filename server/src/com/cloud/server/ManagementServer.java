@@ -1766,8 +1766,8 @@ public interface ManagementServer {
      */
     List<LoadBalancerVO> searchForLoadBalancers(ListLoadBalancerRulesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 
-    boolean deleteLoadBalancer(long userId, long loadBalancerId);
-    long deleteLoadBalancerAsync(long userId, long loadBalancerId);
+//    boolean deleteLoadBalancer(long userId, long loadBalancerId);
+//    long deleteLoadBalancerAsync(long userId, long loadBalancerId);
 
     /**
      * Update a load balancer rule from the existing private port to a new private port.  The load balancer is found by publicIp, public port, and algorithm.
@@ -1778,7 +1778,7 @@ public interface ManagementServer {
      * @param algorithm the target algorithm of the load balancer rule (the rule will be updated from the existing algorithm to this algorithm)
      * @return the updated load balancer rule
      */
-    LoadBalancerVO updateLoadBalancerRule(long userId, LoadBalancerVO loadBalancer, String privatePort, String algorithm);
+//    LoadBalancerVO updateLoadBalancerRule(long userId, LoadBalancerVO loadBalancer, String privatePort, String algorithm);
 
     /**
      * Update the name and/or description of a load balancer rule
@@ -1787,7 +1787,7 @@ public interface ManagementServer {
      * @param description the new description, null if not changing the description
      * @return the updated load balancer rule
      */
-    LoadBalancerVO updateLoadBalancerRule(LoadBalancerVO loadBalancer, String name, String description) throws InvalidParameterValueException;
+//    LoadBalancerVO updateLoadBalancerRule(LoadBalancerVO loadBalancer, String name, String description) throws InvalidParameterValueException;
 
     /**
      * Update the name, description, private port, and/or algorithm of a load balancer rule
