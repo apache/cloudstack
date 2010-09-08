@@ -96,6 +96,7 @@ import com.cloud.api.commands.ListSystemVMsCmd;
 import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.ListUsersCmd;
+import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
@@ -4024,18 +4025,30 @@ public class ManagementServerImpl implements ManagementServer {
         return _dcDao.search(sc, searchFilter);
 
     }
-    
+
     @Override
-    public List<VlanVO> searchForVlans(Criteria c) {
-    	Filter searchFilter = new Filter(VlanVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
-    	
-        Object id = c.getCriteria(Criteria.ID);
-        Object vlan = c.getCriteria(Criteria.VLAN);
-        Object dataCenterId = c.getCriteria(Criteria.DATACENTERID);
-        Object accountId = c.getCriteria(Criteria.ACCOUNTID);
-        Object podId = c.getCriteria(Criteria.PODID);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
-        
+    public List<VlanVO> searchForVlans(ListVlanIpRangesCmd cmd) throws InvalidParameterValueException {
+        // If an account name and domain ID are specified, look up the account
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        Long accountId = null;
+        if (accountName != null && domainId != null) {
+            Account account = _accountDao.findActiveAccount(accountName, domainId);
+            if (account == null) {
+                throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+            } else {
+                accountId = account.getId();
+            }
+        } 
+
+        Filter searchFilter = new Filter(VlanVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        Object id = cmd.getId();
+        Object vlan = cmd.getVlan();
+        Object dataCenterId = cmd.getZoneId();
+        Object podId = cmd.getPodId();
+        Object keyword = cmd.getKeyword();
+
         SearchBuilder<VlanVO> sb = _vlanDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("vlan", sb.entity().getVlanId(), SearchCriteria.Op.EQ);

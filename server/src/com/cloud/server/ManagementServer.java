@@ -60,6 +60,7 @@ import com.cloud.api.commands.ListSystemVMsCmd;
 import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.ListUsersCmd;
+import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
@@ -418,45 +419,12 @@ public interface ManagementServer {
     VolumeStats[] getVolumeStatistics(long[] volId);
 
     /**
-     * Associate / allocate an  IP address to a user
-     * @param userId
-     * @param accountId
-     * @param domainId
-     * @param zoneId
-     * @return allocated IP address in the zone specified
-     * @throws InsufficientAddressCapacityException if no more addresses are available
-     * @throws InvalidParameterValueException if no router for that user exists in the zone specified
-     * @throws InternalErrorException  if the new address could not be sent down to the router
-     */
-//    String associateIpAddress(long userId, long accountId, long domainId, long zoneId) throws ResourceAllocationException, InsufficientAddressCapacityException, InvalidParameterValueException, InternalErrorException;
-//    long associateIpAddressAsync(long userId, long accountId, long domainId, long zoneId);
-   
-    
-    /**
-     * Disassociate /unallocate an allocated IP address from a user
-     * @param userId
-     * @param accountId
-     * @param ipAddress
-     * @return success
-     */
-//    boolean disassociateIpAddress(DisassociateIPAddrCmd cmd) throws PermissionDeniedException;
-//    long disassociateIpAddressAsync(long userId, long accountId, String ipAddress);
-   
-	/**
-	 * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated IP addresses.
-	 * @param userId
-	 * @param vlanDbId
-	 * @return success/failure
-	 */
-//	boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId) throws InvalidParameterValueException;
-        
-    /**
      * Searches for vlan by the specified search criteria
      * Can search by: "id", "vlan", "name", "zoneID"
-     * @param c
+     * @param cmd
      * @return List of Vlans
      */
-    List<VlanVO> searchForVlans(Criteria c);
+    List<VlanVO> searchForVlans(ListVlanIpRangesCmd cmd) throws InvalidParameterValueException;
     
     /**
      * If the specified VLAN is associated with the pod, returns the pod ID. Else, returns null.
