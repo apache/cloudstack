@@ -94,11 +94,11 @@ $(document).ready(function() {
             return false;
         });
     }
-    listMidMenuItems("leftmenu_event", "listEvents", "listeventsresponse", "event", "description", "jsp/tab_event.jsp", loadEventToRigntPanelFn);
-    listMidMenuItems("leftmenu_alert", "listAlerts", "listalertsresponse", "alert", "description", "jsp/tab_alert.jsp", loadAlertToRigntPanelFn);
-    listMidMenuItems("leftmenu_account", "listAccounts", "listaccountsresponse", "account", "name", "jsp/tab_account.jsp", loadAccountToRigntPanelFn);
-    listMidMenuItems("leftmenu_volume", "listVolumes", "listvolumesresponse", "volume", "name", "jsp/tab_volume.jsp", loadVolumeToRigntPanelFn);
-    listMidMenuItems("leftmenu_snapshot", "listSnapshots", "listsnapshotsresponse", "snapshot", "name", "jsp/tab_snapshot.jsp", loadSnapshotToRigntPanelFn);
+    listMidMenuItems("leftmenu_event", "listEvents", "listeventsresponse", "event", "description", "jsp/event.jsp", loadEventToRigntPanelFn);
+    listMidMenuItems("leftmenu_alert", "listAlerts", "listalertsresponse", "alert", "description", "jsp/alert.jsp", loadAlertToRigntPanelFn);
+    listMidMenuItems("leftmenu_account", "listAccounts", "listaccountsresponse", "account", "name", "jsp/account.jsp", loadAccountToRigntPanelFn);
+    listMidMenuItems("leftmenu_volume", "listVolumes", "listvolumesresponse", "volume", "name", "jsp/volume.jsp", loadVolumeToRigntPanelFn);
+    listMidMenuItems("leftmenu_snapshot", "listSnapshots", "listsnapshotsresponse", "snapshot", "name", "jsp/snapshot.jsp", loadSnapshotToRigntPanelFn);
     
     
     

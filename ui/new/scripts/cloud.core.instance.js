@@ -508,7 +508,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         $instanceGroupContainer.empty();   
     }	     
     //***** VM Detail (end) ********************************************************************************    
-    $("#right_panel").load("jsp/tab_instance.jsp", function() {	
+    $("#right_panel").load("jsp/instance.jsp", function() {	
         $rightPanelHeader = $("#right_panel_header");			                                		                                
 	    $rightPanelContent = $("#right_panel_content");	
 	    
