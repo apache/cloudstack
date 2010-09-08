@@ -1539,7 +1539,7 @@ a:visited {
 	float:left;
 	position:absolute;
 	background:#FFF repeat top left;
-	border:1px solid #777679;
+	border:1px solid #999;
 	top:24px;
 	left:0;
 	margin:0;
@@ -1550,22 +1550,26 @@ a:visited {
 	width:96px;
 	height:auto;
 	float:left;
-	margin:0 0 5px 10px;
+	margin:0 0 5px 6px;
 	padding:0 0 10px 0;
 	list-style:none;
 }
 
 .actionsdropdown_boxlist li{
-	width:96px;
+	width:94px;
 	height:auto;
 	float:left;
 	text-align:left;
 	color:#CCC;
 	font-size:11px;
 	font-weight:normal;
-	margin:8px 0 0 0;
-	padding:0;
+	margin:0 0 0 0;
+	padding:5px 0 5px 3px;
 	list-style:none;
+}
+
+.actionsdropdown_boxlist li:hover{
+	background:#e6e6e6 repeat top left;
 }
 
 .actionsdropdown_boxlist a{
@@ -1580,7 +1584,7 @@ a:visited {
 }
 
 .actionsdropdown_boxlist a:hover{
-	text-decoration:underline;
+	text-decoration:none;
 	color:#2c8bbc;
 }
 
@@ -2104,17 +2108,40 @@ a:visited {
 	padding:0;
 }
 
+.grid_actionpanel {
+	width:100%;
+	height:auto;
+	float:left;
+	margin:4px 0 0 0;
+	padding:0 0 0 0;
+}
+
 .grid_actionbox {
 	width:35px;
 	height:17px;
 	float:right;
-	background:url(../images/gird_actions.png) no-repeat top left;
-	margin:2px 10px 0 0;
+	background:url(../images/grid_actions.png) no-repeat top left;
+	margin:2px 5px 0 0;
 	padding:0;
 	cursor:pointer;
 	cursor:hand;
 }
 
 .grid_actionbox:hover {
-	background:url(../images/gird_actions_hover.png) no-repeat top left;
+	background:url(../images/grid_actions_hover.png) no-repeat top left;
+}
+
+.grid_editbox {
+	width:27px;
+	height:17px;
+	float:right;
+	background:url(../images/grid_editicon.png) no-repeat top left;
+	margin:2px 5px 0 0;
+	padding:0;
+	cursor:pointer;
+	cursor:hand;
+}
+
+.grid_editbox:hover {
+	background:url(../images/grid_editicon_hover.png) no-repeat top left;
 }
