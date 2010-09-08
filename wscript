@@ -270,7 +270,9 @@ def runant(tsk):
 			"-Dthirdparty.classpath=%s"%(tsk.env.CLASSPATH.replace(os.pathsep,",")),
 		]
 	stanzas += tsk.generator.antargs + tsk.generator.anttgts
-	return Utils.exec_command(" ".join(stanzas),cwd=tsk.generator.bld.srcnode.abspath(),env=environ,log=True)
+	ret = Utils.exec_command(" ".join(stanzas),cwd=tsk.generator.bld.srcnode.abspath(),env=environ,log=True)
+	if ret != 0: raise Utils.WafError("Ant command %s failed with error value %s"%(stanzas,ret))
+	return ret
 Utils.runant = runant
 
 @throws_command_errors
