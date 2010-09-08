@@ -91,6 +91,7 @@ import com.cloud.api.commands.ListPreallocatedLunsCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListRoutersCmd;
 import com.cloud.api.commands.ListServiceOfferingsCmd;
+import com.cloud.api.commands.ListSnapshotsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -6584,43 +6585,54 @@ public class ManagementServerImpl implements ManagementServer {
     public SnapshotVO createTemplateSnapshot(Long userId, long volumeId) {
         return _vmMgr.createTemplateSnapshot(userId, volumeId);
     }
-    
+
     @Override
     public boolean destroyTemplateSnapshot(Long userId, long snapshotId) {
         return _vmMgr.destroyTemplateSnapshot(userId, snapshotId);
     }
 
-//    @Override
-//    public long deleteSnapshotAsync(long userId, long snapshotId) {
-//    	Snapshot snapshot = findSnapshotById(snapshotId);
-//        long volumeId = snapshot.getVolumeId();
-//        List<SnapshotPolicyVO> policies = _snapMgr.listPoliciesforSnapshot(snapshotId);
-//        
-//        // Return the job id of the last destroySnapshotAsync job which actually destroys the snapshot.
-//        // The rest of the async jobs just update the db and don't really do any meaningful thing.
-//        long finalJobId = 0;
-//        for (SnapshotPolicyVO policy : policies) {
-//            finalJobId = _snapMgr.destroySnapshotAsync(userId, volumeId, snapshotId, policy.getId());
-//        }
-//        return finalJobId;
-//    }
-
-
     @Override
-    public List<SnapshotVO> listSnapshots(Criteria c, String interval) throws InvalidParameterValueException {
-        Filter searchFilter = new Filter(SnapshotVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+    public List<SnapshotVO> listSnapshots(ListSnapshotsCmd cmd) throws InvalidParameterValueException {
+        Long volumeId = cmd.getVolumeId();
+
+        // Verify parameters
+        if(volumeId != null){
+            VolumeVO volume = _volumeDao.findById(volumeId);
+            if (volume == null) {
+                throw new InvalidParameterValueException("unable to find a volume with id " + volumeId);
+            }
+            checkAccountPermissions(volume.getAccountId(), volume.getDomainId(), "volume", volumeId);
+        }
+
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
+        Long accountId = null;
+        if ((account == null) || isAdmin(account.getType())) {
+            if(account != null && account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)
+                accountId = account.getId();
+            if (domainId != null && accountName != null) {
+                Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                if (userAccount != null) {
+                    accountId = userAccount.getId();
+                }
+            }
+        } else {
+            accountId = account.getId();
+        }
+
+        Filter searchFilter = new Filter(SnapshotVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<SnapshotVO> sc = _snapshotDao.createSearchCriteria();
 
-        Object volumeId = c.getCriteria(Criteria.VOLUMEID);
-        Object name = c.getCriteria(Criteria.NAME);
-        Object id = c.getCriteria(Criteria.ID);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
-        Object accountId = c.getCriteria(Criteria.ACCOUNTID);
-        Object snapshotTypeStr = c.getCriteria(Criteria.TYPE);
-        
+        Object name = cmd.getSnapshotName();
+        Object id = cmd.getId();
+        Object keyword = cmd.getKeyword();
+        Object snapshotTypeStr = cmd.getSnapshotType();
+        String interval = cmd.getIntervalType();
+
         sc.addAnd("status", SearchCriteria.Op.EQ, Snapshot.Status.BackedUp);
-        
-        if(volumeId != null){
+
+        if (volumeId != null) {
             sc.addAnd("volumeId", SearchCriteria.Op.EQ, volumeId);
         }
         
@@ -6649,12 +6661,12 @@ public class ManagementServerImpl implements ManagementServer {
                 throw new InvalidParameterValueException("Unsupported snapshot type " + snapshotTypeStr);
             }
             sc.addAnd("snapshotType", SearchCriteria.Op.EQ, snapshotType.ordinal());
-        }
-        else {
+        } else {
             // Show only MANUAL and RECURRING snapshot types
             sc.addAnd("snapshotType", SearchCriteria.Op.NEQ, Snapshot.SnapshotType.TEMPLATE.ordinal());
         }
-        if(interval != null && volumeId != null) {
+
+        if (interval != null && volumeId != null) {
             IntervalType intervalType =  DateUtil.IntervalType.getIntervalType(interval);
             if(intervalType == null) {
                 throw new InvalidParameterValueException("Unsupported interval type " + intervalType);
@@ -8554,5 +8566,23 @@ public class ManagementServerImpl implements ManagementServer {
 		
         return deleteUserInternal(userId);
 	}
+
+	private Long checkAccountPermissions(long targetAccountId, long targetDomainId, String targetDesc, long targetId) throws ServerApiException {
+        Long accountId = null;
+
+        Account account = (Account)UserContext.current().getAccountObject();
+        if (account != null) {
+            if (!isAdmin(account.getType())) {
+                if (account.getId().longValue() != targetAccountId) {
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find a " + targetDesc + " with id " + targetId + " for this account");
+                }
+            } else if (!_domainDao.isChildDomain(account.getDomainId(), targetDomainId)) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to perform operation for " + targetDesc + " with id " + targetId + ", permission denied.");
+            }
+            accountId = account.getId();
+        }
+    
+        return accountId;
+    }
 }
 

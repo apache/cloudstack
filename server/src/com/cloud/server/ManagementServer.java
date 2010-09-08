@@ -54,6 +54,7 @@ import com.cloud.api.commands.ListPreallocatedLunsCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListRoutersCmd;
 import com.cloud.api.commands.ListServiceOfferingsCmd;
+import com.cloud.api.commands.ListSnapshotsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -1565,11 +1566,11 @@ public interface ManagementServer {
     
     /**
      * List all snapshots of a disk volume. Optionaly lists snapshots created by specified interval
-     * @param c the search criteria (order by, limit, etc.)
+     * @param cmd the command containing the search criteria (order by, limit, etc.)
      * @return list of snapshots
      * @throws InvalidParameterValueException
      */
-    List<SnapshotVO> listSnapshots(Criteria c, String interval) throws InvalidParameterValueException;
+    List<SnapshotVO> listSnapshots(ListSnapshotsCmd cmd) throws InvalidParameterValueException;
 
     /**
      * find a single snapshot by id
@@ -1800,11 +1801,6 @@ public interface ManagementServer {
      * @return the updated load balancer rule
      */
     long updateLoadBalancerRuleAsync(long userId, long accountId, long loadBalancerId, String name, String description, String privatePort, String algorithm);
-
-//    void assignToLoadBalancer(long userId, long loadBalancerId, List<Long> instanceIds) throws NetworkRuleConflictException, InternalErrorException, PermissionDeniedException, InvalidParameterValueException;
-//    long assignToLoadBalancerAsync(long userId, long loadBalancerId, List<Long> instanceIds, Map<String, String> params);
-//    boolean removeFromLoadBalancer(long userId, long loadBalancerId, List<Long> instanceIds) throws InvalidParameterValueException;
-//    long removeFromLoadBalancerAsync(long userId, long loadBalancerId, List<Long> instanceIds);
 
     String[] getApiConfig();
     StoragePoolVO findPoolById(Long id);

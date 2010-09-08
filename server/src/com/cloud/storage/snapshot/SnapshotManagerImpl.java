@@ -780,7 +780,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         
     }
     
-    private Long checkAccountPermissions(long targetAccountId,long targetDomainId,String targetDesc,long targetId) throws ServerApiException {
+    private Long checkAccountPermissions(long targetAccountId, long targetDomainId, String targetDesc, long targetId) throws ServerApiException {
     	Long accountId = null;
 
     	Account account = (Account)UserContext.current().getAccountObject();
@@ -797,7 +797,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
 	
     	return accountId;
 	}
-    
+
 	private static boolean isAdmin(short accountType) {
 	    return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
 	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
