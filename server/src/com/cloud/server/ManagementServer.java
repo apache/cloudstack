@@ -30,6 +30,7 @@ import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.DeletePortForwardingServiceCmd;
 import com.cloud.api.commands.DeleteUserCmd;
+import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
@@ -403,26 +404,24 @@ public interface ManagementServer {
     /**
      * Creates and starts a new Virtual Machine.
      * 
-     * @param userId
-     * @param accountId
-     * @param dataCenterId
-     * @param serviceOfferingId
-     * @param templateId - the id of the template (or ISO) to use for creating the virtual machine
-     * @param diskOfferingId - ID of the disk offering to use when creating the root disk (if deploying from an ISO) or the data disk (if deploying from a template). If deploying from a template and a disk offering ID is not passed in, the VM will have only a root disk.
-     * @param domain the end user wants to use for this virtual machine. can be null.  If the virtual machine is already part of an existing network, the domain is ignored.
-     * @param password the password that the user wants to use to access this virtual machine
-     * @param displayName user-supplied name to be shown in the UI or returned in the API
-     * @param groupName user-supplied groupname to be shown in the UI or returned in the API
-     * @param userData user-supplied base64-encoded data that can be retrieved by the instance from the virtual router
-     * @param size -- size to be used for volume creation in case the disk offering is private (i.e. size=0)
+     * @param cmd the command with the deployment parameters
+     *   - userId
+     *   - accountId
+     *   - zoneId
+     *   - serviceOfferingId
+     *   - templateId:  the id of the template (or ISO) to use for creating the virtual machine
+     *   - diskOfferingId:  ID of the disk offering to use when creating the root disk (if deploying from an ISO) or the data disk (if deploying from a template). If deploying from a template and a disk offering ID is not passed in, the VM will have only a root disk.
+     *   - displayName:  user-supplied name to be shown in the UI or returned in the API
+     *   - groupName:  user-supplied groupname to be shown in the UI or returned in the API
+     *   - userData:  user-supplied base64-encoded data that can be retrieved by the instance from the virtual router
+     *   - size:  size to be used for volume creation in case the disk offering is private (i.e. size=0)
      * @return VirtualMachine if successfully deployed, null otherwise
      * @throws InvalidParameterValueException if the parameter values are incorrect.
      * @throws ExecutionException
      * @throws StorageUnavailableException
      * @throws ConcurrentOperationException
      */
-    UserVm deployVirtualMachine(long userId, long accountId, long dataCenterId, long serviceOfferingId, long templateId, Long diskOfferingId, String domain, String password, String displayName, String group, String userData, String [] groups, long startEventId, long size) throws ResourceAllocationException, InvalidParameterValueException, InternalErrorException, InsufficientStorageCapacityException, PermissionDeniedException, ExecutionException, StorageUnavailableException, ConcurrentOperationException;
-    long deployVirtualMachineAsync(long userId, long accountId, long dataCenterId, long serviceOfferingId, long templateId, Long diskOfferingId, String domain, String password, String displayName, String group, String userData, String [] groups, long size) throws InvalidParameterValueException, PermissionDeniedException;
+    UserVm deployVirtualMachine(DeployVMCmd cmd) throws ResourceAllocationException, InvalidParameterValueException, InternalErrorException, InsufficientStorageCapacityException, PermissionDeniedException, ExecutionException, StorageUnavailableException, ConcurrentOperationException;
 
     /**
      * Destroys a Virtual Machine

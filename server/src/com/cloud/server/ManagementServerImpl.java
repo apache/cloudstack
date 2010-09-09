@@ -123,7 +123,6 @@ import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.async.executor.DeleteDomainParam;
-import com.cloud.async.executor.DeployVMParam;
 import com.cloud.async.executor.NetworkGroupIngressParam;
 import com.cloud.async.executor.SecurityGroupParam;
 import com.cloud.async.executor.VMOperationParam;
@@ -1582,8 +1581,7 @@ public class ManagementServerImpl implements ManagementServer {
         return true;
     }
 
-    @Override
-    public UserVm deployVirtualMachine(long userId, long accountId, long dataCenterId, long serviceOfferingId, long templateId, Long diskOfferingId,
+    private UserVm deployVirtualMachineImpl(long userId, long accountId, long dataCenterId, long serviceOfferingId, long templateId, Long diskOfferingId,
             String domain, String password, String displayName, String group, String userData, String [] networkGroups, long startEventId, long size) throws ResourceAllocationException, InvalidParameterValueException, InternalErrorException,
             InsufficientStorageCapacityException, PermissionDeniedException, ExecutionException, StorageUnavailableException, ConcurrentOperationException {
 
@@ -1716,52 +1714,36 @@ public class ManagementServerImpl implements ManagementServer {
             String storageUnavailableExceptionMsg = "";
             String concurrentOperationExceptionMsg = "";
             UserVmVO started = null;
-            if (isIso)
-            {
+            if (isIso) {
                 String isoPath = _storageMgr.getAbsoluteIsoPath(templateId, dataCenterId);
-                try
-                {
-					started = _vmMgr.startVirtualMachine(userId, created.getId(), password, isoPath, startEventId);
-				}
-                catch (ExecutionException e)
-                {
-					executionExceptionFlag = true;
-					executionExceptionMsg = e.getMessage();
-				}
-                catch (StorageUnavailableException e)
-                {
-					storageUnavailableExceptionFlag = true;
-					storageUnavailableExceptionMsg = e.getMessage();
-				}
-                catch (ConcurrentOperationException e)
-                {
-					concurrentOperationExceptionFlag = true;
-					concurrentOperationExceptionMsg = e.getMessage();
-				}
-            }
-            else
-            {
-                try
-                {
-					started = _vmMgr.startVirtualMachine(userId, created.getId(), password, null, startEventId);
-				}
-                catch (ExecutionException e)
-                {
-					executionExceptionFlag = true;
-					executionExceptionMsg = e.getMessage();
-				}
-                catch (StorageUnavailableException e)
-                {
-						storageUnavailableExceptionFlag = true;
-						storageUnavailableExceptionMsg = e.getMessage();
-				}
-                catch (ConcurrentOperationException e)
-                {
-						concurrentOperationExceptionFlag = true;
-						concurrentOperationExceptionMsg = e.getMessage();
-				}
+                try {
+                    started = _vmMgr.startVirtualMachine(userId, created.getId(), password, isoPath, startEventId);
+                } catch (ExecutionException e) {
+                    executionExceptionFlag = true;
+                    executionExceptionMsg = e.getMessage();
+                } catch (StorageUnavailableException e) {
+                    storageUnavailableExceptionFlag = true;
+                    storageUnavailableExceptionMsg = e.getMessage();
+                } catch (ConcurrentOperationException e) {
+                    concurrentOperationExceptionFlag = true;
+                    concurrentOperationExceptionMsg = e.getMessage();
+                }
+            } else {
+                try {
+                    started = _vmMgr.startVirtualMachine(userId, created.getId(), password, null, startEventId);
+                } catch (ExecutionException e) {
+                    executionExceptionFlag = true;
+                    executionExceptionMsg = e.getMessage();
+                } catch (StorageUnavailableException e) {
+                    storageUnavailableExceptionFlag = true;
+                    storageUnavailableExceptionMsg = e.getMessage();
+                } catch (ConcurrentOperationException e) {
+                    concurrentOperationExceptionFlag = true;
+                    concurrentOperationExceptionMsg = e.getMessage();
+                }
 
             }
+
             if (started == null) {
                 List<Pair<VolumeVO, StoragePoolVO>> disks = _storageMgr.isStoredOn(created);
                 // NOTE: We now destroy a VM if the deploy process fails at any step. We now
@@ -1813,8 +1795,53 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public long deployVirtualMachineAsync(long userId, long accountId, long dataCenterId, long serviceOfferingId, long templateId,
-            Long diskOfferingId, String domain, String password, String displayName, String group, String userData, String [] networkGroups, long size)  throws InvalidParameterValueException, PermissionDeniedException {
+    public UserVm deployVirtualMachine(DeployVMCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceAllocationException,
+                                                               InternalErrorException, InsufficientStorageCapacityException, ExecutionException,
+                                                               StorageUnavailableException, ConcurrentOperationException {
+        Account ctxAccount = (Account)UserContext.current().getAccountObject();
+        Long userId = UserContext.current().getUserId();
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        Long accountId = null;
+        long dataCenterId = cmd.getZoneId();
+        long serviceOfferingId = cmd.getServiceOfferingId();
+        long templateId = cmd.getTemplateId();
+        Long diskOfferingId = cmd.getDiskOfferingId();
+        String domain = null; // FIXME:  this was hardcoded to null in DeployVMCmd in the old framework, do we need it?
+        String password = generateRandomPassword();
+        String displayName = cmd.getDisplayName();
+        String group = cmd.getGroup();
+        String userData = cmd.getUserData();
+        String[] networkGroups = null;
+        Long size = cmd.getSize();
+
+        if ((ctxAccount == null) || isAdmin(ctxAccount.getType())) {
+            if (domainId != null) {
+                if ((ctxAccount != null) && !_domainDao.isChildDomain(ctxAccount.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Failed to deploy VM, invalid domain id (" + domainId + ") given.");
+                }
+                if (accountName != null) {
+                    Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                    if (userAccount == null) {
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                    accountId = userAccount.getId();
+                }
+            } else {
+                accountId = ((ctxAccount != null) ? ctxAccount.getId() : null);
+            }
+        } else {
+            accountId = ctxAccount.getId();
+        }
+
+        if (accountId == null) {
+            throw new InvalidParameterValueException("No valid account specified for deploying a virtual machine.");
+        }
+
+        List<String> netGrpList = cmd.getNetworkGroupList();
+        if ((netGrpList != null) && !netGrpList.isEmpty()) {
+            networkGroups = netGrpList.toArray(new String[netGrpList.size()]);
+        }
 
     	AccountVO account = _accountDao.findById(accountId);
         if (account == null) {
@@ -1846,15 +1873,15 @@ public class ManagementServerImpl implements ManagementServer {
         // If the template represents an ISO, a disk offering must be passed in, and will be used to create the root disk
         // Else, a disk offering is optional, and if present will be used to create the data disk
         DiskOfferingVO diskOffering = null;
-        
+
         if (diskOfferingId != null) {
         	diskOffering = _diskOfferingDao.findById(diskOfferingId);
         }
-        
+
         if (isIso && diskOffering == null) {
         	throw new InvalidParameterValueException("Please specify a valid disk offering ID.");
         }
-        
+
         // validate that the template is usable by the account
         if (!template.isPublicTemplate()) {
             Long templateOwner = template.getAccountId();
@@ -1867,7 +1894,7 @@ public class ManagementServerImpl implements ManagementServer {
                 }
             }
         }
-        
+
         byte [] decodedUserData = null;
         if (userData != null) {
         	if (userData.length() >= 2* UserVmManager.MAX_USER_DATA_LENGTH_BYTES) {
@@ -1898,26 +1925,58 @@ public class ManagementServerImpl implements ManagementServer {
         	if (networkGroupVOs.size() != nameSet.size()) {
         		throw new InvalidParameterValueException("Some network group names do not exist");
         	}
-
         } else { //create a default group if necessary
         	if (offering.getGuestIpType() != GuestIpType.Virtualized && _networkGroupsEnabled) {
         		networkGroups = new String[]{NetworkGroupManager.DEFAULT_GROUP_NAME};
         	}
         }
-        
-        long eventId = EventUtils.saveScheduledEvent(userId, accountId, EventTypes.EVENT_VM_CREATE, "deploying Vm");
-        
-        DeployVMParam param = new DeployVMParam(userId, accountId, dataCenterId, serviceOfferingId, templateId, diskOfferingId, domain, password,
-                displayName, group, userData, networkGroups, eventId, size);
-        Gson gson = GsonHelper.getBuilder().create();
 
-        AsyncJobVO job = new AsyncJobVO();
-    	job.setUserId(UserContext.current().getUserId());
-    	job.setAccountId(accountId);
-        job.setCmd("DeployVM");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(DeployVMCmd.getResultObjectName());
-        return _asyncMgr.submitAsyncJob(job);
+        // FIXME:  this really needs to be invoked when the job is scheduled by the framework, so commands need a callback for
+        //         specifying event details that they are tracking...
+        long eventId = EventUtils.saveScheduledEvent(userId, accountId, EventTypes.EVENT_VM_CREATE, "deploying Vm");
+
+        try {
+            return deployVirtualMachineImpl(userId, accountId, dataCenterId, serviceOfferingId, templateId, diskOfferingId, domain, password, displayName, group, userData, networkGroups, eventId, size);
+        } catch (ResourceAllocationException e) {
+            if(s_logger.isDebugEnabled())
+                s_logger.debug("Unable to deploy VM: " + e.getMessage());
+            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: VM_INSUFFICIENT_CAPACITY", null, eventId);
+            throw e;
+        } catch (ExecutionException e) {
+            if(s_logger.isDebugEnabled())
+                s_logger.debug("Unable to deploy VM: " + e.getMessage());
+            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: VM_HOST_LICENSE_EXPIRED", null, eventId);
+            throw e;
+        } catch (InvalidParameterValueException e) {
+            if(s_logger.isDebugEnabled())
+                s_logger.debug("Unable to deploy VM: " + e.getMessage());
+            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: VM_INVALID_PARAM_ERROR", null, eventId);
+            throw e;
+        } catch (InternalErrorException e) {
+            if(s_logger.isDebugEnabled())
+                s_logger.debug("Unable to deploy VM: " + e.getMessage());
+            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: INTERNAL_ERROR", null, eventId);
+            throw e;
+        } catch (InsufficientStorageCapacityException e) {
+            if(s_logger.isDebugEnabled())
+                s_logger.debug("Unable to deploy VM: " + e.getMessage());
+            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: VM_INSUFFICIENT_CAPACITY", null, eventId);
+            throw e;
+        } catch (PermissionDeniedException e) {
+            if(s_logger.isDebugEnabled())
+                s_logger.debug("Unable to deploy VM: " + e.getMessage());
+            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: ACCOUNT_ERROR", null, eventId);
+            throw e;
+        } catch (ConcurrentOperationException e) {
+            if(s_logger.isDebugEnabled())
+                s_logger.debug("Unable to deploy VM: " + e.getMessage());
+            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: INTERNAL_ERROR", null, eventId);
+            throw e;
+        } catch(Exception e) {
+            s_logger.warn("Unable to deploy VM : " + e.getMessage(), e);
+            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_CREATE, "Unable to deploy VM: INTERNAL_ERROR", null, eventId);
+            throw new CloudRuntimeException("Unable to deploy VM : " + e.getMessage());
+        }
     }
 
     @Override

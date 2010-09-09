@@ -27,6 +27,7 @@ import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientStorageCapacityException;
@@ -128,10 +129,7 @@ public class DeployVMExecutor extends VMOperationExecutor {
 	}
 	
     private long saveEvent(DeployVMParam param, String level, String type, String description){
-    	    
-    	return getAsyncJobMgr().getExecutorContext().getManagementServer().saveEvent(
-				param.getUserId(), param.getAccountId(),
-				level, type, description, null, param.getEventId());    	
+    	return EventUtils.saveEvent(param.getUserId(), param.getAccountId(), level, type, description, null, param.getEventId());    	
     }
     
 	private DeployVMResultObject composeResultObject(long userId, UserVm vm, DeployVMParam param) {
