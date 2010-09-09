@@ -99,6 +99,7 @@ import com.cloud.api.commands.ListUsersCmd;
 import com.cloud.api.commands.ListVMsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.ListVolumesCmd;
+import com.cloud.api.commands.ListZonesByCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
@@ -2822,26 +2823,29 @@ public class ManagementServerImpl implements ManagementServer {
 
     
     @Override
-    public List<DataCenterVO> listDataCenters() {
-        return _dcDao.listAllActive();
-    }
-
-    @Override
-    public List<DataCenterVO> listDataCentersBy(long accountId) {
+    public List<DataCenterVO> listDataCenters(ListZonesByCmd cmd) {
         List<DataCenterVO> dcs = _dcDao.listAllActive();
-        List<DomainRouterVO> routers = _routerDao.listBy(accountId);
-        for (Iterator<DataCenterVO> iter = dcs.iterator(); iter.hasNext();) {
-            DataCenterVO dc = iter.next();
-            boolean found = false;
-            for (DomainRouterVO router : routers) {
-                if (dc.getId() == router.getDataCenterId()) {
-                    found = true;
-                    break;
+
+        Account account = (Account)UserContext.current().getAccountObject();
+        Boolean available = cmd.isAvailable();
+        if (account != null) {
+            if ((available != null) && Boolean.FALSE.equals(available)) {
+                List<DomainRouterVO> routers = _routerDao.listBy(account.getId());
+                for (Iterator<DataCenterVO> iter = dcs.iterator(); iter.hasNext();) {
+                    DataCenterVO dc = iter.next();
+                    boolean found = false;
+                    for (DomainRouterVO router : routers) {
+                        if (dc.getId() == router.getDataCenterId()) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found)
+                        iter.remove();
                 }
             }
-            if (!found)
-                iter.remove();
         }
+
         return dcs;
     }
 
@@ -2850,10 +2854,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _hostDao.findById(hostId);
     }
     
-//    public boolean deleteHost(long hostId) {
-//        return _agentMgr.deleteHost(hostId);
-//    }
-
     @Override
     public long getId() {
         return MacAddress.getMacAddress().toLong();

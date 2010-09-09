@@ -63,6 +63,7 @@ import com.cloud.api.commands.ListUsersCmd;
 import com.cloud.api.commands.ListVMsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.ListVolumesCmd;
+import com.cloud.api.commands.ListZonesByCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
@@ -781,19 +782,13 @@ public interface ManagementServer {
     HostPodVO getPodBy(long podId);
     
     /**
-     * Retrieves the list of all data centers
+     * Retrieves the list of data centers with search criteria.
+     * Currently the only search criteria is "available" zones for the account that invokes the API.  By specifying
+     * available=true all zones which the account can access.  By specifying available=false the zones where the
+     * account has virtual machine instances will be returned.
      * @return a list of DataCenters
      */
-    List<DataCenterVO> listDataCenters();
-    
-    /**
-     * Retrieves a list of data centers that contain domain routers
-     * that the specified user owns.
-     * 
-     * @param userId
-     * @return a list of DataCenters
-     */
-    List<DataCenterVO> listDataCentersBy(long userId);
+    List<DataCenterVO> listDataCenters(ListZonesByCmd cmd);
     
     /**
      * Retrieves a host by id
@@ -801,15 +796,6 @@ public interface ManagementServer {
      * @return Host
      */
     HostVO getHostBy(long hostId);
-    
-    
-//    /**
-//     * Deletes a host
-//     * 
-//     * @param hostId
-//     * @param true if deleted, false otherwise
-//     */
-//    boolean deleteHost(long hostId);
     
     /**
      * Retrieves all Events between the start and end date specified

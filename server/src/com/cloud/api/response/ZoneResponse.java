@@ -27,6 +27,9 @@ public class ZoneResponse implements ResponseObject {
     @Param(name="name")
     private String name;
 
+    @Param(name="description")
+    private String description;
+
     @Param(name="dns1")
     private String dns1;
 
@@ -59,6 +62,14 @@ public class ZoneResponse implements ResponseObject {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getDns1() {
