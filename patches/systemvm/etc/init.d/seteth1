@@ -123,6 +123,7 @@ setup_dhcpsrvr() {
   echo "$ETH0_IP $NAME" >> /etc/hosts
   [ -f /etc/httpd/conf/httpd.conf ] && sed -i -e "s/^Listen.*$/Listen $ETH0_IP:80/" /etc/httpd/conf/httpd.conf
   [ -f /etc/httpd/conf.d/ssl.conf ] && mv /etc/httpd/conf.d/ssl.conf /etc/httpd/conf.d/ssl.conf.bak
+  [ -f /etc/ssh/sshd_config ] && sed -i -e "s/^[#]*ListenAddress.*$/ListenAddress $ETH1_IP/" /etc/ssh/sshd_config
 }
 
 setup_secstorage() {

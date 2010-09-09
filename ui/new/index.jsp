@@ -1,3 +1,9 @@
+<%@ page import="java.util.Date" %>
+
+<%
+long milliseconds = new Date().getTime();
+%>
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -24,23 +30,23 @@
 
     <!-- cloud.com scripts -->
 
-    <script type="text/javascript" src="scripts/cloud.logger.js"></script>
+    <script type="text/javascript" src="scripts/cloud.logger.js?t=<%=milliseconds%>"></script>
 
-    <script type="text/javascript" src="scripts/cloud.core.js"></script>
+    <script type="text/javascript" src="scripts/cloud.core.js?t=<%=milliseconds%>"></script>
 
-    <script type="text/javascript" src="scripts/cloud.core.init.js"></script>
+    <script type="text/javascript" src="scripts/cloud.core.init.js?t=<%=milliseconds%>"></script>
     
-    <script type="text/javascript" src="scripts/cloud.core.instance.js"></script>
+    <script type="text/javascript" src="scripts/cloud.core.instance.js?t=<%=milliseconds%>"></script>
     
-    <script type="text/javascript" src="scripts/cloud.core.event.js"></script>
+    <script type="text/javascript" src="scripts/cloud.core.event.js?t=<%=milliseconds%>"></script>
     
-    <script type="text/javascript" src="scripts/cloud.core.alert.js"></script>
+    <script type="text/javascript" src="scripts/cloud.core.alert.js?t=<%=milliseconds%>"></script>
   
-    <script type="text/javascript" src="scripts/cloud.core.account.js"></script>
+    <script type="text/javascript" src="scripts/cloud.core.account.js?t=<%=milliseconds%>"></script>
     
-    <script type="text/javascript" src="scripts/cloud.core.volume.js"></script>
+    <script type="text/javascript" src="scripts/cloud.core.volume.js?t=<%=milliseconds%>"></script>
     
-    <script type="text/javascript" src="scripts/cloud.core.snapshot.js"></script>
+    <script type="text/javascript" src="scripts/cloud.core.snapshot.js?t=<%=milliseconds%>"></script>
   
     <title>Cloud.com CloudStack</title>
 </head>
@@ -338,18 +344,14 @@
                         </div>
                     </div>
                     <div class="leftmenu_content" id="leftmenu_router">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_arrows close" id="arrowIcon">
-                            </div>
+                        <div class="leftmenu_secondindent">                           
                             <div class="leftmenu_list_icons">
                                 <img src="images/routers_leftmenuicon.png" alt="Routers" /></div>
                             Routers
                         </div>
                     </div>
                     <div class="leftmenu_content" id="leftmenu_system">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_arrows close" id="arrowIcon">
-                            </div>
+                        <div class="leftmenu_secondindent">                           
                             <div class="leftmenu_list_icons">
                                 <img src="images/storage_leftmenuicon.png" alt="Storage" /></div>
                             System
@@ -430,14 +432,14 @@
                 </div>
                 <div class="leftmenu_list">
                     <div class="leftmenu_content" id="leftmenu_ip">
-                        <div class="leftmenu_firstindent">
+                        <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/network_leftmenuicon.png" alt="Network" /></div>
                             IP Addresses
                         </div>
                     </div>
                     <div class="leftmenu_content" id="leftmenu_network_group">
-                        <div class="leftmenu_firstindent">
+                        <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/network_leftmenuicon.png" alt="Network" /></div>
                             Network Groups

@@ -61,6 +61,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
     protected final SearchBuilder<StoragePoolVO> DeleteLvmSearch;
     protected final GenericSearchBuilder<StoragePoolVO, Long> MaintenanceCountSearch;
     
+    
     protected final StoragePoolDetailsDao _detailsDao;
 	
     private final String DetailsSqlPrefix = "SELECT storage_pool.* from storage_pool LEFT JOIN storage_pool_details ON storage_pool.id = storage_pool_details.pool_id WHERE storage_pool.data_center_id = ? and (storage_pool.pod_id = ? or storage_pool.pod_id is null) and (";
@@ -142,6 +143,13 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 		SearchCriteria<StoragePoolVO> sc = UUIDSearch.create();
         sc.setParameters("uuid", uuid);
         return findOneBy(sc);
+	}
+
+	@Override
+	public List<StoragePoolVO> findIfDuplicatePoolsExistByUUID(String uuid) {
+		SearchCriteria<StoragePoolVO> sc = UUIDSearch.create();
+        sc.setParameters("uuid", uuid);
+        return listActiveBy(sc);
 	}
 
 

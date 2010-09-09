@@ -23,15 +23,16 @@
         <p id="after_action_info"></p>
     </div>
     <div class="tabbox" style="margin-top:15px;">
-        <div class="content_tabs on">
+        <div class="content_tabs on" id="tab_details">
             <%=t.t("Details")%></div>
-        <div class="content_tabs off">
+        <div class="content_tabs off" id="tab_volume">
             <%=t.t("Volume")%></div>
-        <div class="content_tabs off">
+        <div class="content_tabs off" id="tab_statistics">
             <%=t.t("Statistics")%></div>
     </div>
-    <!--VM details start here-->
-    <div class="grid_container" style="display:none;">
+    
+    <!--Details tab (start)-->
+    <div class="grid_container" style="display:block;" id="tab_content_details">
         <div class="grid_rows odd">
             <div class="vm_statusbox">
                 <div class="vm_consolebox">
@@ -140,10 +141,11 @@
             </div>
         </div>
     </div>
-    <!--VM details ends here-->
+    <!--Details tab (end)-->
     
-    <!--Volume start here-->
-    <div class="grid_container" style="display:block;">
+    <!--Volume tab (start)-->
+    <div style="display:none;" id="tab_content_volume">
+        <!--  
     	<div class="grid_header">
         	<div class="grid_header_title">i-2-7-JW</div>
             <div class="grid_actionbox"></div>
@@ -184,8 +186,15 @@
                 <div class="row_celltitles">09/03/2010  15:06:04</div>
             </div>
         </div>
-    
+        -->
     </div>
+    <!--Volume tab (end)-->
+    
+    <!--Statistics tab (start)-->
+    <div class="grid_container" style="display:none;" id="tab_content_statistics">
+    statistics....
+    </div>    
+    <!--Statistics tab (start)-->
 </div>
 <!-- VM detail panel (end) -->
 <!-- VM wizard (begin)-->
@@ -648,8 +657,9 @@
         Custom:</label>
     <label class="label1">
         Disk Size:</label>
-    <input type="text" name="disksize" class="text" />
-    <span>GB</span>
+    <input type="text" id="custom_disk_size" class="text" />
+    <span>MB</span>
+    <div id="custom_disk_size_errormsg" class="dialog_formcontent_errormsg" style="display: none;">    
 </div>
 <div class="vmpopup_offeringbox" id="vm_popup_disk_offering_template_existing" style="display: none">
     <input type="radio" class="radio" checked />
@@ -742,5 +752,49 @@
             </li>
         </ol>
         </form>
+    </div>
+</div>
+
+<!--  volume tab template -->
+<div class="grid_container" id="volume_tab_template" style="display:none">
+	<div class="grid_header">
+       	<div class="grid_header_title" id="name"></div>
+        <div class="grid_actionbox"></div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                ID:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="id"></div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+           <div class="row_celltitles">
+                Type:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="type"></div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Size:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="size"></div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Created:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="created"></div>
+        </div>
     </div>
 </div>

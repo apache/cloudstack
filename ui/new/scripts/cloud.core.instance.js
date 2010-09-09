@@ -368,10 +368,11 @@ function clickInstanceGroupHeader($arrowIcon) {
         $rightPanelContent.find("#iso").hide();
     }
     
-    function vmMidmenuItemToRightPanel($t) {
-        if($t.find("#info_icon").css("display") != "none") {                
-            $rightPanelContent.find("#after_action_info").text($t.data("afterActionInfo"));
-            if($t.find("#info_icon").hasClass("error"))
+    function vmMidmenuItemToRightPanel($midmenuItem) {
+        //details tab 
+        if($midmenuItem.find("#info_icon").css("display") != "none") {                
+            $rightPanelContent.find("#after_action_info").text($midmenuItem.data("afterActionInfo"));
+            if($midmenuItem.find("#info_icon").hasClass("error"))
                 $rightPanelContent.find("#after_action_info_container").addClass("errorbox");
              else
                 $rightPanelContent.find("#after_action_info_container").removeClass("errorbox");                                        
@@ -382,7 +383,7 @@ function clickInstanceGroupHeader($arrowIcon) {
             $rightPanelContent.find("#after_action_info_container").hide();                
         }
         
-        var jsonObj = $t.data("jsonObj");     
+        var jsonObj = $midmenuItem.data("jsonObj");     
         var vmName = getVmName(jsonObj.name, jsonObj.displayname);        
         $rightPanelHeader.find("#vm_name").text(fromdb(vmName));	
         updateVirtualMachineStateInRightPanel(jsonObj.state);	
@@ -402,10 +403,58 @@ function clickInstanceGroupHeader($arrowIcon) {
         if(jsonObj.isoid != null && jsonObj.isoid.length > 0)
             $rightPanelContent.find("#iso").removeClass("cross_icon").addClass("tick_icon").show();
         else
-            $rightPanelContent.find("#iso").removeClass("tick_icon").addClass("cross_icon").show();           
+            $rightPanelContent.find("#iso").removeClass("tick_icon").addClass("cross_icon").show();    
+            
+        //volume tab
+        //if (getHypervisorType() == "kvm") 
+			//detail.find("#volume_action_create_template").show();		        
+        $.ajax({
+			cache: false,
+			data: createURL("command=listVolumes&virtualMachineId="+jsonObj.id+maxPageSize),
+			dataType: "json",
+			success: function(json) {			    
+				var items = json.listvolumesresponse.volume;
+				if (items != null && items.length > 0) {
+					var container = $rightPanelContent.find("#tab_content_volume").empty();
+					var template = $("#volume_tab_template");				
+					for (var i = 0; i < items.length; i++) {
+						var newTemplate = template.clone(true);
+		                vmVolumeJSONToTemplate(items[i], newTemplate); 
+		                container.append(newTemplate.show());	
+					}
+				}						
+			}
+		});           
     }
     
-    
+    function vmVolumeJSONToTemplate(json, template) {
+        template.attr("id","vm_volume_"+json.id);		
+		template.find("#id").text(json.id);	
+		template.find("#name").text(json.name);
+		if (json.storagetype == "shared") 
+			template.find("#type").text(json.type + " (shared storage)");
+		else 
+			template.find("#type").text(json.type + " (local storage)");
+				
+		template.find("#size").text((json.size == "0") ? "" : convertBytes(json.size));										
+		setDateField(json.created, template.find("#created"));
+		
+		/*		
+		if(json.type=="ROOT") {
+			if (json.vmstate == "Stopped") {
+				template.find("#volume_action_detach_disk, #volume_acton_separator").hide();
+			} else {
+				template.find("#volume_action_detach_disk, #volume_acton_separator, #volume_action_create_template").hide();
+			}
+		} else {
+			if (json.vmstate != "Stopped") {
+				template.find("#volume_acton_separator, #volume_action_create_template").hide();
+			}
+		}
+		*/
+	}
+        
+   
   
     $("#add_link").show(); 
 	if($arrowIcon.hasClass("close") == true) {
@@ -508,7 +557,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         $instanceGroupContainer.empty();   
     }	     
     //***** VM Detail (end) ********************************************************************************    
-    $("#right_panel").load("jsp/tab_instance.jsp", function() {	
+    $("#right_panel").load("jsp/instance.jsp", function() {	
         $rightPanelHeader = $("#right_panel_header");			                                		                                
 	    $rightPanelContent = $("#right_panel_content");	
 	    
@@ -541,6 +590,32 @@ function clickInstanceGroupHeader($arrowIcon) {
 		    modal: true,
 		    zIndex: 2000
 	    }));
+        
+        //***** switch to different tab (begin) ********************************************************************
+        $("#tab_details").bind("click", function(event){
+            $(this).removeClass("off").addClass("on");
+            $("#tab_volume, #tab_statistics").removeClass("on").addClass("off");  
+            $("#tab_content_details").show();     
+            $("#tab_content_volume, #tab_content_statistics").hide();   
+            return false;
+        });
+        
+        $("#tab_volume").bind("click", function(event){
+            $(this).removeClass("off").addClass("on");
+            $("#tab_details, #tab_statistics").removeClass("on").addClass("off");   
+            $("#tab_content_volume").show();    
+            $("#tab_content_details, #tab_content_statistics").hide();    
+            return false;
+        });
+        
+        $("#tab_statistics").bind("click", function(event){
+            $(this).removeClass("off").addClass("on");
+            $("#tab_details, #tab_volume").removeClass("on").addClass("off");  
+            $("#tab_content_statistics").show();   
+            $("#tab_content_details, #tab_content_volume").hide();      
+            return false;
+        });        
+        //***** switch to different tab (end) **********************************************************************
         
         //***** VM Wizard (begin) ******************************************************************************
         $vmPopup = $("#vm_popup");
@@ -955,12 +1030,12 @@ function clickInstanceGroupHeader($arrowIcon) {
 		    listTemplatesInVmPopup();
 		    return false;
 	    });  
-    	
+    		
 	    $vmPopup.find("#next_step").bind("click", function(event) {
 		    event.preventDefault();
 		    event.stopPropagation();	
 		    var $thisPopup = $vmPopup;		    		
-		    if (currentStepInVmPopup == 1) { //select a template		
+		    if (currentStepInVmPopup == 1) { //select a template/ISO		    		
 		        // prevent a person from moving on if no templates are selected	  
 		        if($thisPopup.find("#step1 #template_container .rev_wiztemplistbox_selected").length == 0) {			        
 		            $thisPopup.find("#step1 #wiz_message").show();
@@ -971,30 +1046,15 @@ function clickInstanceGroupHeader($arrowIcon) {
 			        $thisPopup.find("#step3_label").text("Root Disk Offering");
 			        $thisPopup.find("#root_disk_offering_container").show();
 			        $thisPopup.find("#data_disk_offering_container").hide();			       
-			    } else {  //template
+			    } 
+			    else {  //template
 			        $thisPopup.find("#step3_label").text("Data Disk Offering");
 			        $thisPopup.find("#data_disk_offering_container").show();
 			        $thisPopup.find("#root_disk_offering_container").hide();			       
 			    }	
     			
     			$thisPopup.find("#wizard_review_zone").text($thisPopup.find("#wizard_zone option:selected").text());    	
-    			$thisPopup.find("#wizard_review_template").text($thisPopup.find("#step1 .rev_wiztemplistbox_selected .rev_wiztemp_listtext").text());
-    							
-//			    $thisPopup.find("#wizard_review_service_offering").text($thisPopup.find("#wizard_service_offering input[name=service]:checked").next().text());
-//			    $thisPopup.find("#wizard_review_zone").text($thisPopup.find("#wizard_zone option:selected").text());
-//			    $thisPopup.find("#wizard_review_name").text($thisPopup.find("#wizard_vm_name").val());
-//			    $thisPopup.find("#wizard_review_group").text($thisPopup.find("#wizard_vm_group").val());
-//    			
-//			    if($thisPopup.find("#wizard_network_groups_container").css("display") != "none" && $thisPopup.find("#wizard_network_groups").val() != null) {
-//			        var networkGroupList = $thisPopup.find("#wizard_network_groups").val().join(",");
-//			        $thisPopup.find("#wizard_review_network_groups_p").show();
-//			        $thisPopup.find("#wizard_review_network_groups").text(networkGroupList);				    
-//			    } else {
-//			        $thisPopup.find("#wizard_review_network_groups_p").hide();
-//			        $thisPopup.find("#wizard_review_network_groups").text("");
-//			    }								
-
-
+    			$thisPopup.find("#wizard_review_template").text($thisPopup.find("#step1 .rev_wiztemplistbox_selected .rev_wiztemp_listtext").text()); 
 		    }			
     		
 		    if (currentStepInVmPopup == 2) { //service offering
@@ -1009,31 +1069,28 @@ function clickInstanceGroupHeader($arrowIcon) {
 
 		    }			
     		
-		    if(currentStepInVmPopup ==3) { //disk offering
-		        /*
-		        // validate values
-			    var isValid = true;		
-			    isValid &= validateString("Name", $thisPopup.find("#wizard_vm_name"), $thisPopup.find("#wizard_vm_name_errormsg"), true);
-			    isValid &= validateString("Group", $thisPopup.find("#wizard_vm_group"), $thisPopup.find("#wizard_vm_group_errormsg"), true);				
-			    if (!isValid) return;	
-			    */		
-			    
-			    /*
-			    // prevent a person from moving on if no radio button is selected
-		        if($thisPopup.find("input:radio[name=disk_offering_radio]:checked").length == 0) {
-		            $thisPopup.find("#step2 #wiz_message #wiz_message_text").text("Please select a disk offering to continue");
-		            $thisPopup.find("#step2 #wiz_message").show();
-			        return false;
-			    }	
-			    */	   	
-    		   
+		    if(currentStepInVmPopup ==3) { //disk offering	 
 		        if($thisPopup.find("#wiz_blank").hasClass("rev_wizmid_selectedtempbut"))  { //ISO
 		            $thisPopup.find("#wizard_review_disk_offering_label").text("Root Disk Offering:");
 			        $thisPopup.find("#wizard_review_disk_offering").text($thisPopup.find("#root_disk_offering_container input[name=root_disk_offering_radio]:checked").next().text());	
 			    }
 			    else { //template
+			        var checkedRadioButton = $thisPopup.find("#data_disk_offering_container input[name=data_disk_offering_radio]:checked");			        
+			        			    
+			        // validate values
+			        var isValid = true;		
+			        if(checkedRadioButton.parent().attr("id") == "vm_popup_disk_offering_template_custom")			    
+			            isValid &= validateNumber("Disk Size", $thisPopup.find("#custom_disk_size"), $thisPopup.find("#custom_disk_size_errormsg"), null, null, false);	//required	
+			        else
+			            isValid &= validateNumber("Disk Size", $thisPopup.find("#custom_disk_size"), $thisPopup.find("#custom_disk_size_errormsg"), null, null, true);	//optional		    		
+			        if (!isValid) return;
+			        
 			        $thisPopup.find("#wizard_review_disk_offering_label").text("Data Disk Offering:");
-			        $thisPopup.find("#wizard_review_disk_offering").text($thisPopup.find("#data_disk_offering_container input[name=data_disk_offering_radio]:checked").next().text());
+			        
+			        var diskOfferingName = checkedRadioButton.next().text();
+			        if(checkedRadioButton.parent().attr("id") == "vm_popup_disk_offering_template_custom")
+			            diskOfferingName += (" " + $thisPopup.find("#data_disk_offering_container input[name=data_disk_offering_radio]:checked").next().next().next().val() + " MB");
+			        $thisPopup.find("#wizard_review_disk_offering").text(diskOfferingName);
 			    }	
 		    }	
 		    	
@@ -1060,10 +1117,14 @@ function clickInstanceGroupHeader($arrowIcon) {
 			    if ($thisPopup.find("#wiz_blank").hasClass("rev_wizmid_selectedtempbut"))  //ISO
 			        diskOfferingId = $thisPopup.find("#root_disk_offering_container input[name=root_disk_offering_radio]:checked").val();	
 			    else  //template
-			        diskOfferingId = $thisPopup.find("#data_disk_offering_container input[name=data_disk_offering_radio]:checked").val();				       
-		        			   
+			        diskOfferingId = $thisPopup.find("#data_disk_offering_container input[name=data_disk_offering_radio]:checked").val();	
 		        if(diskOfferingId != null && diskOfferingId != "" && diskOfferingId != "no" && diskOfferingId != "custom")
 			        moreCriteria.push("&diskOfferingId="+diskOfferingId);						 
+    			    			
+    			var customDiskSize = $thisPopup.find("#custom_disk_size").val(); //unit is MB
+    			if(customDiskSize != null && customDiskSize.length > 0)
+    			    moreCriteria.push("&size="+customDiskSize);	    			
+    		   
     			
     			var name = trim($thisPopup.find("#wizard_vm_name").val());
 			    if (name != null && name.length > 0) 

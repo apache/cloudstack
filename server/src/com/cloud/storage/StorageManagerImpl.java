@@ -1379,6 +1379,14 @@ public class StorageManagerImpl implements StorageManager {
         }
         long poolId = _storagePoolDao.getNextInSequence(Long.class, "id");
         String uuid = UUID.nameUUIDFromBytes(new String(storageHost + hostPath).getBytes()).toString();
+        
+        List<StoragePoolVO> spHandles = _storagePoolDao.findIfDuplicatePoolsExistByUUID(uuid);
+        if(spHandles!=null && spHandles.size()>0)
+        {
+        	s_logger.debug("Another active pool with the same uuid already exists");
+        	throw new ResourceInUseException("Another active pool with the same uuid already exists");
+        }
+        
         s_logger.debug("In createPool Setting poolId - " +poolId+ " uuid - " +uuid+ " zoneId - " +zoneId+ " podId - " +podId+ " poolName - " +poolName);
         pool.setId(poolId);
         pool.setUuid(uuid);
