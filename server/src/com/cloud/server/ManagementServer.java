@@ -62,6 +62,7 @@ import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.ListUsersCmd;
 import com.cloud.api.commands.ListVMsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
+import com.cloud.api.commands.ListVolumesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
@@ -1200,10 +1201,10 @@ public interface ManagementServer {
     /** revisit
      * Obtains a list of storage volumes by the specified search criteria.
      * Can search by: "userId", "vType", "instanceId", "dataCenterId", "podId", "hostId"
-     * @param c
+     * @param cmd
      * @return List of Volumes.
      */
-    List<VolumeVO> searchForVolumes(Criteria c);
+    List<VolumeVO> searchForVolumes(ListVolumesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
     /**
 	 * Checks that the volume is stored on a shared storage pool.

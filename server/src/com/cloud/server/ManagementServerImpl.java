@@ -98,6 +98,7 @@ import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.ListUsersCmd;
 import com.cloud.api.commands.ListVMsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
+import com.cloud.api.commands.ListVolumesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
@@ -5549,19 +5550,52 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public List<VolumeVO> searchForVolumes(Criteria c) {
-        Filter searchFilter = new Filter(VolumeVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
-        // SearchCriteria sc = _volumeDao.createSearchCriteria();
+    public List<VolumeVO> searchForVolumes(ListVolumesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
+        Long accountId = null;
+        boolean isAdmin = false;
+        if ((account == null) || isAdmin(account.getType())) {
+            isAdmin = true;
+            if (domainId != null) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list volumes.");
+                }
+                if (accountName != null) {
+                    Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                    if (userAccount != null) {
+                        accountId = userAccount.getId();
+                    } else {
+                        throw new InvalidParameterValueException("could not find account " + accountName + " in domain " + domainId);
+                    }
+                }
+            } else {
+                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+            }
+        } else {
+            accountId = account.getId();
+        }
 
-        Object[] accountIds = (Object[]) c.getCriteria(Criteria.ACCOUNTID);
-        Object type = c.getCriteria(Criteria.VTYPE);
-        Long vmInstanceId = (Long) c.getCriteria(Criteria.INSTANCEID);
-        Object zone = c.getCriteria(Criteria.DATACENTERID);
-        Object pod = c.getCriteria(Criteria.PODID);
-        Object domainId = c.getCriteria(Criteria.DOMAINID);
-        Object id = c.getCriteria(Criteria.ID);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
-        Object name = c.getCriteria(Criteria.NAME);
+        Filter searchFilter = new Filter(VolumeVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        Object id = cmd.getId();
+        Long vmInstanceId = cmd.getVirtualMachineId();
+        Object name = cmd.getVolumeName();
+        Object keyword = cmd.getKeyword();
+
+        Object type = null;
+        Object zone = null;
+        Object pod = null;
+        //Object host = null; TODO
+        if (isAdmin) {
+            type = cmd.getType();
+            zone = cmd.getZoneId();
+            pod = cmd.getPodId();
+            // host = cmd.getHostId(); TODO
+        } else {
+            domainId = null;
+        }
 
         // hack for now, this should be done better but due to needing a join I opted to
         // do this quickly and worry about making it pretty later
@@ -5586,7 +5620,7 @@ public class ManagementServerImpl implements ManagementServer {
         // Only return volumes that are not destroyed
         sb.and("destroyed", sb.entity().getDestroyed(), SearchCriteria.Op.EQ);
 
-        if ((accountIds == null) && (domainId != null)) {
+        if ((accountId == null) && (domainId != null)) {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
@@ -5612,12 +5646,8 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("id", id);
         }
 
-        if (accountIds != null) {
-            if ((accountIds.length == 1) && (accountIds[0] != null)) {
-                sc.setParameters("accountIdEQ", accountIds[0]);
-            } else {
-                sc.setParameters("accountIdIN", accountIds);
-            }
+        if (accountId != null) {
+            sc.setParameters("accountIdEQ", accountId);
         } else if (domainId != null) {
             DomainVO domain = _domainDao.findById((Long)domainId);
             sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
