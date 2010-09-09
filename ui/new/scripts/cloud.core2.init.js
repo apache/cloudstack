@@ -58,16 +58,17 @@ $(document).ready(function() {
     });
     
     
-    function jsonToMidmenu(jsonObj, $midmenuItem1, descriptionProperty, toRightPanelFn) {  
+    function jsonToMidmenu(jsonObj, $midmenuItem1, propertyForFirstRow, propertyForSecondRow, toRightPanelFn) {  
         $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));                             
         $midmenuItem1.data("id", jsonObj.id); 
         $midmenuItem1.data("jsonObj", jsonObj); 
-        $midmenuItem1.find("#first_row").text(jsonObj[descriptionProperty].substring(0,25)); 
+        $midmenuItem1.find("#first_row").text(jsonObj[propertyForFirstRow].substring(0,25)); 
+        $midmenuItem1.find("#second_row").text(jsonObj[propertyForSecondRow].substring(0,25));           
         $midmenuItem1.data("toRightPanelFn", toRightPanelFn);
     }
     
     var $midmenuItem = $("#midmenu_item");
-    function listMidMenuItems(leftmenuId, apiName, jsonResponse1, jsonResponse2, descriptionProperty, rightPanelJSP, toRightPanelFn) { 
+    function listMidMenuItems(leftmenuId, apiName, jsonResponse1, jsonResponse2, propertyForFirstRow, propertyForSecondRow, rightPanelJSP, toRightPanelFn) { 
         $("#"+leftmenuId).bind("click", function(event) {
             $("#right_panel").load(rightPanelJSP);
         
@@ -81,12 +82,8 @@ $(document).ready(function() {
 	                if(items != null && items.length > 0) {
 	                    for(var i=0; i<items.length;i++) {                
                             var item = items[i];
-                            var $midmenuItem1 = $midmenuItem.clone();   
-                            
-                            jsonToMidmenu(item, $midmenuItem1, descriptionProperty, toRightPanelFn);  
-                            //$midmenuItem1.data("jsonObj", item);
-                            //$midmenuItem1.find("#description").text(item[descriptionProperty].substring(0,25));     
-                                            
+                            var $midmenuItem1 = $midmenuItem.clone();                               
+                            jsonToMidmenu(item, $midmenuItem1, propertyForFirstRow, propertyForSecondRow, toRightPanelFn);                             
                             $midmenuContainer.append($midmenuItem1.show());                            
                         }  
                     }  
@@ -96,11 +93,11 @@ $(document).ready(function() {
             return false;
         });
     }
-    listMidMenuItems("leftmenu_event", "listEvents", "listeventsresponse", "event", "description", "jsp/event.jsp", loadEventToRigntPanelFn);
-    listMidMenuItems("leftmenu_alert", "listAlerts", "listalertsresponse", "alert", "description", "jsp/alert.jsp", loadAlertToRigntPanelFn);
-    listMidMenuItems("leftmenu_account", "listAccounts", "listaccountsresponse", "account", "name", "jsp/account.jsp", loadAccountToRigntPanelFn);
-    listMidMenuItems("leftmenu_volume", "listVolumes", "listvolumesresponse", "volume", "name", "jsp/volume.jsp", loadVolumeToRigntPanelFn);
-    listMidMenuItems("leftmenu_snapshot", "listSnapshots", "listsnapshotsresponse", "snapshot", "name", "jsp/snapshot.jsp", loadSnapshotToRigntPanelFn);
+    listMidMenuItems("leftmenu_event", "listEvents", "listeventsresponse", "event", "description", "type", "jsp/event.jsp", loadEventToRigntPanelFn);
+    listMidMenuItems("leftmenu_alert", "listAlerts", "listalertsresponse", "alert", "description", "type", "jsp/alert.jsp", loadAlertToRigntPanelFn);
+    listMidMenuItems("leftmenu_account", "listAccounts", "listaccountsresponse", "account", "name", "domain", "jsp/account.jsp", loadAccountToRigntPanelFn);
+    listMidMenuItems("leftmenu_volume", "listVolumes", "listvolumesresponse", "volume", "name", "type", "jsp/volume.jsp", loadVolumeToRigntPanelFn);
+    listMidMenuItems("leftmenu_snapshot", "listSnapshots", "listsnapshotsresponse", "snapshot", "name", "volumename", "jsp/snapshot.jsp", loadSnapshotToRigntPanelFn);
     
     
     

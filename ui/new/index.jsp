@@ -614,8 +614,8 @@ long milliseconds = new Date().getTime();
     
     <div class="midmenu_list" id="midmenu_item" style="display: none;">
         <div class="midmenu_content" id="content">
-            <div class="midmenu_icons" id="icon_container">
-                <img id="icon" src="images/status_gray.png" /></div>
+            <div class="midmenu_icons" id="icon_container" style="display:none">
+                <img id="icon"/></div>
             <div class="midmenu_textbox">
                 <p>
                     <strong id="first_row">&nbsp;</strong>
