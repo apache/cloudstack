@@ -22,13 +22,13 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 
 @Implementation(method="assignSecurityGroup", manager=Manager.ManagementServer)
-public class AssignPortForwardingServiceCmd extends BaseCmd {
+public class AssignPortForwardingServiceCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(AssignPortForwardingServiceCmd.class.getName());
 	
     private static final String s_name = "assignportforwardingserviceresponse";
@@ -149,4 +149,9 @@ public class AssignPortForwardingServiceCmd extends BaseCmd {
         return returnValues;
     }
     */
+	@Override
+	public String getResponse() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

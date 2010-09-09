@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -54,12 +55,14 @@ import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.AssignPortForwardingServiceCmd;
 import com.cloud.api.commands.AuthorizeNetworkGroupIngressCmd;
 import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
+import com.cloud.api.commands.DeletePortForwardingServiceCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.EnableAccountCmd;
@@ -175,7 +178,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.info.ConsoleProxyInfo;
-import com.cloud.network.Criteria;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVMMapVO;
@@ -2874,18 +2876,58 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     @DB
-    public void assignSecurityGroup(Long userId, Long securityGroupId, List<Long> securityGroupIdList, String publicIp, Long vmId, long startEventId) throws PermissionDeniedException,
+    public void assignSecurityGroup(AssignPortForwardingServiceCmd cmd) throws PermissionDeniedException,
             NetworkRuleConflictException, InvalidParameterValueException, InternalErrorException {
+    	Long userId = UserContext.current().getUserId();
+    	Account account = (Account)UserContext.current().getAccountObject();
+    	Long securityGroupId = cmd.getId();
+    	List<Long> sgIdList = cmd.getIds();
+    	String publicIp = cmd.getPublicIp();
+    	Long vmId = cmd.getVirtualMachineId();
+    	
+    	//Verify input parameters
+        if ((securityGroupId == null) && (sgIdList == null)) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "No service id (or list of ids) specified.");
+        }
+
+
+        if (userId == null) {
+            userId = Long.valueOf(1);
+        }
+
+        List<Long> validateSGList = null;
+        if (securityGroupId == null) {
+            validateSGList = sgIdList;
+        } else {
+            validateSGList = new ArrayList<Long>();
+            validateSGList.add(securityGroupId);
+        }
+        Long validatedAccountId = validateSecurityGroupsAndInstance(validateSGList, vmId);
+        if (validatedAccountId == null) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to apply port forwarding services " + StringUtils.join(sgIdList, ",") + " to instance " + vmId + ".  Invalid list of port forwarding services for the given instance.");
+        }
+        if (account != null) {
+            if (!isAdmin(account.getType()) && (account.getId().longValue() != validatedAccountId.longValue())) {
+                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Permission denied applying port forwarding services " + StringUtils.join(sgIdList, ",") + " to instance " + vmId + ".");
+            } else {
+                Account validatedAccount = findAccountById(validatedAccountId);
+                if (!isChildDomain(account.getDomainId(), validatedAccount.getDomainId())) {
+                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Permission denied applying port forwarding services " + StringUtils.join(sgIdList, ",") + " to instance " + vmId + ".");
+                }
+            }
+        }
+    	
+        UserVm userVm = _userVmDao.findById(vmId);
+        if (userVm == null) {
+            s_logger.warn("Unable to find virtual machine with id " + vmId);
+            throw new InvalidParameterValueException("Unable to find virtual machine with id " + vmId);
+        }
+        long startEventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_APPLY, "applying port forwarding service for Vm with Id: "+vmId);
+    	
         boolean locked = false;
         Transaction txn = Transaction.currentTxn();
         try {
-            UserVmVO userVm = _userVmDao.findById(vmId);
-            if (userVm == null) {
-                s_logger.warn("Unable to find virtual machine with id " + vmId);
-                throw new InvalidParameterValueException("Unable to find virtual machine with id " + vmId);
-            }
             EventUtils.saveStartedEvent(userId, userVm.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_APPLY, "Applying port forwarding service for Vm with Id: "+vmId, startEventId);
-            
             State vmState = userVm.getState();
             switch (vmState) {
             case Destroyed:
@@ -2893,7 +2935,7 @@ public class ManagementServerImpl implements ManagementServer {
             case Expunging:
             case Unknown:
                 throw new InvalidParameterValueException("Unable to assign port forwarding service(s) '"
-                        + ((securityGroupId == null) ? StringUtils.join(securityGroupIdList, ",") : securityGroupId) + "' to virtual machine " + vmId
+                        + ((securityGroupId == null) ? StringUtils.join(sgIdList, ",") : securityGroupId) + "' to virtual machine " + vmId
                         + " due to virtual machine being in an invalid state for assigning a port forwarding service (" + vmState + ")");
             }
 
@@ -2933,9 +2975,6 @@ public class ManagementServerImpl implements ManagementServer {
 
             txn.start();
 
-            // save off the owner of the instance to be used for events
-            Account account = _accountDao.findById(userVm.getAccountId());
-
             if (securityGroupId == null) {
                 // - send one command to agent to remove *all* rules for
                 // publicIp/vm combo
@@ -2954,7 +2993,7 @@ public class ManagementServerImpl implements ManagementServer {
                         description = "deleted ip forwarding rule [" + fwRule.getPublicIpAddress() + ":" + fwRule.getPublicPort() + "]->[" + fwRule.getPrivateIpAddress() + ":"
                                 + fwRule.getPrivatePort() + "]" + " " + fwRule.getProtocol();
 
-                        EventUtils.saveEvent(userId, account.getId(), level, type, description);
+                        EventUtils.saveEvent(userId, userVm.getAccountId(), level, type, description);
                     }
                 }
 
@@ -2962,7 +3001,7 @@ public class ManagementServerImpl implements ManagementServer {
                 if ((updatedRules != null) && (updatedRules.size() != fwRulesToRemove.size())) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Unable to clean up all port forwarding service rules for public IP " + publicIp + " and guest vm " + userVm.getName()
-                                + " while applying port forwarding service(s) '" + ((securityGroupId == null) ? StringUtils.join(securityGroupIdList, ",") : securityGroupId) + "'"
+                                + " while applying port forwarding service(s) '" + ((securityGroupId == null) ? StringUtils.join(sgIdList, ",") : securityGroupId) + "'"
                                 + " -- intended to remove " + fwRulesToRemove.size() + " rules, removd " + ((updatedRules == null) ? "null" : updatedRules.size()) + " rules.");
                     }
                 }
@@ -3008,7 +3047,7 @@ public class ManagementServerImpl implements ManagementServer {
             if (securityGroupId != null) {
                 finalSecurityGroupIdList.add(securityGroupId);
             } else {
-                finalSecurityGroupIdList.addAll(securityGroupIdList);
+                finalSecurityGroupIdList.addAll(sgIdList);
             }
 
             for (Long sgId : finalSecurityGroupIdList) {
@@ -3123,20 +3162,20 @@ public class ManagementServerImpl implements ManagementServer {
         }
     }
 
-    @Override
-    public long assignSecurityGroupAsync(Long userId, Long securityGroupId, List<Long> securityGroupIdList, String publicIp, Long vmId) {
-        UserVm userVm = _userVmDao.findById(vmId);
-        long eventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_APPLY, "applying port forwarding service for Vm with Id: "+vmId);
-        SecurityGroupParam param = new SecurityGroupParam(userId, securityGroupId, securityGroupIdList, publicIp, vmId, eventId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-    	job.setUserId(UserContext.current().getUserId());
-    	job.setAccountId(userVm.getAccountId());
-        job.setCmd("AssignSecurityGroup");
-        job.setCmdInfo(gson.toJson(param));
-        return _asyncMgr.submitAsyncJob(job);
-    }
+//    @Override
+//    public long assignSecurityGroupAsync(Long userId, Long securityGroupId, List<Long> securityGroupIdList, String publicIp, Long vmId) {
+//        UserVm userVm = _userVmDao.findById(vmId);
+//        long eventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_APPLY, "applying port forwarding service for Vm with Id: "+vmId);
+//        SecurityGroupParam param = new SecurityGroupParam(userId, securityGroupId, securityGroupIdList, publicIp, vmId, eventId);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//    	job.setUserId(UserContext.current().getUserId());
+//    	job.setAccountId(userVm.getAccountId());
+//        job.setCmd("AssignSecurityGroup");
+//        job.setCmdInfo(gson.toJson(param));
+//        return _asyncMgr.submitAsyncJob(job);
+//    }
 
     @Override
     public void removeSecurityGroup(RemovePortForwardingServiceCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
@@ -7231,28 +7270,50 @@ public class ManagementServerImpl implements ManagementServer {
         return _securityGroupDao.persist(group);
     }
 
+//    @Override
+//    public long deleteSecurityGroupAsync(long userId, Long accountId, long securityGroupId) {
+//    	
+//        long eventId = EventUtils.saveScheduledEvent(userId, accountId, EventTypes.EVENT_PORT_FORWARDING_SERVICE_DELETE, "deleting security group with Id: " + securityGroupId);
+//        SecurityGroupParam param = new SecurityGroupParam(userId, securityGroupId, null, null, null, eventId);
+//        Gson gson = GsonHelper.getBuilder().create();
+//
+//        AsyncJobVO job = new AsyncJobVO();
+//        job.setUserId(UserContext.current().getUserId());
+//        job.setAccountId(accountId);
+//        job.setCmd("DeleteSecurityGroup");
+//        job.setCmdInfo(gson.toJson(param));
+//        return _asyncMgr.submitAsyncJob(job);
+//    }
+
     @Override
-    public long deleteSecurityGroupAsync(long userId, Long accountId, long securityGroupId) {
+    public boolean deleteSecurityGroup(DeletePortForwardingServiceCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    	Long securityGroupId = cmd.getId();
+    	Long userId = UserContext.current().getUserId();
+    	Account account = (Account)UserContext.current().getAccountObject();
     	
-        long eventId = EventUtils.saveScheduledEvent(userId, accountId, EventTypes.EVENT_PORT_FORWARDING_SERVICE_DELETE, "deleting security group with Id: " + securityGroupId);
-        SecurityGroupParam param = new SecurityGroupParam(userId, securityGroupId, null, null, null, eventId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(accountId);
-        job.setCmd("DeleteSecurityGroup");
-        job.setCmdInfo(gson.toJson(param));
-        return _asyncMgr.submitAsyncJob(job);
-    }
-
-    @Override
-    public boolean deleteSecurityGroup(long userId, long securityGroupId, long startEventId) throws InvalidParameterValueException, PermissionDeniedException {
-        SecurityGroupVO securityGroup = _securityGroupDao.findById(Long.valueOf(securityGroupId));
-        if (securityGroup == null) {
-            return true; // already deleted, return true
+        //Verify input parameters
+        if (userId == null) {
+            userId = Long.valueOf(User.UID_SYSTEM);
         }
 
+        //verify parameters
+        SecurityGroupVO securityGroup = _securityGroupDao.findById(Long.valueOf(securityGroupId));
+        if (securityGroup == null) {
+        	throw new InvalidParameterValueException("unable to find port forwarding service with id " + securityGroupId);
+        }
+
+        if (account != null) {
+            if (!isAdmin(account.getType())) {
+                if (account.getId().longValue() != securityGroup.getAccountId()) {
+                    throw new PermissionDeniedException("unable to find a port forwarding service with id " + securityGroupId + " for this account, permission denied");
+                }
+            } else if (!isChildDomain(account.getDomainId(), securityGroup.getDomainId())) {
+                throw new PermissionDeniedException("Unable to delete port forwarding service " + securityGroupId + ", permission denied.");
+            }
+        }
+        
+        long startEventId = EventUtils.saveScheduledEvent(userId, securityGroup.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_DELETE, "deleting security group with Id: " + securityGroupId);
+        
         final EventVO event = new EventVO();
         event.setUserId(userId);
         event.setAccountId(securityGroup.getAccountId());

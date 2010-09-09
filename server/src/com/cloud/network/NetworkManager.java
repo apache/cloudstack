@@ -33,7 +33,6 @@ import com.cloud.api.commands.RebootRouterCmd;
 import com.cloud.api.commands.RemoveFromLoadBalancerRuleCmd;
 import com.cloud.api.commands.StartRouterCmd;
 import com.cloud.api.commands.StopRouterCmd;
-import com.cloud.api.commands.UpdateIPForwardingRuleCmd;
 import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;

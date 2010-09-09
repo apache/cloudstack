@@ -23,10 +23,12 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.alert.AlertVO;
+import com.cloud.api.commands.AssignPortForwardingServiceCmd;
 import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.CreateUserCmd;
+import com.cloud.api.commands.DeletePortForwardingServiceCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
@@ -1620,7 +1622,8 @@ public interface ManagementServer {
      * @param publicIp ip address used for creating forwarding rules from the network rules in the group
      * @param vmId vm id to use from getting the private ip address used for creating forwarding rules from the network rules in the group
      */
-    void assignSecurityGroup(Long userId, Long securityGroupId, List<Long> securityGroupIdList, String publicIp, Long vmId, long startEventId) throws PermissionDeniedException, NetworkRuleConflictException, InvalidParameterValueException, InternalErrorException;
+//    void assignSecurityGroup(Long userId, Long securityGroupId, List<Long> securityGroupIdList, String publicIp, Long vmId, long startEventId) throws PermissionDeniedException, NetworkRuleConflictException, InvalidParameterValueException, InternalErrorException;
+    void assignSecurityGroup(AssignPortForwardingServiceCmd cmd) throws PermissionDeniedException, NetworkRuleConflictException, InvalidParameterValueException, InternalErrorException;
 
     /**
      * remove a security group from a publicIp/vmId combination where it had been previously applied
@@ -1632,7 +1635,7 @@ public interface ManagementServer {
     void removeSecurityGroup(long userId, long securityGroupId, String publicIp, long vmId, long startEventId) throws InvalidParameterValueException, PermissionDeniedException;
     void removeSecurityGroup(RemovePortForwardingServiceCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
-    long assignSecurityGroupAsync(Long userId, Long securityGroupId, List<Long> securityGroupIdList, String publicIp, Long vmId);
+//    long assignSecurityGroupAsync(Long userId, Long securityGroupId, List<Long> securityGroupIdList, String publicIp, Long vmId);
 
     long removeSecurityGroupAsync(Long userId, long securityGroupId, String publicIp, long vmId);
 
@@ -1685,8 +1688,10 @@ public interface ManagementServer {
      * @param eventId
      * @return true if the security group is deleted, exception is thrown otherwise
      */
-    boolean deleteSecurityGroup(long userId, long securityGroupId, long eventId)  throws InvalidParameterValueException, PermissionDeniedException;
-    long deleteSecurityGroupAsync(long userId, Long accountId, long securityGroupId);
+//    boolean deleteSecurityGroup(long userId, long securityGroupId, long eventId)  throws InvalidParameterValueException, PermissionDeniedException;
+    boolean deleteSecurityGroup(DeletePortForwardingServiceCmd cmd)  throws InvalidParameterValueException, PermissionDeniedException;
+
+//    long deleteSecurityGroupAsync(long userId, Long accountId, long securityGroupId);
 
     /**
      * check if a security group name in the given account/domain is in use
