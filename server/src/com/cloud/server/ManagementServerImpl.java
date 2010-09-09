@@ -55,7 +55,6 @@ import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AssignPortForwardingServiceCmd;
-import com.cloud.api.commands.AuthorizeNetworkGroupIngressCmd;
 import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
@@ -192,7 +191,6 @@ import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.SecurityGroupDao;
 import com.cloud.network.dao.SecurityGroupVMMapDao;
-import com.cloud.network.security.IngressRuleVO;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.network.security.dao.NetworkGroupDao;
@@ -8614,29 +8612,29 @@ public class ManagementServerImpl implements ManagementServer {
         return groupVO;
     }
 
-	@Override
-	public List<IngressRuleVO> authorizeNetworkGroupIngress(AccountVO account, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups) {
-		return _networkGroupMgr.authorizeNetworkGroupIngress(account, groupName, protocol, startPort, endPort, cidrList, authorizedGroups);
-	}
+//	@Override
+//	public List<IngressRuleVO> authorizeNetworkGroupIngress(AccountVO account, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups) {
+//		return _networkGroupMgr.authorizeNetworkGroupIngress(account, groupName, protocol, startPort, endPort, cidrList, authorizedGroups);
+//	}
 
-    @Override
-    public long authorizeNetworkGroupIngressAsync(Long accountId, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups) {
-        AccountVO account = (AccountVO)findAccountById(accountId);
-        if (account == null) {
-            s_logger.warn("Unable to authorize network group ingress on group: " + groupName + " for account " + accountId + " -- account not found.");
-            return 0;
-        }
-
-        NetworkGroupIngressParam param = new NetworkGroupIngressParam(account, groupName, protocol, startPort, endPort, cidrList, authorizedGroups);
-        Gson gson = GsonHelper.getBuilder().create();
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(accountId);
-        job.setCmd("AuthorizeNetworkGroupIngress");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(AuthorizeNetworkGroupIngressCmd.getResultObjectName());
-        return _asyncMgr.submitAsyncJob(job);
-    }
+//    @Override
+//    public long authorizeNetworkGroupIngressAsync(Long accountId, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups) {
+//        AccountVO account = (AccountVO)findAccountById(accountId);
+//        if (account == null) {
+//            s_logger.warn("Unable to authorize network group ingress on group: " + groupName + " for account " + accountId + " -- account not found.");
+//            return 0;
+//        }
+//
+//        NetworkGroupIngressParam param = new NetworkGroupIngressParam(account, groupName, protocol, startPort, endPort, cidrList, authorizedGroups);
+//        Gson gson = GsonHelper.getBuilder().create();
+//        AsyncJobVO job = new AsyncJobVO();
+//        job.setUserId(UserContext.current().getUserId());
+//        job.setAccountId(accountId);
+//        job.setCmd("AuthorizeNetworkGroupIngress");
+//        job.setCmdInfo(gson.toJson(param));
+//        job.setCmdOriginator(AuthorizeNetworkGroupIngressCmd.getResultObjectName());
+//        return _asyncMgr.submitAsyncJob(job);
+//    }
 
 //    @Override
 //	public boolean revokeNetworkGroupIngress(AccountVO account, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups) {
@@ -8661,10 +8659,10 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job);
 	}
 
-    @Override
-    public void deleteNetworkGroup(Long groupId, Long accountId) throws ResourceInUseException, PermissionDeniedException {
-        _networkGroupMgr.deleteNetworkGroup(groupId, accountId);
-    }
+//    @Override
+//    public void deleteNetworkGroup(Long groupId, Long accountId) throws ResourceInUseException, PermissionDeniedException {
+//        _networkGroupMgr.deleteNetworkGroup(groupId, accountId);
+//    }
 
 	@Override
 	public HostStats getHostStatistics(long hostId) {

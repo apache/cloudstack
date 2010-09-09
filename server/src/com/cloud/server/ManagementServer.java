@@ -110,7 +110,6 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.SecurityGroupVO;
-import com.cloud.network.security.IngressRuleVO;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
@@ -1836,8 +1835,8 @@ public interface ManagementServer {
      * @param authorizedGroups the network groups (looked up by group name/account) to which access is being granted
      * @return the job id if scheduled, 0 if the job was not scheduled
      */
-    long authorizeNetworkGroupIngressAsync(Long accountId, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups);
-    List<IngressRuleVO> authorizeNetworkGroupIngress(AccountVO account, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups);
+//    long authorizeNetworkGroupIngressAsync(Long accountId, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups);
+//    List<IngressRuleVO> authorizeNetworkGroupIngress(AccountVO account, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups);
 
     /**
 	 * Revoke access to a network group.  Access could have been granted to a set of IP ranges, or to network groups belonging to other accounts.  Access
@@ -1860,7 +1859,7 @@ public interface ManagementServer {
 	 * @param accountId
 	 * @throws PermissionDeniedException
 	 */
-	void deleteNetworkGroup(Long groupId, Long accountId) throws ResourceInUseException, PermissionDeniedException;
+//	void deleteNetworkGroup(Long groupId, Long accountId) throws ResourceInUseException, PermissionDeniedException;
 
 	HostStats getHostStatistics(long hostId);
 	

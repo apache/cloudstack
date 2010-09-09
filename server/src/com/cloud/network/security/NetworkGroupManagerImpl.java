@@ -45,7 +45,9 @@ import com.cloud.agent.api.NetworkIngressRulesCmd.IpPortAndProto;
 import com.cloud.agent.manager.AgentManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.AuthorizeNetworkGroupIngressCmd;
 import com.cloud.api.commands.CreateNetworkGroupCmd;
+import com.cloud.api.commands.DeleteNetworkGroupCmd;
 import com.cloud.api.commands.ListNetworkGroupsCmd;
 import com.cloud.api.commands.RevokeNetworkGroupIngressCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -417,14 +419,150 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 	
 	@Override
 	@DB
-	public List<IngressRuleVO> authorizeNetworkGroupIngress(AccountVO account,
-			String groupName, String protocol, int startPort, int endPort,
-			String [] cidrList, List<NetworkGroupVO> authorizedGroups) {
+	public List<IngressRuleVO> authorizeNetworkGroupIngress(AuthorizeNetworkGroupIngressCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
+		String groupName = cmd.getName();
+		String protocol = cmd.getProtocol();
+		Integer startPort = cmd.getStartPort();
+		Integer endPort = cmd.getEndPort();
+		Integer icmpType = cmd.getIcmpType();
+		Integer icmpCode = cmd.getIcmpCode();
+		List<String> cidrList = cmd.getCidrList();
+		Map groupList = cmd.getUserNetworkGroupList();
+        Account account = (Account)UserContext.current().getAccountObject();
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+		Integer startPortOrType = null;
+        Integer endPortOrCode = null;
+        Long accountId = null;
+		
 		if (!_enabled) {
 			return null;
 		}
+		
+		//Verify input parameters
+        if (protocol == null) {
+        	protocol = "all";
+        }
+
+        if (!NetUtils.isValidNetworkGroupProto(protocol)) {
+        	s_logger.debug("Invalid protocol specified " + protocol);
+        	 throw new InvalidParameterValueException("Invalid protocol " + protocol);
+        }
+        if ("icmp".equalsIgnoreCase(protocol) ) {
+            if ((icmpType == null) || (icmpCode == null)) {
+                throw new InvalidParameterValueException("Invalid ICMP type/code specified, icmpType = " + icmpType + ", icmpCode = " + icmpCode);
+            }
+        	if (icmpType == -1 && icmpCode != -1) {
+        		throw new InvalidParameterValueException("Invalid icmp type range" );
+        	} 
+        	if (icmpCode > 255) {
+        		throw new InvalidParameterValueException("Invalid icmp code " );
+        	}
+        	startPortOrType = icmpType;
+        	endPortOrCode= icmpCode;
+        } else if (protocol.equals("all")) {
+        	if ((startPort != null) || (endPort != null)) {
+                throw new InvalidParameterValueException("Cannot specify startPort or endPort without specifying protocol");
+            }
+        	startPortOrType = 0;
+        	endPortOrCode = 0;
+        } else {
+            if ((startPort == null) || (endPort == null)) {
+                throw new InvalidParameterValueException("Invalid port range specified, startPort = " + startPort + ", endPort = " + endPort);
+            }
+            if (startPort == 0 && endPort == 0) {
+                endPort = 65535;
+            }
+            if (startPort > endPort) {
+                s_logger.debug("Invalid port range specified: " + startPort + ":" + endPort);
+                throw new InvalidParameterValueException("Invalid port range " );
+            }
+            if (startPort > 65535 || endPort > 65535 || startPort < -1 || endPort < -1) {
+                s_logger.debug("Invalid port numbers specified: " + startPort + ":" + endPort);
+                throw new InvalidParameterValueException("Invalid port numbers " );
+            }
+            
+        	if (startPort < 0 || endPort < 0) {
+        		throw new InvalidParameterValueException("Invalid port range " );
+        	}
+            startPortOrType = startPort;
+            endPortOrCode= endPort;
+        }
+        
+        protocol = protocol.toLowerCase();
+
+        if ((account == null) || isAdmin(account.getType())) {
+            if ((accountName != null) && (domainId != null)) {
+                // if it's an admin account, do a quick permission check
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Unable to find rules for network security group id = " + groupName + ", permission denied.");
+                    }
+                    throw new PermissionDeniedException("Unable to find rules for network security group id = " + groupName + ", permission denied.");
+                }
+
+                Account groupOwner = _accountDao.findActiveAccount(accountName, domainId);
+                if (groupOwner == null) {
+                    throw new PermissionDeniedException("Unable to find account " + accountName + " in domain " + domainId);
+                }
+                accountId = groupOwner.getId();
+            } else {
+                if (account != null) {
+                    accountId = account.getId();
+                    domainId = account.getDomainId();
+                }
+            }
+        } else {
+            if (account != null) {
+                accountId = account.getId();
+                domainId = account.getDomainId();
+            }
+        }
+
+        if (accountId == null) {
+            throw new InvalidParameterValueException("Unable to find account for network security group " + groupName + "; failed to authorize ingress.");
+        }
+      
+
+        if (cidrList == null && groupList == null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("At least one cidr or at least one security group needs to be specified");
+            }
+        	throw new InvalidParameterValueException("At least one cidr or at least one security group needs to be specified");
+        }
+        
+        List<NetworkGroupVO> authorizedGroups = new ArrayList<NetworkGroupVO> ();
+        if (groupList != null) {
+            Collection userGroupCollection = groupList.values();
+            Iterator iter = userGroupCollection.iterator();
+            while (iter.hasNext()) {
+                HashMap userGroup = (HashMap)iter.next();
+        		String group = (String)userGroup.get("group");
+        		String authorizedAccountName = (String)userGroup.get("account");
+        		if ((group == null) || (authorizedAccountName == null)) {
+        			 throw new InvalidParameterValueException("Invalid user group specified, fields 'group' and 'account' cannot be null, please specify groups in the form:  userGroupList[0].group=XXX&userGroupList[0].account=YYY");
+        		}
+
+        		Account authorizedAccount = _accountDao.findActiveAccount(authorizedAccountName, domainId);
+        		if (authorizedAccount == null) {
+        		    if (s_logger.isDebugEnabled()) {
+        		        s_logger.debug("Nonexistent account: " + authorizedAccountName + ", domainid: " + domainId + " when trying to authorize ingress for " + groupName + ":" + protocol + ":" + startPortOrType + ":" + endPortOrCode);
+        		    }
+        		    throw new InvalidParameterValueException("Nonexistent account: " + authorizedAccountName + " when trying to authorize ingress for " + groupName + ":" + protocol + ":" + startPortOrType + ":" + endPortOrCode);
+        		}
+
+        		NetworkGroupVO groupVO = _networkGroupDao.findByAccountAndName(authorizedAccount.getId(), group);
+        		if (groupVO == null) {
+        		    if (s_logger.isDebugEnabled()) {
+        		        s_logger.debug("Nonexistent group " + group + " for account " + authorizedAccountName + "/" + domainId);
+        		    }
+        		    throw new InvalidParameterValueException("Invalid group (" + group + ") given, unable to authorize ingress.");
+        		}
+        		authorizedGroups.add(groupVO);
+        	}
+        }
+		
         final Transaction txn = Transaction.currentTxn();
-        final Long accountId = account.getId();
 		final Set<NetworkGroupVO> authorizedGroups2 = new TreeSet<NetworkGroupVO>(new NetworkGroupVOComparator());
 
 		authorizedGroups2.addAll(authorizedGroups); //Ensure we don't re-lock the same row
@@ -493,7 +631,6 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 				_networkGroupDao.release(networkGroupLock.getId());
 			}
 		}
-		
 	}
 	
 	@Override
@@ -968,10 +1105,56 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 
 	@DB
 	@Override
-	public void deleteNetworkGroup(Long groupId, Long accountId) throws ResourceInUseException, PermissionDeniedException{
+	public void deleteNetworkGroup(DeleteNetworkGroupCmd cmd) throws ResourceInUseException, PermissionDeniedException, InvalidParameterValueException{
+		String name = cmd.getName();
+		String accountName = cmd.getAccountName();
+		Long domainId = cmd.getDomainId();
+		Account account = (Account)UserContext.current().getAccountObject();
+		
 		if (!_enabled) {
 			return ;
 		}
+		
+		//Verify input parameters
+        Long accountId = null;
+        if ((account == null) || isAdmin(account.getType())) {
+            if ((accountName != null) && (domainId != null)) {
+                // if it's an admin account, do a quick permission check
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Unable to find rules network group " + name + ", permission denied.");
+                    }
+                    throw new PermissionDeniedException("Unable to network group " + name + ", permission denied.");
+                }
+
+                Account groupOwner = _accountDao.findActiveAccount(accountName, domainId);
+                if (groupOwner == null) {
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find account " + accountName + " in domain " + domainId);
+                }
+                accountId = groupOwner.getId();
+            } else {
+                if (account != null) {
+                    accountId = account.getId();
+                    domainId = account.getDomainId();
+                }
+            }
+        } else {
+            if (account != null) {
+                accountId = account.getId();
+                domainId = account.getDomainId();
+            }
+        }
+
+        if (accountId == null) {
+            throw new InvalidParameterValueException("Unable to find account for network group " + name + "; failed to delete group.");
+        }
+
+        NetworkGroupVO sg = _networkGroupDao.findByAccountAndName(accountId, name);
+        if (sg == null) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find network group " + name + "; failed to delete group.");
+        }
+        
+        Long groupId = sg.getId();
 		
 		final Transaction txn = Transaction.currentTxn();
 		txn.start();

@@ -18,17 +18,18 @@
 
 package com.cloud.api.commands;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 
-@Implementation(method="authorizeNetworkGroupIngress", manager=Manager.ManagementServer)
-public class AuthorizeNetworkGroupIngressCmd extends BaseCmd {
+@Implementation(method="authorizeNetworkGroupIngress", manager=Manager.NetworkGroupManager)
+public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(AuthorizeNetworkGroupIngressCmd.class.getName());
 
     private static final String s_name = "authorizenetworkgroupingress";
@@ -55,8 +56,8 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseCmd {
     @Parameter(name="networkgroupname", type=CommandType.STRING, required=true)
     private String networkGroupName;
 
-    @Parameter(name="cidrlist", type=CommandType.STRING)
-    private String cidrList;
+    @Parameter(name="cidrlist", type=CommandType.LIST, collectionType=CommandType.STRING)
+    private List<String> cidrList;
 
     @Parameter(name="usernetworkgrouplist", type=CommandType.MAP)
     private Map userNetworkGroupList;
@@ -76,7 +77,7 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseCmd {
         return accountName;
     }
 
-    public String getCidrList() {
+    public List<String> getCidrList() {
         return cidrList;
     }
 
@@ -327,4 +328,9 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseCmd {
 		return 0;
 	}
 	*/
+	@Override
+	public String getResponse() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
