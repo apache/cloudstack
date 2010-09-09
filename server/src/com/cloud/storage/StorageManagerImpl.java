@@ -40,7 +40,6 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.GNOME.Accessibility._DocumentStub;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;

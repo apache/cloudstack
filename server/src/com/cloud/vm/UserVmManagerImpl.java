@@ -345,7 +345,7 @@ public class UserVmManagerImpl implements UserVmManager {
     }
     
     @Override
-    public void attachVolumeToVM(AttachVolumeCmd command) throws InternalErrorException, InvalidParameterValueException {
+    public void attachVolumeToVM(AttachVolumeCmd command) throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException {
     	Long vmId = command.getVirtualMachineId();
     	Long volumeId = command.getId();
     	Long deviceId = command.getDeviceId();
@@ -404,21 +404,21 @@ public class UserVmManagerImpl implements UserVmManager {
         
         //Verify account information
         if (volume.getAccountId() != vm.getAccountId()) {
-        	throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, "virtual machine and volume belong to different accounts, can not attach");
+        	throw new PermissionDeniedException ("Virtual machine and volume belong to different accounts, can not attach. Permission denied.");
         }
     	
     	// If the account is not an admin, check that the volume and the virtual machine are owned by the account that was passed in
     	if (account != null) {
     	    if (!isAdmin(account.getType())) {
                 if (account.getId().longValue() != volume.getAccountId())
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
+                    throw new PermissionDeniedException("Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName() + ". Permission denied.");
 
                 if (account.getId().longValue() != vm.getAccountId())
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find VM with ID: " + vmId + " for account: " + account.getAccountName());
+                    throw new PermissionDeniedException("Unable to find VM with ID: " + vmId + " for account: " + account.getAccountName() + ". Permission denied");
     	    } else {
     	        if (!_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId()) ||
     	            !_domainDao.isChildDomain(account.getDomainId(), vm.getDomainId())) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to attach volume " + volumeId + " to virtual machine instance " + vmId + ", permission denied.");
+                    throw new PermissionDeniedException("Unable to attach volume " + volumeId + " to virtual machine instance " + vmId + ". Permission denied.");
     	        }
     	    }
     	}

@@ -62,15 +62,16 @@ import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateIPForwardingRuleCmd;
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
+import com.cloud.api.commands.DeleteIPForwardingRuleCmd;
 import com.cloud.api.commands.DeleteLoadBalancerRuleCmd;
 import com.cloud.api.commands.DeletePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
-import com.cloud.api.commands.LoadBalancerVO;
 import com.cloud.api.commands.RebootRouterCmd;
 import com.cloud.api.commands.RemoveFromLoadBalancerRuleCmd;
 import com.cloud.api.commands.StartRouterCmd;
 import com.cloud.api.commands.StopRouterCmd;
+import com.cloud.api.commands.UpdateIPForwardingRuleCmd;
 import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
@@ -800,17 +801,17 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     }
     
     @Override
-    public DomainRouterVO startRouter(StartRouterCmd cmd) throws InvalidParameterValueException{
+    public DomainRouterVO startRouter(StartRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	Long routerId = cmd.getId();
     	Account account = (Account)UserContext.current().getAccountObject();
     	
 	    //verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
         if (router == null) {
-        	throw new InvalidParameterValueException ("Unable to find a domain router with id " + routerId);
+        	throw new PermissionDeniedException ("Unable to start router with id " + routerId + ". Permisssion denied");
         }
         if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), router.getDomainId())) {
-            throw new ServerApiException (BaseCmd.PARAM_ERROR, "Invalid domain router id (" + routerId + ") given, unable to start router.");
+            throw new PermissionDeniedException ("Unable to start router with id " + routerId + ". Permission denied.");
         }
         
     	long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_START, "starting Router with Id: "+routerId);
@@ -1236,18 +1237,18 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     
     
     @Override
-    public boolean stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException{
+    public boolean stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
 	    Long routerId = cmd.getId();
         Account account = (Account)UserContext.current().getAccountObject();
 
 	    // verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
         if (router == null) {
-        	throw new InvalidParameterValueException ("Unable to find a domain router with id " + routerId);
+        	throw new PermissionDeniedException ("Unable to stop router with id " + routerId + ". Permission denied.");
         }
 
         if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), router.getDomainId())) {
-            throw new InvalidParameterValueException ("Invalid domain router id (" + routerId + ") given, unable to stop router.");
+            throw new PermissionDeniedException ("Unable to stop router with id " + routerId + ". Permission denied");
         }
         
         long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_STOP, "stopping Router with Id: "+routerId);
@@ -1379,18 +1380,18 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     }
     
     @Override
-    public boolean rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException{
+    public boolean rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	Long routerId = cmd.getId();
     	Account account = (Account)UserContext.current().getAccountObject();
     	
         //verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
         if (router == null) {
-        	throw new InvalidParameterValueException("Unable to find a domain router with id " + routerId);
+        	throw new PermissionDeniedException("Unable to reboot domain router with id " + routerId + ". Permission denied");
         }
 
         if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), router.getDomainId())) {
-            throw new InvalidParameterValueException("Invalid domain router id (" + routerId + ") given, unable to reboot router.");
+            throw new PermissionDeniedException("Unable to reboot domain router with id " + routerId + ". Permission denied");
         }
         long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_REBOOT, "rebooting Router with Id: "+routerId);
         
@@ -3136,7 +3137,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 	}
 	
     @Override @DB
-    public boolean deleteLoadBalancerRule(DeleteLoadBalancerRuleCmd cmd) throws InvalidParameterValueException{
+    public boolean deleteLoadBalancerRule(DeleteLoadBalancerRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	Long loadBalancerId = cmd.getId();
     	Long userId = UserContext.current().getUserId();
     	Account account = (Account)UserContext.current().getAccountObject();
@@ -3150,10 +3151,10 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     	if (account != null) {
             if (!isAdmin(account.getType())) {
                 if (loadBalancer.getAccountId() != account.getId().longValue()) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Account " + account.getAccountName() + " does not own load balancer rule " + loadBalancer.getName() + " (id:" + loadBalancerId + ")");
+                    throw new PermissionDeniedException("Account " + account.getAccountName() + " does not own load balancer rule " + loadBalancer.getName() + " (id:" + loadBalancerId + "), permission denied");
                 }
             } else if (!_domainDao.isChildDomain(account.getDomainId(), loadBalancer.getDomainId())) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to delete load balancer rule " + loadBalancer.getName() + " (id:" + loadBalancerId + "), permission denied.");
+                throw new PermissionDeniedException("Unable to delete load balancer rule " + loadBalancer.getName() + " (id:" + loadBalancerId + "), permission denied.");
             }
         }
 
@@ -3229,7 +3230,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 
         boolean success = _loadBalancerDao.remove(loadBalancerId);
 
-        // save off an event for removing the security group
+        // save off an event for removing the load balancer
         EventVO event = new EventVO();
         event.setUserId(userId);
         event.setAccountId(loadBalancer.getAccountId());
@@ -3249,7 +3250,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     
     
     @Override @DB
-    public LoadBalancerVO updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd) throws InvalidParameterValueException{
+    public LoadBalancerVO updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	Long loadBalancerId = cmd.getId();
     	String privatePort = cmd.getPrivatePort();
     	String algorithm = cmd.getAlgorithm();
@@ -3281,10 +3282,10 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         if (account != null) {
             if (!isAdmin(account.getType())) {
                 if (account.getId().longValue() != accountId.longValue()) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to update load balancer rule, permission denied");
+                    throw new PermissionDeniedException("Unable to update load balancer rule, permission denied");
                 }
             } else if (!_domainDao.isChildDomain(account.getDomainId(), lbOwner.getDomainId())) {
-                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to update load balancer rule, permission denied.");
+                throw new PermissionDeniedException("Unable to update load balancer rule, permission denied.");
             }
         }
     	
@@ -3521,6 +3522,101 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             s_logger.error("Disassociate IP address threw an exception.");
             throw new IllegalArgumentException("Disassociate IP address threw an exception");
         }
+    }
+    
+    @Override @DB
+    public boolean deleteIpForwardingRule(DeleteIPForwardingRuleCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
+    	Long ruleId = cmd.getId();
+    	Long userId = UserContext.current().getUserId();
+    	Account account = (Account)UserContext.current().getAccountObject();
+    	
+    	//verify input parameters here
+    	FirewallRuleVO rule = _firewallRulesDao.findById(ruleId);
+    	if (rule == null) {
+          throw new InvalidParameterValueException("Unable to find port forwarding rule " + ruleId);
+    	}
+    	
+        IPAddressVO ipAddress = _ipAddressDao.findById(rule.getPublicIpAddress());
+        if (ipAddress == null) {
+            throw new InvalidParameterValueException("Unable to find IP address for port forwarding rule " + ruleId);
+        }
+        
+        // although we are not writing these values to the DB, we will check
+        // them out of an abundance
+        // of caution (may not be warranted)
+        String privatePort = rule.getPrivatePort();
+        String publicPort = rule.getPublicPort();
+        if (!NetUtils.isValidPort(publicPort) || !NetUtils.isValidPort(privatePort)) {
+            throw new InvalidParameterValueException("Invalid value for port");
+        }
+        
+        String proto = rule.getProtocol();
+        if (!NetUtils.isValidProto(proto)) {
+            throw new InvalidParameterValueException("Invalid protocol");
+        }
+
+        Account ruleOwner = _accountDao.findById(ipAddress.getAccountId());
+        if (ruleOwner == null) {
+            throw new InvalidParameterValueException("Unable to find owning account for port forwarding rule " + ruleId);
+        }
+
+        // if an admin account was passed in, or no account was passed in, make sure we honor the accountName/domainId parameters
+        if (account != null) {
+            if (isAdmin(account.getType())) {
+                if (!_domainDao.isChildDomain(account.getDomainId(), ruleOwner.getDomainId())) {
+                    throw new PermissionDeniedException("Unable to delete port forwarding rule " + ruleId + ", permission denied.");
+                }
+            } else if (account.getId().longValue() != ruleOwner.getId().longValue()) {
+                throw new PermissionDeniedException("Unable to delete port forwarding rule " + ruleId + ", permission denied.");
+            }
+        }
+        
+        Transaction txn = Transaction.currentTxn();
+        boolean success = false;
+        try {
+            txn.start();
+            String privateIp = rule.getPrivateIpAddress();
+            String publicIp = rule.getPublicIpAddress();
+            List<FirewallRuleVO> fwdings = _firewallRulesDao.listIPForwardingForUpdate(publicIp, publicPort, proto);
+            FirewallRuleVO fwRule = null;
+            if (fwdings.size() == 0) {
+                throw new InvalidParameterValueException("No such rule");
+            } else if (fwdings.size() == 1) {
+                fwRule = fwdings.get(0);
+                if (fwRule.getPrivateIpAddress().equalsIgnoreCase(privateIp) && fwRule.getPrivatePort().equals(privatePort)) {
+                    _firewallRulesDao.delete(fwRule.getId());
+                } else {
+                    throw new InvalidParameterValueException("No such rule");
+                }
+            } else {
+                throw new InternalErrorException("Multiple matches. Please contact support");
+            }
+            fwRule.setEnabled(false);
+            success = updateFirewallRule(fwRule, null, null);
+            
+            String description;
+            String type = EventTypes.EVENT_NET_RULE_DELETE;
+            String level = EventVO.LEVEL_INFO;
+            String ruleName = rule.isForwarding() ? "ip forwarding" : "load balancer";
+
+            if (success) {
+                description = "deleted " + ruleName + " rule [" + rule.getPublicIpAddress() + ":" + rule.getPublicPort() + "]->[" + rule.getPrivateIpAddress() + ":"
+                        + rule.getPrivatePort() + "] " + rule.getProtocol();
+            } else {
+                level = EventVO.LEVEL_ERROR;
+                description = "deleted " + ruleName + " rule [" + rule.getPublicIpAddress() + ":" + rule.getPublicPort() + "]->[" + rule.getPrivateIpAddress() + ":"
+                        + rule.getPrivatePort() + "] " + rule.getProtocol();
+            }
+            EventUtils.saveEvent(userId, ipAddress.getAccountId(), level, type, description);
+            txn.commit();
+        }catch (Exception ex) {
+	        txn.rollback();
+	        s_logger.error("Unexpected exception deleting port forwarding rule " + ruleId, ex);
+	        return false;
+        }finally {
+        	txn.close();
+        }
+        return success;
     }
 
 }

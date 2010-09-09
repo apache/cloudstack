@@ -33,7 +33,6 @@ import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.StopVMCmd;
 import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
-import com.cloud.async.executor.DestroyVMExecutor;
 import com.cloud.async.executor.OperationResponse;
 import com.cloud.async.executor.RebootVMExecutor;
 import com.cloud.async.executor.StartVMExecutor;
@@ -123,7 +122,7 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @param cmd
      * @throws InternalErrorException, InvalidParameterValueException
      */
-    void attachVolumeToVM(AttachVolumeCmd cmd) throws InternalErrorException, InvalidParameterValueException;
+    void attachVolumeToVM(AttachVolumeCmd cmd) throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException;
     
     /**
      * Detaches the specified volume from the VM it is currently attached to.

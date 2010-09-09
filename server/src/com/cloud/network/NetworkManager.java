@@ -24,6 +24,7 @@ import com.cloud.api.commands.AssignToLoadBalancerRuleCmd;
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateIPForwardingRuleCmd;
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
+import com.cloud.api.commands.DeleteIPForwardingRuleCmd;
 import com.cloud.api.commands.DeleteLoadBalancerRuleCmd;
 import com.cloud.api.commands.DeletePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
@@ -32,6 +33,7 @@ import com.cloud.api.commands.RebootRouterCmd;
 import com.cloud.api.commands.RemoveFromLoadBalancerRuleCmd;
 import com.cloud.api.commands.StartRouterCmd;
 import com.cloud.api.commands.StopRouterCmd;
+import com.cloud.api.commands.UpdateIPForwardingRuleCmd;
 import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -112,7 +114,12 @@ public interface NetworkManager extends Manager {
     
     DomainRouterVO startRouter(long routerId, long eventId);
     
-    DomainRouterVO startRouter(StartRouterCmd cmd) throws InvalidParameterValueException;
+    /**
+     * Starts domain router
+     * @param cmd the command specifying router's id
+     * @return DomainRouter object
+     */
+    DomainRouterVO startRouter(StartRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
     boolean releaseRouter(long routerId);
     
@@ -120,13 +127,23 @@ public interface NetworkManager extends Manager {
     
     boolean stopRouter(long routerId, long eventId);
     
-    boolean stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException;
+    /**
+     * Stops domain router
+     * @param cmd the command specifying router's id
+     * @return success or failure
+     */
+    boolean stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
     boolean getRouterStatistics(long vmId, Map<String, long[]> netStats, Map<String, long[]> diskStats);
 
     boolean rebootRouter(long routerId, long eventId);
     
-    boolean rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException;
+    /**
+     * Reboots domain router
+     * @param cmd the command specifying router's id
+     * @return success or failure
+     */
+    boolean rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     /**
      * @param hostId get all of the virtual machine routers on a host.
      * @return collection of VirtualMachineRouter
@@ -232,8 +249,8 @@ public interface NetworkManager extends Manager {
 
     public boolean removeFromLoadBalancer(RemoveFromLoadBalancerRuleCmd cmd) throws InvalidParameterValueException;
     
-    public boolean deleteLoadBalancerRule(DeleteLoadBalancerRuleCmd cmd) throws InvalidParameterValueException;
-    public LoadBalancerVO updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd) throws InvalidParameterValueException;
+    public boolean deleteLoadBalancerRule(DeleteLoadBalancerRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    public LoadBalancerVO updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
     /**
      * Add a DHCP entry on the domr dhcp server
@@ -273,6 +290,8 @@ public interface NetworkManager extends Manager {
     
     public boolean deleteNetworkRuleConfig(DeletePortForwardingServiceRuleCmd cmd) throws PermissionDeniedException;
 	
-    boolean disassociateIpAddress(DisassociateIPAddrCmd cmd) throws PermissionDeniedException;
+    public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd) throws PermissionDeniedException;
+    
+    public boolean deleteIpForwardingRule(DeleteIPForwardingRuleCmd cmd) throws PermissionDeniedException, InvalidParameterValueException;
 
 }

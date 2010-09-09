@@ -65,6 +65,7 @@ import com.cloud.api.commands.StartSystemVMCmd;
 import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
+import com.cloud.api.commands.UpdateIPForwardingRuleCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateUserCmd;
@@ -381,8 +382,8 @@ public interface ManagementServer {
      * @param primaryStorageId id of the storage to bring up.
      * @return true if the operation succeeds.
      */
-    boolean cancelPrimaryStorageMaintenance(long primaryStorageId, long userId);
-    long cancelPrimaryStorageMaintenanceAsync(long primaryStorageId) throws InvalidParameterValueException;
+//    boolean cancelPrimaryStorageMaintenance(long primaryStorageId, long userId);
+//    long cancelPrimaryStorageMaintenanceAsync(long primaryStorageId) throws InvalidParameterValueException;
     
     
     /**
@@ -1139,8 +1140,8 @@ public interface ManagementServer {
      * @param protocol protocol of the rule to update
      * @return the new firewall rule if updated, null if no rule on public IP / public port of that protocol could be found
      */
-    FirewallRuleVO updatePortForwardingRule(long userId, String publicIp, String privateIp, String publicPort, String privatePort, String protocol);
-    long updatePortForwardingRuleAsync(long userId, long accountId, String publicIp, String privateIp, String publicPort, String privatePort, String protocol);
+    FirewallRuleVO updatePortForwardingRule(UpdateIPForwardingRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+//    long updatePortForwardingRuleAsync(long userId, long accountId, String publicIp, String privateIp, String publicPort, String privatePort, String protocol);
 
     /**
      * Find a firewall rule by rule id
@@ -1319,8 +1320,8 @@ public interface ManagementServer {
 	 * @throws PermissionDeniedException
 	 * @throws InternalErrorException
 	 */
-	void deleteRule(long id, long userId, long accountId) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException;
-	long deleteRuleAsync(long id, long userId, long accountId);
+//	void deleteRule(long id, long userId, long accountId) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException;
+//	long deleteRuleAsync(long id, long userId, long accountId);
 	
 	ConsoleProxyInfo getConsoleProxy(long dataCenterId, long userVmId);
 	ConsoleProxyVO startConsoleProxy(long instanceId, long startEventId) throws InternalErrorException;
@@ -1800,7 +1801,7 @@ public interface ManagementServer {
      * @param algorithm the target algorithm of the load balancer rule (the rule will be updated from the existing algorithm to this algorithm)
      * @return the updated load balancer rule
      */
-    long updateLoadBalancerRuleAsync(long userId, long accountId, long loadBalancerId, String name, String description, String privatePort, String algorithm);
+//    long updateLoadBalancerRuleAsync(long userId, long accountId, long loadBalancerId, String name, String description, String privatePort, String algorithm);
 
     String[] getApiConfig();
     StoragePoolVO findPoolById(Long id);

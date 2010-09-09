@@ -31,6 +31,7 @@ import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.Storage.FileSystem;
@@ -112,8 +113,8 @@ public interface TemplateManager extends Manager {
      * @throws InvalidParameterValueException 
      */
     boolean copy(long userId, long templateId, long sourceZoneId, long destZoneId, long startEventId) throws InternalErrorException, StorageUnavailableException, InvalidParameterValueException;
-    boolean copyIso(CopyIsoCmd cmd) throws InvalidParameterValueException, StorageUnavailableException;
-    boolean copyTemplate(CopyTemplateCmd cmd) throws InvalidParameterValueException, StorageUnavailableException;
+    boolean copyIso(CopyIsoCmd cmd) throws InvalidParameterValueException, StorageUnavailableException, PermissionDeniedException;
+    boolean copyTemplate(CopyTemplateCmd cmd) throws InvalidParameterValueException, StorageUnavailableException, PermissionDeniedException;
     
     /**
      * Deletes a template from secondary storage servers
@@ -124,9 +125,9 @@ public interface TemplateManager extends Manager {
      */
     boolean delete(long userId, long templateId, Long zoneId) throws InternalErrorException;
     
-    boolean detachIso(DetachIsoCmd cmd) throws InternalErrorException, InvalidParameterValueException;
+    boolean detachIso(DetachIsoCmd cmd) throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException;
     
-    boolean attachIso(AttachIsoCmd cmd) throws InternalErrorException, InvalidParameterValueException;
+    boolean attachIso(AttachIsoCmd cmd) throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException;
     
     /**
      * Lists templates in the specified storage pool that are not being used by any VM.
@@ -147,12 +148,12 @@ public interface TemplateManager extends Manager {
      * Deletes a template
      * @param cmd
      */
-    boolean deleteTemplate(DeleteTemplateCmd cmd) throws InvalidParameterValueException, InternalErrorException;
+    boolean deleteTemplate(DeleteTemplateCmd cmd) throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException;
     
     /**
      * Deletes a template
      * @param cmd
      */
-    boolean deleteIso(DeleteIsoCmd cmd) throws InvalidParameterValueException, InternalErrorException;
+    boolean deleteIso(DeleteIsoCmd cmd) throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException;
     
 }

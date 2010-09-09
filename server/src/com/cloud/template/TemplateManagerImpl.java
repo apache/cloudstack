@@ -58,6 +58,7 @@ import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
@@ -613,7 +614,7 @@ public class TemplateManagerImpl implements TemplateManager {
     }
       
     @Override
-    public boolean copyIso(CopyIsoCmd cmd) throws InvalidParameterValueException, StorageUnavailableException {
+    public boolean copyIso(CopyIsoCmd cmd) throws InvalidParameterValueException, StorageUnavailableException, PermissionDeniedException {
     	Long isoId = cmd.getId();
     	Long userId = UserContext.current().getUserId();
     	Long sourceZoneId = cmd.getSourceZoneId();
@@ -641,7 +642,7 @@ public class TemplateManagerImpl implements TemplateManager {
     
     
     @Override
-    public boolean copyTemplate(CopyTemplateCmd cmd) throws InvalidParameterValueException, StorageUnavailableException {
+    public boolean copyTemplate(CopyTemplateCmd cmd) throws InvalidParameterValueException, StorageUnavailableException, PermissionDeniedException {
     	Long templateId = cmd.getId();
     	Long userId = UserContext.current().getUserId();
     	Long sourceZoneId = cmd.getSourceZoneId();
@@ -955,7 +956,7 @@ public class TemplateManagerImpl implements TemplateManager {
 	}
 
 	@Override
-	public boolean detachIso(DetachIsoCmd cmd) throws InternalErrorException, InvalidParameterValueException {
+	public boolean detachIso(DetachIsoCmd cmd) throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException {
         Account account = (Account) UserContext.current().getAccountObject();
         Long userId = UserContext.current().getUserId();
         Long vmId = cmd.getVirtualMachineId();
@@ -989,7 +990,7 @@ public class TemplateManagerImpl implements TemplateManager {
 	}
 	
 	@Override
-	public boolean attachIso(AttachIsoCmd cmd) throws InternalErrorException, InvalidParameterValueException {
+	public boolean attachIso(AttachIsoCmd cmd) throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException {
         Account account = (Account) UserContext.current().getAccountObject();
         Long userId = UserContext.current().getUserId();
         Long vmId = cmd.getVirtualMachineId();
@@ -1053,28 +1054,28 @@ public class TemplateManagerImpl implements TemplateManager {
         return success;
     }
 
-	private Long accountAndUserValidation(Account account, Long userId, UserVmVO vmInstanceCheck, VMTemplateVO template, String msg) {
+	private Long accountAndUserValidation(Account account, Long userId, UserVmVO vmInstanceCheck, VMTemplateVO template, String msg) throws PermissionDeniedException{
 		
     	if (account != null) {
     	    if (!isAdmin(account.getType())) {
 				if ((vmInstanceCheck != null) && (account.getId().longValue() != vmInstanceCheck.getAccountId())) {
-		            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, msg + ". Permission denied.");
+		            throw new PermissionDeniedException(msg + ". Permission denied.");
 		        }
 
 	    		if ((template != null) && (!template.isPublicTemplate() && (account.getId().longValue() != template.getAccountId()) && (!template.getName().startsWith("xs-tools")))) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, msg + ". Permission denied.");
+                    throw new PermissionDeniedException(msg + ". Permission denied.");
                 }
                 
     	    } else {
     	        if ((vmInstanceCheck != null) && !_domainDao.isChildDomain(account.getDomainId(), vmInstanceCheck.getDomainId())) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, msg + ". Permission denied.");
+                    throw new PermissionDeniedException(msg + ". Permission denied.");
     	        }
     	        // FIXME:  if template/ISO owner is null we probably need to throw some kind of exception
     	        
     	        if (template != null) {
     	        	Account templateOwner = _accountDao.findById(template.getId());
 	    	        if ((templateOwner != null) && !_domainDao.isChildDomain(account.getDomainId(), templateOwner.getDomainId())) {
-	                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, msg + ". Permission denied.");
+	                    throw new PermissionDeniedException(msg + ". Permission denied.");
 	    	        }
     	        }
     	    }
@@ -1093,7 +1094,7 @@ public class TemplateManagerImpl implements TemplateManager {
 	}
 	
 	@Override
-    public boolean deleteTemplate(DeleteTemplateCmd cmd) throws InvalidParameterValueException, InternalErrorException{
+    public boolean deleteTemplate(DeleteTemplateCmd cmd) throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException{
 		
         Long templateId = cmd.getId();
         Long userId = UserContext.current().getUserId();
@@ -1127,7 +1128,7 @@ public class TemplateManagerImpl implements TemplateManager {
 	}
 	
 	@Override
-    public boolean deleteIso(DeleteIsoCmd cmd) throws InvalidParameterValueException, InternalErrorException{
+    public boolean deleteIso(DeleteIsoCmd cmd) throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException{
 		
         Long templateId = cmd.getId();
         Long userId = UserContext.current().getUserId();
