@@ -3,13 +3,16 @@
 set -x
 
 IMAGENAME=systemvm
-LOCATION=/var/lib/images/systemvm3
+LOCATION=/var/lib/images/systemvm
 PASSWORD=password
 APT_PROXY=
 HOSTNAME=systemvm
 SIZE=2000
 DEBIAN_MIRROR=ftp.us.debian.org/debian
 MINIMIZE=true
+MOUNTPOINT=/mnt/$IMAGENAME/
+IMAGELOC=$LOCATION/$IMAGENAME.img
+scriptdir=$(dirname $PWD/$0)
 
 baseimage() {
   mkdir -p $LOCATION
@@ -400,9 +403,6 @@ signature() {
 
 mkdir -p $IMAGENAME
 mkdir -p $LOCATION
-MOUNTPOINT=/mnt/$IMAGENAME/
-IMAGELOC=$LOCATION/$IMAGENAME.img
-scriptdir=$(dirname $PWD/$0)
 
 rm -f $IMAGELOC
 begin=$(date +%s)
