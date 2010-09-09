@@ -1152,7 +1152,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
 
     @Override
-    public Answer easySend(final Long hostId, final Command cmd, int timeout) {
+    public Answer easySend(final Long hostId, final Command cmd, int timeout) { 
         try {
             final Answer answer = send(hostId, cmd, timeout);
             if (answer == null) {

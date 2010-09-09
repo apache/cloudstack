@@ -104,7 +104,7 @@ CREATE TABLE `cloud`.`network_profiles` (
 CREATE TABLE `cloud`.`account_network_ref` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `account_id` bigint unsigned NOT NULL COMMENT 'account id',
-  `network_profile_id` bigint unsigned NOT NULL COMMENT `network profile_id',
+  `network_profile_id` bigint unsigned NOT NULL COMMENT 'network profile_id',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

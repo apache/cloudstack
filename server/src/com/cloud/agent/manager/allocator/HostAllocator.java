@@ -32,4 +32,5 @@ import com.cloud.vm.VmCharacteristics;
 public interface HostAllocator extends Adapter {
 	Host allocateTo(VmCharacteristics vm, ServiceOffering offering, Host.Type type, DataCenterVO dc, HostPodVO pod, StoragePoolVO sp, VMTemplateVO template, Set<Host> avoid);
 	boolean isVirtualMachineUpgradable(final UserVm vm, final ServiceOffering offering);
+	
 }

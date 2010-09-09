@@ -1873,6 +1873,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     @Override
     public boolean start() {
         AccountVO systemAccount = _accountMgr.getSystemAccount();
+        /*
         for (Pair<NetworkOfferingVO, NetworkProfileVO> network : _systemNetworks.values()) {
             network.second(setupNetworkProfile(systemAccount, network.first()));
             if (network.second() == null) {
@@ -1880,6 +1881,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                 return false;
             }
         }
+        */
         
         _executor.scheduleAtFixedRate(new RouterCleanupTask(), _routerCleanupInterval, _routerCleanupInterval, TimeUnit.SECONDS);
         _executor.scheduleAtFixedRate(new NetworkUsageTask(), _routerStatsInterval, _routerStatsInterval, TimeUnit.SECONDS);
