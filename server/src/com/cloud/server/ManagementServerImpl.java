@@ -89,7 +89,15 @@ import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListRoutersCmd;
 import com.cloud.api.commands.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListSnapshotsCmd;
+import com.cloud.api.commands.ListStoragePoolsCmd;
+import com.cloud.api.commands.ListSystemVMsCmd;
+import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
+import com.cloud.api.commands.ListUsersCmd;
+import com.cloud.api.commands.ListVMsCmd;
+import com.cloud.api.commands.ListVlanIpRangesCmd;
+import com.cloud.api.commands.ListVolumesCmd;
+import com.cloud.api.commands.ListZonesByCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
@@ -2809,26 +2817,29 @@ public class ManagementServerImpl implements ManagementServer {
 
     
     @Override
-    public List<DataCenterVO> listDataCenters() {
-        return _dcDao.listAllActive();
-    }
-
-    @Override
-    public List<DataCenterVO> listDataCentersBy(long accountId) {
+    public List<DataCenterVO> listDataCenters(ListZonesByCmd cmd) {
         List<DataCenterVO> dcs = _dcDao.listAllActive();
-        List<DomainRouterVO> routers = _routerDao.listBy(accountId);
-        for (Iterator<DataCenterVO> iter = dcs.iterator(); iter.hasNext();) {
-            DataCenterVO dc = iter.next();
-            boolean found = false;
-            for (DomainRouterVO router : routers) {
-                if (dc.getId() == router.getDataCenterId()) {
-                    found = true;
-                    break;
+
+        Account account = (Account)UserContext.current().getAccountObject();
+        Boolean available = cmd.isAvailable();
+        if (account != null) {
+            if ((available != null) && Boolean.FALSE.equals(available)) {
+                List<DomainRouterVO> routers = _routerDao.listBy(account.getId());
+                for (Iterator<DataCenterVO> iter = dcs.iterator(); iter.hasNext();) {
+                    DataCenterVO dc = iter.next();
+                    boolean found = false;
+                    for (DomainRouterVO router : routers) {
+                        if (dc.getId() == router.getDataCenterId()) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found)
+                        iter.remove();
                 }
             }
-            if (!found)
-                iter.remove();
         }
+
         return dcs;
     }
 
@@ -2837,10 +2848,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _hostDao.findById(hostId);
     }
     
-//    public boolean deleteHost(long hostId) {
-//        return _agentMgr.deleteHost(hostId);
-//    }
-
     @Override
     public long getId() {
         return MacAddress.getMacAddress().toLong();
@@ -3753,16 +3760,26 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<UserAccountVO> searchForUsers(Criteria c) {
-        Filter searchFilter = new Filter(UserAccountVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+    public List<UserAccountVO> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long domainId = cmd.getDomainId();
+        if (domainId != null) {
+            if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list users.");
+            }
+        } else {
+            // default domainId to the admin's domain
+            domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+        }
 
-        Object id = c.getCriteria(Criteria.ID);
-        Object username = c.getCriteria(Criteria.USERNAME);
-        Object type = c.getCriteria(Criteria.TYPE);
-        Object domainId = c.getCriteria(Criteria.DOMAINID);
-        Object account = c.getCriteria(Criteria.ACCOUNTNAME);
-        Object state = c.getCriteria(Criteria.STATE);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
+        Filter searchFilter = new Filter(UserAccountVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        Object id = cmd.getId();
+        Object username = cmd.getUsername();
+        Object type = cmd.getAccountType();
+        Object accountName = cmd.getAccountName();
+        Object state = cmd.getState();
+        Object keyword = cmd.getKeyword();
 
         SearchBuilder<UserAccountVO> sb = _userAccountDao.createSearchBuilder();
         sb.and("username", sb.entity().getUsername(), SearchCriteria.Op.LIKE);
@@ -3772,7 +3789,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.LIKE);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
 
-        if ((account == null) && (domainId != null)) {
+        if ((accountName == null) && (domainId != null)) {
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId());
@@ -3805,8 +3822,8 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("type", type);
         }
 
-        if (account != null) {
-            sc.setParameters("accountName", "%" + account + "%");
+        if (accountName != null) {
+            sc.setParameters("accountName", "%" + accountName + "%");
             if (domainId != null) {
                 sc.setParameters("domainId", domainId);
             }
@@ -4004,18 +4021,30 @@ public class ManagementServerImpl implements ManagementServer {
         return _dcDao.search(sc, searchFilter);
 
     }
-    
+
     @Override
-    public List<VlanVO> searchForVlans(Criteria c) {
-    	Filter searchFilter = new Filter(VlanVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
-    	
-        Object id = c.getCriteria(Criteria.ID);
-        Object vlan = c.getCriteria(Criteria.VLAN);
-        Object dataCenterId = c.getCriteria(Criteria.DATACENTERID);
-        Object accountId = c.getCriteria(Criteria.ACCOUNTID);
-        Object podId = c.getCriteria(Criteria.PODID);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
-        
+    public List<VlanVO> searchForVlans(ListVlanIpRangesCmd cmd) throws InvalidParameterValueException {
+        // If an account name and domain ID are specified, look up the account
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        Long accountId = null;
+        if (accountName != null && domainId != null) {
+            Account account = _accountDao.findActiveAccount(accountName, domainId);
+            if (account == null) {
+                throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+            } else {
+                accountId = account.getId();
+            }
+        } 
+
+        Filter searchFilter = new Filter(VlanVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        Object id = cmd.getId();
+        Object vlan = cmd.getVlan();
+        Object dataCenterId = cmd.getZoneId();
+        Object podId = cmd.getPodId();
+        Object keyword = cmd.getKeyword();
+
         SearchBuilder<VlanVO> sb = _vlanDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("vlan", sb.entity().getVlanId(), SearchCriteria.Op.EQ);
@@ -4861,11 +4890,60 @@ public class ManagementServerImpl implements ManagementServer {
     		return _templateHostDao.findByHostTemplate(secondaryStorageHost.getId(), templateId);
     	}
     }
-    
 
     @Override
     public List<UserVmVO> listUserVMsByHostId(long hostId) {
         return _userVmDao.listByHostId(hostId);
+    }
+
+    @Override
+    public List<UserVmVO> searchForUserVMs(ListVMsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
+        Long accountId = null;
+        boolean isAdmin = false;
+        if ((account == null) || isAdmin(account.getType())) {
+            isAdmin = true;
+            if (domainId != null) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list virtual machines.");
+                }
+
+                if (accountName != null) {
+                    account = _accountDao.findActiveAccount(accountName, domainId);
+                    if (account == null) {
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                    accountId = account.getId();
+                }
+            } else {
+                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+            }
+        } else {
+            accountName = account.getAccountName();
+            accountId = account.getId();
+            domainId = account.getDomainId();
+        }
+
+        Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
+        c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
+        c.addCriteria(Criteria.ID, cmd.getId());
+        c.addCriteria(Criteria.NAME, cmd.getInstanceName());
+        c.addCriteria(Criteria.STATE, cmd.getState());
+        c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());
+
+        // ignore these search requests if it's not an admin
+        if (isAdmin == true) {
+            c.addCriteria(Criteria.DOMAINID, domainId);
+            c.addCriteria(Criteria.PODID, cmd.getPodId());
+            c.addCriteria(Criteria.HOSTID, cmd.getHostId());
+        }
+
+        c.addCriteria(Criteria.ACCOUNTID, accountId);
+        c.addCriteria(Criteria.ISADMIN, isAdmin); 
+
+        return searchForUserVMs(c);
     }
 
     @Override
@@ -5532,19 +5610,52 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public List<VolumeVO> searchForVolumes(Criteria c) {
-        Filter searchFilter = new Filter(VolumeVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
-        // SearchCriteria sc = _volumeDao.createSearchCriteria();
+    public List<VolumeVO> searchForVolumes(ListVolumesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
+        Long accountId = null;
+        boolean isAdmin = false;
+        if ((account == null) || isAdmin(account.getType())) {
+            isAdmin = true;
+            if (domainId != null) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list volumes.");
+                }
+                if (accountName != null) {
+                    Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                    if (userAccount != null) {
+                        accountId = userAccount.getId();
+                    } else {
+                        throw new InvalidParameterValueException("could not find account " + accountName + " in domain " + domainId);
+                    }
+                }
+            } else {
+                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+            }
+        } else {
+            accountId = account.getId();
+        }
 
-        Object[] accountIds = (Object[]) c.getCriteria(Criteria.ACCOUNTID);
-        Object type = c.getCriteria(Criteria.VTYPE);
-        Long vmInstanceId = (Long) c.getCriteria(Criteria.INSTANCEID);
-        Object zone = c.getCriteria(Criteria.DATACENTERID);
-        Object pod = c.getCriteria(Criteria.PODID);
-        Object domainId = c.getCriteria(Criteria.DOMAINID);
-        Object id = c.getCriteria(Criteria.ID);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
-        Object name = c.getCriteria(Criteria.NAME);
+        Filter searchFilter = new Filter(VolumeVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        Object id = cmd.getId();
+        Long vmInstanceId = cmd.getVirtualMachineId();
+        Object name = cmd.getVolumeName();
+        Object keyword = cmd.getKeyword();
+
+        Object type = null;
+        Object zone = null;
+        Object pod = null;
+        //Object host = null; TODO
+        if (isAdmin) {
+            type = cmd.getType();
+            zone = cmd.getZoneId();
+            pod = cmd.getPodId();
+            // host = cmd.getHostId(); TODO
+        } else {
+            domainId = null;
+        }
 
         // hack for now, this should be done better but due to needing a join I opted to
         // do this quickly and worry about making it pretty later
@@ -5569,7 +5680,7 @@ public class ManagementServerImpl implements ManagementServer {
         // Only return volumes that are not destroyed
         sb.and("destroyed", sb.entity().getDestroyed(), SearchCriteria.Op.EQ);
 
-        if ((accountIds == null) && (domainId != null)) {
+        if ((accountId == null) && (domainId != null)) {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
@@ -5595,12 +5706,8 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("id", id);
         }
 
-        if (accountIds != null) {
-            if ((accountIds.length == 1) && (accountIds[0] != null)) {
-                sc.setParameters("accountIdEQ", accountIds[0]);
-            } else {
-                sc.setParameters("accountIdIN", accountIds);
-            }
+        if (accountId != null) {
+            sc.setParameters("accountIdEQ", accountId);
         } else if (domainId != null) {
             DomainVO domain = _domainDao.findById((Long)domainId);
             sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
@@ -6919,10 +7026,56 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<String> listTemplatePermissions(long templateId) {
-        List<String> accountNames = new ArrayList<String>();
-        
-        List<LaunchPermissionVO> permissions = _launchPermissionDao.findByTemplate(templateId);
+    public List<String> listTemplatePermissions(ListTemplateOrIsoPermissionsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long domainId = cmd.getDomainId();
+        String acctName = cmd.getAccountName();
+        Long id = cmd.getId();
+        Long accountId = null;
+
+        if ((account == null) || account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+            // validate domainId before proceeding
+            if (domainId != null) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list " + cmd.getMediaType() + " permissions.");
+                }
+                if (acctName != null) {
+                    Account userAccount = _accountDao.findActiveAccount(acctName, domainId);
+                    if (userAccount != null) {
+                        accountId = userAccount.getId();
+                    } else {
+                        throw new PermissionDeniedException("Unable to find account " + acctName + " in domain " + domainId);
+                    }
+                }
+            }
+        } else {
+            accountId = account.getId();
+        }
+
+        VMTemplateVO template = _templateDao.findById(id.longValue());
+        if (template == null || !templateIsCorrectType(template)) {
+            throw new InvalidParameterValueException("unable to find " + cmd.getMediaType() + " with id " + id);
+        }
+
+        if (accountId != null && !template.isPublicTemplate()) {
+            if (account.getType() == Account.ACCOUNT_TYPE_NORMAL && template.getAccountId() != accountId) {
+                throw new PermissionDeniedException("unable to list permissions for " + cmd.getMediaType() + " with id " + id);
+            } else if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+                DomainVO accountDomain = _domainDao.findById(account.getDomainId());
+                Account templateAccount = _accountDao.findById(template.getAccountId());
+                DomainVO templateDomain = _domainDao.findById(templateAccount.getDomainId());                    
+                if (!templateDomain.getPath().contains(accountDomain.getPath())) {
+                    throw new PermissionDeniedException("unable to list permissions for " + cmd.getMediaType() + " with id " + id);
+                }
+            }                                    
+        }
+
+        if (id == Long.valueOf(1)) {
+            throw new PermissionDeniedException("unable to list permissions for " + cmd.getMediaType() + " with id " + id);
+        }
+
+        List<String> accountNames = new ArrayList<String>();        
+        List<LaunchPermissionVO> permissions = _launchPermissionDao.findByTemplate(id);
         if ((permissions != null) && !permissions.isEmpty()) {
             for (LaunchPermissionVO permission : permissions) {
                 Account acct = _accountDao.findById(permission.getAccountId());
@@ -7903,20 +8056,20 @@ public class ManagementServerImpl implements ManagementServer {
     public List<ClusterVO> listClusterByPodId(long podId) {
         return _clusterDao.listByPodId(podId);
     }
-    
-//    @Override
-//    public ClusterVO createCluster(long dcId, long podId, String name) {
-//        ClusterVO cluster = new ClusterVO(dcId, podId, name);
-//        try {
-//            cluster = _clusterDao.persist(cluster);
-//        } catch (Exception e) {
-//            cluster = _clusterDao.findBy(name, podId);
-//            if (cluster == null) {
-//                throw new CloudRuntimeException("Unable to create cluster " + name + " in pod " + podId + " and data center " + dcId, e);
-//            }
-//        }
-//        return cluster;
-//    }
+
+    @Override
+    public List<? extends StoragePoolVO> searchForStoragePools(ListStoragePoolsCmd cmd) {
+        Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
+        c.addCriteria(Criteria.NAME, cmd.getStoragePoolName());
+        c.addCriteria(Criteria.CLUSTERID, cmd.getClusterId());
+        c.addCriteria(Criteria.ADDRESS, cmd.getIpAddress());
+        c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
+        c.addCriteria(Criteria.PATH, cmd.getPath());
+        c.addCriteria(Criteria.PODID, cmd.getPodId());
+        c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());
+
+        return searchForStoragePools(c);
+    }
 
     @Override
     public List<? extends StoragePoolVO> searchForStoragePools(Criteria c) {
@@ -8204,7 +8357,34 @@ public class ManagementServerImpl implements ManagementServer {
 
         return _secStorageVmDao.search(sc, searchFilter);
     }
-	
+
+	@Override @SuppressWarnings({"unchecked", "rawtypes"})
+	public List<? extends VMInstanceVO> searchForSystemVm(ListSystemVMsCmd cmd) {
+        Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
+        c.addCriteria(Criteria.ID, cmd.getId());
+        c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());
+        c.addCriteria(Criteria.PODID, cmd.getPodId());
+        c.addCriteria(Criteria.HOSTID, cmd.getHostId());
+        c.addCriteria(Criteria.NAME, cmd.getSystemVmName());
+        c.addCriteria(Criteria.STATE, cmd.getState());
+
+        String type = cmd.getSystemVmType();
+        List systemVMs = new ArrayList();
+
+        if (type == null) { //search for all vm types
+            systemVMs.addAll(searchForConsoleProxy(c));
+            systemVMs.addAll(searchForSecondaryStorageVm(c));
+        } else if((type != null) && (type.equalsIgnoreCase("secondarystoragevm"))) { // search for ssvm
+            systemVMs.addAll(searchForSecondaryStorageVm(c));
+        } else if((type != null) && (type.equalsIgnoreCase("consoleproxy"))) { // search for consoleproxy
+            systemVMs.addAll(searchForConsoleProxy(c));
+        }
+
+        return (List<? extends VMInstanceVO>)systemVMs;
+	}
+
 	@Override
 	public VMInstanceVO findSystemVMById(long instanceId) {
 		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(instanceId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);

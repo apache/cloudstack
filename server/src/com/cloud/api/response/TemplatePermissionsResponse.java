@@ -17,51 +17,53 @@
  */
 package com.cloud.api.response;
 
+import java.util.List;
+
 import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 
-public class ConfigurationResponse implements ResponseObject {
-    @Param(name="category")
-    private String category;
+public class TemplatePermissionsResponse implements ResponseObject {
+    @Param(name="id")
+    private Long id;
 
-    @Param(name="name")
-    private String name;
+    @Param(name="ispublic")
+    private Boolean publicTemplate;
 
-    @Param(name="value")
-    private String value;
+    @Param(name="domainid")
+    private Long domainId;
 
-    @Param(name="description")
-    private String description;
+    @Param(name="account")
+    private List<String> accountNames;
 
-    public String getCategory() {
-        return category;
+    public Long getId() {
+        return id;
     }
 
-    public void setCategory(String category) {
-        this.category = category;
+    public void setId(Long id) {
+        this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public Boolean getPublicTemplate() {
+        return publicTemplate;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setPublicTemplate(Boolean publicTemplate) {
+        this.publicTemplate = publicTemplate;
     }
 
-    public String getValue() {
-        return value;
+    public Long getDomainId() {
+        return domainId;
     }
 
-    public void setValue(String value) {
-        this.value = value;
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
     }
 
-    public String getDescription() {
-        return description;
+    public List<String> getAccountNames() {
+        return accountNames;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setAccountNames(List<String> accountNames) {
+        this.accountNames = accountNames;
     }
 }

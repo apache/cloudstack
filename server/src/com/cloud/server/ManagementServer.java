@@ -55,7 +55,15 @@ import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListRoutersCmd;
 import com.cloud.api.commands.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListSnapshotsCmd;
+import com.cloud.api.commands.ListStoragePoolsCmd;
+import com.cloud.api.commands.ListSystemVMsCmd;
+import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
+import com.cloud.api.commands.ListUsersCmd;
+import com.cloud.api.commands.ListVMsCmd;
+import com.cloud.api.commands.ListVlanIpRangesCmd;
+import com.cloud.api.commands.ListVolumesCmd;
+import com.cloud.api.commands.ListZonesByCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
@@ -415,45 +423,12 @@ public interface ManagementServer {
     VolumeStats[] getVolumeStatistics(long[] volId);
 
     /**
-     * Associate / allocate an  IP address to a user
-     * @param userId
-     * @param accountId
-     * @param domainId
-     * @param zoneId
-     * @return allocated IP address in the zone specified
-     * @throws InsufficientAddressCapacityException if no more addresses are available
-     * @throws InvalidParameterValueException if no router for that user exists in the zone specified
-     * @throws InternalErrorException  if the new address could not be sent down to the router
-     */
-//    String associateIpAddress(long userId, long accountId, long domainId, long zoneId) throws ResourceAllocationException, InsufficientAddressCapacityException, InvalidParameterValueException, InternalErrorException;
-//    long associateIpAddressAsync(long userId, long accountId, long domainId, long zoneId);
-   
-    
-    /**
-     * Disassociate /unallocate an allocated IP address from a user
-     * @param userId
-     * @param accountId
-     * @param ipAddress
-     * @return success
-     */
-//    boolean disassociateIpAddress(DisassociateIPAddrCmd cmd) throws PermissionDeniedException;
-//    long disassociateIpAddressAsync(long userId, long accountId, String ipAddress);
-   
-	/**
-	 * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated IP addresses.
-	 * @param userId
-	 * @param vlanDbId
-	 * @return success/failure
-	 */
-//	boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId) throws InvalidParameterValueException;
-        
-    /**
      * Searches for vlan by the specified search criteria
      * Can search by: "id", "vlan", "name", "zoneID"
-     * @param c
+     * @param cmd
      * @return List of Vlans
      */
-    List<VlanVO> searchForVlans(Criteria c);
+    List<VlanVO> searchForVlans(ListVlanIpRangesCmd cmd) throws InvalidParameterValueException;
     
     /**
      * If the specified VLAN is associated with the pod, returns the pod ID. Else, returns null.
@@ -808,19 +783,13 @@ public interface ManagementServer {
     HostPodVO getPodBy(long podId);
     
     /**
-     * Retrieves the list of all data centers
+     * Retrieves the list of data centers with search criteria.
+     * Currently the only search criteria is "available" zones for the account that invokes the API.  By specifying
+     * available=true all zones which the account can access.  By specifying available=false the zones where the
+     * account has virtual machine instances will be returned.
      * @return a list of DataCenters
      */
-    List<DataCenterVO> listDataCenters();
-    
-    /**
-     * Retrieves a list of data centers that contain domain routers
-     * that the specified user owns.
-     * 
-     * @param userId
-     * @return a list of DataCenters
-     */
-    List<DataCenterVO> listDataCentersBy(long userId);
+    List<DataCenterVO> listDataCenters(ListZonesByCmd cmd);
     
     /**
      * Retrieves a host by id
@@ -828,15 +797,6 @@ public interface ManagementServer {
      * @return Host
      */
     HostVO getHostBy(long hostId);
-    
-    
-//    /**
-//     * Deletes a host
-//     * 
-//     * @param hostId
-//     * @param true if deleted, false otherwise
-//     */
-//    boolean deleteHost(long hostId);
     
     /**
      * Retrieves all Events between the start and end date specified
@@ -868,10 +828,10 @@ public interface ManagementServer {
     /** revisit
      * Searches for users by the specified search criteria
      * Can search by: "id", "username", "account", "domainId", "type"
-     * @param c
+     * @param cmd
      * @return List of UserAccounts
      */
-    List<UserAccountVO> searchForUsers(Criteria c);
+    List<UserAccountVO> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException;
     
     /**
      * Searches for Service Offerings by the specified search criteria
@@ -1131,6 +1091,14 @@ public interface ManagementServer {
     List<UserVmVO> searchForUserVMs(Criteria c);
 
     /**
+     * Obtains a list of virtual machines by the specified search criteria.
+     * Can search by: "userId", "name", "state", "dataCenterId", "podId", "hostId"
+     * @param cmd the API command that wraps the search criteria
+     * @return List of UserVMs.
+     */
+    List<UserVmVO> searchForUserVMs(ListVMsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+
+    /**
      * Update an existing port forwarding rule on the given public IP / public port for the given protocol
      * @param userId id of the user performing the action
      * @param publicIp ip address of the forwarding rule to update
@@ -1220,10 +1188,10 @@ public interface ManagementServer {
     /** revisit
      * Obtains a list of storage volumes by the specified search criteria.
      * Can search by: "userId", "vType", "instanceId", "dataCenterId", "podId", "hostId"
-     * @param c
+     * @param cmd
      * @return List of Volumes.
      */
-    List<VolumeVO> searchForVolumes(Criteria c);
+    List<VolumeVO> searchForVolumes(ListVolumesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
     /**
 	 * Checks that the volume is stored on a shared storage pool.
@@ -1594,25 +1562,11 @@ public interface ManagementServer {
     List<DiskOfferingVO> findPrivateDiskOffering();
 
     /**
-     * Update the permissions on a template.  A private template can be made public, or individual accounts can be granted permission to launch instances from the template.
-     * @param templateId
-     * @param operation
-     * @param isPublic
-     * @param isFeatured
-     * @param accountNames
-     * @return
-     * @throws InvalidParameterValueException
-     * @throws PermissionDeniedException
-     * @throws InternalErrorException
-     */
-//    boolean updateTemplatePermissions(long templateId, String operation, Boolean isPublic, Boolean isFeatured, List<String> accountNames) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException;
-
-    /**
      * List the permissions on a template.  This will return a list of account names that have been granted permission to launch instances from the template.
-     * @param templateId
+     * @param cmd the command wrapping the search criteria (template id)
      * @return list of account names that have been granted permission to launch instances from the template
      */
-    List<String> listTemplatePermissions(long templateId);
+    List<String> listTemplatePermissions(ListTemplateOrIsoPermissionsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 
     /**
      * List private templates for which the given account/domain has been granted permission to launch instances
@@ -1807,6 +1761,13 @@ public interface ManagementServer {
     StoragePoolVO findPoolById(Long id);
 	List<? extends StoragePoolVO> searchForStoragePools(Criteria c);
 
+	/**
+	 * List storage pools that match the given criteria
+	 * @param cmd the command that wraps the search criteria (zone, pod, name, IP address, path, and cluster id)
+	 * @return a list of storage pools that match the given criteria
+	 */
+	List<? extends StoragePoolVO> searchForStoragePools(ListStoragePoolsCmd cmd);
+
 	SnapshotPolicyVO findSnapshotPolicyById(Long policyId);
 
 	/**
@@ -1827,6 +1788,13 @@ public interface ManagementServer {
 	List<SecondaryStorageVmVO> searchForSecondaryStorageVm(Criteria c);
 
 	/**
+	 * List system VMs by the given search criteria
+	 * @param cmd the command that wraps the search criteria (host, name, state, type, zone, pod, and/or id)
+	 * @return the list of system vms that match the given criteria
+	 */
+    List<? extends VMInstanceVO> searchForSystemVm(ListSystemVMsCmd cmd);
+
+    /**
 	 * Returns back a SHA1 signed response
 	 * @param userId -- id for the user
 	 * @return -- ArrayList of <CloudId+Signature>
