@@ -3535,7 +3535,10 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
           throw new InvalidParameterValueException("Unable to find port forwarding rule " + ruleId);
     	}
     	
-        IPAddressVO ipAddress = _ipAddressDao.findById(rule.getPublicIpAddress());
+    	String publicIp = rule.getPublicIpAddress();
+    	String privateIp = rule.getPrivateIpAddress();
+    	
+        IPAddressVO ipAddress = _ipAddressDao.findById(publicIp);
         if (ipAddress == null) {
             throw new InvalidParameterValueException("Unable to find IP address for port forwarding rule " + ruleId);
         }
@@ -3571,11 +3574,18 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         }
         
         Transaction txn = Transaction.currentTxn();
+        boolean locked = false;
         boolean success = false;
         try {
+        	
+            IPAddressVO ipVO = _ipAddressDao.acquire(publicIp);
+            if (ipVO == null) {
+                // throw this exception because hackers can use the api to probe for allocated ips
+                throw new PermissionDeniedException("User does not own supplied address");
+            }
+
+            locked = true;
             txn.start();
-            String privateIp = rule.getPrivateIpAddress();
-            String publicIp = rule.getPublicIpAddress();
             List<FirewallRuleVO> fwdings = _firewallRulesDao.listIPForwardingForUpdate(publicIp, publicPort, proto);
             FirewallRuleVO fwRule = null;
             if (fwdings.size() == 0) {
@@ -3599,11 +3609,11 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             String ruleName = rule.isForwarding() ? "ip forwarding" : "load balancer";
 
             if (success) {
-                description = "deleted " + ruleName + " rule [" + rule.getPublicIpAddress() + ":" + rule.getPublicPort() + "]->[" + rule.getPrivateIpAddress() + ":"
+                description = "deleted " + ruleName + " rule [" + publicIp + ":" + rule.getPublicPort() + "]->[" + rule.getPrivateIpAddress() + ":"
                         + rule.getPrivatePort() + "] " + rule.getProtocol();
             } else {
                 level = EventVO.LEVEL_ERROR;
-                description = "deleted " + ruleName + " rule [" + rule.getPublicIpAddress() + ":" + rule.getPublicPort() + "]->[" + rule.getPrivateIpAddress() + ":"
+                description = "deleted " + ruleName + " rule [" + publicIp + ":" + rule.getPublicPort() + "]->[" + rule.getPrivateIpAddress() + ":"
                         + rule.getPrivatePort() + "] " + rule.getProtocol();
             }
             EventUtils.saveEvent(userId, ipAddress.getAccountId(), level, type, description);
@@ -3613,6 +3623,9 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 	        s_logger.error("Unexpected exception deleting port forwarding rule " + ruleId, ex);
 	        return false;
         }finally {
+        	if (locked) {
+              _ipAddressDao.release(publicIp);
+        	}
         	txn.close();
         }
         return success;

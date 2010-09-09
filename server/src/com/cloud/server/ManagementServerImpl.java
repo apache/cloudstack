@@ -169,7 +169,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
@@ -513,18 +512,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _configs;
     }
 
-//    @Override
-//    public List<? extends Host> discoverHosts(long dcId, Long podId, Long clusterId, String url, String username, String password) throws IllegalArgumentException, DiscoveryException {
-//        URI uri;
-//        try {
-//            uri = new URI(url);
-//        } catch (URISyntaxException e) {
-//            throw new IllegalArgumentException("Unable to convert the url" + url, e);
-//        }
-//        // TODO: parameter checks.
-//        return _agentMgr.discoverHosts(dcId, podId, clusterId, uri, username, password);
-//    }
-
     @Override
     public StorageStats getStorageStatistics(long hostId) {
         return _statsCollector.getStorageStats(hostId);
@@ -676,63 +663,6 @@ public class ManagementServerImpl implements ManagementServer {
             throw new CloudRuntimeException(e.getMessage());
         }
     }
-
-//    @Override
-//    public boolean prepareForMaintenance(long hostId) {
-//        try {
-//            return _agentMgr.maintain(hostId);
-//        } catch (AgentUnavailableException e) {
-//            return false;
-//        }
-//    }
-//
-//    @Override
-//    public long prepareForMaintenanceAsync(long hostId) throws InvalidParameterValueException {
-//    	HostVO host = _hostDao.findById(hostId);
-//    	
-//    	if (host == null) {
-//            s_logger.debug("Unable to find host " + hostId);
-//            throw new InvalidParameterValueException("Unable to find host with ID: " + hostId + ". Please specify a valid host ID.");
-//        }
-//        
-//        if (_hostDao.countBy(host.getPodId(), Status.PrepareForMaintenance, Status.ErrorInMaintenance, Status.Maintenance) > 0) {
-//            throw new InvalidParameterValueException("There are other servers in maintenance mode.");
-//        }
-//        
-//        if (_storageMgr.isLocalStorageActiveOnHost(host)) {
-//        	throw new InvalidParameterValueException("There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
-//        }
-//    	
-//        Long param = new Long(hostId);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//        job.setUserId(UserContext.current().getUserId());
-//        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-//        job.setCmd("PrepareMaintenance");
-//        job.setCmdInfo(gson.toJson(param));
-//        job.setCmdOriginator(PrepareForMaintenanceCmd.getResultObjectName());
-//        return _asyncMgr.submitAsyncJob(job);
-//    }
-
-//    @Override
-//    public boolean maintenanceCompleted(long hostId) {
-//        return _agentMgr.cancelMaintenance(hostId);
-//    }
-//
-//    @Override
-//    public long maintenanceCompletedAsync(long hostId) {
-//        Long param = new Long(hostId);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//        job.setUserId(UserContext.current().getUserId());
-//        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-//        job.setCmd("CompleteMaintenance");
-//        job.setCmdInfo(gson.toJson(param));
-//        job.setCmdOriginator(CancelMaintenanceCmd.getResultObjectName());
-//        return _asyncMgr.submitAsyncJob(job);
-//    }
 
     @Override
     public String updateAdminPassword(long userId, String oldPassword, String newPassword) {
@@ -902,22 +832,7 @@ public class ManagementServerImpl implements ManagementServer {
             return false;
         }
     }
-
-//    @Override
-//    public long deleteUserAsync(long userId) {
-//        Long param = new Long(userId);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//        job.setUserId(UserContext.current().getUserId());
-//        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-//        job.setCmd("DeleteUser");
-//        job.setCmdInfo(gson.toJson(param));
-//        job.setCmdOriginator(DeleteUserCmd.getStaticName());
-//
-//        return _asyncMgr.submitAsyncJob(job);
-//    }
-
+    
     public boolean deleteAccount(AccountVO account) {
         long accountId = account.getId();
         long userId = 1L; // only admins can delete users, pass in userId 1 XXX: Shouldn't it be userId 2.
@@ -1496,235 +1411,6 @@ public class ManagementServerImpl implements ManagementServer {
         return null;
     }
 
-//    @Override
-//    @DB
-//    public String associateIpAddress(long userId, long accountId, long domainId, long zoneId) throws ResourceAllocationException, InsufficientAddressCapacityException,
-//            InvalidParameterValueException, InternalErrorException {
-//        Transaction txn = Transaction.currentTxn();
-//        AccountVO account = null;
-//        try {
-//            if (s_logger.isDebugEnabled()) {
-//                s_logger.debug("Associate IP address called for user " + userId + " account " + accountId);
-//            }
-//            account = _accountDao.acquire(accountId);
-//
-//            if (account == null) {
-//                s_logger.warn("Unable to lock account: " + accountId);
-//                throw new InternalErrorException("Unable to acquire account lock");
-//            }
-//
-//            if (s_logger.isDebugEnabled()) {
-//                s_logger.debug("Associate IP address lock acquired");
-//            }
-//
-//            // Check that the maximum number of public IPs for the given
-//            // accountId will not be exceeded
-//            if (_accountMgr.resourceLimitExceeded(account, ResourceType.public_ip)) {
-//                ResourceAllocationException rae = new ResourceAllocationException("Maximum number of public IP addresses for account: " + account.getAccountName()
-//                        + " has been exceeded.");
-//                rae.setResourceType("ip");
-//                throw rae;
-//            }
-//
-//            DomainRouterVO router = _routerDao.findBy(accountId, zoneId);
-//            if (router == null) {
-//                throw new InvalidParameterValueException("No router found for account: " + account.getAccountName() + ".");
-//            }
-//
-//            txn.start();
-//
-//            String ipAddress = null;
-//            Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(zoneId, accountId, domainId, VlanType.VirtualNetwork, false);
-//            
-//            if (ipAndVlan == null) {
-//                throw new InsufficientAddressCapacityException("Unable to find available public IP addresses");
-//            } else {
-//            	ipAddress = ipAndVlan.first();
-//            	_accountMgr.incrementResourceCount(accountId, ResourceType.public_ip);
-//            }
-//
-//            boolean success = true;
-//            String errorMsg = "";
-//
-//            List<String> ipAddrs = new ArrayList<String>();
-//            ipAddrs.add(ipAddress);
-//
-//            if (router.getState() == State.Running) {
-//                success = _networkMgr.associateIP(router, ipAddrs, true);
-//                if (!success) {
-//                    errorMsg = "Unable to assign public IP address.";
-//                }
-//            }
-//
-//            EventVO event = new EventVO();
-//            event.setUserId(userId);
-//            event.setAccountId(accountId);
-//            event.setType(EventTypes.EVENT_NET_IP_ASSIGN);
-//            event.setParameters("address=" + ipAddress + "\nsourceNat=" + false + "\ndcId=" + zoneId);
-//
-//            if (!success) {
-//                _publicIpAddressDao.unassignIpAddress(ipAddress);
-//                ipAddress = null;
-//                _accountMgr.decrementResourceCount(accountId, ResourceType.public_ip);
-//
-//                event.setLevel(EventVO.LEVEL_ERROR);
-//                event.setDescription(errorMsg);
-//                _eventDao.persist(event);
-//                txn.commit();
-//
-//                throw new InternalErrorException(errorMsg);
-//            } else {
-//                event.setDescription("Assigned a public IP address: " + ipAddress);
-//                _eventDao.persist(event);
-//            }
-//
-//            txn.commit();
-//            return ipAddress;
-//
-//        } catch (ResourceAllocationException rae) {
-//            s_logger.error("Associate IP threw a ResourceAllocationException.", rae);
-//            throw rae;
-//        } catch (InsufficientAddressCapacityException iace) {
-//            s_logger.error("Associate IP threw an InsufficientAddressCapacityException.", iace);
-//            throw iace;
-//        } catch (InvalidParameterValueException ipve) {
-//            s_logger.error("Associate IP threw an InvalidParameterValueException.", ipve);
-//            throw ipve;
-//        } catch (InternalErrorException iee) {
-//            s_logger.error("Associate IP threw an InternalErrorException.", iee);
-//            throw iee;
-//        } catch (Throwable t) {
-//            s_logger.error("Associate IP address threw an exception.", t);
-//            throw new InternalErrorException("Associate IP address exception");
-//        } finally {
-//            if (account != null) {
-//                _accountDao.release(accountId);
-//                s_logger.debug("Associate IP address lock released");
-//            }
-//        }
-//    }
-
-//    @Override
-//    public long associateIpAddressAsync(long userId, long accountId, long domainId, long zoneId) {
-//        AssociateIpAddressParam param = new AssociateIpAddressParam(userId, accountId, domainId, zoneId);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//        job.setUserId(UserContext.current().getUserId());
-//        job.setAccountId(accountId);
-//        job.setCmd("AssociateIpAddress");
-//        job.setCmdInfo(gson.toJson(param));
-//        job.setCmdOriginator(AssociateIPAddrCmd.getResultObjectName());
-//        
-//        return _asyncMgr.submitAsyncJob(job, true);
-//    }
-
-//    @Override
-//    @DB
-//    public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd) throws PermissionDeniedException, IllegalArgumentException {
-//        Transaction txn = Transaction.currentTxn();
-//        
-//        Long userId = UserContext.current().getUserId();
-//        Account account = (Account)UserContext.current().getAccountObject();
-//        String ipAddress = cmd.getIpAddress();
-//
-//        // Verify input parameters
-//        Account accountByIp = findAccountByIpAddress(ipAddress);
-//        if(accountByIp == null) {
-//            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find account owner for ip " + ipAddress);
-//        }
-//
-//        Long accountId = accountByIp.getId();
-//        if (account != null) {
-//            if (!isAdmin(account.getType())) {
-//                if (account.getId().longValue() != accountId.longValue()) {
-//                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "account " + account.getAccountName() + " doesn't own ip address " + ipAddress);
-//                }
-//            } else if (!isChildDomain(account.getDomainId(), accountByIp.getDomainId())) {
-//                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to disassociate IP address " + ipAddress + ", permission denied.");
-//            }
-//        }
-//
-//        // If command is executed via 8096 port, set userId to the id of System account (1)
-//        if (userId == null) {
-//            userId = Long.valueOf(1);
-//        }
-//
-//        try {
-//            IPAddressVO ipVO = _publicIpAddressDao.findById(ipAddress);
-//            if (ipVO == null) {
-//                return false;
-//            }
-//
-//            if (ipVO.getAllocated() == null) {
-//                return true;
-//            }
-//
-//            AccountVO accountVO = _accountDao.findById(accountId);
-//            if (accountVO == null) {
-//                return false;
-//            }
-//          
-//            if ((ipVO.getAccountId() == null) || (ipVO.getAccountId().longValue() != accountId)) {
-//                // FIXME: is the user visible in the admin account's domain????
-//                if (!BaseCmd.isAdmin(accountVO.getType())) {
-//                    if (s_logger.isDebugEnabled()) {
-//                        s_logger.debug("permission denied disassociating IP address " + ipAddress + "; acct: " + accountId + "; ip (acct / dc / dom / alloc): "
-//                                + ipVO.getAccountId() + " / " + ipVO.getDataCenterId() + " / " + ipVO.getDomainId() + " / " + ipVO.getAllocated());
-//                    }
-//                    throw new PermissionDeniedException("User/account does not own supplied address");
-//                }
-//            }
-//
-//            if (ipVO.getAllocated() == null) {
-//                return true;
-//            }
-//
-//            if (ipVO.isSourceNat()) {
-//                throw new IllegalArgumentException("ip address is used for source nat purposes and can not be disassociated.");
-//            }
-//            
-//            VlanVO vlan = _vlanDao.findById(ipVO.getVlanDbId());
-//            if (!vlan.getVlanType().equals(VlanType.VirtualNetwork)) {
-//            	throw new IllegalArgumentException("only ip addresses that belong to a virtual network may be disassociated.");
-//            }
-//			
-//			//Check for account wide pool. It will have an entry for account_vlan_map. 
-//            if (_accountVlanMapDao.findAccountVlanMap(accountId,ipVO.getVlanDbId()) != null){
-//            	throw new PermissionDeniedException(ipAddress + " belongs to Account wide IP pool and cannot be disassociated");
-//            }
-//			
-//            txn.start();
-//            boolean success = _networkMgr.releasePublicIpAddress(userId, ipAddress);
-//            if (success)
-//            	_accountMgr.decrementResourceCount(accountId, ResourceType.public_ip);
-//            txn.commit();
-//            return success;
-//
-//        } catch (PermissionDeniedException pde) {
-//            throw pde;
-//        } catch (IllegalArgumentException iae) {
-//            throw iae;
-//        } catch (Throwable t) {
-//            s_logger.error("Disassociate IP address threw an exception.");
-//            throw new IllegalArgumentException("Disassociate IP address threw an exception");
-//        }
-//    }
-
-//    @Override
-//    public long disassociateIpAddressAsync(long userId, long accountId, String ipAddress) {
-//        DisassociateIpAddressParam param = new DisassociateIpAddressParam(userId, accountId, ipAddress);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//        job.setUserId(UserContext.current().getUserId());
-//        job.setAccountId(accountId);
-//        job.setCmd("DisassociateIpAddress");
-//        job.setCmdInfo(gson.toJson(param));
-//        
-//        return _asyncMgr.submitAsyncJob(job, true);
-//    }
-
     @Override
     public VolumeVO createVolume(long userId, long accountId, String name, long zoneId, long diskOfferingId, long startEventId, long size) throws InternalErrorException {
     	EventUtils.saveStartedEvent(userId, accountId, EventTypes.EVENT_VOLUME_CREATE, "Creating volume", startEventId);
@@ -1833,33 +1519,6 @@ public class ManagementServerImpl implements ManagementServer {
         else
             return null;
     }
-    
-//    @Override
-//    public void destroyVolume(long volumeId) throws InvalidParameterValueException {
-//        // Check that the volume is valid
-//        VolumeVO volume = _volumeDao.findById(volumeId);
-//        if (volume == null) {
-//            throw new InvalidParameterValueException("Please specify a valid volume ID.");
-//        }
-//
-//        // Check that the volume is stored on shared storage
-//        if (!_storageMgr.volumeOnSharedStoragePool(volume)) {
-//            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
-//        }
-//
-//        // Check that the volume is not currently attached to any VM
-//        if (volume.getInstanceId() != null) {
-//            throw new InvalidParameterValueException("Please specify a volume that is not attached to any VM.");
-//        }
-//           
-//        // Check that the volume is not already destroyed
-//        if (volume.getDestroyed()) {
-//            throw new InvalidParameterValueException("Please specify a volume that is not already destroyed.");
-//        }
-//        
-//        // Destroy the volume
-//        _storageMgr.destroyVolume(volume);
-//    }
 
     @Override
     public List<IPAddressVO> listPublicIpAddressesBy(Long accountId, boolean allocatedOnly, Long zoneId, Long vlanDbId) {
@@ -1889,151 +1548,6 @@ public class ManagementServerImpl implements ManagementServer {
     public String generateRandomPassword() {
     	return PasswordGenerator.generateRandomPassword();
     }
-
-//    @Override
-//    public boolean resetVMPassword(long userId, long vmId, String password) {
-//        if (password == null || password.equals("")) {
-//            return false;
-//        }
-//        boolean succeed = _vmMgr.resetVMPassword(userId, vmId, password);
-//
-//        // Log event
-//        UserVmVO userVm = _userVmDao.findById(vmId);
-//        if (userVm != null) {
-//            if (succeed) {
-//            	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_RESETPASSWORD, "successfully reset password for VM : " + userVm.getName(), null);
-//            } else {
-//            	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_RESETPASSWORD, "unable to reset password for VM : " + userVm.getName(), null);
-//            }
-//        } else {
-//            s_logger.warn("Unable to find vm = " + vmId + " to reset password");
-//        }
-//        return succeed;
-//    }
-
-//    @Override
-//    public void attachVolumeToVM(long vmId, long volumeId, Long deviceId, long startEventId) throws InternalErrorException {
-//        _vmMgr.attachVolumeToVM(vmId, volumeId, deviceId, startEventId);
-//    }
-//
-//    @Override
-//    public long attachVolumeToVMAsync(long vmId, long volumeId, Long deviceId) throws InvalidParameterValueException {
-//        VolumeVO volume = _volumeDao.findById(volumeId);
-//
-//        // Check that the volume is a data volume
-//        if (volume == null || volume.getVolumeType() != VolumeType.DATADISK) {
-//            throw new InvalidParameterValueException("Please specify a valid data volume.");
-//        }
-//
-//        // Check that the volume is stored on shared storage
-//        if (!_storageMgr.volumeOnSharedStoragePool(volume)) {
-//            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
-//        }
-//
-//        // Check that the VM is a UserVM
-//        UserVmVO vm = _userVmDao.findById(vmId);
-//        if (vm == null || vm.getType() != VirtualMachine.Type.User) {
-//            throw new InvalidParameterValueException("Please specify a valid User VM.");
-//        }
-//        
-//        // Check that the VM is in the correct state
-//        if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
-//        	throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
-//        }
-//
-//        // Check that the volume is not currently attached to any VM
-//        if (volume.getInstanceId() != null) {
-//            throw new InvalidParameterValueException("Please specify a volume that is not attached to any VM.");
-//        }
-//
-//        // Check that the volume is not destroyed
-//        if (volume.getDestroyed()) {
-//            throw new InvalidParameterValueException("Please specify a volume that is not destroyed.");
-//        }
-//
-//        // Check that the VM has less than 6 data volumes attached
-//        List<VolumeVO> existingDataVolumes = _volumeDao.findByInstanceAndType(vmId, VolumeType.DATADISK);
-//        if (existingDataVolumes.size() >= 6) {
-//            throw new InvalidParameterValueException("The specified VM already has the maximum number of data disks (6). Please specify another VM.");
-//        }
-//        
-//        // Check that the VM and the volume are in the same zone
-//        if (vm.getDataCenterId() != volume.getDataCenterId()) {
-//        	throw new InvalidParameterValueException("Please specify a VM that is in the same zone as the volume.");
-//        }
-//        long eventId = EventUtils.saveScheduledEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_ATTACH, "attaching volume: "+volumeId+" to Vm: "+vmId);
-//        VolumeOperationParam param = new VolumeOperationParam();
-//        param.setUserId(1);
-//        param.setAccountId(volume.getAccountId());
-//        param.setOp(VolumeOp.Attach);
-//        param.setVmId(vmId);
-//        param.setVolumeId(volumeId);
-//        param.setEventId(eventId);
-//        param.setDeviceId(deviceId);
-//
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//        job.setUserId(UserContext.current().getUserId());
-//        job.setAccountId(vm.getAccountId());
-//        job.setCmd("VolumeOperation");
-//        job.setCmdInfo(gson.toJson(param));
-//        job.setCmdOriginator("virtualmachine");
-//        
-//        return _asyncMgr.submitAsyncJob(job);
-//    }
-
-//    @Override
-//    public void detachVolumeFromVM(long volumeId, long startEventId) throws InternalErrorException {
-//        _vmMgr.detachVolumeFromVM(volumeId, startEventId);
-//    }
-
-//    @Override
-//    public long detachVolumeFromVMAsync(long volumeId) throws InvalidParameterValueException {
-//        VolumeVO volume = _volumeDao.findById(volumeId);
-//
-//        // Check that the volume is a data volume
-//        if (volume.getVolumeType() != VolumeType.DATADISK) {
-//            throw new InvalidParameterValueException("Please specify a data volume.");
-//        }
-//
-//        // Check that the volume is stored on shared storage
-//        if (!_storageMgr.volumeOnSharedStoragePool(volume)) {
-//            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
-//        }
-//
-//        Long vmId = volume.getInstanceId();
-//
-//        // Check that the volume is currently attached to a VM
-//        if (vmId == null) {
-//            throw new InvalidParameterValueException("The specified volume is not attached to a VM.");
-//        }
-//
-//        // Check that the VM is in the correct state
-//        UserVmVO vm = _vmDao.findById(vmId);
-//        if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
-//        	throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
-//        }
-//        
-//        long eventId = EventUtils.saveScheduledEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_DETACH, "detaching volume: "+volumeId+" from Vm: "+vmId);
-//        VolumeOperationParam param = new VolumeOperationParam();
-//        param.setUserId(1);
-//        param.setAccountId(volume.getAccountId());
-//        param.setOp(VolumeOp.Detach);
-//        param.setVolumeId(volumeId);
-//        param.setEventId(eventId);
-//
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//		AsyncJobVO job = new AsyncJobVO();
-//		job.setUserId(UserContext.current().getUserId());
-//		job.setAccountId(vm.getAccountId());
-//		job.setCmd("VolumeOperation");
-//		job.setCmdInfo(gson.toJson(param));
-//		job.setCmdOriginator("virtualmachine");
-//		
-//		return _asyncMgr.submitAsyncJob(job);
-//	}
 
     @Override
     public boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach, long startEventId) {
@@ -2069,89 +1583,6 @@ public class ManagementServerImpl implements ManagementServer {
         }
         return success;
     }
-    
-
-//    @Override
-//    public long attachISOToVMAsync(long vmId, long userId, long isoId) throws InvalidParameterValueException {
-//        UserVmVO vm = _userVmDao.findById(vmId);
-//        if (vm == null) {
-//            throw new InvalidParameterValueException("Unable to find VM with ID " + vmId);
-//        }
-//
-//        VMTemplateVO iso = _templateDao.findById(isoId);
-//        if (iso == null || !iso.getFormat().equals(ImageFormat.ISO)) {
-//            throw new InvalidParameterValueException("Unable to find ISO with id " + isoId);
-//        }
-//
-//        AccountVO account = _accountDao.findById(vm.getAccountId());
-//        if (account == null) {
-//            throw new InvalidParameterValueException("Unable to find account for VM with ID " + vmId);
-//        }
-//        
-//        State vmState = vm.getState();
-//        if (vmState != State.Running && vmState != State.Stopped) {
-//        	throw new InvalidParameterValueException("Please specify a VM that is either Stopped or Running.");
-//        }
-//        
-//        long eventId = EventUtils.saveScheduledEvent(userId, account.getId(), EventTypes.EVENT_ISO_ATTACH, "attaching ISO: "+isoId+" to Vm: "+vmId);
-//        
-//        AttachISOParam param = new AttachISOParam(vmId, userId, isoId, true);
-//        param.setEventId(eventId);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//		AsyncJobVO job = new AsyncJobVO();
-//		job.setUserId(UserContext.current().getUserId());
-//		job.setAccountId(vm.getAccountId());
-//		job.setCmd("AttachISO");
-//		job.setCmdInfo(gson.toJson(param));
-//		return _asyncMgr.submitAsyncJob(job, true);
-//	}
-
-//    @Override
-//    public long detachISOFromVMAsync(long vmId, long userId) throws InvalidParameterValueException {
-//        UserVm userVM = _userVmDao.findById(vmId);
-//        if (userVM == null) {
-//            throw new InvalidParameterValueException("Please specify a valid VM.");
-//        }
-//
-//        Long isoId = userVM.getIsoId();
-//        if (isoId == null) {
-//            throw new InvalidParameterValueException("The specified VM has no ISO attached to it.");
-//        }
-//        
-//        State vmState = userVM.getState();
-//        if (vmState != State.Running && vmState != State.Stopped) {
-//        	throw new InvalidParameterValueException("Please specify a VM that is either Stopped or Running.");
-//        }
-//
-//        long eventId = EventUtils.saveScheduledEvent(userId, userVM.getAccountId(), EventTypes.EVENT_ISO_DETACH, "detaching ISO: "+isoId+" from Vm: "+vmId);
-//        AttachISOParam param = new AttachISOParam(vmId, userId, isoId.longValue(), false);
-//        param.setEventId(eventId);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//        job.setUserId(UserContext.current().getUserId());
-//        job.setAccountId(userVM.getAccountId());
-//        job.setCmd("AttachISO");
-//        job.setCmdInfo(gson.toJson(param));
-//        return _asyncMgr.submitAsyncJob(job, true);
-//    }
-
-//    @Override
-//    public long resetVMPasswordAsync(long userId, long vmId, String password) {
-//        ResetVMPasswordParam param = new ResetVMPasswordParam(userId, vmId, password);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        UserVm vm = _userVmDao.findById(vmId);
-//		AsyncJobVO job = new AsyncJobVO();
-//		job.setUserId(UserContext.current().getUserId());
-//		job.setAccountId(vm.getAccountId());
-//		job.setCmd("ResetVMPassword");
-//		job.setCmdInfo(gson.toJson(param));
-//		job.setCmdOriginator("virtualmachine");
-//		
-//		return _asyncMgr.submitAsyncJob(job, true);
-//	}
 
     private boolean validPassword(String password) {
         for (int i = 0; i < password.length(); i++) {
@@ -2161,30 +1592,6 @@ public class ManagementServerImpl implements ManagementServer {
         }
         return true;
     }
-
-//    @Override
-//    public boolean reconnect(long hostId) {
-//        try {
-//            return _agentMgr.reconnect(hostId);
-//        } catch (AgentUnavailableException e) {
-//            return false;
-//        }
-//    }
-
-//    @Override
-//    public long reconnectAsync(long hostId) {
-//        Long param = new Long(hostId);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//		AsyncJobVO job = new AsyncJobVO();
-//		job.setUserId(UserContext.current().getUserId());
-//		job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-//		job.setCmd("Reconnect");
-//		job.setCmdInfo(gson.toJson(param));
-//        job.setCmdOriginator(ReconnectHostCmd.getResultObjectName());
-//        
-//		return _asyncMgr.submitAsyncJob(job);
-//	}
 
     @Override
     public UserVm deployVirtualMachine(long userId, long accountId, long dataCenterId, long serviceOfferingId, long templateId, Long diskOfferingId,
@@ -2524,82 +1931,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job);
     }
 
-//    @Override
-//    public UserVm startVirtualMachine(long userId, long vmId, String isoPath) throws InternalErrorException, ExecutionException, StorageUnavailableException, ConcurrentOperationException {
-//        return _vmMgr.startVirtualMachine(userId, vmId, isoPath, 0);
-//    }
-
-//    @Override
-//    public long startVirtualMachineAsync(long userId, long vmId, String isoPath) {
-//        
-//        UserVmVO userVm = _userVmDao.findById(vmId);
-//
-//        long eventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_VM_START, "starting Vm with Id: "+vmId);
-//        
-//        VMOperationParam param = new VMOperationParam(userId, vmId, isoPath, eventId);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//    	job.setUserId(UserContext.current().getUserId());
-//    	job.setAccountId(userVm.getAccountId());
-//        job.setCmd("StartVM");
-//        job.setCmdInfo(gson.toJson(param));
-//        job.setCmdOriginator(StartVMCmd.getResultObjectName());
-//        return _asyncMgr.submitAsyncJob(job, true);
-//    }
-
-//    @Override
-//    public boolean stopVirtualMachine(long userId, long vmId) {
-//        return _vmMgr.stopVirtualMachine(userId, vmId);
-//    }
-
-//    @Override
-//    public long stopVirtualMachineAsync(long userId, long vmId) {
-//        
-//        UserVmVO userVm = _userVmDao.findById(vmId);
-//
-//        long eventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_VM_STOP, "stopping Vm with Id: "+vmId);
-//        
-//        VMOperationParam param = new VMOperationParam(userId, userVm.getAccountId(), vmId, null, eventId);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//    	job.setUserId(UserContext.current().getUserId());
-//    	job.setAccountId(userVm.getAccountId());
-//        job.setCmd("StopVM");
-//        job.setCmdInfo(gson.toJson(param));
-//        
-//        // use the same result result object name as StartVMCmd
-//        job.setCmdOriginator(StartVMCmd.getResultObjectName());
-//        return _asyncMgr.submitAsyncJob(job, true);
-//    }
-
-//    @Override
-//    public boolean rebootVirtualMachine(long userId, long vmId) {
-//        return _vmMgr.rebootVirtualMachine(userId, vmId);
-//    }
-
-//    @Override
-//    public long rebootVirtualMachineAsync(long userId, long vmId) {
-//        
-//        UserVmVO userVm = _userVmDao.findById(vmId);
-//
-//        long eventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_VM_REBOOT, "rebooting Vm with Id: "+vmId);
-//        
-//        VMOperationParam param = new VMOperationParam(userId, userVm.getAccountId(), vmId, null, eventId);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//    	job.setUserId(UserContext.current().getUserId());
-//    	job.setAccountId(userVm.getAccountId());
-//        job.setCmd("RebootVM");
-//        job.setCmdInfo(gson.toJson(param));
-//        
-//        // use the same result result object name as StartVMCmd
-//        job.setCmdOriginator(StartVMCmd.getResultObjectName());
-//        return _asyncMgr.submitAsyncJob(job, true);
-//    }
-
     @Override
     public boolean destroyVirtualMachine(long userId, long vmId) {
         return _vmMgr.destroyVirtualMachine(userId, vmId);
@@ -2622,177 +1953,20 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job, true);
     }
 
-//    @Override
-//    public boolean recoverVirtualMachine(long vmId) throws ResourceAllocationException, InternalErrorException {
-//        return _vmMgr.recoverVirtualMachine(vmId);
-//    }
-
-    /*
-    @Override
-    public boolean upgradeVirtualMachine(long userId, long vmId, long serviceOfferingId,long startEventId) {
-        UserVmVO userVm = _userVmDao.findById(vmId);
-        EventUtils.saveStartedEvent(userId, userVm.getAccountId(), EventTypes.EVENT_VM_UPGRADE, "upgrading service offering on VM : " + userVm.getName(), startEventId);
-        boolean success = _vmMgr.upgradeVirtualMachine(vmId, serviceOfferingId);
-
-        String params = "id=" + vmId + "\nvmName=" + userVm.getName() + "\nsoId=" + serviceOfferingId + "\ntId=" + userVm.getTemplateId() + "\ndcId=" + userVm.getDataCenterId();
-
-        if (success) {
-        	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_UPGRADE, "Successfully upgrade service offering on VM : " + userVm.getName(), params, startEventId);
-        } else {
-        	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_UPGRADE, "Failed to upgrade service offering on VM : " + userVm.getName(), params, startEventId);
-        }
-        
-        return success;
-    }
-
-    @Override
-    public long upgradeVirtualMachineAsync(long userId, long vmId, long serviceOfferingId) throws InvalidParameterValueException {
-        UpgradeVMParam param = new UpgradeVMParam(userId, vmId, serviceOfferingId);
-        Gson gson = GsonHelper.getBuilder().create();
-                       
-        // Check that the specified VM ID is valid
-        UserVmVO vm = _vmDao.findById(vmId);
-        if (vm == null) {
-        	throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
-        }
-        
-        // Check that the specified service offering ID is valid
-        ServiceOfferingVO newServiceOffering = _offeringsDao.findById(serviceOfferingId);
-        if (newServiceOffering == null) {
-        	throw new InvalidParameterValueException("Unable to find a service offering with id " + serviceOfferingId);
-        }
-        
-        // Check that the VM is stopped
-        if (!vm.getState().equals(State.Stopped)) {
-            s_logger.warn("Unable to upgrade virtual machine " + vm.toString() + " in state " + vm.getState());
-            throw new InvalidParameterValueException("Unable to upgrade virtual machine " + vm.toString() + " in state " + vm.getState() + "; make sure the virtual machine is stopped and not in an error state before upgrading.");
-        }
-        
-        // Check if the service offering being upgraded to is what the VM is already running with
-        if (vm.getServiceOfferingId() == newServiceOffering.getId()) {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Not upgrading vm " + vm.toString() + " since it already has the requested service offering (" + newServiceOffering.getName() + ")");
-            }
-            
-            throw new InvalidParameterValueException("Not upgrading vm " + vm.toString() + " since it already has the requested service offering (" + newServiceOffering.getName() + ")");
-        }
-        
-        // Check that the service offering being upgraded to has the same Guest IP type as the VM's current service offering
-        ServiceOfferingVO currentServiceOffering = _offeringsDao.findById(vm.getServiceOfferingId());
-        if (!currentServiceOffering.getGuestIpType().equals(newServiceOffering.getGuestIpType())) {
-        	String errorMsg = "The service offering being upgraded to has a guest IP type: " + newServiceOffering.getGuestIpType();
-        	errorMsg += ". Please select a service offering with the same guest IP type as the VM's current service offering (" + currentServiceOffering.getGuestIpType() + ").";
-        	throw new InvalidParameterValueException(errorMsg);
-        }
-        
-        // Check that the service offering being upgraded to has the same storage pool preference as the VM's current service offering
-        if (currentServiceOffering.getUseLocalStorage() != newServiceOffering.getUseLocalStorage()) {
-            throw new InvalidParameterValueException("Unable to upgrade virtual machine " + vm.toString() + ", cannot switch between local storage and shared storage service offerings.  Current offering useLocalStorage=" +
-                   currentServiceOffering.getUseLocalStorage() + ", target offering useLocalStorage=" + newServiceOffering.getUseLocalStorage());
-        }
-
-        // Check that there are enough resources to upgrade the service offering
-        if (!_agentMgr.isVirtualMachineUpgradable(vm, newServiceOffering)) {
-           throw new InvalidParameterValueException("Unable to upgrade virtual machine, not enough resources available for an offering of " +
-                   newServiceOffering.getCpu() + " cpu(s) at " + newServiceOffering.getSpeed() + " Mhz, and " + newServiceOffering.getRamSize() + " MB of memory");
-        }
-        
-        // Check that the service offering being upgraded to has all the tags of the current service offering
-        List<String> currentTags = _configMgr.csvTagsToList(currentServiceOffering.getTags());
-        List<String> newTags = _configMgr.csvTagsToList(newServiceOffering.getTags());
-        if (!newTags.containsAll(currentTags)) {
-        	throw new InvalidParameterValueException("Unable to upgrade virtual machine; the new service offering does not have all the tags of the " +
-        											 "current service offering. Current service offering tags: " + currentTags + "; " +
-        											 "new service offering tags: " + newTags);
-        }
-        
-        long eventId = EventUtils.saveScheduledEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_UPGRADE, "upgrading Vm with Id: "+vmId);
-        param.setEventId(eventId);
-        
-        AsyncJobVO job = new AsyncJobVO();
-    	job.setUserId(UserContext.current().getUserId());
-    	job.setAccountId(vm.getAccountId());
-        job.setCmd("UpgradeVM");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(UpgradeVMCmd.getResultObjectName());
-        
-        return _asyncMgr.submitAsyncJob(job, true);
-    }
-*/
-    
-//    @Override
-//    public StoragePoolVO updateStoragePool(long poolId, String tags) throws IllegalArgumentException {
-//    	return _storageMgr.updateStoragePool(poolId, tags);
-//    }
-
     @Override
     public DomainRouter startRouter(long routerId, long startEventId) throws InternalErrorException {
         return _networkMgr.startRouter(routerId, startEventId);
     }
-
-//    @Override
-//    public long startRouterAsync(long routerId) {
-//        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_START, "starting Router with Id: "+routerId);
-//
-//        VMOperationParam param = new VMOperationParam(0, routerId, null, eventId);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//        job.setUserId(UserContext.current().getUserId());
-//        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-//        job.setCmd("StartRouter");
-//        job.setCmdInfo(gson.toJson(param));
-//        job.setCmdOriginator(StartRouterCmd.getResultObjectName());
-//        return _asyncMgr.submitAsyncJob(job, true);
-//    }
 
     @Override
     public boolean stopRouter(long routerId, long startEventId) {
         return _networkMgr.stopRouter(routerId, startEventId);
     }
 
-//    @Override
-//    public long stopRouterAsync(long routerId) {
-//        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_STOP, "stopping Router with Id: "+routerId);
-//        VMOperationParam param = new VMOperationParam(0, routerId, null, eventId);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//        job.setUserId(UserContext.current().getUserId());
-//        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-//        job.setCmd("StopRouter");
-//        job.setCmdInfo(gson.toJson(param));
-//        // use the same result object name as StartRouterCmd
-//        job.setCmdOriginator(StartRouterCmd.getResultObjectName());
-//        
-//        return _asyncMgr.submitAsyncJob(job, true);
-//    }
-
     @Override
     public boolean rebootRouter(long routerId, long startEventId) throws InternalErrorException {
         return _networkMgr.rebootRouter(routerId, startEventId);
     }
-
-//    @Override
-//    public long rebootRouterAsync(long routerId) {
-//        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_REBOOT, "rebooting Router with Id: "+routerId);
-//        VMOperationParam param = new VMOperationParam(0, routerId, null, eventId);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//        job.setUserId(UserContext.current().getUserId());
-//        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-//        job.setCmd("RebootRouter");
-//        job.setCmdInfo(gson.toJson(param));
-//        // use the same result object name as StartRouterCmd
-//        job.setCmdOriginator(StartRouterCmd.getResultObjectName());
-//        return _asyncMgr.submitAsyncJob(job, true);
-//    }
-
-//    @Override
-//    public boolean destroyRouter(long routerId) {
-//        return _networkMgr.destroyRouter(routerId);
-//    }
 
     @Override
     public DomainRouterVO findDomainRouterBy(long accountId, long dataCenterId) {
@@ -3159,21 +2333,6 @@ public class ManagementServerImpl implements ManagementServer {
         }
     }
 
-//    @Override
-//    public long assignSecurityGroupAsync(Long userId, Long securityGroupId, List<Long> securityGroupIdList, String publicIp, Long vmId) {
-//        UserVm userVm = _userVmDao.findById(vmId);
-//        long eventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_APPLY, "applying port forwarding service for Vm with Id: "+vmId);
-//        SecurityGroupParam param = new SecurityGroupParam(userId, securityGroupId, securityGroupIdList, publicIp, vmId, eventId);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//    	job.setUserId(UserContext.current().getUserId());
-//    	job.setAccountId(userVm.getAccountId());
-//        job.setCmd("AssignSecurityGroup");
-//        job.setCmdInfo(gson.toJson(param));
-//        return _asyncMgr.submitAsyncJob(job);
-//    }
-
     @Override
     public void removeSecurityGroup(RemovePortForwardingServiceCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	
@@ -3501,257 +2660,6 @@ public class ManagementServerImpl implements ManagementServer {
 
         return newFwRule;
     }
-
-//    @Override
-//    public boolean deleteNetworkRuleConfig(long userId, long networkRuleId) {
-//        try {
-//            NetworkRuleConfigVO netRule = _networkRuleConfigDao.findById(networkRuleId);
-//            if (netRule != null) {
-//                List<SecurityGroupVMMapVO> sgMappings = _securityGroupVMMapDao.listBySecurityGroup(netRule.getSecurityGroupId());
-//                if ((sgMappings != null) && !sgMappings.isEmpty()) {
-//                    for (SecurityGroupVMMapVO sgMapping : sgMappings) {
-//                        UserVm userVm = _userVmDao.findById(sgMapping.getInstanceId());
-//                        if (userVm != null) {
-//                            List<FirewallRuleVO> fwRules = _firewallRulesDao.listIPForwarding(sgMapping.getIpAddress(), netRule.getPublicPort(), true);
-//                            FirewallRuleVO rule = null;
-//                            for (FirewallRuleVO fwRule : fwRules) {
-//                                if (fwRule.getPrivatePort().equals(netRule.getPrivatePort()) && fwRule.getPrivateIpAddress().equals(userVm.getGuestIpAddress())) {
-//                                    rule = fwRule;
-//                                    break;
-//                                }
-//                            }
-//
-//                            if (rule != null) {
-//                                rule.setEnabled(false);
-//                                _networkMgr.updateFirewallRule(rule, null, null);
-//
-//                                // Save and create the event
-//                                Account account = _accountDao.findById(userVm.getAccountId());
-//
-//                                _firewallRulesDao.remove(rule.getId());
-//                                String description = "deleted ip forwarding rule [" + rule.getPublicIpAddress() + ":" + rule.getPublicPort() + "]->[" + rule.getPrivateIpAddress()
-//                                                     + ":" + rule.getPrivatePort() + "]" + " " + rule.getProtocol();
-//
-//                                EventUtils.saveEvent(Long.valueOf(userId), account.getId(), EventVO.LEVEL_INFO, EventTypes.EVENT_NET_RULE_DELETE, description);
-//                            }
-//                        }
-//                    }
-//                }
-//                _networkRuleConfigDao.remove(netRule.getId());
-//            }
-//        } catch (Exception ex) {
-//            s_logger.error("Unexpected exception deleting port forwarding service rule " + networkRuleId, ex);
-//            return false;
-//        }
-//
-//        return true;
-//    }
-
-//    @Override
-//    public long deleteNetworkRuleConfigAsync(long userId, Account account, Long networkRuleId) throws PermissionDeniedException {
-//        // do a quick permissions check to make sure the account is either an
-//        // admin or the owner of the security group to which the network rule
-//        // belongs
-//        NetworkRuleConfigVO netRule = _networkRuleConfigDao.findById(networkRuleId);
-//        long accountId = Account.ACCOUNT_ID_SYSTEM;
-//        if (netRule != null) {
-//            SecurityGroupVO sg = _securityGroupDao.findById(netRule.getSecurityGroupId());
-//            if (account != null) {
-//                if (!BaseCmd.isAdmin(account.getType())) {
-//                    if ((sg.getAccountId() == null) || (sg.getAccountId().longValue() != account.getId().longValue())) {
-//                        throw new PermissionDeniedException("Unable to delete port forwarding service rule " + networkRuleId + "; account: " + account.getAccountName() + " is not the owner");
-//                    }
-//                } else if (!isChildDomain(account.getDomainId(), sg.getDomainId())) {
-//                    throw new PermissionDeniedException("Unable to delete port forwarding service rule " + networkRuleId + "; account: " + account.getAccountName() + " is not an admin in the domain hierarchy.");
-//                }
-//            }
-//            if (sg != null) {
-//                accountId = sg.getAccountId().longValue();
-//            }
-//        } else {
-//            return 0L;  // failed to delete due to netRule not found
-//        }
-//
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//    	job.setUserId(UserContext.current().getUserId());
-//    	job.setAccountId(accountId);
-//        job.setCmd("DeleteNetworkRuleConfig");
-//        job.setCmdInfo(gson.toJson(networkRuleId));
-//        
-//        return _asyncMgr.submitAsyncJob(job);
-//    }
-
-//    @DB
-//    protected boolean deleteIpForwardingRule(long userId, long accountId, String publicIp, String publicPort, String privateIp, String privatePort, String proto)
-//            throws PermissionDeniedException, InvalidParameterValueException, InternalErrorException {
-//
-//        Transaction txn = Transaction.currentTxn();
-//        boolean locked = false;
-//        try {
-//            AccountVO accountVO = _accountDao.findById(accountId);
-//            if (accountVO == null) {
-//                // throw this exception because hackers can use the api to probe
-//                // for existing user ids
-//                throw new PermissionDeniedException("Account does not own supplied address");
-//            }
-//            // although we are not writing these values to the DB, we will check
-//            // them out of an abundance
-//            // of caution (may not be warranted)
-//            if (!NetUtils.isValidPort(publicPort) || !NetUtils.isValidPort(privatePort)) {
-//                throw new InvalidParameterValueException("Invalid value for port");
-//            }
-////            if (!NetUtils.isValidPrivateIp(privateIp, _configs.get("guest.ip.network"))) {
-////                throw new InvalidParameterValueException("Invalid private ip address");
-////            }
-//            if (!NetUtils.isValidProto(proto)) {
-//                throw new InvalidParameterValueException("Invalid protocol");
-//            }
-//            IPAddressVO ipVO = _publicIpAddressDao.acquire(publicIp);
-//            if (ipVO == null) {
-//                // throw this exception because hackers can use the api to probe for allocated ips
-//                throw new PermissionDeniedException("User does not own supplied address");
-//            }
-//
-//            locked = true;
-//            if ((ipVO.getAllocated() == null) || (ipVO.getAccountId() == null) || (ipVO.getAccountId().longValue() != accountId)) {
-//                // FIXME: if admin account, make sure the user is visible in the
-//                // admin's domain, or has that checking been done by this point?
-//                if (!BaseCmd.isAdmin(accountVO.getType())) {
-//                    throw new PermissionDeniedException("User/account does not own supplied address");
-//                }
-//            }
-//
-//            txn.start();
-//
-//            List<FirewallRuleVO> fwdings = _firewallRulesDao.listIPForwardingForUpdate(publicIp, publicPort, proto);
-//            FirewallRuleVO fwRule = null;
-//            if (fwdings.size() == 0) {
-//                throw new InvalidParameterValueException("No such rule");
-//            } else if (fwdings.size() == 1) {
-//                fwRule = fwdings.get(0);
-//                if (fwRule.getPrivateIpAddress().equalsIgnoreCase(privateIp) && fwRule.getPrivatePort().equals(privatePort)) {
-//                    _firewallRulesDao.delete(fwRule.getId());
-//                } else {
-//                    throw new InvalidParameterValueException("No such rule");
-//                }
-//            } else {
-//                throw new InternalErrorException("Multiple matches. Please contact support");
-//            }
-//            fwRule.setEnabled(false);
-//            boolean success = _networkMgr.updateFirewallRule(fwRule, null, null);
-//            if (!success) {
-//                throw new InternalErrorException("Failed to update router");
-//            }
-//            txn.commit();
-//            return success;
-//        } catch (Throwable e) {
-//            if (e instanceof InvalidParameterValueException) {
-//                throw (InvalidParameterValueException) e;
-//            } else if (e instanceof PermissionDeniedException) {
-//                throw (PermissionDeniedException) e;
-//            } else if (e instanceof InternalErrorException) {
-//                s_logger.warn("ManagementServer error", e);
-//                throw (InternalErrorException) e;
-//            }
-//            s_logger.warn("ManagementServer error", e);
-//        } finally {
-//            if (locked) {
-//                _publicIpAddressDao.release(publicIp);
-//            }
-//        }
-//        return false;
-//    }
-
-//    @DB
-//    private boolean deleteLoadBalancingRule(long userId, long accountId, String publicIp, String publicPort, String privateIp, String privatePort, String algo)
-//            throws PermissionDeniedException, InvalidParameterValueException, InternalErrorException {
-//        Transaction txn = Transaction.currentTxn();
-//        boolean locked = false;
-//        try {
-//            AccountVO accountVO = _accountDao.findById(accountId);
-//            if (accountVO == null) {
-//                // throw this exception because hackers can use the api to probe
-//                // for existing user ids
-//                throw new PermissionDeniedException("Account does not own supplied address");
-//            }
-//            // although we are not writing these values to the DB, we will check
-//            // them out of an abundance
-//            // of caution (may not be warranted)
-//            if (!NetUtils.isValidPort(publicPort) || !NetUtils.isValidPort(privatePort)) {
-//                throw new InvalidParameterValueException("Invalid value for port");
-//            }
-////            if (!NetUtils.isValidPrivateIp(privateIp, _configs.get("guest.ip.network"))) {
-////                throw new InvalidParameterValueException("Invalid private ip address");
-////            }
-//            if (!NetUtils.isValidAlgorithm(algo)) {
-//                throw new InvalidParameterValueException("Invalid protocol");
-//            }
-//
-//            IPAddressVO ipVO = _publicIpAddressDao.acquire(publicIp);
-//
-//            if (ipVO == null) {
-//                // throw this exception because hackers can use the api to probe
-//                // for allocated ips
-//                throw new PermissionDeniedException("User does not own supplied address");
-//            }
-//
-//            locked = true;
-//            if ((ipVO.getAllocated() == null) || (ipVO.getAccountId() == null) || (ipVO.getAccountId().longValue() != accountId)) {
-//                // FIXME: the user visible from the admin account's domain? has
-//                // that check been done already?
-//                if (!BaseCmd.isAdmin(accountVO.getType())) {
-//                    throw new PermissionDeniedException("User does not own supplied address");
-//                }
-//            }
-//
-//            List<FirewallRuleVO> fwdings = _firewallRulesDao.listLoadBalanceRulesForUpdate(publicIp, publicPort, algo);
-//            FirewallRuleVO fwRule = null;
-//            if (fwdings.size() == 0) {
-//                throw new InvalidParameterValueException("No such rule");
-//            }
-//            for (FirewallRuleVO frv : fwdings) {
-//                if (frv.getPrivateIpAddress().equalsIgnoreCase(privateIp) && frv.getPrivatePort().equals(privatePort)) {
-//                    fwRule = frv;
-//                    break;
-//                }
-//            }
-//
-//            if (fwRule == null) {
-//                throw new InvalidParameterValueException("No such rule");
-//            }
-//
-//            txn.start();
-//
-//            fwRule.setEnabled(false);
-//            _firewallRulesDao.update(fwRule.getId(), fwRule);
-//
-//            boolean success = _networkMgr.updateFirewallRule(fwRule, null, null);
-//            if (!success) {
-//                throw new InternalErrorException("Failed to update router");
-//            }
-//            _firewallRulesDao.delete(fwRule.getId());
-//
-//            txn.commit();
-//            return success;
-//        } catch (Throwable e) {
-//            if (e instanceof InvalidParameterValueException) {
-//                throw (InvalidParameterValueException) e;
-//            } else if (e instanceof PermissionDeniedException) {
-//                throw (PermissionDeniedException) e;
-//            } else if (e instanceof InternalErrorException) {
-//                s_logger.warn("ManagementServer error", e);
-//                throw (InternalErrorException) e;
-//            }
-//            s_logger.warn("ManagementServer error", e);
-//        } finally {
-//            if (locked) {
-//                _publicIpAddressDao.release(publicIp);
-//            }
-//        }
-//        return false;
-//    }
 
     @Override
     public List<EventVO> getEvents(long userId, long accountId, Long domainId, String type, String level, Date startDate, Date endDate) {
@@ -4486,11 +3394,6 @@ public class ManagementServerImpl implements ManagementServer {
         return null;
     }
 
-//    @Override
-//    public ResourceLimitVO updateResourceLimit(Long domainId, Long accountId, ResourceType type, Long max) throws InvalidParameterValueException {
-//        return _accountMgr.updateResourceLimit(domainId, accountId, type, max);
-//    }
-
     @Override
     public boolean deleteLimit(Long limitId) {
         // A limit ID must be passed in
@@ -4606,79 +3509,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _vlanDao.findById(vlanDbId);
     }
 
-//    @Override
-//    public Long createTemplate(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) throws InvalidParameterValueException,IllegalArgumentException, ResourceAllocationException {
-//        try
-//        {
-//            if (name.length() > 32)
-//            {
-//                throw new InvalidParameterValueException("Template name should be less than 32 characters");
-//            }
-//            	
-//            if (!name.matches("^[\\p{Alnum} ._-]+")) {
-//                throw new InvalidParameterValueException("Only alphanumeric, space, dot, dashes and underscore characters allowed");
-//            }
-//        	
-//            ImageFormat imgfmt = ImageFormat.valueOf(format.toUpperCase());
-//            if (imgfmt == null) {
-//                throw new IllegalArgumentException("Image format is incorrect " + format + ". Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
-//            }
-//            
-//            FileSystem fileSystem = FileSystem.valueOf(diskType);
-//            if (fileSystem == null) {
-//                throw new IllegalArgumentException("File system is incorrect " + diskType + ". Supported file systems are " + EnumUtils.listValues(FileSystem.values()));
-//            }
-//            
-//            URI uri = new URI(url);
-//            if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
-//               throw new IllegalArgumentException("Unsupported scheme for url: " + url);
-//            }
-//            int port = uri.getPort();
-//            if (!(port == 80 || port == 443 || port == -1)) {
-//            	throw new IllegalArgumentException("Only ports 80 and 443 are allowed");
-//            }
-//            String host = uri.getHost();
-//            try {
-//            	InetAddress hostAddr = InetAddress.getByName(host);
-//            	if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress() ) {
-//            		throw new IllegalArgumentException("Illegal host specified in url");
-//            	}
-//            	if (hostAddr instanceof Inet6Address) {
-//            		throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
-//            	}
-//            } catch (UnknownHostException uhe) {
-//            	throw new IllegalArgumentException("Unable to resolve " + host);
-//            }
-//            
-//            // Check that the resource limit for templates/ISOs won't be exceeded
-//            UserVO user = _userDao.findById(userId);
-//            if (user == null) {
-//                throw new IllegalArgumentException("Unable to find user with id " + userId);
-//            }
-//        	AccountVO account = _accountDao.findById(user.getAccountId());
-//            if (_accountMgr.resourceLimitExceeded(account, ResourceType.template)) {
-//            	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of templates and ISOs for account: " + account.getAccountName() + " has been exceeded.");
-//            	rae.setResourceType("template");
-//            	throw rae;
-//            }
-//            
-//            // If a zoneId is specified, make sure it is valid
-//            if (zoneId != null) {
-//            	if (_dcDao.findById(zoneId) == null) {
-//            		throw new IllegalArgumentException("Please specify a valid zone.");
-//            	}
-//            }
-//            VMTemplateVO systemvmTmplt = _templateDao.findRoutingTemplate();
-//            if (systemvmTmplt.getName().equalsIgnoreCase(name) || systemvmTmplt.getDisplayText().equalsIgnoreCase(displayText)) {
-//            	throw new IllegalArgumentException("Cannot use reserved names for templates");
-//            }
-//            
-//            return _tmpltMgr.create(userId, zoneId, name, displayText, isPublic, featured, imgfmt, fileSystem, uri, chksum, requiresHvm, bits, enablePassword, guestOSId, bootable);
-//        } catch (URISyntaxException e) {
-//            throw new IllegalArgumentException("Invalid URL " + url);
-//        }
-//    }
-
     @Override
     public boolean updateTemplate(UpdateTemplateOrIsoCmd cmd) throws InvalidParameterValueException {
     	Long id = cmd.getId();
@@ -4763,48 +3593,6 @@ public class ManagementServerImpl implements ManagementServer {
     	
         return _templateDao.update(id, template);
     }
-
-//    @Override
-//    public boolean deleteTemplate(long userId, long templateId, Long zoneId, long startEventId) throws InternalErrorException {
-//    	return _tmpltMgr.delete(userId, templateId, zoneId, startEventId);
-//    }
-    
-//    @Override
-//    public long deleteTemplateAsync(long userId, long templateId, Long zoneId) throws InvalidParameterValueException {
-//    	UserVO user = _userDao.findById(userId);
-//    	if (user == null) {
-//    		throw new InvalidParameterValueException("Please specify a valid user.");
-//    	}
-//    	
-//    	VMTemplateVO template = _templateDao.findById(templateId);
-//    	if (template == null) {
-//    		throw new InvalidParameterValueException("Please specify a valid template.");
-//    	}
-//    	
-//    	if (template.getFormat() == ImageFormat.ISO) {
-//    		throw new InvalidParameterValueException("Please specify a valid template.");
-//    	}
-//    	
-//    	if (template.getUniqueName().equals("routing")) {
-//    		throw new InvalidParameterValueException("The DomR template cannot be deleted.");
-//    	}
-//    	
-//    	if (zoneId != null && (_hostDao.findSecondaryStorageHost(zoneId) == null)) {
-//    		throw new InvalidParameterValueException("Failed to find a secondary storage host in the specified zone.");
-//    	}
-//    	
-//        DeleteTemplateParam param = new DeleteTemplateParam(userId, templateId, zoneId, 0);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//    	job.setUserId(UserContext.current().getUserId());
-//    	job.setAccountId(template.getAccountId());
-//        job.setCmd("DeleteTemplate");
-//        job.setCmdInfo(gson.toJson(param));
-//        job.setCmdOriginator(DeleteTemplateCmd.getStaticName());
-//        
-//        return _asyncMgr.submitAsyncJob(job);
-//    }
     
     @Override
     public boolean copyTemplate(long userId, long templateId, long sourceZoneId, long destZoneId, long startEventId) throws InternalErrorException {
@@ -4817,100 +3605,6 @@ public class ManagementServerImpl implements ManagementServer {
 		}
 		return success;
     }
-//    
-//    @Override
-//    public long copyTemplateAsync(long userId, long templateId, long sourceZoneId, long destZoneId) throws InvalidParameterValueException {
-//    	UserVO user = _userDao.findById(userId);
-//    	if (user == null) {
-//    		throw new InvalidParameterValueException("Please specify a valid user.");
-//    	}
-//    	
-//    	VMTemplateVO template = _templateDao.findById(templateId);
-//    	if (template == null) {
-//    		throw new InvalidParameterValueException("Please specify a valid template/ISO.");
-//    	}
-//    	
-//    	if (template.getFormat().equals(ImageFormat.ISO) && template.getName().equals("xs-tools.iso")) {
-//    		throw new InvalidParameterValueException("The XenServer Tools ISO cannot be copied.");
-//    	}
-//    	
-//    	DataCenterVO sourceZone = _dcDao.findById(sourceZoneId);
-//    	if (sourceZone == null) {
-//    		throw new InvalidParameterValueException("Please specify a valid source zone.");
-//    	}
-//    	
-//    	DataCenterVO destZone = _dcDao.findById(destZoneId);
-//    	if (destZone == null) {
-//    		throw new InvalidParameterValueException("Please specify a valid destination zone.");
-//    	}
-//    	
-//    	if (sourceZoneId == destZoneId) {
-//    		throw new InvalidParameterValueException("Please specify different source and destination zones.");
-//    	}
-//    	
-//    	HostVO srcSecHost = _hostDao.findSecondaryStorageHost(sourceZoneId);
-//    	
-//    	if (srcSecHost == null) {
-//    		throw new InvalidParameterValueException("Source zone is not ready");
-//    	}
-//    	
-//    	if (_hostDao.findSecondaryStorageHost(destZoneId) == null) {
-//    		throw new InvalidParameterValueException("Destination zone is not ready.");
-//    	}
-//    	
-//       	VMTemplateHostVO srcTmpltHost = null;
-//        srcTmpltHost = _templateHostDao.findByHostTemplate(srcSecHost.getId(), templateId);
-//        if (srcTmpltHost == null || srcTmpltHost.getDestroyed() || srcTmpltHost.getDownloadState() != VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-//        	throw new InvalidParameterValueException("Please specify a template that is installed on secondary storage host: " + srcSecHost.getName());
-//        }
-//        
-//        long eventId = EventUtils.saveScheduledEvent(userId, template.getAccountId(), EventTypes.EVENT_TEMPLATE_COPY, "copying template with Id: "+templateId+" from zone: "+sourceZoneId+" to: "+destZoneId);
-//        
-//        CopyTemplateParam param = new CopyTemplateParam(userId, templateId, sourceZoneId, destZoneId, eventId);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//    	job.setUserId(UserContext.current().getUserId());
-//    	job.setAccountId(template.getAccountId());
-//        job.setCmd("CopyTemplate");
-//        job.setCmdInfo(gson.toJson(param));
-//        job.setCmdOriginator(CopyTemplateCmd.getStaticName());
-//        
-//        return _asyncMgr.submitAsyncJob(job);
-//    }
-    
-//    @Override
-//    public long deleteIsoAsync(long userId, long isoId, Long zoneId) throws InvalidParameterValueException {
-//    	UserVO user = _userDao.findById(userId);
-//    	if (user == null) {
-//    		throw new InvalidParameterValueException("Please specify a valid user.");
-//    	}
-//    	
-//    	VMTemplateVO iso = _templateDao.findById(isoId);
-//    	if (iso == null) {
-//    		throw new InvalidParameterValueException("Please specify a valid ISO.");
-//    	}
-//    	
-//    	if (iso.getFormat() != ImageFormat.ISO) {
-//    		throw new InvalidParameterValueException("Please specify a valid ISO.");
-//    	}
-//    	
-//    	if (zoneId != null && (_hostDao.findSecondaryStorageHost(zoneId) == null)) {
-//    		throw new InvalidParameterValueException("Failed to find a secondary storage host in the specified zone.");
-//    	}
-//    	
-//    	DeleteTemplateParam param = new DeleteTemplateParam(userId, isoId, zoneId, 0);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//    	job.setUserId(UserContext.current().getUserId());
-//    	job.setAccountId(iso.getAccountId());
-//        job.setCmd("DeleteTemplate");
-//        job.setCmdInfo(gson.toJson(param));
-//        job.setCmdOriginator(DeleteIsoCmd.getStaticName());
-//        
-//        return _asyncMgr.submitAsyncJob(job);
-//    }
 
     @Override
     public VMTemplateVO findTemplateById(long templateId) {
@@ -5191,103 +3885,6 @@ public class ManagementServerImpl implements ManagementServer {
         }
         return null;
     }
-//
-//    @Override
-//    public long updatePortForwardingRuleAsync(long userId, long accountId, String publicIp, String privateIp, String publicPort, String privatePort, String protocol) {
-//        CreateOrUpdateRuleParam param = new CreateOrUpdateRuleParam(true, userId, Long.valueOf(accountId), publicIp, publicPort, privateIp, privatePort, protocol, null, null, null);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//        job.setUserId(UserContext.current().getUserId());
-//        job.setAccountId(accountId);
-//        job.setCmd("UpdatePortForwardingRule");
-//        job.setCmdInfo(gson.toJson(param));
-//        job.setCmdOriginator("portforwardingrule");
-//        
-//        return _asyncMgr.submitAsyncJob(job);
-//    }
-
-//    @Override @DB
-//    public LoadBalancerVO updateLoadBalancerRule(long userId, LoadBalancerVO loadBalancer, String privatePort, String algorithm) {
-//        String updatedPrivatePort = ((privatePort == null) ? loadBalancer.getPrivatePort() : privatePort);
-//        String updatedAlgorithm = ((algorithm == null) ? loadBalancer.getAlgorithm() : algorithm);
-//
-//        Transaction txn = Transaction.currentTxn();
-//        try {
-//            txn.start();
-//            loadBalancer.setPrivatePort(updatedPrivatePort);
-//            loadBalancer.setAlgorithm(updatedAlgorithm);
-//            _loadBalancerDao.update(loadBalancer.getId(), loadBalancer);
-//
-//            List<FirewallRuleVO> fwRules = _firewallRulesDao.listByLoadBalancerId(loadBalancer.getId());
-//            if ((fwRules != null) && !fwRules.isEmpty()) {
-//                for (FirewallRuleVO fwRule : fwRules) {
-//                    fwRule.setPrivatePort(updatedPrivatePort);
-//                    fwRule.setAlgorithm(updatedAlgorithm);
-//                    _firewallRulesDao.update(fwRule.getId(), fwRule);
-//                }
-//            }
-//            txn.commit();
-//        } catch (RuntimeException ex) {
-//            s_logger.warn("Unhandled exception trying to update load balancer rule", ex);
-//            txn.rollback();
-//            throw ex;
-//        } finally {
-//            txn.close();
-//        }
-//
-//        // now that the load balancer has been updated, reconfigure the HA Proxy on the router with all the LB rules 
-//        List<FirewallRuleVO> allLbRules = new ArrayList<FirewallRuleVO>();
-//        IPAddressVO ipAddress = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
-//        List<IPAddressVO> ipAddrs = _networkMgr.listPublicIpAddressesInVirtualNetwork(loadBalancer.getAccountId(), ipAddress.getDataCenterId(), null);
-//        for (IPAddressVO ipv : ipAddrs) {
-//            List<FirewallRuleVO> rules = _firewallRulesDao.listIPForwarding(ipv.getAddress(), false);
-//            allLbRules.addAll(rules);
-//        }
-//
-//        IPAddressVO ip = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
-//        DomainRouterVO router = _routerDao.findBy(ip.getAccountId(), ip.getDataCenterId());
-//        _networkMgr.updateFirewallRules(loadBalancer.getIpAddress(), allLbRules, router);
-//        return _loadBalancerDao.findById(loadBalancer.getId());
-//    }
-
-//    @Override
-//    public LoadBalancerVO updateLoadBalancerRule(LoadBalancerVO loadBalancer, String name, String description) throws InvalidParameterValueException {
-//        if ((name == null) && (description == null)) {
-//            return loadBalancer; // nothing to do
-//        }
-//
-//        LoadBalancerVO lbForUpdate = _loadBalancerDao.createForUpdate();
-//        // make sure the name's not already in use
-//        if (name != null) {
-//            LoadBalancerVO existingLB = _loadBalancerDao.findByAccountAndName(loadBalancer.getAccountId(), name);
-//            if ((existingLB != null) && (existingLB.getId().longValue() != loadBalancer.getId().longValue())) {
-//                throw new InvalidParameterValueException("Unable to update load balancer " + loadBalancer.getName() + " with new name " + name + ", the name is already in use.");
-//            }
-//            lbForUpdate.setName(name);
-//        }
-//
-//        if (description != null) {
-//            lbForUpdate.setDescription(description);
-//        }
-//        _loadBalancerDao.update(loadBalancer.getId(), lbForUpdate);
-//        return _loadBalancerDao.findById(loadBalancer.getId());
-//    }
-
-//    @Override
-//    public long updateLoadBalancerRuleAsync(long userId, long accountId, long loadBalancerId, String name, String description, String privatePort, String algorithm) {
-//        UpdateLoadBalancerParam param = new UpdateLoadBalancerParam(userId, loadBalancerId, name, description, privatePort, algorithm);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//        job.setUserId(UserContext.current().getUserId());
-//        job.setAccountId(accountId);
-//        job.setCmd("UpdateLoadBalancerRule");
-//        job.setCmdInfo(gson.toJson(param));
-//        job.setCmdOriginator("loadbalancer");
-//
-//        return _asyncMgr.submitAsyncJob(job);
-//    }
 
     @Override
     public FirewallRuleVO findForwardingRuleById(Long ruleId) {
@@ -6156,75 +4753,6 @@ public class ManagementServerImpl implements ManagementServer {
         return netRule;
     }
 
-//    public void deleteRule(long ruleId, long userId, long accountId) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException {
-//        Exception e = null;
-//        try {
-//            FirewallRuleVO rule = _firewallRulesDao.findById(ruleId);
-//            if (rule != null) {
-//                boolean success = false;
-//
-//                try {
-//                    if (rule.isForwarding()) {
-//                        success = deleteIpForwardingRule(userId, accountId, rule.getPublicIpAddress(), rule.getPublicPort(), rule.getPrivateIpAddress(), rule.getPrivatePort(),
-//                                rule.getProtocol());
-//                    } else {
-//                        success = deleteLoadBalancingRule(userId, accountId, rule.getPublicIpAddress(), rule.getPublicPort(), rule.getPrivateIpAddress(), rule.getPrivatePort(),
-//                                rule.getAlgorithm());
-//                    }
-//                } catch (Exception ex) {
-//                    e = ex;
-//                }
-//
-//                String description;
-//                String type = EventTypes.EVENT_NET_RULE_DELETE;
-//                String level = EventVO.LEVEL_INFO;
-//                String ruleName = rule.isForwarding() ? "ip forwarding" : "load balancer";
-//
-//                if (success) {
-//                    String desc = "deleted " + ruleName + " rule [" + rule.getPublicIpAddress() + ":" + rule.getPublicPort() + "]->[" + rule.getPrivateIpAddress() + ":"
-//                            + rule.getPrivatePort() + "] " + rule.getProtocol();
-//                    if (!rule.isForwarding()) {
-//                        desc = desc + ", algorithm = " + rule.getAlgorithm();
-//                    }
-//                    description = desc;
-//                } else {
-//                    level = EventVO.LEVEL_ERROR;
-//                    String desc = "deleted " + ruleName + " rule [" + rule.getPublicIpAddress() + ":" + rule.getPublicPort() + "]->[" + rule.getPrivateIpAddress() + ":"
-//                            + rule.getPrivatePort() + "] " + rule.getProtocol();
-//                    if (!rule.isForwarding()) {
-//                        desc = desc + ", algorithm = " + rule.getAlgorithm();
-//                    }
-//                    description = desc;
-//                }
-//
-//                EventUtils.saveEvent(userId, accountId, level, type, description);
-//            }
-//        } finally {
-//            if (e != null) {
-//                if (e instanceof InvalidParameterValueException) {
-//                    throw (InvalidParameterValueException) e;
-//                } else if (e instanceof PermissionDeniedException) {
-//                    throw (PermissionDeniedException) e;
-//                } else if (e instanceof InternalErrorException) {
-//                    throw (InternalErrorException) e;
-//                }
-//            }
-//        }
-//    }
-
-//    public long deleteRuleAsync(long id, long userId, long accountId) {
-//        DeleteRuleParam param = new DeleteRuleParam(id, userId, accountId);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//    	job.setUserId(UserContext.current().getUserId());
-//    	job.setAccountId(accountId);
-//        job.setCmd("DeleteRule");
-//        job.setCmdInfo(gson.toJson(param));
-//        
-//        return _asyncMgr.submitAsyncJob(job);
-//    }
-
     public List<VMTemplateVO> listAllTemplates() {
         return _templateDao.listAll();
     }
@@ -6293,10 +4821,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _consoleProxyMgr.rebootProxy(instanceId, startEventId);
     }
 
-//    public boolean destroyConsoleProxy(long instanceId, long startEventId) {
-//        return _consoleProxyMgr.destroyProxy(instanceId, startEventId);
-//    }
-
     public long startConsoleProxyAsync(long instanceId) {
         long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_START, "starting console proxy with Id: "+instanceId);
         VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
@@ -6342,20 +4866,6 @@ public class ManagementServerImpl implements ManagementServer {
         
         return _asyncMgr.submitAsyncJob(job, true);
     }
-
-//    public long destroyConsoleProxyAsync(long instanceId) {
-//        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_DESTROY, "destroying console proxy with Id: "+instanceId);
-//        VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//        job.setUserId(UserContext.current().getUserId());
-//        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-//        job.setCmd("DestroyConsoleProxy");
-//        job.setCmdInfo(gson.toJson(param));
-//        
-//        return _asyncMgr.submitAsyncJob(job);
-//    }
 
     public String getConsoleAccessUrlRoot(long vmId) {
         VMInstanceVO vm = this.findVMInstanceById(vmId);
@@ -7272,21 +5782,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _securityGroupDao.persist(group);
     }
 
-//    @Override
-//    public long deleteSecurityGroupAsync(long userId, Long accountId, long securityGroupId) {
-//    	
-//        long eventId = EventUtils.saveScheduledEvent(userId, accountId, EventTypes.EVENT_PORT_FORWARDING_SERVICE_DELETE, "deleting security group with Id: " + securityGroupId);
-//        SecurityGroupParam param = new SecurityGroupParam(userId, securityGroupId, null, null, null, eventId);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//        job.setUserId(UserContext.current().getUserId());
-//        job.setAccountId(accountId);
-//        job.setCmd("DeleteSecurityGroup");
-//        job.setCmdInfo(gson.toJson(param));
-//        return _asyncMgr.submitAsyncJob(job);
-//    }
-
     @Override
     public boolean deleteSecurityGroup(DeletePortForwardingServiceCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
     	Long securityGroupId = cmd.getId();
@@ -7547,304 +6042,6 @@ public class ManagementServerImpl implements ManagementServer {
     public LoadBalancerVO findLoadBalancerById(long loadBalancerId) {
         return _loadBalancerDao.findById(Long.valueOf(loadBalancerId));
     }
-
-    /*
-    @Override @DB
-    public long assignToLoadBalancerAsync(long userId, long loadBalancerId, List<Long> instanceIds, Map<String, String> params) {
-        LoadBalancerVO loadBalancer = null;
-        try {
-            // unpack the params
-            String accountName = params.get(BaseCmd.Properties.ACCOUNT.getName());
-            String domainIdStr = params.get(BaseCmd.Properties.DOMAIN_ID.getName());
-            String loadBalancerIdStr = params.get(BaseCmd.Properties.ID.getName());
-            String instanceIdStr = params.get(BaseCmd.Properties.VIRTUAL_MACHINE_ID.getName());
-            String instanceIdList = params.get(BaseCmd.Properties.VIRTUAL_MACHINE_IDS.getName());
-
-            Long domainId = null;
-            if (domainIdStr != null) {
-                domainId = Long.valueOf(domainIdStr);
-            }
-
-            Long loadBalancerId = null;
-            if (loadBalancerIdStr != null) {
-                loadBalancerId = Long.valueOf(loadBalancerIdStr);
-            }
-
-            List<Long> instanceIds = new ArrayList<Long>();
-            if (instanceIdList != null) {
-                StringTokenizer st = new StringTokenizer(instanceIdList, ",");
-                while (st.hasMoreTokens()) {
-                    String token = st.nextToken();
-                    try {
-                        Long nextInstanceId = Long.parseLong(token);
-                        instanceIds.add(nextInstanceId);
-                    } catch (NumberFormatException nfe) {
-                        throw new ServerApiException(BaseCmd.PARAM_ERROR, "The virtual machine id " + token + " is not a valid parameter.");
-                    }
-                }
-            } else if (instanceIdStr != null) {
-                instanceIds.add(Long.valueOf(instanceIdStr));
-            }
-
-            loadBalancer = _loadBalancerDao.acquire(loadBalancerId);
-
-            // if unable to lock the load balancer, throw an exception
-            if (loadBalancer == null) {
-                throw new CloudRuntimeException("Failed to assign instances to load balancer, unable to lock load balancer " + loadBalancerId);
-            }
-
-            IPAddressVO ipAddress = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
-            DomainRouterVO router = _routerDao.findBy(loadBalancer.getAccountId(), ipAddress.getDataCenterId());
-            params.put("domainrouterid", Long.valueOf(router.getId()).toString());
-
-            List<LoadBalancerVMMapVO> mappedVMs = _loadBalancerVMMapDao.listByLoadBalancerId(loadBalancerId);
-            for (LoadBalancerVMMapVO mappedVM : mappedVMs) {
-                if (instanceIds.contains(mappedVM.getInstanceId())) {
-                    instanceIds.remove(mappedVM.getInstanceId());
-                }
-            }
-
-            if (instanceIds.isEmpty()) {
-                // nothing to do, return 0 since no job is being submitted
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("assignToLoadBalancerAsync:  all given instance ids are already mapped, no work to do...skipping async job");
-                }
-                return 0L;
-            }
-            for (Long instanceId : instanceIds) {
-                LoadBalancerVMMapVO loadBalancerMapping = new LoadBalancerVMMapVO(loadBalancerId, instanceId.longValue(), true);
-                _loadBalancerVMMapDao.persist(loadBalancerMapping);
-            }
-
-//            LoadBalancerParam param = new LoadBalancerParam(userId, router.getId(), loadBalancerId, instanceIds);
-            Gson gson = GsonHelper.getBuilder().create();
-
-            AsyncJobVO job = new AsyncJobVO();
-            job.setUserId(UserContext.current().getUserId());
-            job.setAccountId(loadBalancer.getAccountId());
-            job.setCmd("AssignToLoadBalancer");
-//            job.setCmdInfo(gson.toJson(param));
-            job.setCmdInfo(gson.toJson(params));
-            return _asyncMgr.submitAsyncJob(job, true);
-        } finally {
-            if (loadBalancer != null) {
-                _loadBalancerDao.release(loadBalancer.getId());
-            }
-        }
-    }
-    */
-
-//    @Override @DB
-//    public boolean removeFromLoadBalancer(long userId, long loadBalancerId, List<Long> instanceIds) throws InvalidParameterValueException {
-//
-//    	Transaction txn = Transaction.currentTxn();
-//        LoadBalancerVO loadBalancerLock = null;
-//        boolean success = true;
-//        try {
-//            LoadBalancerVO loadBalancer = _loadBalancerDao.findById(loadBalancerId);
-//            if (loadBalancer == null) {
-//                return false;
-//            }
-//
-//            IPAddressVO ipAddress = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
-//            if (ipAddress == null) {
-//                return false;
-//            }
-//
-//            DomainRouterVO router = _routerDao.findBy(ipAddress.getAccountId(), ipAddress.getDataCenterId());
-//            if (router == null) {
-//                return false;
-//            }
-//
-//            txn.start();
-//            for (Long instanceId : instanceIds) {
-//                UserVm userVm = _userVmDao.findById(instanceId);
-//                if (userVm == null) {
-//                    s_logger.warn("Unable to find virtual machine with id " + instanceId);
-//                    throw new InvalidParameterValueException("Unable to find virtual machine with id " + instanceId);
-//                }
-//                FirewallRuleVO fwRule = _firewallRulesDao.findByGroupAndPrivateIp(loadBalancerId, userVm.getGuestIpAddress(), false);
-//                if (fwRule != null) {
-//                    fwRule.setEnabled(false);
-//                    _firewallRulesDao.update(fwRule.getId(), fwRule);
-//                }
-//            }
-//
-//            List<FirewallRuleVO> allLbRules = new ArrayList<FirewallRuleVO>();
-//            IPAddressVO ipAddr = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
-//            List<IPAddressVO> ipAddrs = _networkMgr.listPublicIpAddressesInVirtualNetwork(loadBalancer.getAccountId(), ipAddr.getDataCenterId(), null);
-//            for (IPAddressVO ipv : ipAddrs) {
-//                List<FirewallRuleVO> rules = _firewallRulesDao.listIPForwarding(ipv.getAddress(), false);
-//                allLbRules.addAll(rules);
-//            }
-//
-//            _networkMgr.updateFirewallRules(loadBalancer.getIpAddress(), allLbRules, router);
-//
-//            // firewall rules are updated, lock the load balancer as mappings are updated
-//            loadBalancerLock = _loadBalancerDao.acquire(loadBalancerId);
-//            if (loadBalancerLock == null) {
-//                s_logger.warn("removeFromLoadBalancer: failed to lock load balancer " + loadBalancerId + ", deleting mappings anyway...");
-//            }
-//
-//            // remove all the loadBalancer->VM mappings
-//            _loadBalancerVMMapDao.remove(loadBalancerId, instanceIds, Boolean.FALSE);
-//
-//            // Save and create the event
-//            String description;
-//            String type = EventTypes.EVENT_NET_RULE_DELETE;
-//            String level = EventVO.LEVEL_INFO;
-//            Account account = _accountDao.findById(loadBalancer.getAccountId());
-//
-//            for (FirewallRuleVO updatedRule : allLbRules) {
-//                if (!updatedRule.isEnabled()) {
-//                    _firewallRulesDao.remove(updatedRule.getId());
-//
-//                    description = "deleted load balancer rule [" + updatedRule.getPublicIpAddress() + ":" + updatedRule.getPublicPort() + "]->["
-//                            + updatedRule.getPrivateIpAddress() + ":" + updatedRule.getPrivatePort() + "]" + " " + updatedRule.getProtocol();
-//
-//                    EventUtils.saveEvent(userId, account.getId(), level, type, description);
-//                }
-//            }
-//            txn.commit();
-//        } catch (Exception ex) {
-//            s_logger.warn("Failed to delete load balancing rule with exception: ", ex);
-//            success = false;
-//            txn.rollback();
-//        } finally {
-//            if (loadBalancerLock != null) {
-//                _loadBalancerDao.release(loadBalancerId);
-//            }
-//        }
-//        return success;
-//    }
-
-    
-//    @Override
-//    public long removeFromLoadBalancerAsync(long userId, long loadBalancerId, List<Long> instanceIds) {
-//        LoadBalancerVO loadBalancer = _loadBalancerDao.findById(loadBalancerId);
-//        IPAddressVO ipAddress = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
-//        DomainRouterVO router = _routerDao.findBy(loadBalancer.getAccountId(), ipAddress.getDataCenterId());
-//        LoadBalancerParam param = new LoadBalancerParam(userId, router.getId(), loadBalancerId, instanceIds);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//    	job.setUserId(UserContext.current().getUserId());
-//    	job.setAccountId(loadBalancer.getAccountId());
-//        job.setCmd("RemoveFromLoadBalancer");
-//        job.setCmdInfo(gson.toJson(param));
-//        
-//        return _asyncMgr.submitAsyncJob(job, true);
-//    }
-
-//    @Override @DB
-//    public boolean deleteLoadBalancer(long userId, long loadBalancerId) {
-//        Transaction txn = Transaction.currentTxn();
-//        LoadBalancerVO loadBalancer = null;
-//        LoadBalancerVO loadBalancerLock = null;
-//        try {
-//            loadBalancer = _loadBalancerDao.findById(loadBalancerId);
-//            if (loadBalancer == null) {
-//                return false;
-//            }
-//
-//            IPAddressVO ipAddress = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
-//            if (ipAddress == null) {
-//                return false;
-//            }
-//
-//            DomainRouterVO router = _routerDao.findBy(ipAddress.getAccountId(), ipAddress.getDataCenterId());
-//            List<FirewallRuleVO> fwRules = _firewallRulesDao.listByLoadBalancerId(loadBalancerId);
-//
-//            txn.start();
-//
-//            if ((fwRules != null) && !fwRules.isEmpty()) {
-//                for (FirewallRuleVO fwRule : fwRules) {
-//                    fwRule.setEnabled(false);
-//                    _firewallRulesDao.update(fwRule.getId(), fwRule);
-//                }
-//
-//                List<FirewallRuleVO> allLbRules = new ArrayList<FirewallRuleVO>();
-//                List<IPAddressVO> ipAddrs = _networkMgr.listPublicIpAddressesInVirtualNetwork(loadBalancer.getAccountId(), ipAddress.getDataCenterId(), null);
-//                for (IPAddressVO ipv : ipAddrs) {
-//                    List<FirewallRuleVO> rules = _firewallRulesDao.listIPForwarding(ipv.getAddress(), false);
-//                    allLbRules.addAll(rules);
-//                }
-//
-//                _networkMgr.updateFirewallRules(loadBalancer.getIpAddress(), allLbRules, router);
-//
-//                // firewall rules are updated, lock the load balancer as the mappings are updated
-//                loadBalancerLock = _loadBalancerDao.acquire(loadBalancerId);
-//                if (loadBalancerLock == null) {
-//                    s_logger.warn("deleteLoadBalancer: failed to lock load balancer " + loadBalancerId + ", deleting mappings anyway...");
-//                }
-//
-//                // remove all loadBalancer->VM mappings
-//                _loadBalancerVMMapDao.remove(loadBalancerId);
-//
-//                // Save and create the event
-//                String description;
-//                String type = EventTypes.EVENT_NET_RULE_DELETE;
-//                String ruleName = "load balancer";
-//                String level = EventVO.LEVEL_INFO;
-//                Account account = _accountDao.findById(loadBalancer.getAccountId());
-//
-//                for (FirewallRuleVO updatedRule : fwRules) {
-//                    _firewallRulesDao.remove(updatedRule.getId());
-//
-//                    description = "deleted " + ruleName + " rule [" + updatedRule.getPublicIpAddress() + ":" + updatedRule.getPublicPort() + "]->["
-//                                  + updatedRule.getPrivateIpAddress() + ":" + updatedRule.getPrivatePort() + "]" + " " + updatedRule.getProtocol();
-//
-//                    EventUtils.saveEvent(userId, account.getId(), level, type, description);
-//                }
-//            }
-//
-//            txn.commit();
-//        } catch (Exception ex) {
-//            txn.rollback();
-//            s_logger.error("Unexpected exception deleting load balancer " + loadBalancerId, ex);
-//            return false;
-//        } finally {
-//            if (loadBalancerLock != null) {
-//                _loadBalancerDao.release(loadBalancerId);
-//            }
-//        }
-//
-//        boolean success = _loadBalancerDao.remove(loadBalancerId);
-//
-//        // save off an event for removing the security group
-//        EventVO event = new EventVO();
-//        event.setUserId(userId);
-//        event.setAccountId(loadBalancer.getAccountId());
-//        event.setType(EventTypes.EVENT_LOAD_BALANCER_DELETE);
-//        if (success) {
-//            event.setLevel(EventVO.LEVEL_INFO);
-//            String params = "id="+loadBalancer.getId();
-//            event.setParameters(params);
-//            event.setDescription("Successfully deleted load balancer " + loadBalancer.getName() + " (id:" + loadBalancer.getId() + ")");
-//        } else {
-//            event.setLevel(EventVO.LEVEL_ERROR);
-//            event.setDescription("Failed to delete load balancer " + loadBalancer.getName() + " (id:" + loadBalancer.getId() + ")");
-//        }
-//        _eventDao.persist(event);
-//        return success;
-//    }
-//
-//    @Override
-//    public long deleteLoadBalancerAsync(long userId, long loadBalancerId) {
-//        LoadBalancerVO loadBalancer = _loadBalancerDao.findById(loadBalancerId);
-//        IPAddressVO ipAddress = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
-//        DomainRouterVO router = _routerDao.findBy(loadBalancer.getAccountId(), ipAddress.getDataCenterId());
-//        LoadBalancerParam param = new LoadBalancerParam(userId, router.getId(), loadBalancerId, null);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//    	job.setUserId(UserContext.current().getUserId());
-//    	job.setAccountId(loadBalancer.getAccountId());
-//        job.setCmd("DeleteLoadBalancer");
-//        job.setCmdInfo(gson.toJson(param));
-//        
-//        return _asyncMgr.submitAsyncJob(job, true);
-//    }
 
     @Override
     public List<UserVmVO> listLoadBalancerInstances(ListLoadBalancerRuleInstancesCmd cmd) throws PermissionDeniedException {
@@ -8260,21 +6457,6 @@ public class ManagementServerImpl implements ManagementServer {
     public SnapshotPolicyVO findSnapshotPolicyById(Long policyId) {
         return _snapshotPolicyDao.findById(policyId);
     }
-    
-//	@Override
-//	public boolean deleteSnapshotPolicies(long userId, List<Long> policyIds) throws InvalidParameterValueException {
-//		boolean result = true;
-//		if (policyIds.contains(Snapshot.MANUAL_POLICY_ID)) {
-//		    throw new InvalidParameterValueException("Invalid Policy id given: " + Snapshot.MANUAL_POLICY_ID);
-//		}
-//		for (long policyId : policyIds) {
-//			if (!_snapMgr.deletePolicy(userId, policyId)) {
-//				result = false;
-//				s_logger.warn("Failed to delete snapshot policy with Id: " + policyId);
-//			}
-//		}
-//		return result;
-//	}
 
 	@Override
 	public String getSnapshotIntervalTypes(long snapshotId){
@@ -8479,8 +6661,6 @@ public class ManagementServerImpl implements ManagementServer {
 		}
 	}
 
-
-
 	@Override
 	public boolean stopSystemVM(StopSystemVmCmd cmd) {
 		Long id = cmd.getId();
@@ -8497,36 +6677,6 @@ public class ManagementServerImpl implements ManagementServer {
 		} else {
 			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_STOP, "stopping secondary storage Vm Id: "+id);
 			return stopSecondaryStorageVm(id, eventId);
-		}
-	}
-
-//	@Override
-//	public long stopSystemVmAsync(long instanceId) {
-//		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(instanceId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
-//		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
-//			return stopConsoleProxyAsync(instanceId);
-//		} else {
-//			return stopSecondaryStorageVmAsync(instanceId);
-//		}
-//	}
-
-//	@Override
-//	public long rebootSystemVmAsync(long instanceId) {
-//		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(instanceId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
-//		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
-//			return rebootConsoleProxyAsync(instanceId);
-//		} else {
-//			return rebootSecondaryStorageVmAsync(instanceId);
-//		}
-//	}
-	
-	@Override
-	public long startSystemVmAsync(long instanceId) {
-		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(instanceId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
-		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
-			return startConsoleProxyAsync(instanceId);
-		} else {
-			return startSecondaryStorageVmAsync(instanceId);
 		}
 	}
 	
@@ -8612,35 +6762,6 @@ public class ManagementServerImpl implements ManagementServer {
         return groupVO;
     }
 
-//	@Override
-//	public List<IngressRuleVO> authorizeNetworkGroupIngress(AccountVO account, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups) {
-//		return _networkGroupMgr.authorizeNetworkGroupIngress(account, groupName, protocol, startPort, endPort, cidrList, authorizedGroups);
-//	}
-
-//    @Override
-//    public long authorizeNetworkGroupIngressAsync(Long accountId, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups) {
-//        AccountVO account = (AccountVO)findAccountById(accountId);
-//        if (account == null) {
-//            s_logger.warn("Unable to authorize network group ingress on group: " + groupName + " for account " + accountId + " -- account not found.");
-//            return 0;
-//        }
-//
-//        NetworkGroupIngressParam param = new NetworkGroupIngressParam(account, groupName, protocol, startPort, endPort, cidrList, authorizedGroups);
-//        Gson gson = GsonHelper.getBuilder().create();
-//        AsyncJobVO job = new AsyncJobVO();
-//        job.setUserId(UserContext.current().getUserId());
-//        job.setAccountId(accountId);
-//        job.setCmd("AuthorizeNetworkGroupIngress");
-//        job.setCmdInfo(gson.toJson(param));
-//        job.setCmdOriginator(AuthorizeNetworkGroupIngressCmd.getResultObjectName());
-//        return _asyncMgr.submitAsyncJob(job);
-//    }
-
-//    @Override
-//	public boolean revokeNetworkGroupIngress(AccountVO account, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups) {
-//		return _networkGroupMgr.revokeNetworkGroupIngress(account, groupName, protocol, startPort, endPort, cidrList, authorizedGroups);
-//	}
-
 	@Override
 	public long revokeNetworkGroupIngressAsync(Long accountId, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups) {
 		AccountVO account = (AccountVO)findAccountById(accountId);
@@ -8658,11 +6779,6 @@ public class ManagementServerImpl implements ManagementServer {
         job.setCmdInfo(gson.toJson(param));
         return _asyncMgr.submitAsyncJob(job);
 	}
-
-//    @Override
-//    public void deleteNetworkGroup(Long groupId, Long accountId) throws ResourceInUseException, PermissionDeniedException {
-//        _networkGroupMgr.deleteNetworkGroup(groupId, accountId);
-//    }
 
 	@Override
 	public HostStats getHostStatistics(long hostId) {
@@ -8747,68 +6863,6 @@ public class ManagementServerImpl implements ManagementServer {
 		else
 			return false;
 	}
-
-//	public boolean preparePrimaryStorageForMaintenance(long primaryStorageId, long userId) {
-//		return	_storageMgr.preparePrimaryStorageForMaintenance(primaryStorageId, userId);
-//
-//	}
-//
-//	public long preparePrimaryStorageForMaintenanceAsync(long primaryStorageId) throws InvalidParameterValueException 
-//	{
-//    	StoragePoolVO primaryStorage = _poolDao.findById(primaryStorageId);
-//    	
-//    	if (primaryStorage == null) {
-//            s_logger.debug("Unable to find primary storage id: " + primaryStorageId);
-//            throw new InvalidParameterValueException("Unable to find storage pool with ID: " + primaryStorageId + ". Please specify a valid primary storage ID.");
-//        }
-//        
-//        if (_poolDao.countBy(primaryStorage.getId(), Status.PrepareForMaintenance, Status.ErrorInMaintenance, Status.Maintenance) > 0) {
-//            throw new InvalidParameterValueException("There are other primary storages in maintenance mode.");
-//        }
-//        
-//        //set the state to maintenance
-//        primaryStorage.setStatus(Status.PrepareForMaintenance);
-//        _poolDao.persist(primaryStorage);
-//        
-//        Long param = new Long(primaryStorageId);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//        job.setUserId(UserContext.current().getUserId());
-//        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-//        job.setCmd("PreparePrimaryStorageMaintenance");
-//        job.setCmdInfo(gson.toJson(param));
-//        job.setCmdOriginator(PreparePrimaryStorageForMaintenanceCmd.getResultObjectName());
-//        return _asyncMgr.submitAsyncJob(job);
-//
-//	}
-	
-//    public boolean cancelPrimaryStorageMaintenance(long primaryStorageId, long userId)
-//    {
-//		return	_storageMgr.cancelPrimaryStorageForMaintenance(primaryStorageId, userId);
-//    }
-//	
-//	public long cancelPrimaryStorageMaintenanceAsync(long primaryStorageId) throws InvalidParameterValueException 
-//	{
-//    	StoragePoolVO primaryStorage = _poolDao.findById(primaryStorageId);
-//    	
-//    	if (primaryStorage == null) {
-//            s_logger.debug("Unable to find primary storage id: " + primaryStorageId);
-//            throw new InvalidParameterValueException("Unable to find storage pool with ID: " + primaryStorageId + ". Please specify a valid primary storage ID.");
-//        }
-//        
-//        Long param = new Long(primaryStorageId);
-//        Gson gson = GsonHelper.getBuilder().create();
-//
-//        AsyncJobVO job = new AsyncJobVO();
-//        job.setUserId(UserContext.current().getUserId());
-//        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-//        job.setCmd("CancelPrimaryStorageMaintenance");
-//        job.setCmdInfo(gson.toJson(param));
-//        job.setCmdOriginator(CancelPrimaryStorageMaintenanceCmd.getResultObjectName());
-//        return _asyncMgr.submitAsyncJob(job);
-//
-//	}
 
 	@Override
 	public boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException {

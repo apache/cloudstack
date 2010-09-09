@@ -254,16 +254,12 @@ public interface StorageManager extends Manager {
 	
 	/**
 	 * Delete the storage pool
-	 * @param id -- id associated
+	 * @param cmd - the command specifying poolId
+	 * @return success or failure
+	 * @throws InvalidParameterValueException
 	 */
 	boolean deletePool(DeletePoolCmd cmd) throws InvalidParameterValueException;
 	
-	/**
-     * Updates a storage pool.
-     * @param poolId ID of the storage pool to be updated
-     * @param tags Tags that will be added to the storage pool
-     */
-//    StoragePoolVO updateStoragePool(long poolId, String tags) throws IllegalArgumentException;
 
 	/**
 	 * Find all of the storage pools needed for this vm.
@@ -282,13 +278,17 @@ public interface StorageManager extends Manager {
 
     /**
      * Enable maintenance for primary storage
-     * @return
+     * @param cmd - the command specifying primaryStorageId
+     * @return success or failure
+     * @throws InvalidParameterValueException
      */
     public boolean preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) throws InvalidParameterValueException;
     
     /**
      * Complete maintenance for primary storage
-     * @return
+     * @param cmd - the command specifying primaryStorageId
+     * @return success or failure
+     * @throws InvalidParameterValueException
      */
     public boolean cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws InvalidParameterValueException;
 

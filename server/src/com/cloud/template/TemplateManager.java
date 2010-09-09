@@ -146,13 +146,13 @@ public interface TemplateManager extends Manager {
  
     /**
      * Deletes a template
-     * @param cmd
+     * @param cmd - the command specifying templateId
      */
     boolean deleteTemplate(DeleteTemplateCmd cmd) throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException;
     
     /**
      * Deletes a template
-     * @param cmd
+     * @param cmd - the command specifying isoId
      */
     boolean deleteIso(DeleteIsoCmd cmd) throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException;
     

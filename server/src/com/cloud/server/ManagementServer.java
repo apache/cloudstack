@@ -100,7 +100,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
@@ -203,11 +202,10 @@ public interface ManagementServer {
 
     /**
      * Deletes a user by userId
-     * @param userId
+     * @param cmd - the delete command defining the id of the user to be deleted.
      * @return true if delete was successful, false otherwise
      */
     boolean deleteUser(DeleteUserCmd cmd);
-//    long deleteUserAsync(long userId);
 
     /**
      * Disables a user by userId
@@ -227,14 +225,14 @@ public interface ManagementServer {
     
     /**
      * Enables an account by accountId
-     * @param cmd
+     * @param cmd - the enableAccount command defining the accountId to be deleted.
      * @return true if enable was successful, false otherwise
      */
     boolean enableAccount(EnableAccountCmd cmd) throws InvalidParameterValueException;
 
     /**
      * Locks an account by accountId.  A locked account cannot access the API, but will still have running VMs/IP addresses allocated/etc.
-     * @param accountId
+     * @param cmd - the LockAccount command defining the accountId to be locked.
      * @return true if enable was successful, false otherwise
      */
     boolean lockAccount(LockAccountCmd cmd);
@@ -282,20 +280,6 @@ public interface ManagementServer {
      */
     boolean unregisterPreallocatedLun(long id) throws IllegalArgumentException;
     
-
-//    /**
-//     * Discovers new hosts given an url to locate the resource.
-//     * @param dcId id of the data center
-//     * @param podid id of the pod
-//     * @param clusterId id of the cluster
-//     * @param url url to use
-//     * @param username username to use to login
-//     * @param password password to use to login
-//     * @return true if hosts were found; false if not.
-//     * @throws IllegalArgumentException
-//     */
-//    List<? extends Host> discoverHosts(long dcId, Long podId, Long clusterId, String url, String username, String password) throws IllegalArgumentException, DiscoveryException;
-
     String updateAdminPassword(long userId, String oldPassword, String newPassword);
 
     /**
@@ -368,46 +352,6 @@ public interface ManagementServer {
 	StorageStats getStoragePoolStatistics(long id);
     
     /**
-     * prepares a host for maintenance.  This method can take a long time
-     * depending on if there are any current operations on the host.
-     * 
-     * @param hostId id of the host to bring down.
-     * @return true if the operation succeeds.
-     */
-//    boolean prepareForMaintenance(long hostId);
-//    long prepareForMaintenanceAsync(long hostId) throws InvalidParameterValueException;
-    
-    /**
-     * prepares a primary storage for maintenance. 
-     * 
-     * @param primaryStorageId id of the storage to bring down.
-     * @return true if the operation succeeds.
-     */
-//    boolean preparePrimaryStorageForMaintenance(long primaryStorageId, long userId);
-//    long preparePrimaryStorageForMaintenanceAsync(long primaryStorageId) throws InvalidParameterValueException;
-
-    /**
-     * cancels primary storage from maintenance. 
-     * 
-     * @param primaryStorageId id of the storage to bring up.
-     * @return true if the operation succeeds.
-     */
-//    boolean cancelPrimaryStorageMaintenance(long primaryStorageId, long userId);
-//    long cancelPrimaryStorageMaintenanceAsync(long primaryStorageId) throws InvalidParameterValueException;
-    
-    
-    /**
-     * Marks the host as maintenance completed.  This actually will mark
-     * the host as down and the state will be changed automatically once
-     * the agent is up and running.
-     * 
-     * @param hostId
-     * @return true if the state changed worked.  false if not.
-     */
-//    boolean maintenanceCompleted(long hostId);
-//    long maintenanceCompletedAsync(long hostId);
-    
-    /**
      * Gets Host/VM statistics for a given host
      * 
      * @param hostId
@@ -465,12 +409,6 @@ public interface ManagementServer {
      * @return Volume
      */
     VolumeVO findRootVolume(long vmId);
-    
-    /**
-     * Marks a data volume as destroyed
-     * @param volumeId
-     */
-//    void destroyVolume(long volumeId) throws InvalidParameterValueException;
 
     /**
      * Return a list of IP addresses
@@ -491,104 +429,10 @@ public interface ManagementServer {
     List<DataCenterIpAddressVO> listPrivateIpAddressesBy(Long podId, Long zoneId);
     
     /**
-     * Create or update a  port forwarding rule
-     * @param userId userId calling this api
-     * @param accountId accountId calling this api
-     * @param publicIp Ip address
-     * @param publicPort port
-     * @param privateIp private address (10.x.y.z) to be forwarded to
-     * @param privatePort private port to be forwarded to
-     * @param proto protocol (tcp/udp/icmp)
-     * @return -1 if update/create failed, otherwise update/create succeeded
-     * @throws PermissionDeniedException if user is not authorized to operate on the supplied IP address
-     * @throws NetworkRuleConflictException  if the new rule conflicts with existing rules
-     * @throws InvalidParameterValueException  if the supplied parameters have invalid values
-     * @throws InternalErrorException  if the update could not be performed
-     */
-    // long createOrUpdateIpForwardingRule(long userId, long accountId, String publicIp, String publicPort, String privateIp, String privatePort, String proto) throws PermissionDeniedException, NetworkRuleConflictException, InvalidParameterValueException, InternalErrorException;
-    
-    /**
-     * Create or update a load balancing rule
-     * @param userId userId calling this api
-     * @param accountId accountId calling this api
-     * @param publicIp Ip address
-     * @param publicPort port
-     * @param privateIp private address (10.x.y.z) to be forwarded to
-     * @param privatePort private port to be forwarded to
-     * @param algo the load balancing algorithm
-     * @return -1 if update/create failed, otherwise update/create succeeded
-     * @throws PermissionDeniedException if user is not authorized to operate on the supplied IP address
-     * @throws NetworkRuleConflictException  if the new rule conflicts with existing rules
-     * @throws InvalidParameterValueException  if the supplied parameters have invalid values
-     * @throws InternalErrorException  if the update could not be performed
-     */
-    // long createOrUpdateLoadBalancerRule(long userId, long accountId, String publicIp, String publicPort, String privateIp, String privatePort, String algo) throws PermissionDeniedException, NetworkRuleConflictException, InvalidParameterValueException, InternalErrorException;
-    
-    /**
-     * Delete a ip forwarding rule
-     * @param userId userId calling this api
-     * @param accountId accountId calling this api
-     * @param publicIp Ip address
-     * @param publicPort port
-     * @param privateIp private address (10.x.y.z) to be forwarded to
-     * @param privatePort private port to be forwarded to
-     * @param proto protocol (tcp/udp/icmp)
-     * @return true if succeeded
-     * @throws PermissionDeniedException if user is not authorized to operate on the supplied IP address
-     * @throws InvalidParameterValueException  if the supplied parameters have invalid values
-     * @throws InternalErrorException  if the update could not be performed
-     */
-    // boolean deleteIpForwardingRule(long userId, long accountId, String publicIp, String publicPort, String privateIp, String privatePort, String proto) throws PermissionDeniedException, InvalidParameterValueException, InternalErrorException;
-
-    /**
-     * Delete a load balancing rule
- 	 * @param userId userId calling this api
-     * @param accountId accountId calling this api
-     * @param publicIp Ip address
-     * @param publicPort port
-     * @param privateIp private address (10.x.y.z) to be forwarded to
-     * @param privatePort private port to be forwarded to
-     * @param algo loadbalance algorithm (roundrobin/source/leastconn/etc)
-     * @return true if succeeded
-     * @throws PermissionDeniedException if user is not authorized to operate on the supplied IP address
-     * @throws InvalidParameterValueException  if the supplied parameters have invalid values
-     * @throws InternalErrorException  if the update could not be performed
-     */
-    // boolean deleteLoadBalancingRule(long userId, long accountId, String publicIp, String publicPort, String privateIp, String privatePort, String algo) throws PermissionDeniedException, InvalidParameterValueException, InternalErrorException;
-
-    /**
      * Generates a random password that will be used (initially) by newly created and started virtual machines
      * @return a random password
      */
     String generateRandomPassword();
-    
-    /**
-     * Resets the password for a virtual machine with a new password
-     * @param userId, the user that's reseting the password
-     * @param vmId the ID of the virtual machine
- 	 * @param password the password for the virtual machine
-     * @return true or false, based on the success of the method
-     */
-//    boolean resetVMPassword(long userId, long vmId, String password);
-//    long resetVMPasswordAsync(long userId, long vmId, String password);
-    
-    /**
-     * Attaches the specified volume to the specified VM
-     * @param vmId
-     * @param volumeId
-     * @throws InvalidParameterValueException, InternalErrorException
-     */
-//    void attachVolumeToVM(long vmId, long volumeId, Long deviceId, long startEventId) throws InternalErrorException;
-//    long attachVolumeToVMAsync(long vmId, long volumeId, Long deviceId) throws InvalidParameterValueException;
-    
-    /**
-     * Detaches the specified volume from the VM it is currently attached to. If it is not attached to any VM, will return true.
-     * @param vmId
-     * @volumeId
-     * @throws InvalidParameterValueException, InternalErrorException
-     */
-//    void detachVolumeFromVM(long volumeId, long startEventId) throws InternalErrorException;
-//    long detachVolumeFromVMAsync(long volumeId) throws InvalidParameterValueException;
     
     /**
      * Attaches an ISO to the virtual CDROM device of the specified VM. Will fail if the VM already has an ISO mounted.
@@ -599,8 +443,6 @@ public interface ManagementServer {
      * @return
      */
     boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach, long startEventId);
-//    long attachISOToVMAsync(long vmId, long userId, long isoId) throws InvalidParameterValueException;
-//    long detachISOFromVMAsync(long vmId, long userId) throws InvalidParameterValueException;
 
     /**
      * Creates and starts a new Virtual Machine.
@@ -626,46 +468,6 @@ public interface ManagementServer {
     UserVm deployVirtualMachine(long userId, long accountId, long dataCenterId, long serviceOfferingId, long templateId, Long diskOfferingId, String domain, String password, String displayName, String group, String userData, String [] groups, long startEventId, long size) throws ResourceAllocationException, InvalidParameterValueException, InternalErrorException, InsufficientStorageCapacityException, PermissionDeniedException, ExecutionException, StorageUnavailableException, ConcurrentOperationException;
     long deployVirtualMachineAsync(long userId, long accountId, long dataCenterId, long serviceOfferingId, long templateId, Long diskOfferingId, String domain, String password, String displayName, String group, String userData, String [] groups, long size) throws InvalidParameterValueException, PermissionDeniedException;
     
-    /**
-     * Starts a Virtual Machine
-     * 
-     * @param userId the id of the user performing the action
-     * @param vmId
-     * @param isoPath - path of the ISO file to boot this VM from (null to boot from root disk)
-     * @return VirtualMachine if successfully started, null otherwise
-     * @throws ExecutionException
-     * @throws StorageUnavailableException
-     * @throws ConcurrentOperationException
-     */
-    //UserVm startVirtualMachine(long userId, long vmId, String isoPath) throws InternalErrorException, ExecutionException, StorageUnavailableException, ConcurrentOperationException;
-//    long startVirtualMachineAsync(long userId, long vmId, String isoPath);
-    
-    /**
-     * Stops a Virtual Machine
-     * 
-     * @param userId the id of the user performing the action
-     * @param vmId
-     * @return true if successfully stopped, false otherwise
-     */
-    //boolean stopVirtualMachine(long userId, long vmId);
-//    long stopVirtualMachineAsync(long userId, long vmId);
-    
-    /**
-     * Reboots a Virtual Machine
-     * 
-     * @param vmId
-     * @return true if successfully rebooted, false otherwise
-     */
-//    boolean rebootVirtualMachine(long userId, long vmId);
-    
-    /**
-     * Reboots a Virtual Machine
-     * 
-     * @param vmId
-     * @return the async-call job id
-     */
-//    long rebootVirtualMachineAsync(long userId, long vmId);
-    
 
     /**
      * Destroys a Virtual Machine
@@ -683,48 +485,12 @@ public interface ManagementServer {
     long destroyVirtualMachineAsync(long userId, long vmId);
     
     /**
-     * Recovers a destroyed virtual machine.
-     * @param vmId
-     * @return true if recovered, false otherwise
-     * @throws InternalErrorException 
-     */
-//    boolean recoverVirtualMachine(long vmId) throws ResourceAllocationException, InternalErrorException;
-
-    /**
-     * Upgrade the virtual machine to a new service offering
-     * @param vmId
-     * @param serviceOfferingId
-     * @return success/failure
-     */
-//    boolean upgradeVirtualMachine(long userId, long vmId, long serviceOfferingId, long startEventId);
-//    long upgradeVirtualMachineAsync(long userId, long vmId, long serviceOfferingId) throws InvalidParameterValueException;
-    
-    
-    /**
-     * Updates display name and group for virtual machine; enables/disabled ha
-     * @param vmId
-     * @param group, displayName
-     * @param enable true to enable HA, false otherwise
-     * @param userId - id of user performing the update on the virtual machine
-     * @param accountId - id of the account that owns the virtual machine
-     */
-//    void updateVirtualMachine(long vmId, String displayName, String group, boolean enable, Long userId, long accountId);
-
-    /**
-     * Updates a storage pool.
-     * @param poolId ID of the storage pool to be updated
-     * @param tags Tags that will be added to the storage pool
-     */
-//    StoragePoolVO updateStoragePool(long poolId, String tags);
-    
-    /**
      * Starts a Domain Router
      * 
      * @param routerId
      * @return DomainRouter if successfully started, false otherwise
      */
 	DomainRouter startRouter(long routerId, long startEventId) throws InternalErrorException;
-//	long startRouterAsync(long routerId);
 	
 	/**
 	 * Stops a Domain Router
@@ -733,7 +499,6 @@ public interface ManagementServer {
 	 * @return true if successfully stopped, false otherwise
 	 */
 	boolean stopRouter(long routerId, long startEventId);
-//	long stopRouterAsync(long routerId);
 	
 	/**
 	 * Reboots a Domain Router
@@ -742,15 +507,6 @@ public interface ManagementServer {
 	 * @return true if successfully rebooted, false otherwise
 	 */
 	boolean rebootRouter(long routerId, long startEventId) throws InternalErrorException;
-//	long rebootRouterAsync(long routerId);
-	
-	/**
-	 * Destroys a Domain Router
-	 * 
-	 * @param routerId
-	 * @return true if successfully destroyed, false otherwise
-	 */
-//	boolean destroyRouter(long routerId);
     
     /**
      * Finds a domain router by user and data center
@@ -1008,40 +764,6 @@ public interface ManagementServer {
     boolean updateTemplate(UpdateTemplateOrIsoCmd cmd) throws InvalidParameterValueException;
     
     /**
-     * Creates a template by downloading to all zones
-     * @param createdBy userId of the template creater
-     * @param zoneId optional zoneId. if null, assumed to be all zones
-     * @param name - user specified name for the template
-     * @param displayText user readable name.
-     * @param isis it public
-     * @param featured is it featured
-     * @param format format of the template (VHD, ISO, QCOW2, etc)
-     * @param diskType filesystem such as ext2, ntfs etc
-     * @param url url to download from
-     * @param chksum checksum to be verified
-     * @param requiresHvm
-     * @param bits - 32 or 64 bit template
-     * @param enablePassword should password generation be enabled
-     * @param guestOSId guestOS id
-     * @param bootable is the disk bootable
-     * @return template id of created template
-     * @throws IllegalArgumentException
-     * @throws ResourceAllocationException
-     * @throws InvalidParameterValueException
-     */
-//    Long createTemplate(long createdBy, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) throws IllegalArgumentException, ResourceAllocationException, InvalidParameterValueException;
-    
-    /**
-     * Deletes a template from all secondary storage servers
-     * @param userId
-     * @param templateId
-     * @param zoneId
-     * @return true if success
-     */
-//    boolean deleteTemplate(long userId, long templateId, Long zoneId, long startEventId) throws InternalErrorException;
-//    long deleteTemplateAsync(long userId, long templateId, Long zoneId) throws InvalidParameterValueException;
-    
-    /**
      * Copies a template from one secondary storage server to another
      * @param userId
      * @param templateId
@@ -1051,16 +773,6 @@ public interface ManagementServer {
      * @throws InternalErrorException
      */
     boolean copyTemplate(long userId, long templateId, long sourceZoneId, long destZoneId, long startEventId) throws InternalErrorException;
-//    long copyTemplateAsync(long userId, long templateId, long sourceZoneId, long destZoneId) throws InvalidParameterValueException;
-    
-    /**
-     * Deletes an ISO from all secondary storage servers
-     * @param userId
-     * @param isoId
-     * @param zoneId
-     * @return true if success
-     */
-//    long deleteIsoAsync(long userId, long isoId, Long zoneId) throws InvalidParameterValueException;
     
     /**
      * Finds a template by the specified ID.
@@ -1102,16 +814,10 @@ public interface ManagementServer {
 
     /**
      * Update an existing port forwarding rule on the given public IP / public port for the given protocol
-     * @param userId id of the user performing the action
-     * @param publicIp ip address of the forwarding rule to update
-     * @param privateIp ip address to forward to
-     * @param publicPort public port of the forwarding rule to update
-     * @param privatePort private port to forward to
-     * @param protocol protocol of the rule to update
+     * @param cmd - the UpdateIPForwardingRuleCmd command that wraps publicIp, privateIp, publicPort, privatePort, protocol of the rule to update
      * @return the new firewall rule if updated, null if no rule on public IP / public port of that protocol could be found
      */
     FirewallRuleVO updatePortForwardingRule(UpdateIPForwardingRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
-//    long updatePortForwardingRuleAsync(long userId, long accountId, String publicIp, String privateIp, String publicPort, String privatePort, String protocol);
 
     /**
      * Find a firewall rule by rule id
@@ -1280,18 +986,6 @@ public interface ManagementServer {
      * @return the updated rule if successful, null otherwise
      */
     NetworkRuleConfigVO applyPortForwardingServiceRule(Long ruleId) throws NetworkRuleConflictException;
-
-    /**
-	 * Deletes an IP forwarding or load balancer rule
-	 * @param ruleId
-	 * @param userId
-     * @param accountId
-	 * @throws InvalidParameterValueException
-	 * @throws PermissionDeniedException
-	 * @throws InternalErrorException
-	 */
-//	void deleteRule(long id, long userId, long accountId) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException;
-//	long deleteRuleAsync(long id, long userId, long accountId);
 	
 	ConsoleProxyInfo getConsoleProxy(long dataCenterId, long userVmId);
 	ConsoleProxyVO startConsoleProxy(long instanceId, long startEventId) throws InternalErrorException;
@@ -1300,21 +994,14 @@ public interface ManagementServer {
 	long stopConsoleProxyAsync(long instanceId);
 	boolean rebootConsoleProxy(long instanceId, long startEventId);
 	long rebootConsoleProxyAsync(long instanceId);
-//	boolean destroyConsoleProxy(long instanceId, long startEventId);
-//	long destroyConsoleProxyAsync(long instanceId);
 	String getConsoleAccessUrlRoot(long vmId);
 	ConsoleProxyVO findConsoleProxyById(long instanceId);
 	VMInstanceVO findSystemVMById(long instanceId);
 	boolean stopSystemVM(StopSystemVmCmd cmd);
 	VMInstanceVO startSystemVM(StartSystemVMCmd cmd) throws InternalErrorException;
-	long startSystemVmAsync(long instanceId);
-//	long stopSystemVmAsync(long instanceId);
-//	long rebootSystemVmAsync(long longValue);
 	boolean rebootSystemVM(RebootSystemVmCmd cmd);
 
 
-
-	
 	/**
 	 * Returns a configuration value with the specified name
 	 * @param name
@@ -1441,17 +1128,6 @@ public interface ManagementServer {
      * @return owning account if ip address is allocated, null otherwise
      */
     Account findAccountByIpAddress(String ipAddress);
-
-    /**
-	 * Updates an existing resource limit with the specified details. If a limit doesn't exist, will create one.
-	 * @param domainId
-	 * @param accountId
-	 * @param type
-	 * @param max
-	 * @return
-	 * @throws InvalidParameterValueException
-	 */
-//    ResourceLimitVO updateResourceLimit(Long domainId, Long accountId, ResourceType type, Long max) throws InvalidParameterValueException;
     
     /**
      * Deletes a Limit
@@ -1531,7 +1207,6 @@ public interface ManagementServer {
      * @return true if snapshot successfully destroyed, false otherwise
      */
     boolean destroyTemplateSnapshot(Long userId, long snapshotId);
-//    long deleteSnapshotAsync(long userId, long snapshotId);
 
     long createVolumeFromSnapshotAsync(long userId, long accountId, long snapshotId, String volumeName) throws InternalErrorException, ResourceAllocationException;
     
@@ -1625,13 +1300,8 @@ public interface ManagementServer {
 
     /**
      * Assign a security group to a VM
-     * @param userId id of the user assigning the security group
-     * @param securityGroupId the id of the security group to apply (single add)
-     * @param securityGroupIdList the list of ids of the security groups that should be assigned to the vm (will add missing groups and remove existing groups to reconcile with the given list)
-     * @param publicIp ip address used for creating forwarding rules from the network rules in the group
-     * @param vmId vm id to use from getting the private ip address used for creating forwarding rules from the network rules in the group
+     * @param cmd the command specifying secuirtyGroupId, securityGroupIdList, publicIp, vmId parameters
      */
-//    void assignSecurityGroup(Long userId, Long securityGroupId, List<Long> securityGroupIdList, String publicIp, Long vmId, long startEventId) throws PermissionDeniedException, NetworkRuleConflictException, InvalidParameterValueException, InternalErrorException;
     void assignSecurityGroup(AssignPortForwardingServiceCmd cmd) throws PermissionDeniedException, NetworkRuleConflictException, InvalidParameterValueException, InternalErrorException;
 
     /**
@@ -1644,8 +1314,6 @@ public interface ManagementServer {
     void removeSecurityGroup(long userId, long securityGroupId, String publicIp, long vmId, long startEventId) throws InvalidParameterValueException, PermissionDeniedException;
     void removeSecurityGroup(RemovePortForwardingServiceCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
-//    long assignSecurityGroupAsync(Long userId, Long securityGroupId, List<Long> securityGroupIdList, String publicIp, Long vmId);
-
     long removeSecurityGroupAsync(Long userId, long securityGroupId, String publicIp, long vmId);
 
     /**
@@ -1682,25 +1350,17 @@ public interface ManagementServer {
 
     /**
      * Create a security group, a group of network rules (port, private port, protocol, algorithm) that can be applied in mass to a VM
-     * @param name name of the group, must be unique for the domain
-     * @param description brief description of the group, can be null
-     * @param domainId domain where the security group is valid
-     * @param accountId owner of the security group, can be null for domain level security groups
+     * @param cmd the command specifying name, description, domainId, account parameters
      * @return
      */
     SecurityGroupVO createPortForwardingService(CreatePortForwardingServiceCmd cmd) throws InvalidParameterValueException;
 
     /**
      * Delete a security group.  If the group is being actively used, it cannot be deleted.
-     * @param userId the id of the user performing the action
-     * @param securityGroupId the id of the group to delete
-     * @param eventId
+     * @param cmd - the command containing securityGroupId
      * @return true if the security group is deleted, exception is thrown otherwise
      */
-//    boolean deleteSecurityGroup(long userId, long securityGroupId, long eventId)  throws InvalidParameterValueException, PermissionDeniedException;
     boolean deleteSecurityGroup(DeletePortForwardingServiceCmd cmd)  throws InvalidParameterValueException, PermissionDeniedException;
-
-//    long deleteSecurityGroupAsync(long userId, Long accountId, long securityGroupId);
 
     /**
      * check if a security group name in the given account/domain is in use
@@ -1713,9 +1373,6 @@ public interface ManagementServer {
      */
     boolean isSecurityGroupNameInUse(Long domainId, Long accountId, String name);
     SecurityGroupVO findSecurityGroupById(Long groupId);
-
-//    boolean deleteNetworkRuleConfig(long userId, long networkRuleId);
-//    long deleteNetworkRuleConfigAsync(long userId, Account account, Long networkRuleId) throws PermissionDeniedException;
 
     LoadBalancerVO findLoadBalancer(Long accountId, String name);
     LoadBalancerVO findLoadBalancerById(long loadBalancerId);
@@ -1734,42 +1391,6 @@ public interface ManagementServer {
      * @return list of load balancers that match the criteria
      */
     List<LoadBalancerVO> searchForLoadBalancers(ListLoadBalancerRulesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
-
-//    boolean deleteLoadBalancer(long userId, long loadBalancerId);
-//    long deleteLoadBalancerAsync(long userId, long loadBalancerId);
-
-    /**
-     * Update a load balancer rule from the existing private port to a new private port.  The load balancer is found by publicIp, public port, and algorithm.
-     * The individual rule for update is matched by privateIp.
-     * @param userId the id of the user performing the action
-     * @param loadBalancer the load balancer rule being updated
-     * @param privatePort the target private port for the load balancer rule (the rule will be updated from the existing port to this port)
-     * @param algorithm the target algorithm of the load balancer rule (the rule will be updated from the existing algorithm to this algorithm)
-     * @return the updated load balancer rule
-     */
-//    LoadBalancerVO updateLoadBalancerRule(long userId, LoadBalancerVO loadBalancer, String privatePort, String algorithm);
-
-    /**
-     * Update the name and/or description of a load balancer rule
-     * @param loadBalancer the load balancer rule to update
-     * @param name the new name, null if not changing the name
-     * @param description the new description, null if not changing the description
-     * @return the updated load balancer rule
-     */
-//    LoadBalancerVO updateLoadBalancerRule(LoadBalancerVO loadBalancer, String name, String description) throws InvalidParameterValueException;
-
-    /**
-     * Update the name, description, private port, and/or algorithm of a load balancer rule
-     * @param userId the id of the user performing the action
-     * @param accountId the id of the account that owns the load balancer rule
-     * @param loadBalancerId the id of the load balancer rule being updated
-     * @param name the new name, null if not changing the name
-     * @param description the new description, null if not changing the description
-     * @param privatePort the target private port for the load balancer rule (the rule will be updated from the existing port to this port)
-     * @param algorithm the target algorithm of the load balancer rule (the rule will be updated from the existing algorithm to this algorithm)
-     * @return the updated load balancer rule
-     */
-//    long updateLoadBalancerRuleAsync(long userId, long accountId, long loadBalancerId, String name, String description, String privatePort, String algorithm);
 
     String[] getApiConfig();
     StoragePoolVO findPoolById(Long id);
@@ -1824,19 +1445,6 @@ public interface ManagementServer {
      */
     NetworkGroupVO findNetworkGroupById(long networkGroupId);
 
-    /**
-     * Authorize access to a network group.  Access can be granted to a set of IP ranges, or to network groups belonging to other accounts.
-     * @param accountId the account id of the owner of the given network group
-     * @param groupName the name of the network group from which access is being granted
-     * @param protocol scopes the network protocol to which access is being granted
-     * @param startPort scopes the start of a network port range to which access is being granted (or icmp type if the protocol is icmp)
-     * @param endPort scopes the end of a network port range to which access is being granted (or icmp code if the protocol is icmp)
-     * @param cidrList the IP range to which access is being granted
-     * @param authorizedGroups the network groups (looked up by group name/account) to which access is being granted
-     * @return the job id if scheduled, 0 if the job was not scheduled
-     */
-//    long authorizeNetworkGroupIngressAsync(Long accountId, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups);
-//    List<IngressRuleVO> authorizeNetworkGroupIngress(AccountVO account, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups);
 
     /**
 	 * Revoke access to a network group.  Access could have been granted to a set of IP ranges, or to network groups belonging to other accounts.  Access
@@ -1851,15 +1459,6 @@ public interface ManagementServer {
 	 * @return the job id if scheduled, 0 if the job was not scheduled
 	 */
 	long revokeNetworkGroupIngressAsync(Long accountId, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups);
-//	boolean revokeNetworkGroupIngress(AccountVO account, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups);
-
-	/**
-	 * Delete an empty network group.  If the group is not empty an error is returned.
-	 * @param groupId
-	 * @param accountId
-	 * @throws PermissionDeniedException
-	 */
-//	void deleteNetworkGroup(Long groupId, Long accountId) throws ResourceInUseException, PermissionDeniedException;
 
 	HostStats getHostStatistics(long hostId);
 	
@@ -1888,9 +1487,7 @@ public interface ManagementServer {
 	public String getNetworkGroupsNamesForVm(long vmId);
 	
 	boolean checkLocalStorageConfigVal(); 
-	
-//	boolean addConfig(String instance, String component, String category, String name, String value, String description);
-	
+		
 	boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException;
 	boolean updateUser(UpdateUserCmd cmd) throws InvalidParameterValueException;
 	boolean updateTemplatePermissions(UpdateTemplateOrIsoPermissionsCmd cmd)throws InvalidParameterValueException, PermissionDeniedException,InternalErrorException;

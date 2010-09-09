@@ -230,13 +230,12 @@ public interface NetworkManager extends Manager {
     
     /**
      * Associates a public IP address for a router.
-     * @param cmd
+     * @param cmd - the command specifying ipAddress
      * @return
      */
     String associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, InternalErrorException, InvalidParameterValueException;    
     
     boolean updateFirewallRule(FirewallRuleVO fwRule, String oldPrivateIP, String oldPrivatePort);
-//    boolean executeAssignToLoadBalancer(AssignToLoadBalancerExecutor executor, LoadBalancerParam param);
 
     /**
      * Assign a virtual machine, or list of virtual machines, to a load balancer.

@@ -110,23 +110,21 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
     
     /**
      * Resets the password of a virtual machine.
-     * @param userId the id of the user performing the action
-     * @param vmId the id of the virtual machine.
-     * @param password the password of the virtual machine.
-     * @param true if reset worked successfully, false otherwise
+     * @param cmd - the command specifying vmId, password
+     * @return true if reset worked successfully, false otherwise
      */
     boolean resetVMPassword(ResetVMPasswordCmd cmd);
     
     /**
      * Attaches the specified volume to the specified VM
-     * @param cmd
-     * @throws InternalErrorException, InvalidParameterValueException
+     * @param cmd - the command specifying volumeId and vmId
+     * @throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException
      */
     void attachVolumeToVM(AttachVolumeCmd cmd) throws InternalErrorException, InvalidParameterValueException, PermissionDeniedException;
     
     /**
      * Detaches the specified volume from the VM it is currently attached to.
-     * @param volumeId
+     * @param cmd - the command specifying volumeId
      * @throws InternalErrorException
      * @throws InvalidParameterValueException 
      */
@@ -181,7 +179,7 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
 
     /**
      * upgrade the service offering of the virtual machine
-     * @param cmd
+     * @param cmd - the command specifying vmId and new serviceOfferingId
      * @return success/failure
      * @throws InvalidParameterValueException 
      */
@@ -207,7 +205,7 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @param cmd the command object that defines the name, display text, snapshot/volume, bits, public/private, etc.
      * for the private template
      * @return the vm template object if successful, null otherwise
-     * @throws InvalidParameterValueException
+     * @throws InvalidParameterValueException, PermissionDeniedException
      */
     VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
@@ -216,10 +214,9 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @param cmd the command object that defines 
      * 
      * template the template record that is used to store data (we need instance be created first)
-     * @param snapshotId the id of the snaphot to use for the template
-     * @param name the user given name of the private template
-     * @param description the user give description (aka display text) for the template
+     * @param cmd - the command specifying snapshotId, name, description
      * @return a template if successfully created, null otherwise
+     * @throws InvalidParameterValueException
      */
     VMTemplateVO createPrivateTemplate(CreateTemplateCmd cmd) throws InternalErrorException;
 

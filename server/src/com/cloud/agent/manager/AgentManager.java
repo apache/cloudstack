@@ -23,7 +23,6 @@ import java.util.Set;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.commands.AddHostOrStorageCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
 import com.cloud.api.commands.DeleteHostCmd;
@@ -164,7 +163,8 @@ public interface AgentManager extends Manager {
 
 	/**
 	 * Updates a host
-	 * @param cmd
+	 * @param cmd - the command specifying hostId
+	 * @throws InvalidParameterValueException
 	 */
 	void updateHost(UpdateHostCmd cmd) throws InvalidParameterValueException;
 	
@@ -179,8 +179,9 @@ public interface AgentManager extends Manager {
 	/**
      * Deletes a host
      * 
-     * @param cmd
+     * @param cmd - the command specifying hostId
      * @param true if deleted, false otherwise
+     * @throws InvalidParameterValueException
      */
     boolean deleteHost(DeleteHostCmd cmd) throws InvalidParameterValueException; 
 	
