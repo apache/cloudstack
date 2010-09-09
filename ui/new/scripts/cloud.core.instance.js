@@ -9,9 +9,10 @@ function clickInstanceGroupHeader($arrowIcon) {
     var $actionLink = $("#action_link");
     var $actionMenu = $("#action_menu");
     var $actionList = $actionMenu.find("#action_list");
-    var $midmenuContainer = $("#midmenu_container");
-    var $midmenuItemVm = $("#midmenu_item_vm");    
+    var $midmenuContainer = $("#midmenu_container"); 
     var $actionListItem = $("#action_list_item");
+     
+    var $midmenuItem = $("#midmenu_item"); 
       
     var noGroupName = "(no group name)";             
     
@@ -26,42 +27,42 @@ function clickInstanceGroupHeader($arrowIcon) {
             api: "stopVirtualMachine",            
             isAsyncJob: true,
             asyncJobResponse: "stopvirtualmachineresponse",
-            afterActionSeccessFn: setMidmenuItemVm
+            afterActionSeccessFn: vmJsonToMidmenu
         },
         "Start Instance": {
             api: "startVirtualMachine",            
             isAsyncJob: true,
             asyncJobResponse: "startvirtualmachineresponse",
-            afterActionSeccessFn: setMidmenuItemVm
+            afterActionSeccessFn: vmJsonToMidmenu
         },
         "Reboot Instance": {
             api: "rebootVirtualMachine",           
             isAsyncJob: true,
             asyncJobResponse: "rebootvirtualmachineresponse",
-            afterActionSeccessFn: setMidmenuItemVm
+            afterActionSeccessFn: vmJsonToMidmenu
         },
         "Destroy Instance": {
             api: "destroyVirtualMachine",           
             isAsyncJob: true,
             asyncJobResponse: "destroyvirtualmachineresponse",
-            afterActionSeccessFn: setMidmenuItemVm
+            afterActionSeccessFn: vmJsonToMidmenu
         },
         "Restore Instance": {
             api: "recoverVirtualMachine",           
             isAsyncJob: false,
-            afterActionSeccessFn: setMidmenuItemVm
+            afterActionSeccessFn: vmJsonToMidmenu
         },
         "Attach ISO": {
             isAsyncJob: true,
             asyncJobResponse: "attachisoresponse",            
             dialogBeforeActionFn : doAttachISO,
-            afterActionSeccessFn: setMidmenuItemVm   
+            afterActionSeccessFn: vmJsonToMidmenu   
         },
         "Detach ISO": {
             isAsyncJob: true,
             asyncJobResponse: "detachisoresponse",            
             dialogBeforeActionFn : doDetachISO,
-            afterActionSeccessFn: setMidmenuItemVm   
+            afterActionSeccessFn: vmJsonToMidmenu   
         },
         "Reset Password": {
             isAsyncJob: true,
@@ -72,28 +73,28 @@ function clickInstanceGroupHeader($arrowIcon) {
         "Change Name": {
             isAsyncJob: false,            
             dialogBeforeActionFn : doChangeName,
-            afterActionSeccessFn: setMidmenuItemVm
+            afterActionSeccessFn: vmJsonToMidmenu
         },
         "Change Service": {
             isAsyncJob: true,
             asyncJobResponse: "changeserviceforvirtualmachineresponse",
             dialogBeforeActionFn : doChangeService,
-            afterActionSeccessFn: setMidmenuItemVm
+            afterActionSeccessFn: vmJsonToMidmenu
         },
         "Change Group": {
             isAsyncJob: false,            
             dialogBeforeActionFn : doChangeGroup,
-            afterActionSeccessFn: setMidmenuItemVm
+            afterActionSeccessFn: vmJsonToMidmenu
         },
         "Enable HA": {
             isAsyncJob: false,            
             dialogBeforeActionFn : doEnableHA,
-            afterActionSeccessFn: setMidmenuItemVm
+            afterActionSeccessFn: vmJsonToMidmenu
         },
         "Disable HA": {
             isAsyncJob: false,            
             dialogBeforeActionFn : doDisableHA,
-            afterActionSeccessFn: setMidmenuItemVm
+            afterActionSeccessFn: vmJsonToMidmenu
         }                 
     }            
         
@@ -329,25 +330,26 @@ function clickInstanceGroupHeader($arrowIcon) {
     
     function updateVirtualMachineStateInMidMenu(jsonObj, midmenuItem) {         
         if(jsonObj.state == "Running")
-            midmenuItem.find("#status_icon").attr("src", "images/status_green.png");
+            midmenuItem.find("#icon").attr("src", "images/status_green.png");
         else if(jsonObj.state == "Stopped")
-            midmenuItem.find("#status_icon").attr("src", "images/status_red.png");
+            midmenuItem.find("#icon").attr("src", "images/status_red.png");
         else  //Destroyed, Creating, ~                                  
-            midmenuItem.find("#status_icon").attr("src", "images/status_gray.png");
+            midmenuItem.find("#icon").attr("src", "images/status_gray.png");
     }
       
-    function setMidmenuItemVm(instance, $midmenuItemVm1) {  
-        $midmenuItemVm1.data("jsonObj", instance);
-        $midmenuItemVm1.data("toRightPanelFn", vmMidmenuItemToRightPanel);
-        $midmenuItemVm1.attr("id", ("midmenuItemVm_"+instance.id));                             
-        $midmenuItemVm1.data("id", instance.id);        
-        var vmName = getVmName(instance.name, instance.displayname);
-        $midmenuItemVm1.find("#vm_name").text(vmName);
-        $midmenuItemVm1.find("#ip_address").text(instance.ipaddress);                                            
-        updateVirtualMachineStateInMidMenu(instance, $midmenuItemVm1);        
-        $midmenuItemVm1.bind("click", function(event) {  
+    function vmJsonToMidmenu(json, $midmenuItem1) {  
+        $midmenuItem1.data("jsonObj", json);
+        $midmenuItem1.data("toRightPanelFn", vmMidmenuToRightPanel);
+        $midmenuItem1.attr("id", ("midmenuItemVm_"+json.id));                             
+        $midmenuItem1.data("id", json.id);        
+        var vmName = getVmName(json.name, json.displayname);
+        $midmenuItem1.find("#first_row").text(vmName);
+        $midmenuItem1.find("#second_row_label").text("IP Address:");  
+        $midmenuItem1.find("#second_row").text(json.ipaddress);                                            
+        updateVirtualMachineStateInMidMenu(json, $midmenuItem1);        
+        $midmenuItem1.bind("click", function(event) {  
             var $t = $(this);     
-            vmMidmenuItemToRightPanel($t);	 
+            vmMidmenuToRightPanel($t);	 
             return false;
         }); 
     }
@@ -368,7 +370,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         $rightPanelContent.find("#iso").hide();
     }
     
-    function vmMidmenuItemToRightPanel($midmenuItem) {
+    function vmMidmenuToRightPanel($midmenuItem) {
         //details tab 
         if($midmenuItem.find("#info_icon").css("display") != "none") {                
             $rightPanelContent.find("#after_action_info").text($midmenuItem.data("afterActionInfo"));
@@ -504,9 +506,9 @@ function clickInstanceGroupHeader($arrowIcon) {
                                             instanceGroup = noGroupName;                                                                       
                                         if(instanceGroup != groupName)
                                             continue;                                        
-                                        var $midmenuItemVm1 = $midmenuItemVm.clone();                                                                                                                               
-                                        setMidmenuItemVm(instance, $midmenuItemVm1);  
-                                        $("#midmenu_container").append($midmenuItemVm1.show());
+                                        var $template = $midmenuItem.clone();                                                                                                                               
+                                        vmJsonToMidmenu(instance, $template);  
+                                        $("#midmenu_container").append($template.show());
                                     }    
 	                            }
 	                        });
@@ -1136,9 +1138,8 @@ function clickInstanceGroupHeader($arrowIcon) {
     						
 			    vmWizardClose();
     			
-    			var $t = $("#midmenu_item_vm").clone();
-    			$t.find("#vm_name").text("Adding....");
-    			$t.find("#ip_address_container #label").html("&nbsp;");
+    			var $t = $("#midmenu_item").clone();
+    			$t.find("#first_row").text("Adding....");    			
     			$t.find("#content").addClass("inaction"); 
     			$t.find("#spinning_wheel").show();
     			$("#midmenu_container").append($t.show());
@@ -1168,29 +1169,15 @@ function clickInstanceGroupHeader($arrowIcon) {
 										    $t.find("#content").removeClass("inaction"); 
 										    $t.find("#spinning_wheel").hide();		
 										    if (result.jobstatus == 1) {
-											    // Succeeded	
-											    $t.find("#ip_address_container #label").text("IP Address:");
+											    // Succeeded												   
 											    $t.find("#info_icon").removeClass("error").show();
 						                        $t.data("afterActionInfo", ("Adding succeeded.")); 
 						                        if("virtualmachine" in result)	
-						                            setMidmenuItemVm(result.virtualmachine[0], $t);		
-											    /*
-											    vmJSONToTemplate(result.virtualmachine[0], vmInstance);
-											    if (result.virtualmachine[0].passwordenabled == 'true') {
-												    vmInstance.find(".loadingmessage_container .loadingmessage_top p").html("Your instance has been successfully created.  Your new password is : <b>" + result.virtualmachine[0].password + "</b> .  Please change it as soon as you log into your new instance");
-											    } else {
-												    vmInstance.find(".loadingmessage_container .loadingmessage_top p").html("Your instance has been successfully created.");
-											    }
-											    vmInstance.find(".loadingmessage_container").fadeIn("slow");
-											    vmInstance.attr("id", "vm" + result.virtualmachine[0].id);
-											    vmInstance.find("#vm_state_bar").removeClass("admin_vmred_arrow admin_vmgrey_arrow").addClass("admin_vmgreen_arrow");
-											    vmInstance.find("#vm_state").text("Running").removeClass("grid_stoppedtitles grid_celltitles").addClass("grid_runningtitles");
-											    changeGridRowsTotal($("#grid_rows_total"), 1); 
-											    */
+						                            vmJsonToMidmenu(result.virtualmachine[0], $t);													   
 											    
 										    } else if (result.jobstatus == 2) {
 											    // Failed
-											    $t.find("#vm_name").text("Adding failed");
+											    $t.find("#first_row").text("Adding failed");
 											    $t.find("#info_icon").addClass("error").show();
 						                        $t.data("afterActionInfo", ("Adding failed. Reason: " + fromdb(result.jobresult)));   	
 						                        $t.bind("click", function(event) {  
@@ -1199,26 +1186,14 @@ function clickInstanceGroupHeader($arrowIcon) {
                                                     $rightPanelContent.find("#after_action_info_container").show();   
                                                     vmClearRightPanel();
                                                     return false;
-                                                });			
-						                        
-											    /*
-											    vmInstance.find(".loadingmessage_container .loadingmessage_top p").text("Unable to create your new instance due to the error: " + result.jobresult);
-											    vmInstance.find(".loadingmessage_container").fadeIn("slow");
-											    vmInstance.find(".continue_button").data("jobId", result.jobid).unbind("click").bind("click", function(event) {
-												    event.preventDefault();
-												    var deadVM = $("#vmNew"+$(this).data("jobId"));
-												    deadVM.slideUp("slow", function() {
-													    $(this).remove();
-												    });
-											    });
-											    */
+                                                });		
 										    }
 									    }
 								    },
 								    error: function(XMLHttpResponse) {
 									    $("body").stopTime(timerKey);
 									    $t.find("#info_icon").addClass("error").show();
-									    $t.find("#vm_name").text("Adding failed");
+									    $t.find("#first_row").text("Adding failed");
 									    handleError(XMLHttpResponse);
 								    }
 							    });
@@ -1228,7 +1203,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 				    },
 				    error: function(XMLHttpResponse) {					    
 					    $t.find("#info_icon").addClass("error").show();		
-					    $t.find("#vm_name").text("Adding failed");		    
+					    $t.find("#first_row").text("Adding failed");		    
 				        handleError(XMLHttpResponse);
 				    }					
 			    });

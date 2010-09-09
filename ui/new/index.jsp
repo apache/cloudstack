@@ -611,16 +611,18 @@ long milliseconds = new Date().getTime();
                 Group 1</div>
         </div>
     </div>
-    <div class="midmenu_list" id="midmenu_item_vm" style="display: none;">
+    
+    <div class="midmenu_list" id="midmenu_item" style="display: none;">
         <div class="midmenu_content" id="content">
-            <div class="midmenu_icons" id="status_icon_container">
-                <img id="status_icon" src="images/status_gray.png" /></div>
+            <div class="midmenu_icons" id="icon_container">
+                <img id="icon" src="images/status_gray.png" /></div>
             <div class="midmenu_textbox">
                 <p>
-                    <strong id="vm_name"></strong>
+                    <strong id="first_row">&nbsp;</strong>
                 </p>
-                <p id="ip_address_container">
-                    <span id="label">IP Address:</span> <span id="ip_address"></span>
+                <p id="second_row_container">
+                    <span id="second_row_label">&nbsp;</span> 
+                    <span id="second_row">&nbsp;</span>
                 </p>
             </div>
             <div class="midmenu_inactionloader" id="spinning_wheel" style="display: none;">
@@ -629,20 +631,7 @@ long milliseconds = new Date().getTime();
             </div>
         </div>
     </div>
-    
-        <div class="midmenu_list" id="midmenu_item" style="display: none;">
-        	<div class="midmenu_content" id="content">
-                 <div class="midmenu_textbox">
-                 	<p>
-                    	<strong id="description"></strong>
-                    </p>
-                 </div>
-                 <div class="midmenu_inactionloader" id="spinning_wheel" style="display: none; margin-left:18px; display:none;">
-                 </div>
-                 <div class="midmenu_infoicon" id="info_icon" style="display: none; margin-left:18px; display:none;">
-                 </div>
-            </div>
-       </div>
+   
     <!-- action list item -->
     <li id="action_list_item"><a id="link" href="#">Stop</a></li>
     <!-- templates ends here-->

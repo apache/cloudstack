@@ -48,8 +48,7 @@ $(document).ready(function() {
     var $actionLink = $("#action_link");
     var $actionMenu = $("#action_menu");
     var $actionList = $actionMenu.find("#action_list");
-    var $midmenuContainer = $("#midmenu_container");
-    var $midmenuItemVm = $("#midmenu_item_vm");    
+    var $midmenuContainer = $("#midmenu_container");     
     var $actionListItem = $("#action_list_item");
     
     $("#leftmenu_instance_group_header").bind("click", function(event) {   
@@ -59,10 +58,11 @@ $(document).ready(function() {
     });
     
     
-    function setMidmenuItem(jsonObj, $midmenuItem1, toRightPanelFn) {  
+    function jsonToMidmenu(jsonObj, $midmenuItem1, descriptionProperty, toRightPanelFn) {  
         $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));                             
         $midmenuItem1.data("id", jsonObj.id); 
-        $midmenuItem1.data("jsonObj", jsonObj);  
+        $midmenuItem1.data("jsonObj", jsonObj); 
+        $midmenuItem1.find("#first_row").text(jsonObj[descriptionProperty].substring(0,25)); 
         $midmenuItem1.data("toRightPanelFn", toRightPanelFn);
     }
     
@@ -82,10 +82,12 @@ $(document).ready(function() {
 	                    for(var i=0; i<items.length;i++) {                
                             var item = items[i];
                             var $midmenuItem1 = $midmenuItem.clone();   
-                            $midmenuItem1.data("jsonObj", item);
-                            $midmenuItem1.find("#description").text(item[descriptionProperty].substring(0,25));                     
-                            $midmenuContainer.append($midmenuItem1.show());
-                            setMidmenuItem(item, $midmenuItem1, toRightPanelFn);  
+                            
+                            jsonToMidmenu(item, $midmenuItem1, descriptionProperty, toRightPanelFn);  
+                            //$midmenuItem1.data("jsonObj", item);
+                            //$midmenuItem1.find("#description").text(item[descriptionProperty].substring(0,25));     
+                                            
+                            $midmenuContainer.append($midmenuItem1.show());                            
                         }  
                     }  
 	            }
