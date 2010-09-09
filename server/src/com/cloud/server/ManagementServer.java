@@ -68,6 +68,7 @@ import com.cloud.api.commands.ListVolumesCmd;
 import com.cloud.api.commands.ListZonesByCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
+import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.RemovePortForwardingServiceCmd;
@@ -1604,6 +1605,15 @@ public interface ManagementServer {
      * @return async-call result object
      */
     AsyncJobResult queryAsyncJobResult(long jobId) throws PermissionDeniedException;
+
+    /**
+     * Queries for the status or final result of an async job.
+     * @param cmd the command that specifies the job id
+     * @return an async-call result object
+     * @throws PermissionDeniedException
+     */
+    AsyncJobResult queryAsyncJobResult(QueryAsyncJobResultCmd cmd) throws PermissionDeniedException;
+
     AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId);
     AsyncJobVO findAsyncJobById(long jobId);
 

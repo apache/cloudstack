@@ -33,7 +33,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -103,6 +102,7 @@ import com.cloud.api.commands.ListVolumesCmd;
 import com.cloud.api.commands.ListZonesByCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
+import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.RemovePortForwardingServiceCmd;
@@ -123,7 +123,6 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.async.dao.AsyncJobDao;
-import com.cloud.async.executor.CreateOrUpdateRuleParam;
 import com.cloud.async.executor.DeleteDomainParam;
 import com.cloud.async.executor.DeployVMParam;
 import com.cloud.async.executor.NetworkGroupIngressParam;
@@ -7179,6 +7178,11 @@ public class ManagementServerImpl implements ManagementServer {
         */
 
         return _diskOfferingDao.search(sc, searchFilter);
+    }
+
+    @Override
+    public AsyncJobResult queryAsyncJobResult(QueryAsyncJobResultCmd cmd) throws PermissionDeniedException {
+        return queryAsyncJobResult(cmd.getId());
     }
 
     @Override

@@ -18,32 +18,20 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
+import com.cloud.api.response.AsyncJobResponse;
 import com.cloud.async.AsyncJobResult;
-import com.cloud.async.executor.IngressRuleResultObject;
-import com.cloud.async.executor.NetworkGroupResultObject;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.serializer.SerializerHelper;
-import com.cloud.utils.Pair;
 
 public class QueryAsyncJobResultCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(QueryAsyncJobResultCmd.class.getName());
 
     private static final String s_name = "queryasyncjobresultresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.JOB_ID, Boolean.TRUE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -64,33 +52,35 @@ public class QueryAsyncJobResultCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
     
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
-
     @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long jobId = (Long)params.get(BaseCmd.Properties.JOB_ID.getName());
-        AsyncJobResult result;
-        
-		try {
-			result = getManagementServer().queryAsyncJobResult(jobId);
-		} catch (PermissionDeniedException e) {
-			throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Permission denied");
-		}
-        
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), jobId));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_STATUS.getName(), Integer.valueOf(result.getJobStatus())));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_PROCESS_STATUS.getName(), Integer.valueOf(result.getProcessStatus())));
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_RESULT_CODE.getName(), Integer.valueOf(result.getResultCode())));
-        
+    public String getResponse() {
+        AsyncJobResult result = (AsyncJobResult)getResponseObject();
+
+        AsyncJobResponse response = new AsyncJobResponse();
+        response.setId(result.getJobId());
+        response.setJobStatus(result.getJobStatus());
+        response.setJobProcStatus(result.getProcessStatus());
+        response.setJobResultCode(result.getResultCode());
+        response.setJobResult(result.getResult());
+
         Object resultObject = result.getResultObject();
-        if(resultObject != null) {
+        if (resultObject != null) {
+            Class<?> clz = resultObject.getClass();
+            if(clz.isPrimitive() || clz.getSuperclass() == Number.class || clz == String.class || clz == Date.class) {
+                response.setJobResultType("text");
+            } else {
+                response.setJobResultType("object");
+            }
+        }
+
+        /*
+        Object resultObject = result.getResultObject();
+        if (resultObject != null) {
 
             Class<?> clz = resultObject.getClass();
             if(clz.isPrimitive() || clz.getSuperclass() == Number.class || clz == String.class || clz == Date.class) {
@@ -99,22 +89,25 @@ public class QueryAsyncJobResultCmd extends BaseCmd {
             } else {
                 returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_RESULT_TYPE.getName(), "object"));
 
-    	        if(result.getCmdOriginator() != null && !result.getCmdOriginator().isEmpty()) {
-    	        	List<Pair<String, Object>> resultValues = new ArrayList<Pair<String, Object>>();
-    	        	if (resultObject instanceof NetworkGroupResultObject) {
-    	        	    serializeNetworkGroupResults(resultValues, (NetworkGroupResultObject)resultObject);
-    	        	} else {
+                if(result.getCmdOriginator() != null && !result.getCmdOriginator().isEmpty()) {
+                    List<Pair<String, Object>> resultValues = new ArrayList<Pair<String, Object>>();
+                    if (resultObject instanceof NetworkGroupResultObject) {
+                        serializeNetworkGroupResults(resultValues, (NetworkGroupResultObject)resultObject);
+                    } else {
                         SerializerHelper.appendPairList(resultValues, resultObject, BaseCmd.Properties.JOB_RESULT.getName());
-    	        	}
-    	            returnValues.add(new Pair<String, Object>(result.getCmdOriginator(), new Object[] { resultValues } ));
-    	        }
+                    }
+                    returnValues.add(new Pair<String, Object>(result.getCmdOriginator(), new Object[] { resultValues } ));
+                }
             }
         } 
-        return returnValues;
+        */
+
+        return SerializerHelper.toSerializedString(response);
     }
 
     // For now network groups are the only objects with nested objects inside, so we special case serialization to handle this one case.
     // In the future, if a generic serialization that handles nested objects is implemented then this special case can be removed.
+    /*
     private void serializeNetworkGroupResults(List<Pair<String, Object>> resultValues, NetworkGroupResultObject resultObject) {
         if (resultObject != null) {
             resultValues.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), resultObject.getId().toString()));
@@ -153,4 +146,5 @@ public class QueryAsyncJobResultCmd extends BaseCmd {
             }
         }
     }
+    */
 }

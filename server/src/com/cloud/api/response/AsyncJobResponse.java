@@ -44,6 +44,9 @@ public class AsyncJobResponse implements ResponseObject {
     @Param(name="jobresultcode")
     private Integer jobResultCode;
 
+    @Param(name="jobresulttype")
+    private String jobResultType;
+
     @Param(name="jobresult")
     private String jobResult;
 
@@ -110,6 +113,14 @@ public class AsyncJobResponse implements ResponseObject {
 
     public void setJobResultCode(Integer jobResultCode) {
         this.jobResultCode = jobResultCode;
+    }
+
+    public String getJobResultType() {
+        return jobResultType;
+    }
+
+    public void setJobResultType(String jobResultType) {
+        this.jobResultType = jobResultType;
     }
 
     public String getJobResult() {
