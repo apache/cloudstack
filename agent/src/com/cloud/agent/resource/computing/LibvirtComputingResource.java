@@ -1311,7 +1311,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
          try {
 			StoragePool secondaryStoragePool = getNfsSPbyURI(_conn, new URI(secondaryStoragePoolURL));
 			String ssPmountPath = _mountPoint + File.separator + secondaryStoragePool.getUUIDString();
-			snapshotDestPath = ssPmountPath + File.separator + dcId + File.separator + "snapshots" + File.separator + accountId + File.separator + volumeId; 
+			snapshotDestPath = ssPmountPath + File.separator + "snapshots" + File.separator +  dcId + File.separator + accountId + File.separator + volumeId; 
 			Script command = new Script(_manageSnapshotPath, _timeout, s_logger);
 			command.add("-b", snapshotPath);
 			command.add("-n", snapshotName);
@@ -1367,7 +1367,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	try {
     		StoragePool secondaryStoragePool = getNfsSPbyURI(_conn, new URI(cmd.getSecondaryStoragePoolURL()));
 			String ssPmountPath = _mountPoint + File.separator + secondaryStoragePool.getUUIDString();
-			String snapshotDestPath = ssPmountPath + File.separator + dcId + File.separator + "snapshots" + File.separator + accountId + File.separator + volumeId;
+			String snapshotDestPath = ssPmountPath + File.separator + "snapshots"  + File.separator + dcId + File.separator + accountId + File.separator + volumeId;
 			
 			final Script command = new Script(_manageSnapshotPath, _timeout, s_logger);
 			command.add("-d", snapshotDestPath);
@@ -1389,11 +1389,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	try {
     		StoragePool secondaryStoragePool = getNfsSPbyURI(_conn, new URI(cmd.getSecondaryStoragePoolURL()));
 			String ssPmountPath = _mountPoint + File.separator + secondaryStoragePool.getUUIDString();
-			String snapshotDestPath = ssPmountPath + File.separator + dcId + File.separator + "snapshots" + File.separator + accountId + File.separator + volumeId;
+			String snapshotDestPath = ssPmountPath + File.separator + "snapshots" + File.separator +  dcId + File.separator + accountId + File.separator + volumeId;
 			
 			final Script command = new Script(_manageSnapshotPath, _timeout, s_logger);
 			command.add("-d", snapshotDestPath);
 			command.add("-n", cmd.getSnapshotName());
+			command.add("-f");
 			command.execute();
     	} catch (LibvirtException e) {
     		return new Answer(cmd, false, e.toString());
@@ -1428,10 +1429,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		 secondaryPool = getNfsSPbyURI(_conn, new URI(cmd.getSecondaryStoragePoolURL()));
     		 /*TODO: assuming all the storage pools mounted under _mountPoint, the mount point should be got from pool.dumpxml*/
     		 String templatePath = _mountPoint + File.separator + secondaryPool.getUUIDString() + File.separator + templateInstallFolder;	 
-    		 File f = new File(templatePath);
-    		 if (!f.exists()) {
-    			 f.mkdirs();
-    		 }
+    		 _storage.mkdirs(templatePath);
+    		 
     		 String tmplPath = templateInstallFolder + File.separator + tmplFileName;
     		 Script command = new Script(_createTmplPath, _timeout, s_logger);
     		 command.add("-t", templatePath);
@@ -1487,10 +1486,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	 secondaryStorage = getNfsSPbyURI(_conn, new URI(secondaryStorageURL));
         	 /*TODO: assuming all the storage pools mounted under _mountPoint, the mount point should be got from pool.dumpxml*/
         	 String tmpltPath = _mountPoint + File.separator + secondaryStorage.getUUIDString() + templateInstallFolder;
-        	 File mpfile = new File(tmpltPath);
-        	 if (!mpfile.exists()) {
-        		 mpfile.mkdirs();
-        	 }
+        	 _storage.mkdirs(tmpltPath);
 
         	 Script command = new Script(_createTmplPath, _timeout, s_logger);
         	 command.add("-f", cmd.getSnapshotPath());
@@ -1589,10 +1585,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
           
           if (sp == null) {
         	  try {
-        		  File tpFile = new File(targetPath);
-        		  if (!tpFile.exists()) {
-        			  tpFile.mkdir();
-        		  }
+        		  _storage.mkdir(targetPath);
         		  LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(poolType.NFS, uuid, uuid,
         				  sourceHost, sourcePath, targetPath);
         		  s_logger.debug(spd.toString());
@@ -1702,10 +1695,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	String targetPath = _mountPoint + File.separator + pool.getUuid();
     	LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(poolType.NFS, pool.getUuid(), pool.getUuid(),
     														  pool.getHostAddress(), pool.getPath(), targetPath);
-    	File tpFile = new File(targetPath);
-		  if (!tpFile.exists()) {
-			  tpFile.mkdirs();
-		  }
+    	_storage.mkdir(targetPath);
     	StoragePool sp = null;
     	try {
     		s_logger.debug(spd.toString());

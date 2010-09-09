@@ -78,6 +78,7 @@ create_from_file() {
   then
     rm -f $tmpltimg
   fi
+  chmod a+r /$tmpltfs/$tmpltname
 }
 
 create_from_snapshot() {
@@ -92,6 +93,8 @@ create_from_snapshot() {
      printf "Failed to create template /$tmplfs/$tmpltname from snapshot $snapshotName on disk $tmpltImg "
      exit 2
   fi
+
+  chmod a+r /$tmpltfs/$tmpltname
 }
 
 tflag=
@@ -165,6 +168,7 @@ else
 fi
 
 touch /$tmpltfs/template.properties
+chmod a+r /$tmpltfs/template.properties
 echo -n "" > /$tmpltfs/template.properties
 
 today=$(date '+%m_%d_%Y')

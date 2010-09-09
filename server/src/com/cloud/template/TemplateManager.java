@@ -127,5 +127,7 @@ public interface TemplateManager extends Manager {
     void evictTemplateFromStoragePool(VMTemplateStoragePoolVO templatePoolVO);
     
     boolean templateIsDeleteable(VMTemplateHostVO templateHostRef);
+
+	void extract(VMTemplateVO template, String url, VMTemplateHostVO tmpltHostRef, Long zoneId);
     
 }

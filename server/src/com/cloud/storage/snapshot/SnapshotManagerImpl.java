@@ -1006,6 +1006,9 @@ public class SnapshotManagerImpl implements SnapshotManager {
         // i.e Call them before the VMs for those volumes are destroyed.
         boolean success = true;
         for (VolumeVO volume : volumes) {
+        	if(volume.getPoolId()==null){
+        		continue;
+        	}
         	Long volumeId = volume.getId();
         	Long dcId = volume.getDataCenterId();
         	String secondaryStoragePoolURL = _storageMgr.getSecondaryStorageURL(dcId);

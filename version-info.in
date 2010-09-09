@@ -1,6 +1,5 @@
 This is the version information for the manifests in the JAR files.
 
-JAVACFLAGS (taken from ant debuglevel property):  @JAVACFLAGS@
 Implementation_Version:                           @Implementation_Version@
 Ant arguments:                                    @ant_args@
 

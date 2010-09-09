@@ -1,12 +1,14 @@
 import Utils
 from TaskGen import feature, before
+from Configure import ConfigurationError
 import Task
 import os
 
 # fixme: this seems to hang waf with 100% CPU
 
 def detect(conf):
-	conf.find_program("mkisofs",mandatory=True,var='MKISOFS')
+	conf.find_program("mkisofs",var='MKISOFS')
+	if not conf.env.MKISOFS: conf.find_program("genisoimage",mandatory=True,var='MKISOFS')
 
 def iso_up(task):
 	tgt = task.outputs[0].bldpath(task.env)
@@ -16,21 +18,22 @@ def iso_up(task):
 		if inp.id&3==Node.BUILD:
 			src = inp.bldpath(task.env)
 			srcname = src
-			srcname = "/".join(srcname.split("/")[1:]) # chop off default/
+			srcname = sep.join(srcname.split(sep)[1:]) # chop off default/
 		else:
 			src = inp.srcpath(task.env)
 			srcname = src
-			srcname = "/".join(srcname.split("/")[1:]) # chop off ../
-		inps.append(src)
+			srcname = sep.join(srcname.split(sep)[1:]) # chop off ../
+                if task.generator.rename: srcname = task.generator.rename(srcname)
+                inps.append(srcname+'='+src)
 	ret = Utils.exec_command(
 		[
 			task.generator.env.MKISOFS,
 			"-quiet",
 			"-r",
+                        "-graft-points",
 			"-o",tgt,
 		] + inps, shell=False)
 	if ret != 0: return ret
-	if task.chmod: os.chmod(tgt,task.chmod)
 
 def apply_iso(self):
 	Utils.def_attrs(self,fun=iso_up)

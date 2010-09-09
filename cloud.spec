@@ -35,6 +35,7 @@ BuildRequires: jpackage-utils
 BuildRequires: gcc
 BuildRequires: glibc-devel
 BuildRequires: /usr/bin/mkisofs
+BuildRequires: MySQL-python
 
 %global _premium %(tar jtvmf %{SOURCE0} '*/cloudstack-proprietary/' --occurrence=1 2>/dev/null | wc -l)
 
@@ -182,12 +183,11 @@ Summary:   Cloud.com setup tools
 Obsoletes: vmops-setup < %{version}-%{release}
 Requires: java >= 1.6.0
 Requires: python
-Requires: mysql
+Requires: MySQL-python
 Requires: %{name}-utils = %{version}-%{release}
 Requires: %{name}-server = %{version}-%{release}
 Requires: %{name}-deps = %{version}-%{release}
 Requires: %{name}-python = %{version}-%{release}
-Requires: MySQL-python
 Group:     System Environment/Libraries
 %description setup
 The Cloud.com setup tools let you set up your Management Server and Usage Server.
@@ -373,7 +373,6 @@ if [ "$1" == "1" ] ; then
     /sbin/chkconfig --add %{name}-management > /dev/null 2>&1 || true
     /sbin/chkconfig --level 345 %{name}-management on > /dev/null 2>&1 || true
 fi
-test -f %{_sharedstatedir}/%{name}/management/.ssh/id_rsa || su - %{name} -c 'yes "" 2>/dev/null | ssh-keygen -t rsa -q -N ""' < /dev/null
 
 
 
@@ -457,30 +456,17 @@ fi
 %doc %{_docdir}/%{name}-%{version}/sccs-info
 %doc %{_docdir}/%{name}-%{version}/version-info
 %doc %{_docdir}/%{name}-%{version}/configure-info
-%doc README
-%doc INSTALL
-%doc HACKING
 %doc README.html
 %doc debian/copyright
 
 %files client-ui
 %defattr(0644,root,root,0755)
 %{_datadir}/%{name}/management/webapps/client/*
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %files server
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-server.jar
 %{_sysconfdir}/%{name}/server/*
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %files agent-scripts
 %defattr(-,root,root,-)
@@ -498,20 +484,10 @@ fi
 %endif
 %{_libdir}/%{name}/agent/vms/systemvm.zip
 %{_libdir}/%{name}/agent/vms/systemvm.iso
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %files daemonize
 %defattr(-,root,root,-)
 %attr(755,root,root) %{_bindir}/%{name}-daemonize
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %files deps
 %defattr(0644,root,root,0755)
@@ -532,39 +508,20 @@ fi
 %{_javadir}/%{name}-xenserver-5.5.0-1.jar
 %{_javadir}/%{name}-xmlrpc-common-3.*.jar
 %{_javadir}/%{name}-xmlrpc-client-3.*.jar
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %files core
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-core.jar
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc debian/copyright
 
 %files vnet
 %defattr(0644,root,root,0755)
 %attr(0755,root,root) %{_sbindir}/%{name}-vnetd
 %attr(0755,root,root) %{_sbindir}/%{name}-vn
 %attr(0755,root,root) %{_initrddir}/%{name}-vnetd
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %files python
 %defattr(0644,root,root,0755)
 %{_prefix}/lib*/python*/site-packages/%{name}*
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %files setup
 %attr(0755,root,root) %{_bindir}/%{name}-setup-databases
@@ -582,11 +539,9 @@ fi
 %{_datadir}/%{name}/setup/index-212to213.sql
 %{_datadir}/%{name}/setup/postprocess-20to21.sql
 %{_datadir}/%{name}/setup/schema-20to21.sql
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
+%{_datadir}/%{name}/setup/schema-level.sql
+%{_datadir}/%{name}/setup/schema-21to22.sql
+%{_datadir}/%{name}/setup/data-21to22.sql
 
 %files client
 %defattr(0644,root,root,0755)
@@ -626,19 +581,10 @@ fi
 %dir %attr(770,root,%{name}) %{_localstatedir}/cache/%{name}/management/temp
 %dir %attr(770,root,%{name}) %{_localstatedir}/log/%{name}/management
 %dir %attr(770,root,%{name}) %{_localstatedir}/log/%{name}/agent
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %files agent-libs
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-agent.jar
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc debian/copyright
 
 %files agent
 %defattr(0644,root,root,0755)
@@ -654,11 +600,6 @@ fi
 %{_libdir}/%{name}/agent/images
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
 %dir %attr(770,root,root) %{_localstatedir}/log/%{name}/agent
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %files console-proxy
 %defattr(0644,root,root,0755)
@@ -671,11 +612,6 @@ fi
 %{_libdir}/%{name}/console-proxy/*
 %attr(0755,root,root) %{_bindir}/%{name}-setup-console-proxy
 %dir %attr(770,root,root) %{_localstatedir}/log/%{name}/console-proxy
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %if %{_premium}
 
@@ -686,20 +622,10 @@ fi
 %{_sharedstatedir}/%{name}/test/*
 %{_libdir}/%{name}/test/*
 %{_sysconfdir}/%{name}/test/*
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %files premium-deps
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-premium/*.jar
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %files premium
 %defattr(0644,root,root,0755)
@@ -719,11 +645,6 @@ fi
 %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenheartbeat.sh
 %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenserver56/patch-premium
 %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xs_cleanup.sh
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %files usage
 %defattr(0644,root,root,0755)
@@ -734,11 +655,6 @@ fi
 %{_sysconfdir}/%{name}/usage/usage-components.xml
 %config(noreplace) %{_sysconfdir}/%{name}/usage/log4j-%{name}_usage.xml
 %config(noreplace) %attr(640,root,%{name}) %{_sysconfdir}/%{name}/usage/db.properties
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %endif
 

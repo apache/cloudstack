@@ -4,26 +4,15 @@ bld.substitute("*/**",name="patchsubst")
 
 for virttech in Utils.to_list(bld.path.ant_glob("*",dir=True)):
 	if virttech in ["shared","wscript_build"]: continue
-	patchfiles = bld.path.ant_glob('%s/** shared/**'%virttech,src=True,bld=True,dir=False,flat=True)
+	patchfiles = bld.path.ant_glob('shared/** %s/**'%virttech,src=False,bld=True,dir=False,flat=True)
 	tgen = bld(
 		features  = 'tar',#Utils.tar_up,
 		source = patchfiles,
 		target = '%s-patch.tgz'%virttech,
 		name   = '%s-patch_tgz'%virttech,
-		root = "patches/%s"%virttech,
+		root = os.path.join("patches",virttech),
 		rename = lambda x: re.sub(".subst$","",x),
-		after = 'patchsubst',
 	)
-	bld.process_after(tgen)
 	if virttech != "xenserver":
 		# xenserver uses the patch.tgz file later to make an ISO, so we do not need to install it
 		bld.install_as("${AGENTLIBDIR}/scripts/vm/hypervisor/%s/patch.tgz"%virttech, "%s-patch.tgz"%virttech)
-
-tgen = bld(
-	rule = 'cp ${SRC} ${TGT}',
-	source = 'xenserver-patch.tgz',
-	target = 'patch.tgz',
-	after = 'xenserver-patch_tgz',
-	name = 'patch_tgz'
-)
-bld.process_after(tgen)

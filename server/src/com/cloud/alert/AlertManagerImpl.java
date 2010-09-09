@@ -65,8 +65,9 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.SecondaryStorageVmVO;
@@ -117,8 +118,6 @@ public class AlertManagerImpl implements AlertManager {
     private double _storageAllocCapacityThreshold = 0.75;
     private double _publicIPCapacityThreshold = 0.75;
     private double _privateIPCapacityThreshold = 0.75;
-
-    private final GlobalLock m_capacityCheckLock = GlobalLock.getInternLock("capacity.check");
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -319,7 +318,7 @@ public class AlertManagerImpl implements AlertManager {
         }
     }
 
-    @Override
+    @Override @DB
     public void recalculateCapacity() {
         // FIXME: the right way to do this is to register a listener (see RouterStatsListener, VMSyncListener)
         //        for the vm sync state.  The listener model has connects/disconnects to keep things in sync much better
@@ -435,25 +434,23 @@ public class AlertManagerImpl implements AlertManager {
             newCapacities.add(newPrivateIPCapacity);
         }
 
-        if (m_capacityCheckLock.lock(5)) { // 5 second timeout
-            try {
-                // delete the old records
-                _capacityDao.clearNonStorageCapacities();
+        Transaction txn = Transaction.currentTxn();
+        try {
+        	txn.start();
+        	// delete the old records
+            _capacityDao.clearNonStorageCapacities();
 
-                for (CapacityVO newCapacity : newCapacities) {
-                    _capacityDao.persist(newCapacity);
-                }
-            } finally {
-                m_capacityCheckLock.unlock();
+            for (CapacityVO newCapacity : newCapacities) {
+            	s_logger.trace("Executing capacity update");
+                _capacityDao.persist(newCapacity);
+                s_logger.trace("Done with capacity update");
             }
-
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("done recalculating system capacity");
-            }
-        } else {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Skipping capacity check, unable to lock the capacity table for recalculation.");
-            }
+            txn.commit();
+        } catch (Exception ex) {
+        	txn.rollback();
+        	s_logger.error("Unable to start transaction for capacity update");
+        }finally {
+        	txn.close();
         }
     }
 

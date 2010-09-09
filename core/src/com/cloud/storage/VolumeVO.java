@@ -90,6 +90,10 @@ public class VolumeVO implements Volume {
     @Column(name="created")
     Date created;
     
+    @Column(name="attached")
+    @Temporal(value=TemporalType.TIMESTAMP)
+    Date attached;
+    
     @Column(name="data_center_id")
     long dataCenterId;
     
@@ -539,4 +543,15 @@ public class VolumeVO implements Volume {
 	public Long getSourceId(){
 		return this.sourceId;
 	}
+	
+	@Override
+	public Date getAttached(){
+		return this.attached; 
+	}
+	
+	@Override
+	public void setAttached(Date attached){
+		this.attached = attached;
+	}
+	
 }

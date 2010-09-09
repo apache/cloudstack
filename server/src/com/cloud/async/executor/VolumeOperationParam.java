@@ -41,7 +41,7 @@ public class VolumeOperationParam {
 	private long volumeId;
 	private long eventId;
 	private Long deviceId;
-
+	
 	public VolumeOperationParam() {
 	}
 	

@@ -61,6 +61,9 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc {
 	@Column (name="download_pct")
 	private int downloadPercent;
 	
+	@Column (name="upload_pct")
+	private int uploadPercent;
+	
 	@Column (name="size")
 	private long size;
 	
@@ -68,14 +71,24 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc {
 	@Enumerated(EnumType.STRING)
 	private Status downloadState;
 	
+	@Column (name="upload_state")
+	@Enumerated(EnumType.STRING)
+	private Status uploadState;
+	
 	@Column (name="local_path")
 	private String localDownloadPath;
 	
 	@Column (name="error_str")
 	private String errorString;
 	
+	@Column (name="upload_error_str")
+	private String upload_errorString;
+	
 	@Column (name="job_id")
 	private String jobId;
+	
+	@Column (name="upload_job_id")
+	private String uploadJobId;
 	
 	@Column (name="pool_id")
 	private Long poolId;
@@ -85,7 +98,10 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc {
 	
 	@Column (name="url")
 	private String downloadUrl;
-	
+
+	@Column (name="upload_url")
+	private String uploadUrl;
+		
 	@Column(name="is_copy")
 	private boolean isCopy = false;
     
@@ -262,5 +278,45 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc {
 
 	public boolean isCopy() {
 		return isCopy;
+	}
+
+	public int getUploadPercent() {
+		return uploadPercent;
+	}
+
+	public void setUploadPercent(int uploadPercent) {
+		this.uploadPercent = uploadPercent;
+	}
+
+	public Status getUploadState() {
+		return uploadState;
+	}
+
+	public void setUploadState(Status uploadState) {
+		this.uploadState = uploadState;
+	}
+
+	public String getUpload_errorString() {
+		return upload_errorString;
+	}
+
+	public void setUpload_errorString(String uploadErrorString) {
+		upload_errorString = uploadErrorString;
+	}
+
+	public String getUploadUrl() {
+		return uploadUrl;
+	}
+
+	public void setUploadUrl(String uploadUrl) {
+		this.uploadUrl = uploadUrl;
+	}
+
+	public String getUploadJobId() {
+		return uploadJobId;
+	}
+
+	public void setUploadJobId(String uploadJobId) {
+		this.uploadJobId = uploadJobId;
 	}
 }

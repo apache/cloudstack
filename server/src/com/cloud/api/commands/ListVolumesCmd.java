@@ -143,7 +143,7 @@ public class ListVolumesCmd extends BaseCmd{
 
         List<VolumeVO> volumes = getManagementServer().searchForVolumes(c);
 
-        if (volumes == null || volumes.size()==0) {
+        if (volumes == null) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "unable to find volumes");
         }
 
@@ -194,6 +194,7 @@ public class ListVolumesCmd extends BaseCmd{
             volumeData.add(new Pair<String, Object>(BaseCmd.Properties.SIZE.getName(), virtualSizeInBytes));
 
             volumeData.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(volume.getCreated())));
+            volumeData.add(new Pair<String, Object>(BaseCmd.Properties.ATTACHED.getName(), getDateString(volume.getAttached())));
             volumeData.add(new Pair<String, Object>(BaseCmd.Properties.STATE.getName(),volume.getStatus()));
             
             Account accountTemp = getManagementServer().findAccountById(volume.getAccountId());

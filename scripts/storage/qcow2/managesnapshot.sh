@@ -43,7 +43,23 @@ create_snapshot() {
 destroy_snapshot() {
   local disk=$1
   local snapshotname=$2
+  local deleteDir=$3
   local failed=0
+
+  if [ -d $disk ]
+  then
+     if [ -f $disk/$snapshotname ]
+     then
+	rm -rf $disk/$snapshotname >& /dev/null
+     fi
+
+     if [ "$deleteDir" == "1" ]
+     then
+	rm -rf %disk >& /dev/null
+     fi
+
+     return $failed
+  fi
 
   if [ ! -f $disk ]
   then
@@ -119,8 +135,9 @@ nflag=
 pathval=
 snapshot=
 tmplName=
+deleteDir=
 
-while getopts 'c:d:r:n:b:p:t:' OPTION
+while getopts 'c:d:r:n:b:p:t:f' OPTION
 do
   case $OPTION in
   c)	cflag=1
@@ -142,6 +159,8 @@ do
         ;;
   t)    tmplName="$OPTARG"
 	;;
+  f)    deleteDir=1
+	;;
   ?)	usage
 	;;
   esac
@@ -154,7 +173,7 @@ then
   exit $?
 elif [ "$dflag" == "1" ]
 then
-  destroy_snapshot $pathval $snapshot
+  destroy_snapshot $pathval $snapshot $deleteDir
   exit $?
 elif [ "$bflag" == "1" ]
 then

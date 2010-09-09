@@ -2,7 +2,12 @@
 
 BASE_DIR="/var/www/html/copy/template/"
 HTACCESS="$BASE_DIR/.htaccess"
+
 PASSWDFILE="/etc/httpd/.htpasswd"
+if [ -d /etc/apache2 ]
+then
+  PASSWDFILE="/etc/apache2/.htpasswd"
+fi
 
 config_htaccess() {
   mkdir -p $BASE_DIR

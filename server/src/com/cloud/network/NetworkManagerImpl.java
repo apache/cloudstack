@@ -642,6 +642,9 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             }
             
             if (!found) {
+                event.setDescription("failed to create Domain Router : " + name);
+                event.setLevel(EventVO.LEVEL_ERROR);
+                _eventDao.persist(event);
                 throw new ExecutionException("Unable to create DomainRouter");
             }
             _routerDao.updateIf(router, Event.OperationSucceeded, null);
@@ -1793,8 +1796,6 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 
-        _routerTemplateId = NumbersUtil.parseInt(configs.get("router.template.id"), 1);
-
         _routerRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), 128);
 
 //        String value = configs.get("guest.ip.network");
@@ -1836,11 +1837,11 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         _offering = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, useLocalStorage, true, null);
         _offering.setUniqueName("Cloud.Com-SoftwareRouter");
         _offering = _serviceOfferingDao.persistSystemServiceOffering(_offering);
-        _template = _templateDao.findById(_routerTemplateId);
+        _template = _templateDao.findRoutingTemplate();
         if (_template == null) {
         	s_logger.error("Unable to find system vm template.");
-        	
-            // throw new ConfigurationException("Unable to find the template for the router: " + _routerTemplateId);
+        } else {
+        	_routerTemplateId = _template.getId();
         }
         
         NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmPublicNetwork, TrafficType.Public, null);

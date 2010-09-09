@@ -235,4 +235,8 @@ public class DiskOfferingVO implements DiskOffering {
         
         setTags(buf.toString());
     }
+
+	public void setUseLocalStorage(boolean useLocalStorage) {
+		this.useLocalStorage = useLocalStorage;
+	}
 }

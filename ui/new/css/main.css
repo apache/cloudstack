@@ -15,8 +15,7 @@ html,body{
 	background:#00374e url(../images/login_bg.gif) repeat-x top left;
 	margin:0;
 	padding:0;
-	overflow-x:hidden;
-	overflow-y:auto;
+	overflow:auto;
 }
 
 <!--[if IE 6]>
@@ -988,6 +987,90 @@ a:visited {
 	color:#FFF;
 }
 
+.revwiz_loadingbox {
+	width:180px;
+	height:50px;
+	position:absolute;
+	background:#FFF repeat top left;
+	border:1px solid #999;
+	z-index:1100;
+	top:47%;
+	left:45%;
+}
+
+.revwiz_loadingbox p{
+	width:auto;
+	height:auto;
+	float:left;
+	text-align:left;
+	color:#666;
+	font-weight:normal;
+	font-size:25px;
+	margin:10px 0 0 20px;
+	display:inline;
+}
+
+
+.revwiz_message_container {
+	width:300px;
+	height:auto;
+	position:absolute;
+	background:url(../images/loading_messagebg.gif) #d3d3d3 repeat-x top left;
+	border:1px solid #CCC;
+	z-index:1100;
+	top:47%;
+	left:45%;
+	display:inline;
+	margin:0;
+	padding:0;
+}
+
+
+.revwiz_message_top {
+	width:99%;
+	height:auto;
+	float:left;
+	margin:0;
+	padding:2px 5px 0 5px;
+	overflow:hidden;
+}
+
+.revwiz_message_top p {
+	width:auto;
+	height:25px;
+	margin:0;
+	padding:0;
+	color:#333;
+	text-align:left;
+	font-weight:normal;
+	font-size:11px;
+	display:inline;
+}
+
+.revwiz_message_bottom {
+	width:100%;
+	height:20px;
+	float:left;
+	margin:0;
+	padding:0;
+	
+}
+
+
+.revwizcontinue_button {
+	width:60px;
+	height:17px;
+	float:right;
+	margin-right:5px;
+	padding:0;
+	background:url(../images/vm_continuebutton.gif) no-repeat top left;
+	text-decoration:none;
+}
+
+.revwizcontinue_button:hover {
+	background:url(../images/vm_continuebutton_hover.gif) no-repeat top left;
+}
+
 .revwiz_formcontent_title {
 	width:800px;
 	height:auto;
@@ -1455,7 +1538,7 @@ a:visited {
 	float:left;
 	position:absolute;
 	background:#FFF repeat top left;
-	border:1px solid #777679;
+	border:1px solid #999;
 	top:24px;
 	left:0;
 	margin:0;
@@ -1466,22 +1549,26 @@ a:visited {
 	width:96px;
 	height:auto;
 	float:left;
-	margin:0 0 5px 10px;
-	padding:0;
+	margin:0 0 5px 6px;
+	padding:0 0 10px 0;
 	list-style:none;
 }
 
 .actionsdropdown_boxlist li{
-	width:96px;
+	width:94px;
 	height:auto;
 	float:left;
 	text-align:left;
 	color:#CCC;
 	font-size:11px;
 	font-weight:normal;
-	margin:6px 0 0 0;
-	padding:0;
+	margin:0 0 0 0;
+	padding:5px 0 5px 3px;
 	list-style:none;
+}
+
+.actionsdropdown_boxlist li:hover{
+	background:#e6e6e6 repeat top left;
 }
 
 .actionsdropdown_boxlist a{
@@ -1496,7 +1583,7 @@ a:visited {
 }
 
 .actionsdropdown_boxlist a:hover{
-	text-decoration:underline;
+	text-decoration:none;
 	color:#2c8bbc;
 }
 
@@ -1707,7 +1794,7 @@ a:visited {
 }
 
 .content_tabs {
-	width:78px;
+	width:101px;
 	height:13px;
 	float:left;
 	font-size:11px;
@@ -1998,7 +2085,113 @@ a:visited {
 	color:#a90000;
 }
 
-.thanks box {
-		
+.grid_header {
+	width:100%;
+	height:20px;
+	float:left;
+	background:url(../images/grid_headerbg.gif) repeat-x top left;
+	margin:0;
+	padding:0;
 }
 
+.grid_header_cell {
+	height:20px;
+	float:left;
+	margin:0;
+	padding:0;
+	border-right:1px solid #CCC;
+}
+
+.grid_header_title {
+	width:auto;
+	height:auto;
+	float:left;
+	margin:4px 0 0 10px;
+	display:inline;
+	color:#434343;
+	text-align:left;
+	font-weight:bold;
+	font-size:11px;
+	padding:0;
+}
+
+.grid_actionpanel {
+	width:100%;
+	height:auto;
+	float:left;
+	margin:4px 0 0 0;
+	padding:0 0 0 0;
+}
+
+.grid_actionbox {
+	width:35px;
+	height:17px;
+	float:right;
+	background:url(../images/grid_actions.png) no-repeat top left;
+	margin:2px 5px 0 0;
+	padding:0;
+	cursor:pointer;
+	cursor:hand;
+}
+
+.grid_actionbox:hover {
+	background:url(../images/grid_actions_hover.png) no-repeat top left;
+}
+
+.grid_editbox {
+	width:27px;
+	height:17px;
+	float:right;
+	background:url(../images/grid_editicon.png) no-repeat top left;
+	margin:2px 5px 0 0;
+	padding:0;
+	cursor:pointer;
+	cursor:hand;
+}
+
+.grid_editbox:hover {
+	background:url(../images/grid_editicon_hover.png) no-repeat top left;
+}
+
+
+.grid_detailspanel {
+	width:90%;
+	height:auto;
+	float:left;
+	margin:5px 0 0 45px;
+	display:inline;
+	padding:0;
+}
+
+.grid_details_pointer {
+	width:15px;
+	height:9px;
+	float:left;
+	background:url(../images/grid_detailspointer.png) no-repeat top left;
+	margin:0 0 0 10px;
+	display:inline;
+	padding:0;
+}
+
+.grid_detailsbox {
+	width:100%;
+	height:auto;
+	float:left;
+	border:1px solid #d5d5d5;
+	margin:0;
+	padding:0;
+}
+
+.grid_details_row {
+	width:100%;
+	height:auto;
+	border-bottom:1px dashed #a2bcce;
+	background:#e3eaef repeat top left;
+	float:left;
+	margin:0;
+	padding:4px 0 4px 0;
+}
+
+.grid_details_row.odd {
+	background:#f0f3f5 repeat top left;
+}

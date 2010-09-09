@@ -615,8 +615,8 @@ public interface ManagementServer {
      * @volumeId
      * @throws InvalidParameterValueException, InternalErrorException
      */
-    void detachVolumeFromVM(long volumeId, long startEventId) throws InternalErrorException;
-    long detachVolumeFromVMAsync(long volumeId) throws InvalidParameterValueException;
+    void detachVolumeFromVM(long volumeId, long startEventId, long deviceId, long instanceId) throws InternalErrorException;
+    long detachVolumeFromVMAsync(long volumeId, long deviceId, long instanceId) throws InvalidParameterValueException;
     
     /**
      * Attaches an ISO to the virtual CDROM device of the specified VM. Will fail if the VM already has an ISO mounted.
@@ -2186,7 +2186,17 @@ public interface ManagementServer {
 	boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException;
 	
 	boolean checkIfMaintenable(long hostId);
+	/**
+	 * Extracts the template to a particular location.
+	 * @param url - the url  where the template needs to be extracted to
+	 * @param zoneId - zone id of the template
+	 * @param template id - the id of the template
+	 *  
+	 */
+	void extractTemplate(String url, Long templateId, Long zoneId) throws URISyntaxException;
 
     Map<String, String> listCapabilities();
-	GuestOSCategoryVO getGuestOsCategory(Long guestOsId);
+	GuestOSVO getGuestOs(Long guestOsId);
+	VolumeVO findVolumeByInstanceAndDeviceId(long instanceId, long deviceId);
+	VolumeVO getRootVolume(Long instanceId);
 }

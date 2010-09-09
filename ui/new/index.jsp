@@ -1,3 +1,9 @@
+<%@ page import="java.util.Date" %>
+
+<%
+long milliseconds = new Date().getTime();
+%>
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -24,13 +30,25 @@
 
     <!-- cloud.com scripts -->
 
-    <script type="text/javascript" src="scripts/cloud.logger.js"></script>
+    <script type="text/javascript" src="scripts/cloud.logger.js?t=<%=milliseconds%>"></script>
 
-    <script type="text/javascript" src="scripts/cloud.core.js"></script>
+    <script type="text/javascript" src="scripts/cloud.core2.js?t=<%=milliseconds%>"></script>
 
-    <script type="text/javascript" src="scripts/cloud.core.init.js"></script>
+    <script type="text/javascript" src="scripts/cloud.core2.init.js?t=<%=milliseconds%>"></script>
     
-    <script type="text/javascript" src="scripts/cloud.core.instance.js"></script>
+    <script type="text/javascript" src="scripts/cloud.core2.instance.js?t=<%=milliseconds%>"></script>
+    
+    <script type="text/javascript" src="scripts/cloud.core2.event.js?t=<%=milliseconds%>"></script>
+    
+    <script type="text/javascript" src="scripts/cloud.core2.alert.js?t=<%=milliseconds%>"></script>
+  
+    <script type="text/javascript" src="scripts/cloud.core2.account.js?t=<%=milliseconds%>"></script>
+    
+    <script type="text/javascript" src="scripts/cloud.core2.volume.js?t=<%=milliseconds%>"></script>
+    
+    <script type="text/javascript" src="scripts/cloud.core2.snapshot.js?t=<%=milliseconds%>"></script>
+    
+    <script type="text/javascript" src="scripts/cloud.core2.ipaddress.js?t=<%=milliseconds%>"></script>
   
     <title>Cloud.com CloudStack</title>
 </head>
@@ -294,7 +312,7 @@
                     </div>
                 </div>
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content" id="leftmenu_dashboard">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/db_leftmenuicon.png" alt="Dashboard" /></div>
@@ -327,22 +345,18 @@
                         <div id="leftmenu_instance_group_container">
                         </div>
                     </div>
-                    <div class="leftmenu_content">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_arrows close" id="arrowIcon">
-                            </div>
+                    <div class="leftmenu_content" id="leftmenu_router">
+                        <div class="leftmenu_secondindent">                           
                             <div class="leftmenu_list_icons">
                                 <img src="images/routers_leftmenuicon.png" alt="Routers" /></div>
                             Routers
                         </div>
                     </div>
-                    <div class="leftmenu_content">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_arrows close" id="arrowIcon">
-                            </div>
+                    <div class="leftmenu_content" id="leftmenu_system">
+                        <div class="leftmenu_secondindent">                           
                             <div class="leftmenu_list_icons">
                                 <img src="images/storage_leftmenuicon.png" alt="Storage" /></div>
-                            Storage
+                            System
                         </div>
                     </div>
                 </div>
@@ -358,7 +372,7 @@
                     </div>
                 </div>
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content" id="leftmenu_host">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/hosts_leftmenuicon.png" alt="Host" /></div>
@@ -378,28 +392,28 @@
                     </div>
                 </div>
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content" id="leftmenu_primary_storage">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/storage_leftmenuicon.png" alt="storage" /></div>
                             Primary Storage
                         </div>
                     </div>
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content" id="leftmenu_secondary_storage">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/storage_leftmenuicon.png" alt="storage" /></div>
                             secondary Storage
                         </div>
                     </div>
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content" id="leftmenu_volume">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/storage_leftmenuicon.png" alt="storage" /></div>
                             Volumes
                         </div>
                     </div>
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content" id="leftmenu_snapshot">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/storage_leftmenuicon.png" alt="storage" /></div>
@@ -419,15 +433,15 @@
                     </div>
                 </div>
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content">
-                        <div class="leftmenu_firstindent">
+                    <div class="leftmenu_content" id="leftmenu_ip">
+                        <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/network_leftmenuicon.png" alt="Network" /></div>
                             IP Addresses
                         </div>
                     </div>
-                    <div class="leftmenu_content">
-                        <div class="leftmenu_firstindent">
+                    <div class="leftmenu_content" id="leftmenu_network_group">
+                        <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/network_leftmenuicon.png" alt="Network" /></div>
                             Network Groups
@@ -446,14 +460,14 @@
                     </div>
                 </div>
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content" id="leftmenu_template">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/templates_leftmenuicon.png" alt="Templates" /></div>
                             Template
                         </div>
                     </div>
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content" id="leftmenu_iso">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/templates_leftmenuicon.png" alt="Templates" /></div>
@@ -473,7 +487,7 @@
                     </div>
                 </div>
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content" id="leftmenu_account">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/accounts_leftmenuicon.png" alt="Accounts" /></div>
@@ -493,7 +507,7 @@
                     </div>
                 </div>
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content" id="leftmenu_domain">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/domain_leftmenuicon.png" alt="Domain" /></div>
@@ -513,14 +527,14 @@
                     </div>
                 </div>
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content" id="leftmenu_event">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/events_leftmenuicon.png" alt="Events" /></div>
                             Events
                         </div>
                     </div>
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content" id="leftmenu_alert">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/events_leftmenuicon.png" alt="Events" /></div>
@@ -540,28 +554,28 @@
                     </div>
                 </div>
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content" id="leftmenu_global_setting">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/configuration_leftmenuicon.png" alt="Configuration" /></div>
                             Global Settings
                         </div>
                     </div>
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content" id="leftmenu_zone">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/configuration_leftmenuicon.png" alt="Configuration" /></div>
                             Zones
                         </div>
                     </div>
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content" id="leftmenu_service_offering">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/configuration_leftmenuicon.png" alt="Configuration" /></div>
                             Service Offerings
                         </div>
                     </div>
-                    <div class="leftmenu_content">
+                    <div class="leftmenu_content" id="leftmenu_disk_offering">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/configuration_leftmenuicon.png" alt="Configuration" /></div>
@@ -599,16 +613,18 @@
                 Group 1</div>
         </div>
     </div>
-    <div class="midmenu_list" id="midmenu_item_vm" style="display: none;">
+    
+    <div class="midmenu_list" id="midmenu_item" style="display: none;">
         <div class="midmenu_content" id="content">
-            <div class="midmenu_icons" id="status_icon_container">
-                <img id="status_icon" src="images/status_gray.png" /></div>
+            <div class="midmenu_icons" id="icon_container" style="display:none">
+                <img id="icon"/></div>
             <div class="midmenu_textbox">
                 <p>
-                    <strong id="vm_name"></strong>
+                    <strong id="first_row">&nbsp;</strong>
                 </p>
-                <p id="ip_address_container">
-                    IP Address: <span id="ip_address"></span>
+                <p id="second_row_container">
+                    <span id="second_row_label">&nbsp;</span> 
+                    <span id="second_row">&nbsp;</span>
                 </p>
             </div>
             <div class="midmenu_inactionloader" id="spinning_wheel" style="display: none;">
@@ -617,20 +633,7 @@
             </div>
         </div>
     </div>
-    
-        <div class="midmenu_list" id="midmenu_item" style="display: none;">
-        	<div class="midmenu_content" id="content">
-                 <div class="midmenu_textbox">
-                 	<p>
-                    	<strong id="vm_name">ABC</strong>
-                    </p>
-                 </div>
-                 <div class="midmenu_inactionloader" id="spinning_wheel" style="display: none; margin-left:18px; display:inline;">
-                 </div>
-                 <div class="midmenu_infoicon" id="info_icon" style="display: none; margin-left:18px; display:inline;">
-                 </div>
-            </div>
-       </div>
+   
     <!-- action list item -->
     <li id="action_list_item"><a id="link" href="#">Stop</a></li>
     <!-- templates ends here-->

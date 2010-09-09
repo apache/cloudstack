@@ -1,26 +1,34 @@
 #!/bin/bash
 
+set -x
+
 IMAGENAME=systemvm
-LOCATION=/var/lib/images/systemvm2
+LOCATION=/var/lib/images/systemvm
 PASSWORD=password
 APT_PROXY=
 HOSTNAME=systemvm
 SIZE=2000
 DEBIAN_MIRROR=ftp.us.debian.org/debian
 MINIMIZE=true
+MOUNTPOINT=/mnt/$IMAGENAME/
+IMAGELOC=$LOCATION/$IMAGENAME.img
+scriptdir=$(dirname $PWD/$0)
 
 baseimage() {
   mkdir -p $LOCATION
+  #dd if=/dev/zero of=$IMAGELOC bs=1M  count=$SIZE
   dd if=/dev/zero of=$IMAGELOC bs=1M seek=$((SIZE - 1)) count=1
   loopdev=$(losetup -f)
   losetup $loopdev $IMAGELOC
   parted $loopdev -s 'mklabel msdos'
   parted $loopdev -s 'mkpart primary ext3 512B 2097151000B'
+  sleep 2 
   losetup -d $loopdev
   loopdev=$(losetup --show -o 512 -f $IMAGELOC )
   mkfs.ext3  -L ROOT $loopdev
   mkdir -p $MOUNTPOINT
   tune2fs -c 100 -i 0 $loopdev
+  sleep 2 
   losetup -d $loopdev
   
   mount -o loop,offset=512 $IMAGELOC  $MOUNTPOINT
@@ -105,12 +113,11 @@ ff02::3 ip6-allhosts
 EOF
 
   cat >> etc/network/interfaces << EOF
-auto lo
+auto lo eth0
 iface lo inet loopback
 
 # The primary network interface
-allow-hotplug eth0
-iface eth0 inet dhcp
+iface eth0 inet static
 
 EOF
 }
@@ -147,6 +154,8 @@ EOF
 
 
 fixgrub() {
+  kern=$(basename $(ls  boot/vmlinuz-*))
+  ver=${kern#vmlinuz-}
   cat > boot/grub/menu.lst << EOF
 default 0
 timeout 2
@@ -156,10 +165,10 @@ color cyan/blue white/blue
 # kopt=root=LABEL=ROOT ro
 
 ## ## End Default Options ##
-title		Debian GNU/Linux, kernel 2.6.32-5-686-bigmem 
+title		Debian GNU/Linux, kernel $ver
 root		(hd0,0)
-kernel		/boot/vmlinuz-2.6.32-5-686-bigmem root=LABEL=ROOT ro console=tty0 xencons=ttyS0,115200 console=hvc0 quiet
-initrd		/boot/initrd.img-2.6.32-5-686-bigmem
+kernel		/boot/$kern root=LABEL=ROOT ro console=tty0 xencons=ttyS0,115200 console=hvc0 quiet
+initrd		/boot/initrd.img-$ver
 
 ### END DEBIAN AUTOMAGIC KERNELS LIST
 EOF
@@ -182,6 +191,7 @@ EOF
 }
 
 fixacpid() {
+  mkdir -p etc/acpi/events
   cat >> etc/acpi/events/power << EOF
 event=button/power.*
 action=/usr/local/sbin/power.sh "%e"
@@ -193,15 +203,140 @@ EOF
   chmod a+x usr/local/sbin/power.sh
 }
 
+fixiptables() {
+cat >> etc/modules << EOF
+nf_conntrack
+nf_conntrack_ipv4
+EOF
+cat > etc/init.d/iptables-persistent << EOF
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          iptables
+# Required-Start:    mountkernfs $local_fs
+# Required-Stop:     $local_fs
+# Should-Start:      cloud-early-config
+# Default-Start:     S
+# Default-Stop:     
+# Short-Description: Set up iptables rules
+### END INIT INFO
+
+PATH="/sbin:/bin:/usr/sbin:/usr/bin"
+
+# Include config file for iptables-persistent
+. /etc/iptables/iptables.conf
+
+case "\$1" in
+start)
+    if [ -e /var/run/iptables ]; then
+        echo "iptables is already started!"
+        exit 1
+    else
+        touch /var/run/iptables
+    fi
+
+    if [ \$ENABLE_ROUTING -ne 0 ]; then
+        # Enable Routing
+        echo 1 > /proc/sys/net/ipv4/ip_forward
+    fi
+
+    # Load Modules
+    modprobe -a \$MODULES
+
+    # Load saved rules
+    if [ -f /etc/iptables/rules ]; then
+        iptables-restore </etc/iptables/rules
+    fi
+    ;;
+stop|force-stop)
+    if [ ! -e /var/run/iptables ]; then
+        echo "iptables is already stopped!"
+        exit 1
+    else
+        rm /var/run/iptables
+    fi
+
+    if [ \$SAVE_NEW_RULES -ne 0 ]; then
+        # Backup old rules
+        cp /etc/iptables/rules /etc/iptables/rules.bak
+        # Save new rules
+        iptables-save >/etc/iptables/rules
+    fi
+
+    # Restore Default Policies
+    iptables -P INPUT ACCEPT
+    iptables -P FORWARD ACCEPT
+    iptables -P OUTPUT ACCEPT
+
+    # Flush rules on default tables
+    iptables -F
+    iptables -t nat -F
+    iptables -t mangle -F
+
+    # Unload previously loaded modules
+    modprobe -r \$MODULES
+
+    # Disable Routing if enabled
+    if [ \$ENABLE_ROUTING -ne 0 ]; then
+        # Disable Routing
+        echo 0 > /proc/sys/net/ipv4/ip_forward
+    fi
+
+    ;;
+restart|force-reload)
+    \$0 stop
+    \$0 start
+    ;;
+status)
+    echo "Filter Rules:"
+    echo "--------------"
+    iptables -L -v
+    echo ""
+    echo "NAT Rules:"
+    echo "-------------"
+    iptables -t nat -L -v
+    echo ""
+    echo "Mangle Rules:"
+    echo "----------------"
+    iptables -t mangle -L -v
+    ;;
+*)
+    echo "Usage: \$0 {start|stop|force-stop|restart|force-reload|status}" >&2
+    exit 1
+    ;;
+esac
+
+exit 0
+EOF
+  chmod a+x etc/init.d/iptables-persistent
+
+
+  touch etc/iptables/iptables.conf 
+  cat > etc/iptables/iptables.conf << EOF
+# A basic config file for the /etc/init.d/iptable-persistent script
+#
+
+# Should new manually added rules from command line be saved on reboot? Assign to a value different that 0 if you want this enabled.
+SAVE_NEW_RULES=0
+
+# Modules to load:
+MODULES="nf_nat_ftp nf_conntrack_ftp"
+
+# Enable Routing?
+ENABLE_ROUTING=1
+EOF
+  chmod a+x etc/iptables/iptables.conf
+
+}
+
 packages() {
   DEBIAN_FRONTEND=noninteractive
   DEBIAN_PRIORITY=critical
   DEBCONF_DB_OVERRIDE=’File{/root/config.dat}’
   export DEBIAN_FRONTEND DEBIAN_PRIORITY DEBCONF_DB_OVERRIDE
 
-  chroot .  apt-get --no-install-recommends -q -y --force-yes install rsyslog chkconfig insserv net-tools ifupdown vim-tiny netbase iptables openssh-server grub e2fsprogs dhcp3-client dnsmasq tcpdump socat wget apache2 python2.5 bzip2 sed gawk diff grep gzip less tar telnet xl2tpd traceroute openswan psmisc 
+  chroot .  apt-get --no-install-recommends -q -y --force-yes install rsyslog chkconfig insserv net-tools ifupdown vim-tiny netbase iptables openssh-server grub e2fsprogs dhcp3-client dnsmasq tcpdump socat wget apache2 ssl-cert python bzip2 sed gawk diff grep gzip less tar telnet xl2tpd traceroute openswan psmisc inetutils-ping iputils-arping httping dnsutils zip unzip ethtool uuid
 
-  chroot . apt-get --no-install-recommends -q -y --force-yes -t backports install haproxy nfs-common
+  chroot . apt-get --no-install-recommends -q -y --force-yes install haproxy nfs-common
 
   echo "***** getting additional modules *********"
   chroot .  apt-get --no-install-recommends -q -y --force-yes  install iproute acpid iptables-persistent
@@ -218,8 +353,34 @@ password() {
   chroot . echo "root:$PASSWORD" | chroot . chpasswd
 }
 
+apache2() {
+   chroot . a2enmod ssl rewrite auth_basic auth_digest
+   chroot . a2ensite default-ssl
+   cp etc/apache2/sites-available/default etc/apache2/sites-available/default.orig
+   cp etc/apache2/sites-available/default-ssl etc/apache2/sites-available/default-ssl.orig
+}
+
+services() {
+  mkdir -p ./var/www/html
+  mkdir -p ./opt/cloud/bin
+  mkdir -p ./var/cache/cloud
+  mkdir -p ./usr/share/cloud
+  mkdir -p ./usr/local/cloud
+  mkdir -p ./root/.ssh
+  
+  /bin/cp -r ${scriptdir}/config/* ./
+  chroot . chkconfig xl2tpd off
+  chroot . chkconfig --add cloud-early-config
+  chroot . chkconfig cloud-early-config on
+  chroot . chkconfig --add cloud-passwd-srvr 
+  chroot . chkconfig cloud-passwd-srvr off
+  chroot . chkconfig --add cloud
+  chroot . chkconfig cloud off
+}
+
 cleanup() {
   rm -f usr/sbin/policy-rc.d
+  rm -f root/config.dat
   rm -f etc/apt/apt.conf.d/01proxy 
 
   if [ "$MINIMIZE" == "true" ]
@@ -229,17 +390,22 @@ cleanup() {
     rm -rf usr/share/locale/[a-d]*
     rm -rf usr/share/locale/[f-z]*
     rm -rf usr/share/doc/*
+    size=$(df   $MOUNTPOINT | awk '{print $4}' | grep -v Available)
+    dd if=/dev/zero of=$MOUNTPOINT/zeros.img bs=1M count=$((((size-200000)) / 1000))
+    rm -f $MOUNTPOINT/zeros.img
   fi
+}
+
+signature() {
+  (cd ${scriptdir}/config;  tar czf ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tgz *)
+  md5sum ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tgz |awk '{print $1}'  > ${MOUNTPOINT}/var/cache/cloud/cloud-scripts-signature
 }
 
 mkdir -p $IMAGENAME
 mkdir -p $LOCATION
-MOUNTPOINT=/mnt/$IMAGENAME/
-IMAGELOC=$LOCATION/$IMAGENAME.img
-scriptdir=$(dirname $PWD/$0)
 
 rm -f $IMAGELOC
-
+begin=$(date +%s)
 echo "*************INSTALLING BASEIMAGE********************"
 baseimage
 
@@ -278,26 +444,35 @@ echo "*************CONFIGURING ACPID********************"
 fixacpid
 echo "*************DONE CONFIGURING ACPID********************"
 
-#cp etc/inittab etc/inittab.hvm
-#cp $scriptdir/inittab.xen etc/inittab.xen
-#cp $scriptdir/inittab.xen etc/inittab
-#cp $scriptdir/fstab.xen etc/fstab.xen
-#cp $scriptdir/fstab.xen etc/fstab
-#cp $scriptdir/fstab etc/fstab
-
 echo "*************INSTALLING PACKAGES********************"
 packages
 echo "*************DONE INSTALLING PACKAGES********************"
 
+echo "*************CONFIGURING IPTABLES********************"
+fixiptables
+echo "*************DONE CONFIGURING IPTABLES********************"
+
 echo "*************CONFIGURING PASSWORD********************"
 password
 
+echo "*************CONFIGURING SERVICES********************"
+services
+
+echo "*************CONFIGURING APACHE********************"
+apache2
+
 echo "*************CLEANING UP********************"
 cleanup 
+
+echo "*************GENERATING SIGNATURE********************"
+signature
 
 cd $scriptdir
 
 umount $MOUNTPOINT/proc
 umount $MOUNTPOINT/dev
 umount $MOUNTPOINT
+fin=$(date +%s)
+t=$((fin-begin))
+echo "Finished building image $IMAGELOC in $t seconds"
 

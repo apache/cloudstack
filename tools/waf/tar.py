@@ -1,8 +1,9 @@
 import Utils
+import Options
 import tarfile
 from TaskGen import feature, before
 import Task
-import os
+import os, sys
 
 # this is a clever little thing
 # given a list of nodes, build or source
@@ -14,9 +15,9 @@ import os
 def tar_up(task):
 	tgt = task.outputs[0].bldpath(task.env)
 	if os.path.exists(tgt): os.unlink(tgt)
-	if tgt.lower().endswith(".bz2"): z = tarfile.open(tgt,"w:bz2")
-	elif tgt.lower().endswith(".gz"): z = tarfile.open(tgt,"w:gz")
-	elif tgt.lower().endswith(".tgz"): z = tarfile.open(tgt,"w:gz")
+        if tgt.lower().endswith(".bz2"): z = tarfile.open(tgt,"w:bz2")
+        elif tgt.lower().endswith(".gz"): z = tarfile.open(tgt,"w:gz")
+        elif tgt.lower().endswith(".tgz"): z = tarfile.open(tgt,"w:gz")
 	else: z = tarfile.open(tgt,"w")
 	fileset = {}
 	for inp in task.inputs:
@@ -25,16 +26,16 @@ def tar_up(task):
 			srcname = Utils.relpath(src,os.path.join("..",".")) # file in source dir
 		else:
 			srcname = Utils.relpath(src,os.path.join(task.env.variant(),".")) # file in artifacts dir
+		srcname = srcname.split(os.path.sep,len(task.generator.root.split(os.path.sep)))[-1]
 		if task.generator.rename: srcname = task.generator.rename(srcname)
-		for dummy in task.generator.root.split("/"):
-			splittedname = srcname.split("/")
-			srcname = "/".join(splittedname[1:])
 		fileset[srcname] = src
 	for srcname,src in fileset.items():
 		ti = tarfile.TarInfo(srcname)
 		ti.mode = 0755
 		ti.size = os.path.getsize(src)
-		f = file(src)
+                openmode = 'r'
+                if Options.platform == 'win32': openmode = openmode + 'b'
+                f = file(src,openmode)
 		z.addfile(ti,fileobj=f)
 		f.close()
 	z.close()
@@ -53,16 +54,9 @@ def apply_tar(self):
 		node = self.path.find_resource(x)
 		if not node:raise Utils.WafError('cannot find input file %s for processing'%x)
 		ins.append(node)
-	if self.dict and not self.env['DICT_HASH']:
-		self.env=self.env.copy()
-		keys=list(self.dict.keys())
-		keys.sort()
-		lst=[self.dict[x]for x in keys]
-		self.env['DICT_HASH']=str(Utils.h_list(lst))
 	tsk=self.create_task('tar',ins,out)
 	tsk.fun=self.fun
 	tsk.dict=self.dict
-	tsk.dep_vars=['DICT_HASH']
 	tsk.install_path=self.install_path
 	tsk.chmod=self.chmod
 	if not tsk.env:

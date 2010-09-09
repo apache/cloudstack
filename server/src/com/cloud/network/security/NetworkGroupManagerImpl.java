@@ -684,6 +684,9 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 	@Override
 	@DB
 	public boolean addInstanceToGroups(final Long userVmId, final List<NetworkGroupVO> groups) {
+		if (!_enabled) {
+			return true;
+		}
 		if (groups != null) {
 			final Set<NetworkGroupVO> uniqueGroups = new TreeSet<NetworkGroupVO>(new NetworkGroupVOComparator());
 			uniqueGroups.addAll(groups);
@@ -724,6 +727,9 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 	@Override
 	@DB
 	public void removeInstanceFromGroups(Long userVmId) {
+		if (!_enabled) {
+			return;
+		}
 		final Transaction txn = Transaction.currentTxn();
 		txn.start();
 		UserVm userVm = _userVMDao.acquire(userVmId); //ensures that duplicate entries are not created in addInstance

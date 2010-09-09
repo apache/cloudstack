@@ -61,6 +61,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected final GenericSearchBuilder<VolumeVO, Long> ActiveTemplateSearch;
     protected final SearchBuilder<VolumeVO> RemovedButNotDestroyedSearch;
     protected final SearchBuilder<VolumeVO> PoolIdSearch;
+    protected final SearchBuilder<VolumeVO> InstanceAndDeviceIdSearch;
     
     protected static final String SELECT_VM_SQL = "SELECT DISTINCT instance_id from volumes v where v.host_id = ? and v.mirror_state = ?";
     protected static final String SELECT_VM_ID_SQL = "SELECT DISTINCT instance_id from volumes v where v.host_id = ?";
@@ -117,6 +118,14 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         sc.setParameters("instanceId", id);
 	    return listActiveBy(sc);
 	}
+   
+    @Override
+    public List<VolumeVO> findByInstanceAndDeviceId(long instanceId, long deviceId){
+    	SearchCriteria<VolumeVO> sc = InstanceAndDeviceIdSearch.create();
+    	sc.setParameters("instanceId", instanceId);
+    	sc.setParameters("deviceId", deviceId);
+    	return listActiveBy(sc);
+    }
     
     @Override
     public List<VolumeVO> findByPoolId(long poolId) {
@@ -234,6 +243,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     	volume.setInstanceId(vmId);
     	volume.setDeviceId(deviceId);
     	volume.setUpdated(new Date());
+    	volume.setAttached(new Date());
     	update(volumeId, volume);
     }
     
@@ -243,6 +253,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     	volume.setInstanceId(null);
         volume.setDeviceId(null);
     	volume.setUpdated(new Date());
+    	volume.setAttached(null);
     	update(volumeId, volume);
     }
     
@@ -302,6 +313,11 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         InstanceIdSearch.and("instanceId", InstanceIdSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
         InstanceIdSearch.done();
 
+        InstanceAndDeviceIdSearch = createSearchBuilder();
+        InstanceAndDeviceIdSearch.and("instanceId", InstanceAndDeviceIdSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
+        InstanceAndDeviceIdSearch.and("deviceId", InstanceAndDeviceIdSearch.entity().getDeviceId(), SearchCriteria.Op.EQ);
+        InstanceAndDeviceIdSearch.done();
+        
         PoolIdSearch = createSearchBuilder();
         PoolIdSearch.and("poolId", PoolIdSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
         PoolIdSearch.done();

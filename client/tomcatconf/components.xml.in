@@ -172,6 +172,8 @@
         </manager>
         <manager name="download manager" class="com.cloud.storage.download.DownloadMonitorImpl">
         </manager>
+        <manager name="upload manager" class="com.cloud.storage.upload.UploadMonitorImpl">
+        </manager>
         <manager name="console proxy manager" class="com.cloud.consoleproxy.AgentBasedStandaloneConsoleProxyManager">
         </manager>
         <manager name="secondary storage vm manager" class="com.cloud.storage.secondary.SecondaryStorageManagerImpl">

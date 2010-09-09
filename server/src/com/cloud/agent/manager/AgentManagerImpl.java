@@ -551,6 +551,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             host.setGuid(null);
             host.setClusterId(null);
             _hostDao.update(host.getId(), host);
+            
             _hostDao.remove(hostId);
             
             //delete the associated primary storage from db
@@ -614,6 +615,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             templateHostSC.addAnd("hostId", SearchCriteria.Op.EQ, secStorageHost.getId());
             _vmTemplateHostDao.remove(templateHostSC);
             
+            /*Disconnected agent needs special handling here*/
+    		secStorageHost.setGuid(null);
     		txn.commit();
     		return true;
     	}catch (Throwable t) {
@@ -1142,11 +1145,16 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             }
         }
     }
+    
+    @Override
+    public Answer easySend(final Long hostId, final Command cmd) {   	
+    	return easySend(hostId, cmd, _wait);
+    }
 
     @Override
-    public Answer easySend(final Long hostId, final Command cmd) {
+    public Answer easySend(final Long hostId, final Command cmd, int timeout) {
         try {
-            final Answer answer = send(hostId, cmd, _wait);
+            final Answer answer = send(hostId, cmd, timeout);
             if (answer == null) {
                 s_logger.warn("send returns null answer");
                 return null;
@@ -1764,6 +1772,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
     }
     
+    @Override
     public Host findHost(VmCharacteristics vm, Set<? extends Host> avoids) {
         return null;
     }

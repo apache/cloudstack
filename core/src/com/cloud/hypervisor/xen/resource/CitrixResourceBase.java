@@ -1,5 +1,5 @@
 /**
-: *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
+ *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
  * 
  * This software is licensed under the GNU General Public License v3 or later.
  * 
@@ -234,6 +234,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     protected int _wait;
     protected IAgentControl _agentControl;
     protected boolean _isRemoteAgent = false;
+    
 
     protected final XenServerHost _host = new XenServerHost();
 
@@ -270,69 +271,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         s_statesTable.put(Types.VmPowerState.UNKNOWN, State.Unknown);
         s_statesTable.put(Types.VmPowerState.UNRECOGNIZED, State.Unknown);
     }
-    private static HashMap<String, String> _guestOsType = new HashMap<String, String>(50);
-    static {
-        _guestOsType.put("CentOS 4.5 (32-bit)", "CentOS 4.5");
-        _guestOsType.put("CentOS 4.6 (32-bit)", "CentOS 4.6");
-        _guestOsType.put("CentOS 4.7 (32-bit)", "CentOS 4.7");
-        _guestOsType.put("CentOS 4.8 (32-bit)", "CentOS 4.8");
-        _guestOsType.put("CentOS 5.0 (32-bit)", "CentOS 5.0");
-        _guestOsType.put("CentOS 5.0 (64-bit)", "CentOS 5.0 x64");
-        _guestOsType.put("CentOS 5.1 (32-bit)", "CentOS 5.1");
-        _guestOsType.put("CentOS 5.1 (64-bit)", "CentOS 5.1 x64");
-        _guestOsType.put("CentOS 5.2 (32-bit)", "CentOS 5.2");
-        _guestOsType.put("CentOS 5.2 (64-bit)", "CentOS 5.2 x64");
-        _guestOsType.put("CentOS 5.3 (32-bit)", "CentOS 5.3");
-        _guestOsType.put("CentOS 5.3 (64-bit)", "CentOS 5.3 x64");
-        _guestOsType.put("CentOS 5.4 (32-bit)", "CentOS 5.4");
-        _guestOsType.put("CentOS 5.4 (64-bit)", "CentOS 5.4 x64");
-        _guestOsType.put("Debian Lenny 5.0 (32-bit)", "Debian Lenny 5.0");
-        _guestOsType.put("Oracle Enterprise Linux 5.0 (32-bit)", "Oracle Enterprise Linux 5.0");
-        _guestOsType.put("Oracle Enterprise Linux 5.0 (64-bit)", "Oracle Enterprise Linux 5.0 x64");
-        _guestOsType.put("Oracle Enterprise Linux 5.1 (32-bit)", "Oracle Enterprise Linux 5.1");
-        _guestOsType.put("Oracle Enterprise Linux 5.1 (64-bit)", "Oracle Enterprise Linux 5.1 x64");
-        _guestOsType.put("Oracle Enterprise Linux 5.2 (32-bit)", "Oracle Enterprise Linux 5.2");
-        _guestOsType.put("Oracle Enterprise Linux 5.2 (64-bit)", "Oracle Enterprise Linux 5.2 x64");
-        _guestOsType.put("Oracle Enterprise Linux 5.3 (32-bit)", "Oracle Enterprise Linux 5.3");
-        _guestOsType.put("Oracle Enterprise Linux 5.3 (64-bit)", "Oracle Enterprise Linux 5.3 x64");
-        _guestOsType.put("Oracle Enterprise Linux 5.4 (32-bit)", "Oracle Enterprise Linux 5.4");
-        _guestOsType.put("Oracle Enterprise Linux 5.4 (64-bit)", "Oracle Enterprise Linux 5.4 x64");
-        _guestOsType.put("Red Hat Enterprise Linux 4.5 (32-bit)", "Red Hat Enterprise Linux 4.5");
-        _guestOsType.put("Red Hat Enterprise Linux 4.6 (32-bit)", "Red Hat Enterprise Linux 4.6");
-        _guestOsType.put("Red Hat Enterprise Linux 4.7 (32-bit)", "Red Hat Enterprise Linux 4.7");
-        _guestOsType.put("Red Hat Enterprise Linux 4.8 (32-bit)", "Red Hat Enterprise Linux 4.8");
-        _guestOsType.put("Red Hat Enterprise Linux 5.0 (32-bit)", "Red Hat Enterprise Linux 5.0");
-        _guestOsType.put("Red Hat Enterprise Linux 5.0 (64-bit)", "Red Hat Enterprise Linux 5.0 x64");
-        _guestOsType.put("Red Hat Enterprise Linux 5.1 (32-bit)", "Red Hat Enterprise Linux 5.1");
-        _guestOsType.put("Red Hat Enterprise Linux 5.1 (64-bit)", "Red Hat Enterprise Linux 5.1 x64");
-        _guestOsType.put("Red Hat Enterprise Linux 5.2 (32-bit)", "Red Hat Enterprise Linux 5.2");
-        _guestOsType.put("Red Hat Enterprise Linux 5.2 (64-bit)", "Red Hat Enterprise Linux 5.2 x64");
-        _guestOsType.put("Red Hat Enterprise Linux 5.3 (32-bit)", "Red Hat Enterprise Linux 5.3");
-        _guestOsType.put("Red Hat Enterprise Linux 5.3 (64-bit)", "Red Hat Enterprise Linux 5.3 x64");
-        _guestOsType.put("Red Hat Enterprise Linux 5.4 (32-bit)", "Red Hat Enterprise Linux 5.4");
-        _guestOsType.put("Red Hat Enterprise Linux 5.4 (64-bit)", "Red Hat Enterprise Linux 5.4 x64");
-        _guestOsType.put("SUSE Linux Enterprise Server 9 SP4 (32-bit)", "SUSE Linux Enterprise Server 9 SP4");
-        _guestOsType.put("SUSE Linux Enterprise Server 10 SP1 (32-bit)", "SUSE Linux Enterprise Server 10 SP1");
-        _guestOsType.put("SUSE Linux Enterprise Server 10 SP1 (64-bit)", "SUSE Linux Enterprise Server 10 SP1 x64");
-        _guestOsType.put("SUSE Linux Enterprise Server 10 SP2 (32-bit)", "SUSE Linux Enterprise Server 10 SP2");
-        _guestOsType.put("SUSE Linux Enterprise Server 10 SP2 (64-bit)", "SUSE Linux Enterprise Server 10 SP2 x64");
-        _guestOsType.put("SUSE Linux Enterprise Server 10 SP3 (64-bit)", "Other install media");
-        _guestOsType.put("SUSE Linux Enterprise Server 11 (32-bit)", "SUSE Linux Enterprise Server 11");
-        _guestOsType.put("SUSE Linux Enterprise Server 11 (64-bit)", "SUSE Linux Enterprise Server 11 x64");
-        _guestOsType.put("Windows 7 (32-bit)", "Windows 7");
-        _guestOsType.put("Windows 7 (64-bit)", "Windows 7 x64");
-        _guestOsType.put("Windows Server 2003 (32-bit)", "Windows Server 2003");
-        _guestOsType.put("Windows Server 2003 (64-bit)", "Windows Server 2003 x64");
-        _guestOsType.put("Windows Server 2008 (32-bit)", "Windows Server 2008");
-        _guestOsType.put("Windows Server 2008 (64-bit)", "Windows Server 2008 x64");
-        _guestOsType.put("Windows Server 2008 R2 (64-bit)", "Windows Server 2008 R2 x64");
-        _guestOsType.put("Windows 2000 SP4 (32-bit)", "Windows 2000 SP4");
-        _guestOsType.put("Windows Vista (32-bit)", "Windows Vista");
-        _guestOsType.put("Windows XP SP2 (32-bit)", "Windows XP SP2");
-        _guestOsType.put("Windows XP SP3 (32-bit)", "Windows XP SP3");
-        _guestOsType.put("Other install media", "Other install media");
-      
-    }
+    
     
     protected boolean isRefNull(XenAPIObject object) {
         return (object == null || object.toWireString().equals("OpaqueRef:NULL"));
@@ -1171,7 +1110,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             bootArgs += " pod=" + _pod;
             bootArgs += " localgw=" + _localGateway;
             String result = startSystemVM(vmName, storage.getVlanId(), network, cmd.getVolumes(), bootArgs, storage.getGuestMacAddress(), storage.getGuestIpAddress(), storage
-                    .getPrivateMacAddress(), storage.getPublicMacAddress(), cmd.getProxyCmdPort(), storage.getRamSize());
+                    .getPrivateMacAddress(), storage.getPublicMacAddress(), cmd.getProxyCmdPort(), storage.getRamSize(), storage.getGuestOSId());
             if (result == null) {
                 return new StartSecStorageVmAnswer(cmd);
             }
@@ -2078,6 +2017,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
             /* Does the template exist in primary storage pool? If yes, no copy */
             VDI vmtmpltvdi = null;
+            VDI snapshotvdi = null;
 
             Set<VDI> vdis = VDI.getByNameLabel(conn, "Template " + cmd.getName());
 
@@ -2110,19 +2050,21 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     return new DownloadAnswer(null, 0, msg, com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR, "", "", 0);
                 }
                 vmtmpltvdi = cloudVDIcopy(tmpltvdi, poolsr);
-
-                vmtmpltvdi.setNameLabel(conn, "Template " + cmd.getName());
+                snapshotvdi = vmtmpltvdi.snapshot(conn, new HashMap<String, String>());
+                vmtmpltvdi.destroy(conn);
+                snapshotvdi.setNameLabel(conn, "Template " + cmd.getName());
                 // vmtmpltvdi.setNameDescription(conn, cmd.getDescription());
-                uuid = vmtmpltvdi.getUuid(conn);
+                uuid = snapshotvdi.getUuid(conn);
+                vmtmpltvdi = snapshotvdi;
 
             } else
                 uuid = vmtmpltvdi.getUuid(conn);
 
             // Determine the size of the template
-            long createdSize = vmtmpltvdi.getVirtualSize(conn);
+            long phySize = vmtmpltvdi.getPhysicalUtilisation(conn);
 
             DownloadAnswer answer = new DownloadAnswer(null, 100, cmd, com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED, uuid, uuid);
-            answer.setTemplateSize(createdSize);
+            answer.setTemplateSize(phySize);
 
             return answer;
 
@@ -2593,9 +2535,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return vm;
     }
 
-    protected String getGuestOsType(String stdType) {
-        return _guestOsType.get(stdType);
-    }
+
 
     public boolean joinPool(String address, String username, String password) {
         Connection conn = getConnection();
@@ -3139,7 +3079,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             String bootArgs = cmd.getBootArgs();
 
             String result = startSystemVM(vmName, router.getVlanId(), network, cmd.getVolumes(), bootArgs, router.getGuestMacAddress(), router.getPrivateIpAddress(), router
-                    .getPrivateMacAddress(), router.getPublicMacAddress(), 3922, router.getRamSize());
+                    .getPrivateMacAddress(), router.getPublicMacAddress(), 3922, router.getRamSize(), router.getGuestOSId());
             if (result == null) {
                 networkUsage(router.getPrivateIpAddress(), "create", null);
                 return new StartRouterAnswer(cmd);
@@ -3154,7 +3094,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
 
     protected String startSystemVM(String vmName, String vlanId, Network nw0, List<VolumeVO> vols, String bootArgs, String guestMacAddr, String privateIp, String privateMacAddr,
-            String publicMacAddr, int cmdPort, long ramSize) {
+            String publicMacAddr, int cmdPort, long ramSize, long guestOsId) {
 
     	setupLinkLocalNetwork();
         VM vm = null;
@@ -3172,14 +3112,12 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
             Ternary<SR, VDI, VolumeVO> mount = mounts.get(0);
 
-            Set<VM> templates = VM.getByNameLabel(conn, "CentOS 5.3");
+            Set<VM> templates = VM.getByNameLabel(conn, CitrixHelper.getGuestOsType(guestOsId));
             if (templates.size() == 0) {
-                templates = VM.getByNameLabel(conn, "CentOS 5.3 (64-bit)");
-                if (templates.size() == 0) {
-                    String msg = " can not find template CentOS 5.3 ";
-                    s_logger.warn(msg);
-                    return msg;
-                }
+            	String msg = " can not find systemvm template " + CitrixHelper.getGuestOsType(guestOsId) ;
+            	s_logger.warn(msg);
+            	return msg;
+
             }
 
             VM template = templates.iterator().next();
@@ -3340,7 +3278,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             bootArgs += " localgw=" + _localGateway;
 
             String result = startSystemVM(vmName, proxy.getVlanId(), network, cmd.getVolumes(), bootArgs, proxy.getGuestMacAddress(), proxy.getGuestIpAddress(), proxy
-                    .getPrivateMacAddress(), proxy.getPublicMacAddress(), cmd.getProxyCmdPort(), proxy.getRamSize());
+                    .getPrivateMacAddress(), proxy.getPublicMacAddress(), cmd.getProxyCmdPort(), proxy.getRamSize(), proxy.getGuestOSId());
             if (result == null) {
                 return new StartConsoleProxyAnswer(cmd);
             }
@@ -3477,8 +3415,12 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             return false;
         return true;
     }
-
     protected String callHostPlugin(String plugin, String cmd, String... params) {
+        //default time out is 300 s
+        return callHostPluginWithTimeOut(plugin, cmd, 300, params);
+    }
+
+    protected String callHostPluginWithTimeOut(String plugin, String cmd, int timeout, String... params) {
         Map<String, String> args = new HashMap<String, String>();
         Session slaveSession = null;
         Connection slaveConn = null;
@@ -3490,7 +3432,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-            slaveConn = new Connection(slaveUrl, 1800);
+            slaveConn = new Connection(slaveUrl, timeout);
             slaveSession = Session.slaveLocalLoginWithPassword(slaveConn, _username, _password);
 
             if (s_logger.isDebugEnabled()) {
@@ -4451,9 +4393,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             SR.Record srr = sr.getRecord(conn);
             Set<PBD> pbds = sr.getPBDs(conn);
             if (pbds.size() == 0) {
-                String msg = "There is no PBDs for this SR: " + _host.uuid;
+                String msg = "There is no PBDs for this SR: " + srr.nameLabel + " on host:" + _host.uuid;
                 s_logger.warn(msg);
-                removeSR(sr);
                 return false;
             }
             Set<Host> hosts = null;
@@ -4507,15 +4448,11 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
     protected Answer execute(ModifyStoragePoolCommand cmd) {
         StoragePoolVO pool = cmd.getPool();
+        StoragePoolTO poolTO = new StoragePoolTO(pool);
         try {
             Connection conn = getConnection();
 
-            SR sr = getStorageRepository(conn, pool);
-            if (!checkSR(sr)) {
-                String msg = "ModifyStoragePoolCommand checkSR failed! host:" + _host.uuid + " pool: " + pool.getName() + pool.getHostAddress() + pool.getPath();
-                s_logger.warn(msg);
-                return new Answer(cmd, false, msg);
-            }
+            SR sr = getStorageRepository(conn, poolTO);
             long capacity = sr.getPhysicalSize(conn);
             long available = capacity - sr.getPhysicalUtilisation(conn);
             if (capacity == -1) {
@@ -4540,14 +4477,10 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
     protected Answer execute(DeleteStoragePoolCommand cmd) {
         StoragePoolVO pool = cmd.getPool();
+        StoragePoolTO poolTO = new StoragePoolTO(pool);
         try {
             Connection conn = getConnection();
-            SR sr = getStorageRepository(conn, pool);
-            if (!checkSR(sr)) {
-                String msg = "DeleteStoragePoolCommand checkSR failed! host:" + _host.uuid + " pool: " + pool.getName() + pool.getHostAddress() + pool.getPath();
-                s_logger.warn(msg);
-                return new Answer(cmd, false, msg);
-            }
+            SR sr = getStorageRepository(conn, poolTO);
             sr.setNameLabel(conn, pool.getUuid());
             sr.setNameDescription(conn, pool.getName());
 
@@ -4957,119 +4890,10 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             s_logger.warn(msg, e);
             throw new CloudRuntimeException(msg, e);
         }
-
     }
 
-    protected SR getIscsiSR(Connection conn, StoragePoolVO pool) {
-
-        synchronized (pool.getUuid().intern()) {
-            Map<String, String> deviceConfig = new HashMap<String, String>();
-            try {
-                String target = pool.getHostAddress().trim();
-                String path = pool.getPath().trim();
-                if (path.endsWith("/")) {
-                    path = path.substring(0, path.length() - 1);
-                }
-
-                String tmp[] = path.split("/");
-                if (tmp.length != 3) {
-                    String msg = "Wrong iscsi path " + pool.getPath() + " it should be /targetIQN/LUN";
-                    s_logger.warn(msg);
-                    throw new CloudRuntimeException(msg);
-                }
-                String targetiqn = tmp[1].trim();
-                String lunid = tmp[2].trim();
-                String scsiid = "";
-
-                Set<SR> srs = SR.getByNameLabel(conn, pool.getUuid());
-                for (SR sr : srs) {
-                    if (!SRType.LVMOISCSI.equals(sr.getType(conn)))
-                        continue;
-
-                    Set<PBD> pbds = sr.getPBDs(conn);
-                    if (pbds.isEmpty())
-                        continue;
-
-                    PBD pbd = pbds.iterator().next();
-
-                    Map<String, String> dc = pbd.getDeviceConfig(conn);
-
-                    if (dc == null)
-                        continue;
-
-                    if (dc.get("target") == null)
-                        continue;
-
-                    if (dc.get("targetIQN") == null)
-                        continue;
-
-                    if (dc.get("lunid") == null)
-                        continue;
-
-                    if (target.equals(dc.get("target")) && targetiqn.equals(dc.get("targetIQN")) && lunid.equals(dc.get("lunid"))) {
-                        return sr;
-                    }
-
-                }
-                deviceConfig.put("target", target);
-                deviceConfig.put("targetIQN", targetiqn);
-
-                Host host = Host.getByUuid(conn, _host.uuid);
-                SR sr = null;
-                try {
-                    sr = SR.create(conn, host, deviceConfig, new Long(0), pool.getUuid(), pool.getName(), SRType.LVMOISCSI.toString(), "user", true, new HashMap<String, String>());
-                } catch (XenAPIException e) {
-                    String errmsg = e.toString();
-                    if (errmsg.contains("SR_BACKEND_FAILURE_107")) {
-                        String lun[] = errmsg.split("<LUN>");
-                        boolean found = false;
-                        for (int i = 1; i < lun.length; i++) {
-                            int blunindex = lun[i].indexOf("<LUNid>") + 7;
-                            int elunindex = lun[i].indexOf("</LUNid>");
-                            String ilun = lun[i].substring(blunindex, elunindex);
-                            ilun = ilun.trim();
-                            if (ilun.equals(lunid)) {
-                                int bscsiindex = lun[i].indexOf("<SCSIid>") + 8;
-                                int escsiindex = lun[i].indexOf("</SCSIid>");
-                                scsiid = lun[i].substring(bscsiindex, escsiindex);
-                                scsiid = scsiid.trim();
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (!found) {
-                            String msg = "can not find LUN " + lunid + " in " + errmsg;
-                            s_logger.warn(msg);
-                            throw new CloudRuntimeException(msg);
-                        }
-                    } else {
-                        String msg = "Unable to create Iscsi SR  " + deviceConfig + " due to  " + e.toString();
-                        s_logger.warn(msg, e);
-                        throw new CloudRuntimeException(msg, e);
-                    }
-                }
-                deviceConfig.put("SCSIid", scsiid);
-                sr = SR.create(conn, host, deviceConfig, new Long(0), pool.getUuid(), pool.getName(), SRType.LVMOISCSI.toString(), "user", true, new HashMap<String, String>());
-                if( !checkSR(sr) ) {
-                    throw new Exception("no attached PBD");
-                }           
-                sr.scan(conn);
-                return sr;
-
-            } catch (XenAPIException e) {
-                String msg = "Unable to create Iscsi SR  " + deviceConfig + " due to  " + e.toString();
-                s_logger.warn(msg, e);
-                throw new CloudRuntimeException(msg, e);
-            } catch (Exception e) {
-                String msg = "Unable to create Iscsi SR  " + deviceConfig + " due to  " + e.getMessage();
-                s_logger.warn(msg, e);
-                throw new CloudRuntimeException(msg, e);
-            }
-        }
-    }
-
-    protected SR getIscsiSR(Connection conn, StoragePoolTO pool) {
-
+    protected SR getIscsiSR(StoragePoolTO pool) {
+        Connection conn = getConnection();
         synchronized (pool.getUuid().intern()) {
             Map<String, String> deviceConfig = new HashMap<String, String>();
             try {
@@ -5118,6 +4942,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                         if (checkSR(sr)) {
                             return sr;
                         }
+                        throw new CloudRuntimeException("SR check failed for storage pool: " + pool.getUuid() + "on host:" + _host.uuid);
                     }
 
                 }
@@ -5177,13 +5002,12 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
     }
 
-    protected SR getNfsSR(StoragePoolVO pool) {
+    protected SR getNfsSR(StoragePoolTO pool) {
         Connection conn = getConnection();
 
         Map<String, String> deviceConfig = new HashMap<String, String>();
         try {
-
-            String server = pool.getHostAddress();
+            String server = pool.getHost();
             String serverpath = pool.getPath();
             serverpath = serverpath.replace("//", "/");
             Set<SR> srs = SR.getAll(conn);
@@ -5212,59 +5036,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     if (checkSR(sr)) {
                         return sr;
                     }
-                }
-
-            }
-
-            deviceConfig.put("server", server);
-            deviceConfig.put("serverpath", serverpath);
-            Host host = Host.getByUuid(conn, _host.uuid);
-            SR sr = SR.create(conn, host, deviceConfig, new Long(0), pool.getUuid(), pool.getName(), SRType.NFS.toString(), "user", true, new HashMap<String, String>());
-            sr.scan(conn);
-            return sr;
-
-        } catch (XenAPIException e) {
-            String msg = "Unable to create NFS SR  " + deviceConfig + " due to  " + e.toString();
-            s_logger.warn(msg, e);
-            throw new CloudRuntimeException(msg, e);
-        } catch (Exception e) {
-            String msg = "Unable to create NFS SR  " + deviceConfig + " due to  " + e.getMessage();
-            s_logger.warn(msg);
-            throw new CloudRuntimeException(msg, e);
-        }
-    }
-
-    protected SR getNfsSR(Connection conn, StoragePoolTO pool) {
-        Map<String, String> deviceConfig = new HashMap<String, String>();
-
-        String server = pool.getHost();
-        String serverpath = pool.getPath();
-        serverpath = serverpath.replace("//", "/");
-        try {
-            Set<SR> srs = SR.getAll(conn);
-            for (SR sr : srs) {
-                if (!SRType.NFS.equals(sr.getType(conn)))
-                    continue;
-
-                Set<PBD> pbds = sr.getPBDs(conn);
-                if (pbds.isEmpty())
-                    continue;
-
-                PBD pbd = pbds.iterator().next();
-
-                Map<String, String> dc = pbd.getDeviceConfig(conn);
-
-                if (dc == null)
-                    continue;
-
-                if (dc.get("server") == null)
-                    continue;
-
-                if (dc.get("serverpath") == null)
-                    continue;
-
-                if (server.equals(dc.get("server")) && serverpath.equals(dc.get("serverpath"))) {
-                    return sr;
+                    throw new CloudRuntimeException("SR check failed for storage pool: " + pool.getUuid() + "on host:" + _host.uuid);
                 }
 
             }
@@ -5351,6 +5123,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     public CopyVolumeAnswer execute(final CopyVolumeCommand cmd) {
         String volumeUUID = cmd.getVolumePath();
         StoragePoolVO pool = cmd.getPool();
+        StoragePoolTO poolTO = new StoragePoolTO(pool);
         String secondaryStorageURL = cmd.getSecondaryStorageURL();
 
         URI uri = null;
@@ -5403,7 +5176,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 }
 
                 // Copy the volume to the primary storage pool
-                primaryStoragePool = getStorageRepository(conn, pool);
+                primaryStoragePool = getStorageRepository(conn, poolTO);
                 destVolume = cloudVDIcopy(srcVolume, primaryStoragePool);
             }
 
@@ -6279,40 +6052,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
         if (srs.size() > 1) {
             throw new CloudRuntimeException("More than one storage repository was found for pool with uuid: " + pool.getUuid());
-        }
-
-        if (srs.size() == 1) {
-            SR sr = srs.iterator().next();
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("SR retrieved for " + pool.getId() + " is mapped to " + sr.toString());
-            }
-
-            if (checkSR(sr)) {
-                return sr;
-            }
-        }
-
-        if (pool.getType() == StoragePoolType.NetworkFilesystem)
-            return getNfsSR(conn, pool);
-        else if (pool.getType() == StoragePoolType.IscsiLUN)
-            return getIscsiSR(conn, pool);
-        else
-            throw new CloudRuntimeException("The pool type: " + pool.getType().name() + " is not supported.");
-
-    }
-
-    protected SR getStorageRepository(Connection conn, StoragePoolVO pool) {
-        Set<SR> srs;
-        try {
-            srs = SR.getByNameLabel(conn, pool.getUuid());
-        } catch (XenAPIException e) {
-            throw new CloudRuntimeException("Unable to get SR " + pool.getUuid() + " due to " + e.toString(), e);
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Unable to get SR " + pool.getUuid() + " due to " + e.getMessage(), e);
-        }
-
-        if (srs.size() > 1) {
-            throw new CloudRuntimeException("More than one storage repository was found for pool with uuid: " + pool.getUuid());
         } else if (srs.size() == 1) {
             SR sr = srs.iterator().next();
             if (s_logger.isDebugEnabled()) {
@@ -6322,15 +6061,15 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             if (checkSR(sr)) {
                 return sr;
             }
-            throw new CloudRuntimeException("Check this SR failed");
+            throw new CloudRuntimeException("SR check failed for storage pool: " + pool.getUuid() + "on host:" + _host.uuid);
         } else {
 	
-	        if (pool.getPoolType() == StoragePoolType.NetworkFilesystem)
+	        if (pool.getType() == StoragePoolType.NetworkFilesystem)
 	            return getNfsSR(pool);
-	        else if (pool.getPoolType() == StoragePoolType.IscsiLUN)
-	            return getIscsiSR(conn, pool);
+	        else if (pool.getType() == StoragePoolType.IscsiLUN)
+	            return getIscsiSR(pool);
 	        else
-	            throw new CloudRuntimeException("The pool type: " + pool.getPoolType().name() + " is not supported.");
+	            throw new CloudRuntimeException("The pool type: " + pool.getType().name() + " is not supported.");
         }
 
     }
@@ -6405,7 +6144,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             checksum = "";
         }
 
-        String result = callHostPlugin("vmopsSnapshot", "post_create_private_template", "remoteTemplateMountPath", remoteTemplateMountPath, "templateDownloadFolder", templateDownloadFolder,
+        String result = callHostPluginWithTimeOut("vmopsSnapshot", "post_create_private_template", 110*60, "remoteTemplateMountPath", remoteTemplateMountPath, "templateDownloadFolder", templateDownloadFolder,
                 "templateInstallFolder", templateInstallFolder, "templateFilename", templateFilename, "templateName", templateName, "templateDescription", templateDescription,
                 "checksum", checksum, "virtualSize", String.valueOf(virtualSize), "templateId", String.valueOf(templateId));
 
@@ -6443,7 +6182,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
         // Each argument is put in a separate line for readability.
         // Using more lines does not harm the environment.
-        String results = callHostPlugin("vmopsSnapshot", "backupSnapshot", "primaryStorageSRUuid", primaryStorageSRUuid, "dcId", dcId.toString(), "accountId", accountId.toString(), "volumeId",
+        String results = callHostPluginWithTimeOut("vmopsSnapshot", "backupSnapshot", 110*60, "primaryStorageSRUuid", primaryStorageSRUuid, "dcId", dcId.toString(), "accountId", accountId.toString(), "volumeId",
                 volumeId.toString(), "secondaryStorageMountPath", secondaryStorageMountPath, "snapshotUuid", snapshotUuid, "prevSnapshotUuid", prevSnapshotUuid, "prevBackupUuid",
                 prevBackupUuid, "isFirstSnapshotOfRootVolume", isFirstSnapshotOfRootVolume.toString(), "isISCSI", isISCSI.toString());
 
@@ -6546,7 +6285,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
         String failureString = "Could not create volume from " + backedUpSnapshotUuid;
         templatePath = (templatePath == null) ? "" : templatePath;
-        String results = callHostPlugin("vmopsSnapshot", "createVolumeFromSnapshot", "dcId", dcId.toString(), "accountId", accountId.toString(), "volumeId", volumeId.toString(),
+        String results = callHostPluginWithTimeOut("vmopsSnapshot","createVolumeFromSnapshot", 110*60, "dcId", dcId.toString(), "accountId", accountId.toString(), "volumeId", volumeId.toString(),
                 "secondaryStorageMountPath", secondaryStorageMountPath, "backedUpSnapshotUuid", backedUpSnapshotUuid, "templatePath", templatePath, "templateDownloadFolder",
                 templateDownloadFolder, "isISCSI", isISCSI.toString());
 
@@ -6699,4 +6438,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             return virtualSize;
         }
     }
+
+	protected String getGuestOsType(String stdType) {
+		return CitrixHelper.getGuestOsType(stdType);
+	}
 }

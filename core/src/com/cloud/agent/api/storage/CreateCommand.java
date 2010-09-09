@@ -64,7 +64,7 @@ public class CreateCommand extends Command {
         this.pool = new StoragePoolTO(pool);
         this.templateUrl = null;
         this.size = size;
-        this.instanceName = vm.getInstanceName();
+        //this.instanceName = vm.getInstanceName();
     }
     
     @Override

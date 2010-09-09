@@ -117,7 +117,7 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @param volumeId
      * @throws InternalErrorException
      */
-    void detachVolumeFromVM(long volumeId, long startEventId) throws InternalErrorException;
+    void detachVolumeFromVM(long volumeId, long startEventId, long deviceId, long instanceId) throws InternalErrorException;
     
     /**
      * Attaches an ISO to the virtual CDROM device of the specified VM. Will eject any existing virtual CDROM if isoPath is null.

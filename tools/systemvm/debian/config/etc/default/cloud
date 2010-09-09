@@ -1,0 +1,2 @@
+#set ENABLED to 1 if you want the init script to start the password server
+ENABLED=0

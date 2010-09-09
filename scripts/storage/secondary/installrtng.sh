@@ -116,6 +116,9 @@ then
   echo "Failed to install routing template $tmpltimg to $destdir"
 fi
 
+tmpltfile=$destdir/$tmpfile
+tmpltsize=$(ls -l $tmpltfile| awk -F" " '{print $5}')
+
 echo "vhd=true" >> $destdir/template.properties
 echo "id=1" >> $destdir/template.properties
 echo "public=true" >> $destdir/template.properties
@@ -123,6 +126,6 @@ echo "vhd.filename=$localfile" >> $destdir/template.properties
 echo "uniquename=routing" >> $destdir/template.properties
 echo "vhd.virtualsize=2147483648" >> $destdir/template.properties
 echo "virtualsize=2147483648" >> $destdir/template.properties
-echo "vhd.size=2101252608" >> $destdir/template.properties
+echo "vhd.size=$tmpltsize" >> $destdir/template.properties
 
 echo "Successfully installed routing template $tmpltimg to $destdir"
