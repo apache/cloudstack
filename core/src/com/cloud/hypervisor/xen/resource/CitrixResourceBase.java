@@ -3341,9 +3341,14 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             if (vlanNetworkr.PIFs != null) {
                 for (PIF pif : vlanNetworkr.PIFs) {
                     PIF.Record pifr = pif.getRecord(conn);
-                    if (pifr.device.equals(nPifr.device) && pifr.host.equals(nPifr.host)) {
-                        pif.plug(conn);
-                        return vlanNetwork;
+                    if(pifr.host.equals(nPifr.host)) {
+                        if (pifr.device.equals(nPifr.device) ) {
+                            pif.plug(conn);
+                            return vlanNetwork;
+                        } else {
+                            throw new CloudRuntimeException("Creating VLAN " + tag + " on " + nPifr.device + " failed due to this VLAN is already created on " + pifr.device);                	
+                        }
+                        
                     }
                 }
             }
