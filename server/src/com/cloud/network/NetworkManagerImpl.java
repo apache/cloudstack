@@ -1788,8 +1788,6 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 
-        _routerTemplateId = NumbersUtil.parseInt(configs.get("router.template.id"), 1);
-
         _routerRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), 128);
 
 //        String value = configs.get("guest.ip.network");
