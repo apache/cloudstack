@@ -104,6 +104,7 @@ import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
+import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.RemovePortForwardingServiceCmd;
@@ -7080,6 +7081,11 @@ public class ManagementServerImpl implements ManagementServer {
         */
 
         return _diskOfferingDao.search(sc, searchFilter);
+    }
+
+    @Override
+    public AsyncJobResult queryAsyncJobResult(QueryAsyncJobResultCmd cmd) throws PermissionDeniedException {
+        return queryAsyncJobResult(cmd.getId());
     }
 
     @Override
