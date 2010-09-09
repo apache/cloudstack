@@ -32,21 +32,21 @@ long milliseconds = new Date().getTime();
 
     <script type="text/javascript" src="scripts/cloud.logger.js?t=<%=milliseconds%>"></script>
 
-    <script type="text/javascript" src="scripts/cloud.core.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core2.js?t=<%=milliseconds%>"></script>
 
-    <script type="text/javascript" src="scripts/cloud.core.init.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core2.init.js?t=<%=milliseconds%>"></script>
     
-    <script type="text/javascript" src="scripts/cloud.core.instance.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core2.instance.js?t=<%=milliseconds%>"></script>
     
-    <script type="text/javascript" src="scripts/cloud.core.event.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core2.event.js?t=<%=milliseconds%>"></script>
     
-    <script type="text/javascript" src="scripts/cloud.core.alert.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core2.alert.js?t=<%=milliseconds%>"></script>
   
-    <script type="text/javascript" src="scripts/cloud.core.account.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core2.account.js?t=<%=milliseconds%>"></script>
     
-    <script type="text/javascript" src="scripts/cloud.core.volume.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core2.volume.js?t=<%=milliseconds%>"></script>
     
-    <script type="text/javascript" src="scripts/cloud.core.snapshot.js?t=<%=milliseconds%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core2.snapshot.js?t=<%=milliseconds%>"></script>
   
     <title>Cloud.com CloudStack</title>
 </head>
