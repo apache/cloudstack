@@ -78,6 +78,7 @@ DROP TABLE IF EXISTS `cloud`.`network_profiles`;
 DROP TABLE IF EXISTS `cloud`.`network_offerings`;
 DROP TABLE IF EXISTS `cloud`.`host_master`;
 DROP TABLE IF EXISTS `cloud`.`hypervisor_properties`;
+DROP TABLE IF EXISTS `cloud`.`account_network_ref`;
 
 CREATE TABLE `cloud`.`hypervsior_properties` (
   `hypervisor` varchar(32) NOT NULL UNIQUE COMMENT 'hypervisor type',
@@ -96,6 +97,14 @@ CREATE TABLE `cloud`.`network_profiles` (
   `cidr` varchar(32) NOT NULL COMMENT 'network cidr',
   `mode` varchar(32) NOT NULL COMMENT 'How to retrieve ip address in this network',
   `vlan_id` bigint unsigned NULL COMMENT 'vlan id if the broadcast_domain_type is the vlan',
+  `network_offering_id` bigint unsigned NOT NULL COMMENT 'network offering id that this profile is created from',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`account_network_ref` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `account_id` bigint unsigned NOT NULL COMMENT 'account id',
+  `network_profile_id` bigint unsigned NOT NULL COMMENT `network profile_id',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -122,9 +131,10 @@ CREATE TABLE `cloud`.`network_offerings` (
   `mc_rate` smallint unsigned COMMENT 'mcast rate throttle mbits/s',
   `concurrent_connections` int(10) unsigned COMMENT 'concurrent connections supported on this network',
   `traffic_type` varchar(32) NOT NULL COMMENT 'traffic type carried on this network',
+  `tags` varchar(4096) NOT NULL COMMENT 'tags supported by this offering',
+  `system_only` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is this network offering for system use only',
   `created` datetime NOT NULL COMMENT 'time the entry was created',
   `removed` datetime DEFAULT NULL COMMENT 'time the entry was removed',
-  `system_only` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is this network offering for system use only',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

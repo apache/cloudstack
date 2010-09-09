@@ -46,7 +46,10 @@ public class NetworkProfileDaoImpl extends GenericDaoBase<NetworkProfileVO, Long
         
         AccountSearch = createSearchBuilder();
         AccountSearch.and("account", AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AccountSearch.and("offering", AccountSearch.entity().getNetworkOfferingId(), SearchCriteria.Op.EQ);
         AccountSearch.done();
+        
+        
     }
     
     public NetworkProfileVO findBy(TrafficType trafficType, Mode mode, BroadcastDomainType broadcastType,  long accountId) {
@@ -62,6 +65,15 @@ public class NetworkProfileDaoImpl extends GenericDaoBase<NetworkProfileVO, Long
     @Override
     public List<NetworkProfileVO> listBy(long accountId) {
         SearchCriteria<NetworkProfileVO> sc = AccountSearch.create();
+        sc.setParameters("account", accountId);
+        
+        return listActiveBy(sc);
+    }
+    
+    @Override
+    public List<NetworkProfileVO> listBy(long accountId, long offeringId) {
+        SearchCriteria<NetworkProfileVO> sc = AccountSearch.create();
+        sc.setParameters("offering", offeringId);
         sc.setParameters("account", accountId);
         
         return listActiveBy(sc);

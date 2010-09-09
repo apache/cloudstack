@@ -37,8 +37,9 @@ import com.cloud.utils.db.GenericDao;
 public class NetworkOfferingVO implements NetworkOffering {
     public final static String SystemVmPublicNetwork = "System-Vm-Public-Network";
     public final static String SystemVmGuestNetwork = "System-Vm-Guest-Network";
-    public final static String SystemVmLinkLocalNetwork = "System-Vm-LinkLocal-Network";
+    public final static String SystemVmControlNetwork = "System-Vm-Control-Network";
     public final static String SystemVmManagementNetwork = "System-Vm-Management-Network";
+    public final static String SystemVmStorageNetwork = "System-Vm-Storage-Network";
     
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -70,6 +71,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     
     @Column(name="system_only")
     boolean systemOnly;
+    
+    @Column(name="tags")
+    String tags;
     
     @Column(name=GenericDao.REMOVED_COLUMN)
     Date removed;
@@ -127,6 +131,14 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Override
     public Integer getConcurrentConnections() {
         return concurrentConnections;
+    }
+    
+    public String getTags() {
+        return tags;
+    }
+    
+    public void setTags(String tags) {
+        this.tags = tags;
     }
     
     public NetworkOfferingVO() {

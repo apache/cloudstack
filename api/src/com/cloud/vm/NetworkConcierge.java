@@ -3,7 +3,9 @@
  */
 package com.cloud.vm;
 
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.network.NetworkProfile;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapter;
 
@@ -16,8 +18,10 @@ import com.cloud.utils.component.Adapter;
  */
 public interface NetworkConcierge extends Adapter {
     String getUniqueName();
+
+    Nic allocate(VirtualMachine vm, NetworkProfile profile, Nic nic);
     
-    Pair<String, String> reserve(long vmId, NetworkCharacteristics ch) throws InsufficientVirtualNetworkCapcityException;
+    Pair<String, String> reserve(long vmId, NetworkCharacteristics ch) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException;
     
     boolean release(String uniqueName, String uniqueId);
 }

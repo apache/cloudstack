@@ -28,12 +28,12 @@ import javax.persistence.TableGenerator;
 
 @Entity
 @Table(name="data_center")
-public class DataCenterVO {
+public class DataCenterVO implements DataCenter {
     
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-    private Long id = null;
+    private long id;
     
 	@Column(name="name")
 	private String name = null;
@@ -66,20 +66,20 @@ public class DataCenterVO {
     @TableGenerator(name="mac_address_sq", table="data_center", pkColumnName="id", valueColumnName="mac_address", allocationSize=1)
     private long macAddress = 1;
     
-    public DataCenterVO(Long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr) {
+    public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr) {
+        this(name, description, dns1, dns2, dns3, dns4, vnet, guestCidr);
         this.id = id;
-		this.name = name;
-		this.description = description;
-		this.dns1 = dns1;
-		this.dns2 = dns2;
-		this.internalDns1 = dns3;
-		this.internalDns2 = dns4;
-		this.vnet = vnet;
-		this.guestNetworkCidr = guestCidr;
 	}
 
     public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr) {
-        this(null, name, description, dns1, dns2, dns3, dns4, vnet, guestCidr);
+        this.name = name;
+        this.description = description;
+        this.dns1 = dns1;
+        this.dns2 = dns2;
+        this.internalDns1 = dns3;
+        this.internalDns2 = dns4;
+        this.vnet = vnet;
+        this.guestNetworkCidr = guestCidr;
     }
     
     public String getDescription() {
@@ -117,7 +117,8 @@ public class DataCenterVO {
 	protected DataCenterVO() {
     }
 
-	public Long getId() {
+	@Override
+    public long getId() {
 		return id;
 	}
 	

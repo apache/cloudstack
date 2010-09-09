@@ -29,7 +29,7 @@ import com.cloud.utils.NumbersUtil;
 
 @Entity
 @Table(name = "host_pod_ref")
-public class HostPodVO {
+public class HostPodVO implements Pod {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	long id;
@@ -67,7 +67,8 @@ public class HostPodVO {
 	protected HostPodVO() {
 	}
 
-	public long getId() {
+	@Override
+    public long getId() {
 		return id;
 	}
 

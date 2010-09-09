@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -84,8 +83,8 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
-import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
+import com.cloud.host.Host.Type;
 import com.cloud.host.dao.HostDao;
 import com.cloud.info.ConsoleProxyConnectionInfo;
 import com.cloud.info.ConsoleProxyInfo;
@@ -97,7 +96,8 @@ import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.maid.StackMaid;
 import com.cloud.network.IpAddrAllocator;
 import com.cloud.network.IpAddrAllocator.networkInfo;
-import com.cloud.network.Network.TrafficType;
+import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkProfileVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -223,6 +223,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     private StorageManager _storageMgr;
     @Inject
     private HighAvailabilityManager _haMgr;
+    @Inject NetworkManager _networkMgr;
+    
     @Inject AccountManager _accountMgr;
     @Inject
     private EventDao _eventDao;
@@ -1010,16 +1012,24 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         long id = _consoleProxyDao.getNextInSequence(Long.class, "id");
         String name = VirtualMachineName.getConsoleProxyName(id, _instance);
         
+        DataCenterVO dc = _dcDao.findById(dataCenterId);
+        
         ConsoleProxyVO proxy = new ConsoleProxyVO(id, name, _template.getId(), _template.getGuestOSId(), dataCenterId, 0);
         proxy = _consoleProxyDao.persist(proxy);
-        ArrayList<NetworkOfferingVO> networkOfferings = new ArrayList<NetworkOfferingVO>(3);
-        networkOfferings.add(_managementNetworkOffering);
-        networkOfferings.add(_linkLocalNetworkOffering);
-        networkOfferings.add(_publicNetworkOffering);
-        _vmMgr.allocate(proxy, _serviceOffering, null, networkOfferings, null, null, null, _accountMgr.getSystemAccount());
-        Map<String, Object> context = new HashMap<String, Object>();
-        String publicIpAddress = null;
+        List<NetworkProfileVO> profiles = _networkMgr.getSystemAccountNetworkProfiles(NetworkOfferingVO.SystemVmControlNetwork, NetworkOfferingVO.SystemVmManagementNetwork, NetworkOfferingVO.SystemVmPublicNetwork);
+        try {
+            proxy = _vmMgr.allocate(proxy, _template, _serviceOffering, profiles, dc, _accountMgr.getSystemAccount());
+            proxy = _vmMgr.create(proxy);
+        } catch (InsufficientCapacityException e) {
+            s_logger.warn("InsufficientCapacity", e);
+            throw new CloudRuntimeException("Insufficient capcity exception", e);
+        } catch (StorageUnavailableException e) {
+            s_logger.warn("Unable to contact storage", e);
+            throw new CloudRuntimeException("Unable to contact storage", e);
+        }
+        
         return null;
+        
         
 /*
         Transaction txn = Transaction.currentTxn();
@@ -2352,13 +2362,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         if (_template == null) {
             throw new ConfigurationException("Unable to find the template for console proxy VMs");
         }
-        
-        _publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmPublicNetwork, TrafficType.Public, null);
-        _publicNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_publicNetworkOffering);
-        _managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmManagementNetwork, TrafficType.Management, null);
-        _managementNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_managementNetworkOffering);
-        _linkLocalNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmLinkLocalNetwork, TrafficType.Control, null);
-        _linkLocalNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_linkLocalNetworkOffering);
         
         _capacityScanScheduler.scheduleAtFixedRate(getCapacityScanTask(), STARTUP_DELAY, _capacityScanInterval, TimeUnit.MILLISECONDS);
 

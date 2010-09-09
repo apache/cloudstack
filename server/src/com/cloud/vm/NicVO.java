@@ -30,7 +30,7 @@ import com.cloud.network.Network.Mode;
 import com.cloud.network.Network.TrafficType;
 
 @Entity
-@Table(name="network")
+@Table(name="nics")
 public class NicVO implements Nic {
     protected NicVO() {
     }
@@ -79,6 +79,13 @@ public class NicVO implements Nic {
     @Column(name="device_id")
     int deviceId;
 
+    public NicVO(String conciergeName, long instanceId, long profileId) {
+        this.conciergeName = conciergeName;
+        this.instanceId = instanceId;
+        this.networkProfileId = profileId;
+        this.state = State.Allocated;
+    }
+    
     @Override
     public String getIp4Address() {
         return ip4Address;
@@ -92,10 +99,18 @@ public class NicVO implements Nic {
     public String getMacAddress() {
         return macAddress;
     }
+    
+    public void setMacAddress(String macAddress) {
+        this.macAddress = macAddress;
+    }
 
     @Override
     public State getState() {
         return state;
+    }
+    
+    public void setState(State state) {
+        this.state = state;
     }
 
     @Override
@@ -136,5 +151,14 @@ public class NicVO implements Nic {
     
     public void setDeviceId(int deviceId) {
         this.deviceId = deviceId;
+    }
+
+    @Override
+    public Mode getMode() {
+        return mode;
+    }
+    
+    public void setMode(Mode mode) {
+        this.mode = mode;
     }
 }

@@ -17,6 +17,8 @@
  */
 package com.cloud.vm;
 
+import com.cloud.network.Network.Mode;
+
 
 /**
  * Nic represents one nic on the VM.
@@ -50,4 +52,6 @@ public interface Nic {
     long getInstanceId();
     
     long getDeviceId();
+    
+    Mode getMode();
 }

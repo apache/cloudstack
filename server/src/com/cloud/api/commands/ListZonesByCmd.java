@@ -79,9 +79,7 @@ public class ListZonesByCmd extends BaseCmd {
         int i = 0;
         for (DataCenterVO dataCenter : dataCenters) {
             List<Pair<String, Object>> dcData = new ArrayList<Pair<String, Object>>();
-            if (dataCenter.getId() != null) {
-                dcData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), dataCenter.getId().toString()));
-            }
+            dcData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), Long.toString(dataCenter.getId())));
             dcData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), dataCenter.getName()));
             if ((dataCenter.getDescription() != null) && !dataCenter.getDescription().equalsIgnoreCase("null")) {
                 dcData.add(new Pair<String, Object>(BaseCmd.Properties.DESCRIPTION.getName(), dataCenter.getDescription()));

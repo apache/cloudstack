@@ -22,7 +22,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,8 +37,8 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
@@ -53,11 +52,9 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.SecondaryStorage;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
@@ -131,6 +128,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         return true;
     }
     
+    @Override
     public void updateConfiguration(long userId, String name, String value) throws InvalidParameterValueException, InternalErrorException {
     	if (value != null && (value.trim().isEmpty() || value.equals("null"))) {
     		value = null;
@@ -347,6 +345,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		}
     }
     
+    @Override
     @DB
     public void deletePod(long userId, long podId) throws InvalidParameterValueException, InternalErrorException {
     	// Make sure the pod exists
@@ -367,6 +366,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		saveConfigurationEvent(userId, null, EventTypes.EVENT_POD_DELETE, "Successfully deleted pod with name: " + pod.getName() + " in zone: " + zone.getName() + ".", "podId=" + podId, "dcId=" + zone.getId());
     }
     
+    @Override
     @DB
     public HostPodVO editPod(long userId, long podId, String newPodName, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException {
     	// Make sure the pod exists
@@ -451,6 +451,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		return pod;
     }
     
+    @Override
     @DB
     public HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException {
     	checkPodAttributes(-1, podName, zoneId, gateway, cidr, startIp, endIp, true);
@@ -647,6 +648,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	
     }
     
+    @Override
     @DB
     public void deleteZone(long userId, long zoneId) throws InvalidParameterValueException, InternalErrorException {
     	// Make sure the zone exists
@@ -780,6 +782,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	return zone;
     }
     
+    @Override
     @DB
     public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException {
     	
@@ -817,7 +820,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2,true);
 		
 		// Create the new zone in the database
-		DataCenterVO zone = new DataCenterVO(null, zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr);
+		DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr);
 		zone = _zoneDao.persist(zone);
 		
 		// Add vnet entries for the new zone
@@ -828,6 +831,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		return zone;
     }
     
+    @Override
     public ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean useVirtualNetwork, String tags) {
     	String networkRateStr = _configDao.getValue("network.throttling.rate");
     	String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
@@ -846,6 +850,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     }
     
+    @Override
     public ServiceOfferingVO updateServiceOffering(long userId, long serviceOfferingId, String name, String displayText, Boolean offerHA, Boolean useVirtualNetwork, String tags) {
     	boolean updateNeeded = (name != null || displayText != null || offerHA != null || useVirtualNetwork != null || tags != null);
     	if (!updateNeeded) {
@@ -889,6 +894,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         }
     }
     
+    @Override
     public DiskOfferingVO updateDiskOffering(long userId, long diskOfferingId, String name, String displayText, String tags) {
     	boolean updateNeeded = (name != null || displayText != null || tags != null);
     	if (!updateNeeded) {
@@ -922,6 +928,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     }
     
+    @Override
     public boolean deleteServiceOffering(long userId, long serviceOfferingId) {
     	ServiceOfferingVO offering = _serviceOfferingDao.findById(serviceOfferingId);
     	
@@ -934,6 +941,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     }
     
+    @Override
     public DiskOfferingVO createDiskOffering(long userId, long domainId, String name, String description, int numGibibytes, String tags) {
     	long diskSize = numGibibytes * 1024;
     	tags = cleanupTags(tags);
@@ -949,6 +957,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		}
     }
     
+    @Override
     public boolean deleteDiskOffering(long userId, long diskOfferingId) {
         DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
         
@@ -962,6 +971,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         }
     }
     
+    @Override
     public String changePrivateIPRange(boolean add, long podId, String startIP, String endIP) throws InvalidParameterValueException {
     	checkPrivateIpRangeErrors(podId, startIP, endIP);
     	
@@ -980,6 +990,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		}
     }
     
+    @Override
     public VlanVO createVlanAndPublicIpRange(long userId, VlanType vlanType, Long zoneId, Long accountId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String startIP, String endIP) throws InvalidParameterValueException, InternalErrorException {    		
     	
 		//check for hypervisor type to be xenserver
@@ -1048,7 +1059,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         		List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAccountVlanMapsByAccount(accountId);
         		for (AccountVlanMapVO accountVlanMap : accountVlanMaps) {
         			VlanVO vlan = _vlanDao.findById(accountVlanMap.getVlanDbId());
-        			if (vlan.getDataCenterId() == zone.getId().longValue()) {
+        			if (vlan.getDataCenterId() == zone.getId()) {
         				throw new InvalidParameterValueException("The account " + account.getAccountName() + " is already assigned to an IP range in zone " + zone.getName() + ".");
         			}
         		}
@@ -1068,7 +1079,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         		List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAll();
         		for (AccountVlanMapVO accountVlanMap : accountVlanMaps) {
         			VlanVO vlan = _vlanDao.findById(accountVlanMap.getVlanDbId());
-        			if (vlan.getDataCenterId() == zone.getId().longValue()) {
+        			if (vlan.getDataCenterId() == zone.getId()) {
         				throw new InvalidParameterValueException("Zone " + zone.getName() + " already has account-wide IP ranges. A zone may contain either pod-wide IP ranges or account-wide IP ranges, but not both.");
         			}
         		}
@@ -1193,6 +1204,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		return vlan;
     }
     
+    @Override
     public boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId) throws InvalidParameterValueException {
     	VlanVO vlan = _vlanDao.findById(vlanDbId);
     	if (vlan == null) {
@@ -1249,6 +1261,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		return success;
     }
     
+    @Override
     public List<String> csvTagsToList(String tags) {
     	List<String> tagsList = new ArrayList<String>();
     	
@@ -1262,6 +1275,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	return tagsList;
     }
     
+    @Override
     public String listToCsvTags(List<String> tagsList) {
     	String tags = "";
     	if (tagsList.size() > 0) {

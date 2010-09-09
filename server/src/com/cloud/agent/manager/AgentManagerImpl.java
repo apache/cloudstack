@@ -63,20 +63,20 @@ import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.UnsupportedAnswer;
-import com.cloud.agent.api.UpgradeCommand;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.agent.manager.allocator.PodAllocator;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
-import com.cloud.agent.transport.UpgradeResponse;
 import com.cloud.alert.AlertManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.PodCluster;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -92,10 +92,10 @@ import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
+import com.cloud.host.Host.Type;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.Host.Type;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
@@ -112,7 +112,6 @@ import com.cloud.resource.ServerResource;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
@@ -508,6 +507,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         throw new DiscoveryException("Unable to add the host");
     }
     
+    @Override
     @DB
     public boolean deleteHost(long hostId) {
         Transaction txn = Transaction.currentTxn();
@@ -548,11 +548,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             _dcDao.releasePrivateIpAddress(host.getPrivateIpAddress(), host.getDataCenterId(), null);
             AgentAttache attache = _agents.get(hostId);
             handleDisconnect(attache, Status.Event.Remove, false);
-            /*
             host.setGuid(null);
             host.setClusterId(null);
             _hostDao.update(host.getId(), host);
-            */
             _hostDao.remove(hostId);
             
             //delete the associated primary storage from db
@@ -1062,6 +1060,19 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
         return null;
     }
+    
+    public Pod findPod(VmCharacteristics vm, DataCenter dc, Set<? extends Pod> avoids) {
+        for (PodAllocator allocator : _podAllocators) {
+            Pod pod = allocator.allocateTo(vm, dc, avoids);
+            if (pod != null) {
+                s_logger.debug("Pod " + pod.getId() + " is found by " + allocator.getName());
+                return pod;
+            }
+        }
+        
+        s_logger.debug("Unable to find any pod for " + vm);
+        return null;
+    }
 
     @Override
     public HostStats getHostStatistics(long hostId) throws InternalErrorException
@@ -1088,6 +1099,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     	return null;
     }
     
+    @Override
     public Long getGuestOSCategoryId(long hostId) {
     	HostVO host = _hostDao.findById(hostId);
     	if (host == null) {
@@ -1119,6 +1131,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             _investigate = investigate;
         }
 
+        @Override
         public void run() {
             try {
                 handleDisconnect(_attache, _event, _investigate);
@@ -1589,6 +1602,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
     }
     
+    @Override
     public void updateHost(long hostId, long guestOSCategoryId) {
     	GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
     	Map<String, String> hostDetails = _hostDetailsDao.findDetails(hostId);
@@ -1749,6 +1763,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
 
     }
+    
+    public Host findHost(VmCharacteristics vm, Set<? extends Host> avoids) {
+        return null;
+    }
 
     // create capacity entries if none exist for this server
     private void createCapacityEntry(final StartupCommand startup, HostVO server) {
@@ -1824,6 +1842,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             this.actionDelegate = actionDelegate;
         }
 
+        @Override
         public void run() {
             try {
                 if (s_logger.isDebugEnabled()) {

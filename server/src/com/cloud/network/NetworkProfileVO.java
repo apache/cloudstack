@@ -29,7 +29,7 @@ import javax.persistence.Table;
 import com.cloud.network.Network.BroadcastDomainType;
 import com.cloud.network.Network.Mode;
 import com.cloud.network.Network.TrafficType;
-import com.cloud.user.OwnedBy;
+import com.cloud.vm.NetworkCharacteristics;
 
 /**
  * NetworkProfileVO contains information about a specific network.
@@ -37,10 +37,10 @@ import com.cloud.user.OwnedBy;
  */
 @Entity
 @Table(name="network_profiles")
-public class NetworkProfileVO implements OwnedBy {
+public class NetworkProfileVO implements NetworkProfile {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
-    long id;
+    Long id;
     
     @Column(name="mode")
     @Enumerated(value=EnumType.STRING)
@@ -66,26 +66,37 @@ public class NetworkProfileVO implements OwnedBy {
     @Column(name="cidr")
     String cidr;
     
+    @Column(name="network_offering_id")
+    long networkOfferingId;
+    
     public NetworkProfileVO() {
     }
     
-    public NetworkProfileVO(NetworkProfile that, long accountId) {
-        this(accountId, that.getTrafficType(), that.getMode(), that.getBroadcastDomainType());
+    public NetworkProfileVO(NetworkProfile that, long accountId, long offeringId) {
+        this(accountId, that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId);
     }
     
-    public NetworkProfileVO(long accountId, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType) {
+    public NetworkProfileVO(long accountId, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId) {
         this.accountId = accountId;
         this.trafficType = trafficType;
         this.mode = mode;
         this.broadcastDomainType = broadcastDomainType;
+        this.networkOfferingId = networkOfferingId;
     }
 
-    public long getId() {
+    @Override
+    public Long getId() {
         return id;
     }
 
+    @Override
     public Mode getMode() {
         return mode;
+    }
+    
+    @Override
+    public long getNetworkOfferingId() {
+        return networkOfferingId;
     }
 
     public void setMode(Mode mode) {
@@ -101,6 +112,7 @@ public class NetworkProfileVO implements OwnedBy {
         this.accountId = accountId;
     }
 
+    @Override
     public BroadcastDomainType getBroadcastDomainType() {
         return broadcastDomainType;
     }
@@ -109,6 +121,7 @@ public class NetworkProfileVO implements OwnedBy {
         this.broadcastDomainType = broadcastDomainType;
     }
 
+    @Override
     public TrafficType getTrafficType() {
         return trafficType;
     }
@@ -117,6 +130,7 @@ public class NetworkProfileVO implements OwnedBy {
         this.trafficType = trafficType;
     }
 
+    @Override
     public String getGateway() {
         return gateway;
     }
@@ -125,10 +139,12 @@ public class NetworkProfileVO implements OwnedBy {
         this.gateway = gateway;
     }
 
+    @Override
     public String getCidr() {
         return cidr;
     }
 
+    @Override
     public void setCidr(String cidr) {
         this.cidr = cidr;
     }
@@ -139,5 +155,9 @@ public class NetworkProfileVO implements OwnedBy {
 
     public void setVlanId(Long vlanId) {
         this.vlanId = vlanId;
+    }
+    
+    public NetworkCharacteristics toCharacteristics() {
+        return new NetworkCharacteristics(id, broadcastDomainType, cidr, mode, 0);
     }
 }

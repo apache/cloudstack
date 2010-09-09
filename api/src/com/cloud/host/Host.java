@@ -19,7 +19,9 @@ package com.cloud.host;
 
 import java.util.Date;
 
+import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.Type;
 
 
 /**

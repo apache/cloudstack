@@ -33,6 +33,7 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.Volume.VolumeType;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
@@ -314,4 +315,20 @@ public interface StorageManager extends Manager {
      * @return
      */
     public boolean cancelPrimaryStorageForMaintenance(long primaryStorageId, long userId);
+    
+    /**
+     * Allocates one volume.
+     * @param <T>
+     * @param type
+     * @param offering
+     * @param name
+     * @param size
+     * @param template
+     * @param vm
+     * @param account
+     * @return VolumeVO a persisted volume.
+     */
+    <T extends VMInstanceVO> VolumeVO allocate(VolumeType type, DiskOfferingVO offering, String name, Long size, VMTemplateVO template, T vm, AccountVO account);
+    
+    <T extends VMInstanceVO> void create(T vm);
 }

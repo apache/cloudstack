@@ -44,6 +44,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VmCharacteristics;
 
 /**
  * AgentManager manages hosts.  It directly coordinates between the
@@ -178,6 +179,8 @@ public interface AgentManager extends Manager {
 	 * @return
 	 */
     Pair<HostPodVO, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc, long userId, Set<Long> avoids);
+    
+    Host findHost(VmCharacteristics vm, Set<? extends Host> avoids);
 
     /**
      * Put the agent in maintenance mode.

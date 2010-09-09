@@ -20,6 +20,7 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.async.executor.AssignToLoadBalancerExecutor;
 import com.cloud.async.executor.LoadBalancerParam;
 import com.cloud.dc.DataCenterVO;
@@ -28,12 +29,16 @@ import com.cloud.dc.VlanVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.AccountVO;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
 
 /**
  * NetworkManager manages the network for the different end users.
@@ -206,6 +211,17 @@ public interface NetworkManager extends Manager {
      * @param sourceNat - (optional) true if the IP address should be a source NAT address
      * @return - list of IP addresses
      */
-    List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat);	
-	
+    List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat);
+    
+    NetworkProfileVO setupNetworkProfile(AccountVO account, NetworkOfferingVO offering);
+    NetworkProfileVO setupNetworkProfile(AccountVO account, NetworkOfferingVO offering, Map<String, String> params);
+    List<NetworkProfileVO> setupNetworkProfiles(AccountVO account, List<NetworkOfferingVO> offerings);
+    
+    List<NetworkProfileVO> getSystemAccountNetworkProfiles(String... offeringNames);
+    
+    <K extends VMInstanceVO> List<NicVO> allocate(K vm, List<Pair<NetworkProfileVO, NicVO>> networks) throws InsufficientCapacityException;
+
+    <K extends VMInstanceVO> List<NicTO> prepare(K vm);
+    
+    <K extends VMInstanceVO> void create(K vm);
 }

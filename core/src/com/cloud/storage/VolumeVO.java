@@ -296,7 +296,8 @@ public class VolumeVO implements Volume {
         return size;
     }
     
-	public void setSize(long size) {
+	@Override
+    public void setSize(long size) {
 		this.size = size;
 	}
     
@@ -402,7 +403,8 @@ public class VolumeVO implements Volume {
 		this.diskOfferingId = diskOfferingId;
 	}
 
-	public Long getTemplateId() {
+	@Override
+    public Long getTemplateId() {
 		return templateId;
 	}
 
@@ -435,7 +437,8 @@ public class VolumeVO implements Volume {
 		this.storageResourceType = storageResourceType2;
 	}
 
-	public Long getPoolId() {
+	@Override
+    public Long getPoolId() {
 		return poolId;
 	}
 	
@@ -455,7 +458,8 @@ public class VolumeVO implements Volume {
         return updated;
     }
 	
-	public State getState() {
+	@Override
+    public State getState() {
 	    return state;
 	}
 

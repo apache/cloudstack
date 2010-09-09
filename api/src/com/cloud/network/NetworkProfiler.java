@@ -5,6 +5,7 @@ package com.cloud.network;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.exception.ConflictingNetworkSettingsException;
 import com.cloud.offering.NetworkOffering;
@@ -20,6 +21,8 @@ import com.cloud.vm.VirtualMachine;
  *
  */
 public interface NetworkProfiler extends Adapter {
+    NetworkProfile convert(NetworkOffering offering, Map<String, String> params, Account owner);
+    
     List<? extends NetworkProfile>  convert(Collection<? extends NetworkOffering> networkOfferings, Account owner);
     boolean check(VirtualMachine vm, ServiceOffering serviceOffering, Collection<? extends NetworkProfile> networkProfiles) throws ConflictingNetworkSettingsException;
 }

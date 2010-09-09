@@ -32,6 +32,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.StatsCollector;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
@@ -39,9 +40,8 @@ import com.cloud.storage.StorageStats;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -166,7 +166,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 
 		Pair<Long, Long> sizes = _volumeDao.getCountAndTotalByPool(pool.getId());
 		
-		long totalAllocatedSize = sizes.second() + (long)sizes.first() * _extraBytesPerVolume;
+		long totalAllocatedSize = sizes.second() + sizes.first() * _extraBytesPerVolume;
 
 		// Iterate through all templates on this storage pool
 		boolean tmpinstalled = false;
@@ -179,11 +179,10 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 
 		for (VMTemplateStoragePoolVO templatePoolVO : templatePoolVOs) {
 			VMTemplateVO templateInPool = _templateDao.findById(templatePoolVO.getTemplateId());
-			int templateSizeMultiplier = 2;
+			int templateSizeMultiplier = pool.getPoolType() == StoragePoolType.NetworkFilesystem ? 1 : 2;
 
 			if ((template != null) && !tmpinstalled && (templateInPool.getId() == template.getId())) {
 				tmpinstalled = true;
-				templateSizeMultiplier = 3;
 			}
 			
 			s_logger.debug("For template: " + templateInPool.getName() + ", using template size multiplier: " + templateSizeMultiplier);
@@ -203,9 +202,9 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 				if (templateHostVO == null) {
 					return false;
 				} else {
-					s_logger.debug("For template: " + template.getName() + ", using template size multiplier: " + 3);
+					s_logger.debug("For template: " + template.getName() + ", using template size multiplier: " + 2);
 					long templateSize = templateHostVO.getSize();
-					totalAllocatedSize += 3 * (templateSize + _extraBytesPerVolume);
+					totalAllocatedSize += 2 * (templateSize + _extraBytesPerVolume);
 				}
 			}
 		}

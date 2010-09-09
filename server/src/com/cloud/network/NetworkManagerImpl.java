@@ -18,6 +18,7 @@
 package com.cloud.network;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +55,7 @@ import com.cloud.agent.api.routing.LoadBalancerCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRuleCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.async.AsyncJobExecutor;
@@ -144,13 +146,18 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouter.Role;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.NetworkConcierge;
+import com.cloud.vm.Nic;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 
 /**
@@ -195,8 +202,10 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     @Inject UserStatisticsDao _statsDao = null;
     @Inject NetworkOfferingDao _networkOfferingDao = null;
     @Inject NetworkProfileDao _networkProfileDao = null;
+    @Inject NicDao _nicDao;
     
     Adapters<NetworkProfiler> _networkProfilers;
+    Adapters<NetworkConcierge> _networkConcierges;
 
     long _routerTemplateId = -1;
     int _routerRamSize;
@@ -207,10 +216,8 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     int _routerCleanupInterval = 3600;
     int _routerStatsInterval = 300;
     private ServiceOfferingVO _offering;
-    private NetworkOfferingVO _managementNetworkOffering;
-    private NetworkOfferingVO _publicNetworkOffering;
-    private NetworkOfferingVO _linkLocalNetworkOffering;
-    private NetworkOfferingVO _guestNetworkOffering;
+    private HashMap<String, Pair<NetworkOfferingVO, NetworkProfileVO>> _systemNetworks = new HashMap<String, Pair<NetworkOfferingVO, NetworkProfileVO>>(5);
+    
     private VMTemplateVO _template;
     
     ScheduledExecutorService _executor;
@@ -1782,6 +1789,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 
         final ComponentLocator locator = ComponentLocator.getCurrentLocator();
         _networkProfilers = locator.getAdapters(NetworkProfiler.class);
+        _networkConcierges = locator.getAdapters(NetworkConcierge.class);
         
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 
@@ -1835,47 +1843,27 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             // throw new ConfigurationException("Unable to find the template for the router: " + _routerTemplateId);
         }
         
-        _publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmPublicNetwork, TrafficType.Public, null);
-        _publicNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_publicNetworkOffering);
-        _managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmManagementNetwork, TrafficType.Management, null);
-        _managementNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_managementNetworkOffering);
-        _linkLocalNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmLinkLocalNetwork, TrafficType.Control, null);
-        _linkLocalNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_linkLocalNetworkOffering);
-        _guestNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmGuestNetwork, TrafficType.Guest, GuestIpType.Virtualized);
-        _guestNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(_guestNetworkOffering);
-        
-        // FIXME: Obviously Virtualized is not the only guest network.  How do we determine which one to use?
-        
-        
+        NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmPublicNetwork, TrafficType.Public, null);
+        publicNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(publicNetworkOffering);
+        _systemNetworks.put(NetworkOfferingVO.SystemVmPublicNetwork, new Pair<NetworkOfferingVO, NetworkProfileVO>(publicNetworkOffering, null));
+        NetworkOfferingVO managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmManagementNetwork, TrafficType.Management, null);
+        managementNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(managementNetworkOffering);
+        _systemNetworks.put(NetworkOfferingVO.SystemVmManagementNetwork, new Pair<NetworkOfferingVO, NetworkProfileVO>(managementNetworkOffering, null));
+        NetworkOfferingVO controlNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmControlNetwork, TrafficType.Control, null);
+        controlNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(controlNetworkOffering);
+        _systemNetworks.put(NetworkOfferingVO.SystemVmControlNetwork, new Pair<NetworkOfferingVO, NetworkProfileVO>(controlNetworkOffering, null));
+        NetworkOfferingVO guestNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmGuestNetwork, TrafficType.Guest, GuestIpType.Virtualized);
+        guestNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(guestNetworkOffering);
+        _systemNetworks.put(NetworkOfferingVO.SystemVmGuestNetwork, new Pair<NetworkOfferingVO, NetworkProfileVO>(guestNetworkOffering, null));
+        NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmStorageNetwork, TrafficType.Storage, null);
+        storageNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(storageNetworkOffering);
+        _systemNetworks.put(NetworkOfferingVO.SystemVmGuestNetwork, new Pair<NetworkOfferingVO, NetworkProfileVO>(storageNetworkOffering, null));
         
         s_logger.info("Network Manager is configured.");
 
         return true;
     }
     
-    public void setupNetworkProfiles(List<NetworkOfferingVO> offerings, AccountVO account) {
-        List<? extends NetworkProfile> profiles = null;
-        for (NetworkProfiler profiler : _networkProfilers) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Sending network profiles to " + profiler.getName());
-            }
-            profiles = profiler.convert(offerings, account);
-            if (profiles != null) {
-                break;
-            }
-        }
-
-        if (profiles == null) {
-            s_logger.debug("Unable to resolve the network profiles");
-            throw new CloudRuntimeException("Uanble to convert network offerings to network profiles for that account");
-        }
-        
-        for (NetworkProfile profile : profiles) {
-            NetworkProfileVO vo = new NetworkProfileVO(profile, account.getId());
-            vo = _networkProfileDao.persist(vo);
-        }
-    }
-
     @Override
     public String getName() {
         return _name;
@@ -1883,18 +1871,15 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 
     @Override
     public boolean start() {
-        List<NetworkOfferingVO> offerings = new ArrayList<NetworkOfferingVO>(4);
-        offerings.add(_publicNetworkOffering);
-        offerings.add(_guestNetworkOffering);
-        offerings.add(_linkLocalNetworkOffering);
-        offerings.add(_managementNetworkOffering);
-
-       // try {
-        //    setupNetworkProfiles(offerings, _accountMgr.getSystemAccount());
-        //} catch (Exception e) {
-          //  s_logger.warn("Unable to setup the system network profiles");
-            //return false;
-        //}
+        AccountVO systemAccount = _accountMgr.getSystemAccount();
+        for (Pair<NetworkOfferingVO, NetworkProfileVO> network : _systemNetworks.values()) {
+            network.second(setupNetworkProfile(systemAccount, network.first()));
+            if (network.second() == null) {
+                s_logger.warn("Unable to setup system account's network profile for " + network.first().getName());
+                return false;
+            }
+        }
+        
         _executor.scheduleAtFixedRate(new RouterCleanupTask(), _routerCleanupInterval, _routerCleanupInterval, TimeUnit.SECONDS);
         _executor.scheduleAtFixedRate(new NetworkUsageTask(), _routerStatsInterval, _routerStatsInterval, TimeUnit.SECONDS);
         return true;
@@ -2361,6 +2346,103 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     	ipAddressSC.setJoinParameters("virtualNetworkVlanSB", "vlanType", VlanType.VirtualNetwork);
 		
 		return _ipAddressDao.search(ipAddressSC, null);
+    }
+    
+    @Override
+    public NetworkProfileVO setupNetworkProfile(AccountVO owner, NetworkOfferingVO offering) {
+        return setupNetworkProfile(owner, offering, new HashMap<String, String>());
+    }
+    
+    @Override
+    public NetworkProfileVO setupNetworkProfile(AccountVO owner, NetworkOfferingVO offering, Map<String, String> params) {
+        for (NetworkProfiler profiler : _networkProfilers) {
+            NetworkProfile profile = profiler.convert(offering, params, owner);
+            if (profile == null) {
+                continue;
+            }
+            
+            if (profile.getId() != null) {
+                if (profile instanceof NetworkProfileVO) {
+                    return (NetworkProfileVO)profile;
+                } else {
+                    return _networkProfileDao.findById(profile.getId());
+                }
+            } 
+            
+            NetworkProfileVO vo = new NetworkProfileVO(profile, owner.getId(), offering.getId());
+            return _networkProfileDao.persist(vo);
+        }
+
+        throw new CloudRuntimeException("Unable to convert network offering to network profile: " + offering.getId());
+    }
+
+    @Override
+    public List<NetworkProfileVO> setupNetworkProfiles(AccountVO owner, List<NetworkOfferingVO> offerings) {
+        List<NetworkProfileVO> profiles = new ArrayList<NetworkProfileVO>(offerings.size());
+        for (NetworkOfferingVO offering : offerings) {
+            profiles.add(setupNetworkProfile(owner, offering));
+        }
+        return profiles;
+    }
+    
+    @Override
+    public List<NetworkProfileVO> getSystemAccountNetworkProfiles(String... offeringNames) {
+        List<NetworkProfileVO> profiles = new ArrayList<NetworkProfileVO>(offeringNames.length);
+        for (String offeringName : offeringNames) {
+            Pair<NetworkOfferingVO, NetworkProfileVO> network = _systemNetworks.get(offeringName);
+            if (network == null) {
+                throw new CloudRuntimeException("Unable to find system network profile for " + offeringName);
+            }
+            profiles.add(network.second());
+        }
+        return profiles;
+    }
+
+
+    @Override @DB
+    public <K extends VMInstanceVO> List<NicVO> allocate(K vm, List<Pair<NetworkProfileVO, NicVO>> networks) throws InsufficientCapacityException {
+        List<NicVO> nics = new ArrayList<NicVO>(networks.size());
+        
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
+        for (Pair<NetworkProfileVO, NicVO> network : networks) {
+            for (NetworkConcierge concierge : _networkConcierges) {
+                Nic nic = concierge.allocate(vm, network.first(), network.second());
+                if (nic == null) {
+                    continue;
+                }
+                NicVO vo = new NicVO(concierge.getUniqueName(), vm.getId(), network.first().getId());
+                
+                if (nic.getIp4Address() != null) {
+                    vo.setIp4Address(nic.getIp4Address());
+                    vo.setState(NicVO.State.IpAcquired);
+                }
+                
+                if (nic.getMacAddress() != null) {
+                    vo.setMacAddress(nic.getMacAddress());
+                }
+                
+                if (nic.getMode() != null) {
+                    vo.setMode(nic.getMode());
+                }
+        
+                vo = _nicDao.persist(vo);
+                nics.add(vo);
+            }
+        }
+        txn.commit();
+        
+        return nics;
+    }
+    
+    @Override
+    public <K extends VMInstanceVO> List<NicTO> prepare(K vm) {
+        return null;
+    }
+    
+    @Override
+    public <K extends VMInstanceVO> void create(K vm) {
     }
     
     protected class NetworkUsageTask implements Runnable {

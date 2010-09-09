@@ -29,6 +29,7 @@ public class VmCharacteristics {
     Hypervisor.Type hypervisorType;
     VirtualMachine.Type type;
     Map<String, String> params;
+    Long templateId;
     
     public VmCharacteristics(VirtualMachine.Type type) {
         this.type = type;
@@ -38,6 +39,9 @@ public class VmCharacteristics {
         return type;
     }
     
+    public Long getTemplateId() {
+        return templateId;
+    }
     
     public int getCores() {
         return core;
@@ -55,15 +59,21 @@ public class VmCharacteristics {
         return hypervisorType;
     }
     
-    public VmCharacteristics(long id, int core, int speed, long ram, Hypervisor.Type type, Map<String, String> params) {
+    public VmCharacteristics(long id, int core, int speed, long ram, Long templateId, Hypervisor.Type type, Map<String, String> params) {
         this.core = core;
         this.speed = speed;
         this.ram = ram;
         this.hypervisorType = type;
         this.params = params;
         this.id = id;
+        this.templateId = templateId;
     }
     
     protected VmCharacteristics() {
+    }
+    
+    @Override
+    public String toString() {
+        return "VM-" + type + "-" + id;
     }
 }
