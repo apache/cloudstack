@@ -218,7 +218,8 @@ public class SnapshotManagerImpl implements SnapshotManager {
         return runSnap;
     }
     
-    private ImageFormat getImageFormat(Long volumeId) {
+    @Override
+    public ImageFormat getImageFormat(Long volumeId) {
         ImageFormat format = null;
         VolumeVO volume = _volsDao.findById(volumeId);
         Long templateId = volume.getTemplateId();
