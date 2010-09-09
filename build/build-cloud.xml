@@ -525,6 +525,7 @@
         <exclude name="**/wscript_build" />
       </tarfileset>
     </tar>
+    <copy file="${base.dir}/patches/systemvm/root/.ssh/authorized_keys" todir="${dist.dir}/"/>
     <gzip destfile="${dist.dir}/patch.tgz" src="${dist.dir}/patch.tar"/>
     <delete file="${dist.dir}/patch.tar"/>
   </target>

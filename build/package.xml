@@ -110,6 +110,7 @@
       <arg value="systemvm.iso"/>
       <arg value="systemvm.zip"/>
       <arg value="patch.tgz"/>
+      <arg value="authorized_keys"/>
     </exec>
   </target>
 
