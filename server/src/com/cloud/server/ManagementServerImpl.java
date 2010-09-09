@@ -832,7 +832,7 @@ public class ManagementServerImpl implements ManagementServer {
             return false;
         }
     }
-    
+
     public boolean deleteAccount(AccountVO account) {
         long accountId = account.getId();
         long userId = 1L; // only admins can delete users, pass in userId 1 XXX: Shouldn't it be userId 2.
@@ -1214,10 +1214,8 @@ public class ManagementServerImpl implements ManagementServer {
         return success;
     }
 
-
     @Override
-    public boolean updateUser(UpdateUserCmd cmd) throws InvalidParameterValueException
-    {
+    public boolean updateUser(UpdateUserCmd cmd) throws InvalidParameterValueException {
         Long id = cmd.getId();
         String apiKey = cmd.getApiKey();
         String firstName = cmd.getFirstname();
@@ -1278,28 +1276,21 @@ public class ManagementServerImpl implements ManagementServer {
             s_logger.debug("updating user with id: " + id);
         }
         UserAccount userAccount = _userAccountDao.findById(id);
-        try
-        {
+        try {
         	//check if the apiKey and secretKey are globally unique
-        	if(apiKey != null && secretKey != null)
-        	{
+        	if (apiKey != null && secretKey != null) {
         		Pair<User, Account> apiKeyOwner = findUserByApiKey(apiKey);
-        		
-        		if(apiKeyOwner != null)
-        		{
+
+        		if(apiKeyOwner != null) {
         			User usr = apiKeyOwner.first();
-        			
-        			if(usr.getId() != id)
+        			if (usr.getId() != id) {
             			throw new InvalidParameterValueException("The api key:"+apiKey+" exists in the system for user id:"+id+" ,please provide a unique key");
-        			else
-        			{
+        			} else {
         				//allow the updation to take place
         			}
         		}
-        	
         	}
 
-        	
             _userDao.update(id, userName, password, firstName, lastName, email, accountId, timeZone, apiKey, secretKey);
             EventUtils.saveEvent(new Long(1), Long.valueOf(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_UPDATE, "User, " + userName + " for accountId = "
                     + accountId + " domainId = " + userAccount.getDomainId() + " and timezone = "+timeZone + " was updated.");
@@ -1508,8 +1499,6 @@ public class ManagementServerImpl implements ManagementServer {
         
         return _snapMgr.createVolumeFromSnapshotAsync(userId, accountId, snapshotId, volumeName);
     }
-
-    
 
     @Override
     public VolumeVO findRootVolume(long vmId) {
@@ -2963,7 +2952,6 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         return _dcDao.search(sc, searchFilter);
-
     }
 
     @Override
@@ -4236,7 +4224,6 @@ public class ManagementServerImpl implements ManagementServer {
          }
     }
 
-
     @Override
     public VolumeVO findAnyVolumeById(long volumeId) {
         return _volumeDao.findById(volumeId);
@@ -4486,34 +4473,6 @@ public class ManagementServerImpl implements ManagementServer {
 
         return _publicIpAddressDao.search(sc, searchFilter);
     }
-
-    /*
-     * Left in just in case we have to resurrect this code for demo purposes, but for now
-     * 
-     * @Override public List<UsageVO> searchForUsage(Criteria c) { Filter searchFilter = new Filter(UsageVO.class,
-     * c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit()); SearchCriteria sc = new
-     * SearchCriteria(UsageVO.class);
-     * 
-     * Object[] accountIds = (Object[]) c.getCriteria(Criteria.ACCOUNTID); Object startDate =
-     * c.getCriteria(Criteria.STARTDATE); Object endDate = c.getCriteria(Criteria.ENDDATE); Object domainId =
-     * c.getCriteria(Criteria.DOMAINID);
-     * 
-     * if (accountIds.length == 1) { if (accountIds[0] != null) { sc.addAnd("accountId", SearchCriteria.Op.EQ,
-     * accountIds[0]); } } else { sc.addAnd("accountId", SearchCriteria.Op.IN, accountIds); } if (domainId != null) {
-     * sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId); } if (startDate != null && endDate != null) {
-     * sc.addAnd("startDate", SearchCriteria.Op.BETWEEN, startDate, endDate); sc.addAnd("startDate",
-     * SearchCriteria.Op.BETWEEN, startDate, endDate); } else if (startDate != null) { sc.addAnd("startDate",
-     * SearchCriteria.Op.LTEQ, startDate); sc.addAnd("endDate", SearchCriteria.Op.GTEQ, startDate); } else if (endDate
-     * != null) { sc.addAnd("startDate", SearchCriteria.Op.LTEQ, endDate); sc.addAnd("endDate", SearchCriteria.Op.GTEQ,
-     * endDate); }
-     * 
-     * List<UsageVO> usageRecords = null; Transaction txn = Transaction.currentTxn(Transaction.USAGE_DB); try {
-     * usageRecords = _usageDao.search(sc, searchFilter); } finally { txn.close();
-     * 
-     * // switch back to VMOPS_DB txn = Transaction.currentTxn(Transaction.VMOPS_DB); txn.close(); }
-     * 
-     * return usageRecords; }
-     */
 
     @Override
     public List<DiskTemplateVO> listAllActiveDiskTemplates() {
@@ -6679,7 +6638,7 @@ public class ManagementServerImpl implements ManagementServer {
 			return stopSecondaryStorageVm(id, eventId);
 		}
 	}
-	
+
 	@Override
 	public boolean rebootSystemVM(RebootSystemVmCmd cmd)  {
 		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(cmd.getId(), VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
@@ -6936,4 +6895,3 @@ public class ManagementServerImpl implements ManagementServer {
         return accountId;
     }
 }
-

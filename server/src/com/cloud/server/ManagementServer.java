@@ -181,16 +181,6 @@ public interface ManagementServer {
     UserAccount getUserAccount(String username, Long domainId);
 
     /**
-     * Gets a user and account by username, password and domain
-     * 
-     * @param username
-     * @param password
-     * @param domainId
-     * @return a user object
-     */
-    // UserAccount getUserAccount(String username, String password, Long domainId);
-
-    /**
      * Authenticates a user when s/he logs in.
      * @param username required username for authentication
      * @param password password to use for authentication, can be null for single sign-on case
@@ -279,24 +269,8 @@ public interface ManagementServer {
      * @throws IllegalArgumentException
      */
     boolean unregisterPreallocatedLun(long id) throws IllegalArgumentException;
-    
-    String updateAdminPassword(long userId, String oldPassword, String newPassword);
 
-    /**
-     * Updates a user's information
-     * @param userId
-     * @param username
-     * @param password
-     * @param firstname
-     * @param lastname
-     * @param email
-     * @param timezone
-     * @param apikey
-     * @param secretkey
-     * @return true if update was successful, false otherwise
-     * @throws InvalidParameterValueException
-     */
-//    boolean updateUser(long userId, String username, String password, String firstname, String lastname, String email, String timezone, String apiKey, String secretKey) throws InvalidParameterValueException;
+    String updateAdminPassword(long userId, String oldPassword, String newPassword);
 
     /**
      * Locate a user by their apiKey
@@ -313,23 +287,6 @@ public interface ManagementServer {
     Account getAccount(long accountId);
 
     /**
-     * Create an API key for a user; this key is used as the user's identity when making
-     * calls to the developer API
-     * @param userId
-     * @return the new API key
-     */
-//    String createApiKey(Long userId);
-
-    /**
-     * Create a secret key for a user, this key is used to sign requests made by the user
-     * to the developer API.  When a request is received from a user, the secret key is
-     * retrieved from the database (using the apiKey) and used to verify the request signature.
-     * @param userId
-     * @return the new secret key
-     */
-//    String createSecretKey(Long userId);
-
-    /**
      * Gets Storage statistics for a given host
      * 
      * @param hostId
@@ -343,8 +300,7 @@ public interface ManagementServer {
      * @return guest OS Category
      */
     GuestOSCategoryVO getHostGuestOSCategory(long hostId);
-    
-    
+
 	/** Get storage statistics (used/available) for a pool
 	 * @param id pool id
 	 * @return storage statistics
@@ -427,13 +383,13 @@ public interface ManagementServer {
      * @return list of private IP addresses
      */
     List<DataCenterIpAddressVO> listPrivateIpAddressesBy(Long podId, Long zoneId);
-    
+
     /**
      * Generates a random password that will be used (initially) by newly created and started virtual machines
      * @return a random password
      */
     String generateRandomPassword();
-    
+
     /**
      * Attaches an ISO to the virtual CDROM device of the specified VM. Will fail if the VM already has an ISO mounted.
      * @param vmId
@@ -467,7 +423,6 @@ public interface ManagementServer {
      */
     UserVm deployVirtualMachine(long userId, long accountId, long dataCenterId, long serviceOfferingId, long templateId, Long diskOfferingId, String domain, String password, String displayName, String group, String userData, String [] groups, long startEventId, long size) throws ResourceAllocationException, InvalidParameterValueException, InternalErrorException, InsufficientStorageCapacityException, PermissionDeniedException, ExecutionException, StorageUnavailableException, ConcurrentOperationException;
     long deployVirtualMachineAsync(long userId, long accountId, long dataCenterId, long serviceOfferingId, long templateId, Long diskOfferingId, String domain, String password, String displayName, String group, String userData, String [] groups, long size) throws InvalidParameterValueException, PermissionDeniedException;
-    
 
     /**
      * Destroys a Virtual Machine
@@ -483,7 +438,7 @@ public interface ManagementServer {
      * @return the async-call job id
      */
     long destroyVirtualMachineAsync(long userId, long vmId);
-    
+
     /**
      * Starts a Domain Router
      * 
@@ -507,7 +462,7 @@ public interface ManagementServer {
 	 * @return true if successfully rebooted, false otherwise
 	 */
 	boolean rebootRouter(long routerId, long startEventId) throws InternalErrorException;
-    
+
     /**
      * Finds a domain router by user and data center
      * @param userId
@@ -522,8 +477,7 @@ public interface ManagementServer {
      * @return a domainRouter
      */
 	DomainRouterVO findDomainRouterById(long domainRouterId);
-	
-    
+
     /**
      * Retrieves a data center by id
      * 
@@ -673,13 +627,6 @@ public interface ManagementServer {
     String changePrivateIPRange(boolean add, Long podId, String startIP, String endIP) throws InvalidParameterValueException;
     
     /**
-     * Finds users with usernames similar to the parameter
-     * @param username
-     * @return list of Users
-     */
-    // List<? extends User> findUsersLike(String username);
-    
-    /**
      * Finds a user by their user ID.
      * @param ownerId
      * @return User
@@ -773,7 +720,7 @@ public interface ManagementServer {
      * @throws InternalErrorException
      */
     boolean copyTemplate(long userId, long templateId, long sourceZoneId, long destZoneId, long startEventId) throws InternalErrorException;
-    
+
     /**
      * Finds a template by the specified ID.
      * @param templateId
@@ -840,16 +787,6 @@ public interface ManagementServer {
      */
     List<NetworkRuleConfigVO> searchForNetworkRules(ListPortForwardingServiceRulesCmd c) throws InvalidParameterValueException, PermissionDeniedException;
 
-    /**
-     * Saves an event with the specified parameters.
-     * @param userId
-     * @param accountId
-     * @param type
-     * @param description
-     * @return ID of the saved event.
-     */
-    // Long saveEvent(Long userId, long accountId, String level, String type, String description, String params);
-    
     /**
      * Obtains a list of events by the specified search criteria.
      * Can search by: "username", "type", "level", "startDate", "endDate"
@@ -986,7 +923,7 @@ public interface ManagementServer {
      * @return the updated rule if successful, null otherwise
      */
     NetworkRuleConfigVO applyPortForwardingServiceRule(Long ruleId) throws NetworkRuleConflictException;
-	
+
 	ConsoleProxyInfo getConsoleProxy(long dataCenterId, long userVmId);
 	ConsoleProxyVO startConsoleProxy(long instanceId, long startEventId) throws InternalErrorException;
 	long startConsoleProxyAsync(long instanceId);
@@ -1000,7 +937,6 @@ public interface ManagementServer {
 	boolean stopSystemVM(StopSystemVmCmd cmd);
 	VMInstanceVO startSystemVM(StartSystemVMCmd cmd) throws InternalErrorException;
 	boolean rebootSystemVM(RebootSystemVmCmd cmd);
-
 
 	/**
 	 * Returns a configuration value with the specified name
@@ -1016,7 +952,6 @@ public interface ManagementServer {
 	 * @return the vnc port if found; -1 if unable to find.
 	 */
 	int getVncPort(VirtualMachine vm);
-	
 
 	/**
 	 * Search for domains owned by the given domainId/domainName (those parameters are wrapped
@@ -1066,8 +1001,6 @@ public interface ManagementServer {
      * @return domainVO the domain with the matching path, or null if no domain with the given path exists
      */
     DomainVO findDomainByPath(String domainPath);
-    
-    
 
     /**
      * Finds accounts with account identifiers similar to the parameter
@@ -1128,7 +1061,7 @@ public interface ManagementServer {
      * @return owning account if ip address is allocated, null otherwise
      */
     Account findAccountByIpAddress(String ipAddress);
-    
+
     /**
      * Deletes a Limit
      * @param limitId - the database ID of the Limit
@@ -1487,7 +1420,7 @@ public interface ManagementServer {
 	public String getNetworkGroupsNamesForVm(long vmId);
 	
 	boolean checkLocalStorageConfigVal(); 
-		
+
 	boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException;
 	boolean updateUser(UpdateUserCmd cmd) throws InvalidParameterValueException;
 	boolean updateTemplatePermissions(UpdateTemplateOrIsoPermissionsCmd cmd)throws InvalidParameterValueException, PermissionDeniedException,InternalErrorException;
