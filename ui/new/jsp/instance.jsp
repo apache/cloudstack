@@ -144,7 +144,8 @@
     <!--Details tab (end)-->
     
     <!--Volume tab (start)-->
-    <div class="grid_container" style="display:none;" id="tab_content_volume">
+    <div style="display:none;" id="tab_content_volume">
+        <!--  
     	<div class="grid_header">
         	<div class="grid_header_title">i-2-7-JW</div>
             <div class="grid_actionbox"></div>
@@ -185,7 +186,7 @@
                 <div class="row_celltitles">09/03/2010  15:06:04</div>
             </div>
         </div>
-    
+        -->
     </div>
     <!--Volume tab (end)-->
     
@@ -751,5 +752,49 @@
             </li>
         </ol>
         </form>
+    </div>
+</div>
+
+<!--  volume tab template -->
+<div class="grid_container" id="volume_tab_template" style="display:none">
+	<div class="grid_header">
+       	<div class="grid_header_title" id="name"></div>
+        <div class="grid_actionbox"></div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                ID:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="id"></div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+           <div class="row_celltitles">
+                Type:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="type"></div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Size:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="size"></div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Created:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="created"></div>
+        </div>
     </div>
 </div>

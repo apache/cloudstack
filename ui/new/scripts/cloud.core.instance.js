@@ -368,10 +368,11 @@ function clickInstanceGroupHeader($arrowIcon) {
         $rightPanelContent.find("#iso").hide();
     }
     
-    function vmMidmenuItemToRightPanel($t) {
-        if($t.find("#info_icon").css("display") != "none") {                
-            $rightPanelContent.find("#after_action_info").text($t.data("afterActionInfo"));
-            if($t.find("#info_icon").hasClass("error"))
+    function vmMidmenuItemToRightPanel($midmenuItem) {
+        //details tab 
+        if($midmenuItem.find("#info_icon").css("display") != "none") {                
+            $rightPanelContent.find("#after_action_info").text($midmenuItem.data("afterActionInfo"));
+            if($midmenuItem.find("#info_icon").hasClass("error"))
                 $rightPanelContent.find("#after_action_info_container").addClass("errorbox");
              else
                 $rightPanelContent.find("#after_action_info_container").removeClass("errorbox");                                        
@@ -382,7 +383,7 @@ function clickInstanceGroupHeader($arrowIcon) {
             $rightPanelContent.find("#after_action_info_container").hide();                
         }
         
-        var jsonObj = $t.data("jsonObj");     
+        var jsonObj = $midmenuItem.data("jsonObj");     
         var vmName = getVmName(jsonObj.name, jsonObj.displayname);        
         $rightPanelHeader.find("#vm_name").text(fromdb(vmName));	
         updateVirtualMachineStateInRightPanel(jsonObj.state);	
@@ -402,10 +403,58 @@ function clickInstanceGroupHeader($arrowIcon) {
         if(jsonObj.isoid != null && jsonObj.isoid.length > 0)
             $rightPanelContent.find("#iso").removeClass("cross_icon").addClass("tick_icon").show();
         else
-            $rightPanelContent.find("#iso").removeClass("tick_icon").addClass("cross_icon").show();           
+            $rightPanelContent.find("#iso").removeClass("tick_icon").addClass("cross_icon").show();    
+            
+        //volume tab
+        //if (getHypervisorType() == "kvm") 
+			//detail.find("#volume_action_create_template").show();		        
+        $.ajax({
+			cache: false,
+			data: createURL("command=listVolumes&virtualMachineId="+jsonObj.id+maxPageSize),
+			dataType: "json",
+			success: function(json) {			    
+				var items = json.listvolumesresponse.volume;
+				if (items != null && items.length > 0) {
+					var container = $rightPanelContent.find("#tab_content_volume").empty();
+					var template = $("#volume_tab_template");				
+					for (var i = 0; i < items.length; i++) {
+						var newTemplate = template.clone(true);
+		                vmVolumeJSONToTemplate(items[i], newTemplate); 
+		                container.append(newTemplate.show());	
+					}
+				}						
+			}
+		});           
     }
     
-    
+    function vmVolumeJSONToTemplate(json, template) {
+        template.attr("id","vm_volume_"+json.id);		
+		template.find("#id").text(json.id);	
+		template.find("#name").text(json.name);
+		if (json.storagetype == "shared") 
+			template.find("#type").text(json.type + " (shared storage)");
+		else 
+			template.find("#type").text(json.type + " (local storage)");
+				
+		template.find("#size").text((json.size == "0") ? "" : convertBytes(json.size));										
+		setDateField(json.created, template.find("#created"));
+		
+		/*		
+		if(json.type=="ROOT") {
+			if (json.vmstate == "Stopped") {
+				template.find("#volume_action_detach_disk, #volume_acton_separator").hide();
+			} else {
+				template.find("#volume_action_detach_disk, #volume_acton_separator, #volume_action_create_template").hide();
+			}
+		} else {
+			if (json.vmstate != "Stopped") {
+				template.find("#volume_acton_separator, #volume_action_create_template").hide();
+			}
+		}
+		*/
+	}
+        
+   
   
     $("#add_link").show(); 
 	if($arrowIcon.hasClass("close") == true) {
