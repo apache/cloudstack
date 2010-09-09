@@ -977,7 +977,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 if ("untagged".equalsIgnoreCase(vlanId)) {
                     vifr.network = Network.getByUuid(conn, _host.publicNetwork);
                 } else {
-                    Network vlanNetwork = enableVlanNetwork(Long.valueOf(vlanId), _host.publicNetwork, _host.publicPif);
+                    Network vlanNetwork = enableVlanNetwork(Long.valueOf(vlanId), _host.publicPif);
 
                     if (vlanNetwork == null) {
                         throw new InternalErrorException("Failed to enable VLAN network with tag: " + vlanId);
@@ -1654,11 +1654,11 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 } else if(nwuuid.equalsIgnoreCase(_host.publicNetwork)) {
                     pifuuid = _host.publicPif;
                 } else if(nwuuid.equalsIgnoreCase(_host.privateNetwork)) {
-                	pifuuid = _host.privateNetwork;
+                	pifuuid = _host.privatePif;
                 } else {
                     continue;
                 }
-                Network vlanNetwork = enableVlanNetwork(vlan, nwuuid, pifuuid);
+                Network vlanNetwork = enableVlanNetwork(vlan, pifuuid);
 
                 if (vlanNetwork == null) {
                     throw new InternalErrorException("Failed to enable VLAN network with tag: " + vlan);
@@ -2534,7 +2534,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         if ("untagged".equalsIgnoreCase(vlanTag)) {
             vlanNetwork = Network.getByUuid(conn, nwUuid);
         } else {
-            vlanNetwork = enableVlanNetwork(Long.valueOf(vlanTag), nwUuid, pifUuid);
+            vlanNetwork = enableVlanNetwork(Long.valueOf(vlanTag), pifUuid);
         }
 
         if (vlanNetwork == null) {
@@ -2759,7 +2759,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 Connection conn = getConnection();
                 network = Network.getByUuid(conn, _host.guestNetwork);
             } else {
-                network = enableVlanNetwork(Long.parseLong(tag), _host.guestNetwork, _host.guestPif);
+                network = enableVlanNetwork(Long.parseLong(tag), _host.guestPif);
             }
 
             if (network == null) {
@@ -2879,7 +2879,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 if ("untagged".equalsIgnoreCase(vlanId)) {
                     vifr.network = Network.getByUuid(conn, _host.publicNetwork);
                 } else {
-                    Network vlanNetwork = enableVlanNetwork(Long.valueOf(vlanId), _host.publicNetwork, _host.publicPif);
+                    Network vlanNetwork = enableVlanNetwork(Long.valueOf(vlanId), _host.publicPif);
     
                     if (vlanNetwork == null) {
                         throw new InternalErrorException("Failed to enable VLAN network with tag: " + vlanId);
@@ -3309,7 +3309,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return null;
     }
 
-    protected Network enableVlanNetwork(long tag, String networkUuid, String pifUuid) throws XenAPIException, XmlRpcException {
+    protected Network enableVlanNetwork(long tag, String pifUuid) throws XenAPIException, XmlRpcException {
         // In XenServer, vlan is added by
         // 1. creating a network.
         // 2. creating a vlan associating network with the pif.
