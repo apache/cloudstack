@@ -219,7 +219,6 @@ class NFSSR(FileSR.FileSR):
             if inst.code != errno.ENOENT:
                 raise xs_errors.XenError('NFSDelete')
 
-    @echo
     def vdi(self, uuid, loadLocked = False):
         if not loadLocked:
             return NFSFileVDINolock(self, uuid)

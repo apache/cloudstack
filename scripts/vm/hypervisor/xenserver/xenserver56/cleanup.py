@@ -1576,7 +1576,7 @@ class FileSR(SR):
         for uuid, vhdInfo in vhds.iteritems():
             vdi = self.getVDI(uuid)
             if not vdi:
-                Util.log("Found new VDI when scanning: %s" % uuid)
+                #Util.log("Found new VDI when scanning: %s" % uuid)
                 vdi = FileVDI(self, uuid)
                 self.vdis[uuid] = vdi
             vdi.load(vhdInfo)
