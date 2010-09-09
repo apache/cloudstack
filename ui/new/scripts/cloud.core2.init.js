@@ -98,7 +98,7 @@ $(document).ready(function() {
     listMidMenuItems("leftmenu_account", "listAccounts", "listaccountsresponse", "account", "name", "domain", "jsp/account.jsp", loadAccountToRigntPanelFn);
     listMidMenuItems("leftmenu_volume", "listVolumes", "listvolumesresponse", "volume", "name", "type", "jsp/volume.jsp", loadVolumeToRigntPanelFn);
     listMidMenuItems("leftmenu_snapshot", "listSnapshots", "listsnapshotsresponse", "snapshot", "name", "volumename", "jsp/snapshot.jsp", loadSnapshotToRigntPanelFn);
-    listMidMenuItems("leftmenu_ip", "listPublicIpAddresses", "listpublicipaddressesresponse", "publicipaddress", "ipaddress", "account", "jsp/network.jsp", loadIpToRigntPanelFn);
+    listMidMenuItems("leftmenu_ip", "listPublicIpAddresses", "listpublicipaddressesresponse", "publicipaddress", "ipaddress", "account", "jsp/ip_address.jsp", loadIpToRigntPanelFn);
     
     
                   													
