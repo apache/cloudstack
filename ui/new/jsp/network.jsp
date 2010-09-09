@@ -1,7 +1,3 @@
-<!--
-<script type="text/javascript" src="scripts/cloud.core.event.js"></script>
--->
-
 <%@ page import="java.util.*" %>
 <%@ page import="com.cloud.utils.*" %>
 
@@ -11,13 +7,13 @@
     CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
 %>
 
-<!-- event detail panel (begin) -->
+<!-- IP Address detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
      
     <div class="main_titleicon">
-        <img src="images/iptitle_icons.gif" alt="Network" /></div>
+        <img src="images/iptitle_icons.gif" alt="IP Address" /></div>
     
-    <h1>Event
+    <h1>IP Address
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
@@ -301,4 +297,4 @@
     </div>
     <!-- Load Balancer ends here-->
 </div>
-<!-- event detail panel (end) -->
+<!-- IP Address detail panel (end) -->

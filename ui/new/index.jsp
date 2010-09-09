@@ -47,6 +47,8 @@ long milliseconds = new Date().getTime();
     <script type="text/javascript" src="scripts/cloud.core2.volume.js?t=<%=milliseconds%>"></script>
     
     <script type="text/javascript" src="scripts/cloud.core2.snapshot.js?t=<%=milliseconds%>"></script>
+    
+    <script type="text/javascript" src="scripts/cloud.core2.ipaddress.js?t=<%=milliseconds%>"></script>
   
     <title>Cloud.com CloudStack</title>
 </head>
