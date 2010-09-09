@@ -60,6 +60,7 @@ import com.cloud.api.commands.ListSystemVMsCmd;
 import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.ListUsersCmd;
+import com.cloud.api.commands.ListVMsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -1100,6 +1101,14 @@ public interface ManagementServer {
      * @return List of UserVMs.
      */
     List<UserVmVO> searchForUserVMs(Criteria c);
+
+    /**
+     * Obtains a list of virtual machines by the specified search criteria.
+     * Can search by: "userId", "name", "state", "dataCenterId", "podId", "hostId"
+     * @param cmd the API command that wraps the search criteria
+     * @return List of UserVMs.
+     */
+    List<UserVmVO> searchForUserVMs(ListVMsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 
     /**
      * Update an existing port forwarding rule on the given public IP / public port for the given protocol

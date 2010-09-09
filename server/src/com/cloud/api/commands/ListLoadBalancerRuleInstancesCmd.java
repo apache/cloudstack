@@ -80,6 +80,7 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
             userVmResponse.setId(instance.getId());
             userVmResponse.setName(instance.getName());
             userVmResponse.setDisplayName(instance.getDisplayName());
+            userVmResponse.setPrivateIp(instance.getPrivateIpAddress());
 
             // TODO:  implement
             Account accountTemp = getManagementServer().findAccountById(instance.getAccountId());

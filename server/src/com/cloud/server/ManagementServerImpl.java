@@ -96,6 +96,7 @@ import com.cloud.api.commands.ListSystemVMsCmd;
 import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.ListUsersCmd;
+import com.cloud.api.commands.ListVMsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
@@ -4894,11 +4895,60 @@ public class ManagementServerImpl implements ManagementServer {
     		return _templateHostDao.findByHostTemplate(secondaryStorageHost.getId(), templateId);
     	}
     }
-    
 
     @Override
     public List<UserVmVO> listUserVMsByHostId(long hostId) {
         return _userVmDao.listByHostId(hostId);
+    }
+
+    @Override
+    public List<UserVmVO> searchForUserVMs(ListVMsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
+        Long accountId = null;
+        boolean isAdmin = false;
+        if ((account == null) || isAdmin(account.getType())) {
+            isAdmin = true;
+            if (domainId != null) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list virtual machines.");
+                }
+
+                if (accountName != null) {
+                    account = _accountDao.findActiveAccount(accountName, domainId);
+                    if (account == null) {
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                    accountId = account.getId();
+                }
+            } else {
+                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+            }
+        } else {
+            accountName = account.getAccountName();
+            accountId = account.getId();
+            domainId = account.getDomainId();
+        }
+
+        Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
+        c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
+        c.addCriteria(Criteria.ID, cmd.getId());
+        c.addCriteria(Criteria.NAME, cmd.getInstanceName());
+        c.addCriteria(Criteria.STATE, cmd.getState());
+        c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());
+
+        // ignore these search requests if it's not an admin
+        if (isAdmin == true) {
+            c.addCriteria(Criteria.DOMAINID, domainId);
+            c.addCriteria(Criteria.PODID, cmd.getPodId());
+            c.addCriteria(Criteria.HOSTID, cmd.getHostId());
+        }
+
+        c.addCriteria(Criteria.ACCOUNTID, accountId);
+        c.addCriteria(Criteria.ISADMIN, isAdmin); 
+
+        return searchForUserVMs(c);
     }
 
     @Override
