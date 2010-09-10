@@ -36,7 +36,7 @@ public class NetworkGroupRulesDaoImpl extends GenericDaoBase<NetworkGroupRulesVO
     @Override
     public List<NetworkGroupRulesVO> listNetworkGroupRules() {
         Filter searchFilter = new Filter(NetworkGroupRulesVO.class, "id", true, null, null);
-        return listAllActive(searchFilter);
+        return listAll(searchFilter);
     }
 
     @Override

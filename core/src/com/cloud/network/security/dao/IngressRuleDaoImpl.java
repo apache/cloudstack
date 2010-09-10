@@ -79,7 +79,7 @@ public class IngressRuleDaoImpl extends GenericDaoBase<IngressRuleVO, Long> impl
     public int deleteByNetworkGroup(long networkGroupId) {
         SearchCriteria<IngressRuleVO> sc = networkGroupIdSearch.create();
         sc.setParameters("networkGroupId", networkGroupId);
-        return delete(sc);
+        return expunge(sc);
     }
 
 	@Override
@@ -135,7 +135,7 @@ public class IngressRuleDaoImpl extends GenericDaoBase<IngressRuleVO, Long> impl
 		sc.setParameters("endPort", endPort);
 		sc.setParameters("allowedNetworkId", allowedGroupId);
 		
-        return delete(sc);
+        return expunge(sc);
 		
 	}
 
@@ -148,7 +148,7 @@ public class IngressRuleDaoImpl extends GenericDaoBase<IngressRuleVO, Long> impl
 		sc.setParameters("endPort", endPort);
 		sc.setParameters("cidr", cidr);
 		
-		return delete(sc);
+		return expunge(sc);
 	}
 
 	@Override

@@ -459,7 +459,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             List<VolumeVO> vols = _storageMgr.create(account, router, rtrTemplate, dc, pod, _offering, null,0);
             if (vols == null){
             	_ipAddressDao.unassignIpAddress(guestIp);
-            	_routerDao.delete(router.getId());
+            	_routerDao.expunge(router.getId());
             	if (s_logger.isDebugEnabled()) {
             		s_logger.debug("Unable to create dhcp server in storage host or pool in pod " + pod.getName() + " (id:" + pod.getId() + ")");
             	}
@@ -493,7 +493,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             txn.rollback();
 
             if (router.getState() == State.Creating) {
-                _routerDao.delete(router.getId());
+                _routerDao.expunge(router.getId());
             }
             return null;
         } finally {
@@ -635,7 +635,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                     break;
                 }
 
-                _routerDao.delete(router.getId());
+                _routerDao.expunge(router.getId());
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Unable to find storage host or pool in pod " + pod.first().getName() + " (id:" + pod.first().getId() + "), checking other pods");
                 }
@@ -670,7 +670,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             txn.rollback();
 
             if (router != null && router.getState() == State.Creating) {
-                _routerDao.delete(router.getId());
+                _routerDao.expunge(router.getId());
             }
             return null;
         } finally {

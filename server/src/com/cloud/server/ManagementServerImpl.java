@@ -970,7 +970,7 @@ public class ManagementServerImpl implements ManagementServer {
                     // All vm instances have been destroyed, delete the security group -> instance_id mappings
                     SearchCriteria<SecurityGroupVMMapVO> sc = _securityGroupVMMapDao.createSearchCriteria();
                     sc.addAnd("securityGroupId", SearchCriteria.Op.EQ, securityGroup.getId());
-                    _securityGroupVMMapDao.delete(sc);
+                    _securityGroupVMMapDao.expunge(sc);
 
                     // now clean the network rules and security groups themselves
                     _networkRuleConfigDao.deleteBySecurityGroup(securityGroup.getId());
@@ -2847,12 +2847,12 @@ public class ManagementServerImpl implements ManagementServer {
     
     @Override
     public List<DataCenterVO> listDataCenters() {
-        return _dcDao.listAllActive();
+        return _dcDao.listAll();
     }
 
     @Override
     public List<DataCenterVO> listDataCentersBy(long accountId) {
-        List<DataCenterVO> dcs = _dcDao.listAllActive();
+        List<DataCenterVO> dcs = _dcDao.listAll();
         List<DomainRouterVO> routers = _routerDao.listBy(accountId);
         for (Iterator<DataCenterVO> iter = dcs.iterator(); iter.hasNext();) {
             DataCenterVO dc = iter.next();
@@ -3647,7 +3647,7 @@ public class ManagementServerImpl implements ManagementServer {
             } else if (fwdings.size() == 1) {
                 fwRule = fwdings.get(0);
                 if (fwRule.getPrivateIpAddress().equalsIgnoreCase(privateIp) && fwRule.getPrivatePort().equals(privatePort)) {
-                    _firewallRulesDao.delete(fwRule.getId());
+                    _firewallRulesDao.expunge(fwRule.getId());
                 } else {
                     throw new InvalidParameterValueException("No such rule");
                 }
@@ -3746,7 +3746,7 @@ public class ManagementServerImpl implements ManagementServer {
             if (!success) {
                 throw new InternalErrorException("Failed to update router");
             }
-            _firewallRulesDao.delete(fwRule.getId());
+            _firewallRulesDao.expunge(fwRule.getId());
 
             txn.commit();
             return success;
@@ -4483,7 +4483,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (limitId == null)
             return false;
 
-        return _resourceLimitDao.delete(limitId);
+        return _resourceLimitDao.expunge(limitId);
     }
 
     @Override
@@ -4516,7 +4516,7 @@ public class ManagementServerImpl implements ManagementServer {
 	        	{
 	        		//account belongs to admin
 	        		//return all limits
-	        		limits = _resourceLimitDao.listAll();
+	        		limits = _resourceLimitDao.listAllIncludingRemoved();
 	        		return limits;
 	        	}
 	        }
@@ -4525,7 +4525,7 @@ public class ManagementServerImpl implements ManagementServer {
 	        //return all the records for resource limits (bug:3778)
 	        if(accountId==1 && domainId==1)
 	        {
-	        	limits = _resourceLimitDao.listAll();
+	        	limits = _resourceLimitDao.listAllIncludingRemoved();
 	        	return limits;
 	        }
         }
@@ -4685,12 +4685,12 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<ServiceOfferingVO> listAllServiceOfferings() {
-        return _offeringsDao.listAll();
+        return _offeringsDao.listAllIncludingRemoved();
     }
 
     @Override
     public List<HostVO> listAllActiveHosts() {
-        return _hostDao.listAllActive();
+        return _hostDao.listAll();
     }
 
     @Override
@@ -5474,7 +5474,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<DomainRouterVO> listAllActiveRouters() {
-        return _routerDao.listAllActive();
+        return _routerDao.listAll();
     }
 
     @Override
@@ -5861,7 +5861,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<DiskTemplateVO> listAllActiveDiskTemplates() {
-        return _diskTemplateDao.listAllActive();
+        return _diskTemplateDao.listAll();
     }
 
     @Override
@@ -6114,7 +6114,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<VMTemplateVO> listAllTemplates() {
-        return _templateDao.listAll();
+        return _templateDao.listAllIncludingRemoved();
     }
 
     @Override
@@ -7924,7 +7924,7 @@ public class ManagementServerImpl implements ManagementServer {
                     List<EventVO> oldEvents = _eventDao.listOlderEvents(purgeTime);
                     s_logger.debug("Found "+oldEvents.size()+" events to be purged");
                     for (EventVO event : oldEvents){
-                        _eventDao.delete(event.getId());
+                        _eventDao.expunge(event.getId());
                     }
                 } catch (Exception e) {
                     s_logger.error("Exception ", e);

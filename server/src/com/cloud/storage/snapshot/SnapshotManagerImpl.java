@@ -368,7 +368,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
             // The snapshot was not successfully created
             createdSnapshot = _snapshotDao.findById(id);
             // delete from the snapshots table
-            _snapshotDao.delete(id);
+            _snapshotDao.expunge(id);
             
         }
 
@@ -431,7 +431,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
                 if (answer.getResult()) {
                     // The expected snapshot details on the primary is the same as it would be if this snapshot was never taken at all
                     // Just delete the entry in the table
-                    _snapshotDao.delete(id);
+                    _snapshotDao.expunge(id);
                     // Create an event saying the snapshot failed. ??
                     // An event is not generated when validatePreviousSnapshotBackup fails. So not generating it here too.
                 }
@@ -566,7 +566,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
                     long pprevSnapshotId = prevSnapshot.getPrevSnapshotId();
                     snapshot.setPrevSnapshotId(pprevSnapshotId);
                     _snapshotDao.update(snapshot.getId(), snapshot);
-                    _snapshotDao.delete(prevSnapshot.getId());
+                    _snapshotDao.expunge(prevSnapshot.getId());
                     
                     EventVO event = new EventVO();
                     String eventParams = "id=" + prevSnapshot.getId() + "\nssName=" + prevSnapshot.getName();
@@ -695,7 +695,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
                 SnapshotScheduleVO snapshotSchedule = _snapshotScheduleDao.getCurrentSchedule(volumeId, policyId, true);
                 if (snapshotSchedule != null) {
                     // We should lock the row before deleting it as it is also being deleted by the scheduler.
-                    _snapshotScheduleDao.delete(snapshotSchedule.getId());
+                    _snapshotScheduleDao.expunge(snapshotSchedule.getId());
                 }
             }
         }
@@ -947,7 +947,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         if(isLastSnap){
             _snapshotDao.remove(snapshotId);
         } else {
-            _snapshotDao.delete(snapshotId);
+            _snapshotDao.expunge(snapshotId);
             // In the snapshots table,
             // the last_snapshot_id field of the next snapshot becomes the last_snapshot_id of the deleted snapshot
             long prevSnapshotId = snapshot.getPrevSnapshotId();
@@ -1053,7 +1053,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         	// Either way delete the snapshots for this volume.
         	List<SnapshotVO> snapshots = listSnapsforVolume(volumeId);
         	for (SnapshotVO snapshot: snapshots) {
-        	    if(_snapshotDao.delete(snapshot.getId())){
+        	    if(_snapshotDao.expunge(snapshot.getId())){
         	    	_accountMgr.decrementResourceCount(accountId, ResourceType.snapshot);
         	    	
         	        //Log event after successful deletion
@@ -1197,7 +1197,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
     	// We can only delete the schedules in the future, not the ones which are already executing.
     	SnapshotScheduleVO snapshotSchedule = _snapshotScheduleDao.getCurrentSchedule(volumeId, Snapshot.MANUAL_POLICY_ID, false);
     	if (snapshotSchedule != null) {
-    	    _snapshotScheduleDao.delete(snapshotSchedule.getId());
+    	    _snapshotScheduleDao.expunge(snapshotSchedule.getId());
     	}
 	}
     
@@ -1256,7 +1256,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
             }
         }
         if(success){
-            _snapshotDao.delete(snapshot.getId());
+            _snapshotDao.expunge(snapshot.getId());
         }
         return success;
     }

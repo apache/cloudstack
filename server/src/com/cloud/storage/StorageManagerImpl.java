@@ -1417,7 +1417,7 @@ public class StorageManagerImpl implements StorageManager {
         }
 
         if (poolHosts.isEmpty()) {
-            _storagePoolDao.delete(pool.getId());
+            _storagePoolDao.expunge(pool.getId());
             pool = null;
         } else {
             createCapacityEntry(pool);
@@ -1885,7 +1885,7 @@ public class StorageManagerImpl implements StorageManager {
     public void cleanupStorage(boolean recurring) {
 
         // Cleanup primary storage pools
-        List<StoragePoolVO> storagePools = _storagePoolDao.listAllActive();
+        List<StoragePoolVO> storagePools = _storagePoolDao.listAll();
         for (StoragePoolVO pool : storagePools) {
             try {
                 if (recurring && pool.isLocal()) {

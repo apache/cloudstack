@@ -128,7 +128,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<WorkVO, Long> implem
         final SearchCriteria<WorkVO> sc = CleanupSearch.create();
         sc.setParameters("time", time);
         sc.setParameters("step", HighAvailabilityManager.Step.Done, HighAvailabilityManager.Step.Cancelled);
-        delete(sc);
+        expunge(sc);
     }
 
     @Override
@@ -161,7 +161,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<WorkVO, Long> implem
     	SearchCriteria<WorkVO> sc = PreviousWorkSearch.create();
     	sc.setParameters("instance", instanceId);
     	sc.setParameters("type", type);
-    	return delete(sc) > 0;
+    	return expunge(sc) > 0;
     }
     
     @Override

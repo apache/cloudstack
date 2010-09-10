@@ -46,6 +46,6 @@ public class NetworkRuleConfigDaoImpl extends GenericDaoBase<NetworkRuleConfigVO
     public void deleteBySecurityGroup(long securityGroupId) {
         SearchCriteria<NetworkRuleConfigVO> sc = SecurityGroupIdSearch.create();
         sc.setParameters("securityGroupId", securityGroupId);
-        delete(sc);
+        expunge(sc);
     }
 }

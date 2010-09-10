@@ -307,7 +307,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			List<DataCenterVO> dcs = new ArrayList<DataCenterVO>();
 			
 			if (zoneId == null) {
-				dcs.addAll(_dcDao.listAll());
+				dcs.addAll(_dcDao.listAllIncludingRemoved());
 			} else {
 				dcs.add(_dcDao.findById(zoneId));
 			}

@@ -63,7 +63,7 @@ public class SnapshotPolicyRefDaoImpl extends GenericDaoBase<SnapshotPolicyRefVO
 		SearchCriteria<SnapshotPolicyRefVO> sc = snapPolicy.create();
 	    sc.setParameters("snapshotId", snapshotId);
 	    sc.setParameters("policyId", policyId);
-	    return delete(sc);
+	    return expunge(sc);
 	}
 
 	@Override

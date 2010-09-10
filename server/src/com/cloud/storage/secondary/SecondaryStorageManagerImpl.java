@@ -527,7 +527,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			return true;
 		}
 		boolean success = true;
-		List<DataCenterVO> allZones = _dcDao.listAllActive();
+		List<DataCenterVO> allZones = _dcDao.listAll();
 		for (DataCenterVO zone: allZones){
 			success = success && generateFirewallConfigurationForZone( zone.getId());
 		}
@@ -953,7 +953,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 					try {
 						checkPendingSecStorageVMs();
 						
-						List<DataCenterVO> datacenters = _dcDao.listAll();
+						List<DataCenterVO> datacenters = _dcDao.listAllIncludingRemoved();
 
 
 						for (DataCenterVO dc: datacenters){

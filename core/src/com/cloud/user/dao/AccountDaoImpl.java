@@ -74,7 +74,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     	SearchCriteria<AccountVO> sc = CleanupSearch.create();
     	sc.setParameters("cleanup", true);
     	
-    	return searchAll(sc, null, null, false);
+    	return searchIncludingRemoved(sc, null, null, false);
     }
     
     public Pair<User, Account> findUserAccountByApiKey(String apiKey) {

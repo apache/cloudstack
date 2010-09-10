@@ -774,7 +774,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 			txn.rollback();
 			throw new ResourceInUseException("Cannot delete group when there are ingress rules in this group");
 		}
-        _networkGroupDao.delete(groupId);
+        _networkGroupDao.expunge(groupId);
         txn.commit();
 	}
 

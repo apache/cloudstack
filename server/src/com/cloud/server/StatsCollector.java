@@ -284,7 +284,7 @@ public class StatsCollector {
 				
 				ConcurrentHashMap<Long, StorageStats> storagePoolStats = new ConcurrentHashMap<Long, StorageStats>();
 
-				List<StoragePoolVO> storagePools = _storagePoolDao.listAllActive();
+				List<StoragePoolVO> storagePools = _storagePoolDao.listAll();
 				for (StoragePoolVO pool: storagePools) {
 					GetStorageStatsCommand command = new GetStorageStatsCommand(pool.getUuid(), pool.getPoolType(), pool.getPath());
 					Answer answer = _storageManager.sendToPool(pool, command);
@@ -377,7 +377,7 @@ public class StatsCollector {
 	class VolumeCollector implements Runnable {
 		public void run() {
 			try {
-				List<VolumeVO> volumes = _volsDao.listAllActive();
+				List<VolumeVO> volumes = _volsDao.listAll();
 				Map<Long, List<VolumeCommand>> commandsByPool = new HashMap<Long, List<VolumeCommand>>();
 				
 				for (VolumeVO volume : volumes) {

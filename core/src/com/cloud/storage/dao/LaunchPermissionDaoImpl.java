@@ -92,7 +92,7 @@ public class LaunchPermissionDaoImpl extends GenericDaoBase<LaunchPermissionVO, 
     public void removeAllPermissions(long templateId) {
         SearchCriteria<LaunchPermissionVO> sc = TemplateIdSearch.create();
         sc.setParameters("templateId", templateId);
-        delete(sc);
+        expunge(sc);
     }
 
     @Override

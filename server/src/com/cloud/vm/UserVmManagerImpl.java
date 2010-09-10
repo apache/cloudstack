@@ -1547,7 +1547,7 @@ public class UserVmManagerImpl implements UserVmManager {
         } catch (Throwable th) {
             s_logger.error("Unable to create vm", th);
             if (vm != null) {
-            	_vmDao.delete(vmId);
+            	_vmDao.expunge(vmId);
             }
             _accountMgr.decrementResourceCount(account.getId(), ResourceType.user_vm);
             _accountMgr.decrementResourceCount(account.getId(), ResourceType.volume, numVolumes);
@@ -2231,7 +2231,7 @@ public class UserVmManagerImpl implements UserVmManager {
 
             if ((answer != null) && answer.getResult()) {
                 // delete the snapshot from the database
-                _snapshotDao.delete(snapshotId);
+                _snapshotDao.expunge(snapshotId);
                 success = true;
             }
             if (answer != null) {
@@ -2287,7 +2287,7 @@ public class UserVmManagerImpl implements UserVmManager {
             Transaction txn = Transaction.currentTxn();
             txn.start();
             createdSnapshot = _snapshotDao.findById(id);
-            _snapshotDao.delete(id);
+            _snapshotDao.expunge(id);
             txn.commit();
             
             createdSnapshot = null;
@@ -2709,7 +2709,7 @@ public class UserVmManagerImpl implements UserVmManager {
 	            boolean addedToGroups = _networkGroupManager.addInstanceToGroups(vmId, networkGroups);
 	            if (!addedToGroups) {
 	            	s_logger.warn("Not all specified network groups can be found");
-	            	_vmDao.delete(vm.getId());
+	            	_vmDao.expunge(vm.getId());
 	            	throw new InvalidParameterValueException("Not all specified network groups can be found");
 	            }
 	            
@@ -2717,7 +2717,7 @@ public class UserVmManagerImpl implements UserVmManager {
 	            try {
 	            	poolId = _storageMgr.createUserVM(account,  vm, template, dc, pod.first(), offering, diskOffering, a,size);
 	            } catch (CloudRuntimeException e) {
-	            	_vmDao.delete(vmId);
+	            	_vmDao.expunge(vmId);
 	                _ipAddressDao.unassignIpAddress(guestIp);
 	                s_logger.debug("Released a guest ip address because we could not find storage: ip=" + guestIp);
 	                guestIp = null;
@@ -2878,7 +2878,7 @@ public class UserVmManagerImpl implements UserVmManager {
 	            try {
 	            	poolId = _storageMgr.createUserVM(account,  vm, template, dc, pod.first(), offering, diskOffering,a,size);
 	            } catch (CloudRuntimeException e) {
-	            	_vmDao.delete(vmId);
+	            	_vmDao.expunge(vmId);
 	                _accountMgr.decrementResourceCount(account.getId(), ResourceType.user_vm);
 	                _accountMgr.decrementResourceCount(account.getId(), ResourceType.volume, numVolumes);
 	                if (s_logger.isDebugEnabled()) {

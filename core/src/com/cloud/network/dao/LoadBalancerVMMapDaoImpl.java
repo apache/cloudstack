@@ -34,7 +34,7 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
         SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
 
-        delete(sc);
+        expunge(sc);
     }
 
     @Override
@@ -46,7 +46,7 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
             sc.addAnd("pending", SearchCriteria.Op.EQ, pending);
         }
 
-        delete(sc);
+        expunge(sc);
     }
 
     @Override

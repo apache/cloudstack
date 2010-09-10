@@ -313,7 +313,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         if (_snapshotScheduleDao.findById(expectedId) != null) {
             // We need to acquire a lock and delete it, then release the lock.
             // But I don't know how to.
-            _snapshotScheduleDao.delete(expectedId);
+            _snapshotScheduleDao.expunge(expectedId);
         }
         if (policyId.longValue() == Snapshot.MANUAL_POLICY_ID) {
             // Don't need to schedule the next job for this.
@@ -338,7 +338,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         SnapshotScheduleVO schedule = _snapshotScheduleDao.getCurrentSchedule(volumeId, policyId, false);
         boolean success = true;
         if (schedule != null) {
-            success = _snapshotScheduleDao.delete(schedule.getId());
+            success = _snapshotScheduleDao.expunge(schedule.getId());
         }
         if(!success){
             s_logger.debug("Error while deleting Snapshot schedule with Id: "+schedule.getId());

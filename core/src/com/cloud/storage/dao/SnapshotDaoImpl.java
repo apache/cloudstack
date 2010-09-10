@@ -76,7 +76,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
 		SearchCriteria<Long> sc = lastSnapSearch.create();
 		sc.setParameters("volumeId", volumeId);
 		sc.setParameters("snapId", snapId);
-		List<Long> prevSnapshots = searchAll(sc, null);
+		List<Long> prevSnapshots = searchIncludingRemoved(sc, null);
 		if(prevSnapshots != null && prevSnapshots.size() > 0 && prevSnapshots.get(0) != null) {
 			return prevSnapshots.get(0);
 		}

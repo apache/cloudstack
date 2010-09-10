@@ -71,7 +71,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         SearchCriteria<VolumeVO> sc = RemovedButNotDestroyedSearch.create();
         sc.setParameters("destroyed", false);
         
-        return searchAll(sc, null, null, false);
+        return searchIncludingRemoved(sc, null, null, false);
     }
     
     @Override @DB
@@ -224,7 +224,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 	    sc.setParameters("template", templateId);
 	    sc.setParameters("pool", poolId);
 	    
-	    List<Long> results = searchAll(sc, null);
+	    List<Long> results = searchIncludingRemoved(sc, null);
 	    assert results.size() > 0 : "How can this return a size of " + results.size();
 	    
 	    return results.get(0) > 0;
@@ -234,7 +234,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public void deleteVolumesByInstance(long instanceId) {
         SearchCriteria<VolumeVO> sc = InstanceIdSearch.create();
         sc.setParameters("instanceId", instanceId);
-        delete(sc);
+        expunge(sc);
     }
     
     @Override
@@ -359,7 +359,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 	public Pair<Long, Long> getCountAndTotalByPool(long poolId) {
         SearchCriteria<SumCount> sc = TotalSizeByPoolSearch.create();
         sc.setParameters("poolId", poolId);
-        List<SumCount> results = searchAll(sc, null);
+        List<SumCount> results = searchIncludingRemoved(sc, null);
         SumCount sumCount = results.get(0);
         return new Pair<Long, Long>(sumCount.count, sumCount.sum);
 	}

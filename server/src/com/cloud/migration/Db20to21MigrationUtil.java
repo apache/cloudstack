@@ -126,7 +126,7 @@ public class Db20to21MigrationUtil {
         sb.done();
         
         SearchCriteria<DcPod> sc = sb.create();
-        List<DcPod> results = _dcDao.searchAll(sc, (Filter)null);
+        List<DcPod> results = _dcDao.searchIncludingRemoved(sc, (Filter)null);
         if(results.size() > 0) {
         	System.out.println("We've found following zones are deployed in your database");
         	for(DcPod cols : results) {
@@ -153,7 +153,7 @@ public class Db20to21MigrationUtil {
 		SearchCriteria<HostPodVO> sc = sb.create();
 		sc.setParameters("zoneId", zoneId);
 		
-		List<HostPodVO> pods = _podDao.searchAll(sc, null, false, false);
+		List<HostPodVO> pods = _podDao.searchIncludingRemoved(sc, null, false, false);
 		if(pods.size() > 0) {
 			for(HostPodVO pod : pods) {
 				System.out.println("Migrating pod " + pod.getName() + " in zone " + zoneName + "...");
@@ -202,7 +202,7 @@ public class Db20to21MigrationUtil {
 		sc.setParameters("type", Host.Type.Routing);
 		
 		// join cluster for hosts in pod
-		List<HostVO> hostsInPod = _hostDao.searchAll(sc, null, false, false);
+		List<HostVO> hostsInPod = _hostDao.searchIncludingRemoved(sc, null, false, false);
 		if(hostsInPod.size() > 0) {
 			if(cluster == null) {
 				cluster = new ClusterVO(zoneId, podId, String.valueOf(podId));
@@ -228,7 +228,7 @@ public class Db20to21MigrationUtil {
 		scPool.setParameters("pod", podId);
 		scPool.setParameters("poolType", StoragePoolType.NetworkFilesystem.toString(), StoragePoolType.IscsiLUN.toString());
 		
-		List<StoragePoolVO> sPoolsInPod = _spDao.searchAll(scPool, null, false, false);
+		List<StoragePoolVO> sPoolsInPod = _spDao.searchIncludingRemoved(scPool, null, false, false);
 		if(sPoolsInPod.size() > 0) {
 			if(cluster == null) {
 				cluster = new ClusterVO(zoneId, podId, String.valueOf(podId));
@@ -265,7 +265,7 @@ public class Db20to21MigrationUtil {
 		System.out.println("Migrating domains...");
 
 		// we shouldn't have too many domains in the system, use a very dumb way to setup domain path
-		List<DomainVO> domains = _domainDao.listAll();
+		List<DomainVO> domains = _domainDao.listAllIncludingRemoved();
 		for(DomainVO domain : domains) {
 			StringBuilder path = new StringBuilder();
 			composeDomainPath(domain, path);
@@ -284,7 +284,7 @@ public class Db20to21MigrationUtil {
 		
 		long seq = getServiceOfferingStartSequence();
 
-		List<ServiceOffering20VO> oldServiceOfferings = _serviceOffering20Dao.listAll();
+		List<ServiceOffering20VO> oldServiceOfferings = _serviceOffering20Dao.listAllIncludingRemoved();
 		for(ServiceOffering20VO so20 : oldServiceOfferings) {
 			ServiceOffering21VO so21 = new ServiceOffering21VO(so20.getName(), so20.getCpu(), so20.getRamSize(), so20.getSpeed(), so20.getRateMbps(),
 				so20.getMulticastRateMbps(), so20.getOfferHA(), so20.getDisplayText(), so20.getGuestIpType(),
@@ -435,7 +435,7 @@ public class Db20to21MigrationUtil {
 	private void migrateDiskOfferings() {
 		System.out.println("Migrating disk offering...");
 		
-		List<DiskOffering20VO> oldDiskOfferings = _diskOffering20Dao.listAll();
+		List<DiskOffering20VO> oldDiskOfferings = _diskOffering20Dao.listAllIncludingRemoved();
 		long maxDiskOfferingId = _domRServiceOfferingId;
 		maxDiskOfferingId += 100;		
 		
@@ -460,7 +460,7 @@ public class Db20to21MigrationUtil {
 		System.out.println("Fixup NULL disk_offering_id references in volumes table ...");
 		
 		SearchCriteria<DiskOffering21VO> scDiskOffering = _diskOffering21Dao.createSearchCriteria();
-		List<DiskOffering21VO> offeringList = _diskOffering21Dao.searchAll(scDiskOffering, 
+		List<DiskOffering21VO> offeringList = _diskOffering21Dao.searchIncludingRemoved(scDiskOffering, 
 			new Filter(DiskOffering21VO.class, "diskSize", true, null, null), false, false);
 		
 		for(DiskOffering21VO offering : offeringList) {
@@ -472,7 +472,7 @@ public class Db20to21MigrationUtil {
 		sb.done();
 		
 		SearchCriteria<VolumeVO> sc = sb.create();
-		List<VolumeVO> volumes = _volumeDao.searchAll(sc, null, false, false);
+		List<VolumeVO> volumes = _volumeDao.searchIncludingRemoved(sc, null, false, false);
 		
 		if(volumes.size() > 0) {
 			for(VolumeVO vol : volumes) {
@@ -558,7 +558,7 @@ public class Db20to21MigrationUtil {
 		SearchCriteria<ConsoleProxyVO> sc = sb.create();
 		sc.setParameters("zoneId", zoneId);
 		
-		List<ConsoleProxyVO> proxies =_consoleProxyDao.searchAll(sc, null, false, false);
+		List<ConsoleProxyVO> proxies =_consoleProxyDao.searchIncludingRemoved(sc, null, false, false);
 		for(ConsoleProxyVO proxy : proxies) {
 			String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(zoneId, (1L << 31));
 			String guestMacAddress = macAddresses[0];
@@ -585,7 +585,7 @@ public class Db20to21MigrationUtil {
 		SearchCriteria<SecondaryStorageVmVO> sc2 = sb2.create();
 		sc2.setParameters("zoneId", zoneId);
 		
-		List<SecondaryStorageVmVO> secStorageVms =_secStorageVmDao.searchAll(sc2, null, false, false);
+		List<SecondaryStorageVmVO> secStorageVms =_secStorageVmDao.searchIncludingRemoved(sc2, null, false, false);
 		for(SecondaryStorageVmVO secStorageVm : secStorageVms) {
 			String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(zoneId, (1L << 31));
 			String guestMacAddress = macAddresses[0];
@@ -612,7 +612,7 @@ public class Db20to21MigrationUtil {
 		
 		SearchCriteria<DomainRouterVO> sc3 = sb3.create();
 		sc3.setParameters("zoneId", zoneId);
-		List<DomainRouterVO> domRs = _routerDao.searchAll(sc3, null, false, false);
+		List<DomainRouterVO> domRs = _routerDao.searchIncludingRemoved(sc3, null, false, false);
 		for(DomainRouterVO router :  domRs) {
 			if(router.getState() == State.Running || router.getState() == State.Starting) {
 				router.setState(State.Stopping);
@@ -633,7 +633,7 @@ public class Db20to21MigrationUtil {
 		SearchCriteria<VMInstanceVO> sc = sb.create();
 		sc.setParameters("zoneId", zoneId);
 		sc.setParameters("podId", podId);
-		List<VMInstanceVO> vmInstances = _vmInstanceDao.searchAll(sc, null, false, false);
+		List<VMInstanceVO> vmInstances = _vmInstanceDao.searchIncludingRemoved(sc, null, false, false);
 		List<HostVO> podHosts = getHostsInPod(zoneId, podId);
 		for(VMInstanceVO vm : vmInstances) {
 			if(vm.getHostId() != null) {
@@ -660,13 +660,13 @@ public class Db20to21MigrationUtil {
 		sc.setParameters("podId", podId);
 		sc.setParameters("type", Host.Type.Routing.toString());
 		
-		return _hostDao.searchAll(sc, null, false, false);
+		return _hostDao.searchIncludingRemoved(sc, null, false, false);
 	}
 	
 	private void migrateVolumDeviceIds() {
 		System.out.println("Migrating device_id for volumes, this may take a while, please wait...");
 		SearchCriteria<VMInstanceVO> sc = _vmInstanceDao.createSearchCriteria();
-		List<VMInstanceVO> vmInstances = _vmInstanceDao.searchAll(sc, null, false, false);
+		List<VMInstanceVO> vmInstances = _vmInstanceDao.searchIncludingRemoved(sc, null, false, false);
 		
 		long deviceId = 1;
 		for(VMInstanceVO vm: vmInstances) {
@@ -677,7 +677,7 @@ public class Db20to21MigrationUtil {
 			SearchCriteria<VolumeVO> sc2 = sb.create();
 			sc2.setParameters("instanceId", vm.getId());
 			
-			List<VolumeVO> volumes = _volumeDao.searchAll(sc2, null, false, false);
+			List<VolumeVO> volumes = _volumeDao.searchIncludingRemoved(sc2, null, false, false);
 			deviceId = 1;	// reset for each VM iteration
 			for(VolumeVO vol : volumes) {
 				if(vol.getVolumeType() == VolumeType.ROOT) {
@@ -707,7 +707,7 @@ public class Db20to21MigrationUtil {
 		System.out.println("Migrating pool type for volumes...");
 		
 		SearchCriteria<VolumeVO> sc = _volumeDao.createSearchCriteria();
-		List<VolumeVO> volumes = _volumeDao.searchAll(sc, null, false, false);
+		List<VolumeVO> volumes = _volumeDao.searchIncludingRemoved(sc, null, false, false);
 		for(VolumeVO vol : volumes) {
 			if(vol.getPoolId() != null) {
 				StoragePoolVO pool = _poolDao.findById(vol.getPoolId());

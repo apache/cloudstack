@@ -107,7 +107,7 @@ public class NetworkGroupVMMapDaoImpl extends GenericDaoBase<NetworkGroupVMMapVO
     public int deleteVM(long instanceId) {
     	SearchCriteria<NetworkGroupVMMapVO> sc = ListByVmId.create();
         sc.setParameters("instanceId", instanceId);
-        return super.delete(sc);
+        return super.expunge(sc);
     }
 
 	@Override
@@ -122,7 +122,7 @@ public class NetworkGroupVMMapDaoImpl extends GenericDaoBase<NetworkGroupVMMapVO
     public List<Long> listVmIdsByNetworkGroup(long networkGroupId) {
         SearchCriteria<Long> sc = ListVmIdByNetworkGroup.create();
         sc.setParameters("networkGroupId", networkGroupId);
-        return searchAll(sc, null);
+        return searchIncludingRemoved(sc, null);
     }
 
 	@Override

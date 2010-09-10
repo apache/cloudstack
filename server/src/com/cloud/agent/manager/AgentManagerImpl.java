@@ -1634,7 +1634,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         String cluster = startup.getCluster();
         
         if (pod != null && dataCenter != null && pod.equalsIgnoreCase("default") && dataCenter.equalsIgnoreCase("default")) {
-        	List<HostPodVO> pods = _podDao.listAll();
+        	List<HostPodVO> pods = _podDao.listAllIncludingRemoved();
         	for (HostPodVO hpv : pods) {
         		if (checkCIDR(type, hpv, startup.getPrivateIpAddress(), startup.getPrivateNetmask())) {
         			pod = hpv.getName();

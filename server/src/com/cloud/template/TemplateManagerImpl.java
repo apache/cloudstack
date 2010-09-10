@@ -127,7 +127,7 @@ public class TemplateManagerImpl implements TemplateManager {
         
         VMTemplateVO template = new VMTemplateVO(id, name, format, isPublic, featured, fs, url.toString(), requiresHvm, bits, accountId, chksum, displayText, enablePassword, guestOSId, bootable);
         if (zoneId == null) {
-            List<DataCenterVO> dcs = _dcDao.listAll();
+            List<DataCenterVO> dcs = _dcDao.listAllIncludingRemoved();
 
         	for (DataCenterVO dc: dcs) {
     			_tmpltDao.addTemplateToZone(template, dc.getId());

@@ -338,7 +338,7 @@ public class AlertManagerImpl implements AlertManager {
         List<HostVO> hosts = _hostDao.search(sc, null);
 
         // prep the service offerings
-        List<ServiceOfferingVO> offerings = _offeringsDao.listAll();
+        List<ServiceOfferingVO> offerings = _offeringsDao.listAllIncludingRemoved();
         Map<Long, ServiceOfferingVO> offeringsMap = new HashMap<Long, ServiceOfferingVO>();
         for (ServiceOfferingVO offering : offerings) {
             offeringsMap.put(offering.getId(), offering);
@@ -394,7 +394,7 @@ public class AlertManagerImpl implements AlertManager {
         }
 
         // Calculate storage pool capacity
-        List<StoragePoolVO> storagePools = _storagePoolDao.listAllActive();
+        List<StoragePoolVO> storagePools = _storagePoolDao.listAll();
         for (StoragePoolVO pool : storagePools) {
             long disk = 0l;
             Pair<Long, Long> sizes = _volumeDao.getCountAndTotalByPool(pool.getId());
@@ -410,7 +410,7 @@ public class AlertManagerImpl implements AlertManager {
         }
 
         // Calculate new Public IP capacity
-        List<DataCenterVO> datacenters = _dcDao.listAll();
+        List<DataCenterVO> datacenters = _dcDao.listAllIncludingRemoved();
         for (DataCenterVO datacenter : datacenters) {
             long dcId = datacenter.getId();
 
@@ -422,7 +422,7 @@ public class AlertManagerImpl implements AlertManager {
         }
 
         // Calculate new Private IP capacity
-        List<HostPodVO> pods = _podDao.listAll();
+        List<HostPodVO> pods = _podDao.listAllIncludingRemoved();
         for (HostPodVO pod : pods) {
             long podId = pod.getId();
             long dcId = pod.getDataCenterId();
@@ -465,7 +465,7 @@ public class AlertManagerImpl implements AlertManager {
             }
 
             try {
-                List<CapacityVO> capacityList = _capacityDao.listAll();
+                List<CapacityVO> capacityList = _capacityDao.listAllIncludingRemoved();
                 Map<String, List<CapacityVO>> capacityDcTypeMap = new HashMap<String, List<CapacityVO>>();
 
                 for (CapacityVO capacity : capacityList) {

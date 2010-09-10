@@ -120,7 +120,7 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
         	SearchCriteria<Long> sc = VmsOnPoolSearch.create();
         	sc.setJoinParameters("volumeJoin", "poolId", pool.getId());
         	sc.setParameters("state", State.Expunging);
-        	List<Long> vmsOnHost = _vmInstanceDao.searchAll(sc, null);
+        	List<Long> vmsOnHost = _vmInstanceDao.searchIncludingRemoved(sc, null);
             
         	if(s_logger.isDebugEnabled()) {
         		s_logger.debug("Found " + vmsOnHost.size() + " VM instances are alloacated at host " + spHost.getHostId() + " with local storage pool " + pool.getName());

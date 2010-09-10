@@ -48,7 +48,7 @@ AgentBasedConsoleProxyManager {
 		if(host != null) {
 			HostVO allocatedHost = null;
 			/*Is there a consoleproxy agent running on the same machine?*/
-			List<HostVO> hosts = _hostDao.listAll();
+			List<HostVO> hosts = _hostDao.listAllIncludingRemoved();
 			for (HostVO hv : hosts) {
 				if (hv.getType() == Host.Type.ConsoleProxy && hv.getPublicIpAddress().equalsIgnoreCase(host.getPublicIpAddress())) {
 					allocatedHost = hv;

@@ -375,7 +375,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
         sc.setParameters("status", (Object[])statuses);
         sc.setParameters("pool", primaryStorageId);
         
-        List<Long> rs = searchAll(sc, null);
+        List<Long> rs = searchIncludingRemoved(sc, null);
         if (rs.size() == 0) {
             return 0;
         }

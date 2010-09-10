@@ -69,15 +69,15 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     }
     
     @Override
-    public List<DiskOfferingVO> searchAll(SearchCriteria<DiskOfferingVO> sc, final Filter filter, final Boolean lock, final boolean cache) {
+    public List<DiskOfferingVO> searchIncludingRemoved(SearchCriteria<DiskOfferingVO> sc, final Filter filter, final Boolean lock, final boolean cache) {
         sc.addAnd(_typeAttr, Op.EQ, Type.Disk);
-        return super.searchAll(sc, filter, lock, cache);
+        return super.searchIncludingRemoved(sc, filter, lock, cache);
     }
     
     @Override
-    public <K> List<K> searchAll(SearchCriteria<K> sc, final Filter filter) {
+    public <K> List<K> searchIncludingRemoved(SearchCriteria<K> sc, final Filter filter) {
         sc.addAnd(_typeAttr, Op.EQ, Type.Disk);
-        return super.searchAll(sc, filter);
+        return super.searchIncludingRemoved(sc, filter);
     }
     
     @Override

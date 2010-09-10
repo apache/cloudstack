@@ -293,11 +293,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             }
             sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
         }
-        return searchAll(sc, filter, lock, cache);
+        return searchIncludingRemoved(sc, filter, lock, cache);
     }
 
     @Override
-    public List<T> searchAll(SearchCriteria<T> sc, final Filter filter, final Boolean lock, final boolean cache) {
+    public List<T> searchIncludingRemoved(SearchCriteria<T> sc, final Filter filter, final Boolean lock, final boolean cache) {
         String clause = sc != null ? sc.getWhereClause() : null;
         if (clause != null && clause.length() == 0) {
         	clause = null;
@@ -363,7 +363,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
     
     @Override @SuppressWarnings("unchecked") @DB
-    public <M> List<M> searchAll(SearchCriteria<M> sc, final Filter filter) {
+    public <M> List<M> searchIncludingRemoved(SearchCriteria<M> sc, final Filter filter) {
         String clause = sc != null ? sc.getWhereClause() : null;
         if (clause != null && clause.length() == 0) {
             clause = null;
@@ -723,7 +723,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
 
     protected T findOneBy(final SearchCriteria<T> sc) {
         Filter filter = new Filter(1);
-        List<T> results = searchAll(sc, filter, null, false);
+        List<T> results = searchIncludingRemoved(sc, filter, null, false);
         assert results.size() <= 1 : "Didn't the limiting worked?";
         return results.size() == 0 ? null : results.get(0);
     }
@@ -751,7 +751,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
 
     @DB(txn=false)
     protected List<T> listBy(final SearchCriteria<T> sc, final Filter filter) {
-        return searchAll(sc, filter, null, false);
+        return searchIncludingRemoved(sc, filter, null, false);
     }
 
     @DB(txn=false)
@@ -837,8 +837,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @Override @DB(txn=false)
-    public List<T> listAll() {
-        return listAll(null);
+    public List<T> listAllIncludingRemoved() {
+        return listAllIncludingRemoved(null);
     }
 
     @DB(txn=false)
@@ -872,7 +872,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @Override @DB(txn=false)
-    public List<T> listAll(final Filter filter) {
+    public List<T> listAllIncludingRemoved(final Filter filter) {
         final StringBuilder sql = createPartialSelectSql(null, false);
         addFilter(sql, filter);
 
@@ -903,14 +903,14 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @Override @DB(txn=false)
-    public List<T> listAllActive() {
-        return listAllActive(null);
+    public List<T> listAll() {
+        return listAll(null);
     }
 
     @Override @DB(txn=false)
-    public List<T> listAllActive(final Filter filter) {
+    public List<T> listAll(final Filter filter) {
         if (_removed == null) {
-            return listAll(filter);
+            return listAllIncludingRemoved(filter);
         }
 
         final StringBuilder sql = createPartialSelectSql(null, true);
@@ -921,7 +921,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @Override
-    public boolean delete(final ID id) {
+    public boolean expunge(final ID id) {
         final Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = s_initStmt;
         String sql = null;
@@ -952,7 +952,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
 
     // FIXME: Does not work for joins.
     @Override
-    public int delete(final SearchCriteria<T> sc) {
+    public int expunge(final SearchCriteria<T> sc) {
         final StringBuilder str = new StringBuilder("DELETE FROM ");
         str.append(_table);
         str.append(" WHERE ");
@@ -1269,7 +1269,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     @Override
     public boolean remove(final ID id) {
         if (_removeSql == null) {
-            return delete(id);
+            return expunge(id);
         }
 
         final Transaction txn = Transaction.currentTxn();
@@ -1299,7 +1299,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     @Override
     public int remove(SearchCriteria<T> sc) {
         if (_removeSql == null) {
-            return delete(sc);
+            return expunge(sc);
         }
         
         T vo = createForUpdate();
@@ -1337,7 +1337,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         createCache(params);
         final boolean load = Boolean.parseBoolean((String)params.get("cache.preload"));
         if (load) {
-            listAllActive();
+            listAll();
         }
 
         return true;

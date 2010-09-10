@@ -206,7 +206,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("status", (Object[])statuses);
         sc.setParameters("pod", podId);
         
-        List<Long> rs = searchAll(sc, null);
+        List<Long> rs = searchIncludingRemoved(sc, null);
         if (rs.size() == 0) {
             return 0;
         }

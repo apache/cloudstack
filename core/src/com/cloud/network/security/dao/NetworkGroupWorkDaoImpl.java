@@ -187,7 +187,7 @@ public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, 
 		sc.setParameters("taken", timeBefore);
 		sc.setParameters("step", Step.Done);
 
-		return delete(sc);
+		return expunge(sc);
 	}
 
 	@Override

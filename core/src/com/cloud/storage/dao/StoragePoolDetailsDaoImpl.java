@@ -48,7 +48,7 @@ public class StoragePoolDetailsDaoImpl extends GenericDaoBase<StoragePoolDetailV
         sc.setParameters("pool", poolId);
         
         txn.start();
-        delete(sc);
+        expunge(sc);
         for (Map.Entry<String, String> entry : details.entrySet()) {
             StoragePoolDetailVO detail = new StoragePoolDetailVO(poolId, entry.getKey(), entry.getValue());
             persist(detail);

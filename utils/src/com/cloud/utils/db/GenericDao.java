@@ -125,14 +125,14 @@ public interface GenericDao<T, ID extends Serializable> {
      * Look for all active rows.
      * @return list of entity beans.
      */
-    List<T> listAllActive();
+    List<T> listAll();
 
     /**
      * Look for all active rows.
      * @param filter filter to limit the results
      * @return list of entity beans.
      */
-    List<T> listAllActive(Filter filter);
+    List<T> listAll(Filter filter);
     
     
     /**
@@ -143,7 +143,7 @@ public interface GenericDao<T, ID extends Serializable> {
      */
     List<T> search(SearchCriteria<T> sc, Filter filter);
     
-    List<T> searchAll(SearchCriteria<T> sc, final Filter filter, final Boolean lock, final boolean cache);
+    List<T> searchIncludingRemoved(SearchCriteria<T> sc, final Filter filter, final Boolean lock, final boolean cache);
     
     /**
      * Customized search with SearchCritiria
@@ -151,20 +151,20 @@ public interface GenericDao<T, ID extends Serializable> {
      * @param filter
      * @return list of entity beans.
      */
-    public <M> List<M> searchAll(SearchCriteria<M> sc, Filter filter);
+    public <M> List<M> searchIncludingRemoved(SearchCriteria<M> sc, Filter filter);
     
     /**
      * Retrieves the entire table.
      * @return collection of entity beans.
      **/
-    List<T> listAll();
+    List<T> listAllIncludingRemoved();
 
     /**
      * Retrieves the entire table.
      * @param filter filter to limit the returns.
      * @return collection of entity beans.
      **/
-    List<T> listAll(Filter filter);
+    List<T> listAllIncludingRemoved(Filter filter);
     
     /**
      * Persist the entity bean.  The id field of the entity is updated with
@@ -188,14 +188,14 @@ public interface GenericDao<T, ID extends Serializable> {
      * @param id
      * @return true if removed.
      */
-    boolean delete(ID id);
+    boolean expunge(ID id);
     
     /**
      * remove the entity bean specified by the search criteria
      * @param sc
      * @return number of rows deleted
      */
-    int delete(final SearchCriteria<T> sc);
+    int expunge(final SearchCriteria<T> sc);
     
     /**
      * expunge the removed rows.

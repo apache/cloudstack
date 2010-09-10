@@ -358,7 +358,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	HostPodVO pod = _podDao.findById(podId);
     	DataCenterVO zone = _zoneDao.findById(pod.getDataCenterId());
 
-    	_podDao.delete(podId);
+    	_podDao.expunge(podId);
     	
     	// Delete private IP addresses in the pod
     	_privateIpAddressDao.deleteIpAddressByPod(podId);
@@ -660,7 +660,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	
     	DataCenterVO zone = _zoneDao.findById(zoneId);
     	
-    	_zoneDao.delete(zoneId);
+    	_zoneDao.expunge(zoneId);
     	
     	// Delete vNet
         _zoneDao.deleteVnet(zoneId);
@@ -1076,7 +1076,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         		}
         		
         		// Make sure there aren't any account VLANs in this zone
-        		List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAll();
+        		List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAllIncludingRemoved();
         		for (AccountVlanMapVO accountVlanMap : accountVlanMaps) {
         			VlanVO vlan = _vlanDao.findById(accountVlanMap.getVlanDbId());
         			if (vlan.getDataCenterId() == zone.getId()) {
@@ -1171,12 +1171,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		if (accountId != null && vlanType.equals(VlanType.VirtualNetwork)){
 			if(!savePublicIPRangeForAccount(startIP, endIP, zoneId, vlan.getId(), accountId, _accountDao.findById(accountId).getDomainId())){
 				deletePublicIPRange(vlan.getId());
-				_vlanDao.delete(vlan.getId());
+				_vlanDao.expunge(vlan.getId());
 				throw new InternalErrorException("Failed to save IP range. Please contact Cloud Support."); //It can be Direct IP or Public IP.
 			}				
 		}else if (!savePublicIPRange(startIP, endIP, zoneId, vlan.getId())) {
 			deletePublicIPRange(vlan.getId());
-			_vlanDao.delete(vlan.getId());
+			_vlanDao.expunge(vlan.getId());
 			throw new InternalErrorException("Failed to save IP range. Please contact Cloud Support."); //It can be Direct IP or Public IP.
 		}
 		
@@ -1240,7 +1240,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     	
 		// Delete the VLAN
-		boolean success = _vlanDao.delete(vlanDbId);
+		boolean success = _vlanDao.expunge(vlanDbId);
 		
 		if (success) {
 			String[] ipRange = vlan.getIpRange().split("\\-");
