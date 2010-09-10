@@ -185,8 +185,9 @@ public class CreateVolumeCmd extends BaseCmd {
     	        if(s_logger.isDebugEnabled())
     	        	s_logger.debug("CreateVolume command has been accepted, job id: " + jobId);
             }
-    		
+
     		long volumeId = waitInstanceCreation(jobId);
+
     		List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
             returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
             returnValues.add(new Pair<String, Object>(BaseCmd.Properties.VOLUME_ID.getName(), Long.valueOf(volumeId))); 

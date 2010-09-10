@@ -19,36 +19,28 @@ $(document).ready(function() {
     $("#midmenu_container").selectable({
         selecting: function(event, ui) {	 	                               
             if(ui.selecting.id.indexOf("midmenuItem") != -1) {                     
-                var $t = $("#"+ui.selecting.id);
-                if($t.find("#content").hasClass("inaction") == false) { //only items not in action are allowed to be selected
-                    var id =$t.data("id");                
-                    selectedItemIds[id] = $t; 
-                    $t.find("#content").addClass("selected");   
+                var $midmenuItem1 = $("#"+ui.selecting.id);
+                if($midmenuItem1.find("#content").hasClass("inaction") == false) { //only items not in action are allowed to be selected
+                    var id =$midmenuItem1.data("id");                
+                    selectedItemsInMidMenu[id] = $midmenuItem1; 
+                    $midmenuItem1.find("#content").addClass("selected");   
                 }                               
-                var toRightPanelFn = $t.data("toRightPanelFn");
-                toRightPanelFn($t);	          
+                var toRightPanelFn = $midmenuItem1.data("toRightPanelFn");
+                toRightPanelFn($midmenuItem1);	          
             }                                             
         },
         unselecting: function(event, ui) {
             if(ui.unselecting.id.indexOf("midmenuItem") != -1) {                     
-                var $t = $("#"+ui.unselecting.id);
-                var id = $t.data("id");
-                if(id in selectedItemIds) {                    
-                    delete selectedItemIds[id];
-                    $t.find("#content").removeClass("selected"); 
+                var $midmenuItem1 = $("#"+ui.unselecting.id);
+                var id = $midmenuItem1.data("id");
+                if(id in selectedItemsInMidMenu) {                    
+                    delete selectedItemsInMidMenu[id];
+                    $midmenuItem1.find("#content").removeClass("selected"); 
                 }
             }             
         }
     });
-
-    var $rightPanel = $("#right_panel"); 
-    var $addLink = $("#add_link");
-    //var $actionLink = $("#action_link");
-    //var $actionMenu = $("#action_menu");
-    //var $actionList = $("#action_menu #action_list");
-    var $midmenuContainer = $("#midmenu_container");     
-    //var $actionListItem = $("#action_list_item");
-    
+ 
     $("#leftmenu_instance_group_header").bind("click", function(event) {   
         var $arrowIcon = $(this).find("#arrow_icon");        
         clickInstanceGroupHeader($arrowIcon);
@@ -75,14 +67,16 @@ $(document).ready(function() {
 	            data: createURL("command="+apiName+"&response=json"),
 	            dataType: "json",
 	            success: function(json) {	
-	                $midmenuContainer.empty();
+	                $("#midmenu_container").empty();
+	                selectedItemsInMidMenu = {};
+	                
 	                var items = json[jsonResponse1][jsonResponse2];
 	                if(items != null && items.length > 0) {
 	                    for(var i=0; i<items.length;i++) {                
                             var item = items[i];
                             var $midmenuItem1 = $midmenuItem.clone();                               
                             jsonToMidmenu(item, $midmenuItem1, propertyForFirstRow, propertyForSecondRow, toRightPanelFn);                             
-                            $midmenuContainer.append($midmenuItem1.show());                            
+                            $("#midmenu_container").append($midmenuItem1.show());                            
                         }  
                     }  
 	            }
@@ -100,11 +94,11 @@ $(document).ready(function() {
     
        
     $("#action_link").bind("mouseover", function(event) {
-        $("#action_menu").show();    
+        $(this).find("#action_menu").show();    
         return false;
     });
     $("#action_link").bind("mouseout", function(event) {
-        $("#action_menu").hide();    
+        $(this).find("#action_menu").hide();    
         return false;
     });
     

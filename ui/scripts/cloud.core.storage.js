@@ -274,8 +274,10 @@ function showStorageTab(domainId, targetTab) {
 			setDateField(json.created, template.find("#volume_created"));			
 		   		    		
 			if(json.type=="ROOT") {
-			} else {
-				// DataDisk
+			    if (json.vmstate == "Stopped") 
+			        template.find("#volume_action_create_template_span").show();	
+			} 
+			else { //json.type=="DATADISK": "detach disk" is allowed, "create template" is disallowed.	
 				if (json.virtualmachineid != undefined) {
 					if (json.storagetype == "shared" && (json.vmstate == "Running" || json.vmstate == "Stopped")) {
 						template.find("#volume_action_detach_span").show();

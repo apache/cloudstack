@@ -59,6 +59,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
     protected final SearchBuilder<StoragePoolVO> HostPathDcSearch;
     protected final SearchBuilder<StoragePoolVO> DcPodAnyClusterSearch;
     protected final SearchBuilder<StoragePoolVO> DeleteLvmSearch;
+    protected final SearchBuilder<StoragePoolVO> StatusSearch;
     protected final GenericSearchBuilder<StoragePoolVO, Long> MaintenanceCountSearch;
     
     
@@ -108,6 +109,10 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
         HostSearch = createSearchBuilder();
         HostSearch.and("host", HostSearch.entity().getHostAddress(), SearchCriteria.Op.EQ);
         HostSearch.done();
+        
+        StatusSearch = createSearchBuilder();
+        StatusSearch.and("status",StatusSearch.entity().getStatus(),SearchCriteria.Op.EQ);
+        StatusSearch.done();
         
         HostPathDcPodSearch = createSearchBuilder();
         HostPathDcPodSearch.and("hostAddress", HostPathDcPodSearch.entity().getHostAddress(), SearchCriteria.Op.EQ);
@@ -182,6 +187,13 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
         SearchCriteria<StoragePoolVO> sc = HostSearch.create();
         sc.setParameters("host", hostFqdnOrIp);
         return listBy(sc);
+    }
+    
+    @Override
+    public List<StoragePoolVO> listPoolsByStatus(Status status){
+    	SearchCriteria<StoragePoolVO> sc = StatusSearch.create();
+    	sc.setParameters("status", status);
+    	return listBy(sc);
     }
 
     @Override

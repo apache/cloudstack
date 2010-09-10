@@ -73,7 +73,7 @@ public class PreparePrimaryStorageForMaintenanceCmd extends BaseCmd {
     	}
     	
     	if(getManagementServer().getPsMaintenanceCount(storagePool.getPodId()) > 0){
-    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR,"There already exist other storage pools in maintenance");
+    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR,"There already exist other storage pools in maintenance process");
     	}
 
     	long jobId = 0;

@@ -79,6 +79,9 @@ public class StartVMCmd extends BaseCmd {
             }
         }
 
+        if(!getManagementServer().isPoolUp(vmId)){
+        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR,"Storage pool for this vm is under maintenance");
+        }
         if (userId == null) {
             userId = Long.valueOf(1);
         }

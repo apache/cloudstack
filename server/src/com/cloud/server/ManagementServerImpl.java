@@ -1762,11 +1762,22 @@ public class ManagementServerImpl implements ManagementServer {
             
         // Check that there is a shared primary storage pool in the specified zone
         List<StoragePoolVO> storagePools = _poolDao.listByDataCenterId(zoneId);
+        
         boolean sharedPoolExists = false;
+        boolean readyPoolExists = false;
         for (StoragePoolVO storagePool : storagePools) {
         	if (storagePool.isShared()) {
         		sharedPoolExists = true;
         	}
+            //check if there are any pools in the UP state
+            //if not, throw an error
+        	if(storagePool.getStatus().equals(Status.Up)){
+        		readyPoolExists = true;
+        	}
+        }
+        
+        if(!readyPoolExists){
+        	throw new InternalErrorException("There are no ready pools for volume creation");
         }
         
         // Check that there is at least one host in the specified zone
@@ -8722,7 +8733,31 @@ public class ManagementServerImpl implements ManagementServer {
     
     @Override
     public long getPsMaintenanceCount(long podId){
-    	return _poolDao.countBy(podId, Status.Maintenance);
+    	List<StoragePoolVO> poolsInTransition = new ArrayList<StoragePoolVO>();
+    	poolsInTransition.addAll(_poolDao.listPoolsByStatus(Status.Maintenance));
+    	poolsInTransition.addAll(_poolDao.listPoolsByStatus(Status.PrepareForMaintenance));
+    	poolsInTransition.addAll(_poolDao.listPoolsByStatus(Status.ErrorInMaintenance));
+    	
+    	if(poolsInTransition==null)
+    		return 0;
+    	else
+    		return poolsInTransition.size();
+    }
+    
+    @Override
+    public boolean isPoolUp(long instanceId){
+		VolumeVO rootVolume = _volumeDao.findByInstance(instanceId).get(0);
+		
+		if(rootVolume!=null){
+			Status poolStatus = _poolDao.findById(rootVolume.getPoolId()).getStatus();
+    	
+			if(!poolStatus.equals(Status.Up))
+				return false;
+			else
+				return true;
+		}
+		
+		return false;
     }
 }
 

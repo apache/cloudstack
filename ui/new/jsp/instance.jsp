@@ -145,17 +145,21 @@
     
     <!--Volume tab (start)-->
     <div style="display:none;" id="tab_content_volume">
-        <!--  
+          
         <div class="grid_container" id="volume_tab_template" style="display:block">
 	        <div class="grid_header">
        	        <div class="grid_header_title" id="name"></div>
-                <div class="grid_actionbox" id="volume_action_link">
+                <div class="grid_actionbox" id="volume_action_link" style="display:block;">
                     <div class="grid_actionsdropdown_box" id="volume_action_menu" style="display: none;">	                    
 	                    <ul class="actionsdropdown_boxlist" id="action_list">
                     	    <li> <a href="#"> Delete </a> </li>
                             <li> <a href="#"> Attach Disk </a> </li>
                         </ul>	                    
 	                </div>        
+                </div>
+                <div class="gridheader_loaderbox">
+                    <div class="gridheader_loader"></div>
+                    <p> Creating Template &hellip; </p>
                 </div>       
             </div>
             <div class="grid_rows even">
@@ -194,8 +198,9 @@
                     <div class="row_celltitles" id="created"></div>
                 </div>
             </div>
-        </div>    
-        -->
+        </div>  
+          
+     
     </div>
     <!--Volume tab (end)-->
     
@@ -773,7 +778,9 @@
 	            <ul class="actionsdropdown_boxlist" id="action_list">
 	            </ul>
 	        </div>        
-        </div>       
+        </div>
+        
+               
     </div>
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">

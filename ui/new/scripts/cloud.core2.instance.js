@@ -2,16 +2,8 @@ function clickInstanceGroupHeader($arrowIcon) {
     //***** VM Detail (begin) ******************************************************************************
     var $vmPopup
     var $rightPanelHeader;  
-    var $rightPanelContent;   
-    var $instanceGroupContainer = $("#leftmenu_instance_group_container");  
-    var $instanceGroupTemplate = $("#leftmenu_instance_group_template");  
-     
-    //var $actionLink = $("#action_link");
-    //var $actionMenu = $("#action_menu");
-    //var $actionList = $("#action_menu #action_list");
-    var $midmenuContainer = $("#midmenu_container"); 
-    //var $actionListItem = $("#action_list_item");
-     
+    var $rightPanelContent;  
+            
     var $midmenuItem = $("#midmenu_item"); 
       
     var noGroupName = "(no group name)";             
@@ -98,7 +90,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         }                 
     }            
         
-    function doAttachISO($t, selectedItemIds, vmListAPIMap) {   
+    function doAttachISO($t, selectedItemsInMidMenu, vmListAPIMap) {   
         $.ajax({
 		    data: createURL("command=listIsos&isReady=true"),
 			dataType: "json",
@@ -125,9 +117,9 @@ function clickInstanceGroupHeader($arrowIcon) {
 					$("#dialog_alert").dialog("open");
 					return false;
 				}	
-				for(var id in selectedItemIds) {
+				for(var id in selectedItemsInMidMenu) {
 				   var apiCommand = "command=attachIso&virtualmachineid="+id+"&id="+isoId;
-				   doAction(id, $t, apiCommand, vmListAPIMap);	
+				   doActionForMidMenu(id, $t, apiCommand, vmListAPIMap);	
 				}			
 			}, 
 			"Cancel": function() { 
@@ -136,15 +128,15 @@ function clickInstanceGroupHeader($arrowIcon) {
 		}).dialog("open");
     }
    
-    function doDetachISO($t, selectedItemIds, vmListAPIMap) {    
+    function doDetachISO($t, selectedItemsInMidMenu, vmListAPIMap) {    
         $("#dialog_confirmation")
 		.html("<p>Please confirm you want to detach an ISO from the virtual machine(s)</p>")
 		.dialog('option', 'buttons', { 						
 			"Confirm": function() { 
 				$(this).dialog("close");				
-				for(var id in selectedItemIds) {
+				for(var id in selectedItemsInMidMenu) {
 				   var apiCommand = "command=detachIso&virtualmachineid="+id;
-				   doAction(id, $t, apiCommand, vmListAPIMap);	
+				   doActionForMidMenu(id, $t, apiCommand, vmListAPIMap);	
 				}					
 			}, 
 			"Cancel": function() { 
@@ -153,14 +145,14 @@ function clickInstanceGroupHeader($arrowIcon) {
 		}).dialog("open");
     }
    
-    function doResetPassword($t, selectedItemIds, vmListAPIMap) {   		
+    function doResetPassword($t, selectedItemsInMidMenu, vmListAPIMap) {   		
 		$("#dialog_confirmation")
 		.html("<p>Please confirm you want to change the ROOT password for your virtual machine(s)</p>")
 		.dialog('option', 'buttons', { 						
 			"Confirm": function() { 
 				$(this).dialog("close"); 
-				for(var id in selectedItemIds) {	
-				    var $midMenuItem = selectedItemIds[id];
+				for(var id in selectedItemsInMidMenu) {	
+				    var $midMenuItem = selectedItemsInMidMenu[id];
 				    var jsonObj = $midMenuItem.data("jsonObj");
 				    if(jsonObj.state != "Stopped") {				    
 				        $midMenuItem.find("#info_icon").addClass("error").show();
@@ -173,7 +165,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 			            continue;
 		            }	
 		            var apiCommand = "command=resetPasswordForVirtualMachine&id="+id;
-		            doAction(id, $t, apiCommand, vmListAPIMap);	
+		            doActionForMidMenu(id, $t, apiCommand, vmListAPIMap);	
 		        }		
 			}, 
 			"Cancel": function() { 
@@ -182,7 +174,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 		}).dialog("open");
 	}
    
-    function doChangeName($t, selectedItemIds, vmListAPIMap) { 
+    function doChangeName($t, selectedItemsInMidMenu, vmListAPIMap) { 
 		$("#dialog_change_name")
 		.dialog('option', 'buttons', { 						
 			"Confirm": function() { 			    
@@ -196,9 +188,9 @@ function clickInstanceGroupHeader($arrowIcon) {
 				
 				var name = trim(thisDialog.find("#change_instance_name").val());
 				
-				for(var id in selectedItemIds) {
+				for(var id in selectedItemsInMidMenu) {
 		           var apiCommand = "command=updateVirtualMachine&id="+id+"&displayName="+todb(name);		     
-		           doAction(id, $t, apiCommand, vmListAPIMap);
+		           doActionForMidMenu(id, $t, apiCommand, vmListAPIMap);
 		        }	
 			}, 
 			"Cancel": function() { 
@@ -207,7 +199,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 		}).dialog("open");
     }
    
-    function doChangeService($t, selectedItemIds, vmListAPIMap) { 
+    function doChangeService($t, selectedItemsInMidMenu, vmListAPIMap) { 
 		$.ajax({
 		    //data: createURL("command=listServiceOfferings&VirtualMachineId="+vmId), //can not specifiy VirtualMachineId since we allow multiple-item-selection.
 		    data: createURL("command=listServiceOfferings"), //can not specifiy VirtualMachineId since we support multiple-item-selection.
@@ -231,8 +223,8 @@ function clickInstanceGroupHeader($arrowIcon) {
 			    var thisDialog = $(this);
 				thisDialog.dialog("close"); 
 				
-				for(var id in selectedItemIds) {				
-				    var $midMenuItem = selectedItemIds[id];
+				for(var id in selectedItemsInMidMenu) {				
+				    var $midMenuItem = selectedItemsInMidMenu[id];
 				    var jsonObj = $midMenuItem.data("jsonObj");				
 				    if(jsonObj.state != "Stopped") {				    
 				        $midMenuItem.find("#info_icon").addClass("error").show();
@@ -240,7 +232,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 			            continue;
 		            }
                     var apiCommand = "command=changeServiceForVirtualMachine&id="+id+"&serviceOfferingId="+thisDialog.find("#change_service_offerings").val();	     
-                    doAction(id, $t, apiCommand, vmListAPIMap);
+                    doActionForMidMenu(id, $t, apiCommand, vmListAPIMap);
                 }
 			}, 
 			"Cancel": function() { 
@@ -249,7 +241,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 		}).dialog("open");
     }
     
-    function doChangeGroup($t, selectedItemIds, vmListAPIMap) { 
+    function doChangeGroup($t, selectedItemsInMidMenu, vmListAPIMap) { 
 		$("#dialog_change_group")
 		.dialog('option', 'buttons', { 						
 			"Confirm": function() { 	
@@ -261,12 +253,12 @@ function clickInstanceGroupHeader($arrowIcon) {
 		        isValid &= validateString("Group", thisDialog.find("#change_group_name"), thisDialog.find("#change_group_name_errormsg"), true); //group name is optional								
 		        if (!isValid) return;
 		        
-		        for(var id in selectedItemIds) {				
-		            var $midMenuItem = selectedItemIds[id];
+		        for(var id in selectedItemsInMidMenu) {				
+		            var $midMenuItem = selectedItemsInMidMenu[id];
 		            var jsonObj = $midMenuItem.data("jsonObj");		
 		            var group = trim(thisDialog.find("#change_group_name").val());
                     var apiCommand = "command=updateVirtualMachine&id="+id+"&group="+todb(group);          
-                    doAction(id, $t, apiCommand, vmListAPIMap);
+                    doActionForMidMenu(id, $t, apiCommand, vmListAPIMap);
                 }
 			}, 
 			"Cancel": function() { 
@@ -275,7 +267,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 		}).dialog("open");	
     }
    
-    function doEnableHA($t, selectedItemIds, vmListAPIMap) {            
+    function doEnableHA($t, selectedItemsInMidMenu, vmListAPIMap) {            
 		var message = "<p>Please confirm you want to enable HA for your virtual machine. Once HA is enabled, your Virtual Instance will be automatically restarted in the event it is detected to have failed.</p>";
 			
         $("#dialog_confirmation")
@@ -283,11 +275,11 @@ function clickInstanceGroupHeader($arrowIcon) {
 		.dialog('option', 'buttons', { 						
 			"Confirm": function() { 
 				$(this).dialog("close"); 
-				for(var id in selectedItemIds) {					
-				    var $midMenuItem = selectedItemIds[id];
+				for(var id in selectedItemsInMidMenu) {					
+				    var $midMenuItem = selectedItemsInMidMenu[id];
 		            var jsonObj = $midMenuItem.data("jsonObj");				            
                     var apiCommand = "command=updateVirtualMachine&id="+id+"&haenable=true";          
-                    doAction(id, $t, apiCommand, vmListAPIMap);
+                    doActionForMidMenu(id, $t, apiCommand, vmListAPIMap);
 				}					    
 			}, 
 			"Cancel": function() { 
@@ -296,7 +288,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 		}).dialog("open");
     }
     
-    function doDisableHA($t, selectedItemIds, vmListAPIMap) {            
+    function doDisableHA($t, selectedItemsInMidMenu, vmListAPIMap) {            
 		var message = "<p>Please confirm you want to disable HA for your virtual machine. Once HA is disabled, your Virtual Instance will no longer be be automatically restarted in the event of a failure.</p>";
 			
         $("#dialog_confirmation")
@@ -304,11 +296,11 @@ function clickInstanceGroupHeader($arrowIcon) {
 		.dialog('option', 'buttons', { 						
 			"Confirm": function() { 
 				$(this).dialog("close"); 
-				for(var id in selectedItemIds) {					
-				    var $midMenuItem = selectedItemIds[id];
+				for(var id in selectedItemsInMidMenu) {					
+				    var $midMenuItem = selectedItemsInMidMenu[id];
 		            var jsonObj = $midMenuItem.data("jsonObj");				            
                     var apiCommand = "command=updateVirtualMachine&id="+id+"&haenable=false";          
-                    doAction(id, $t, apiCommand, vmListAPIMap);
+                    doActionForMidMenu(id, $t, apiCommand, vmListAPIMap);
 				}					    
 			}, 
 			"Cancel": function() { 
@@ -445,11 +437,11 @@ function clickInstanceGroupHeader($arrowIcon) {
 		setDateField(json.created, template.find("#created"));
 		
 		if(json.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
-			//if (json.vmstate == "Stopped") 
-			    buildActionLink("Create Template", volumeActionMap, $("#volume_action_menu"), volumeListAPIMap);	
+			if (json.vmstate == "Stopped") 
+			    buildActionLink("Create Template", volumeActionMap, template.find("#volume_action_menu"), volumeListAPIMap);	
 		} 
 		else { //json.type=="DATADISK": "detach disk" is allowed, "create template" is disallowed.			
-			buildActionLink("Detach Disk", volumeActionMap, $("#volume_action_menu"), volumeListAPIMap);				
+			buildActionLink("Detach Disk", volumeActionMap, template.find("#volume_action_menu"), volumeListAPIMap);				
 		}		
 	}
          
@@ -480,12 +472,14 @@ function clickInstanceGroupHeader($arrowIcon) {
 		        }
 		        for(var i=0; i < instanceGroupArray.length; i++) {
 		            if(instanceGroupArray[i]!=null && instanceGroupArray[i].length>0) {
-		        	    var $groupTemplate = $instanceGroupTemplate.clone().show();				        	            	
+		        	    var $groupTemplate = $("#leftmenu_instance_group_template").clone().show();				        	            	
 		                $groupTemplate.find("#group_name").text(instanceGroupArray[i]);
 		                		                			                
 		                $groupTemplate.bind("click", function(event) { 
 		                    //$(this).removeClass("leftmenu_content").addClass("leftmenu_content_selected");			               
                             $("#midmenu_container").empty();
+                            selectedItemsInMidMenu = {};
+                            
                             var groupName = $(this).find("#group_name").text();
                                                         
                             $.ajax({
@@ -511,7 +505,7 @@ function clickInstanceGroupHeader($arrowIcon) {
                             return false;
                         });			                
 		                
-		                $instanceGroupContainer.append($groupTemplate);
+		                $("#leftmenu_instance_group_container").append($groupTemplate);
 		            }
 		        }
 		        
@@ -525,7 +519,7 @@ function clickInstanceGroupHeader($arrowIcon) {
     }
     else if($arrowIcon.hasClass("open") == true) {
         $arrowIcon.removeClass("open").addClass("close");            
-        $instanceGroupContainer.empty();   
+        $("#leftmenu_instance_group_container").empty();   
     }	     
     //***** VM Detail (end) ********************************************************************************    
     $("#right_panel").load("jsp/instance.jsp", function() {	
@@ -1203,11 +1197,11 @@ function clickInstanceGroupHeader($arrowIcon) {
         
         //***** Volume tab (begin) *****************************************************************************
         $("#volume_action_link").bind("mouseover", function(event) {
-            $("#volume_action_menu").show();    
+            $(this).find("#volume_action_menu").show();    
             return false;
         });
         $("#volume_action_link").bind("mouseout", function(event) {
-            $("#volume_action_menu").hide();    
+            $(this).find("#volume_action_menu").hide();    
             return false;
         });
         //***** Volume tab (end) *******************************************************************************

@@ -2200,4 +2200,5 @@ public interface ManagementServer {
 	VolumeVO findVolumeByInstanceAndDeviceId(long instanceId, long deviceId);
 	VolumeVO getRootVolume(Long instanceId);
 	long getPsMaintenanceCount(long podId);
+	boolean isPoolUp(long instanceId);
 }
