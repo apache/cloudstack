@@ -67,8 +67,8 @@ function doCreateTemplate($t, selectedItemIds, listAPIMap) {
             var password = thisDialog.find("#create_template_password").val();				
 			
 			for(var id in selectedItemIds) {
-			   var apiCommand = "command=createTemplate&volumeId="+id+"&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
-			   doAction(id, $t, apiCommand, listAPIMap);	
+			    var apiCommand = "command=createTemplate&volumeId="+id+"&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
+			    doAction(id, $t, apiCommand, listAPIMap);	
 			}		
 		}, 
 		"Cancel": function() { 

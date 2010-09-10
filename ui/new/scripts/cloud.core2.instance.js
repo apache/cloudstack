@@ -445,11 +445,11 @@ function clickInstanceGroupHeader($arrowIcon) {
 		setDateField(json.created, template.find("#created"));
 		
 		if(json.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
-			//if (json.vmstate == "Stopped") 
-			    buildActionLink("Create Template", volumeActionMap, $("#volume_action_menu"), volumeListAPIMap);	
+			if (json.vmstate == "Stopped") 
+			    buildActionLink("Create Template", volumeActionMap, template.find("#volume_action_menu"), volumeListAPIMap);	
 		} 
 		else { //json.type=="DATADISK": "detach disk" is allowed, "create template" is disallowed.			
-			buildActionLink("Detach Disk", volumeActionMap, $("#volume_action_menu"), volumeListAPIMap);				
+			buildActionLink("Detach Disk", volumeActionMap, template.find("#volume_action_menu"), volumeListAPIMap);				
 		}		
 	}
          
@@ -1203,11 +1203,11 @@ function clickInstanceGroupHeader($arrowIcon) {
         
         //***** Volume tab (begin) *****************************************************************************
         $("#volume_action_link").bind("mouseover", function(event) {
-            $("#volume_action_menu").show();    
+            $(this).find("#volume_action_menu").show();    
             return false;
         });
         $("#volume_action_link").bind("mouseout", function(event) {
-            $("#volume_action_menu").hide();    
+            $(this).find("#volume_action_menu").hide();    
             return false;
         });
         //***** Volume tab (end) *******************************************************************************

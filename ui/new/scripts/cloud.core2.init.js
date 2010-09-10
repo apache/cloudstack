@@ -100,11 +100,11 @@ $(document).ready(function() {
     
        
     $("#action_link").bind("mouseover", function(event) {
-        $("#action_menu").show();    
+        $(this).find("#action_menu").show();    
         return false;
     });
     $("#action_link").bind("mouseout", function(event) {
-        $("#action_menu").hide();    
+        $(this).find("#action_menu").hide();    
         return false;
     });
     
