@@ -94,7 +94,7 @@ long milliseconds = new Date().getTime();
                             display: none">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
-                                    <img src="images/actions_actionicon.png" alt="Add VM" /></div>
+                                    <img src="images/actions_actionicon.png" alt="Add" /></div>
                                 <div class="actionpanel_button_links">
                                     Actions</div>
                                 <div class="action_ddarrow">
@@ -635,7 +635,8 @@ long milliseconds = new Date().getTime();
     </div>
    
     <!-- action list item -->
-    <li id="action_list_item"><a id="link" href="#">Stop</a></li>
+    <li id="action_list_item" style="display:none"><a id="link" href="#">(action)</a></li>
+    
     <!-- templates ends here-->
 </body>
 </html>

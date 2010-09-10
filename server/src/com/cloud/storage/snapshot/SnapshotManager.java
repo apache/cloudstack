@@ -26,6 +26,7 @@ import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.Filter;
 
@@ -154,5 +155,7 @@ public interface SnapshotManager extends Manager {
 	boolean deleteSnapshotDirsForAccount(long accountId);
 
     void validateSnapshot(Long userId, SnapshotVO snapshot);
+
+	ImageFormat getImageFormat(Long volumeId);
 
 }

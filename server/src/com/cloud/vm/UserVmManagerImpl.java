@@ -151,6 +151,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
@@ -207,6 +208,7 @@ public class UserVmManagerImpl implements UserVmManager {
     @Inject CapacityDao _capacityDao = null;
     @Inject NetworkManager _networkMgr = null;
     @Inject StorageManager _storageMgr = null;
+    @Inject SnapshotManager _snapshotMgr = null;
     @Inject AgentManager _agentMgr = null;
     @Inject AccountDao _accountDao = null;
     @Inject UserDao _userDao = null;
@@ -692,6 +694,7 @@ public class UserVmManagerImpl implements UserVmManager {
     		_eventDao.persist(event);
             return null;
         }
+        
 
         if (!_vmDao.updateIf(vm, Event.StartRequested, host.getId())) {
             String description = "Unable to start VM " + vm.toString() + " because the state is not correct.";
@@ -2483,10 +2486,11 @@ public class UserVmManagerImpl implements UserVmManager {
                 Long accountId = volume.getAccountId();
                 
                 String origTemplateInstallPath = null;
-                Long origTemplateId = volume.getTemplateId();
+
                 
-                if (origTemplateId != null) {
-                	VMTemplateHostVO vmTemplateHostVO = _templateHostDao.findByHostTemplate(secondaryStorageHost.getId(), origTemplateId);
+                if (ImageFormat.ISO != _snapshotMgr.getImageFormat(volumeId)) {
+                    Long origTemplateId = volume.getTemplateId();
+                    VMTemplateHostVO vmTemplateHostVO = _templateHostDao.findByHostTemplate(secondaryStorageHost.getId(), origTemplateId);
                     origTemplateInstallPath = vmTemplateHostVO.getInstallPath();
                 }
                 

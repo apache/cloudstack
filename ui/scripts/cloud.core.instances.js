@@ -1017,6 +1017,7 @@ function showInstancesTab(p_domainId, p_account) {
 									if(volumes[i].type=="ROOT") {
 										if (volumes[i].vmstate == "Stopped") {
 											detail.find("#volume_action_detach_disk, #volume_acton_separator").hide();
+											detail.find("#volume_action_create_template").show();
 										} else {
 											detail.find("#volume_action_detach_disk, #volume_acton_separator, #volume_action_create_template").hide();
 										}

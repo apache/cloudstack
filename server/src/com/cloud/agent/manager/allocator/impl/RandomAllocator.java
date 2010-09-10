@@ -46,13 +46,13 @@ public class RandomAllocator implements HostAllocator {
 
     @Override
     public Host allocateTo(VmCharacteristics vm, ServiceOffering offering, Host.Type type, DataCenterVO dc, HostPodVO pod,
-    		StoragePoolVO sp, VMTemplateVO template, Set<Host> avoid) {
+    		Long clusterId, VMTemplateVO template, Set<Host> avoid) {
         if (type == Host.Type.Storage) {
             return null;
         }
 
         // list all computing hosts, regardless of whether they support routing...it's random after all
-        List<? extends Host> hosts = _hostDao.listBy(type, sp.getClusterId(), sp.getPodId(), sp.getDataCenterId());
+        List<? extends Host> hosts = _hostDao.listBy(type, clusterId, pod.getId(), dc.getId());
         if (hosts.size() == 0) {
             return null;
         }

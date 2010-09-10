@@ -404,7 +404,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         Enumeration<HostAllocator> en = _hostAllocators.enumeration();
         while (en.hasMoreElements()) {
             final HostAllocator allocator = en.nextElement();
-            final Host host = allocator.allocateTo(vmc, offering, type, dc, pod, sp, template, avoid);
+            final Host host = allocator.allocateTo(vmc, offering, type, dc, pod, sp.getClusterId(), template, avoid);
             if (host == null) {
                 continue;
             } else {

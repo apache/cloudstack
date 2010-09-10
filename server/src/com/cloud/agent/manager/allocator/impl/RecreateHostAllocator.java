@@ -54,8 +54,8 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
     
     @Override
     public Host allocateTo(VmCharacteristics vm, ServiceOffering offering, Host.Type type, DataCenterVO dc, HostPodVO pod,
-            StoragePoolVO sp, VMTemplateVO template, Set<Host> avoid) {
-        Host host = super.allocateTo(vm, offering, type, dc, pod, sp, template, avoid);
+    		Long clusterId, VMTemplateVO template, Set<Host> avoid) {
+        Host host = super.allocateTo(vm, offering, type, dc, pod, clusterId, template, avoid);
         if (host != null) {
             return host;
         }
@@ -77,16 +77,15 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
             s_logger.debug("Removing " + pcId + " from the list of available pods");
             pcs.remove(new PodCluster(new HostPodVO(pcId.first()), pcId.second() != null ? new ClusterVO(pcId.second()) : null));
         }
-        
-        for (PodCluster p : pcs) {
-            List<StoragePoolVO> pools = _poolDao.listBy(dc.getId(), p.getPod().getId(), p.getCluster() == null ? null : p.getCluster().getId());
-            for (StoragePoolVO pool : pools) {
-                host = super.allocateTo(vm, offering, type, dc, p.getPod(), pool, template, avoid);
-                if (host != null) {
-                    return host;
-                }
-            }
-        }
+
+		for (PodCluster p : pcs) {
+			clusterId = p.getCluster() == null ? null : p.getCluster().getId();
+			host = super.allocateTo(vm, offering, type, dc, p.getPod(),
+					clusterId, template, avoid);
+			if (host != null) {
+				return host;
+			}
+		}
 
         s_logger.debug("Unable to find any available pods at all!");
         return null;

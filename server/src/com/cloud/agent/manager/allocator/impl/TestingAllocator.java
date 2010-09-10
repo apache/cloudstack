@@ -48,7 +48,7 @@ public class TestingAllocator implements HostAllocator {
 
     @Override
     public Host allocateTo(VmCharacteristics vm, ServiceOffering offering, Host.Type type, DataCenterVO dc, HostPodVO pod,
-    		StoragePoolVO sp, VMTemplateVO template, Set<Host> avoid) {
+    		Long clusterId, VMTemplateVO template, Set<Host> avoid) {
         if (type == Host.Type.Routing && _routingHost != null) {
             return _hostDao.findById(_routingHost);
         } else if (type == Host.Type.Storage && _storageHost != null) {

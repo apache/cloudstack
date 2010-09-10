@@ -21,3 +21,58 @@ function loadVolumeToRigntPanelFn($rightPanelContent) {
 		
     setDateField(jsonObj.created, $rightPanelContent.find("#created"));	
 }
+
+
+var volumeListAPIMap = {
+    listAPI: "listVolumes",
+    listAPIResponse: "listvolumesresponse",
+    listAPIResponseObj: "volume"
+};           
+  
+var volumeActionMap = {  
+    "Detach Disk": {
+        api: "detachVolume",            
+        isAsyncJob: true,
+        asyncJobResponse: "detachvolumeresponse",
+        afterActionSeccessFn: function(){}
+    },
+    "Create Template": {
+        isAsyncJob: true,
+        asyncJobResponse: "createtemplateresponse",            
+        dialogBeforeActionFn : doCreateTemplate,
+        afterActionSeccessFn: function(){}   
+    }  
+}   
+
+
+
+function doCreateTemplate($t, selectedItemIds, listAPIMap) {   
+    //$("#dialog_create_template").find("#volume_name").text(volumeName);
+	$("#dialog_create_template")
+	.dialog('option', 'buttons', { 						
+		"Create": function() { 
+		    debugger;
+		    var thisDialog = $(this);
+									
+			// validate values
+	        var isValid = true;					
+	        isValid &= validateString("Name", thisDialog.find("#create_template_name"), thisDialog.find("#create_template_name_errormsg"));
+			isValid &= validateString("Display Text", thisDialog.find("#create_template_desc"), thisDialog.find("#create_template_desc_errormsg"));			
+	        if (!isValid) return;		
+	        
+	        var name = trim(thisDialog.find("#create_template_name").val());
+			var desc = trim(thisDialog.find("#create_template_desc").val());
+			var osType = thisDialog.find("#create_template_os_type").val();					
+			var isPublic = thisDialog.find("#create_template_public").val();
+            var password = thisDialog.find("#create_template_password").val();				
+			
+			for(var id in selectedItemIds) {
+			   var apiCommand = "command=createTemplate&volumeId="+id+"&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
+			   doAction(id, $t, apiCommand, listAPIMap);	
+			}		
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		} 
+	}).dialog("open");
+}         

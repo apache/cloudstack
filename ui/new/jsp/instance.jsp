@@ -759,7 +759,11 @@
 <div class="grid_container" id="volume_tab_template" style="display:none">
 	<div class="grid_header">
        	<div class="grid_header_title" id="name"></div>
-        <div class="grid_actionbox"></div>
+        <div class="grid_actionbox" id="volume_action_link"></div>
+        <div class="actionsdropdown_box" id="volume_action_menu" style="display: none;">
+            <ul class="actionsdropdown_boxlist" id="action_list">
+            </ul>
+        </div>
     </div>
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
@@ -795,6 +799,76 @@
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="created"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Template Dialog -->
+<div id="dialog_create_template" title="Create Template" style="display:none">
+    <p>
+        Please specify the following information before creating a template of your disk
+        volume: <b><span id="volume_name"></span></b>. Creating a template could take up
+        to several hours depending on the size of your disk volume.</p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+                <label for="user_name">
+                    Name:</label>
+                <input class="text" type="text" name="create_template_name" id="create_template_name" />
+                <div id="create_template_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label for="user_name">
+                    Display Text:</label>
+                <input class="text" type="text" name="create_template_desc" id="create_template_desc" />
+                <div id="create_template_desc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label for="create_template_os_type">
+                    OS Type:</label>
+                <select class="select" name="create_template_os_type" id="create_template_os_type">
+                </select>
+            </li>
+            <li>
+                <label for="create_template_public">
+                    Public:</label>
+                <select class="select" name="create_template_public" id="create_template_public">                    
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                </select>
+            </li>
+            <li>
+                <label for="user_name">
+                    Password Enabled?:</label>
+                <select class="select" name="create_template_password" id="create_template_password">                    
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                </select>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+<!-- Detach Volume Dialog (begin) -->
+<div id="dialog_detach_volume" title="Detach Volume" style="display: none">
+    <p>
+        Please confirm you want to detach the volume</p>
+    <div class="dialog_formcontent">
+        <div class="selectable_errorbox" style="display: none; width: 250px">
+            <p>
+                <span style="font-style: bold; color: red"><strong>Error</strong>: </span><span id="apply_error_text">
+                    Error text will appear here</span>
+            </p>
+        </div>
+        <div class="selectable_commentbox" style="display: none; width: 250px">
+            <div class="selectable_loader">
+            </div>
+            <p>
+                <strong>Please wait...</strong>
+            </p>
         </div>
     </div>
 </div>
