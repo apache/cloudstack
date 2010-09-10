@@ -1,5 +1,3 @@
-var selectedItemIds = {};
-    
 $(document).ready(function() {     
     $("#accordion_menu").accordion({
         autoHeight: false, 
@@ -45,11 +43,11 @@ $(document).ready(function() {
 
     var $rightPanel = $("#right_panel"); 
     var $addLink = $("#add_link");
-    var $actionLink = $("#action_link");
-    var $actionMenu = $("#action_menu");
-    var $actionList = $actionMenu.find("#action_list");
+    //var $actionLink = $("#action_link");
+    //var $actionMenu = $("#action_menu");
+    //var $actionList = $("#action_menu #action_list");
     var $midmenuContainer = $("#midmenu_container");     
-    var $actionListItem = $("#action_list_item");
+    //var $actionListItem = $("#action_list_item");
     
     $("#leftmenu_instance_group_header").bind("click", function(event) {   
         var $arrowIcon = $(this).find("#arrow_icon");        
@@ -100,16 +98,13 @@ $(document).ready(function() {
     listMidMenuItems("leftmenu_snapshot", "listSnapshots", "listsnapshotsresponse", "snapshot", "name", "volumename", "jsp/snapshot.jsp", loadSnapshotToRigntPanelFn);
     listMidMenuItems("leftmenu_ip", "listPublicIpAddresses", "listpublicipaddressesresponse", "publicipaddress", "ipaddress", "account", "jsp/ip_address.jsp", loadIpToRigntPanelFn);
     
-    
-                  													
-    
-    
-    $actionLink.bind("mouseover", function(event) {
-        $actionMenu.show();    
+       
+    $("#action_link").bind("mouseover", function(event) {
+        $("#action_menu").show();    
         return false;
     });
-    $actionLink.bind("mouseout", function(event) {
-        $actionMenu.hide();    
+    $("#action_link").bind("mouseout", function(event) {
+        $("#action_menu").hide();    
         return false;
     });
     

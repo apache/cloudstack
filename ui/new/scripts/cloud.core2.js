@@ -20,12 +20,43 @@
 
 // Version: @VERSION@
 
-//var jobIdMap;
-function doAction(id, $t, apiCommand, listAPIMap) {   
-    var label = $t.data("label");			           
-    var isAsyncJob = $t.data("isAsyncJob");
-    var asyncJobResponse = $t.data("asyncJobResponse");	
-    var afterActionSeccessFn = $t.data("afterActionSeccessFn");	
+var selectedItemIds = {};
+
+function buildActionLink(label, actionMap, $actionMenu, listAPIMap) {
+    var apiInfo = actionMap[label];
+    var $listItem = $("#action_list_item").clone();
+    $actionMenu.find("#action_list").append($listItem.show());
+    var $link = $listItem.find("#link").text(label);
+    $link.data("label", label);	  
+    $link.data("api", apiInfo.api);				                 
+    $link.data("isAsyncJob", apiInfo.isAsyncJob);
+    $link.data("asyncJobResponse", apiInfo.asyncJobResponse);		     
+    $link.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);
+    $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);
+    $link.bind("click", function(event) {	
+        $actionMenu.hide();    	 
+        var $actionLink = $(this);   
+        var dialogBeforeActionFn = $actionLink.data("dialogBeforeActionFn"); 
+        if(dialogBeforeActionFn == null) {		                   
+            for(var id in selectedItemIds) {	
+                var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
+                doAction(id, $actionLink, apiCommand, listAPIMap); 	
+            }
+        }
+        else {
+            dialogBeforeActionFn($actionLink, selectedItemIds, listAPIMap);	
+        }        
+        selectedItemIds = {}; //clear selected items for action	                          
+        return false;
+    });  
+}
+
+
+function doAction(id, $actionLink, apiCommand, listAPIMap) {   
+    var label = $actionLink.data("label");			           
+    var isAsyncJob = $actionLink.data("isAsyncJob");
+    var asyncJobResponse = $actionLink.data("asyncJobResponse");	
+    var afterActionSeccessFn = $actionLink.data("afterActionSeccessFn");	
     var listAPI = listAPIMap["listAPI"];
     var listAPIResponse = listAPIMap["listAPIResponse"];
     var listAPIResponseObj = listAPIMap["listAPIResponseObj"];
