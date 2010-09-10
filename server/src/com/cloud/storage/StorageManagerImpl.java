@@ -440,7 +440,9 @@ public class StorageManagerImpl implements StorageManager {
         
         for (StoragePoolHostVO poolHost: poolHosts) {
             try {
-                return _agentMgr.send(poolHost.getHostId(), cmds, stopOnError);
+                Answer[] answerRet = _agentMgr.send(poolHost.getHostId(), cmds, stopOnError);
+                return answerRet;
+                
             } catch (AgentUnavailableException e) {
                 s_logger.debug("Moving on because unable to send to " + poolHost.getHostId() + " due to " + e.getMessage());
             } catch (OperationTimedoutException e) {
@@ -1664,7 +1666,7 @@ public class StorageManagerImpl implements StorageManager {
 	            _asyncMgr.updateAsyncJobAttachment(job.getId(), "volume", volume.getId());
 	            _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, volume.getId());
 	        }
-	
+	        
 	        List<StoragePoolVO> poolsToAvoid = new ArrayList<StoragePoolVO>();
 	        Set<Long> podsToAvoid = new HashSet<Long>();
 	        Pair<HostPodVO, Long> pod = null;
@@ -2007,9 +2009,9 @@ public class StorageManagerImpl implements StorageManager {
         	//check to see if other ps exist
         	//if they do, then we can migrate over the system vms to them
         	//if they dont, then just stop all vms on this one
-        	count = _storagePoolDao.countBy(primaryStorage.getPodId(), Status.Up);
+        	List<StoragePoolVO> upPools = _storagePoolDao.listPoolsByStatus(Status.Up);
         	
-        	if(count == 0)
+        	if(upPools==null || upPools.size()==0)
         		restart = false;
         		
         	//2. Get a list of all the volumes within this storage pool

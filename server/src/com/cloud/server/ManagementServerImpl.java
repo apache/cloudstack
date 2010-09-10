@@ -8722,7 +8722,12 @@ public class ManagementServerImpl implements ManagementServer {
     
     @Override
     public long getPsMaintenanceCount(long podId){
-    	return _poolDao.countBy(podId, Status.Maintenance);
+    	List<StoragePoolVO> poolsInMaintenance = _poolDao.listPoolsByStatus(Status.Maintenance);
+    	
+    	if(poolsInMaintenance==null)
+    		return 0;
+    	else
+    		return poolsInMaintenance.size();
     }
 }
 

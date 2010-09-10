@@ -103,5 +103,7 @@ public interface StoragePoolDao extends GenericDao<StoragePoolVO, Long> {
     long countBy(long podId, Status... statuses);
 
 	List<StoragePoolVO> findIfDuplicatePoolsExistByUUID(String uuid);
+
+	List<StoragePoolVO> listPoolsByStatus(Status status);
     
 }
