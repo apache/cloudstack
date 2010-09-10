@@ -1946,22 +1946,21 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             for (VIF vif : vifs) {
                 Network network = vif.getNetwork(conn);
                 Set<PIF> pifs = network.getPIFs(conn);
-                Long vlan = null;
+                long vlan = -1;
                 PIF npif = null;
                 for (PIF pif : pifs) {
                     try {
                         vlan = pif.getVLAN(conn);
-                        if (vlan != null) {
+                        if (vlan != -1 ) {
                             VLAN vland = pif.getVLANMasterOf(conn);
                             npif = vland.getTaggedPIF(conn);
-                            break;
                         }
+                        break;
                     }catch (Exception e) {
-                        vlan = null;
                         continue;
                     }
                 }
-                if (vlan == null) {
+                if (npif == null)  {
                     continue;
                 }
                 network = npif.getNetwork(conn);
