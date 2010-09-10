@@ -48,6 +48,7 @@ import com.cloud.api.commands.DeleteSnapshotCmd;
 import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
 import com.cloud.api.commands.ListSnapshotPoliciesCmd;
+import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -149,22 +150,6 @@ public class SnapshotManagerImpl implements SnapshotManager {
     protected SearchBuilder<SnapshotPolicyVO> PoliciesForSnapSearch;
 
     private final boolean _shouldBeSnapshotCapable = true; // all methods here should be snapshot capable.
-
-    @Override @DB
-    public long createSnapshotAsync(long userId, long volumeId, List<Long> policies) {
-        VolumeVO volume = _volsDao.findById(volumeId);
-        SnapshotOperationParam param = new SnapshotOperationParam(userId, volume.getAccountId(), volumeId, policies);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(userId);
-        job.setAccountId(volume.getAccountId());
-        job.setCmd("CreateSnapshot");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(CreateSnapshotCmd.getResultObjectName());
-        
-        return _asyncMgr.submitAsyncJob(job, true);
-    }
     
     private boolean isVolumeDirty(long volumeId, List<Long> policies) {
         VolumeVO volume = _volsDao.findById(volumeId);
@@ -275,9 +260,48 @@ public class SnapshotManagerImpl implements SnapshotManager {
         
         return runSnap;
     }
-    
+
+    @Override
+    public SnapshotVO createSnapshotDB(CreateSnapshotCmd cmd) throws InvalidParameterValueException, ResourceAllocationException, InternalErrorException {
+        // FIXME:  When a valid snapshot is returned, the snapshot must have been created on the storage server side so that the caller
+        //         knows it is safe to once again resume normal operations on the volume in question.
+        Long volumeId = cmd.getVolumeId();
+        VolumeVO volume = _volsDao.findById(volumeId); // not null, precondition.
+        if (volume.getStatus() != AsyncInstanceCreateStatus.Created) {
+            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in Created state but " + volume.getStatus() + ". Cannot take snapshot.");
+        }
+        StoragePoolVO storagePoolVO = _storagePoolDao.findById(volume.getPoolId());
+        if (storagePoolVO == null) {
+            throw new InvalidParameterValueException("VolumeId: " + volumeId + " does not have a valid storage pool. Is it destroyed?");
+        }
+        if (storagePoolVO.isLocal()) {
+            throw new InvalidParameterValueException("Cannot create a snapshot from a volume residing on a local storage pool, poolId: " + volume.getPoolId());
+        }
+
+        Long instanceId = volume.getInstanceId();
+        if (instanceId != null) {
+            // It is not detached, but attached to a VM
+            if (_vmDao.findById(instanceId) == null) {
+                // It is not a UserVM but a SystemVM or DomR
+                throw new InvalidParameterValueException("Snapshots of volumes attached to System or router VM are not allowed");
+            }
+        }
+        
+        SnapshotScheduleVO schedule = _snapSchedMgr.scheduleManualSnapshot(volumeId);
+        if (schedule == null) {
+            throw new InternalErrorException("Snapshot could not be scheduled because there is another snapshot underway for the same volume. " +
+                                             "Please wait for some time.");
+        }
+
+        List<Long> policyIds = new ArrayList<Long>();
+        policyIds.add(Snapshot.MANUAL_POLICY_ID);
+
+        return createSnapshotImpl(volumeId, policyIds);
+    }
+
     @Override @DB
-    public SnapshotVO createSnapshot(long userId, long volumeId, List<Long> policyIds) throws InvalidParameterValueException, ResourceAllocationException {
+    public SnapshotVO createSnapshotImpl(long volumeId, List<Long> policyIds) throws InvalidParameterValueException, ResourceAllocationException {
+        Long userId = UserContext.current().getUserId();
         // Get the async job id from the context.
         Long jobId = null;
         AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
@@ -316,7 +340,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
             if (prevSnapshot.getRemoved() != null && snapshotStatus != Status.BackedUp) {
                 // The snapshot was deleted and it was deleted not manually but because backing up failed.
                 // Try to back it up again.
-                boolean backedUp = backupSnapshotToSecondaryStorage(userId, prevSnapshot);
+                boolean backedUp = backupSnapshotToSecondaryStorage(prevSnapshot);
                 if (!backedUp) {
                     // If we can't backup this snapshot, there's not much chance that we can't take another one and back it up again.
                     return null;
@@ -398,6 +422,30 @@ public class SnapshotManagerImpl implements SnapshotManager {
         return createdSnapshot;
     }
 
+    @Override
+    public SnapshotVO createSnapshot(CreateSnapshotCmd cmd) throws InvalidParameterValueException, ResourceAllocationException, InternalErrorException {
+        SnapshotVO snapshot = _snapshotDao.findById(cmd.getId());
+        Long snapshotId = null;
+        boolean backedUp = false;
+        if (snapshot != null && snapshot.getStatus() == Snapshot.Status.CreatedOnPrimary) {
+            snapshotId = snapshot.getId();
+            backedUp = backupSnapshotToSecondaryStorage(snapshot);
+            if (!backedUp) {
+                throw new InternalErrorException("Created snapshot: " + snapshotId + " on primary but failed to backup on secondary");
+            }
+        }
+
+        // FIXME:  this is for create snapshot through the API, which is a manual snapshot, is there a better way to keep track of policy ids?  Like
+        //         add them to the command?
+        List<Long> policyIds = new ArrayList<Long>();
+        policyIds.add(Snapshot.MANUAL_POLICY_ID);
+
+        // Cleanup jobs to do after the snapshot has been created.
+        postCreateSnapshot(cmd.getVolumeId(), snapshotId, policyIds, backedUp);
+
+        return snapshot;
+    }
+
     private SnapshotVO updateDBOnCreate(Long id, String snapshotPath) {
         SnapshotVO createdSnapshot = _snapshotDao.findById(id);
         Long volumeId = createdSnapshot.getVolumeId();
@@ -473,16 +521,16 @@ public class SnapshotManagerImpl implements SnapshotManager {
             // It has entered backupSnapshotToSecondaryStorage.
             // But we have no idea whether it was backed up or not.
             // So call backupSnapshotToSecondaryStorage again.
-            backupSnapshotToSecondaryStorage(userId, snapshot);
+            backupSnapshotToSecondaryStorage(snapshot);
             break;
         case BackedUp:
             // No need to do anything as snapshot has already been backed up.
         }
     }
 
-    @Override
     @DB
-    public boolean backupSnapshotToSecondaryStorage(long userId, SnapshotVO snapshot) {
+    private boolean backupSnapshotToSecondaryStorage(SnapshotVO snapshot) {
+        Long userId = UserContext.current().getUserId();
         long id = snapshot.getId();
         
         snapshot.setStatus(Snapshot.Status.BackingUp);
@@ -674,9 +722,9 @@ public class SnapshotManagerImpl implements SnapshotManager {
         return backedUp;
     }
 
-    @Override
     @DB
-    public void postCreateSnapshot(long userId, long volumeId, long snapshotId, List<Long> policyIds, boolean backedUp) {
+    private void postCreateSnapshot(long volumeId, long snapshotId, List<Long> policyIds, boolean backedUp) {
+        Long userId = UserContext.current().getUserId();
         // Update the snapshot_policy_ref table with the created snapshot
         // Get the list of policies for this snapshot
         Transaction txn = Transaction.currentTxn();

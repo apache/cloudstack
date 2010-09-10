@@ -58,6 +58,7 @@ import com.cloud.api.commands.AssignPortForwardingServiceCmd;
 import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
+import com.cloud.api.commands.CreateSnapshotCmd;
 import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeletePortForwardingServiceCmd;
@@ -207,6 +208,7 @@ import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotPolicyVO;
+import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
@@ -5268,42 +5270,6 @@ public class ManagementServerImpl implements ManagementServer {
             mem += so.getRamSize() * 1024L * 1024L;
         }
         return mem;
-    }
-
-    @Override
-    public long createSnapshotAsync(long userId, long volumeId)
-    throws InvalidParameterValueException,
-           ResourceAllocationException,
-           InternalErrorException
-    {
-        VolumeVO volume = findVolumeById(volumeId); // not null, precondition.
-        if (volume.getStatus() != AsyncInstanceCreateStatus.Created) {
-            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in Created state but " + volume.getStatus() + ". Cannot take snapshot.");
-        }
-        StoragePoolVO storagePoolVO = findPoolById(volume.getPoolId());
-        if (storagePoolVO == null) {
-            throw new InvalidParameterValueException("VolumeId: " + volumeId + " does not have a valid storage pool. Is it destroyed?");
-        }
-        if (storagePoolVO.isLocal()) {
-            throw new InvalidParameterValueException("Cannot create a snapshot from a volume residing on a local storage pool, poolId: " + volume.getPoolId());
-        }
-
-        Long instanceId = volume.getInstanceId();
-        if (instanceId != null) {
-            // It is not detached, but attached to a VM
-            if (findUserVMInstanceById(instanceId) == null) {
-                // It is not a UserVM but a SystemVM or DomR
-                throw new InvalidParameterValueException("Snapshots of volumes attached to System or router VM are not allowed");
-            }
-        }
-        
-    	Long jobId = _snapshotScheduler.scheduleManualSnapshot(userId, volumeId);
-    	if (jobId == null) {
-    	    throw new InternalErrorException("Snapshot could not be scheduled because there is another snapshot underway for the same volume. " +
-    	    		                         "Please wait for some time.");
-    	}
-        
-    	return jobId;
     }
 
     @Override

@@ -18,26 +18,18 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseAsyncCreateCmd;
-import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.async.AsyncJobResult;
-import com.cloud.async.AsyncJobVO;
-import com.cloud.async.executor.CreateSnapshotResultObject;
-import com.cloud.exception.ResourceAllocationException;
+import com.cloud.api.response.SnapshotResponse;
 import com.cloud.serializer.SerializerHelper;
-import com.cloud.server.ManagementServer;
+import com.cloud.storage.Snapshot.SnapshotType;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.utils.Pair;
+import com.cloud.user.Account;
 
 @Implementation(createMethod="createSnapshotDB", method="createSnapshot", manager=Manager.SnapshotManager)
 public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
@@ -88,128 +80,27 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getResponse() {
-    }
-	
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//        Long volumeId = (Long) params.get(BaseCmd.Properties.VOLUME_ID.getName());
-//        Long userId = (Long) params.get(BaseCmd.Properties.USER_ID.getName());
+        SnapshotVO snapshot = (SnapshotVO)getResponseObject();
 
-        ManagementServer managementServer = getManagementServer();
-        // Verify that a volume exists with a specified volume ID
-        VolumeVO volume = managementServer.findVolumeById(volumeId);
-        if (volume == null) {
-            throw new ServerApiException (BaseCmd.PARAM_ERROR, "Unable to find a volume with id " + volumeId);
-        }
-        
-        // If an account was passed in, make sure that it matches the account of the volume
-        // FIXME:  permission checks go in business logic
-        checkAccountPermissions(params, volume.getAccountId(), volume.getDomainId(), "volume", volumeId);
+        SnapshotResponse response = new SnapshotResponse();
+        response.setId(snapshot.getId());
 
-        // If command is executed via 8096 port, set userId to the id of System account (1)
-        if (userId == null) {
-            userId = Long.valueOf(1);
+        Account account = getAsyncJobMgr().getExecutorContext().getAccountDao().findById(snapshot.getAccountId());
+        if (account != null) {
+            response.setAccountName(account.getAccountName());
+            response.setDomainId(account.getDomainId());
+            response.setDomainName(getAsyncJobMgr().getExecutorContext().getManagementServer().findDomainIdById(account.getDomainId()).getName());
         }
 
-        try {
-            long jobId = managementServer.createSnapshotAsync(userId, volumeId.longValue());
-            if (jobId == 0) {
-            	s_logger.warn("Unable to schedule async-job for CreateSnapshot comamnd");
-            } else {
-    	        if (s_logger.isDebugEnabled())
-    	        	s_logger.debug("CreateSnapshot command has been accepted, job id: " + jobId);
-            }
-            
-            long snapshotId = waitInstanceCreation(jobId);
-            
-            List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SNAPSHOT_ID.getName(), Long.valueOf(snapshotId))); 
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-            
-            return returnValues;
-        } catch (ResourceAllocationException rae) {
-        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to create a snapshot for volume with id " + volumeId + ": " + rae.getMessage());
-        } catch (ServerApiException apiEx) {
-            throw apiEx;
-        } catch (Exception ex) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to create a snapshot for volume with id " + volumeId + " because of: " + ex.getMessage());
-        } 
-    }
-    
-    protected long waitInstanceCreation(long jobId) {
-        ManagementServer mgr = getManagementServer();
+        VolumeVO volume = managementServer.findVolumeById(snapshot.getVolumeId());
+        String snapshotTypeStr = SnapshotType.values()[snapshot.getSnapshotType()].name();
+        response.setSnapshotType(snapshotTypeStr);
+        response.setVolumeId(snapshot.getVolumeId());
+        response.setVolumeName(volume.getName());
+        response.setVolumeType(volume.getVolumeType().toString());
+        response.setCreated(snapshot.getCreated());
+        response.setName(snapshot.getName());
 
-        long snapshotId = 0;
-        AsyncJobVO job = null;
-        boolean interruped = false;
-        
-        // as job may be executed in other management server, we need to do a database polling here
-        try {
-        	boolean quit = false;
-	        while(!quit) {
-	        	job = mgr.findAsyncJobById(jobId);
-	        	if(job == null) {
-	        		s_logger.error("CreateSnapshotAsync.waitInstanceCreation error: job-" + jobId + " no longer exists");
-	        		break;
-	        	}
-	        	
-	        	switch(job.getStatus()) {
-	        	case AsyncJobResult.STATUS_IN_PROGRESS :
-	        		if(job.getProcessStatus() == BaseCmd.PROGRESS_INSTANCE_CREATED) {
-	        			Long id = (Long)SerializerHelper.fromSerializedString(job.getResult());
-	        			if(id != null) {
-	        				snapshotId = id.longValue();
-	        				if(s_logger.isDebugEnabled())
-	        					s_logger.debug("CreateSnapshotAsync succeeded in taking snapshot on primary, snapshotId: " + snapshotId);
-	        			} else {
-	        				s_logger.warn("CreateSnapshotAsync succeeded in taking snapshot on primary, but value as null?");
-	        			}
-	        			quit = true;
-	        		}
-	        		break;
-	        		
-	        	case AsyncJobResult.STATUS_SUCCEEDED :
-	        		{
-	        		    CreateSnapshotResultObject resultObject = (CreateSnapshotResultObject)SerializerHelper.fromSerializedString(job.getResult());
-	        			if(resultObject != null) {
-	        				snapshotId = resultObject.getId();
-	        				
-	        				if(s_logger.isDebugEnabled())
-	        					s_logger.debug("CreateSnapshotAsync succeeded in backing up snapshot to secondary, snapshotId: " + snapshotId);
-	        			} else {
-	        				s_logger.warn("CreateSnapshotAsync successfully completed, but result object is null?");
-	        			}
-	        		}
-	        		quit = true;
-	        		break;
-	        		
-	        	case AsyncJobResult.STATUS_FAILED :
-        			s_logger.error("CreateSnapshotAsync job-" + jobId + " failed, result: " + job.getResult());
-	        		quit = true;
-	        		break;
-	        	}
-	        	
-	        	if(quit)
-	        		break;
-	        	
-	        	try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-					interruped = true;
-				}
-	        }
-        } finally {
-	        if(interruped)
-	        	Thread.currentThread().interrupt();
-        }
-        return snapshotId;
-	}
-
-    protected long getInstanceIdFromJobSuccessResult(String result) {
-    	CreateSnapshotResultObject resultObject = (CreateSnapshotResultObject)SerializerHelper.fromSerializedString(result);
-    	if(resultObject != null) {
-    		return resultObject.getId();
-    	}
-    	return 0;
+        return SerializerHelper.toSerializedString(response);
     }
 }

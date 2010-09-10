@@ -19,6 +19,7 @@ package com.cloud.storage.snapshot;
 
 import java.util.List;
 
+import com.cloud.api.commands.CreateSnapshotCmd;
 import com.cloud.api.commands.CreateSnapshotPolicyCmd;
 import com.cloud.api.commands.DeleteSnapshotCmd;
 import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
@@ -46,51 +47,38 @@ public interface SnapshotManager extends Manager {
 	public static final int WEEKLYMAX = 8;
 	public static final int MONTHLYMAX = 8;
 	
-	/**
-     * This is the synchronous version of the below command. 
-     * @throws ResourceAllocationException 
-     * @throws InvalidParameterValueException 
+    /**
+     * Create a snapshot of a volume
+     * @param cmd the API command wrapping the parameters for creating the snapshot (mainly volumeId) 
+     * @return the Snapshot that was created
+     * @throws InternalErrorException
      */
-    SnapshotVO createSnapshot(long userId, long volumeId, List<Long> policies) throws InvalidParameterValueException, ResourceAllocationException;
+    SnapshotVO createSnapshotDB(CreateSnapshotCmd cmd) throws InvalidParameterValueException, ResourceAllocationException, InternalErrorException;
 
     /**
-     * Creates a snapshot for the given volume
+     * Create a snapshot of a volume
+     * @param cmd the API command wrapping the parameters for creating the snapshot (mainly volumeId) 
+     * @return the Snapshot that was created
+     * @throws InternalErrorException
      */
-    long createSnapshotAsync(long userId, long volumeId, List<Long> policies);
+    SnapshotVO createSnapshot(CreateSnapshotCmd cmd) throws InvalidParameterValueException, ResourceAllocationException, InternalErrorException;
 
     /**
-     * After successfully creating a snapshot of a volume, copy the snapshot to the secondary storage for 
-     * 1) reliability
-     * 2) So that storage space on Primary is conserved. 
-     * @param userId The user who invoked this command.
-     * @param snapshot Info about the created snapshot on primary storage.
-     * @return True if the snapshot was successfully backed up. 
+     * Create a snapshot of a volume
+     * @param cmd the API command wrapping the parameters for creating the snapshot (mainly volumeId) 
+     * @return the Snapshot that was created
+     * @throws InternalErrorException
      */
-    public boolean backupSnapshotToSecondaryStorage(long userId, SnapshotVO snapshot);
-    
-    /**
-     * Once a snapshot has completed, 
-     * 1) If success, update the database entries 
-     * 2) If success and there are excess snapshots for any of the policies given, delete the oldest one.
-     * 3) Schedule the next recurring snapshot.
-     * @param userId     The user who executed this command
-     * @param volumeId   The volume for which the snapshot is being taken
-     * @param snapshotId The snapshot which has just completed
-     * @param policyIds  The list of policyIds to which this snapshot belongs to
-     * @param backedUp   If true, the snapshot has been successfully created.
-     */
-    void postCreateSnapshot(long userId, long volumeId, long snapshotId, List<Long> policyIds, boolean backedUp);
-    
+    SnapshotVO createSnapshotImpl(long volumeId, List<Long> policyIds) throws InvalidParameterValueException, ResourceAllocationException, InternalErrorException;
+
     /**
      * Creates a volume from the specified snapshot. A new volume is returned which is not attached to any VM Instance
      */
-    //VolumeVO createVolumeFromSnapshot(long userId, long accountId, long snapshotId, String volumeName);
     long createVolumeFromSnapshotAsync(long userId, long accountId, long snapshotId, String volumeName) throws InternalErrorException;
     
     /**
      * Destroys the specified snapshot from secondary storage
      */
-//    long destroySnapshotAsync(long userId, long volumeId, long snapshotId, long policyId);
     boolean destroySnapshot(long userId, long snapshotId, long policyId);
 
     /**

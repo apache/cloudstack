@@ -27,6 +27,7 @@ import com.cloud.api.commands.AssignPortForwardingServiceCmd;
 import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
+import com.cloud.api.commands.CreateSnapshotCmd;
 import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.DeletePortForwardingServiceCmd;
 import com.cloud.api.commands.DeleteUserCmd;
@@ -1113,18 +1114,6 @@ public interface ManagementServer {
     List<CapacityVO> listCapacities(ListCapacityCmd cmd);
 
     public long getMemoryUsagebyHost(Long hostId);
-    
-    /**
-     * Create a snapshot of a volume
-     * @param userId the user for whom this snapshot is being created
-     * @param volumeId the id of the volume
-     * @return the Snapshot that was created
-     * @throws InternalErrorException
-     */
-    long createSnapshotAsync(long userId, long volumeId)
-    throws InvalidParameterValueException,
-           ResourceAllocationException,
-           InternalErrorException;
 
     /**
      * @param userId    The Id of the user who invoked this operation.

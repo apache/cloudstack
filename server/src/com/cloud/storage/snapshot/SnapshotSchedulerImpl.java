@@ -35,6 +35,9 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.exception.InternalErrorException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
@@ -45,8 +48,8 @@ import com.cloud.storage.dao.SnapshotPolicyRefDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.DateUtil.IntervalType;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.TestClock;
@@ -199,7 +202,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
      */
     @Override
     @DB
-    public Long scheduleManualSnapshot(Long userId, Long volumeId) {
+    public SnapshotScheduleVO scheduleManualSnapshot(Long volumeId) {
         // Check if there is another manual snapshot scheduled which hasn't been executed yet.
         SearchCriteria<SnapshotScheduleVO> sc = _snapshotScheduleDao.createSearchCriteria();
         sc.addAnd("volumeId", SearchCriteria.Op.EQ, volumeId);
@@ -219,10 +222,14 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         // There is a race condition here. Two threads enter here. 
         // Both find that there are no manual snapshots for the same volume scheduled.
         // Both try to schedule. One fails, which is what we wanted anyway.
-        _snapshotScheduleDao.persist(snapshotSchedule); 
+        return _snapshotScheduleDao.persist(snapshotSchedule);
+
+        // do this for async?
+        /*
         List<Long> policyIds = new ArrayList<Long>();
         policyIds.add(Snapshot.MANUAL_POLICY_ID);
         return _snapshotManager.createSnapshotAsync(userId, volumeId, policyIds);
+        */
     }
     
     @DB
@@ -232,10 +239,6 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         
         List<SnapshotScheduleVO> snapshotsToBeExecuted = _snapshotScheduleDao.getSchedulesToExecute(_currentTimestamp);
         s_logger.debug("Got " + snapshotsToBeExecuted.size() + " snapshots to be executed at " + displayTime);
-        
-        // This is done for recurring snapshots, which are executed by the system automatically
-        // Hence set user id to that of system
-        long userId = 1;
         
         // The volumes which are going to be snapshotted now.
         // The value contains the list of policies associated with this new snapshot.
@@ -295,14 +298,24 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
                     coincidentSchedules.append(coincidingSchedule.getId() + ", ");
                 }
                 txn.commit();
-                
+
                 s_logger.debug("Scheduling 1 snapshot for volume " + volumeId + " for schedule ids: " + coincidentSchedules + " at " + displayTime);
-                long jobId = _snapshotManager.createSnapshotAsync(userId, volumeId, coincidingPolicies);
-				
+                try {
+                    _snapshotManager.createSnapshotImpl(volumeId, coincidingPolicies);
+                } catch (InternalErrorException ex) {
+                    s_logger.warn("Internal error creating a recurring snapshot for volume " + volumeId + "; message: " + ex.getMessage());
+                    // TODO:  update the schedule w/ an error?  error event?
+                } catch (ResourceAllocationException ex) {
+                    s_logger.warn("Too many snapshots have been created for volume " + volumeId + "; message: " + ex.getMessage());
+                    // TODO:  update the schedule w/ an error?  error event?
+                } catch (InvalidParameterValueException ex) {
+                    s_logger.warn("Invalid parameter creating a snapshot for volume " + volumeId + "; message: " + ex.getMessage());
+                    // TODO:  update the schedule w/ an error?  error event?
+                }
+
                 // Add this snapshot to the listOfVolumesSnapshotted
 				// So that the coinciding schedules don't get scheduled again.
 				listOfVolumesSnapshotted.put(volumeId, coincidingPolicies);
-                
             }
         }
     }
