@@ -1542,7 +1542,8 @@ a:visited {
 	top:24px;
 	left:0;
 	margin:0;
-	padding:0
+	padding:0;
+	z-index:1005;
 }
 
 .actionsdropdown_boxlist {
