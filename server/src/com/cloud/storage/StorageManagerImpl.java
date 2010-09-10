@@ -2007,7 +2007,7 @@ public class StorageManagerImpl implements StorageManager {
         	//check to see if other ps exist
         	//if they do, then we can migrate over the system vms to them
         	//if they dont, then just stop all vms on this one
-        	count = _storagePoolDao.countBy(primaryStorage.getId(), Status.Up);
+        	count = _storagePoolDao.countBy(primaryStorage.getPodId(), Status.Up);
         	
         	if(count == 1)
         		restart = false;

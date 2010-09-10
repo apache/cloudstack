@@ -2199,4 +2199,5 @@ public interface ManagementServer {
 	GuestOSVO getGuestOs(Long guestOsId);
 	VolumeVO findVolumeByInstanceAndDeviceId(long instanceId, long deviceId);
 	VolumeVO getRootVolume(Long instanceId);
+	long getPsMaintenanceCount(long podId);
 }

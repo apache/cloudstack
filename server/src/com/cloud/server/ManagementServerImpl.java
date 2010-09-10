@@ -8719,5 +8719,10 @@ public class ManagementServerImpl implements ManagementServer {
     {
     	return _volumeDao.findByInstanceAndType(instanceId, Volume.VolumeType.ROOT).get(0);
     }
+    
+    @Override
+    public long getPsMaintenanceCount(long podId){
+    	return _poolDao.countBy(podId, Status.Maintenance);
+    }
 }
 
