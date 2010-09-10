@@ -145,10 +145,18 @@
     
     <!--Volume tab (start)-->
     <div style="display:none;" id="tab_content_volume">
-        <!--  
-    	<div class="grid_header">
-        	<div class="grid_header_title">i-2-7-JW</div>
-            <div class="grid_actionbox"></div>
+      <!--<div class="grid_container" id="volume_tab_template" style="display:none">
+        <div class="grid_header">
+            <div class="grid_header_title" id="name"></div>
+            <div class="grid_actionbox">
+            	<div class="grid_actionsdropdown_box">
+                	<ul class="actionsdropdown_boxlist" id="action_list">
+                    	<li> <a href="#"> Delete </a> </li>
+                        <li> <a href="#"> Attach Disk </a> </li>
+                    </ul>
+                </div>
+            </div>
+            
         </div>
         <div class="grid_rows even">
             <div class="grid_row_cell" style="width: 20%;">
@@ -156,16 +164,16 @@
                     ID:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles">6</div>
+                <div class="row_celltitles" id="id"></div>
             </div>
         </div>
         <div class="grid_rows odd">
             <div class="grid_row_cell" style="width: 20%;">
-                <div class="row_celltitles">
+               <div class="row_celltitles">
                     Type:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles">Root (Shared)</div>
+                <div class="row_celltitles" id="type"></div>
             </div>
         </div>
         <div class="grid_rows even">
@@ -174,7 +182,7 @@
                     Size:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles">8 GB</div>
+                <div class="row_celltitles" id="size"></div>
             </div>
         </div>
         <div class="grid_rows odd">
@@ -183,10 +191,12 @@
                     Created:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles">09/03/2010  15:06:04</div>
+                <div class="row_celltitles" id="created"></div>
             </div>
         </div>
-        -->
+    </div>-->
+    	
+        
     </div>
     <!--Volume tab (end)-->
     
