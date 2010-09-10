@@ -72,6 +72,10 @@ public class PreparePrimaryStorageForMaintenanceCmd extends BaseCmd {
     		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Primary storage with id " + storagePoolId + " is not ready for migration, as the status is:"+storagePool.getStatus().toString());
     	}
     	
+    	if(getManagementServer().getPsMaintenanceCount(storagePool.getPodId()) > 0){
+    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR,"There already exist other storage pools in maintenance");
+    	}
+
     	long jobId = 0;
     	try {
     		jobId = getManagementServer().preparePrimaryStorageForMaintenanceAsync(storagePoolId);
