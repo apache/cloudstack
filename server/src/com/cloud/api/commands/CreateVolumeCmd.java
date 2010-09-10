@@ -109,6 +109,7 @@ public class CreateVolumeCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
@@ -117,8 +118,8 @@ public class CreateVolumeCmd extends BaseCmd {
     	return "volume";
     }
     
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
+    @Override
+    public String getResponse() {
     }
 
     @Override

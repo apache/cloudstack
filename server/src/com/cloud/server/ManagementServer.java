@@ -27,7 +27,6 @@ import com.cloud.api.commands.AssignPortForwardingServiceCmd;
 import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
-import com.cloud.api.commands.CreateSnapshotCmd;
 import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.DeletePortForwardingServiceCmd;
 import com.cloud.api.commands.DeleteUserCmd;
@@ -35,6 +34,7 @@ import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
+import com.cloud.api.commands.ListAccountsCmd;
 import com.cloud.api.commands.ListAlertsCmd;
 import com.cloud.api.commands.ListAsyncJobsCmd;
 import com.cloud.api.commands.ListCapacityCmd;
@@ -1049,10 +1049,10 @@ public interface ManagementServer {
     /**
      * Searches for accounts by the specified search criteria
      * Can search by: "id", "name", "domainid", "type"
-     * @param c
+     * @param cmd
      * @return List of Accounts
      */
-    List<AccountVO> searchForAccounts(Criteria c);
+    List<AccountVO> searchForAccounts(ListAccountsCmd cmd);
     
     
     /**

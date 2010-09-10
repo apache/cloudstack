@@ -58,7 +58,6 @@ import com.cloud.api.commands.AssignPortForwardingServiceCmd;
 import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
-import com.cloud.api.commands.CreateSnapshotCmd;
 import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeletePortForwardingServiceCmd;
@@ -67,6 +66,7 @@ import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
+import com.cloud.api.commands.ListAccountsCmd;
 import com.cloud.api.commands.ListAlertsCmd;
 import com.cloud.api.commands.ListAsyncJobsCmd;
 import com.cloud.api.commands.ListCapacityCmd;
@@ -208,7 +208,6 @@ import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotPolicyVO;
-import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
@@ -236,7 +235,6 @@ import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
-import com.cloud.storage.snapshot.SnapshotScheduler;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -351,7 +349,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final AsyncJobManager _asyncMgr;
     private final TemplateManager _tmpltMgr;
     private final SnapshotManager _snapMgr;
-    private final SnapshotScheduler _snapshotScheduler;
     private final NetworkGroupManager _networkGroupMgr;
     private final int _purgeDelay;
     private final boolean _directAttachNetworkExternalIpAllocator;
@@ -444,7 +441,6 @@ public class ManagementServerImpl implements ManagementServer {
         _asyncMgr = locator.getManager(AsyncJobManager.class);
         _tmpltMgr = locator.getManager(TemplateManager.class);
         _snapMgr = locator.getManager(SnapshotManager.class);
-        _snapshotScheduler = locator.getManager(SnapshotScheduler.class);
         _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
         
         _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
@@ -3372,16 +3368,31 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<AccountVO> searchForAccounts(Criteria c) {
-        Filter searchFilter = new Filter(AccountVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+    public List<AccountVO> searchForAccounts(ListAccountsCmd cmd) {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
+        Long accountId = cmd.getId();
 
-        Object id = c.getCriteria(Criteria.ID);
-        Object accountname = c.getCriteria(Criteria.ACCOUNTNAME);
-        Object domainId = c.getCriteria(Criteria.DOMAINID);
-        Object type = c.getCriteria(Criteria.TYPE);
-        Object state = c.getCriteria(Criteria.STATE);
-        Object isCleanupRequired = c.getCriteria(Criteria.ISCLEANUPREQUIRED);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
+        if ((account == null) || isAdmin(account.getType())) {
+            if (domainId == null) {
+                // default domainId to the admin's domain
+                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+            } else if (account != null) {
+                if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid domain id (" + domainId + ") given, unable to list accounts");
+                }
+            }
+        } else {
+            accountId = account.getId();
+        }
+
+        Filter searchFilter = new Filter(AccountVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        Object type = cmd.getAccountType();
+        Object state = cmd.getState();
+        Object isCleanupRequired = cmd.isCleanupRequired();
+        Object keyword = cmd.getKeyword();
 
         SearchBuilder<AccountVO> sb = _accountDao.createSearchBuilder();
         sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.LIKE);
@@ -3390,7 +3401,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("needsCleanup", sb.entity().getNeedsCleanup(), SearchCriteria.Op.EQ);
 
-        if ((id == null) && (domainId != null)) {
+        if ((accountId == null) && (domainId != null)) {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
@@ -3406,12 +3417,12 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("accountName", SearchCriteria.Op.SC, ssc);
         }
 
-        if (accountname != null) {
-            sc.setParameters("accountName", "%" + accountname + "%");
+        if (accountName != null) {
+            sc.setParameters("accountName", "%" + accountName + "%");
         }
 
-        if (id != null) {
-            sc.setParameters("id", id);
+        if (accountId != null) {
+            sc.setParameters("id", accountId);
         } else if (domainId != null) {
             DomainVO domain = _domainDao.findById((Long)domainId);
 
@@ -3719,7 +3730,7 @@ public class ManagementServerImpl implements ManagementServer {
             c.addCriteria(Criteria.HOSTID, cmd.getHostId());
         }
 
-        c.addCriteria(Criteria.ACCOUNTID, accountId);
+        c.addCriteria(Criteria.ACCOUNTID, new Object[] {accountId});
         c.addCriteria(Criteria.ISADMIN, isAdmin); 
 
         return searchForUserVMs(c);
