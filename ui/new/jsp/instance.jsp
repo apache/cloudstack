@@ -145,58 +145,57 @@
     
     <!--Volume tab (start)-->
     <div style="display:none;" id="tab_content_volume">
-      <!--<div class="grid_container" id="volume_tab_template" style="display:none">
-        <div class="grid_header">
-            <div class="grid_header_title" id="name"></div>
-            <div class="grid_actionbox">
-            	<div class="grid_actionsdropdown_box">
-                	<ul class="actionsdropdown_boxlist" id="action_list">
-                    	<li> <a href="#"> Delete </a> </li>
-                        <li> <a href="#"> Attach Disk </a> </li>
-                    </ul>
+        <!--  
+        <div class="grid_container" id="volume_tab_template" style="display:block">
+	        <div class="grid_header">
+       	        <div class="grid_header_title" id="name"></div>
+                <div class="grid_actionbox" id="volume_action_link">
+                    <div class="grid_actionsdropdown_box" id="volume_action_menu" style="display: none;">	                    
+	                    <ul class="actionsdropdown_boxlist" id="action_list">
+                    	    <li> <a href="#"> Delete </a> </li>
+                            <li> <a href="#"> Attach Disk </a> </li>
+                        </ul>	                    
+	                </div>        
+                </div>       
+            </div>
+            <div class="grid_rows even">
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles">
+                        ID:</div>
+                </div>
+                <div class="grid_row_cell" style="width: 79%;">
+                    <div class="row_celltitles" id="id"></div>
                 </div>
             </div>
-            
-        </div>
-        <div class="grid_rows even">
-            <div class="grid_row_cell" style="width: 20%;">
-                <div class="row_celltitles">
-                    ID:</div>
+            <div class="grid_rows odd">
+                <div class="grid_row_cell" style="width: 20%;">
+                   <div class="row_celltitles">
+                        Type:</div>
+                </div>
+                <div class="grid_row_cell" style="width: 79%;">
+                    <div class="row_celltitles" id="type"></div>
+                </div>
             </div>
-            <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="id"></div>
+            <div class="grid_rows even">
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles">
+                        Size:</div>
+                </div>
+                <div class="grid_row_cell" style="width: 79%;">
+                    <div class="row_celltitles" id="size"></div>
+                </div>
             </div>
-        </div>
-        <div class="grid_rows odd">
-            <div class="grid_row_cell" style="width: 20%;">
-               <div class="row_celltitles">
-                    Type:</div>
+            <div class="grid_rows odd">
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles">
+                        Created:</div>
+                </div>
+                <div class="grid_row_cell" style="width: 79%;">
+                    <div class="row_celltitles" id="created"></div>
+                </div>
             </div>
-            <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="type"></div>
-            </div>
-        </div>
-        <div class="grid_rows even">
-            <div class="grid_row_cell" style="width: 20%;">
-                <div class="row_celltitles">
-                    Size:</div>
-            </div>
-            <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="size"></div>
-            </div>
-        </div>
-        <div class="grid_rows odd">
-            <div class="grid_row_cell" style="width: 20%;">
-                <div class="row_celltitles">
-                    Created:</div>
-            </div>
-            <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="created"></div>
-            </div>
-        </div>
-    </div>-->
-    	
-        
+        </div>    
+        -->
     </div>
     <!--Volume tab (end)-->
     
@@ -769,11 +768,12 @@
 <div class="grid_container" id="volume_tab_template" style="display:none">
 	<div class="grid_header">
        	<div class="grid_header_title" id="name"></div>
-        <div class="grid_actionbox" id="volume_action_link"></div>
-        <div class="actionsdropdown_box" id="volume_action_menu" style="display: none;">
-            <ul class="actionsdropdown_boxlist" id="action_list">
-            </ul>
-        </div>
+        <div class="grid_actionbox" id="volume_action_link">
+            <div class="grid_actionsdropdown_box" id="volume_action_menu" style="display: none;">
+	            <ul class="actionsdropdown_boxlist" id="action_list">
+	            </ul>
+	        </div>        
+        </div>       
     </div>
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
