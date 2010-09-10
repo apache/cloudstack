@@ -1,11 +1,22 @@
 package com.cloud.vmware;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSession;
 
 import org.apache.log4j.xml.DOMConfigurator;
 
@@ -15,6 +26,13 @@ import com.vmware.vim25.HostIpConfig;
 import com.vmware.vim25.HostVirtualNicSpec;
 import com.vmware.vim25.HostConfigManager;
 import com.vmware.vim25.HostPortGroupSpec;
+import com.vmware.vim25.HttpNfcLeaseDeviceUrl;
+import com.vmware.vim25.HttpNfcLeaseInfo;
+import com.vmware.vim25.HttpNfcLeaseState;
+import com.vmware.vim25.OvfCreateImportSpecParams;
+import com.vmware.vim25.OvfCreateImportSpecResult;
+import com.vmware.vim25.OvfFileItem;
+import com.vmware.vim25.OvfNetworkMapping;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
 import com.vmware.vim25.VirtualEthernetCard;
@@ -39,6 +57,18 @@ import com.vmware.vim25.TraversalSpec;
 
 public class TestVMWare {
 	private static ExtendedAppUtil cb;
+	
+	static {
+		try {
+			javax.net.ssl.TrustManager[] trustAllCerts = new javax.net.ssl.TrustManager[1]; 
+			javax.net.ssl.TrustManager tm = new TrustAllManager(); 
+			trustAllCerts[0] = tm; 
+			javax.net.ssl.SSLContext sc = javax.net.ssl.SSLContext.getInstance("SSL"); 
+			sc.init(null, trustAllCerts, null); 
+			javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+		} catch (Exception e) {
+		}
+	}
 	
 	private static void setupLog4j() {
 	   File file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
@@ -860,6 +890,174 @@ public class TestVMWare {
 		System.out.println("Enable FT resutl : " + result);
 	}
 	
+	private void importOVF() throws Exception {
+		ManagedObjectReference morHost = new ManagedObjectReference();
+		morHost.setType("HostSystem");
+		morHost.set_value("host-223");
+		
+		ManagedObjectReference morRp = new ManagedObjectReference();
+		morRp.setType("ResourcePool");
+		morRp.set_value("resgroup-222");
+		
+		ManagedObjectReference morDs = new ManagedObjectReference();
+		morDs.setType("Datastore");
+		morDs.set_value("datastore-30");
+		
+		ManagedObjectReference morVmFolder = new ManagedObjectReference();
+		morVmFolder.setType("Folder");
+		morVmFolder.set_value("group-v3");
+		
+		ManagedObjectReference morNetwork = new ManagedObjectReference();
+		morNetwork.setType("Network");
+		morNetwork.set_value("network-32");
+		
+		ManagedObjectReference morOvf = cb.getServiceConnection3().getServiceContent().getOvfManager();
+		
+		OvfCreateImportSpecParams importSpecParams = new OvfCreateImportSpecParams();  
+		importSpecParams.setHostSystem(morHost);  
+		importSpecParams.setLocale("US");  
+		importSpecParams.setEntityName("winxpsp3-ovf-deployed");  
+		importSpecParams.setDeploymentOption("");
+		importSpecParams.setDiskProvisioning("thin");
+
+/*		
+		OvfNetworkMapping networkMapping = new OvfNetworkMapping();  
+		networkMapping.setName("VM Network");  
+		networkMapping.setNetwork(morNetwork); // network);  
+		importSpecParams.setNetworkMapping(new OvfNetworkMapping[] { networkMapping });
+*/		
+		importSpecParams.setPropertyMapping(null);
+		
+		String ovfDescriptor = readOvfContent("C:\\research\\vmware\\winxpsp3-ovf\\winxpsp3-ovf.ovf");
+		OvfCreateImportSpecResult ovfImportResult = cb.getServiceConnection3().getService().createImportSpec(
+			morOvf, ovfDescriptor, morRp, morDs, importSpecParams);
+		
+		if(ovfImportResult != null) {
+			long totalBytes = addTotalBytes(ovfImportResult);
+			
+			ManagedObjectReference morLease = cb.getServiceConnection3().getService().importVApp(morRp, 
+				ovfImportResult.getImportSpec(), morVmFolder, morHost);
+			
+			HttpNfcLeaseState state;
+			for(;;) {
+				state = (HttpNfcLeaseState)cb.getServiceUtil3().getDynamicProperty(morLease, "state");
+				if(state == HttpNfcLeaseState.ready || state == HttpNfcLeaseState.error)
+					break;
+			}
+			
+			if(state == HttpNfcLeaseState.ready) {
+				HttpNfcLeaseInfo httpNfcLeaseInfo = (HttpNfcLeaseInfo)cb.getServiceUtil3().getDynamicProperty(morLease, "info");
+		        HttpNfcLeaseDeviceUrl[] deviceUrls = httpNfcLeaseInfo.getDeviceUrl();  
+		        long bytesAlreadyWritten = 0;  
+		        for (HttpNfcLeaseDeviceUrl deviceUrl : deviceUrls) {
+		        	
+		        	String deviceKey = deviceUrl.getImportKey();  
+		        	for (OvfFileItem ovfFileItem : ovfImportResult.getFileItem()) {  
+		        		if (deviceKey.equals(ovfFileItem.getDeviceId())) {  
+		        			System.out.println("Import key==OvfFileItem device id: " + deviceKey);
+		        			System.out.println("device URL: " + deviceUrl.getUrl());
+		        			
+		        			String absoluteFile = "C:\\research\\vmware\\winxpsp3-ovf\\" + ovfFileItem.getPath();
+		        			String urlToPost = deviceUrl.getUrl().replace("*", "esxhost-1.lab.vmops.com");  
+		        			  	
+	        			  	uploadVmdkFile(ovfFileItem.isCreate(), absoluteFile, urlToPost, bytesAlreadyWritten, totalBytes);  
+	        			  	bytesAlreadyWritten += ovfFileItem.getSize();  
+	        			  	System.out.println("Completed uploading the VMDK file:" + absoluteFile);  
+	        			 }  
+		        	 }  
+		         }
+		         cb.getServiceConnection3().getService().httpNfcLeaseProgress(morLease, 100);
+		         cb.getServiceConnection3().getService().httpNfcLeaseComplete(morLease);
+			}
+		}
+	}
+	
+	 private static void uploadVmdkFile(boolean put, String diskFilePath, String urlStr, long bytesAlreadyWritten, long totalBytes) throws IOException {  
+		 HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {  
+			 public boolean verify(String urlHostName, SSLSession session) {  
+				 return true;  
+			 }  
+		 });  
+
+		 HttpsURLConnection conn = (HttpsURLConnection) new URL(urlStr).openConnection();
+		 
+		 conn.setDoOutput(true);  
+		 conn.setUseCaches(false);
+		 
+		 int CHUCK_LEN = 64*1024;
+		 conn.setChunkedStreamingMode(CHUCK_LEN);  
+		 conn.setRequestMethod(put? "PUT" : "POST"); // Use a post method to write the file.  
+		 conn.setRequestProperty("Connection", "Keep-Alive");  
+		 conn.setRequestProperty("Content-Type", "application/x-vnd.vmware-streamVmdk");  
+		 conn.setRequestProperty("Content-Length", Long.toString(new File(diskFilePath).length()));  
+		 BufferedOutputStream bos = new BufferedOutputStream(conn.getOutputStream());  
+		 BufferedInputStream diskis = new BufferedInputStream(new FileInputStream(diskFilePath));  
+		 int bytesAvailable = diskis.available();  
+		 int bufferSize = Math.min(bytesAvailable, CHUCK_LEN);  
+		 byte[] buffer = new byte[bufferSize];  
+		 long totalBytesWritten = 0;  
+		 while (true) {  
+			 int bytesRead = diskis.read(buffer, 0, bufferSize);  
+			 if (bytesRead == -1)  
+			 {  
+				 System.out.println("Total bytes written: " + totalBytesWritten);  
+				 break;  
+			 }  
+			 totalBytesWritten += bytesRead;  
+			 bos.write(buffer, 0, bufferSize);  
+			 bos.flush();  
+			 System.out.println("Total bytes written: " + totalBytesWritten);
+			 
+/*			 
+			int progressPercent = (int) (((bytesAlreadyWritten + totalBytesWritten) * 100) / totalBytes);  
+			 	leaseUpdater.setPercent(progressPercent);  
+*/			  
+		}
+	 	diskis.close();  
+	 	bos.flush();  
+	 	bos.close();  
+	 	conn.disconnect();  
+	}
+	
+	public static long addTotalBytes(OvfCreateImportSpecResult ovfImportResult) {  
+		OvfFileItem[] fileItemArr = ovfImportResult.getFileItem();  
+		long totalBytes = 0;  
+		if (fileItemArr != null) {  
+			for (OvfFileItem fi : fileItemArr) {  
+				printOvfFileItem(fi);  
+				totalBytes += fi.getSize();  
+			}  
+		}  
+		return totalBytes;  
+	}
+	
+	private static void printOvfFileItem(OvfFileItem fi) {  
+		System.out.println("================ OvfFileItem ================");  
+		System.out.println("chunkSize: " + fi.getChunkSize());  
+		System.out.println("create: " + fi.isCreate());  
+		System.out.println("deviceId: " + fi.getDeviceId());  
+		System.out.println("path: " + fi.getPath());  
+		System.out.println("size: " + fi.getSize());  
+		System.out.println("==============================================");  
+	}  
+	
+	public static String readOvfContent(String ovfFilePath) throws IOException	 {  
+		StringBuffer strContent = new StringBuffer();  
+		BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(ovfFilePath)));  
+		String lineStr;  
+		while ((lineStr = in.readLine()) != null) {  
+			strContent.append(lineStr);  
+		}  
+
+		in.close();  
+		return strContent.toString();  
+	}
+	
+	public static String escapeSpecialChars(String str)	{  
+		str = str.replaceAll("<", "&lt;");  
+		return str.replaceAll(">", "&gt;"); // do not escape "&" -> "&amp;", "\"" -> "&quot;"  
+	}  
+	
 	public static void main(String[] args) throws Exception {
 		setupLog4j();
 		TestVMWare client = new TestVMWare();
@@ -878,7 +1076,7 @@ public class TestVMWare {
 
 			// client.listInventoryFolders();
 			// client.listDataCenters();
-			client.powerOnVm();
+			// client.powerOnVm();
 			// client.createSnapshot();
 			// client.registerTemplate();
 			// client.createVmFromTemplate();
@@ -890,10 +1088,37 @@ public class TestVMWare {
 			// client.getHostVMs();
 			// client.testFT();
 			// client.testFTEnable();
+			
+			client.importOVF();
 		
 			cb.disConnect();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
+	
+	public static class TrustAllManager implements javax.net.ssl.TrustManager, javax.net.ssl.X509TrustManager {
+		
+		public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+			return null;
+		}
+		
+		public boolean isServerTrusted(java.security.cert.X509Certificate[] certs) {
+			return true;
+		}
+		
+		public boolean isClientTrusted(java.security.cert.X509Certificate[] certs) {
+			return true;
+		}
+		
+		public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType)
+	      	throws java.security.cert.CertificateException {
+			return;
+		} 
+		public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType)
+	      	throws java.security.cert.CertificateException {
+			return;
+		}
+	}
 }
+
