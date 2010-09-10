@@ -40,15 +40,7 @@ $(document).ready(function() {
             }             
         }
     });
-
-    var $rightPanel = $("#right_panel"); 
-    var $addLink = $("#add_link");
-    //var $actionLink = $("#action_link");
-    //var $actionMenu = $("#action_menu");
-    //var $actionList = $("#action_menu #action_list");
-    var $midmenuContainer = $("#midmenu_container");     
-    //var $actionListItem = $("#action_list_item");
-    
+ 
     $("#leftmenu_instance_group_header").bind("click", function(event) {   
         var $arrowIcon = $(this).find("#arrow_icon");        
         clickInstanceGroupHeader($arrowIcon);
@@ -75,14 +67,16 @@ $(document).ready(function() {
 	            data: createURL("command="+apiName+"&response=json"),
 	            dataType: "json",
 	            success: function(json) {	
-	                $midmenuContainer.empty();
+	                $("#midmenu_container").empty();
+	                selectedItemsInMidMenu = {};
+	                
 	                var items = json[jsonResponse1][jsonResponse2];
 	                if(items != null && items.length > 0) {
 	                    for(var i=0; i<items.length;i++) {                
                             var item = items[i];
                             var $midmenuItem1 = $midmenuItem.clone();                               
                             jsonToMidmenu(item, $midmenuItem1, propertyForFirstRow, propertyForSecondRow, toRightPanelFn);                             
-                            $midmenuContainer.append($midmenuItem1.show());                            
+                            $("#midmenu_container").append($midmenuItem1.show());                            
                         }  
                     }  
 	            }

@@ -2,16 +2,8 @@ function clickInstanceGroupHeader($arrowIcon) {
     //***** VM Detail (begin) ******************************************************************************
     var $vmPopup
     var $rightPanelHeader;  
-    var $rightPanelContent;   
-    var $instanceGroupContainer = $("#leftmenu_instance_group_container");  
-    var $instanceGroupTemplate = $("#leftmenu_instance_group_template");  
-     
-    //var $actionLink = $("#action_link");
-    //var $actionMenu = $("#action_menu");
-    //var $actionList = $("#action_menu #action_list");
-    var $midmenuContainer = $("#midmenu_container"); 
-    //var $actionListItem = $("#action_list_item");
-     
+    var $rightPanelContent;  
+            
     var $midmenuItem = $("#midmenu_item"); 
       
     var noGroupName = "(no group name)";             
@@ -480,12 +472,14 @@ function clickInstanceGroupHeader($arrowIcon) {
 		        }
 		        for(var i=0; i < instanceGroupArray.length; i++) {
 		            if(instanceGroupArray[i]!=null && instanceGroupArray[i].length>0) {
-		        	    var $groupTemplate = $instanceGroupTemplate.clone().show();				        	            	
+		        	    var $groupTemplate = $("#leftmenu_instance_group_template").clone().show();				        	            	
 		                $groupTemplate.find("#group_name").text(instanceGroupArray[i]);
 		                		                			                
 		                $groupTemplate.bind("click", function(event) { 
 		                    //$(this).removeClass("leftmenu_content").addClass("leftmenu_content_selected");			               
                             $("#midmenu_container").empty();
+                            selectedItemsInMidMenu = {};
+                            
                             var groupName = $(this).find("#group_name").text();
                                                         
                             $.ajax({
@@ -511,7 +505,7 @@ function clickInstanceGroupHeader($arrowIcon) {
                             return false;
                         });			                
 		                
-		                $instanceGroupContainer.append($groupTemplate);
+		                $("#leftmenu_instance_group_container").append($groupTemplate);
 		            }
 		        }
 		        
@@ -525,7 +519,7 @@ function clickInstanceGroupHeader($arrowIcon) {
     }
     else if($arrowIcon.hasClass("open") == true) {
         $arrowIcon.removeClass("open").addClass("close");            
-        $instanceGroupContainer.empty();   
+        $("#leftmenu_instance_group_container").empty();   
     }	     
     //***** VM Detail (end) ********************************************************************************    
     $("#right_panel").load("jsp/instance.jsp", function() {	

@@ -163,7 +163,6 @@ function doActionForMidMenu(id, $actionLink, apiCommand, listAPIMap) {
 }
 
 function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem) { 
-    debugger;
     $midmenuItem.find("#content").removeClass("inaction");
 	$midmenuItem.find("#spinning_wheel").hide();	
 	$midmenuItem.find("#info_icon").addClass("error").show();		
