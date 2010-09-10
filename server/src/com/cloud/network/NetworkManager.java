@@ -213,13 +213,13 @@ public interface NetworkManager extends Manager {
      */
     List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat);
     
-    NetworkProfileVO setupNetworkProfile(AccountVO account, NetworkOfferingVO offering);
-    NetworkProfileVO setupNetworkProfile(AccountVO account, NetworkOfferingVO offering, Map<String, String> params);
-    List<NetworkProfileVO> setupNetworkProfiles(AccountVO account, List<NetworkOfferingVO> offerings);
+    NetworkConfigurationVO setupNetworkProfile(AccountVO account, NetworkOfferingVO offering);
+    NetworkConfigurationVO setupNetworkProfile(AccountVO account, NetworkOfferingVO offering, Map<String, String> params);
+    List<NetworkConfigurationVO> setupNetworkProfiles(AccountVO account, List<NetworkOfferingVO> offerings);
     
-    List<NetworkProfileVO> getSystemAccountNetworkProfiles(String... offeringNames);
+    List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames);
     
-    <K extends VMInstanceVO> List<NicVO> allocate(K vm, List<Pair<NetworkProfileVO, NicVO>> networks) throws InsufficientCapacityException;
+    <K extends VMInstanceVO> List<NicVO> allocate(K vm, List<Pair<NetworkConfigurationVO, NicVO>> networks) throws InsufficientCapacityException;
 
     <K extends VMInstanceVO> List<NicTO> prepare(K vm);
     

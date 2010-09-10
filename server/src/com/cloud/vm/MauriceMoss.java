@@ -33,7 +33,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.NetworkProfileVO;
+import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ImageFormat;
@@ -68,7 +68,7 @@ public class MauriceMoss implements VmManager {
             ServiceOfferingVO serviceOffering,
             Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
             List<Pair<DiskOfferingVO, Long>> dataDiskOfferings,
-            List<Pair<NetworkProfileVO, NicVO>> networks, 
+            List<Pair<NetworkConfigurationVO, NicVO>> networks, 
             DataCenterVO dc,
             AccountVO owner) throws InsufficientCapacityException {
         if (s_logger.isDebugEnabled()) {
@@ -96,7 +96,7 @@ public class MauriceMoss implements VmManager {
             ServiceOfferingVO serviceOffering,
             Long rootSize,
             Pair<DiskOfferingVO, Long> dataDiskOffering,
-            List<Pair<NetworkProfileVO, NicVO>> networks,
+            List<Pair<NetworkConfigurationVO, NicVO>> networks,
             DataCenterVO dc,
             AccountVO owner) throws InsufficientCapacityException {
         List<Pair<DiskOfferingVO, Long>> diskOfferings = new ArrayList<Pair<DiskOfferingVO, Long>>(1);
@@ -110,11 +110,11 @@ public class MauriceMoss implements VmManager {
     public <T extends VMInstanceVO> T allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
-            List<NetworkProfileVO> networkProfiles,
+            List<NetworkConfigurationVO> networkProfiles,
             DataCenterVO dc, AccountVO owner) throws InsufficientCapacityException {
-        List<Pair<NetworkProfileVO, NicVO>> networks = new ArrayList<Pair<NetworkProfileVO, NicVO>>(networkProfiles.size());
-        for (NetworkProfileVO profile : networkProfiles) {
-            networks.add(new Pair<NetworkProfileVO, NicVO>(profile, null));
+        List<Pair<NetworkConfigurationVO, NicVO>> networks = new ArrayList<Pair<NetworkConfigurationVO, NicVO>>(networkProfiles.size());
+        for (NetworkConfigurationVO profile : networkProfiles) {
+            networks.add(new Pair<NetworkConfigurationVO, NicVO>(profile, null));
         }
         return allocate(vm, template, serviceOffering, new Pair<DiskOfferingVO, Long>(serviceOffering, null), null, networks, dc, owner);
     }

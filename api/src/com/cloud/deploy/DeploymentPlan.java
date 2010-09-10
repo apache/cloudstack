@@ -23,5 +23,5 @@ package com.cloud.deploy;
  */
 public interface DeploymentPlan {
     public long getDataCenterId();
-
+    public int getCount();
 }

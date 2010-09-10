@@ -19,10 +19,10 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-import com.cloud.network.NetworkProfileVO;
+import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface NetworkProfileDao extends GenericDao<NetworkProfileVO, Long> {
-    List<NetworkProfileVO> listBy(long accountId);
-    List<NetworkProfileVO> listBy(long accountId, long offeringId);
+public interface NetworkConfigurationDao extends GenericDao<NetworkConfigurationVO, Long> {
+    List<NetworkConfigurationVO> listBy(long accountId);
+    List<NetworkConfigurationVO> listBy(long accountId, long offeringId);
 }

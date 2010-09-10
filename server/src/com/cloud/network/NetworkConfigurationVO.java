@@ -36,8 +36,8 @@ import com.cloud.vm.NetworkCharacteristics;
  *
  */
 @Entity
-@Table(name="network_profiles")
-public class NetworkProfileVO implements NetworkProfile {
+@Table(name="network_configurations")
+public class NetworkConfigurationVO implements NetworkConfiguration {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     Long id;
@@ -45,9 +45,6 @@ public class NetworkProfileVO implements NetworkProfile {
     @Column(name="mode")
     @Enumerated(value=EnumType.STRING)
     Mode mode;
-    
-    @Column(name="account_id")
-    long accountId;
     
     @Column(name="broadcast_domain_type")
     @Enumerated(value=EnumType.STRING)
@@ -69,15 +66,17 @@ public class NetworkProfileVO implements NetworkProfile {
     @Column(name="network_offering_id")
     long networkOfferingId;
     
-    public NetworkProfileVO() {
+    @Column(name="data_center_id")
+    long dataCenterId;
+    
+    public NetworkConfigurationVO() {
     }
     
-    public NetworkProfileVO(NetworkProfile that, long accountId, long offeringId) {
-        this(accountId, that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId);
+    public NetworkConfigurationVO(NetworkConfiguration that, long accountId, long offeringId) {
+        this(that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId);
     }
     
-    public NetworkProfileVO(long accountId, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId) {
-        this.accountId = accountId;
+    public NetworkConfigurationVO(TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId) {
         this.trafficType = trafficType;
         this.mode = mode;
         this.broadcastDomainType = broadcastDomainType;
@@ -101,15 +100,6 @@ public class NetworkProfileVO implements NetworkProfile {
 
     public void setMode(Mode mode) {
         this.mode = mode;
-    }
-
-    @Override
-    public long getAccountId() {
-        return accountId;
-    }
-
-    public void setAccountId(long accountId) {
-        this.accountId = accountId;
     }
 
     @Override

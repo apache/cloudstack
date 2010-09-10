@@ -24,7 +24,7 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.network.NetworkProfileVO;
+import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VMTemplateVO;
@@ -42,7 +42,7 @@ public interface VmManager extends Manager {
             ServiceOfferingVO serviceOffering,
             Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
             List<Pair<DiskOfferingVO, Long>> dataDiskOfferings,
-            List<Pair<NetworkProfileVO, NicVO>> networks, 
+            List<Pair<NetworkConfigurationVO, NicVO>> networks, 
             DataCenterVO dc,
             AccountVO owner) throws InsufficientCapacityException;
     
@@ -51,14 +51,14 @@ public interface VmManager extends Manager {
             ServiceOfferingVO serviceOffering,
             Long rootSize,
             Pair<DiskOfferingVO, Long> dataDiskOffering,
-            List<Pair<NetworkProfileVO, NicVO>> networks,
+            List<Pair<NetworkConfigurationVO, NicVO>> networks,
             DataCenterVO dc,
             AccountVO owner) throws InsufficientCapacityException;
     
     <T extends VMInstanceVO> T allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
-            List<NetworkProfileVO> networkProfiles,
+            List<NetworkConfigurationVO> networkProfiles,
             DataCenterVO dc,
             AccountVO owner) throws InsufficientCapacityException;
     

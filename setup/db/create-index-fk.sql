@@ -26,10 +26,11 @@ ALTER TABLE `cloud`.`op_ha_work` ADD INDEX `i_op_ha_work__step`(`step`);
 ALTER TABLE `cloud`.`op_ha_work` ADD INDEX `i_op_ha_work__type`(`type`);
 ALTER TABLE `cloud`.`op_ha_work` ADD INDEX `i_op_ha_work__mgmt_server_id`(`mgmt_server_id`);
 
-ALTER TABLE `cloud`.`network_profiles` ADD CONSTRAINT `fk_network_profiles__account_id` FOREIGN KEY `fk_network_profiles__account_id`(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`account_network_ref` ADD CONSTRAINT `fk_account_network_ref__account_id` FOREIGN KEY `fk_account_network_ref__account_id`(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`account_network_ref` ADD CONSTRAINT `fk_account_network_ref__network_configuration_id` FOREIGN KEY `fk_account_network_ref__network_configuration_id`(`network_configuration_id`) REFERENCES `network_configurations`(`id`) ON DELETE CASCADE;
 
 ALTER TABLE `cloud`.`nics` ADD CONSTRAINT `fk_nics__instance_id` FOREIGN KEY `fk_nics__instance_id`(`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`nics` ADD CONSTRAINT `fk_nics__network_profile_id` FOREIGN KEY `fk_nics__network_profile_id`(`network_profile_id`) REFERENCES `network_profiles`(`id`);
+ALTER TABLE `cloud`.`nics` ADD CONSTRAINT `fk_nics__network_configuration_id` FOREIGN KEY `fk_nics__network_configuration_id`(`network_configuration_id`) REFERENCES `network_configurations`(`id`);
 
 ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD INDEX `i_op_dc_ip_address_alloc__pod_id__data_center_id__taken` (`pod_id`, `data_center_id`, `taken`, `instance_id`);
 ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD UNIQUE `i_op_dc_ip_address_alloc__ip_address__data_center_id`(`ip_address`, `data_center_id`);

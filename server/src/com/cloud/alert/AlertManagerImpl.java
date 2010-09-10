@@ -333,7 +333,7 @@ public class AlertManagerImpl implements AlertManager {
         List<CapacityVO> newCapacities = new ArrayList<CapacityVO>();
 
         // get all hosts..
-        SearchCriteria sc = _hostDao.createSearchCriteria();
+        SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
         sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
         List<HostVO> hosts = _hostDao.search(sc, null);
 

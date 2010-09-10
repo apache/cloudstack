@@ -74,7 +74,7 @@ DROP TABLE IF EXISTS `cloud`.`storage_pool_details`;
 DROP TABLE IF EXISTS `cloud`.`ext_lun_details`;
 DROP TABLE IF EXISTS `cloud`.`cluster`;
 DROP TABLE IF EXISTS `cloud`.`nics`;
-DROP TABLE IF EXISTS `cloud`.`network_profiles`;
+DROP TABLE IF EXISTS `cloud`.`network_configurations`;
 DROP TABLE IF EXISTS `cloud`.`network_offerings`;
 DROP TABLE IF EXISTS `cloud`.`host_master`;
 DROP TABLE IF EXISTS `cloud`.`hypervisor_properties`;
@@ -87,24 +87,24 @@ CREATE TABLE `cloud`.`hypervsior_properties` (
   `max_network_devices` int(10) NOT NULL COMMENT 'maximum number of network devices'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`network_profiles` (
+CREATE TABLE `cloud`.`network_configurations` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `name` varchar(255) COMMENT 'name for this network',
-  `account_id` bigint unsigned NOT NULL COMMENT 'Owner of this network configuration',
   `traffic_type` varchar(32) NOT NULL COMMENT 'type of traffic going through this network',
   `broadcast_domain_type` varchar(32) NOT NULL COMMENT 'type of broadcast domain used',
-  `gateway` varchar(15) NOT NULL COMMENT 'gateway for this network profile',
+  `gateway` varchar(15) NOT NULL COMMENT 'gateway for this network configuration',
   `cidr` varchar(32) NOT NULL COMMENT 'network cidr',
   `mode` varchar(32) NOT NULL COMMENT 'How to retrieve ip address in this network',
   `vlan_id` bigint unsigned NULL COMMENT 'vlan id if the broadcast_domain_type is the vlan',
-  `network_offering_id` bigint unsigned NOT NULL COMMENT 'network offering id that this profile is created from',
+  `network_offering_id` bigint unsigned NOT NULL COMMENT 'network offering id that this configuration is created from',
+  `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id that this configuration is used in', 
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`account_network_ref` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `account_id` bigint unsigned NOT NULL COMMENT 'account id',
-  `network_profile_id` bigint unsigned NOT NULL COMMENT 'network profile_id',
+  `network_configuration_id` bigint unsigned NOT NULL COMMENT 'network configuration id',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -113,7 +113,7 @@ CREATE TABLE `cloud`.`nics` (
   `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance id',
   `ip4_address` varchar(15) COMMENT 'ip4 address',
   `mac_address` varchar(17) COMMENT 'mac address',
-  `network_profile_id` bigint unsigned NOT NULL COMMENT 'network id',  
+  `network_configuration_id` bigint unsigned NOT NULL COMMENT 'network configuration id',  
   `vlan` varchar(64) COMMENT 'Virtualized network identifier',
   `state` varchar(32) NOT NULL COMMENT 'state of the creation',
   `name` varchar(64) COMMENT 'Name of the component that reserved the ip address',
@@ -125,13 +125,13 @@ CREATE TABLE `cloud`.`nics` (
 CREATE TABLE `cloud`.`network_offerings` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `name` varchar(64) NOT NULL unique COMMENT 'network offering',
-  `type` varchar(32) NOT NULL COMMENT 'type of network',
+  `type` varchar(32) COMMENT 'type of network',
   `display_text` varchar(255) NOT NULL COMMENT 'text to display to users',
   `nw_rate` smallint unsigned COMMENT 'network rate throttle mbits/s',
   `mc_rate` smallint unsigned COMMENT 'mcast rate throttle mbits/s',
   `concurrent_connections` int(10) unsigned COMMENT 'concurrent connections supported on this network',
   `traffic_type` varchar(32) NOT NULL COMMENT 'traffic type carried on this network',
-  `tags` varchar(4096) NOT NULL COMMENT 'tags supported by this offering',
+  `tags` varchar(4096) COMMENT 'tags supported by this offering',
   `system_only` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is this network offering for system use only',
   `created` datetime NOT NULL COMMENT 'time the entry was created',
   `removed` datetime DEFAULT NULL COMMENT 'time the entry was removed',
