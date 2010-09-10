@@ -2009,7 +2009,7 @@ public class StorageManagerImpl implements StorageManager {
         	//if they dont, then just stop all vms on this one
         	count = _storagePoolDao.countBy(primaryStorage.getPodId(), Status.Up);
         	
-        	if(count == 1)
+        	if(count == 0)
         		restart = false;
         		
         	//2. Get a list of all the volumes within this storage pool
