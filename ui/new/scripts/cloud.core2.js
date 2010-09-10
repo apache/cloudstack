@@ -20,7 +20,7 @@
 
 // Version: @VERSION@
 
-var selectedItemIds = {};
+var selectedItemsInMidMenu = {};
 
 function buildActionLink(label, actionMap, $actionMenu, listAPIMap) {
     var apiInfo = actionMap[label];
@@ -38,21 +38,21 @@ function buildActionLink(label, actionMap, $actionMenu, listAPIMap) {
         var $actionLink = $(this);   
         var dialogBeforeActionFn = $actionLink.data("dialogBeforeActionFn"); 
         if(dialogBeforeActionFn == null) {		                   
-            for(var id in selectedItemIds) {	
+            for(var id in selectedItemsInMidMenu) {	
                 var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
-                doAction(id, $actionLink, apiCommand, listAPIMap); 	
+                doActionForMidMenu(id, $actionLink, apiCommand, listAPIMap); 	
             }
         }
         else {
-            dialogBeforeActionFn($actionLink, selectedItemIds, listAPIMap);	
+            dialogBeforeActionFn($actionLink, selectedItemsInMidMenu, listAPIMap);	
         }        
-        selectedItemIds = {}; //clear selected items for action	                          
+        selectedItemsInMidMenu = {}; //clear selected items for action	                          
         return false;
     });  
 }
 
 
-function doAction(id, $actionLink, apiCommand, listAPIMap) {   
+function doActionForMidMenu(id, $actionLink, apiCommand, listAPIMap) {   
     var label = $actionLink.data("label");			           
     var isAsyncJob = $actionLink.data("isAsyncJob");
     var asyncJobResponse = $actionLink.data("asyncJobResponse");	
@@ -113,45 +113,16 @@ function doAction(id, $actionLink, apiCommand, listAPIMap) {
 		                        }
 	                        },
 	                        error: function(XMLHttpResponse) {
-		                        $("body").stopTime(timerKey);
-		                        $midmenuItem.find("#content").removeClass("inaction");
-		                        $midmenuItem.find("#spinning_wheel").hide();	
-		                        $midmenuItem.find("#info_icon").addClass("error").show();	
-		                        
-		                        var errorMsg = "";
-                                if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {
-                                    var start = XMLHttpResponse.responseText.indexOf("h1") + 3;
-                                    var end = XMLHttpResponse.responseText.indexOf("</h1");
-                                    errorMsg = XMLHttpResponse.responseText.substring(start, end);		
-                                }
-                                if(errorMsg.length > 0) 
-                                    $midmenuItem.data("afterActionInfo", ((label + " action failed. Reason: " + sanitizeXSS(unescape(errorMsg)))));    
-                                else
-                                    $midmenuItem.data("afterActionInfo", (label + " action failed."));       	                        
-		                        //handleError(XMLHttpResponse);
+		                        $("body").stopTime(timerKey);		                       		                        
+		                        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem); 		                        
 	                        }
                         });
                     },
                     0
                 );
             },
-            error: function(XMLHttpResponse) {	               		                        
-                $midmenuItem.find("#content").removeClass("inaction");
-		        $midmenuItem.find("#spinning_wheel").hide();	
-		        $midmenuItem.find("#info_icon").addClass("error").show();	
-		        $midmenuItem.data("afterActionInfo", (label + " action failed."));  
-		        
-		        var errorMsg = "";
-                if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {
-                    var start = XMLHttpResponse.responseText.indexOf("h1") + 3;
-                    var end = XMLHttpResponse.responseText.indexOf("</h1");
-                    errorMsg = XMLHttpResponse.responseText.substring(start, end);		
-                }
-                if(errorMsg.length > 0) 
-                    $midmenuItem.data("afterActionInfo", ((label + " action failed. Reason: " + sanitizeXSS(unescape(errorMsg)))));    
-                else
-                    $midmenuItem.data("afterActionInfo", (label + " action failed."));      	     
-                //handleError(XMLHttpResponse);
+            error: function(XMLHttpResponse) {	
+		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem);    
             }
         });     
     }     
@@ -178,19 +149,37 @@ function doAction(id, $actionLink, apiCommand, listAPIMap) {
                         $midmenuItem.find("#info_icon").removeClass("error").show();
 			            $midmenuItem.data("afterActionInfo", (label + " action succeeded.")); 	                                                                                  
                         afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem);	                           
-                    },
-                    error: function(XMLHttpResponse) {                       
-                        $midmenuItem.find("#info_icon").addClass("error").show();
-			            $midmenuItem.data("afterActionInfo", (label + " action failed. Reason: " + sanitizeXSS(result.jobresult)));    
                     }
                 });										
 				//After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
 				//afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem);	   
-	        }
+	        },
+            error: function(XMLHttpResponse) {	
+		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem);    
+            }        
         });
     }
     //Sync job (end) *****
 }
+
+function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem) { 
+    debugger;
+    $midmenuItem.find("#content").removeClass("inaction");
+	$midmenuItem.find("#spinning_wheel").hide();	
+	$midmenuItem.find("#info_icon").addClass("error").show();		
+		                        
+    var errorMsg = "";
+    if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {
+        var start = XMLHttpResponse.responseText.indexOf("h1") + 3;
+        var end = XMLHttpResponse.responseText.indexOf("</h1");
+        errorMsg = XMLHttpResponse.responseText.substring(start, end);		
+    }
+    if(errorMsg.length > 0) 
+        $midmenuItem.data("afterActionInfo", ((label + " action failed. Reason: " + sanitizeXSS(unescape(errorMsg)))));    
+    else
+        $midmenuItem.data("afterActionInfo", (label + " action failed."));  
+}     	                
+
 
 function createURL(url) {
     return url +"&response=json&sessionkey=" + g_sessionKey;
