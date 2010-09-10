@@ -2141,6 +2141,41 @@ a:visited {
 	background:url(../images/grid_actions_hover.png) no-repeat top left;
 }
 
+.gridheader_loaderbox {
+	width:auto;
+	height:20px;
+	float:right;
+	position:absolute;
+	background:#99b2c3 url(../images/gridheader_loadingbg.gif) repeat-x top left;
+	border-left:1px solid #999;
+	margin:0px 0 0 0;
+	padding:0;
+	z-index:1001;
+	right:0;
+}
+
+.gridheader_loaderbox p{
+	width:auto;
+	height:auto;
+	float:left;
+	color:#FFF;
+	font-size:11px;
+	font-weight:bold;
+	margin:2px 5px 0 5px;
+	display:inline;
+	padding:0;
+}
+
+.gridheader_loader {
+	width:16px;
+	height:16px;
+	float:left;
+	background:url(../images/grid_actionloader.gif) no-repeat top left;
+	margin:0 0 0 5px;
+	display:inline;
+	padding:0;
+}
+
 .grid_editbox {
 	width:27px;
 	height:17px;
