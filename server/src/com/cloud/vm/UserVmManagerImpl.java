@@ -694,6 +694,7 @@ public class UserVmManagerImpl implements UserVmManager {
     		_eventDao.persist(event);
             return null;
         }
+        
 
         if (!_vmDao.updateIf(vm, Event.StartRequested, host.getId())) {
             String description = "Unable to start VM " + vm.toString() + " because the state is not correct.";

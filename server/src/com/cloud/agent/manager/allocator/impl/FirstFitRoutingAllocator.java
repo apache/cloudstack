@@ -37,7 +37,7 @@ import com.cloud.vm.VmCharacteristics;
 public class FirstFitRoutingAllocator extends FirstFitAllocator {
     @Override
     public Host allocateTo(VmCharacteristics vm, ServiceOffering offering, Host.Type type, DataCenterVO dc, HostPodVO pod,
-    		StoragePoolVO sp, VMTemplateVO template, Set<Host> avoid) {
+    		Long clusterId, VMTemplateVO template, Set<Host> avoid) {
         try {
             NDC.push("FirstFitRoutingAllocator");
             if (type != Host.Type.Routing) {
@@ -45,7 +45,7 @@ public class FirstFitRoutingAllocator extends FirstFitAllocator {
                 return null;
             }
             //all hosts should be of type routing anyway.
-            return super.allocateTo(vm, offering, type, dc, pod, sp, template, avoid);
+            return super.allocateTo(vm, offering, type, dc, pod, clusterId, template, avoid);
         } finally {
             NDC.pop();
         }
