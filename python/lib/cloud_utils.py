@@ -911,7 +911,7 @@ def prompt_for_hostpods(zonespods):
 	
 # this configures the agent
 
-def setup_agent_config(configfile, host, zone, pod, guid):
+def setup_agent_config(configfile, host, zone, pod, cluster, guid):
 	stderr("Examining Agent configuration")
 	fn = configfile
 	text = file(fn).read(-1)
@@ -949,6 +949,7 @@ def setup_agent_config(configfile, host, zone, pod, guid):
 	    else:
 			confopts["zone"] = zone
 			confopts["pod"] = pod
+			confopts["cluster"] = cluster
 	except (urllib2.URLError,urllib2.HTTPError),e:
 		stderr("Query failed: %s.  Defaulting to zone %s pod %s",str(e),confopts["zone"],confopts["pod"])
 

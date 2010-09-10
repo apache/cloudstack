@@ -211,13 +211,14 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			SCPClient scp = new SCPClient(sshConnection);
 			scp.put(_setupAgentPath, "/usr/bin", "0755");
 		
-			sshExecuteCmd(sshConnection, "/usr/bin/setup_agent.sh " + " -h " + _hostIp + " -z " + dcId + " -p " + podId + " -u " + guid + " 1>&2", 3);
+			sshExecuteCmd(sshConnection, "/usr/bin/setup_agent.sh " + " -h " + _hostIp + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -u " + guid + " 1>&2", 3);
 			
 			KvmDummyResourceBase kvmResource = new KvmDummyResourceBase();
 			Map<String, Object> params = new HashMap<String, Object>();
 			
 			params.put("zone", Long.toString(dcId));
 			params.put("pod", Long.toString(podId));
+			params.put("cluster",  Long.toString(clusterId));
 			params.put("guid", guid + "-LibvirtComputingResource"); /*tail added by agent.java*/
 			params.put("agentIp", agentIp);
 			kvmResource.configure("kvm agent", params);

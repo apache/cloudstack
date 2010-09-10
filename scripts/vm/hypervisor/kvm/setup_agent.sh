@@ -126,7 +126,8 @@ cloud_agent_setup() {
     local host=$1
     local zone=$2
     local pod=$3
-    local guid=$4
+    local cluster=$4
+    local guid=$5
     # disable selinux
     selenabled=`cat /selinux/enforce`
     if [ "$selenabled" == "1" ]
@@ -134,7 +135,7 @@ cloud_agent_setup() {
         sed -i  's/\(SELINUX\)\(.*\)/\1=permissive/' /etc/selinux/config
         setenforce 0
     fi
-    cloud-setup-agent --host=$host --zone=$zone --pod=$pod --guid=$guid -a > /dev/null
+    cloud-setup-agent --host=$host --zone=$zone --pod=$pod --cluster=$cluster --guid=$guid -a > /dev/null
 }
 
 cloud_consoleP_setup() {
@@ -147,9 +148,10 @@ cloud_consoleP_setup() {
 host=
 zone=
 pod=
+cluster=
 guid=
 dflag=
-while getopts 'h:z:p:u:d' OPTION
+while getopts 'h:z:p:u:c:d' OPTION
 do
   case $OPTION in
   h) 
@@ -160,6 +162,9 @@ do
         ;;
   p)    
         pod="$OPTARG"
+        ;;
+  c)    
+        cluster="$OPTARG"
         ;;
   u)    
         guid="$OPTARG"
@@ -173,5 +178,5 @@ done
 
 #install_cloud_agent $dflag
 #install_cloud_consoleP $dflag
-cloud_agent_setup $host $zone $pod $guid
+cloud_agent_setup $host $zone $pod $cluster $guid
 #cloud_consoleP_setup $host $zone $pod

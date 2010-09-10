@@ -222,6 +222,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _host;
     private String _dcId;
     private String _pod;
+    private String _clusterId;
     private long _hvVersion;
     private final String _SSHKEYSPATH = "/root/.ssh";
     private final String _SSHPRVKEYPATH = _SSHKEYSPATH + File.separator + "id_rsa.cloud";
@@ -561,8 +562,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (_pod == null) {
         	_pod = "default";
         }
-		
         
+        _clusterId = (String) params.get("cluster");
+		    
         _createvnetPath = Script.findScript(networkScriptsDir, "createvnet.sh");
         if(_createvnetPath == null) {
             throw new ConfigurationException("Unable to find createvnet.sh");
@@ -2559,6 +2561,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         fillNetworkInformation(cmd);
         cmd.getHostDetails().putAll(getVersionStrings());
         cmd.setPool(_pool);
+        cmd.setCluster(_clusterId);
 
         return new StartupCommand[]{cmd};
 	}

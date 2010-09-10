@@ -40,10 +40,11 @@ backupdir = "@SHAREDSTATEDIR@/@AGENTPATH@/etcbackup"
 
 try:
 # parse cmd line	
-	opts, args = getopt.getopt(sys.argv[1:], "a", ["host=", "zone=", "pod=", "no-kvm", "guid="])
+	opts, args = getopt.getopt(sys.argv[1:], "a", ["host=", "zone=", "pod=", "cluster=", "no-kvm", "guid="])
 	host=None
 	zone=None
 	pod=None
+  	cluster=None
 	guid=None
     	autoMode=False
 	do_check_kvm = True	
@@ -57,6 +58,9 @@ try:
 		elif opt == "--pod":
 			if arg != "":
 				pod = arg
+		elif opt == "--cluster":
+			if arg != "":
+				cluster = arg
 		elif opt == "--guid":
 			if arg != "":
 				guid = arg
@@ -112,7 +116,7 @@ try:
 		stderr(str(e))
 		bail(cloud_utils.E_SETUPFAILED,"Cloud Agent setup failed")
 	
-	setup_agent_config(configfile, host, zone, pod, guid)
+	setup_agent_config(configfile, host, zone, pod, cluster, guid)
 	stderr("Enabling and starting the Cloud Agent")
 	stop_service(servicename)
 	enable_service(servicename)

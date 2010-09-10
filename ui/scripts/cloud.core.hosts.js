@@ -33,10 +33,6 @@ function showHostsTab() {
 	
 	var dialogAddRouting = $("#dialog_add_routing");
 	
-	//xenserver supports cluster. kvm doesn't support cluster.
-    if (getHypervisorType() == "kvm")        
-        dialogAddRouting.find("#cluster_options_container, #new_cluster_radio_container, #existing_cluster_radio_container, #no_cluster_radio_container").hide();    		
-				
 	$.ajax({
 	       data: createURL("command=listZones&available=true&response=json"+maxPageSize),
 		dataType: "json",
@@ -594,11 +590,6 @@ function showHostsTab() {
 			    isValid &= validateString("Host name", dialogBox.find("#host_hostname"), dialogBox.find("#host_hostname_errormsg"));
 			    isValid &= validateString("User name", dialogBox.find("#host_username"), dialogBox.find("#host_username_errormsg"));
 			    isValid &= validateString("Password", dialogBox.find("#host_password"), dialogBox.find("#host_password_errormsg"));						
-			    //xenserver supports cluster. kvm doesn't support cluster.
-				if (getHypervisorType() != "kvm") { 
-			        if(clusterRadio == "new_cluster_radio")
-			            isValid &= validateString("Cluster name", dialogBox.find("#new_cluster_name"), dialogBox.find("#new_cluster_name_errormsg"));		
-			    }			
 			    if (!isValid) return;
 				
 			    var array1 = [];
@@ -614,21 +605,6 @@ function showHostsTab() {
 				
 			    var password = trim(dialogBox.find("#host_password").val());
 			    array1.push("&password="+encodeURIComponent(password));
-				
-				//xenserver supports cluster. kvm doesn't support cluster.
-				if (getHypervisorType() != "kvm") { 
-			        if(clusterRadio == "new_cluster_radio") {
-			            var newClusterName = trim(dialogBox.find("#new_cluster_name").val());
-			            array1.push("&clustername="+encodeURIComponent(newClusterName));				    
-			        }
-			        else if(clusterRadio == "existing_cluster_radio") {
-			            var clusterId = dialogBox.find("#cluster_select").val();
-					    // We will default to no cluster if someone selects Join Cluster with no cluster available.
-					    if (clusterId != '-1') {
-						    array1.push("&clusterid="+clusterId);
-					    }
-			        }
-			    }
 				
 			    var hostname = trim(dialogBox.find("#host_hostname").val());
 			    var url;					

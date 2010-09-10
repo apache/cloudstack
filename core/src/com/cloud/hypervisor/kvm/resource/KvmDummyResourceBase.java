@@ -20,6 +20,7 @@ import com.cloud.vm.State;
 public class KvmDummyResourceBase extends ServerResourceBase implements ServerResource {
 	private String _zoneId;
 	private String _podId;
+	private String _clusterId;
 	private String _guid;
 	private String _agentIp;
 	@Override
@@ -33,6 +34,7 @@ public class KvmDummyResourceBase extends ServerResourceBase implements ServerRe
 		StartupRoutingCommand cmd = new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.Type.KVM, new HashMap<String, String>(), new HashMap<String, State>());
 		cmd.setDataCenter(_zoneId);
 		cmd.setPod(_podId);
+		cmd.setCluster(_clusterId);
 		cmd.setGuid(_guid);
 		cmd.setName(_agentIp);
 		cmd.setPrivateIpAddress(_agentIp);
@@ -63,6 +65,7 @@ public class KvmDummyResourceBase extends ServerResourceBase implements ServerRe
 	public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
 		_zoneId = (String)params.get("zone");
 		_podId = (String)params.get("pod");
+		_clusterId = (String)params.get("cluster");
 		_guid = (String)params.get("guid");
 		_agentIp = (String)params.get("agentIp");
 		return true;
