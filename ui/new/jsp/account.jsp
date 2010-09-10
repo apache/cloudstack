@@ -28,7 +28,14 @@
             <%=t.t("Details")%></div>
     </div>
     <div class="grid_actionpanel">
-    	<div class="grid_actionbox"></div>   
+    	<div class="grid_actionbox">
+        	<div class="grid_actionsdropdown_box">
+                	<ul class="actionsdropdown_boxlist" id="action_list">
+                    	<li> <a href="#"> Delete </a> </li>
+                        <li> <a href="#"> Attach Disk </a> </li>
+                    </ul>
+            </div>
+        </div>   
         <div class="grid_editbox"></div>    
     </div>
     <div class="grid_container">

@@ -2120,6 +2120,7 @@ a:visited {
 	width:100%;
 	height:auto;
 	float:left;
+	position:relative;
 	margin:4px 0 0 0;
 	padding:0 0 0 0;
 }
