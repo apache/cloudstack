@@ -60,11 +60,10 @@ $(document).ready(function() {
     var $midmenuItem = $("#midmenu_item");
     function listMidMenuItems(leftmenuId, apiName, jsonResponse1, jsonResponse2, rightPanelJSP, toMidmenu, toRightPanel) { 
         $("#"+leftmenuId).bind("click", function(event) {
-            $("#right_panel").load(rightPanelJSP);
-        
+            $("#right_panel").load(rightPanelJSP);           
             $.ajax({
 	            cache: false,
-	            data: createURL("command="+apiName+"&response=json"),
+	            data: createURL("command="+apiName+"&pagesize="+midmenuItemCount),
 	            dataType: "json",
 	            success: function(json) {	
 	                $("#midmenu_container").empty();

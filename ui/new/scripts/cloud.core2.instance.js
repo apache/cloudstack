@@ -480,31 +480,26 @@ function clickInstanceGroupHeader($arrowIcon) {
                             $("#midmenu_container").empty();
                             selectedItemsInMidMenu = {};
                             
-                            var groupName = $(this).find("#group_name").text();
+                            var groupName = $(this).find("#group_name").text();                                                         
+                            var group1 = groupName; 
+                            if(groupName == noGroupName)
+                                group1 = "";                           
                                                         
                             $.ajax({
 	                            cache: false,
-	                            data: createURL("command=listVirtualMachines"),
+	                            data: createURL("command=listVirtualMachines&group="+group1+"&pagesize="+midmenuItemCount),
 	                            dataType: "json",
 	                            success: function(json) {		                                                             
 	                                var instances = json.listvirtualmachinesresponse.virtualmachine;                               
-                                    for(var i=0; i<instances.length;i++) {                
-                                        var instance = instances[i];
-                                        var instanceGroup = instance.group;
-                                        if(instanceGroup == null || instanceGroup == "")
-                                            instanceGroup = noGroupName;                                                                       
-                                        if(instanceGroup != groupName)
-                                            continue;                                        
+                                    for(var i=0; i<instances.length;i++) {  
                                         var $template = $midmenuItem.clone();                                                                                                                               
-                                        vmJsonToMidmenu(instance, $template);  
+                                        vmJsonToMidmenu(instances[i], $template);  
                                         $("#midmenu_container").append($template.show());
                                     }    
 	                            }
-	                        });
-                            
+	                        });                            
                             return false;
-                        });			                
-		                
+                        });	
 		                $("#leftmenu_instance_group_container").append($groupTemplate);
 		            }
 		        }

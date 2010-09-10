@@ -192,7 +192,7 @@ function todb(val) {
     return encodeURIComponent(escape(val));
 }
 
-
+var midmenuItemCount = 20;
 
 
 

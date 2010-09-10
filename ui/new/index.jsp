@@ -622,8 +622,7 @@ long milliseconds = new Date().getTime();
                 <p>
                     <strong id="first_row">&nbsp;</strong>
                 </p>
-                <p id="second_row_container">
-                    <span id="second_row_label">&nbsp;</span> 
+                <p id="second_row_container">                    
                     <span id="second_row">&nbsp;</span>
                 </p>
             </div>
