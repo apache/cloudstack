@@ -332,7 +332,7 @@ function clickInstanceGroupHeader($arrowIcon) {
     function vmJsonToMidmenu(json, $midmenuItem) {  
         $midmenuItem.data("jsonObj", json);
         $midmenuItem.data("toRightPanelFn", vmMidmenuToRightPanel);
-        $midmenuItem.attr("id", ("midmenuItemVm_"+json.id));                             
+        $midmenuItem.attr("id", ("midmenuItem_"+json.id));                             
         $midmenuItem.data("id", json.id);        
         
         $midmenuItem.find("#icon").attr("src", "images/status_gray.png");
@@ -425,7 +425,8 @@ function clickInstanceGroupHeader($arrowIcon) {
     }
     
     function vmVolumeJSONToTemplate(json, template) {
-        template.attr("id","vm_volume_"+json.id);		
+        template.attr("id","vm_volume_"+json.id);	
+        template.data("id", json.id);	
 		template.find("#id").text(json.id);	
 		template.find("#name").text(json.name);
 		if (json.storagetype == "shared") 
@@ -438,10 +439,10 @@ function clickInstanceGroupHeader($arrowIcon) {
 		
 		if(json.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
 			if (json.vmstate == "Stopped") 
-			    buildActionLink("Create Template", volumeActionMap, template.find("#volume_action_menu"), volumeListAPIMap);	
+			    buildActionLinkForSingleObject("Create Template", volumeActionMap, template.find("#volume_action_menu"), volumeListAPIMap, template);	
 		} 
 		else { //json.type=="DATADISK": "detach disk" is allowed, "create template" is disallowed.			
-			buildActionLink("Detach Disk", volumeActionMap, template.find("#volume_action_menu"), volumeListAPIMap);				
+			buildActionLinkForSingleObject("Detach Disk", volumeActionMap, template.find("#volume_action_menu"), volumeListAPIMap, template);				
 		}		
 	}
          
@@ -508,7 +509,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 		        $("#action_link").show();
 		        $("#action_menu #action_list").empty();		        
 		        for(var label in vmActionMap) 				            
-		            buildActionLink(label, vmActionMap, $("#action_menu"), vmListAPIMap);	
+		            buildActionLinkForMidMenu(label, vmActionMap, $("#action_menu"), vmListAPIMap);	
 	        }
         });  
     }
@@ -1191,14 +1192,30 @@ function clickInstanceGroupHeader($arrowIcon) {
         //***** VM Wizard (end) ********************************************************************************
         
         //***** Volume tab (begin) *****************************************************************************
-        $("#volume_action_link").bind("mouseover", function(event) {
+        $("#volume_action_link").live("mouseover", function(event) {
             $(this).find("#volume_action_menu").show();    
             return false;
         });
-        $("#volume_action_link").bind("mouseout", function(event) {
+        $("#volume_action_link").live("mouseout", function(event) {
             $(this).find("#volume_action_menu").hide();    
             return false;
         });
+        
+        
+        $.ajax({
+	        data: createURL("command=listOsTypes&response=json"),
+		    dataType: "json",
+		    success: function(json) {
+			    types = json.listostypesresponse.ostype;
+			    if (types != null && types.length > 0) {
+				    var select = $("#dialog_create_template #create_template_os_type").empty();
+				    for (var i = 0; i < types.length; i++) {
+					    select.append("<option value='" + types[i].id + "'>" + types[i].description + "</option>");
+				    }
+			    }	
+		    }
+	    });
+        
         //***** Volume tab (end) *******************************************************************************
     
     

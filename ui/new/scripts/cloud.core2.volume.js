@@ -58,12 +58,13 @@ var volumeActionMap = {
 
 
 
-function doCreateTemplate($t, selectedItemIds, listAPIMap) {   
+function doCreateTemplate($actionLink, listAPIMap, $singleObject) {   
+    //debugger;
     //$("#dialog_create_template").find("#volume_name").text(volumeName);
 	$("#dialog_create_template")
 	.dialog('option', 'buttons', { 						
 		"Create": function() { 
-		    debugger;
+		    //debugger;
 		    var thisDialog = $(this);
 									
 			// validate values
@@ -78,10 +79,11 @@ function doCreateTemplate($t, selectedItemIds, listAPIMap) {
 			var isPublic = thisDialog.find("#create_template_public").val();
             var password = thisDialog.find("#create_template_password").val();				
 			
-			for(var id in selectedItemIds) {
+			var id = $singleObject.data("id");
+			//for(var id in selectedItemIds) {
 			    var apiCommand = "command=createTemplate&volumeId="+id+"&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
-			    doAction(id, $t, apiCommand, listAPIMap);	
-			}		
+			    doActionToSingleObject(id, $actionLink, apiCommand, listAPIMap, $singleObject);	
+			//}		
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 

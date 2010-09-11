@@ -779,8 +779,10 @@
 	            </ul>
 	        </div>        
         </div>
-        
-               
+        <div class="gridheader_loaderbox" id="spinning_wheel" style="display:none">
+            <div class="gridheader_loader" id="icon"></div>
+            <p id="description"> Waiting &hellip; </p>
+        </div>              
     </div>
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">

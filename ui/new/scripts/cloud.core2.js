@@ -20,9 +20,10 @@
 
 // Version: @VERSION@
 
+//***** actions for middle menu (begin) ************************************************************************
 var selectedItemsInMidMenu = {};
 
-function buildActionLink(label, actionMap, $actionMenu, listAPIMap) {
+function buildActionLinkForMidMenu(label, actionMap, $actionMenu, listAPIMap) {
     var apiInfo = actionMap[label];
     var $listItem = $("#action_list_item").clone();
     $actionMenu.find("#action_list").append($listItem.show());
@@ -49,8 +50,7 @@ function buildActionLink(label, actionMap, $actionMenu, listAPIMap) {
         selectedItemsInMidMenu = {}; //clear selected items for action	                          
         return false;
     });  
-}
-
+} 
 
 function doActionForMidMenu(id, $actionLink, apiCommand, listAPIMap) {   
     var label = $actionLink.data("label");			           
@@ -61,7 +61,7 @@ function doActionForMidMenu(id, $actionLink, apiCommand, listAPIMap) {
     var listAPIResponse = listAPIMap["listAPIResponse"];
     var listAPIResponseObj = listAPIMap["listAPIResponseObj"];
         
-    var $midmenuItem = $("#midmenuItemVm_"+id);	
+    var $midmenuItem = $("#midmenuItem_"+id);	
     $midmenuItem.find("#content").removeClass("selected").addClass("inaction");                          
     $midmenuItem.find("#spinning_wheel").addClass("midmenu_addingloader").show();	
     $midmenuItem.find("#info_icon").hide();		  
@@ -177,7 +177,176 @@ function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem) {
         $midmenuItem.data("afterActionInfo", ((label + " action failed. Reason: " + sanitizeXSS(unescape(errorMsg)))));    
     else
         $midmenuItem.data("afterActionInfo", (label + " action failed."));  
-}     	                
+}    	                
+//***** actions for middle menu (end) **************************************************************************
+
+//***** actions for right panel (begin) ************************************************************************
+//var selectedItemsInSingleObject = {};
+
+function buildActionLinkForSingleObject(label, actionMap, $actionMenu, listAPIMap, $singleObject) {
+    //debugger;
+    var apiInfo = actionMap[label];
+    var $listItem = $("#action_list_item").clone();
+    $actionMenu.find("#action_list").append($listItem.show());
+    var $link = $listItem.find("#link").text(label);
+    $link.data("label", label);	  
+    $link.data("api", apiInfo.api);				                 
+    $link.data("isAsyncJob", apiInfo.isAsyncJob);
+    $link.data("asyncJobResponse", apiInfo.asyncJobResponse);		     
+    $link.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);
+    $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);
+    
+    var id = $singleObject.data("id");
+    
+    $link.bind("click", function(event) {
+        //debugger;	
+        $actionMenu.hide();    	 
+        var $actionLink = $(this);   
+        var dialogBeforeActionFn = $actionLink.data("dialogBeforeActionFn"); 
+        if(dialogBeforeActionFn == null) {		                   
+            //for(var id in selectedItemsInSingleObject) {	
+                var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
+                doActionToSingleObject(id, $actionLink, apiCommand, listAPIMap, $singleObject); 	
+            //}
+        }
+        else {
+            dialogBeforeActionFn($actionLink, listAPIMap, $singleObject);	
+        }        
+        //selectedItemsInSingleObject = {}; //clear selected items for action	                          
+        return false;
+    });  
+} 
+
+function doActionToSingleObject(id, $actionLink, apiCommand, listAPIMap, $singleObject) {   
+    //debugger;
+    var label = $actionLink.data("label");			           
+    var isAsyncJob = $actionLink.data("isAsyncJob");
+    var asyncJobResponse = $actionLink.data("asyncJobResponse");	
+    var afterActionSeccessFn = $actionLink.data("afterActionSeccessFn");	
+    var listAPI = listAPIMap["listAPI"];
+    var listAPIResponse = listAPIMap["listAPIResponse"];
+    var listAPIResponseObj = listAPIMap["listAPIResponseObj"];
+      
+    var $spinningWheel = $singleObject.find("#spinning_wheel");
+    $spinningWheel.find("#description").text(label + "....");  
+    $spinningWheel.show();        
+    
+	//Async job (begin) *****
+	if(isAsyncJob == true) {	                     
+        $.ajax({
+            data: createURL(apiCommand),
+            dataType: "json",           
+            success: function(json) {	
+                //debugger;                	                        
+                var jobId = json[asyncJobResponse].jobid;                  			                        
+                var timerKey = "asyncJob_" + jobId;					                       
+                $("body").everyTime(
+                    10000,
+                    timerKey,
+                    function() {
+                        $.ajax({
+                            data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+	                        dataType: "json",									                    					                    
+	                        success: function(json) {	
+	                            //debugger;	                            							                       
+		                        var result = json.queryasyncjobresultresponse;										                   
+		                        if (result.jobstatus == 0) {
+			                        return; //Job has not completed
+		                        } else {											                    
+			                        $("body").stopTime(timerKey);	
+			                        $spinningWheel.hide();      		                       
+			                        if (result.jobstatus == 1) { // Succeeded 
+			                            $singleObject.data("afterActionInfo", (label + " action succeeded.")); 
+			                            
+			                            //DestroyVirtualMachine API doesn't return an embedded object on success (Bug 6041)
+	                                    //Before Bug 6041 get fixed, use the temporary solution below.							            
+	                                    $.ajax({
+                                            cache: false,
+                                            data: createURL("command="+listAPI+"&id="+id),
+                                            dataType: "json",                                            
+                                            success: function(json) {		                                                                                  
+                                                afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $singleObject);	                        
+                                            }
+                                        });										
+				                        //After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
+			                            //afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $singleObject);	   
+			                            
+			                        } else if (result.jobstatus == 2) { // Failed				                            
+			                            $singleObject.data("afterActionInfo", (label + " action failed. Reason: " + sanitizeXSS(result.jobresult)));    
+			                        }											                    
+		                        }
+	                        },
+	                        error: function(XMLHttpResponse) {
+	                            //debugger;
+		                        $("body").stopTime(timerKey);		                       		                        
+		                        handleErrorInSingleObject(XMLHttpResponse, $singleObject); 		                        
+	                        }
+                        });
+                    },
+                    0
+                );
+            },
+            error: function(XMLHttpResponse) {	 
+                //debugger;
+		        handleErrorInSingleObject(XMLHttpResponse, $singleObject);    
+            }
+        });     
+    }     
+    //Async job (end) *****
+    
+    //Sync job (begin) *****
+    else { 	
+        //debugger;              
+        $.ajax({
+            data: createURL(apiCommand),
+	        dataType: "json",
+	        async: false,
+	        success: function(json) {
+	            //debugger;
+	            $spinningWheel.hide();      
+														              
+	            //RecoverVirtualMachine API doesn't return an embedded object on success (Bug 6037)
+	            //Before Bug 6037 get fixed, use the temporary solution below.							            
+	            $.ajax({
+                    cache: false,
+                    data: createURL("command="+listAPI+"&id="+id),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {
+			            $singleObject.data("afterActionInfo", (label + " action succeeded.")); 	                                                                                  
+                        afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $singleObject);	                           
+                    }
+                });										
+				//After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
+				//afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $singleObject);	   
+	        },
+            error: function(XMLHttpResponse) {	
+                //debugger;
+		        handleErrorInSingleObject(XMLHttpResponse, $singleObject);    
+            }        
+        });
+    }
+    //Sync job (end) *****
+}
+
+function handleErrorInSingleObject(XMLHttpResponse, $singleObject) { 
+    //debugger;
+    $spinningWheel.hide();      
+		                        
+    var errorMsg = "";
+    if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {
+        var start = XMLHttpResponse.responseText.indexOf("h1") + 3;
+        var end = XMLHttpResponse.responseText.indexOf("</h1");
+        errorMsg = XMLHttpResponse.responseText.substring(start, end);		
+    }
+    if(errorMsg.length > 0) 
+        $singleObject.data("afterActionInfo", ((label + " action failed. Reason: " + sanitizeXSS(unescape(errorMsg)))));    
+    else
+        $singleObject.data("afterActionInfo", (label + " action failed."));  
+}    	                
+//***** actions for right panel (end) **************************************************************************
+
+
 
 
 function createURL(url) {
