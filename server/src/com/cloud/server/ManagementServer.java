@@ -28,6 +28,7 @@ import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.CreateUserCmd;
+import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeletePortForwardingServiceCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
@@ -348,19 +349,6 @@ public interface ManagementServer {
      */
     Long getAccountIdForVlan(long vlanDbId);
 
-    /**
-     * Creates a data volume
-     * @param accountId
-     * @pparam userId
-     * @param name - name for the volume
-     * @param zoneId - id of the zone to create this volume on
-     * @param diskOfferingId - id of the disk offering to create this volume with
-     * @param size - size of the volume
-     * @return true if success, false if not
-     */
-    VolumeVO createVolume(long accountId, long userId, String name, long zoneId, long diskOfferingId, long startEventId, long size) throws InternalErrorException;
-    long createVolumeAsync(long accountId, long userId, String name, long zoneId, long diskOfferingId, long size) throws InvalidParameterValueException, InternalErrorException, ResourceAllocationException;
-    
     /**
      * Finds the root volume of the VM
      * @param vmId
@@ -1129,8 +1117,6 @@ public interface ManagementServer {
      */
     boolean destroyTemplateSnapshot(Long userId, long snapshotId);
 
-    long createVolumeFromSnapshotAsync(long userId, long accountId, long snapshotId, String volumeName) throws InternalErrorException, ResourceAllocationException;
-    
     /**
      * List all snapshots of a disk volume. Optionaly lists snapshots created by specified interval
      * @param cmd the command containing the search criteria (order by, limit, etc.)
@@ -1409,7 +1395,6 @@ public interface ManagementServer {
 	
 	boolean checkLocalStorageConfigVal(); 
 
-	boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException;
 	boolean updateUser(UpdateUserCmd cmd) throws InvalidParameterValueException;
 	boolean updateTemplatePermissions(UpdateTemplateOrIsoPermissionsCmd cmd)throws InvalidParameterValueException, PermissionDeniedException,InternalErrorException;
 	String[] createApiKeyAndSecretKey(RegisterCmd cmd);

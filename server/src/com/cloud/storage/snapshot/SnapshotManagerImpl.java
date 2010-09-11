@@ -1088,36 +1088,6 @@ public class SnapshotManagerImpl implements SnapshotManager {
     }
 
     @Override
-    public long createVolumeFromSnapshotAsync(long userId, long accountId, long snapshotId, String volumeName) throws InternalErrorException {
-        // Precondition the snapshot is valid
-        SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
-        VolumeVO volume = _volsDao.findById(snapshot.getVolumeId());
-        
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(accountId);
-        event.setType(EventTypes.EVENT_VOLUME_CREATE);
-        event.setState(EventState.Scheduled);
-        event.setDescription("Scheduled async job for creating volume from snapshot with id: "+snapshotId);
-        event = _eventDao.persist(event);
-
-        SnapshotOperationParam param = new SnapshotOperationParam(userId, accountId, volume.getId(), snapshotId, volumeName);
-        param.setEventId(event.getId());
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(userId);
-        job.setAccountId(snapshot.getAccountId());
-        job.setCmd("CreateVolumeFromSnapshot");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(CreateVolumeCmd.getResultObjectName());
-
-        return _asyncMgr.submitAsyncJob(job);
-        
-    }
-
-   
-    @Override
 	public boolean deleteSnapshotDirsForAccount(long accountId) {
         
         List<VolumeVO> volumes = _volsDao.findByAccount(accountId);
@@ -1531,6 +1501,12 @@ public class SnapshotManagerImpl implements SnapshotManager {
         PoliciesForSnapSearch.join("policyRef", policyRefSearch, policyRefSearch.entity().getPolicyId(), PoliciesForSnapSearch.entity().getId());
         policyRefSearch.done();
         PoliciesForSnapSearch.done();
+
+        String maxVolumeSizeInGbString = configDao.get("max.volume.size.gb");
+        int maxVolumeSizeGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2000);
+
+        _maxVolumeSizeInGb = maxVolumeSizeGb;
+
         s_logger.info("Snapshot Manager is configured.");
 
         return true;

@@ -65,6 +65,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
 import com.cloud.api.commands.CreateStoragePoolCmd;
+import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeletePoolCmd;
 import com.cloud.api.commands.DeleteVolumeCmd;
 import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
@@ -97,6 +98,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.StorageUnavailableException;
@@ -132,6 +134,7 @@ import com.cloud.storage.snapshot.SnapshotScheduler;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
@@ -212,6 +215,7 @@ public class StorageManagerImpl implements StorageManager {
     protected int _pingInterval = 60; // seconds
     protected int _hostRetry;
     protected int _overProvisioningFactor = 1;
+    private int _maxVolumeSizeInGb;
 
     private int _totalRetries;
     private int _pauseInterval;
@@ -396,16 +400,16 @@ public class StorageManagerImpl implements StorageManager {
         return answers[0];
     }
     
-    protected DiskCharacteristicsTO createDiskCharacteristics(VolumeVO volume, VMTemplateVO template, DataCenterVO dc, DiskOfferingVO diskOffering) {
+    private DiskCharacteristicsTO createDiskCharacteristics(VolumeVO volume, VMTemplateVO template, long dataCenterId, DiskOfferingVO diskOffering) {
         if (volume.getVolumeType() == VolumeType.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
             SearchCriteria<VMTemplateHostVO> sc = HostTemplateStatesSearch.create();
             sc.setParameters("id", template.getId());
             sc.setParameters("state", com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
-            sc.setJoinParameters("host", "dcId", dc.getId());
+            sc.setJoinParameters("host", "dcId", dataCenterId);
         
             List<VMTemplateHostVO> sss = _vmTemplateHostDao.search(sc, null);
             if (sss.size() == 0) {
-                throw new CloudRuntimeException("Template " + template.getName() + " has not been completely downloaded to zone " + dc.getId());
+                throw new CloudRuntimeException("Template " + template.getName() + " has not been completely downloaded to zone " + dataCenterId);
             }
             VMTemplateHostVO ss = sss.get(0);
         
@@ -427,43 +431,14 @@ public class StorageManagerImpl implements StorageManager {
     }
     
     @DB
-    protected Pair<VolumeVO, String> createVolumeFromSnapshot(long userId, long accountId, String userSpecifiedName, DataCenterVO dc, DiskOfferingVO diskOffering, SnapshotVO snapshot, String templatePath, Long originalVolumeSize, VMTemplateVO template) {
-        
+    private Pair<VolumeVO, String> createVolumeFromSnapshot(VolumeVO volume, SnapshotVO snapshot, String templatePath, Long originalVolumeSize, VMTemplateVO template) {
         VolumeVO createdVolume = null;
         Long volumeId = null;
         
         String volumeFolder = null;
         
         // Create the Volume object and save it so that we can return it to the user
-        Account account = _accountDao.findById(accountId);
-        VolumeVO volume = new VolumeVO(null, userSpecifiedName, -1, -1, -1, -1, new Long(-1), null, null, 0, Volume.VolumeType.DATADISK);
-        volume.setPoolId(null);
-        volume.setDataCenterId(dc.getId());
-        volume.setPodId(null);
-        volume.setAccountId(accountId);
-        volume.setDomainId(account.getDomainId().longValue());
-        volume.setMirrorState(MirrorState.NOT_MIRRORED);
-        if (diskOffering != null) {
-            volume.setDiskOfferingId(diskOffering.getId());
-        }
-        volume.setSize(originalVolumeSize);
-        volume.setStorageResourceType(StorageResourceType.STORAGE_POOL);
-        volume.setInstanceId(null);
-        volume.setUpdated(new Date());
-        volume.setStatus(AsyncInstanceCreateStatus.Creating);
-        volume = _volsDao.persist(volume);
-        volumeId = volume.getId();
-        
-        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-        if(asyncExecutor != null) {
-            AsyncJobVO job = asyncExecutor.getJob();
-
-            if(s_logger.isInfoEnabled())
-                s_logger.info("CreateVolume created a new instance " + volumeId + ", update async job-" + job.getId() + " progress status");
-            
-            _asyncMgr.updateAsyncJobAttachment(job.getId(), "volume", volumeId);
-            _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, volumeId);
-        }
+        Account account = _accountDao.findById(volume.getAccountId());
         
         final HashSet<StoragePool> poolsToAvoid = new HashSet<StoragePool>();
         StoragePoolVO pool = null;
@@ -472,10 +447,10 @@ public class StorageManagerImpl implements StorageManager {
         Pair<HostPodVO, Long> pod = null;
         String volumeUUID = null;
         String details = null;
-        
-        DiskCharacteristicsTO dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
-        
-        
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+        DataCenterVO dc = _dcDao.findById(volume.getDataCenterId());
+        DiskCharacteristicsTO dskCh = createDiskCharacteristics(volume, template, dc.getId(), diskOffering);
+
         // Determine what pod to store the volume in
         while ((pod = _agentMgr.findPod(null, null, dc, account.getId(), podsToAvoid)) != null) {
             // Determine what storage pool to store the volume in
@@ -484,13 +459,13 @@ public class StorageManagerImpl implements StorageManager {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Attempting to create volume from snapshotId: " + snapshot.getId() + " on storage pool " + pool.getName());
                 }
-                
+
                 // Get the newly created VDI from the snapshot.
                 // This will return a null volumePath if it could not be created
-                Pair<String, String> volumeDetails = createVDIFromSnapshot(userId, snapshot, pool, templatePath);
+                Pair<String, String> volumeDetails = createVDIFromSnapshot(UserContext.current().getUserId(), snapshot, pool, templatePath);
                 volumeUUID = volumeDetails.first();
                 details = volumeDetails.second();
-                
+
                 if (volumeUUID != null) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Volume with UUID " + volumeUUID + " was created on storage pool " + pool.getName());
@@ -500,7 +475,6 @@ public class StorageManagerImpl implements StorageManager {
                 }
 
                 s_logger.warn("Unable to create volume on pool " + pool.getName() + ", reason: " + details);
-                
             }
             
             if (success) {
@@ -517,7 +491,7 @@ public class StorageManagerImpl implements StorageManager {
         
         if (success) {
             // Increment the number of volumes
-            _accountMgr.incrementResourceCount(accountId, ResourceType.volume);
+            _accountMgr.incrementResourceCount(account.getId(), ResourceType.volume);
             
             createdVolume.setStatus(AsyncInstanceCreateStatus.Created);
             createdVolume.setPodId(pod.first().getId());
@@ -536,19 +510,17 @@ public class StorageManagerImpl implements StorageManager {
         return new Pair<VolumeVO, String>(createdVolume, details);
     }
 
-    @Override
-    @DB
-    public VolumeVO createVolumeFromSnapshot(long userId, long accountId, long snapshotId, String volumeName, long startEventId) {
-        
+    private VolumeVO createVolumeFromSnapshot(VolumeVO volume, long snapshotId/*, long startEventId*/) {
+        // FIXME:  start event id needs to come from somewhere
         EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(accountId);
+        event.setUserId(UserContext.current().getUserId());
+        event.setAccountId(volume.getAccountId());
         event.setType(EventTypes.EVENT_VOLUME_CREATE);
         event.setState(EventState.Started);
-        event.setStartId(startEventId);
+// FIXME:        event.setStartId(startEventId);
         event.setDescription("Creating volume from snapshot with id: "+snapshotId);
         _eventDao.persist(event);
-        
+
         // By default, assume failure.
         VolumeVO createdVolume = null;
         String details = null;
@@ -612,7 +584,7 @@ public class StorageManagerImpl implements StorageManager {
                 s_logger.error("Original volume must have been a ROOT DISK or a DATA DISK");
                 return null;
             }
-            Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(userId, accountId, volumeName, dc, diskOffering, snapshot, templatePath, originalVolume.getSize(), template);
+            Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(volume, snapshot, templatePath, originalVolume.getSize(), template);
             createdVolume = volumeDetails.first();
             if (createdVolume != null) {
                 volumeId = createdVolume.getId();
@@ -636,11 +608,11 @@ public class StorageManagerImpl implements StorageManager {
         String poolName = _storagePoolDao.findById(createdVolume.getPoolId()).getName();
         String eventParams = "id=" + volumeId +"\ndoId="+diskOfferingId+"\ntId="+templateId+"\ndcId="+originalVolume.getDataCenterId()+"\nsize="+sizeMB;
         event = new EventVO();
-        event.setAccountId(accountId);
-        event.setUserId(userId);
+        event.setAccountId(volume.getAccountId());
+        event.setUserId(UserContext.current().getUserId());
         event.setType(EventTypes.EVENT_VOLUME_CREATE);
         event.setParameters(eventParams);
-        event.setStartId(startEventId);
+// FIXME:        event.setStartId(startEventId);
         event.setState(EventState.Completed);
         if (createdVolume.getPath() != null) {
             event.setDescription("Created volume: "+ createdVolume.getName() + " with size: " + sizeMB + " MB in pool: " + poolName + " from snapshot id: " + snapshotId);
@@ -703,9 +675,9 @@ public class StorageManagerImpl implements StorageManager {
 
         DiskCharacteristicsTO dskCh = null;
         if (volume.getVolumeType() == VolumeType.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
-            dskCh = createDiskCharacteristics(volume, template, dc, offering);
+            dskCh = createDiskCharacteristics(volume, template, dc.getId(), offering);
         } else {
-            dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
+            dskCh = createDiskCharacteristics(volume, template, dc.getId(), diskOffering);
         }
 
         Transaction txn = Transaction.currentTxn();
@@ -1572,92 +1544,197 @@ public class StorageManagerImpl implements StorageManager {
     }
 
     @Override
-    @DB
-    public VolumeVO createVolume(long accountId, long userId, String userSpecifiedName, DataCenterVO dc, DiskOfferingVO diskOffering, long startEventId, long size) 
-    {
-    	String volumeName = "";
-        VolumeVO createdVolume = null;
-        
-        try 
-        {
-	        // Determine the volume's name
-	        volumeName = getRandomVolumeName();
-	
-	        // Create the Volume object and save it so that we can return it to the user
-	        Account account = _accountDao.findById(accountId);
-	        VolumeVO volume = new VolumeVO(null, userSpecifiedName, -1, -1, -1, -1, new Long(-1), null, null, 0, Volume.VolumeType.DATADISK);
-	        volume.setPoolId(null);
-	        volume.setDataCenterId(dc.getId());
-	        volume.setPodId(null);
-	        volume.setAccountId(accountId);
-	        volume.setDomainId(account.getDomainId().longValue());
-	        volume.setMirrorState(MirrorState.NOT_MIRRORED);
-	        volume.setDiskOfferingId(diskOffering.getId());
-	        volume.setStorageResourceType(StorageResourceType.STORAGE_POOL);
-	        volume.setInstanceId(null);
-	        volume.setUpdated(new Date());
-	        volume.setStatus(AsyncInstanceCreateStatus.Creating);
-	        volume.setDomainId(account.getDomainId().longValue());
-	        volume = _volsDao.persist(volume);
-	
-	        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-	        if (asyncExecutor != null) {
-	            AsyncJobVO job = asyncExecutor.getJob();
-	
-	            if (s_logger.isInfoEnabled())
-	                s_logger.info("CreateVolume created a new instance " + volume.getId() + ", update async job-" + job.getId() + " progress status");
-	
-	            _asyncMgr.updateAsyncJobAttachment(job.getId(), "volume", volume.getId());
-	            _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, volume.getId());
-	        }
-	
-	        List<StoragePoolVO> poolsToAvoid = new ArrayList<StoragePoolVO>();
-	        Set<Long> podsToAvoid = new HashSet<Long>();
-	        Pair<HostPodVO, Long> pod = null;
-	
-	        while ((pod = _agentMgr.findPod(null, null, dc, account.getId(), podsToAvoid)) != null) {
-	            if ((createdVolume = createVolume(volume, null, null, dc, pod.first(), null, null, diskOffering, poolsToAvoid, size)) != null) {
-	            	break;
-	            } else {
-	                podsToAvoid.add(pod.first().getId());
-	            }
-	        }
-	
-	        // Create an event
-	        EventVO event = new EventVO();
-	        event.setAccountId(accountId);
-	        event.setUserId(userId);
-	        event.setType(EventTypes.EVENT_VOLUME_CREATE);
-	        event.setStartId(startEventId);
-	
-	        Transaction txn = Transaction.currentTxn();
+    public VolumeVO createVolumeDB(CreateVolumeCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceAllocationException {
+        // FIXME:  some of the scheduled event stuff might be missing here...
+        Account account = (Account)UserContext.current().getAccountObject();
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+        Account targetAccount = null;
+        if ((account == null) || isAdmin(account.getType())) {
+            // Admin API call
+            if ((domainId != null) && (accountName != null)) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Unable to create volume in domain " + domainId + ", permission denied.");
+                }
 
-            txn.start();
-
-            if (createdVolume != null) {
-                // Increment the number of volumes
-                _accountMgr.incrementResourceCount(accountId, ResourceType.volume);
-                
-                // Set event parameters
-                long sizeMB = createdVolume.getSize() / (1024 * 1024);
-                StoragePoolVO pool = _storagePoolDao.findById(createdVolume.getPoolId());
-                String eventParams = "id=" + createdVolume.getId() + "\ndoId=" + diskOffering.getId() + "\ntId=" + -1 + "\ndcId=" + dc.getId() + "\nsize=" + sizeMB;
-                event.setLevel(EventVO.LEVEL_INFO);
-                event.setDescription("Created volume: " + createdVolume.getName() + " with size: " + sizeMB + " MB in pool: " + pool.getName());
-                event.setParameters(eventParams);
-                _eventDao.persist(event);
+                targetAccount = _accountDao.findActiveAccount(accountName, domainId);
             } else {
-            	// Mark the existing volume record as corrupted
-                volume.setStatus(AsyncInstanceCreateStatus.Corrupted);
-                volume.setDestroyed(true);
-                _volsDao.update(volume.getId(), volume);
-            }            
+                targetAccount = account;
+            }
 
-            txn.commit();
-        } catch (Exception e) {
-            s_logger.error("Unhandled exception while saving volume " + volumeName, e);
+            // If the account is null, this means that the accountName and domainId passed in were invalid
+            if (targetAccount == null) {
+                throw new InvalidParameterValueException("Unable to find account with name: " + accountName + " and domain ID: " + domainId);
+            }
+        } else {
+            targetAccount = account;
+        }
+
+        // check if the volume can be created for the user
+        // Check that the resource limit for volumes won't be exceeded
+        if (_accountMgr.resourceLimitExceeded((AccountVO)targetAccount, ResourceType.volume)) {
+            ResourceAllocationException rae = new ResourceAllocationException("Maximum number of volumes for account: " + targetAccount.getAccountName() + " has been exceeded.");
+            rae.setResourceType("volume");
+            throw rae;
+        }
+
+        // validate input parameters before creating the volume
+        if (cmd.getSnapshotId() == null) {
+            Long zoneId = cmd.getZoneId();
+            if ((zoneId == null)) {
+                throw new InvalidParameterValueException("Missing parameter, zoneid must be specified.");
+            }
+
+            Long diskOfferingId = cmd.getDiskOfferingId();
+            Long size = cmd.getSize();
+            if ((diskOfferingId == null) && (size == null)) {
+                throw new InvalidParameterValueException("Missing parameter(s),either a positive volume size or a valid disk offering id must be specified.");
+            } else if ((diskOfferingId == null) && (size != null)) {
+                boolean ok = validateCustomVolumeSizeRange(size);
+
+                if (!ok) {
+                    throw new InvalidParameterValueException("Invalid size for custom volume creation: " + size);
+                }
+
+                //this is the case of creating var size vol with private disk offering
+                List<DiskOfferingVO> privateTemplateList = _diskOfferingDao.findPrivateDiskOffering();
+                diskOfferingId = privateTemplateList.get(0).getId(); //we use this id for creating volume
+            } else {
+                // Check that the the disk offering is specified
+                DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
+                if ((diskOffering == null) || !DiskOfferingVO.Type.Disk.equals(diskOffering.getType())) {
+                    throw new InvalidParameterValueException("Please specify a valid disk offering.");
+                }
+            }
+        } else {
+            Long snapshotId = cmd.getSnapshotId();
+            Snapshot snapshotCheck = _snapshotDao.findById(snapshotId);
+            if (snapshotCheck == null) {
+                throw new ServerApiException (BaseCmd.SNAPSHOT_INVALID_PARAM_ERROR, "unable to find a snapshot with id " + snapshotId);
+            }
+            
+            if (account != null) {
+                if (isAdmin(account.getType())) {
+                    Account snapshotOwner = _accountDao.findById(snapshotCheck.getAccountId());
+                    if (!_domainDao.isChildDomain(account.getDomainId(), snapshotOwner.getDomainId())) {
+                        throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to create volume from snapshot with id " + snapshotId + ", permission denied.");
+                    }
+                } else if (account.getId().longValue() != snapshotCheck.getAccountId()) {
+                    throw new ServerApiException(BaseCmd.SNAPSHOT_INVALID_PARAM_ERROR, "unable to find a snapshot with id " + snapshotId + " for this account");
+                }
+            }
+        }
+
+        Long zoneId = cmd.getZoneId();
+        // Check that the zone is valid
+        DataCenterVO zone = _dcDao.findById(zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Please specify a valid zone.");
         }
         
+        // Check that there is a shared primary storage pool in the specified zone
+        List<StoragePoolVO> storagePools = _storagePoolDao.listByDataCenterId(zoneId);
+        boolean sharedPoolExists = false;
+        for (StoragePoolVO storagePool : storagePools) {
+            if (storagePool.isShared()) {
+                sharedPoolExists = true;
+            }
+        }
+        
+        // Check that there is at least one host in the specified zone
+        List<HostVO> hosts = _hostDao.listByDataCenter(zoneId);
+        if (hosts.isEmpty()) {
+            throw new InvalidParameterValueException("Please add a host in the specified zone before creating a new volume.");
+        }
+        
+        if (!sharedPoolExists) {
+            throw new InvalidParameterValueException("Please specify a zone that has at least one shared primary storage pool.");
+        }
+
+        String userSpecifiedName = cmd.getVolumeName();
+        if (userSpecifiedName == null) {
+            userSpecifiedName = getRandomVolumeName();
+        }
+
+        VolumeVO volume = new VolumeVO(null, userSpecifiedName, -1, -1, -1, -1, new Long(-1), null, null, 0, Volume.VolumeType.DATADISK);
+        volume.setPoolId(null);
+        volume.setDataCenterId(zoneId);
+        volume.setPodId(null);
+        volume.setAccountId(targetAccount.getId());
+        volume.setDomainId(account.getDomainId().longValue());
+        volume.setMirrorState(MirrorState.NOT_MIRRORED);
+        volume.setDiskOfferingId(cmd.getDiskOfferingId());
+        volume.setStorageResourceType(StorageResourceType.STORAGE_POOL);
+        volume.setInstanceId(null);
+        volume.setUpdated(new Date());
+        volume.setStatus(AsyncInstanceCreateStatus.Creating);
+        volume.setDomainId(account.getDomainId().longValue());
+        volume = _volsDao.persist(volume);
+
+        return volume;
+    }
+
+    @Override @DB
+    public VolumeVO createVolume(CreateVolumeCmd cmd) {
+        VolumeVO createdVolume = _volsDao.findById(cmd.getId());
+        Long userId = UserContext.current().getUserId();
+
+        if (cmd.getSnapshotId() != null) {
+            return createVolumeFromSnapshot(createdVolume, cmd.getSnapshotId());
+        } else {
+            DataCenterVO dc = _dcDao.findById(cmd.getZoneId());
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(cmd.getDiskOfferingId());
+            long size = diskOffering.getDiskSize();
+
+            try {
+                List<StoragePoolVO> poolsToAvoid = new ArrayList<StoragePoolVO>();
+                Set<Long> podsToAvoid = new HashSet<Long>();
+                Pair<HostPodVO, Long> pod = null;
+        
+                while ((pod = _agentMgr.findPod(null, null, dc, createdVolume.getAccountId(), podsToAvoid)) != null) {
+                    if ((createdVolume = createVolume(createdVolume, null, null, dc, pod.first(), null, null, diskOffering, poolsToAvoid, size)) != null) {
+                        break;
+                    } else {
+                        podsToAvoid.add(pod.first().getId());
+                    }
+                }
+
+                // Create an event
+                EventVO event = new EventVO();
+                event.setAccountId(createdVolume.getAccountId());
+                event.setUserId(userId);
+                event.setType(EventTypes.EVENT_VOLUME_CREATE);
+                event.setStartId(startEventId); // FIX other event stuff as well for createVolume
+        
+                Transaction txn = Transaction.currentTxn();
+
+                txn.start();
+
+                if (createdVolume != null) {
+                    // Increment the number of volumes
+                    _accountMgr.incrementResourceCount(createdVolume.getAccountId(), ResourceType.volume);
+                    
+                    // Set event parameters
+                    long sizeMB = createdVolume.getSize() / (1024 * 1024);
+                    StoragePoolVO pool = _storagePoolDao.findById(createdVolume.getPoolId());
+                    String eventParams = "id=" + createdVolume.getId() + "\ndoId=" + diskOffering.getId() + "\ntId=" + -1 + "\ndcId=" + dc.getId() + "\nsize=" + sizeMB;
+                    event.setLevel(EventVO.LEVEL_INFO);
+                    event.setDescription("Created volume: " + createdVolume.getName() + " with size: " + sizeMB + " MB in pool: " + pool.getName());
+                    event.setParameters(eventParams);
+                    _eventDao.persist(event);
+                } else {
+                    // Mark the existing volume record as corrupted
+                    createdVolume.setStatus(AsyncInstanceCreateStatus.Corrupted);
+                    createdVolume.setDestroyed(true);
+                    _volsDao.update(createdVolume.getId(), createdVolume);
+                }            
+
+                txn.commit();
+            } catch (Exception e) {
+                s_logger.error("Unhandled exception while creating volume " + createdVolume.getName(), e);
+            }
+        }
+
         return createdVolume;
     }
 
@@ -2332,5 +2409,15 @@ public class StorageManagerImpl implements StorageManager {
         
         return true;
     	
+	}
+
+	private boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException {
+	    if (size<0 || (size>0 && size < 1)) {
+	        throw new InvalidParameterValueException("Please specify a size of at least 1 Gb.");
+	    } else if (size > _maxVolumeSizeInGb) {
+	        throw new InvalidParameterValueException("The maximum size allowed is " + _maxVolumeSizeInGb + " Gb.");
+	    }
+
+	    return true;
 	}
 }

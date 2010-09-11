@@ -59,7 +59,6 @@ import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.CreateUserCmd;
-import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeletePortForwardingServiceCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
@@ -128,8 +127,6 @@ import com.cloud.async.executor.NetworkGroupIngressParam;
 import com.cloud.async.executor.SecurityGroupParam;
 import com.cloud.async.executor.VMOperationParam;
 import com.cloud.async.executor.VMOperationParam.VmOp;
-import com.cloud.async.executor.VolumeOperationParam;
-import com.cloud.async.executor.VolumeOperationParam.VolumeOp;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.ConfigurationManager;
@@ -376,8 +373,6 @@ public class ManagementServerImpl implements ManagementServer {
 
     private boolean _isHypervisorSnapshotCapable = false;
 
-    private final int _maxVolumeSizeInGb;
-    
     protected ManagementServerImpl() {
         ComponentLocator locator = ComponentLocator.getLocator(Name);
         _lunDao = locator.getDao(PreallocatedLunDao.class);
@@ -471,11 +466,6 @@ public class ManagementServerImpl implements ManagementServer {
         // Parse the max number of UserVMs and public IPs from server-setup.xml,
         // and set them in the right places
         
-        String maxVolumeSizeInGbString = _configs.get("max.volume.size.gb");
-        int maxVolumeSizeGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2000);
-
-        _maxVolumeSizeInGb = maxVolumeSizeGb;
-
         _routerRamSize = NumbersUtil.parseInt(_configs.get("router.ram.size"),NetworkManager.DEFAULT_ROUTER_VM_RAMSIZE);
         _proxyRamSize = NumbersUtil.parseInt(_configs.get("consoleproxy.ram.size"), ConsoleProxyManager.DEFAULT_PROXY_VM_RAMSIZE);
         _ssRamSize = NumbersUtil.parseInt(_configs.get("secstorage.ram.size"), SecondaryStorageVmManager.DEFAULT_SS_VM_RAMSIZE);
@@ -1397,104 +1387,6 @@ public class ManagementServerImpl implements ManagementServer {
             s_logger.error("error generating secret key for user: " + user.getUsername(), ex);
         }
         return null;
-    }
-
-    @Override
-    public VolumeVO createVolume(long userId, long accountId, String name, long zoneId, long diskOfferingId, long startEventId, long size) throws InternalErrorException {
-    	EventUtils.saveStartedEvent(userId, accountId, EventTypes.EVENT_VOLUME_CREATE, "Creating volume", startEventId);
-        DataCenterVO zone = _dcDao.findById(zoneId);
-        DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
-        VolumeVO createdVolume = _storageMgr.createVolume(accountId, userId, name, zone, diskOffering, startEventId,size);
-
-        if (createdVolume != null)
-            return createdVolume;
-        else
-            throw new InternalErrorException("Failed to create volume.");
-    }
-
-    @Override
-    public long createVolumeAsync(long userId, long accountId, String name, long zoneId, long diskOfferingId, long size) throws InvalidParameterValueException, InternalErrorException, ResourceAllocationException {
-        // Check that the account is valid
-    	AccountVO account = _accountDao.findById(accountId);
-    	if (account == null) {
-    		throw new InvalidParameterValueException("Please specify a valid account.");
-    	}
-    	
-    	// Check that the zone is valid
-        DataCenterVO zone = _dcDao.findById(zoneId);
-        if (zone == null) {
-            throw new InvalidParameterValueException("Please specify a valid zone.");
-        }
-        
-        // Check that the the disk offering is specified
-        DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
-        if ((diskOffering == null) || !DiskOfferingVO.Type.Disk.equals(diskOffering.getType())) {
-            throw new InvalidParameterValueException("Please specify a valid disk offering.");
-        }
-            
-        // Check that there is a shared primary storage pool in the specified zone
-        List<StoragePoolVO> storagePools = _poolDao.listByDataCenterId(zoneId);
-        boolean sharedPoolExists = false;
-        for (StoragePoolVO storagePool : storagePools) {
-        	if (storagePool.isShared()) {
-        		sharedPoolExists = true;
-        	}
-        }
-        
-        // Check that there is at least one host in the specified zone
-        List<HostVO> hosts = _hostDao.listByDataCenter(zoneId);
-        if (hosts.isEmpty()) {
-        	throw new InvalidParameterValueException("Please add a host in the specified zone before creating a new volume.");
-        }
-        
-        if (!sharedPoolExists) {
-        	throw new InvalidParameterValueException("Please specify a zone that has at least one shared primary storage pool.");
-        }
-        
-        // Check that the resource limit for volumes won't be exceeded
-        if (_accountMgr.resourceLimitExceeded(account, ResourceType.volume)) {
-        	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of volumes for account: " + account.getAccountName() + " has been exceeded.");
-        	rae.setResourceType("volume");
-        	throw rae;
-        }
-
-        long eventId = EventUtils.saveScheduledEvent(userId, accountId, EventTypes.EVENT_VOLUME_CREATE, "creating volume");
-        
-        VolumeOperationParam param = new VolumeOperationParam();
-        param.setOp(VolumeOp.Create);
-        param.setAccountId(accountId);
-        param.setUserId(UserContext.current().getUserId());
-        param.setName(name);
-        param.setZoneId(zoneId);
-        param.setDiskOfferingId(diskOfferingId);
-        param.setEventId(eventId);
-        param.setSize(size);
-        
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(accountId);
-        job.setCmd("VolumeOperation");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(CreateVolumeCmd.getResultObjectName());
-        
-        return _asyncMgr.submitAsyncJob(job);
-    }
-
-    @Override
-    public long createVolumeFromSnapshotAsync(long userId, long accountId, long snapshotId, String volumeName) throws InternalErrorException, ResourceAllocationException {
-        SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
-        AccountVO account = _accountDao.findById(snapshot.getAccountId());
-        
-        // Check that the resource limit for volumes won't be exceeded
-        if (_accountMgr.resourceLimitExceeded(account, ResourceType.volume)) {
-            ResourceAllocationException rae = new ResourceAllocationException("Maximum number of volumes for account: " + account.getAccountName() + " has been exceeded.");
-            rae.setResourceType("volume");
-            throw rae;
-        }
-        
-        return _snapMgr.createVolumeFromSnapshotAsync(userId, accountId, snapshotId, volumeName);
     }
 
     @Override
@@ -6857,17 +6749,6 @@ public class ManagementServerImpl implements ManagementServer {
 			return true;
 		else
 			return false;
-	}
-
-	@Override
-	public boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException {
-        if (size<0 || (size>0 && size < 1)) {
-            throw new InvalidParameterValueException("Please specify a size of at least 1 Gb.");
-        } else if (size > _maxVolumeSizeInGb) {
-        	throw new InvalidParameterValueException("The maximum size allowed is " + _maxVolumeSizeInGb + " Gb.");
-        }
-
-		return true;
 	}
 
 	@Override

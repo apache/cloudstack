@@ -72,11 +72,6 @@ public interface SnapshotManager extends Manager {
     SnapshotVO createSnapshotImpl(long volumeId, List<Long> policyIds) throws InvalidParameterValueException, ResourceAllocationException, InternalErrorException;
 
     /**
-     * Creates a volume from the specified snapshot. A new volume is returned which is not attached to any VM Instance
-     */
-    long createVolumeFromSnapshotAsync(long userId, long accountId, long snapshotId, String volumeName) throws InternalErrorException;
-    
-    /**
      * Destroys the specified snapshot from secondary storage
      */
     boolean destroySnapshot(long userId, long snapshotId, long policyId);

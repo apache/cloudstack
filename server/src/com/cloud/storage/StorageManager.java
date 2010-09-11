@@ -24,6 +24,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
 import com.cloud.api.commands.CreateStoragePoolCmd;
+import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeletePoolCmd;
 import com.cloud.api.commands.DeleteVolumeCmd;
 import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
@@ -32,6 +33,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.StorageUnavailableException;
@@ -191,19 +193,23 @@ public interface StorageManager extends Manager {
 	 * @return VolumeVO
 	 */
 	VolumeVO moveVolume(VolumeVO volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId) throws InternalErrorException;
-	
+
 	/**
-	 * Creates a new volume in a pool in the specified zone
-	 * @param accountId
-	 * @param userId
-	 * @param name
-	 * @param dc
-	 * @param diskOffering
-	 * @param size
-	 * @return VolumeVO
+	 * Creates the database object for a volume based on the given criteria
+	 * @param cmd the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot, name)
+	 * @return the volume object
+	 * @throws InvalidParameterValueException
+	 * @throws PermissionDeniedException
 	 */
-	VolumeVO createVolume(long accountId, long userId, String name, DataCenterVO dc, DiskOfferingVO diskOffering, long startEventId, long size);
-	
+	VolumeVO createVolumeDB(CreateVolumeCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceAllocationException;
+
+	/**
+     * Creates the volume based on the given criteria
+     * @param cmd the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot, name)
+     * @return the volume object
+	 */
+	VolumeVO createVolume(CreateVolumeCmd cmd);
+
 	/**
 	 * Marks the specified volume as destroyed in the management server database. The expunge thread will delete the volume from its storage pool.
 	 * @param volume
@@ -270,11 +276,6 @@ public interface StorageManager extends Manager {
 	List<StoragePoolVO> getStoragePoolsForVm(long vmId);
 	
     String getPrimaryStorageNameLabel(VolumeVO volume);
-    
-    /**
-     * Creates a volume from the specified snapshot. A new volume is returned which is not attached to any VM Instance
-     */
-    VolumeVO createVolumeFromSnapshot(long userId, long accountId, long snapshotId, String volumeName, long startEventId);
 
     /**
      * Enable maintenance for primary storage
