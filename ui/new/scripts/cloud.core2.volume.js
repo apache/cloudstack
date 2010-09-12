@@ -66,6 +66,7 @@ function doCreateTemplate($actionLink, listAPIMap, $singleObject) {
 		"Create": function() { 
 		    //debugger;
 		    var thisDialog = $(this);
+		    thisDialog.dialog("close"); 
 									
 			// validate values
 	        var isValid = true;					
