@@ -448,7 +448,7 @@ function clickInstanceGroupHeader($arrowIcon) {
     
     function vmVolumeJSONToTemplate(json, template) {
         template.attr("id","vm_volume_"+json.id);	
-        template.data("id", json.id);	
+        //template.data("id", json.id);	
         template.data("jsonObj", json);        
 		template.find("#id").text(json.id);	
 		template.find("#name").text(json.name);
@@ -460,13 +460,26 @@ function clickInstanceGroupHeader($arrowIcon) {
 		template.find("#size").text((json.size == "0") ? "" : convertBytes(json.size));										
 		setDateField(json.created, template.find("#created"));
 		
+		var $actionLink = template.find("#volume_action_link");		
+		$actionLink.bind("mouseover", function(event) {
+            $(this).find("#volume_action_menu").show();    
+            return false;
+        });
+        $actionLink.bind("mouseout", function(event) {
+            $(this).find("#volume_action_menu").hide();    
+            return false;
+        });		
+		
+		var $actionMenu = $actionLink.find("#volume_action_menu");
+        $actionMenu.find("#action_list").empty();
 		if(json.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
 			if (json.vmstate == "Stopped") 
-			    buildActionLinkForSingleObject("Create Template", vmVolumeActionMap, template.find("#volume_action_menu"), volumeListAPIMap, template);	
+			    buildActionLinkForSingleObject("Create Template", vmVolumeActionMap, $actionMenu, volumeListAPIMap, template);	
 		} 
 		else { //json.type=="DATADISK": "detach disk" is allowed, "create template" is disallowed.			
-			buildActionLinkForSingleObject("Detach Disk", vmVolumeActionMap, template.find("#volume_action_menu"), volumeListAPIMap, template);				
-		}		
+			buildActionLinkForSingleObject("Detach Disk", vmVolumeActionMap, $actionMenu, volumeListAPIMap, template);				
+		}	
+		
 	}
     //***** declaration for volume tab (end) *********************************************************
     
@@ -1217,6 +1230,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         //***** VM Wizard (end) ********************************************************************************
         
         //***** Volume tab (begin) *****************************************************************************
+        /*
         $("#volume_action_link").live("mouseover", function(event) {
             $(this).find("#volume_action_menu").show();    
             return false;
@@ -1225,6 +1239,7 @@ function clickInstanceGroupHeader($arrowIcon) {
             $(this).find("#volume_action_menu").hide();    
             return false;
         });
+        */
                 
         $.ajax({
 	        data: createURL("command=listOsTypes&response=json"),

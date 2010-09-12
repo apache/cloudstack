@@ -12,29 +12,49 @@ function volumeToMidmenu(jsonObj, $midmenuItem1, toRightPanelFn) {
 }
 
 function volumeToRigntPanel($midmenuItem) {       
-    var jsonObj = $midmenuItem.data("jsonObj");
-    
+    var json = $midmenuItem.data("jsonObj");
+        
     var $rightPanelContent = $("#right_panel_content");    
-    $rightPanelContent.find("#id").text(jsonObj.id);
-    $rightPanelContent.find("#name").text(fromdb(jsonObj.name));    
-    $rightPanelContent.find("#zonename").text(fromdb(jsonObj.zonename));    
-    $rightPanelContent.find("#device_id").text(jsonObj.deviceid);   
-    $rightPanelContent.find("#state").text(jsonObj.state);    
-    $rightPanelContent.find("#storage").text(fromdb(jsonObj.storage));
-    $rightPanelContent.find("#account").text(fromdb(jsonObj.account)); 
+    $rightPanelContent.data("jsonObj", json);   
+    $rightPanelContent.find("#id").text(json.id);
+    $rightPanelContent.find("#name").text(fromdb(json.name));    
+    $rightPanelContent.find("#zonename").text(fromdb(json.zonename));    
+    $rightPanelContent.find("#device_id").text(json.deviceid);   
+    $rightPanelContent.find("#state").text(json.state);    
+    $rightPanelContent.find("#storage").text(fromdb(json.storage));
+    $rightPanelContent.find("#account").text(fromdb(json.account)); 
     
-    $rightPanelContent.find("#type").text(jsonObj.type + " (" + jsonObj.storagetype + " storage)");
-    $rightPanelContent.find("#size").text((jsonObj.size == "0") ? "" : convertBytes(jsonObj.size));		
+    $rightPanelContent.find("#type").text(json.type + " (" + json.storagetype + " storage)");
+    $rightPanelContent.find("#size").text((json.size == "0") ? "" : convertBytes(json.size));		
     
-    if (jsonObj.virtualmachineid == null) 
+    if (json.virtualmachineid == null) 
 		$rightPanelContent.find("#vm_name").text("detached");
 	else 
-		$rightPanelContent.find("#vm_name").text(getVmName(jsonObj.vmname, jsonObj.vmdisplayname) + " (" + jsonObj.vmstate + ")");
+		$rightPanelContent.find("#vm_name").text(getVmName(json.vmname, json.vmdisplayname) + " (" + json.vmstate + ")");
 		
-    setDateField(jsonObj.created, $rightPanelContent.find("#created"));	
+    setDateField(json.created, $rightPanelContent.find("#created"));	
+    
+    var $actionLink = $rightPanelContent.find("#volume_action_link");
+	$actionLink.bind("mouseover", function(event) {	    
+        $(this).find("#volume_action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {       
+        $(this).find("#volume_action_menu").hide();    
+        return false;
+    });			
+        
+    var $actionMenu = $actionLink.find("#volume_action_menu");
+    $actionMenu.find("#action_list").empty();
+    if(json.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
+		if (json.vmstate == "Stopped") 
+		    buildActionLinkForSingleObject("Create Template", volumeActionMap, $actionMenu, volumeListAPIMap, $rightPanelContent);	
+	} 
+	else { //json.type=="DATADISK": "detach disk" is allowed, "create template" is disallowed.			
+		buildActionLinkForSingleObject("Detach Disk", volumeActionMap, $actionMenu, volumeListAPIMap, $rightPanelContent);				
+	}	
 }
-
-
+       
 var volumeListAPIMap = {
     listAPI: "listVolumes",
     listAPIResponse: "listvolumesresponse",
@@ -57,8 +77,6 @@ var volumeActionMap = {
         afterActionSeccessFn: function(){}   
     }  
 }   
-
-
 
 function doCreateTemplate($actionLink, listAPIMap, $singleObject) {       
     var jsonObj = $singleObject.data("jsonObj");
@@ -93,4 +111,4 @@ function doCreateTemplate($actionLink, listAPIMap, $singleObject) {
 			$(this).dialog("close"); 
 		} 
 	}).dialog("open");
-}         
+}   

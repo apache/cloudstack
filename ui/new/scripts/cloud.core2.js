@@ -195,7 +195,7 @@ function buildActionLinkForSingleObject(label, actionMap, $actionMenu, listAPIMa
     $link.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);
     $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);      
     
-    var id = $singleObject.data("id");
+    var id = $singleObject.data("jsonObj").id;
     
     $link.bind("click", function(event) {
         //debugger;	
@@ -214,7 +214,7 @@ function buildActionLinkForSingleObject(label, actionMap, $actionMenu, listAPIMa
 } 
 
 function doActionToSingleObject(id, $actionLink, apiCommand, listAPIMap, $singleObject) {   
-    //debugger;
+    debugger;
     var label = $actionLink.data("label");	
     var inProcessText = $actionLink.data("inProcessText");		           
     var isAsyncJob = $actionLink.data("isAsyncJob");
@@ -234,7 +234,7 @@ function doActionToSingleObject(id, $actionLink, apiCommand, listAPIMap, $single
             data: createURL(apiCommand),
             dataType: "json",           
             success: function(json) {	
-                //debugger;                	                        
+                debugger;                	                        
                 var jobId = json[asyncJobResponse].jobid;                  			                        
                 var timerKey = "asyncJob_" + jobId;					                       
                 $("body").everyTime(

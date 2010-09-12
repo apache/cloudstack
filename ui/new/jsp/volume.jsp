@@ -28,7 +28,17 @@
     <div class="tabbox" style="margin-top:15px;">
         <div class="content_tabs on">
             <%=t.t("Details")%></div>  
-        <div class="grid_actionbox" style="margin:-4px 0 0 0;"></div>        
+        <div class="grid_actionbox" id="volume_action_link" style="margin:-4px 0 0 0;background-color:yello;display:block">
+            <div class="grid_actionsdropdown_box" id="volume_action_menu" style="display: block;background-color:green">	                    
+	            <ul class="actionsdropdown_boxlist" id="action_list">              	   
+                </ul>	                    
+	        </div>  
+        </div>  
+                 
+        <div class="gridheader_loaderbox" id="spinning_wheel" style="display:none">
+            <div class="gridheader_loader" id="icon"></div>
+            <p id="description"> Waiting &hellip; </p>
+        </div>                 
     </div>
     <div class="grid_container">
         <div class="grid_rows odd">
