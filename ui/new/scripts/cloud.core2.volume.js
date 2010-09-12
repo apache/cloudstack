@@ -46,12 +46,14 @@ var volumeActionMap = {
         api: "detachVolume",            
         isAsyncJob: true,
         asyncJobResponse: "detachvolumeresponse",
+        inProcessText: "Detaching disk....",
         afterActionSeccessFn: function(){}
     },
     "Create Template": {
         isAsyncJob: true,
         asyncJobResponse: "createtemplateresponse",            
         dialogBeforeActionFn : doCreateTemplate,
+        inProcessText: "Creating template....",
         afterActionSeccessFn: function(){}   
     }  
 }   

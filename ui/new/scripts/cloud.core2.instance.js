@@ -430,6 +430,7 @@ function clickInstanceGroupHeader($arrowIcon) {
             api: "detachVolume",            
             isAsyncJob: true,
             asyncJobResponse: "detachvolumeresponse",
+            inProcessText: "Detaching disk....",
             afterActionSeccessFn: function(jsonObj, template){            
                 template.slideUp("slow", function(){                   
                     $(this).remove();
@@ -440,6 +441,7 @@ function clickInstanceGroupHeader($arrowIcon) {
             isAsyncJob: true,
             asyncJobResponse: "createtemplateresponse",            
             dialogBeforeActionFn : doCreateTemplate,
+            inProcessText: "Creating template....",
             afterActionSeccessFn: function(){}   
         }  
     }     

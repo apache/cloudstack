@@ -181,8 +181,6 @@ function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem) {
 //***** actions for middle menu (end) **************************************************************************
 
 //***** actions for right panel (begin) ************************************************************************
-//var selectedItemsInSingleObject = {};
-
 function buildActionLinkForSingleObject(label, actionMap, $actionMenu, listAPIMap, $singleObject) {
     //debugger;
     var apiInfo = actionMap[label];
@@ -190,11 +188,12 @@ function buildActionLinkForSingleObject(label, actionMap, $actionMenu, listAPIMa
     $actionMenu.find("#action_list").append($listItem.show());
     var $link = $listItem.find("#link").text(label);
     $link.data("label", label);	  
+    $link.data("inProcessText", apiInfo.inProcessText);	 
     $link.data("api", apiInfo.api);				                 
     $link.data("isAsyncJob", apiInfo.isAsyncJob);
     $link.data("asyncJobResponse", apiInfo.asyncJobResponse);		     
     $link.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);
-    $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);
+    $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);      
     
     var id = $singleObject.data("id");
     
@@ -203,32 +202,30 @@ function buildActionLinkForSingleObject(label, actionMap, $actionMenu, listAPIMa
         $actionMenu.hide();    	 
         var $actionLink = $(this);   
         var dialogBeforeActionFn = $actionLink.data("dialogBeforeActionFn"); 
-        if(dialogBeforeActionFn == null) {		                   
-            //for(var id in selectedItemsInSingleObject) {	
-                var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
-                doActionToSingleObject(id, $actionLink, apiCommand, listAPIMap, $singleObject); 	
-            //}
+        if(dialogBeforeActionFn == null) {	 
+            var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
+            doActionToSingleObject(id, $actionLink, apiCommand, listAPIMap, $singleObject); 
         }
         else {
             dialogBeforeActionFn($actionLink, listAPIMap, $singleObject);	
-        }        
-        //selectedItemsInSingleObject = {}; //clear selected items for action	                          
+        }                        
         return false;
     });  
 } 
 
 function doActionToSingleObject(id, $actionLink, apiCommand, listAPIMap, $singleObject) {   
     //debugger;
-    var label = $actionLink.data("label");			           
+    var label = $actionLink.data("label");	
+    var inProcessText = $actionLink.data("inProcessText");		           
     var isAsyncJob = $actionLink.data("isAsyncJob");
     var asyncJobResponse = $actionLink.data("asyncJobResponse");	
     var afterActionSeccessFn = $actionLink.data("afterActionSeccessFn");	
     var listAPI = listAPIMap["listAPI"];
     var listAPIResponse = listAPIMap["listAPIResponse"];
     var listAPIResponseObj = listAPIMap["listAPIResponseObj"];
-      
+          
     var $spinningWheel = $singleObject.find("#spinning_wheel");
-    $spinningWheel.find("#description").text(label + "....");  
+    $spinningWheel.find("#description").text(inProcessText);  
     $spinningWheel.show();        
     
 	//Async job (begin) *****
