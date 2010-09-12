@@ -424,9 +424,30 @@ function clickInstanceGroupHeader($arrowIcon) {
 		});           
     }
     
+    //***** declaration for volume tab (begin) *********************************************************
+    var vmVolumeActionMap = {  
+        "Detach Disk": {
+            api: "detachVolume",            
+            isAsyncJob: true,
+            asyncJobResponse: "detachvolumeresponse",
+            afterActionSeccessFn: function(jsonObj, template){            
+                template.slideUp("slow", function(){                   
+                    $(this).remove();
+                });
+            }
+        },
+        "Create Template": {
+            isAsyncJob: true,
+            asyncJobResponse: "createtemplateresponse",            
+            dialogBeforeActionFn : doCreateTemplate,
+            afterActionSeccessFn: function(){}   
+        }  
+    }     
+    
     function vmVolumeJSONToTemplate(json, template) {
         template.attr("id","vm_volume_"+json.id);	
         template.data("id", json.id);	
+        template.data("jsonObj", json);        
 		template.find("#id").text(json.id);	
 		template.find("#name").text(json.name);
 		if (json.storagetype == "shared") 
@@ -439,13 +460,15 @@ function clickInstanceGroupHeader($arrowIcon) {
 		
 		if(json.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
 			if (json.vmstate == "Stopped") 
-			    buildActionLinkForSingleObject("Create Template", volumeActionMap, template.find("#volume_action_menu"), volumeListAPIMap, template);	
+			    buildActionLinkForSingleObject("Create Template", vmVolumeActionMap, template.find("#volume_action_menu"), volumeListAPIMap, template);	
 		} 
 		else { //json.type=="DATADISK": "detach disk" is allowed, "create template" is disallowed.			
-			buildActionLinkForSingleObject("Detach Disk", volumeActionMap, template.find("#volume_action_menu"), volumeListAPIMap, template);				
+			buildActionLinkForSingleObject("Detach Disk", vmVolumeActionMap, template.find("#volume_action_menu"), volumeListAPIMap, template);				
 		}		
 	}
-         
+    //***** declaration for volume tab (end) *********************************************************
+    
+       
     $("#add_link").show(); 
 	if($arrowIcon.hasClass("close") == true) {
         $arrowIcon.removeClass("close").addClass("open");    
@@ -1200,8 +1223,7 @@ function clickInstanceGroupHeader($arrowIcon) {
             $(this).find("#volume_action_menu").hide();    
             return false;
         });
-        
-        
+                
         $.ajax({
 	        data: createURL("command=listOsTypes&response=json"),
 		    dataType: "json",
