@@ -5747,15 +5747,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<SecurityGroupVO> listSecurityGroups(Long accountId, Long domainId) {
-        if (accountId != null) {
-            Account acct = _accountDao.findById(accountId);
-            domainId = acct.getDomainId();
-        }
-        return _securityGroupDao.listAvailableGroups(accountId, domainId);
-    }
-
-    @Override
     public List<SecurityGroupVO> searchForSecurityGroups(ListPortForwardingServicesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         // if an admin account was passed in, or no account was passed in, make sure we honor the accountName/domainId parameters
         Account account = (Account)UserContext.current().getAccountObject();

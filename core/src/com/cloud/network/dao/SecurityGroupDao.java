@@ -26,5 +26,4 @@ import com.cloud.utils.db.GenericDao;
 public interface SecurityGroupDao extends GenericDao<SecurityGroupVO, Long> {
     List<SecurityGroupVO> listByAccountId(long accountId);
     boolean isNameInUse(Long accountId, Long domainId, String name);
-    List<SecurityGroupVO> listAvailableGroups(Long accountId, Long domainId);
 }

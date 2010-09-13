@@ -133,7 +133,7 @@ public class ListRoutersCmd extends BaseListCmd {
                 routerResponse.setHostName(getManagementServer().getHostBy(router.getHostId()).getName());
             } 
 
-            routerResponse.setPrivateIp(router.getPrivateIpAddress()());
+            routerResponse.setPrivateIp(router.getPrivateIpAddress());
             routerResponse.setPrivateMacAddress(router.getPrivateMacAddress());
             routerResponse.setPrivateNetmask(router.getPrivateNetmask());
             routerResponse.setPublicIp(router.getPublicIpAddress());

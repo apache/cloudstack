@@ -18,16 +18,11 @@
 
 package com.cloud.network.security.dao;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
 
-import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
 import com.cloud.network.security.NetworkGroupVO;
-import com.cloud.server.ManagementServer;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -37,8 +32,6 @@ public class NetworkGroupDaoImpl extends GenericDaoBase<NetworkGroupVO, Long> im
     private SearchBuilder<NetworkGroupVO> AccountIdSearch;
     private SearchBuilder<NetworkGroupVO> AccountIdNameSearch;
     private SearchBuilder<NetworkGroupVO> AccountIdNamesSearch;
-
-    private DomainDao _domainDao = null;
 
     protected NetworkGroupDaoImpl() {
         AccountIdSearch = createSearchBuilder();
@@ -52,10 +45,7 @@ public class NetworkGroupDaoImpl extends GenericDaoBase<NetworkGroupVO, Long> im
         AccountIdNamesSearch = createSearchBuilder();
         AccountIdNamesSearch.and("accountId", AccountIdNamesSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountIdNamesSearch.and("groupNames", AccountIdNamesSearch.entity().getName(), SearchCriteria.Op.IN);
-
         AccountIdNameSearch.done();
-
-        _domainDao = ComponentLocator.getLocator(ManagementServer.Name).getDao(DomainDao.class);
     }
 
     @Override
@@ -78,34 +68,6 @@ public class NetworkGroupDaoImpl extends GenericDaoBase<NetworkGroupVO, Long> im
 
         List<NetworkGroupVO> securityGroups = listActiveBy(sc);
         return ((securityGroups != null) && !securityGroups.isEmpty());
-    }
-
-    @Override
-    public List<NetworkGroupVO> listAvailableGroups(Long accountId, Long domainId) {
-        List<NetworkGroupVO> availableGroups = new ArrayList<NetworkGroupVO>();
-        if ((accountId != null) || (domainId != null)) {
-            if (accountId != null) {
-                SearchCriteria<NetworkGroupVO> sc = createSearchCriteria();
-                sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-                List<NetworkGroupVO> accountGroups = listActiveBy(sc);
-                availableGroups.addAll(accountGroups);
-            } else if (domainId != null) {
-                while (domainId != null) {
-                    SearchCriteria<NetworkGroupVO> sc = createSearchCriteria();
-                    sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-                    if (accountId != null) {
-                        sc.addAnd("accountId", SearchCriteria.Op.NEQ, accountId); // we added the account specific ones above
-                    }
-                    List<NetworkGroupVO> domainGroups = listActiveBy(sc);
-                    availableGroups.addAll(domainGroups);
-
-                    // get the parent domain, repeat the loop
-                    DomainVO domain = _domainDao.findById(domainId);
-                    domainId = domain.getParent();
-                }
-            }
-        }
-        return availableGroups;
     }
 
 	@Override

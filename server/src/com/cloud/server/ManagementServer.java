@@ -1232,16 +1232,6 @@ public interface ManagementServer {
     Long validateSecurityGroupsAndInstance(List<Long> securityGroupIds, Long instanceId);
 
     /**
-     * returns a list of security groups that can be applied to virtual machines for the given
-     * account/domain
-     * @param accountId the id of the account used for looking up groups
-     * @param domainId the domain of the given account, or if the account is null the domain
-     *                 to use for searching for groups
-     * @return a list of security groups
-     */
-    List<SecurityGroupVO> listSecurityGroups(Long accountId, Long domainId);
-
-    /**
      * returns a list of security groups
      * @param cmd
      * @return a list of security groups
