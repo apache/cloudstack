@@ -213,8 +213,7 @@ function buildActionLinkForSingleObject(label, actionMap, $actionMenu, listAPIMa
     });  
 } 
 
-function doActionToSingleObject(id, $actionLink, apiCommand, listAPIMap, $singleObject) {   
-    //debugger;
+function doActionToSingleObject(id, $actionLink, apiCommand, listAPIMap, $singleObject) {       
     var label = $actionLink.data("label");	
     var inProcessText = $actionLink.data("inProcessText");		           
     var isAsyncJob = $actionLink.data("isAsyncJob");
@@ -223,7 +222,8 @@ function doActionToSingleObject(id, $actionLink, apiCommand, listAPIMap, $single
     var listAPI = listAPIMap["listAPI"];
     var listAPIResponse = listAPIMap["listAPIResponse"];
     var listAPIResponseObj = listAPIMap["listAPIResponseObj"];
-          
+    
+    //debugger;      
     var $spinningWheel = $singleObject.find("#spinning_wheel");
     $spinningWheel.find("#description").text(inProcessText);  
     $spinningWheel.show();        
@@ -250,7 +250,7 @@ function doActionToSingleObject(id, $actionLink, apiCommand, listAPIMap, $single
 		                        if (result.jobstatus == 0) {
 			                        return; //Job has not completed
 		                        } else {											                    
-			                        $("body").stopTime(timerKey);	
+			                        $("body").stopTime(timerKey);				                        
 			                        $spinningWheel.hide();      		                       
 			                        if (result.jobstatus == 1) { // Succeeded 
 			                            $singleObject.data("afterActionInfo", (label + " action succeeded.")); 

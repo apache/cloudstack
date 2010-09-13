@@ -1,3 +1,7 @@
+function afterLoadAlertJSP() {
+
+}
+
 function alertToMidmenu(jsonObj, $midmenuItem1, toRightPanelFn) {      
     $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));                             
     $midmenuItem1.data("id", jsonObj.id); 

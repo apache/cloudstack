@@ -871,23 +871,3 @@
         </form>
     </div>
 </div>
-<!-- Detach Volume Dialog (begin) -->
-<div id="dialog_detach_volume" title="Detach Volume" style="display: none">
-    <p>
-        Please confirm you want to detach the volume</p>
-    <div class="dialog_formcontent">
-        <div class="selectable_errorbox" style="display: none; width: 250px">
-            <p>
-                <span style="font-style: bold; color: red"><strong>Error</strong>: </span><span id="apply_error_text">
-                    Error text will appear here</span>
-            </p>
-        </div>
-        <div class="selectable_commentbox" style="display: none; width: 250px">
-            <div class="selectable_loader">
-            </div>
-            <p>
-                <strong>Please wait...</strong>
-            </p>
-        </div>
-    </div>
-</div>

@@ -58,37 +58,38 @@ $(document).ready(function() {
     }
     
     var $midmenuItem = $("#midmenu_item");
-    function listMidMenuItems(leftmenuId, apiName, jsonResponse1, jsonResponse2, rightPanelJSP, toMidmenu, toRightPanel) { 
+    function listMidMenuItems(leftmenuId, apiName, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSP, toMidmenu, toRightPanel) { 
         $("#"+leftmenuId).bind("click", function(event) {
-            $("#right_panel").load(rightPanelJSP);           
-            $.ajax({
-	            cache: false,
-	            data: createURL("command="+apiName+"&pagesize="+midmenuItemCount),
-	            dataType: "json",
-	            success: function(json) {	
-	                $("#midmenu_container").empty();
-	                selectedItemsInMidMenu = {};
-	                
-	                var items = json[jsonResponse1][jsonResponse2];
-	                if(items != null && items.length > 0) {
-	                    for(var i=0; i<items.length;i++) { 
-                            var $midmenuItem1 = $midmenuItem.clone();                               
-                            toMidmenu(items[i], $midmenuItem1, toRightPanel);                             
-                            $("#midmenu_container").append($midmenuItem1.show());                            
+            $("#right_panel").load(rightPanelJSP, function(){   
+                afterLoadRightPanelJSP();
+                $.ajax({
+	                cache: false,
+	                data: createURL("command="+apiName+"&pagesize="+midmenuItemCount),
+	                dataType: "json",
+	                success: function(json) {	
+	                    $("#midmenu_container").empty();
+	                    selectedItemsInMidMenu = {};
+    	                
+	                    var items = json[jsonResponse1][jsonResponse2];
+	                    if(items != null && items.length > 0) {
+	                        for(var i=0; i<items.length;i++) { 
+                                var $midmenuItem1 = $midmenuItem.clone();                               
+                                toMidmenu(items[i], $midmenuItem1, toRightPanel);                             
+                                $("#midmenu_container").append($midmenuItem1.show());                            
+                            }  
                         }  
-                    }  
-	            }
-		    });	
-		   
+	                }
+		        });	 
+            });     
             return false;
         });
     }
-    listMidMenuItems("leftmenu_event", "listEvents", "listeventsresponse", "event", "jsp/event.jsp", eventToMidmenu, eventToRigntPanel);
-    listMidMenuItems("leftmenu_alert", "listAlerts", "listalertsresponse", "alert", "jsp/alert.jsp", alertToMidmenu, alertToRigntPanel);
-    listMidMenuItems("leftmenu_account", "listAccounts", "listaccountsresponse", "account", "jsp/account.jsp", accountToMidmenu, accountToRigntPanel);
-    listMidMenuItems("leftmenu_volume", "listVolumes", "listvolumesresponse", "volume", "jsp/volume.jsp", volumeToMidmenu, volumeToRigntPanel);
-    listMidMenuItems("leftmenu_snapshot", "listSnapshots", "listsnapshotsresponse", "snapshot", "jsp/snapshot.jsp", snapshotToMidmenu, snapshotToRigntPanel);
-    listMidMenuItems("leftmenu_ip", "listPublicIpAddresses", "listpublicipaddressesresponse", "publicipaddress", "jsp/ip_address.jsp", ipToMidmenu, ipToRigntPanel);
+    listMidMenuItems("leftmenu_event", "listEvents", "listeventsresponse", "event", "jsp/event.jsp", afterLoadEventJSP, eventToMidmenu, eventToRigntPanel);
+    listMidMenuItems("leftmenu_alert", "listAlerts", "listalertsresponse", "alert", "jsp/alert.jsp", afterLoadAlertJSP, alertToMidmenu, alertToRigntPanel);
+    listMidMenuItems("leftmenu_account", "listAccounts", "listaccountsresponse", "account", "jsp/account.jsp", afterLoadAccountJSP, accountToMidmenu, accountToRigntPanel);
+    listMidMenuItems("leftmenu_volume", "listVolumes", "listvolumesresponse", "volume", "jsp/volume.jsp", afterLoadVolumeJSP, volumeToMidmenu, volumeToRigntPanel);
+    listMidMenuItems("leftmenu_snapshot", "listSnapshots", "listsnapshotsresponse", "snapshot", "jsp/snapshot.jsp", afterLoadSnapshotJSP, snapshotToMidmenu, snapshotToRigntPanel);
+    listMidMenuItems("leftmenu_ip", "listPublicIpAddresses", "listpublicipaddressesresponse", "publicipaddress", afterLoadIpJSP, "jsp/ip_address.jsp", ipToMidmenu, ipToRigntPanel);
     
        
     $("#action_link").bind("mouseover", function(event) {

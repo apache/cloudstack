@@ -1,3 +1,27 @@
+function afterLoadVolumeJSP() {
+    activateDialog($("#dialog_create_template").dialog({
+        width: 400,
+        autoOpen: false,
+        modal: true,
+        zIndex: 2000
+    }));
+    
+    
+    $.ajax({
+        data: createURL("command=listOsTypes&response=json"),
+	    dataType: "json",
+	    success: function(json) {
+		    types = json.listostypesresponse.ostype;
+		    if (types != null && types.length > 0) {
+			    var select = $("#dialog_create_template #create_template_os_type").empty();
+			    for (var i = 0; i < types.length; i++) {
+				    select.append("<option value='" + types[i].id + "'>" + types[i].description + "</option>");
+			    }
+		    }	
+	    }
+    });
+}
+
 function volumeToMidmenu(jsonObj, $midmenuItem1, toRightPanelFn) {  
     $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));                             
     $midmenuItem1.data("id", jsonObj.id); 
@@ -101,11 +125,9 @@ function doCreateTemplate($actionLink, listAPIMap, $singleObject) {
 			var isPublic = thisDialog.find("#create_template_public").val();
             var password = thisDialog.find("#create_template_password").val();				
 			
-			var id = $singleObject.data("id");
-			//for(var id in selectedItemIds) {
-			    var apiCommand = "command=createTemplate&volumeId="+id+"&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
-			    doActionToSingleObject(id, $actionLink, apiCommand, listAPIMap, $singleObject);	
-			//}		
+			var id = $singleObject.data("jsonObj").id;			
+			var apiCommand = "command=createTemplate&volumeId="+id+"&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
+	    	doActionToSingleObject(id, $actionLink, apiCommand, listAPIMap, $singleObject);					
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
