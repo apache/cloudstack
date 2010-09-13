@@ -3417,47 +3417,53 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (userVm != null) 
         {
-            String privateIpPort = mappedPublicPorts.get(publicPort).toString();//eg: 10.1.1.2,30 ; 10.1.1.2,34
-            if (privateIpPort != null && privateIpPort.length()>0) 
-            {
-                String publicPortProtocol = publicPortToProtocolMapping.get(publicPort).toString();
-                String[] privateIpPortPairs = privateIpPort.toString().split(";"); //eg. 10.1.1.2,30
-                String[] privateIpAndPortStr;
-                boolean errFlag = false;
-
-            	for(String pair: privateIpPortPairs)
-            	{
-            		privateIpAndPortStr = pair.split(",");//split into 10.1.1.2 & 30
-            	
-	                if (privateIpAndPortStr[0].equals(userVm.getGuestIpAddress()) && privateIpAndPortStr[1].equals(privatePort)) {
-	                    if (s_logger.isDebugEnabled()) {
-	                        s_logger.debug("skipping the creating of firewall rule " + ipAddress + ":" + publicPort + " to " + userVm.getGuestIpAddress() + ":" + privatePort + "; rule already exists.");
-	                    }
-	                    return null; // already mapped
-	                }
-	                //at this point protocol string looks like: eg. tcp;udp || tcp || udp || udp;tcp 
-	                else if(!publicPortProtocol.contains(protocol))//check if this public port is mapped to the protocol or not
-	                {
-	                	//this is the case eg:
-	                	//pub:1 pri:2 pro: tcp
-	                	//pub 1 pri:3 pro: udp
-	                	break; //we break here out of the loop, for the record to be created
-	                }
-	                else
-	                {
-	                	errFlag = true;
-//	                    throw new NetworkRuleConflictException("An existing port forwarding service rule for " + ipAddress + ":" + publicPort
-//	                            + " already exists, found while trying to create mapping to " + userVm.getGuestIpAddress() + ":" + privatePort + ((securityGroupId == null) ? "." : " from port forwarding service "
-//	                            + securityGroupId.toString() + "."));
-	                }
-            	}
-            	
-            	if(errFlag)
-                    throw new NetworkRuleConflictException("An existing port forwarding service rule for " + ipAddress + ":" + publicPort
-                            + " already exists, found while trying to create mapping to " + userVm.getGuestIpAddress() + ":" + privatePort + ((securityGroupId == null) ? "." : " from port forwarding service "
-                            + securityGroupId.toString() + "."));
-            }
-
+        	if(mappedPublicPorts.size()>0)
+        	{
+        		StringBuilder privateIpPortIntermediate = mappedPublicPorts.get(publicPort);
+	            String privateIpPort = null;
+	            if(privateIpPortIntermediate != null && privateIpPortIntermediate.length()>0)
+	            	privateIpPort = privateIpPortIntermediate.toString();//eg: 10.1.1.2,30 ; 10.1.1.2,34
+	            
+	            if (privateIpPort != null && privateIpPort.length()>0) 
+	            {
+	                String publicPortProtocol = publicPortToProtocolMapping.get(publicPort).toString();
+	                String[] privateIpPortPairs = privateIpPort.toString().split(";"); //eg. 10.1.1.2,30
+	                String[] privateIpAndPortStr;
+	                boolean errFlag = false;
+	
+	            	for(String pair: privateIpPortPairs)
+	            	{
+	            		privateIpAndPortStr = pair.split(",");//split into 10.1.1.2 & 30
+	            	
+		                if (privateIpAndPortStr[0].equals(userVm.getGuestIpAddress()) && privateIpAndPortStr[1].equals(privatePort)) {
+		                    if (s_logger.isDebugEnabled()) {
+		                        s_logger.debug("skipping the creating of firewall rule " + ipAddress + ":" + publicPort + " to " + userVm.getGuestIpAddress() + ":" + privatePort + "; rule already exists.");
+		                    }
+		                    return null; // already mapped
+		                }
+		                //at this point protocol string looks like: eg. tcp;udp || tcp || udp || udp;tcp 
+		                else if(!publicPortProtocol.contains(protocol))//check if this public port is mapped to the protocol or not
+		                {
+		                	//this is the case eg:
+		                	//pub:1 pri:2 pro: tcp
+		                	//pub 1 pri:3 pro: udp
+		                	break; //we break here out of the loop, for the record to be created
+		                }
+		                else
+		                {
+		                	errFlag = true;
+	//	                    throw new NetworkRuleConflictException("An existing port forwarding service rule for " + ipAddress + ":" + publicPort
+	//	                            + " already exists, found while trying to create mapping to " + userVm.getGuestIpAddress() + ":" + privatePort + ((securityGroupId == null) ? "." : " from port forwarding service "
+	//	                            + securityGroupId.toString() + "."));
+		                }
+	            	}
+	            	
+	            	if(errFlag)
+	                    throw new NetworkRuleConflictException("An existing port forwarding service rule for " + ipAddress + ":" + publicPort
+	                            + " already exists, found while trying to create mapping to " + userVm.getGuestIpAddress() + ":" + privatePort + ((securityGroupId == null) ? "." : " from port forwarding service "
+	                            + securityGroupId.toString() + "."));
+	            }
+        	}
             FirewallRuleVO newFwRule = new FirewallRuleVO();
             newFwRule.setEnabled(true);
             newFwRule.setForwarding(true);
