@@ -105,7 +105,7 @@ long milliseconds = new Date().getTime();
                                 </ul>
                             </div>
                         </div>
-                        <div class="actionpanel_button_wrapper" id="add_link" style="display: none">
+                        <div class="actionpanel_button_wrapper" id="midmenu_add_link" style="display: none">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
                                     <img src="images/addvm_actionicon.png" alt="Add" /></div>

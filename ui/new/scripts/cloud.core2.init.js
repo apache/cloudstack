@@ -50,9 +50,15 @@ $(document).ready(function() {
         $midmenuItem1.data("toRightPanelFn", toRightPanelFn);
     }
     
+    function clearMidMenu() {
+        $("#midmenu_action_link").hide();
+        $("#midmenu_add_link").hide();
+    }
+    
     var $midmenuItem = $("#midmenu_item");
     function listMidMenuItems(leftmenuId, apiName, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSP, toMidmenu, toRightPanel) { 
         $("#"+leftmenuId).bind("click", function(event) {
+            clearMidMenu();
             $("#right_panel").load(rightPanelJSP, function(){   
                 afterLoadRightPanelJSP();
                 $.ajax({
@@ -84,7 +90,8 @@ $(document).ready(function() {
     listMidMenuItems("leftmenu_snapshot", "listSnapshots", "listsnapshotsresponse", "snapshot", "jsp/snapshot.jsp", afterLoadSnapshotJSP, snapshotToMidmenu, snapshotToRigntPanel);
     listMidMenuItems("leftmenu_ip", "listPublicIpAddresses", "listpublicipaddressesresponse", "publicipaddress", "jsp/ip_address.jsp", afterLoadIpJSP, ipToMidmenu, ipToRigntPanel);
     
-    $("#leftmenu_instance_group_header").bind("click", function(event) {   
+    $("#leftmenu_instance_group_header").bind("click", function(event) {  
+        clearMidMenu(); 
         var $arrowIcon = $(this).find("#arrow_icon");        
         clickInstanceGroupHeader($arrowIcon);
         return false;

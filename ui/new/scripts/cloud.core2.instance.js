@@ -484,7 +484,7 @@ function clickInstanceGroupHeader($arrowIcon) {
     //***** declaration for volume tab (end) *********************************************************
     
        
-    $("#add_link").show(); 
+    $("#midmenu_add_link").show(); 
 	if($arrowIcon.hasClass("close") == true) {
         $arrowIcon.removeClass("close").addClass("open");    
         $.ajax({
@@ -629,7 +629,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         var currentPageInTemplateGridInVmPopup =1;
 	    var selectedTemplateTypeInVmPopup;  //selectedTemplateTypeInVmPopup will be set to "featured" when new VM dialog box opens
     	   	
-	    $("#add_link").unbind("click").bind("click", function(event) {
+	    $("#midmenu_add_link").unbind("click").bind("click", function(event) {
             vmWizardOpen();			
 		    $.ajax({
 			    data: createURL("command=listZones&available=true"),
