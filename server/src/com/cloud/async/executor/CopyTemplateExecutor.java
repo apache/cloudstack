@@ -31,10 +31,9 @@ import com.cloud.domain.DomainVO;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 import com.google.gson.Gson;
 
 public class CopyTemplateExecutor extends BaseAsyncJobExecutor {

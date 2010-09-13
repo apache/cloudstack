@@ -21,14 +21,12 @@ package com.cloud.async;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 import junit.framework.Assert;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJobResult;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.domain.dao.DomainDaoImpl;

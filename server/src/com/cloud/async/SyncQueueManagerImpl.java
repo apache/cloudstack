@@ -25,18 +25,16 @@ import java.util.Map;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.async.SyncQueueItemVO;
-import com.cloud.async.SyncQueueVO;
 import com.cloud.async.dao.SyncQueueDao;
 import com.cloud.async.dao.SyncQueueItemDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value={SyncQueueManager.class})
 public class SyncQueueManagerImpl implements SyncQueueManager {

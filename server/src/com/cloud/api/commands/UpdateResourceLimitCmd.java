@@ -18,24 +18,12 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.Manager;
-import com.cloud.configuration.ResourceCount.ResourceType;
-import com.cloud.configuration.ResourceLimitVO;
-import com.cloud.domain.DomainVO;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.server.Criteria;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
 @Implementation(method="updateResourceLimit", manager=Manager.AccountManager)
 public class UpdateResourceLimitCmd extends BaseCmd {

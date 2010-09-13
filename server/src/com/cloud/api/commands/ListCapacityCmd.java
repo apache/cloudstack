@@ -29,18 +29,15 @@ import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.response.CapacityResponse;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.serializer.SerializerHelper;
 import com.cloud.server.Criteria;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePoolVO;
-import com.cloud.utils.Pair;
 
 @Implementation(method="listCapacities")
 public class ListCapacityCmd extends BaseListCmd {

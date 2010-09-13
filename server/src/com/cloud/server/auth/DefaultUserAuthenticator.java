@@ -23,10 +23,6 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
-import com.cloud.server.ManagementServerImpl;
-
 /**
  * Use this UserAuthenticator if users are already authenticated outside
  * of the VMOps system.

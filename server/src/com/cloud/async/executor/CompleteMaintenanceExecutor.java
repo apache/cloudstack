@@ -37,9 +37,7 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.GuestOSCategoryVO;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.vm.UserVmVO;
-//import com.cloud.vm.HostStats;
 import com.google.gson.Gson;
 
 public class CompleteMaintenanceExecutor extends BaseAsyncJobExecutor {

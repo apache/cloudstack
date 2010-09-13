@@ -19,15 +19,11 @@
 package com.cloud.async;
 
 import java.util.List;
-import java.util.Random;
 
 import junit.framework.Assert;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.async.SyncQueueItemVO;
-import com.cloud.async.SyncQueueManager;
-import com.cloud.async.SyncQueueVO;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.testcase.ComponentSetup;
 import com.cloud.utils.testcase.ComponentTestCase;

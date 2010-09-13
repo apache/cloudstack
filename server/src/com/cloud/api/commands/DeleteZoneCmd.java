@@ -18,20 +18,12 @@
 
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.Manager;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.user.User;
-import com.cloud.utils.Pair;
 
 @Implementation(method="deleteZone", manager=Manager.ConfigManager)
 public class DeleteZoneCmd extends BaseCmd {

@@ -18,8 +18,6 @@
 
 package com.cloud.async;
 
-import com.cloud.async.AsyncJobVO;
-import com.cloud.async.SyncQueueItemVO;
 
 public interface AsyncJobExecutor {
 	public AsyncJobManager getAsyncJobMgr();

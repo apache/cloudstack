@@ -5,9 +5,9 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.Manager;
 
 @Implementation(method="updateTemplatePermissions", manager=Manager.ManagementServer)
 public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {

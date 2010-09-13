@@ -18,8 +18,6 @@
 
 package com.cloud.async;
 
-import com.cloud.async.AsyncJobResult;
-import com.cloud.async.AsyncJobVO;
 import com.cloud.utils.component.Manager;
 
 public interface AsyncJobManager extends Manager {

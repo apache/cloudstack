@@ -111,7 +111,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
 
         VolumeResponse response = new VolumeResponse();
         response.setId(volume.getId());
-        response.setName(param.getName());
+        response.setName(volume.getName());
         response.setVolumeType(volume.getVolumeType().toString());
         response.setSize(volume.getSize());
         response.setCreated(volume.getCreated());

@@ -20,22 +20,16 @@ package com.cloud.api.commands;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.async.AsyncJobVO;
-import com.cloud.domain.DomainVO;
 import com.cloud.serializer.SerializerHelper;
-import com.cloud.server.Criteria;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 import com.cloud.vm.DomainRouterVO;
 
 @Implementation(method="searchForRouters")

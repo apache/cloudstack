@@ -27,7 +27,6 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -40,7 +39,6 @@ import com.cloud.host.Status.Event;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.GuestOSCategoryVO;
-import com.cloud.utils.Pair;
 import com.cloud.vm.UserVmVO;
 
 @Implementation(method="searchForServers")

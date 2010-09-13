@@ -18,10 +18,7 @@
 
 package com.cloud.async.executor;
 
-import java.util.List;
-
 import com.cloud.api.BaseCmd;
-import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.VMTemplateVO;

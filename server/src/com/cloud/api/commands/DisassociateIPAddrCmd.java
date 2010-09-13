@@ -21,9 +21,9 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.Manager;
 
 @Implementation(method="disassociateIpAddress", manager=Manager.NetworkManager)
 public class DisassociateIPAddrCmd extends BaseCmd {

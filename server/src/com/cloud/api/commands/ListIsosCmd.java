@@ -25,15 +25,12 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.domain.DomainVO;
 import com.cloud.host.HostVO;
 import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.GuestOS;
@@ -43,7 +40,6 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
-import com.cloud.utils.Pair;
 
 @Implementation(method="listTemplates")
 public class ListIsosCmd extends BaseListCmd {

@@ -20,7 +20,6 @@ package com.cloud.storage.download;
 
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.download.DownloadState.DownloadEvent;
 
 public class DownloadAbandonedState extends DownloadInactiveState {
 

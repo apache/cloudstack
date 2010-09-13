@@ -161,12 +161,12 @@ public class ApiServlet extends HttpServlet {
             String userId = null;
 
             if (!isNew) {
-                userId = (String)session.getAttribute(BaseCmd.Properties.USER_ID.getName());
-                String account = (String)session.getAttribute(BaseCmd.Properties.ACCOUNT.getName());
-                String domainId = (String)session.getAttribute(BaseCmd.Properties.DOMAIN_ID.getName());
-                Object accountObj = session.getAttribute(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-                String sessionKey = (String)session.getAttribute(BaseCmd.Properties.SESSION_KEY.getName());
-                String[] sessionKeyParam = (String[])params.get(BaseCmd.Properties.SESSION_KEY.getName());
+                userId = (String)session.getAttribute("userid");
+                String account = (String)session.getAttribute("account");
+                String domainId = (String)session.getAttribute("domainid");
+                Object accountObj = session.getAttribute("accountobj");
+                String sessionKey = (String)session.getAttribute("sessionkey");
+                String[] sessionKeyParam = (String[])params.get("sessionkey");
                 if ((sessionKeyParam == null) || (sessionKey == null) || !sessionKey.equals(sessionKeyParam[0])) {
                     session.invalidate();
                     resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials");
@@ -276,6 +276,7 @@ public class ApiServlet extends HttpServlet {
         }
     }
 
+    @SuppressWarnings("rawtypes")
     private String getLoginSuccessResponse(HttpSession session, String responseType) {
         StringBuffer sb = new StringBuffer();
         int inactiveInterval = session.getMaxInactiveInterval();

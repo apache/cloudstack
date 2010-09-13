@@ -23,9 +23,9 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.Manager;
 
 @Implementation(method="removeFromLoadBalancer", manager=Manager.NetworkManager)
 public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {

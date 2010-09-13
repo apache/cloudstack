@@ -1,6 +1,7 @@
 package com.cloud.event;
 
 import com.cloud.event.dao.EventDao;
+import com.cloud.server.ManagementServer;
 import com.cloud.utils.component.ComponentLocator;
 
 public class EventUtils {

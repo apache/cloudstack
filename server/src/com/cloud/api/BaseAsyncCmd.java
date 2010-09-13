@@ -1,7 +1,6 @@
 package com.cloud.api;
 
 import com.cloud.serializer.SerializerHelper;
-import com.cloud.user.Account;
 
 /**
  * A base command for supporting asynchronous API calls.  When an API command is received, the command will be

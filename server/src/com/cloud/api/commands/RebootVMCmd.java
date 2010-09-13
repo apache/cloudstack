@@ -21,9 +21,9 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.BaseCmd.Manager;
 
 @Implementation(method="rebootVirtualMachine", manager=Manager.UserVmManager)
 public class RebootVMCmd extends BaseAsyncCmd {

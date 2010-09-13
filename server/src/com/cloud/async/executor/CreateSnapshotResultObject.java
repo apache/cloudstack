@@ -19,9 +19,9 @@
 package com.cloud.async.executor;
 
 import java.util.Date;
-import com.cloud.storage.Volume.VolumeType;
 
 import com.cloud.serializer.Param;
+import com.cloud.storage.Volume.VolumeType;
 
 public class CreateSnapshotResultObject {
 	

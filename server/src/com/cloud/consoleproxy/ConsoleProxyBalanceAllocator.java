@@ -27,8 +27,6 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.consoleproxy.ConsoleProxyAllocator;
-import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.ConsoleProxyVO;
