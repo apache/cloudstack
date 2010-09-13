@@ -3379,27 +3379,69 @@ public class ManagementServerImpl implements ManagementServer {
 
         // check for ip address/port conflicts by checking existing forwarding and load balancing rules
         List<FirewallRuleVO> existingRulesOnPubIp = _firewallRulesDao.listIPForwarding(ipAddress);
-        Map<String, Pair<String, String>> mappedPublicPorts = new HashMap<String, Pair<String, String>>();
-
+        Map<String,StringBuilder> mappedPublicPorts = new HashMap<String, StringBuilder>();
+        Map<String, StringBuilder> publicPortToProtocolMapping=new HashMap<String, StringBuilder>();
         if (existingRulesOnPubIp != null) {
             for (FirewallRuleVO fwRule : existingRulesOnPubIp) {
-                mappedPublicPorts.put(fwRule.getPublicPort(), new Pair<String, String>(fwRule.getPrivateIpAddress(), fwRule.getPrivatePort()));
+            	
+                //mappedPublicPorts.put(fwRule.getPublicPort(), new Pair<String, String>(fwRule.getPrivateIpAddress(), fwRule.getPrivatePort()));
+            	if(mappedPublicPorts.containsKey(fwRule.getPublicPort())){
+            		mappedPublicPorts.put(fwRule.getPublicPort(), mappedPublicPorts.get(fwRule.getPublicPort()).append(";").append(fwRule.getPrivateIpAddress().concat(",").concat(fwRule.getPrivatePort())));
+            	}
+            	else{
+            		mappedPublicPorts.put(fwRule.getPublicPort(), new StringBuilder(fwRule.getPrivateIpAddress()+","+fwRule.getPrivatePort()));
+            	}
+            	
+            	if(publicPortToProtocolMapping.containsKey(fwRule.getPublicPort())){
+            		publicPortToProtocolMapping.put(fwRule.getPublicPort(), publicPortToProtocolMapping.get(fwRule.getPublicPort()).append(";").append(fwRule.getProtocol()));
+            	}
+            	else{
+            		publicPortToProtocolMapping.put(fwRule.getPublicPort(),new StringBuilder(fwRule.getProtocol()));
+            	}
             }
         }
 
-        if (userVm != null) {
-            Pair<String, String> privateIpPort = mappedPublicPorts.get(publicPort);
-            if (privateIpPort != null) {
-                if (privateIpPort.first().equals(userVm.getGuestIpAddress()) && privateIpPort.second().equals(privatePort)) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("skipping the creating of firewall rule " + ipAddress + ":" + publicPort + " to " + userVm.getGuestIpAddress() + ":" + privatePort + "; rule already exists.");
-                    }
-                    return null; // already mapped
-                } else {
+        if (userVm != null) 
+        {
+            String privateIpPort = mappedPublicPorts.get(publicPort).toString();//eg: 10.1.1.2,30 ; 10.1.1.2,34
+            if (privateIpPort != null && privateIpPort.length()>0) 
+            {
+                String publicPortProtocol = publicPortToProtocolMapping.get(publicPort).toString();
+                String[] privateIpPortPairs = privateIpPort.toString().split(";"); //eg. 10.1.1.2,30
+                String[] privateIpAndPortStr;
+                boolean errFlag = false;
+
+            	for(String pair: privateIpPortPairs)
+            	{
+            		privateIpAndPortStr = pair.split(",");//split into 10.1.1.2 & 30
+            	
+	                if (privateIpAndPortStr[0].equals(userVm.getGuestIpAddress()) && privateIpAndPortStr[1].equals(privatePort)) {
+	                    if (s_logger.isDebugEnabled()) {
+	                        s_logger.debug("skipping the creating of firewall rule " + ipAddress + ":" + publicPort + " to " + userVm.getGuestIpAddress() + ":" + privatePort + "; rule already exists.");
+	                    }
+	                    return null; // already mapped
+	                }
+	                //at this point protocol string looks like: eg. tcp;udp || tcp || udp || udp;tcp 
+	                else if(!publicPortProtocol.contains(protocol))//check if this public port is mapped to the protocol or not
+	                {
+	                	//this is the case eg:
+	                	//pub:1 pri:2 pro: tcp
+	                	//pub 1 pri:3 pro: udp
+	                	break; //we break here out of the loop, for the record to be created
+	                }
+	                else
+	                {
+	                	errFlag = true;
+//	                    throw new NetworkRuleConflictException("An existing port forwarding service rule for " + ipAddress + ":" + publicPort
+//	                            + " already exists, found while trying to create mapping to " + userVm.getGuestIpAddress() + ":" + privatePort + ((securityGroupId == null) ? "." : " from port forwarding service "
+//	                            + securityGroupId.toString() + "."));
+	                }
+            	}
+            	
+            	if(errFlag)
                     throw new NetworkRuleConflictException("An existing port forwarding service rule for " + ipAddress + ":" + publicPort
                             + " already exists, found while trying to create mapping to " + userVm.getGuestIpAddress() + ":" + privatePort + ((securityGroupId == null) ? "." : " from port forwarding service "
                             + securityGroupId.toString() + "."));
-                }
             }
 
             FirewallRuleVO newFwRule = new FirewallRuleVO();
