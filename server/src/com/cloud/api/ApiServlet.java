@@ -134,7 +134,7 @@ public class ApiServlet extends HttpServlet {
 
                     if (username != null) {
                         String pwd = ((password == null) ? null : password[0]);
-                        List<Pair<String, Object>> sessionParams = _apiServer.loginUser(username[0], pwd, domainId, domain, params);
+                        List<Pair<String, Object>> sessionParams = _apiServer.loginUser(session, username[0], pwd, domainId, domain, params);
                         if (sessionParams != null) {
                             for (Pair<String, Object> sessionParam : sessionParams) {
                                 session.setAttribute(sessionParam.first(), sessionParam.second());

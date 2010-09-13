@@ -170,17 +170,17 @@ public class ListAccountsCmd extends BaseListCmd {
             acctResponse.setVolumeTotal(volumeTotal);
             acctResponse.setVolumeAvailable(volumeAvail);
             
-            long snapshotLimit = getManagementServer().findCorrectResourceLimit(ResourceType.snapshot, accountO.getId());
+            long snapshotLimit = getManagementServer().findCorrectResourceLimit(ResourceType.snapshot, account.getId());
             String snapshotLimitDisplay = (accountIsAdmin || snapshotLimit == -1) ? "Unlimited" : String.valueOf(snapshotLimit);
-            long snapshotTotal = getManagementServer().getResourceCount(ResourceType.snapshot, accountO.getId());
+            long snapshotTotal = getManagementServer().getResourceCount(ResourceType.snapshot, account.getId());
             String snapshotAvail = (accountIsAdmin || snapshotLimit == -1) ? "Unlimited" : String.valueOf(snapshotLimit - snapshotTotal);
             acctResponse.setSnapshotLimit(snapshotLimitDisplay);
             acctResponse.setSnapshotTotal(snapshotTotal);
             acctResponse.setSnapshotAvailable(snapshotAvail);
             
-            long templateLimit = getManagementServer().findCorrectResourceLimit(ResourceType.template, accountO.getId());
+            long templateLimit = getManagementServer().findCorrectResourceLimit(ResourceType.template, account.getId());
             String templateLimitDisplay = (accountIsAdmin || templateLimit == -1) ? "Unlimited" : String.valueOf(templateLimit);
-            long templateTotal = getManagementServer().getResourceCount(ResourceType.template, accountO.getId());
+            long templateTotal = getManagementServer().getResourceCount(ResourceType.template, account.getId());
             String templateAvail = (accountIsAdmin || templateLimit == -1) ? "Unlimited" : String.valueOf(templateLimit - templateTotal);
             acctResponse.setTemplateLimit(templateLimitDisplay);
             acctResponse.setTemplateTotal(templateTotal);

@@ -43,7 +43,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CreateSnapshotCmd;
 import com.cloud.api.commands.CreateSnapshotPolicyCmd;
-import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.DeleteSnapshotCmd;
 import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
@@ -53,7 +52,6 @@ import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
-import com.cloud.async.executor.SnapshotOperationParam;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -68,7 +66,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
-import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.Snapshot.Status;
@@ -113,7 +110,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.UserVmDao;
-import com.google.gson.Gson;
 
 @Local(value={SnapshotManager.class})
 public class SnapshotManagerImpl implements SnapshotManager {
@@ -1501,11 +1497,6 @@ public class SnapshotManagerImpl implements SnapshotManager {
         PoliciesForSnapSearch.join("policyRef", policyRefSearch, policyRefSearch.entity().getPolicyId(), PoliciesForSnapSearch.entity().getId());
         policyRefSearch.done();
         PoliciesForSnapSearch.done();
-
-        String maxVolumeSizeInGbString = configDao.get("max.volume.size.gb");
-        int maxVolumeSizeGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2000);
-
-        _maxVolumeSizeInGb = maxVolumeSizeGb;
 
         s_logger.info("Snapshot Manager is configured.");
 

@@ -17,7 +17,6 @@
  */
 package com.cloud.consoleproxy;
 
-
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.Listener;

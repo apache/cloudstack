@@ -26,15 +26,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
-import java.text.DateFormat;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -43,7 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -52,6 +48,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import javax.servlet.http.HttpSession;
 
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
@@ -80,7 +77,6 @@ import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.ConfigurationVO;
@@ -93,7 +89,6 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
-import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
@@ -101,7 +96,6 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.encoding.Base64;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
 
 public class ApiServer implements HttpRequestHandler {
@@ -115,6 +109,7 @@ public class ApiServer implements HttpRequestHandler {
     private Properties _apiCommands = null;
     private AsyncJobManager _asyncMgr;
     private ApiDispatcher _dispatcher;
+    private ManagementServer _ms = null;
 
     private static int _workerCount = 0;
 
@@ -187,12 +182,13 @@ public class ApiServer implements HttpRequestHandler {
             s_logger.error("Exception loading properties file", ioex);
         }
 
+        _ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
         _asyncMgr = locator.getManager(AsyncJobManager.class);
         _dispatcher = new ApiDispatcher();
 
         int apiPort = 8096; // default port
-        ConfigurationDao configDao = ComponentLocator.getLocator(ManagementServer.Name).getDao(ConfigurationDao.class);
+        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
         SearchCriteria<ConfigurationVO> sc = configDao.createSearchCriteria();
         sc.addAnd("name", SearchCriteria.Op.EQ, "integration.api.port");
         List<ConfigurationVO> values = configDao.search(sc, null);
@@ -205,7 +201,7 @@ public class ApiServer implements HttpRequestHandler {
         listenerThread.start();
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     public void handle(HttpRequest request, HttpResponse response, HttpContext context) throws HttpException, IOException {
         // get some information for the access log...
@@ -279,6 +275,7 @@ public class ApiServer implements HttpRequestHandler {
         }
     }
 
+    @SuppressWarnings("rawtypes")
     public String handleRequest(Map params, boolean decode, String responseType) throws ServerApiException {
         String response = null;
         String[] command = null;
@@ -495,7 +492,7 @@ public class ApiServer implements HttpRequestHandler {
         return false;
     }
     
-    public List<Pair<String, Object>> loginUser(String username, String password, Long domainId, String domainPath, Map<String, Object[]> requestParameters) {
+    public List<Pair<String, Object>> loginUser(HttpSession session, String username, String password, Long domainId, String domainPath, Map<String, Object[]> requestParameters) {
     	// We will always use domainId first.  If that does not exist, we will use domain name.  If THAT doesn't exist
     	// we will default to ROOT
         if (domainId == null) {
@@ -549,24 +546,24 @@ public class ApiServer implements HttpRequestHandler {
             String systemVmUseLocalStorage = _ms.getConfigurationValue("system.vm.use.local.storage");
             if (systemVmUseLocalStorage == null) 
             	systemVmUseLocalStorage = "false";            
-            
+
             // set the userId and account object for everyone
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.USER_ID.getName(), userAcct.getId().toString()));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.USERNAME.getName(), userAcct.getUsername()));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.FIRSTNAME.getName(), userAcct.getFirstname()));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.LASTNAME.getName(), userAcct.getLastname()));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT_OBJ.getName(), account));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT.getName(), account.getAccountName()));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), account.getDomainId().toString()));           
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.TYPE.getName(), Short.valueOf(account.getType()).toString()));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.NETWORK_TYPE.getName(), networkType));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.HYPERVISOR_TYPE.getName(), hypervisorType));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.DIRECT_ATTACH_NETWORK_GROUPS_ENABLED.getName(), directAttachNetworkGroupsEnabled));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.DIRECT_ATTACHED_UNTAGGED_ENABLED.getName(), directAttachedUntaggedEnabled));
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.SYSTEM_VM_USE_LOCAL_STORAGE.getName(), systemVmUseLocalStorage));
+            session.setAttribute("userid", userAcct.getId().toString());
+            session.setAttribute("username", userAcct.getUsername());
+            session.setAttribute("firstname", userAcct.getFirstname());
+            session.setAttribute("lastname", userAcct.getLastname());
+            session.setAttribute("accountobj", account);
+            session.setAttribute("account", account.getAccountName());
+            session.setAttribute("domainid", account.getDomainId().toString());
+            session.setAttribute("type", Short.valueOf(account.getType()).toString());
+            session.setAttribute("networktype", networkType);
+            session.setAttribute("hypervisortype", hypervisorType);
+            session.setAttribute("directattachnetworkgroupsenabled", directAttachNetworkGroupsEnabled);
+            session.setAttribute("directattacheduntaggedenabled", directAttachedUntaggedEnabled);
+            session.setAttribute("systemvmuselocalstorage", systemVmUseLocalStorage);
             if (timezone != null) {
-            	loginParams.add(new Pair<String, Object>(BaseCmd.Properties.TIMEZONE.getName(), timezone));
-            	loginParams.add(new Pair<String, Object>(BaseCmd.Properties.TIMEZONE_OFFSET.getName(), Float.valueOf(offsetInHrs).toString()));
+                session.setAttribute("timezone", timezone);
+                session.setAttribute("timezoneoffset", Float.valueOf(offsetInHrs).toString());
             }
 
             // (bug 5483) generate a session key that the user must submit on every request to prevent CSRF, add that
@@ -575,7 +572,7 @@ public class ApiServer implements HttpRequestHandler {
             byte sessionKeyBytes[] = new byte[20];
             sesssionKeyRandom.nextBytes(sessionKeyBytes);
             String sessionKey = Base64.encodeBytes(sessionKeyBytes);
-            loginParams.add(new Pair<String, Object>(BaseCmd.Properties.SESSION_KEY.getName(), sessionKey));
+            session.setAttribute("sessionkey", sessionKey);
 
             return loginParams;
         }
