@@ -40,13 +40,6 @@ $(document).ready(function() {
             }             
         }
     });
- 
-    $("#leftmenu_instance_group_header").bind("click", function(event) {   
-        var $arrowIcon = $(this).find("#arrow_icon");        
-        clickInstanceGroupHeader($arrowIcon);
-        return false;
-    });
-    
     
     function jsonToMidmenu(jsonObj, $midmenuItem1, propertyForFirstRow, propertyForSecondRow, toRightPanelFn) {  
         $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));                             
@@ -89,14 +82,23 @@ $(document).ready(function() {
     listMidMenuItems("leftmenu_account", "listAccounts", "listaccountsresponse", "account", "jsp/account.jsp", afterLoadAccountJSP, accountToMidmenu, accountToRigntPanel);
     listMidMenuItems("leftmenu_volume", "listVolumes", "listvolumesresponse", "volume", "jsp/volume.jsp", afterLoadVolumeJSP, volumeToMidmenu, volumeToRigntPanel);
     listMidMenuItems("leftmenu_snapshot", "listSnapshots", "listsnapshotsresponse", "snapshot", "jsp/snapshot.jsp", afterLoadSnapshotJSP, snapshotToMidmenu, snapshotToRigntPanel);
-    listMidMenuItems("leftmenu_ip", "listPublicIpAddresses", "listpublicipaddressesresponse", "publicipaddress", afterLoadIpJSP, "jsp/ip_address.jsp", ipToMidmenu, ipToRigntPanel);
+    listMidMenuItems("leftmenu_ip", "listPublicIpAddresses", "listpublicipaddressesresponse", "publicipaddress", "jsp/ip_address.jsp", afterLoadIpJSP, ipToMidmenu, ipToRigntPanel);
     
-       
-    $("#action_link").bind("mouseover", function(event) {
+    $("#leftmenu_instance_group_header").bind("click", function(event) {   
+        var $arrowIcon = $(this).find("#arrow_icon");        
+        clickInstanceGroupHeader($arrowIcon);
+        return false;
+    });
+    
+    
+    
+    
+           
+    $("#midmenu_action_link").bind("mouseover", function(event) {
         $(this).find("#action_menu").show();    
         return false;
     });
-    $("#action_link").bind("mouseout", function(event) {
+    $("#midmenu_action_link").bind("mouseout", function(event) {
         $(this).find("#action_menu").hide();    
         return false;
     });

@@ -544,7 +544,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 		        }
 		        
 		        //action menu			        
-		        $("#action_link").show();
+		        $("#midmenu_action_link").show();
 		        $("#action_menu #action_list").empty();		        
 		        for(var label in vmActionMap) 				            
 		            buildActionLinkForMidMenu(label, vmActionMap, $("#action_menu"), vmListAPIMap);	

@@ -90,7 +90,7 @@ long milliseconds = new Date().getTime();
                             </form>
                             <a href="#">Advanced</a>
                         </div>
-                        <div class="actionpanel_button_wrapper" id="action_link" style="position: relative;
+                        <div class="actionpanel_button_wrapper" id="midmenu_action_link" style="position: relative;
                             display: none">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
