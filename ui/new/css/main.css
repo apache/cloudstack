@@ -38,7 +38,8 @@ a {
 }
 
 a:link, a:visited {
-	text-decoration:none;	
+	text-decoration:none;
+	
 }
 
 a:visited {
@@ -833,7 +834,7 @@ a:visited {
 	padding:0;
 }
 
-.rev_wiztemplist_actionsbox a:link {
+.rev_wiztemplist_actionsbox a {
 	width:auto;
 	height:auto;
 	float:left;
@@ -846,30 +847,13 @@ a:visited {
 	padding:0;
 }
 
-.rev_wiztemplist_actionsbox a:visted {
-	width:auto;
-	height:auto;
-	float:left;
-	color:#2c8bbc;
-	font-size:12px;
-	text-align:left;
-	font-weight:normal;
+.rev_wiztemplist_actionsbox a:link, rev_wiztemplist_actionsbox a:visted {
 	text-decoration:none;
-	margin:0 15px 0 0;
-	padding:0;
 }
 
 .rev_wiztemplist_actionsbox a:hover {
-	width:auto;
-	height:auto;
-	float:left;
-	color:#2c8bbc;
-	font-size:12px;
-	text-align:left;
-	font-weight:normal;
 	text-decoration:underline;
-	margin:0 15px 0 0;
-	padding:0;
+	
 }
 
 
