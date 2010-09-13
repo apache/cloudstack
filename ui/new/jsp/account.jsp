@@ -29,14 +29,28 @@
     </div>
     <div class="grid_actionpanel">
     	<div class="grid_actionbox">
-        	<div class="grid_actionsdropdown_box">
+        	<div class="grid_actionsdropdown_box" style="display:none;">
                 	<ul class="actionsdropdown_boxlist" id="action_list">
                     	<li> <a href="#"> Delete </a> </li>
                         <li> <a href="#"> Attach Disk </a> </li>
                     </ul>
             </div>
         </div>   
-        <div class="grid_editbox"></div>    
+        <div class="grid_editbox"></div>
+        <div class="gridheader_loaderbox" style="border:1px solid #999; display:none;">
+        	<div class="gridheader_loader"></div>
+            <p>Dettaching Disk &hellip;</p>
+        </div>
+        
+        <div class="gridheader_message" style="border:1px solid #999; display:block;">
+            <p>Disk has been succesfully dettached &hellip;</p>
+            <div class="close_button"></div>
+        </div>  
+        
+        <div class="gridheader_message error" style="border:1px solid #999; display:none;">
+            <p>Some problem occured while dettaching disk &hellip;</p>
+            <div class="close_button"></div>
+        </div>  
     </div>
     <div class="grid_container">
         <div class="grid_rows odd">
