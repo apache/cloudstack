@@ -18,38 +18,37 @@
 
 package com.cloud.api.commands;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.HostResponse;
+import com.cloud.api.response.StoragePoolResponse;
+import com.cloud.dc.ClusterVO;
 import com.cloud.host.Host;
-import com.cloud.server.ManagementServer;
-import com.cloud.utils.Pair;
+import com.cloud.host.HostStats;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status.Event;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.serializer.SerializerHelper;
+import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.StorageStats;
+import com.cloud.vm.UserVmVO;
 
 @Implementation(method="")
 public class ListStoragePoolsAndHostsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListStoragePoolsAndHostsCmd.class.getName());
 
     private static final String s_name = "liststoragepoolsandhostsresponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-    private static final ListStoragePoolsCmd storagePoolsCmd = new ListStoragePoolsCmd();
-    private static final ListHostsCmd storageHostsCmd = new ListHostsCmd();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IP_ADDRESS, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PATH, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.STATE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TYPE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -117,34 +116,153 @@ public class ListStoragePoolsAndHostsCmd extends BaseListCmd {
         return s_name;
     }
 
-    @Override
+    @Override @SuppressWarnings("unchecked")
     public String getResponse() {
-    }
+        List<Object> poolsAndHosts = (List<Object>)getResponseObject();
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        List<Pair<String, Object>> poolTags = storagePoolsCmd.execute(params);
-        List<Pair<String, Object>> hostTags = new ArrayList<Pair<String, Object>>();
-        String ipAddress = (String)params.get(BaseCmd.Properties.IP_ADDRESS.getName());
-        String path = (String)params.get(BaseCmd.Properties.PATH.getName());
-        if (ipAddress == null && path == null){
-            params.put(BaseCmd.Properties.TYPE.getName(), Host.Type.Storage.toString());
-            hostTags = storageHostsCmd.execute(params);
+        List<Object> response = new ArrayList<Object>();
+        for (Object poolOrHost : poolsAndHosts) {
+            if (poolOrHost instanceof StoragePoolVO) {
+                StoragePoolVO pool = (StoragePoolVO)poolOrHost;
+                response.add(constructStoragePoolResponse(pool));
+            } else if (poolOrHost instanceof HostVO) {
+                HostVO host = (HostVO)poolOrHost;
+                response.add(constructHostResponse(host));
+            }
         }
-        poolTags.addAll(hostTags);
-        return poolTags;
+
+        return SerializerHelper.toSerializedString(response);
     }
 
-    @Override
-    public void setManagementServer(ManagementServer ms) {
-        storagePoolsCmd.setManagementServer(ms);
-        storageHostsCmd.setManagementServer(ms);
+    private StoragePoolResponse constructStoragePoolResponse(StoragePoolVO pool) {
+        StoragePoolResponse poolResponse = new StoragePoolResponse();
+        poolResponse.setId(pool.getId());
+        poolResponse.setName(pool.getName());
+        poolResponse.setPath(pool.getPath());
+        poolResponse.setIpAddress(pool.getHostAddress());
+        poolResponse.setZoneId(pool.getDataCenterId());
+        poolResponse.setZoneName(getManagementServer().getDataCenterBy(pool.getDataCenterId()).getName());
+        if (pool.getPoolType() != null) {
+            poolResponse.setType(pool.getPoolType().toString());
+        }
+        if (pool.getPodId() != null) {
+            poolResponse.setPodId(pool.getPodId());
+            poolResponse.setPodName(getManagementServer().getPodBy(pool.getPodId()).getName());
+        }
+        if (pool.getCreated() != null) {
+            poolResponse.setCreated(pool.getCreated());
+        }
+
+        StorageStats stats = getManagementServer().getStoragePoolStatistics(pool.getId());
+        long capacity = pool.getCapacityBytes();
+        long available = pool.getAvailableBytes() ;
+        long used = capacity - available;
+
+        if (stats != null) {
+            used = stats.getByteUsed();
+            available = capacity - used;
+        }
+
+        poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
+        poolResponse.setDiskSizeAllocated(used);
+
+        if (pool.getClusterId() != null) {
+            ClusterVO cluster = getManagementServer().findClusterById(pool.getClusterId());
+            poolResponse.setClusterId(cluster.getId());
+            poolResponse.setClusterName(cluster.getName());
+        }           
+
+        poolResponse.setTags(getManagementServer().getStoragePoolTags(pool.getId()));
+
+        return poolResponse;
     }
 
-    @Override
-    public Map<String, Object> validateParams(Map<String, String> params, boolean decode) {
-        Map<String, Object> result = storagePoolsCmd.validateParams(params, decode);
-        result.putAll(storageHostsCmd.validateParams(params, decode));
-        return result;
+    private HostResponse constructHostResponse(HostVO host) {
+        HostResponse hostResponse = new HostResponse();
+        hostResponse.setId(host.getId());
+        hostResponse.setCapabilities(host.getCapabilities());
+        hostResponse.setClusterId(host.getClusterId());
+        hostResponse.setCpuNumber(host.getCpus());
+        hostResponse.setZoneId(host.getDataCenterId());
+        hostResponse.setDisconnectedOn(host.getDisconnectedOn());
+        hostResponse.setHypervisor(host.getHypervisorType());
+        hostResponse.setHostType(host.getType());
+        hostResponse.setLastPinged(new Date(host.getLastPinged()));
+        hostResponse.setManagementServerId(host.getManagementServerId());
+        hostResponse.setName(host.getName());
+        hostResponse.setPodId(host.getPodId());
+        hostResponse.setRemoved(host.getRemoved());
+        hostResponse.setCpuSpeed(host.getSpeed());
+        hostResponse.setState(host.getStatus());
+        hostResponse.setIpAddress(host.getPrivateIpAddress());
+        hostResponse.setVersion(host.getVersion());
+
+        // TODO:  implement
+        GuestOSCategoryVO guestOSCategory = getManagementServer().getHostGuestOSCategory(host.getId());
+        if (guestOSCategory != null) {
+            hostResponse.setOsCategoryId(guestOSCategory.getId());
+            hostResponse.setOsCategoryName(guestOSCategory.getName());
+        }
+        hostResponse.setZoneName(getManagementServer().getDataCenterBy(host.getDataCenterId()).getName());
+        hostResponse.setPodName(getManagementServer().findHostPodById(host.getPodId()).getName());
+
+        // calculate cpu allocated by vm
+        int cpu = 0;
+        String cpuAlloc = null;
+        DecimalFormat decimalFormat = new DecimalFormat("#.##");
+        List<UserVmVO> instances = getManagementServer().listUserVMsByHostId(host.getId());
+        for (UserVmVO vm : instances) {
+            ServiceOffering so = getManagementServer().findServiceOfferingById(vm.getServiceOfferingId());
+            cpu += so.getCpu() * so.getSpeed();
+        }
+        cpuAlloc = decimalFormat.format(((float) cpu / (float) (host.getCpus() * host.getSpeed())) * 100f) + "%";
+        hostResponse.setCpuAllocated(cpuAlloc);
+
+        // calculate cpu utilized
+        String cpuUsed = null;
+        HostStats hostStats = getManagementServer().getHostStatistics(host.getId());
+        if (hostStats != null) {
+            float cpuUtil = (float) hostStats.getCpuUtilization();
+            cpuUsed = decimalFormat.format(cpuUtil) + "%";
+            hostResponse.setCpuUsed(cpuUsed);
+            hostResponse.setAverageLoad((long)hostStats.getAverageLoad());
+            hostResponse.setNetworkKbsRead((long)hostStats.getNetworkReadKBs());
+            hostResponse.setNetworkKbsWrite((long)hostStats.getNetworkWriteKBs());
+        }
+
+        if (host.getType() == Host.Type.Routing) {
+            hostResponse.setMemoryTotal(host.getTotalMemory());
+            
+            // calculate memory allocated by systemVM and userVm
+            long mem = getManagementServer().getMemoryUsagebyHost(host.getId());
+            hostResponse.setMemoryAllocated(mem);
+            hostResponse.setMemoryUsed(mem);
+        } else if (host.getType().toString().equals("Storage")) {
+            hostResponse.setDiskSizeTotal(host.getTotalSize());
+            hostResponse.setDiskSizeAllocated(0L);
+        }
+
+        if (host.getClusterId() != null) {
+            ClusterVO cluster = getManagementServer().findClusterById(host.getClusterId());
+            hostResponse.setClusterName(cluster.getName());
+        }
+
+        hostResponse.setLocalStorageActive(getManagementServer().isLocalStorageActiveOnHost(host));
+
+        Set<Event> possibleEvents = host.getStatus().getPossibleEvents();
+        if ((possibleEvents != null) && !possibleEvents.isEmpty()) {
+            String events = "";
+            Iterator<Event> iter = possibleEvents.iterator();
+            while (iter.hasNext()) {
+                Event event = iter.next();
+                events += event.toString();
+                if (iter.hasNext()) {
+                    events += "; ";
+                }
+            }
+            hostResponse.setEvents(events);
+        }
+
+        return hostResponse;
     }
 }

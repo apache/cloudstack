@@ -90,6 +90,7 @@ import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListRoutersCmd;
 import com.cloud.api.commands.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListSnapshotsCmd;
+import com.cloud.api.commands.ListStoragePoolsAndHostsCmd;
 import com.cloud.api.commands.ListStoragePoolsCmd;
 import com.cloud.api.commands.ListSystemVMsCmd;
 import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
@@ -167,6 +168,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -2800,9 +2802,6 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<HostVO> searchForServers(ListHostsCmd cmd) {
-        Filter searchFilter = new Filter(HostVO.class, "id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
-
         Object name = cmd.getHostName();
         Object type = cmd.getType();
         Object state = cmd.getState();
@@ -2811,6 +2810,13 @@ public class ManagementServerImpl implements ManagementServer {
         Object cluster = cmd.getClusterId();
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
+
+        return searchForServers(cmd.getStartIndex(), cmd.getPageSizeVal(), name, type, state, zone, pod, cluster, id, keyword);
+    }
+
+    private List<HostVO> searchForServers(Long startIndex, Long pageSize, Object name, Object type, Object state, Object zone, Object pod, Object cluster, Object id, Object keyword) {
+        Filter searchFilter = new Filter(HostVO.class, "id", Boolean.TRUE, startIndex, pageSize);
+        SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
 
         if (keyword != null) {
             SearchCriteria<HostVO> ssc = _hostDao.createSearchCriteria();
@@ -6263,6 +6269,32 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         return _poolDao.search(sc, searchFilter);
+    }
+
+    @Override
+    public List<Object> searchForStoragePoolsAndHosts(ListStoragePoolsAndHostsCmd cmd) {
+        Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
+        c.addCriteria(Criteria.NAME, cmd.getStoragePoolName());
+        c.addCriteria(Criteria.ADDRESS, cmd.getIpAddress());
+        c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
+        c.addCriteria(Criteria.PATH, cmd.getPath());
+        c.addCriteria(Criteria.PODID, cmd.getPodId());
+        c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());
+
+        List<Object> poolsAndHosts = new ArrayList<Object>();
+        List<? extends StoragePoolVO> pools = searchForStoragePools(c);
+        if ((pools != null) && !pools.isEmpty()) {
+            poolsAndHosts.addAll(pools);
+        }
+
+        if ((cmd.getPath() == null) && (cmd.getIpAddress() == null)) {
+            List<HostVO> hosts = searchForServers(cmd.getStartIndex(), cmd.getPageSizeVal(), cmd.getStoragePoolName(), Host.Type.Storage.toString(), cmd.getState(), cmd.getZoneId(), cmd.getPodId(), null, null, cmd.getKeyword());
+            if ((hosts != null) && !hosts.isEmpty()) {
+                poolsAndHosts.addAll(hosts);
+            }
+        }
+
+        return poolsAndHosts;
     }
 
     @Override

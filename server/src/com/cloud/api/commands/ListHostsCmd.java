@@ -18,6 +18,7 @@
 
 package com.cloud.api.commands;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -26,14 +27,21 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.HostResponse;
+import com.cloud.dc.ClusterVO;
 import com.cloud.host.Host;
+import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status.Event;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.serializer.SerializerHelper;
+import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.utils.Pair;
+import com.cloud.vm.UserVmVO;
 
 @Implementation(method="searchForServers")
 public class ListHostsCmd extends BaseListCmd {
@@ -135,60 +143,56 @@ public class ListHostsCmd extends BaseListCmd {
             hostResponse.setVersion(host.getVersion());
 
             // TODO:  implement
-//            GuestOSCategoryVO guestOSCategory = getManagementServer().getHostGuestOSCategory(server.getId());
-//            if (guestOSCategory != null) {
-//                serverData.add(new Pair<String, Object>(BaseCmd.Properties.OS_CATEGORY_ID.getName(), guestOSCategory.getId()));
-//                serverData.add(new Pair<String, Object>(BaseCmd.Properties.OS_CATEGORY_NAME.getName(), guestOSCategory.getName()));
-//                hostResponse.setOsCategoryId(osCategoryId);
-//                hostResponse.setOsCategoryName(osCategoryName);
-//            }
-//            hostResponse.setZoneName(zoneName);
-//            serverData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), getManagementServer().getDataCenterBy(server.getDataCenterId()).getName()));
-//            hostResponse.setPodName(podName);
-//            serverData.add(new Pair<String, Object>(BaseCmd.Properties.POD_NAME.getName(), getManagementServer().findHostPodById(server.getPodId()).getName()));
+            GuestOSCategoryVO guestOSCategory = getManagementServer().getHostGuestOSCategory(host.getId());
+            if (guestOSCategory != null) {
+                hostResponse.setOsCategoryId(guestOSCategory.getId());
+                hostResponse.setOsCategoryName(guestOSCategory.getName());
+            }
+            hostResponse.setZoneName(getManagementServer().getDataCenterBy(host.getDataCenterId()).getName());
+            hostResponse.setPodName(getManagementServer().findHostPodById(host.getPodId()).getName());
 
             // calculate cpu allocated by vm
-//            int cpu = 0;
-//            String cpuAlloc = null;
-//            DecimalFormat decimalFormat = new DecimalFormat("#.##");
-//            List<UserVmVO> instances = getManagementServer().listUserVMsByHostId(host.getId());
-//            for (UserVmVO vm : instances) {
-//                ServiceOffering so = getManagementServer().findServiceOfferingById(vm.getServiceOfferingId());
-//                cpu += so.getCpu() * so.getSpeed();
-//            }
-//            cpuAlloc = decimalFormat.format(((float) cpu / (float) (host.getCpus() * host.getSpeed())) * 100f) + "%";
-//            hostResponse.setCpuAllocated(cpuAlloc);
+            int cpu = 0;
+            String cpuAlloc = null;
+            DecimalFormat decimalFormat = new DecimalFormat("#.##");
+            List<UserVmVO> instances = getManagementServer().listUserVMsByHostId(host.getId());
+            for (UserVmVO vm : instances) {
+                ServiceOffering so = getManagementServer().findServiceOfferingById(vm.getServiceOfferingId());
+                cpu += so.getCpu() * so.getSpeed();
+            }
+            cpuAlloc = decimalFormat.format(((float) cpu / (float) (host.getCpus() * host.getSpeed())) * 100f) + "%";
+            hostResponse.setCpuAllocated(cpuAlloc);
 
             // calculate cpu utilized
-//            String cpuUsed = null;
-//            HostStats hostStats = getManagementServer().getHostStatistics(host.getId());
-//            if (hostStats != null) {
-//                float cpuUtil = (float) hostStats.getCpuUtilization();
-//                cpuUsed = decimalFormat.format(cpuUtil) + "%";
-//                hostResponse.setCpuUsed(cpuUsed);
-//                hostResponse.setAverageLoad((long)hostStats.getAverageLoad());
-//                hostResponse.setNetworkKbsRead((long)hostStats.getNetworkReadKBs());
-//                hostResponse.setNetworkKbsWrite((long)hostStats.getNetworkWriteKBs());
-//            }
+            String cpuUsed = null;
+            HostStats hostStats = getManagementServer().getHostStatistics(host.getId());
+            if (hostStats != null) {
+                float cpuUtil = (float) hostStats.getCpuUtilization();
+                cpuUsed = decimalFormat.format(cpuUtil) + "%";
+                hostResponse.setCpuUsed(cpuUsed);
+                hostResponse.setAverageLoad((long)hostStats.getAverageLoad());
+                hostResponse.setNetworkKbsRead((long)hostStats.getNetworkReadKBs());
+                hostResponse.setNetworkKbsWrite((long)hostStats.getNetworkWriteKBs());
+            }
 
             if (host.getType() == Host.Type.Routing) {
                 hostResponse.setMemoryTotal(host.getTotalMemory());
                 
                 // calculate memory allocated by systemVM and userVm
-//                long mem = getManagementServer().getMemoryUsagebyHost(host.getId());
-//                hostResponse.setMemoryAllocated(mem);
-//                hostResponse.setMemoryUsed(mem);
+                long mem = getManagementServer().getMemoryUsagebyHost(host.getId());
+                hostResponse.setMemoryAllocated(mem);
+                hostResponse.setMemoryUsed(mem);
             } else if (host.getType().toString().equals("Storage")) {
                 hostResponse.setDiskSizeTotal(host.getTotalSize());
                 hostResponse.setDiskSizeAllocated(0L);
             }
 
-//            if (host.getClusterId() != null) {
-//                ClusterVO cluster = getManagementServer().findClusterById(host.getClusterId());
-//                hostResponse.setClusterName(cluster.getName());
-//            }
+            if (host.getClusterId() != null) {
+                ClusterVO cluster = getManagementServer().findClusterById(host.getClusterId());
+                hostResponse.setClusterName(cluster.getName());
+            }
 
-//            hostResponse.setLocalStorageActive(getManagementServer().isLocalStorageActiveOnHost(host));
+            hostResponse.setLocalStorageActive(getManagementServer().isLocalStorageActiveOnHost(host));
 
             Set<Event> possibleEvents = host.getStatus().getPossibleEvents();
             if ((possibleEvents != null) && !possibleEvents.isEmpty()) {
