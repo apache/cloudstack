@@ -1837,10 +1837,13 @@ a:visited {
 	width:100%;
 	height:auto;
 	float:left;
+	position:relative;
 	margin:0;
 	padding:5px 0 5px 0;
 	border-bottom:1px solid #e2e2e2;
 }
+
+
 
 .grid_rows.even {
 	background:#FFF repeat top left;
@@ -1854,6 +1857,70 @@ a:visited {
 	height:auto;
 	float:left;
 	margin:0;
+	padding:0;
+	border-right:1px solid #fff;
+}
+
+
+.grid_row_cell .text {
+	width:92%;
+	height:13px;
+	float:left;
+	margin:0 0 0 10px;
+	display:inline;
+	padding:0;
+	border:1px solid #999;
+	background:#FFF;
+	color:#333;
+	font-size:11px;
+}
+
+.grid_row_cell .select {
+	width:92%;
+	height:15px;
+	float:left;
+	margin:0 0 0 10px;
+	display:inline;
+	padding:0;
+	border:1px solid #999;
+	background:#FFF;
+	color:#333;
+	font-size:11px;
+}
+
+.gridrow_loaderbox {
+	width:100%;
+	height:23px;
+	float:right;
+	position:absolute;
+	background:#99b2c3 url(../images/gridheader_loadingbg.gif) repeat-x top left;
+	border-left:1px solid #999;
+	margin:0 0 0 0;
+	padding:0;
+	z-index:1001;
+	top:0;
+	right:0;
+}
+
+.gridrow_loaderbox p{
+	width:auto;
+	height:auto;
+	float:left;
+	color:#FFF;
+	font-size:11px;
+	font-weight:bold;
+	margin:5px 5px 0 5px;
+	display:inline;
+	padding:0;
+}
+
+.gridrow_loader {
+	width:16px;
+	height:16px;
+	float:left;
+	background:url(../images/grid_actionloader.gif) no-repeat top left;
+	margin:3px 0 0 5px;
+	display:inline;
 	padding:0;
 }
 

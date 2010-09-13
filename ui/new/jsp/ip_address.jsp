@@ -143,18 +143,24 @@
             	<div class="grid_header_title">Instance</div>
             </div>
         </div>
+        
+       
+        
         <div class="grid_rows even">
             <div class="grid_row_cell" style="width: 20%;">
-                <div class="row_celltitles">8080</div>
+                <input class="text" style="width:90%;" type="text" />
             </div>
             <div class="grid_row_cell" style="width: 20%;">
-                <div class="row_celltitles">80</div>
+                <input class="text" style="width:90%;" type="text" />
             </div>
             <div class="grid_row_cell" style="width: 29%;">
-                <div class="row_celltitles">8 GB</div>
+               <input class="text" style="width:90%;" type="text" />
             </div>
-            <div class="grid_row_cell" style="width: 30%;">
-                <div class="row_celltitles">Instance Name</div>
+            <div class="grid_row_cell" style="width: 20%;">
+               <select class="select" style="width:90%;"><option value="Instance1">Instance Name 1 </option> <option value="Instance2">Instance Name 2 </option> </select>
+            </div>
+            <div class="grid_row_cell" style="width: 10%;">
+                <div class="row_celltitles"><a href="#">Add</a></div>
             </div>
             
         </div>
@@ -172,7 +178,30 @@
             <div class="grid_row_cell" style="width: 30%;">
                 <div class="row_celltitles">Instance Name</div>
             </div>
+            <div class="gridrow_loaderbox" style="display:none;">
+                <div class="gridrow_loader"></div>
+                <p> Creating &hellip;</p>
+        	</div>
             
+        </div>
+        
+        <div class="grid_rows even">
+            <div class="grid_row_cell" style="width: 20%;">
+                <div class="row_celltitles">8080</div>
+            </div>
+            <div class="grid_row_cell" style="width: 20%;">
+                <div class="row_celltitles">80</div>
+            </div>
+            <div class="grid_row_cell" style="width: 29%;">
+                <div class="row_celltitles">8 GB</div>
+            </div>
+            <div class="grid_row_cell" style="width: 30%;">
+                <div class="row_celltitles">Instance Name</div>
+            </div>
+            <div class="gridrow_loaderbox" style="display:none;">
+                <div class="gridrow_loader"></div>
+                <p> Creating &hellip;</p>
+        	</div>
         </div>
 	 </div>
     <!-- Port Forwarding ends here-->
@@ -194,53 +223,24 @@
             	<div class="grid_header_title">Algorithm</div>
             </div>
         </div>
+        
         <div class="grid_rows even">
             <div class="grid_row_cell" style="width: 29%;">
-                <div class="row_celltitles">LB#1</div>
+                <input class="text" style="width:90%;" type="text" />
             </div>
             <div class="grid_row_cell" style="width: 20%;">
-                <div class="row_celltitles">8080</div>
+               <input class="text" style="width:90%;" type="text" />
             </div>
             <div class="grid_row_cell" style="width: 20%;">
-                <div class="row_celltitles">80</div>
+                <input class="text" style="width:90%;" type="text" />
             </div>
-            <div class="grid_row_cell" style="width: 30%;">
-                <div class="row_celltitles">Source</div>
+            <div class="grid_row_cell" style="width: 20%;">
+                <select class="select" style="width:90%;"><option value="Source1">Source Name 1 </option> <option value="Source2">Source Name 2 </option> </select>
             </div>
-          	<div class="grid_detailspanel" style="display:block;">
-            	<div class="grid_details_pointer"></div>
-                <div class="grid_detailsbox">
-                	<div class="grid_details_row">
-                    	      <div class="grid_row_cell" style="width: 9%;">
-                                    <div class="row_celltitles"><img src="images/network_managevmicon.gif" /></div>
-                              </div>
-                              <div class="grid_row_cell" style="width: 30%;">
-                                    <div class="row_celltitles">1-2-2-TEST</div>
-                              </div>
-                              <div class="grid_row_cell" style="width: 30%;">
-                                    <div class="row_celltitles">10.23.231.230</div>
-                              </div>
-                              <div class="grid_row_cell" style="width: 30%;">
-                                    <div class="row_celltitles"><a href="#">Remove</a></div>
-                              </div>
-                    </div>
-                    
-                    <div class="grid_details_row odd">
-                    	      <div class="grid_row_cell" style="width: 9%;">
-                                    <div class="row_celltitles"><img src="images/network_managevmicon.gif" /></div>
-                              </div>
-                              <div class="grid_row_cell" style="width: 30%;">
-                                    <div class="row_celltitles">1-2-2-TEST</div>
-                              </div>
-                              <div class="grid_row_cell" style="width: 30%;">
-                                    <div class="row_celltitles">10.23.231.230</div>
-                              </div>
-                              <div class="grid_row_cell" style="width: 30%;">
-                                    <div class="row_celltitles"><a href="#">Remove</a></div>
-                              </div>
-                    </div>
-                </div>
-            </div>  
+            <div class="grid_row_cell" style="width: 10%;">
+                <div class="row_celltitles"><a href="#">Add</a></div>
+            </div>
+            
         </div>
         
         <div class="grid_rows odd">
@@ -256,20 +256,29 @@
             <div class="grid_row_cell" style="width: 30%;">
                 <div class="row_celltitles">Source</div>
             </div>
-            
-            <div class="grid_detailspanel" style="display:none;">
+          	<div class="grid_detailspanel" style="display:block;">
             	<div class="grid_details_pointer"></div>
                 <div class="grid_detailsbox">
+                	<div class="grid_details_row odd">
+                    	      <div class="grid_row_cell" style="width: 9%;">
+                                    <div class="row_celltitles"><img src="images/network_managevmicon.gif" /></div>
+                              </div>
+                              <div class="grid_row_cell" style="width: 60%;">
+                                   <select class="select" style="width:90%;"><option value="Source1">Source Name 1 </option> <option value="Source2">Source Name 2 </option> </select>
+                              </div>
+                              
+                              <div class="grid_row_cell" style="width: 30%;">
+                                    <div class="row_celltitles"><a href="#">Add</a></div>
+                              </div>
+                    </div>
                 	<div class="grid_details_row">
                     	      <div class="grid_row_cell" style="width: 9%;">
                                     <div class="row_celltitles"><img src="images/network_managevmicon.gif" /></div>
                               </div>
-                              <div class="grid_row_cell" style="width: 30%;">
+                              <div class="grid_row_cell" style="width: 60%;">
                                     <div class="row_celltitles">1-2-2-TEST</div>
                               </div>
-                              <div class="grid_row_cell" style="width: 30%;">
-                                    <div class="row_celltitles">10.23.231.230</div>
-                              </div>
+                              
                               <div class="grid_row_cell" style="width: 30%;">
                                     <div class="row_celltitles"><a href="#">Remove</a></div>
                               </div>
@@ -279,18 +288,35 @@
                     	      <div class="grid_row_cell" style="width: 9%;">
                                     <div class="row_celltitles"><img src="images/network_managevmicon.gif" /></div>
                               </div>
-                              <div class="grid_row_cell" style="width: 30%;">
+                              <div class="grid_row_cell" style="width: 60%;">
                                     <div class="row_celltitles">1-2-2-TEST</div>
                               </div>
-                              <div class="grid_row_cell" style="width: 30%;">
-                                    <div class="row_celltitles">10.23.231.230</div>
-                              </div>
+                             
                               <div class="grid_row_cell" style="width: 30%;">
                                     <div class="row_celltitles"><a href="#">Remove</a></div>
                               </div>
                     </div>
                 </div>
+            </div>  
+        </div>
+        
+        <div class="grid_rows even">
+            <div class="grid_row_cell" style="width: 29%;">
+                <div class="row_celltitles">LB#1</div>
             </div>
+            <div class="grid_row_cell" style="width: 20%;">
+                <div class="row_celltitles">8080</div>
+            </div>
+            <div class="grid_row_cell" style="width: 20%;">
+                <div class="row_celltitles">80</div>
+            </div>
+            <div class="grid_row_cell" style="width: 30%;">
+                <div class="row_celltitles">Source</div>
+            </div>
+            <div class="gridrow_loaderbox" style="display:none;">
+                <div class="gridrow_loader"></div>
+                <p> Creating &hellip;</p>
+        	</div>
             
         </div>
            
