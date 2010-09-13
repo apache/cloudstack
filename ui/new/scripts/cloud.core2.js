@@ -214,7 +214,7 @@ function buildActionLinkForSingleObject(label, actionMap, $actionMenu, listAPIMa
 } 
 
 function doActionToSingleObject(id, $actionLink, apiCommand, listAPIMap, $singleObject) {   
-    debugger;
+    //debugger;
     var label = $actionLink.data("label");	
     var inProcessText = $actionLink.data("inProcessText");		           
     var isAsyncJob = $actionLink.data("isAsyncJob");
@@ -234,7 +234,7 @@ function doActionToSingleObject(id, $actionLink, apiCommand, listAPIMap, $single
             data: createURL(apiCommand),
             dataType: "json",           
             success: function(json) {	
-                debugger;                	                        
+                //debugger;                	                        
                 var jobId = json[asyncJobResponse].jobid;                  			                        
                 var timerKey = "asyncJob_" + jobId;					                       
                 $("body").everyTime(
@@ -276,7 +276,7 @@ function doActionToSingleObject(id, $actionLink, apiCommand, listAPIMap, $single
 	                        error: function(XMLHttpResponse) {
 	                            //debugger;
 		                        $("body").stopTime(timerKey);		                       		                        
-		                        handleErrorInSingleObject(XMLHttpResponse, $singleObject); 		                        
+		                        handleErrorInSingleObject(XMLHttpResponse, $singleObject, label); 		                        
 	                        }
                         });
                     },
@@ -285,7 +285,7 @@ function doActionToSingleObject(id, $actionLink, apiCommand, listAPIMap, $single
             },
             error: function(XMLHttpResponse) {	 
                 //debugger;
-		        handleErrorInSingleObject(XMLHttpResponse, $singleObject);    
+		        handleErrorInSingleObject(XMLHttpResponse, $singleObject, label);    
             }
         });     
     }     
@@ -319,16 +319,16 @@ function doActionToSingleObject(id, $actionLink, apiCommand, listAPIMap, $single
 	        },
             error: function(XMLHttpResponse) {	
                 //debugger;
-		        handleErrorInSingleObject(XMLHttpResponse, $singleObject);    
+		        handleErrorInSingleObject(XMLHttpResponse, $singleObject, label);    
             }        
         });
     }
     //Sync job (end) *****
 }
 
-function handleErrorInSingleObject(XMLHttpResponse, $singleObject) { 
+function handleErrorInSingleObject(XMLHttpResponse, $singleObject, label) { 
     //debugger;
-    $spinningWheel.hide();      
+    $singleObject.find("#spinning_wheel").hide();      
 		                        
     var errorMsg = "";
     if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {
