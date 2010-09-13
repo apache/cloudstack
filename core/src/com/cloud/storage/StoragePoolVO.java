@@ -181,6 +181,7 @@ public class StoragePoolVO implements StoragePool {
         this.path = hostPath;
         this.port = port;
         this.podId = podId;
+        this.setStatus(Status.Up);
     }
     
     public StoragePoolVO(StoragePoolType type, String hostAddress, int port, String path) {
@@ -188,6 +189,7 @@ public class StoragePoolVO implements StoragePool {
         this.hostAddress = hostAddress;
         this.port = port;
         this.path = path;
+        this.setStatus(Status.Up);
     }
     
     public void setStatus(Status status)
