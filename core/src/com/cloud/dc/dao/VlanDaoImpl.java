@@ -25,6 +25,8 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import sun.swing.SwingUtilities2.Section;
+
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
@@ -45,7 +47,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
 	protected SearchBuilder<VlanVO> ZoneTypeSearch;
 	protected SearchBuilder<VlanVO> ZoneTypeAllPodsSearch;
 	protected SearchBuilder<VlanVO> ZoneTypePodSearch;
-
+	protected SearchBuilder<VlanVO> ZoneVlanSearch;
 
 	protected PodVlanMapDaoImpl _podVlanMapDao = new PodVlanMapDaoImpl();
 	protected AccountVlanMapDao _accountVlanMapDao = new AccountVlanMapDaoImpl();
@@ -80,8 +82,22 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         ZoneTypeSearch.and("zoneId", ZoneTypeSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         ZoneTypeSearch.and("vlanType", ZoneTypeSearch.entity().getVlanType(), SearchCriteria.Op.EQ);
         ZoneTypeSearch.done();
+        
+        ZoneVlanSearch = createSearchBuilder();
+        ZoneVlanSearch.and("vlanType", ZoneVlanSearch.entity().getVlanType(), SearchCriteria.Op.EQ);
+        ZoneVlanSearch.and("vlanId", ZoneVlanSearch.entity().getVlanId(), SearchCriteria.Op.NEQ);
+        ZoneVlanSearch.and("zoneId", ZoneTypeSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
     }
 
+    @Override
+    public List<VlanVO> listZoneWideVlans(long zoneId, VlanType vlanType, String vlanId){
+    	SearchCriteria<VlanVO> sc = ZoneVlanSearch.create();
+    	sc.setParameters("zoneId", zoneId);
+    	sc.setParameters("vlanId", vlanId);
+    	sc.setParameters("vlanType", vlanType);
+    	return listBy(sc);
+    }
+    
 	@Override
 	public List<VlanVO> listByZoneAndType(long zoneId, VlanType vlanType) {
 		SearchCriteria<VlanVO> sc = ZoneTypeSearch.create();
