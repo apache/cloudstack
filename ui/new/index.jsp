@@ -50,7 +50,7 @@ long milliseconds = new Date().getTime();
     
     <script type="text/javascript" src="scripts/cloud.core2.ipaddress.js?t=<%=milliseconds%>"></script>
   
-    
+    <script type="text/javascript" src="scripts/cloud.core2.template.js?t=<%=milliseconds%>"></script>
   
     <title>Cloud.com CloudStack</title>
 </head>
@@ -471,7 +471,7 @@ long milliseconds = new Date().getTime();
                             </div>
                         </div>
                         <div id="leftmenu_template_filter_container">                        
-                            <div class="leftmenu_content" id="leftmenu_submenu_myTemplates">
+                            <div class="leftmenu_content" id="leftmenu_submenu_myTemplate">
 						        <div class="leftmenu_thirdindent">
 						            <div class="leftmenu_list_icons">
 						                <img src="images/templates_leftmenuicon.png" /></div>
@@ -506,7 +506,7 @@ long milliseconds = new Date().getTime();
                             </div>
                         </div>
                         <div id="leftmenu_iso_filter_container">
-                             <div class="leftmenu_content" id="leftmenu_submenu_myISOs">
+                             <div class="leftmenu_content" id="leftmenu_submenu_myISO">
 						        <div class="leftmenu_thirdindent">
 						            <div class="leftmenu_list_icons">
 						                <img src="images/templates_leftmenuicon.png" /></div>

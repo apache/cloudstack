@@ -3,8 +3,7 @@ function afterLoadAccountJSP() {
 }
 
 function accountToMidmenu(jsonObj, $midmenuItem1, toRightPanelFn) {  
-    $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));                             
-    $midmenuItem1.data("id", jsonObj.id); 
+    $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));  
     $midmenuItem1.data("jsonObj", jsonObj); 
     
     var iconContainer = $midmenuItem1.find("#icon_container").show();   

@@ -1,11 +1,12 @@
-function afterLoadEventJSP() {
+function afterLoadTemplateJSP() {
 
 }
 
-function eventToMidmenu(jsonObj, $midmenuItem1, toRightPanelFn) {
+function templateToMidmenu(jsonObj, $midmenuItem1, toRightPanelFn) {    
     $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));  
     $midmenuItem1.data("jsonObj", jsonObj); 
     
+    /*
     var iconContainer = $midmenuItem1.find("#icon_container").show();
     if(jsonObj.level == "INFO")
         iconContainer.find("#icon").attr("src", "images/midmenuicon_events_info.png");
@@ -17,9 +18,11 @@ function eventToMidmenu(jsonObj, $midmenuItem1, toRightPanelFn) {
     $midmenuItem1.find("#first_row").text(jsonObj.description.substring(0,25)); 
     $midmenuItem1.find("#second_row").text(jsonObj.type.substring(0,25));           
     $midmenuItem1.data("toRightPanelFn", toRightPanelFn);
+    */    
 }
 
-function eventToRigntPanel($midmenuItem) {      
+function templateToRigntPanel($midmenuItem) {   
+    /*   
     var jsonObj = $midmenuItem.data("jsonObj");
     
     var $rightPanelContent = $("#right_panel_content");
@@ -30,4 +33,5 @@ function eventToRigntPanel($midmenuItem) {
     $rightPanelContent.find("#description").text(fromdb(jsonObj.description));  
     $rightPanelContent.find("#state").text(jsonObj.state);     
     setDateField(jsonObj.created, $rightPanelContent.find("#created"));	
+    */
 }

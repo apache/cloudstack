@@ -332,8 +332,7 @@ function clickInstanceGroupHeader($arrowIcon) {
     function vmToMidmenu(json, $midmenuItem, toRightPanelFn) {  
         $midmenuItem.data("jsonObj", json);
         $midmenuItem.data("toRightPanelFn", toRightPanelFn);
-        $midmenuItem.attr("id", ("midmenuItem_"+json.id));                             
-        $midmenuItem.data("id", json.id);        
+        $midmenuItem.attr("id", ("midmenuItem_"+json.id));   
         
         $midmenuItem.find("#icon").attr("src", "images/status_gray.png");
         $midmenuItem.find("#icon_container").show();        
