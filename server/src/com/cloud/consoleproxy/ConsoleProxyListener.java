@@ -17,8 +17,6 @@
  */
 package com.cloud.consoleproxy;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
@@ -31,8 +29,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 
 public class ConsoleProxyListener implements Listener {
-    private final static Logger s_logger = Logger.getLogger(ConsoleProxyListener.class);
-    
     ConsoleProxyManager _proxyMgr = null;
 
     public ConsoleProxyListener(ConsoleProxyManager proxyMgr) {
