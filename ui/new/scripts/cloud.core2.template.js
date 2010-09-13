@@ -36,10 +36,11 @@ function templateToRigntPanel($midmenuItem) {
 		status = jsonObj.templatestatus;	
 	$rightPanelContent.find("#status").text(status);    
     
-    $rightPanelContent.find("#passwordenabled").text(fromdb(jsonObj.passwordenabled));
-    $rightPanelContent.find("#ispublic").text(fromdb(jsonObj.ispublic));   
-    $rightPanelContent.find("#isfeatured").text(fromdb(jsonObj.isfeatured));
-    $rightPanelContent.find("#crossZones").text(fromdb(jsonObj.crossZones));
+    setBooleanField(jsonObj.passwordenabled, $rightPanelContent.find("#passwordenabled"));	
+    setBooleanField(jsonObj.ispublic, $rightPanelContent.find("#ispublic"));	
+    setBooleanField(jsonObj.isfeatured, $rightPanelContent.find("#isfeatured"));
+    setBooleanField(jsonObj.crossZones, $rightPanelContent.find("#crossZones"));
+    
     $rightPanelContent.find("#ostypename").text(fromdb(jsonObj.ostypename));
     $rightPanelContent.find("#account").text(fromdb(jsonObj.account));
     

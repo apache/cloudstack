@@ -386,20 +386,15 @@ function clickInstanceGroupHeader($arrowIcon) {
         $rightPanelContent.find("#ipAddress").text(jsonObj.ipaddress);
         $rightPanelContent.find("#zoneName").text(fromdb(jsonObj.zonename));
         $rightPanelContent.find("#templateName").text(fromdb(jsonObj.templatename));
-        $rightPanelContent.find("#serviceOfferingName").text(fromdb(jsonObj.serviceofferingname));		                                			                                
-        if(jsonObj.haenable == "true")
-            $rightPanelContent.find("#ha").removeClass("cross_icon").addClass("tick_icon").show();
-        else
-            $rightPanelContent.find("#ha").removeClass("tick_icon").addClass("cross_icon").show();		                                
+        $rightPanelContent.find("#serviceOfferingName").text(fromdb(jsonObj.serviceofferingname));		
         $rightPanelContent.find("#created").text(jsonObj.created);
         $rightPanelContent.find("#account").text(fromdb(jsonObj.account));
         $rightPanelContent.find("#domain").text(fromdb(jsonObj.domain));
         $rightPanelContent.find("#hostName").text(fromdb(jsonObj.hostname));
         $rightPanelContent.find("#group").text(fromdb(jsonObj.group));	
-        if(jsonObj.isoid != null && jsonObj.isoid.length > 0)
-            $rightPanelContent.find("#iso").removeClass("cross_icon").addClass("tick_icon").show();
-        else
-            $rightPanelContent.find("#iso").removeClass("tick_icon").addClass("cross_icon").show();    
+        
+        setBooleanField(jsonObj.haenable, $rightPanelContent.find("#ha"));	
+        setBooleanField((jsonObj.isoid != null && jsonObj.isoid.length > 0), $rightPanelContent.find("#iso"));	
             
         //volume tab
         //if (getHypervisorType() == "kvm") 

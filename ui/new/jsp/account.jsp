@@ -56,6 +56,16 @@
         <div class="grid_rows odd">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
+                    <%=t.t("id")%>:</div>
+            </div>
+            <div class="grid_row_cell" style="width: 79%;">
+                <div class="row_celltitles" id="id">
+                </div>
+            </div>
+        </div>
+        <div class="grid_rows odd">
+            <div class="grid_row_cell" style="width: 20%;">
+                <div class="row_celltitles">
                     <%=t.t("Role")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
