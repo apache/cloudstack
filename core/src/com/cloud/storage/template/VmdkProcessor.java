@@ -10,6 +10,7 @@ import org.apache.log4j.Logger;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.utils.script.Script;
 
 public class VmdkProcessor implements Processor {
     private static final Logger s_logger = Logger.getLogger(VmdkProcessor.class);
@@ -33,11 +34,25 @@ public class VmdkProcessor implements Processor {
             return null;
         }
         
+        s_logger.info("Template processing - untar OVA package. templatePath: " + templatePath + ", templateName: " + templateName);
+        File templateFile = new File(templatePath);
+        Script command = new Script(true, "tar", 0, s_logger);
+        command.add("-xf", templatePath);
+        command.setWorkDir(templateFile.getParent());
+        String result = command.execute();
+        if (result != null) {
+            s_logger.info("failed to untar OVA package due to " + result + ". templatePath: " + templatePath + ", templateName: " + templateName);
+        	return null;
+        }
+        
         FormatInfo info = new FormatInfo();
         info.format = ImageFormat.OVA;
         info.filename = templateName + "." + ImageFormat.OVA.getFileExtension();
         info.size = _storage.getSize(templateFilePath);
         info.virtualSize = info.size;
+
+        // delete original OVA file
+        templateFile.delete();
         return info;
     }
     
