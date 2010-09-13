@@ -23,6 +23,7 @@ function accountToRigntPanel($midmenuItem) {
     var jsonObj = $midmenuItem.data("jsonObj");
     
     var $rightPanelContent = $("#right_panel_content");
+    $rightPanelContent.find("#id").text(jsonObj.id);
     $rightPanelContent.find("#role").text(toRole(jsonObj.accounttype));
     $rightPanelContent.find("#account").text(fromdb(jsonObj.name));
     $rightPanelContent.find("#domain").text(fromdb(jsonObj.domain));

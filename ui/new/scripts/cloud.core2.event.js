@@ -23,6 +23,7 @@ function eventToRigntPanel($midmenuItem) {
     var jsonObj = $midmenuItem.data("jsonObj");
     
     var $rightPanelContent = $("#right_panel_content");
+    $rightPanelContent.find("#id").text(fromdb(jsonObj.id));
     $rightPanelContent.find("#username").text(fromdb(jsonObj.username));
     $rightPanelContent.find("#account").text(fromdb(jsonObj.account));
     $rightPanelContent.find("#type").text(jsonObj.type);

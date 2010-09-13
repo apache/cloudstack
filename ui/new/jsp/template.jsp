@@ -35,7 +35,7 @@
                     <%=t.t("ID")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="username">
+                <div class="row_celltitles" id="id">
                 </div>
             </div>
         </div>
@@ -45,7 +45,7 @@
                     <%=t.t("Zone")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="username">
+                <div class="row_celltitles" id="zonename">
                 </div>
             </div>
         </div>
@@ -55,7 +55,7 @@
                     <%=t.t("Name")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="username">
+                <div class="row_celltitles" id="name">
                 </div>
             </div>
         </div>
@@ -65,7 +65,7 @@
                     <%=t.t("Display.Text")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="username">
+                <div class="row_celltitles" id="displaytext">
                 </div>
             </div>
         </div>
@@ -75,7 +75,7 @@
                     <%=t.t("Status")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="username">
+                <div class="row_celltitles" id="status">
                 </div>
             </div>
         </div>
@@ -85,7 +85,7 @@
                     <%=t.t("Password.Enabled")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="username">
+                <div class="row_celltitles" id="passwordenabled">
                 </div>
             </div>
         </div>
@@ -95,7 +95,7 @@
                     <%=t.t("Public")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="username">
+                <div class="row_celltitles" id="ispublic">
                 </div>
             </div>
         </div>
@@ -105,7 +105,7 @@
                     <%=t.t("Featured")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="username">
+                <div class="row_celltitles" id="isfeatured">
                 </div>
             </div>
         </div>
@@ -115,7 +115,7 @@
                     <%=t.t("Cross.Zones")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="username">
+                <div class="row_celltitles" id="crossZones">
                 </div>
             </div>
         </div>
@@ -125,7 +125,7 @@
                     <%=t.t("OS.Type")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="username">
+                <div class="row_celltitles" id="ostypename">
                 </div>
             </div>
         </div>
@@ -135,7 +135,7 @@
                     <%=t.t("Account")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="username">
+                <div class="row_celltitles" id="account">
                 </div>
             </div>
         </div>
@@ -145,7 +145,7 @@
                     <%=t.t("Created")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="username">
+                <div class="row_celltitles" id="created">
                 </div>
             </div>
         </div>
@@ -155,7 +155,7 @@
                     <%=t.t("Size")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="username">
+                <div class="row_celltitles" id="size">
                 </div>
             </div>
         </div>
