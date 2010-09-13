@@ -157,7 +157,7 @@
                         </ul>	                    
 	                </div>        
                 </div>
-                <div class="gridheader_loaderbox">
+                <div class="gridheader_loaderbox" style="height:18px;">
                     <div class="gridheader_loader"></div>
                     <p> Creating Template &hellip; </p>
                 </div>       
@@ -779,7 +779,7 @@
 	            </ul>
 	        </div>        
         </div>
-        <div class="gridheader_loaderbox" id="spinning_wheel" style="display:none">
+        <div class="gridheader_loaderbox" id="spinning_wheel" style="display:none; height:18px;">
             <div class="gridheader_loader" id="icon"></div>
             <p id="description"> Waiting &hellip; </p>
         </div>              
