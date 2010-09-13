@@ -19,42 +19,42 @@ function clickInstanceGroupHeader($arrowIcon) {
             api: "stopVirtualMachine",            
             isAsyncJob: true,
             asyncJobResponse: "stopvirtualmachineresponse",
-            afterActionSeccessFn: vmJsonToMidmenu
+            afterActionSeccessFn: vmToMidmenu
         },
         "Start Instance": {
             api: "startVirtualMachine",            
             isAsyncJob: true,
             asyncJobResponse: "startvirtualmachineresponse",
-            afterActionSeccessFn: vmJsonToMidmenu
+            afterActionSeccessFn: vmToMidmenu
         },
         "Reboot Instance": {
             api: "rebootVirtualMachine",           
             isAsyncJob: true,
             asyncJobResponse: "rebootvirtualmachineresponse",
-            afterActionSeccessFn: vmJsonToMidmenu
+            afterActionSeccessFn: vmToMidmenu
         },
         "Destroy Instance": {
             api: "destroyVirtualMachine",           
             isAsyncJob: true,
             asyncJobResponse: "destroyvirtualmachineresponse",
-            afterActionSeccessFn: vmJsonToMidmenu
+            afterActionSeccessFn: vmToMidmenu
         },
         "Restore Instance": {
             api: "recoverVirtualMachine",           
             isAsyncJob: false,
-            afterActionSeccessFn: vmJsonToMidmenu
+            afterActionSeccessFn: vmToMidmenu
         },
         "Attach ISO": {
             isAsyncJob: true,
             asyncJobResponse: "attachisoresponse",            
             dialogBeforeActionFn : doAttachISO,
-            afterActionSeccessFn: vmJsonToMidmenu   
+            afterActionSeccessFn: vmToMidmenu   
         },
         "Detach ISO": {
             isAsyncJob: true,
             asyncJobResponse: "detachisoresponse",            
             dialogBeforeActionFn : doDetachISO,
-            afterActionSeccessFn: vmJsonToMidmenu   
+            afterActionSeccessFn: vmToMidmenu   
         },
         "Reset Password": {
             isAsyncJob: true,
@@ -65,28 +65,28 @@ function clickInstanceGroupHeader($arrowIcon) {
         "Change Name": {
             isAsyncJob: false,            
             dialogBeforeActionFn : doChangeName,
-            afterActionSeccessFn: vmJsonToMidmenu
+            afterActionSeccessFn: vmToMidmenu
         },
         "Change Service": {
             isAsyncJob: true,
             asyncJobResponse: "changeserviceforvirtualmachineresponse",
             dialogBeforeActionFn : doChangeService,
-            afterActionSeccessFn: vmJsonToMidmenu
+            afterActionSeccessFn: vmToMidmenu
         },
         "Change Group": {
             isAsyncJob: false,            
             dialogBeforeActionFn : doChangeGroup,
-            afterActionSeccessFn: vmJsonToMidmenu
+            afterActionSeccessFn: vmToMidmenu
         },
         "Enable HA": {
             isAsyncJob: false,            
             dialogBeforeActionFn : doEnableHA,
-            afterActionSeccessFn: vmJsonToMidmenu
+            afterActionSeccessFn: vmToMidmenu
         },
         "Disable HA": {
             isAsyncJob: false,            
             dialogBeforeActionFn : doDisableHA,
-            afterActionSeccessFn: vmJsonToMidmenu
+            afterActionSeccessFn: vmToMidmenu
         }                 
     }            
         
@@ -329,9 +329,9 @@ function clickInstanceGroupHeader($arrowIcon) {
             midmenuItem.find("#icon").attr("src", "images/status_gray.png");
     }
       
-    function vmJsonToMidmenu(json, $midmenuItem) {  
+    function vmToMidmenu(json, $midmenuItem, toRightPanelFn) {  
         $midmenuItem.data("jsonObj", json);
-        $midmenuItem.data("toRightPanelFn", vmMidmenuToRightPanel);
+        $midmenuItem.data("toRightPanelFn", toRightPanelFn);
         $midmenuItem.attr("id", ("midmenuItem_"+json.id));                             
         $midmenuItem.data("id", json.id);        
         
@@ -344,7 +344,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         updateVirtualMachineStateInMidMenu(json, $midmenuItem);        
         $midmenuItem.bind("click", function(event) {  
             var $t = $(this);     
-            vmMidmenuToRightPanel($t);	 
+            vmToRightPanel($t);	 
             return false;
         }); 
     }
@@ -365,7 +365,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         $rightPanelContent.find("#iso").hide();
     }
     
-    function vmMidmenuToRightPanel($midmenuItem) {
+    function vmToRightPanel($midmenuItem) {
         //details tab 
         if($midmenuItem.find("#info_icon").css("display") != "none") {                
             $rightPanelContent.find("#after_action_info").text($midmenuItem.data("afterActionInfo"));
@@ -511,15 +511,16 @@ function clickInstanceGroupHeader($arrowIcon) {
 		        }
 		        for(var i=0; i < instanceGroupArray.length; i++) {
 		            if(instanceGroupArray[i]!=null && instanceGroupArray[i].length>0) {
-		        	    var $groupTemplate = $("#leftmenu_instance_group_template").clone().show();				        	            	
-		                $groupTemplate.find("#group_name").text(instanceGroupArray[i]);
-		                		                			                
-		                $groupTemplate.bind("click", function(event) { 
+		        	    var $leftmenuSubmenuTemplate = $("#leftmenu_submenu_template").clone().show();				        	            	
+		                $leftmenuSubmenuTemplate.find("#submenu_name").text(instanceGroupArray[i]);
+		                $leftmenuSubmenuTemplate.find("#icon").attr("src", "images/instance_leftmenuicon.png").show();
+		                 		                			                
+		                $leftmenuSubmenuTemplate.bind("click", function(event) { 
 		                    //$(this).removeClass("leftmenu_content").addClass("leftmenu_content_selected");			               
                             $("#midmenu_container").empty();
                             selectedItemsInMidMenu = {};
                             
-                            var groupName = $(this).find("#group_name").text();                                                         
+                            var groupName = $(this).find("#submenu_name").text();                                                         
                             var group1 = groupName; 
                             if(groupName == noGroupName)
                                 group1 = "";                           
@@ -532,14 +533,14 @@ function clickInstanceGroupHeader($arrowIcon) {
 	                                var instances = json.listvirtualmachinesresponse.virtualmachine;                               
                                     for(var i=0; i<instances.length;i++) {  
                                         var $template = $midmenuItem.clone();                                                                                                                               
-                                        vmJsonToMidmenu(instances[i], $template);  
+                                        vmToMidmenu(instances[i], $template, vmToRightPanel);  
                                         $("#midmenu_container").append($template.show());
                                     }    
 	                            }
 	                        });                            
                             return false;
                         });	
-		                $("#leftmenu_instance_group_container").append($groupTemplate);
+		                $("#leftmenu_instance_group_container").append($leftmenuSubmenuTemplate);
 		            }
 		        }
 		        
@@ -1177,7 +1178,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 											    $t.find("#info_icon").removeClass("error").show();
 						                        $t.data("afterActionInfo", ("Adding succeeded.")); 
 						                        if("virtualmachine" in result)	
-						                            vmJsonToMidmenu(result.virtualmachine[0], $t);													   
+						                            vmToMidmenu(result.virtualmachine[0], $t, vmToRightPanel);													   
 											    
 										    } else if (result.jobstatus == 2) {
 											    // Failed

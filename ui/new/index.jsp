@@ -50,6 +50,8 @@ long milliseconds = new Date().getTime();
     
     <script type="text/javascript" src="scripts/cloud.core2.ipaddress.js?t=<%=milliseconds%>"></script>
   
+    
+  
     <title>Cloud.com CloudStack</title>
 </head>
 <body>
@@ -460,18 +462,74 @@ long milliseconds = new Date().getTime();
                     </div>
                 </div>
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content" id="leftmenu_template">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_list_icons">
-                                <img src="images/templates_leftmenuicon.png" alt="Templates" /></div>
-                            Template
+                    <div id="leftmenu_itemplate_filter">    
+                        <div class="leftmenu_content" id="leftmenu_template_filter_header">
+                            <div class="leftmenu_secondindent">                                
+                                <div class="leftmenu_list_icons">
+                                    <img src="images/templates_leftmenuicon.png" alt="Templates" /></div>
+                                Template
+                            </div>
+                        </div>
+                        <div id="leftmenu_template_filter_container">                        
+                            <div class="leftmenu_content" id="leftmenu_submenu_myTemplates">
+						        <div class="leftmenu_thirdindent">
+						            <div class="leftmenu_list_icons">
+						                <img src="images/templates_leftmenuicon.png" /></div>
+						            <div>
+						                My Templates</div>
+						        </div>
+						    </div>                        
+                            <div class="leftmenu_content" id="leftmenu_submenu_featuredTemplate">
+						        <div class="leftmenu_thirdindent">
+						            <div class="leftmenu_list_icons">
+						                <img src="images/templates_leftmenuicon.png" /></div>
+						            <div>
+						                Featured</div>
+						        </div>
+						    </div>                        
+                            <div class="leftmenu_content" id="leftmenu_submenu_communityTemplate">
+						        <div class="leftmenu_thirdindent">
+						            <div class="leftmenu_list_icons">
+						                <img src="images/templates_leftmenuicon.png" /></div>
+						            <div>
+						                Community</div>
+						        </div>
+						    </div>                        
                         </div>
                     </div>
-                    <div class="leftmenu_content" id="leftmenu_iso">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_list_icons">
-                                <img src="images/templates_leftmenuicon.png" alt="Templates" /></div>
-                            ISO
+                    <div id="leftmenu_iso_filter">    
+                        <div class="leftmenu_content" id="leftmenu_iso_filter_header">
+                            <div class="leftmenu_secondindent">                                
+                                <div class="leftmenu_list_icons">
+                                    <img src="images/templates_leftmenuicon.png" alt="Templates" /></div>
+                                ISO
+                            </div>
+                        </div>
+                        <div id="leftmenu_iso_filter_container">
+                             <div class="leftmenu_content" id="leftmenu_submenu_myISOs">
+						        <div class="leftmenu_thirdindent">
+						            <div class="leftmenu_list_icons">
+						                <img src="images/templates_leftmenuicon.png" /></div>
+						            <div>
+						                My ISOs</div>
+						        </div>
+						    </div>                        
+                            <div class="leftmenu_content" id="leftmenu_submenu_featuredISO">
+						        <div class="leftmenu_thirdindent">
+						            <div class="leftmenu_list_icons">
+						                <img src="images/templates_leftmenuicon.png" /></div>
+						            <div>
+						                Featured</div>
+						        </div>
+						    </div>                        
+                            <div class="leftmenu_content" id="leftmenu_submenu_communityISO">
+						        <div class="leftmenu_thirdindent">
+						            <div class="leftmenu_list_icons">
+						                <img src="images/templates_leftmenuicon.png" /></div>
+						            <div>
+						                Community</div>
+						        </div>
+						    </div>                                         
                         </div>
                     </div>
                 </div>
@@ -605,12 +663,12 @@ long milliseconds = new Date().getTime();
 	</div>
 	
     <!-- templates starts here-->
-    <div class="leftmenu_content" id="leftmenu_instance_group_template" style="display: none">
+    <div class="leftmenu_content" id="leftmenu_submenu_template" style="display: none">
         <div class="leftmenu_thirdindent">
             <div class="leftmenu_list_icons">
-                <img src="images/instance_leftmenuicon.png" alt="Instances" /></div>
-            <div id="group_name">
-                Group 1</div>
+                <img id="icon" style="display:none"/></div>
+            <div id="submenu_name">
+                (submenu)</div>
         </div>
     </div>
     
