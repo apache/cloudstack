@@ -9,8 +9,8 @@ function snapshotToMidmenu(jsonObj, $midmenuItem1, toRightPanelFn) {
     var $iconContainer = $midmenuItem1.find("#icon_container").show();   
     $iconContainer.find("#icon").attr("src", "images/midmenuicon_storage_snapshots.png");		
     
-    $midmenuItem1.find("#first_row").text(jsonObj.name.substring(0,25)); 
-    $midmenuItem1.find("#second_row").text(jsonObj.volumename.substring(0,25));           
+    $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
+    $midmenuItem1.find("#second_row").text(fromdb(jsonObj.volumename).substring(0,25));           
     $midmenuItem1.data("toRightPanelFn", toRightPanelFn);
 }
 

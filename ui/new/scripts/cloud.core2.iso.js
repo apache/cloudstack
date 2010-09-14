@@ -9,8 +9,8 @@ function isoToMidmenu(jsonObj, $midmenuItem1, toRightPanelFn) {
     var $iconContainer = $midmenuItem1.find("#icon_container").show();
     setIconByOsType(jsonObj.ostypename, $iconContainer.find("#icon"));
     
-    $midmenuItem1.find("#first_row").text(jsonObj.name.substring(0,25)); 
-    $midmenuItem1.find("#second_row").text(jsonObj.zonename.substring(0,25));           
+    $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
+    $midmenuItem1.find("#second_row").text(fromdb(jsonObj.zonename).substring(0,25));           
     $midmenuItem1.data("toRightPanelFn", toRightPanelFn);
        
 }

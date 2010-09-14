@@ -39,7 +39,7 @@
         <div class="grid_editbox"></div>
         <div class="gridheader_loaderbox" style="border:1px solid #999; display:none;">
         	<div class="gridheader_loader"></div>
-            <p>Dettaching Disk &hellip;</p>
+            <p>Detaching Disk &hellip;</p>
         </div>
         
         <div class="gridheader_message" style="border:1px solid #999; display:block;">

@@ -140,6 +140,16 @@
                 </div>
             </div>
         </div>
+         <div class="grid_rows odd">
+            <div class="grid_row_cell" style="width: 20%;">
+                <div class="row_celltitles">
+                    <%=t.t("Group")%>:</div>
+            </div>
+            <div class="grid_row_cell" style="width: 79%;">
+                <div class="row_celltitles" id="group">
+                </div>
+            </div>
+        </div>
     </div>
     <!--Details tab (end)-->
     

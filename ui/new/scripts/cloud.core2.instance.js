@@ -349,22 +349,6 @@ function clickInstanceGroupHeader($arrowIcon) {
         }); 
     }
     
-    function vmClearRightPanel(jsonObj) {       
-        $rightPanelHeader.find("#vm_name").text("");	
-        updateVirtualMachineStateInRightPanel("");	
-        $rightPanelContent.find("#ipAddress").text("");
-        $rightPanelContent.find("#zoneName").text("");
-        $rightPanelContent.find("#templateName").text("");
-        $rightPanelContent.find("#serviceOfferingName").text("");		
-        $rightPanelContent.find("#ha").hide();  
-        $rightPanelContent.find("#created").text("");
-        $rightPanelContent.find("#account").text("");
-        $rightPanelContent.find("#domain").text("");
-        $rightPanelContent.find("#hostName").text("");
-        $rightPanelContent.find("#group").text("");	
-        $rightPanelContent.find("#iso").hide();
-    }
-    
     function vmToRightPanel($midmenuItem) {
         //details tab 
         if($midmenuItem.find("#info_icon").css("display") != "none") {                
@@ -417,6 +401,22 @@ function clickInstanceGroupHeader($arrowIcon) {
 				}						
 			}
 		});           
+    }
+        
+    function vmClearRightPanel(jsonObj) {       
+        $rightPanelHeader.find("#vm_name").text("");	
+        updateVirtualMachineStateInRightPanel("");	
+        $rightPanelContent.find("#ipAddress").text("");
+        $rightPanelContent.find("#zoneName").text("");
+        $rightPanelContent.find("#templateName").text("");
+        $rightPanelContent.find("#serviceOfferingName").text("");		
+        $rightPanelContent.find("#ha").hide();  
+        $rightPanelContent.find("#created").text("");
+        $rightPanelContent.find("#account").text("");
+        $rightPanelContent.find("#domain").text("");
+        $rightPanelContent.find("#hostName").text("");
+        $rightPanelContent.find("#group").text("");	
+        $rightPanelContent.find("#iso").hide();
     }
     
     //***** declaration for volume tab (begin) *********************************************************

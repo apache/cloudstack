@@ -29,7 +29,7 @@ function volumeToMidmenu(jsonObj, $midmenuItem1, toRightPanelFn) {
     var $iconContainer = $midmenuItem1.find("#icon_container").show();   
     $iconContainer.find("#icon").attr("src", "images/midmenuicon_storage_volume.png");		
     
-    $midmenuItem1.find("#first_row").text(jsonObj.name.substring(0,25)); 
+    $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
     $midmenuItem1.find("#second_row").text(jsonObj.type.substring(0,25));           
     $midmenuItem1.data("toRightPanelFn", toRightPanelFn);
 }

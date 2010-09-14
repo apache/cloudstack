@@ -24,32 +24,38 @@
 <div class="contentbox" id="right_panel_content">
     <div class="info_detailbox errorbox" id="after_action_info_container" style="display:none">
         <p id="after_action_info"></p>
-    </div>        
-    
-    <div class="grid_actionpanel">
-	  	<div class="grid_actionbox" id="volume_action_link">
-	       	<div class="grid_actionsdropdown_box" id="volume_action_menu" style="display:none">
-	           	<ul class="actionsdropdown_boxlist" id="action_list">
-	          	    <!--  
-	               	<li> <a href="#"> Delete </a> </li>
-	                <li> <a href="#"> Attach Disk </a> </li>
-	                 -->
-	            </ul>
-	        </div>
-	    </div>   
-	    <!--  
-	    <div class="grid_editbox"></div>    
-	    -->
-	</div>                          
-    <div class="gridheader_loaderbox" id="spinning_wheel" style="display:none">
-        <div class="gridheader_loader" id="icon"></div>
-        <p id="description"> Waiting &hellip; </p>
-    </div>    
-    
+    </div> 
     <div class="tabbox" style="margin-top:15px;">
         <div class="content_tabs on">
             <%=t.t("Details")%></div>  
-          
+    
+    <div class="grid_actionpanel">
+    	<div class="grid_actionbox" id="volume_action_link">
+        	<div class="grid_actionsdropdown_box" id="volume_action_menu" style="display:none;">
+                	<ul class="actionsdropdown_boxlist" id="action_list">
+                	    <!--  
+                    	<li> <a href="#"> Delete </a> </li>
+                        <li> <a href="#"> Attach Disk </a> </li>
+                        -->
+                    </ul>
+            </div>
+        </div>   
+        <div class="grid_editbox"></div>
+        <div class="gridheader_loaderbox" id="spinning_wheel" style="border:1px solid #999; display:none;">
+        	<div class="gridheader_loader" id="icon"></div>
+            <p id="description">Detaching Disk &hellip;</p>
+        </div>
+        
+        <div class="gridheader_message" id="message_box" style="border:1px solid #999; display:none;">
+            <p>Disk has been succesfully dettached &hellip;</p>
+            <div class="close_button"></div>
+        </div>  
+        
+        <div class="gridheader_message error" style="border:1px solid #999; display:none;">
+            <p>Some problem occured while dettaching disk &hellip;</p>
+            <div class="close_button"></div>
+        </div>  
+    </div>
              
     </div>   
     <div class="grid_container">
