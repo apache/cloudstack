@@ -82,8 +82,8 @@
                     <%=t.t("HA")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles">
-                    <div class="cross_icon" id="ha" style="display:none">
+                <div class="row_celltitles" id="ha">
+                    <div id="icon">
                     </div>
                 </div>
             </div>
@@ -134,8 +134,8 @@
                     <%=t.t("ISO")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles">
-                    <div class="cross_icon" id="iso" style="display:none">
+                <div class="row_celltitles" id="iso">
+                    <div id="icon">
                     </div>
                 </div>
             </div>

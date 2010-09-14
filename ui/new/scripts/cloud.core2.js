@@ -508,9 +508,9 @@ var midmenuItemCount = 20;
 
 function setBooleanField(value, $field) {
     if(value == "true")
-        $field.removeClass("cross_icon").addClass("tick_icon").show();
+        $field.find("#icon").removeClass("cross_icon").addClass("tick_icon").show();
     else
-        $field.removeClass("tick_icon").addClass("cross_icon").show();	
+        $field.find("#icon").removeClass("tick_icon").addClass("cross_icon").show();	
 }
 
 

@@ -86,6 +86,8 @@
             </div>
             <div class="grid_row_cell" style="width: 79%;">
                 <div class="row_celltitles" id="bootable">
+                    <div id="icon">
+                    </div>
                 </div>
             </div>
         </div>
