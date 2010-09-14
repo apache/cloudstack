@@ -11,7 +11,7 @@
 <div class="main_title" id="right_panel_header">
      
     <div class="main_titleicon">
-        <img src="images/iptitle_icons.gif" alt="IP Address" /></div>
+        <img src="images/title_ipicon.gif" alt="IP Address" /></div>
     
     <h1>IP Address
     </h1>
