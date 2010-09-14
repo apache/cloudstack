@@ -2658,7 +2658,7 @@ public class UserVmManagerImpl implements UserVmManager {
             	forAccount = true;
             	guestVlan = vlansForAccount.get(0);//FIXME: iterate over all vlans
             }
-//            else
+//            else //TODO PLEASE DO NOT REMOVE THIS COMMENTED PART
 //            {
 //            	//list zone wide vlans that are direct attached and tagged
 //            	//if exists pick random one
