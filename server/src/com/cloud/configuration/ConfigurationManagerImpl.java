@@ -775,8 +775,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
     
     @Override
-    public DataCenterVO editZone(UpdateZoneCmd cmd) throws InvalidParameterValueException, InternalErrorException 
-    {
+    public DataCenterVO editZone(UpdateZoneCmd cmd) throws InvalidParameterValueException, InternalErrorException {
     	//Parameter validation as from execute() method in V1
     	Long zoneId = cmd.getId();
     	String zoneName = cmd.getZoneName();
@@ -885,8 +884,54 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	
     	return zone;
     }
-    
-    @DB
+
+    @Override @DB
+    public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException {
+        int vnetStart, vnetEnd;
+        if (vnetRange != null) {
+            String[] tokens = vnetRange.split("-");
+            
+            try {
+                vnetStart = Integer.parseInt(tokens[0]);
+                if (tokens.length == 1) {
+                    vnetEnd = vnetStart + 1;
+                } else {
+                    vnetEnd = Integer.parseInt(tokens[1]);
+                }
+            } catch (NumberFormatException e) {
+                throw new InvalidParameterValueException("Please specify valid integers for the vlan range.");
+            }
+        } else {
+            String networkType = _configDao.getValue("network.type");
+            if (networkType != null && networkType.equals("vnet")) {
+                vnetStart = 1000;
+                vnetEnd = 2000;
+            } else {
+                throw new InvalidParameterValueException("Please specify a vlan range.");
+            }
+        }
+
+        //checking the following params outside checkzoneparams method as we do not use these params for updatezone
+        //hence the method below is generic to check for common params
+        if ((guestCidr != null) && !NetUtils.isValidCIDR(guestCidr)) {
+            throw new InvalidParameterValueException("Please enter a valid guest cidr");
+        }
+
+        checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, true);
+
+        // Create the new zone in the database
+        DataCenterVO zone = new DataCenterVO(null, zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr);
+        zone = _zoneDao.persist(zone);
+
+        // Add vnet entries for the new zone
+        _zoneDao.addVnet(zone.getId(), vnetStart, vnetEnd);
+
+        saveConfigurationEvent(userId, null, EventTypes.EVENT_ZONE_CREATE, "Successfully created new zone with name: " + zoneName + ".", "dcId=" + zone.getId(), "dns1=" + dns1, "dns2=" + dns2, "internalDns1=" + internalDns1, "internalDns2=" + internalDns2, "vnetRange=" + vnetRange, "guestCidr=" + guestCidr);
+        
+        return zone;
+    }
+
+    @Override
     public DataCenterVO createZone(CreateZoneCmd cmd) throws InvalidParameterValueException, InternalErrorException {
         // grab parameters from the command
         Long userId = UserContext.current().getUserId();
@@ -902,48 +947,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
             userId = User.UID_SYSTEM;
         }
 
-        int vnetStart, vnetEnd;
-        if (vnetRange != null) {
-            String[] tokens = vnetRange.split("-");
-            
-            try {
-            	vnetStart = Integer.parseInt(tokens[0]);
-            	if (tokens.length == 1) {
-            		vnetEnd = vnetStart + 1;
-            	} else {
-            		vnetEnd = Integer.parseInt(tokens[1]);
-            	}
-            } catch (NumberFormatException e) {
-            	throw new InvalidParameterValueException("Please specify valid integers for the vlan range.");
-            }
-        } else {
-        	String networkType = _configDao.getValue("network.type");
-        	if (networkType != null && networkType.equals("vnet")) {
-        		vnetStart = 1000;
-                vnetEnd = 2000;
-        	} else {
-        		throw new InvalidParameterValueException("Please specify a vlan range.");
-        	}
-        }
-
-        //checking the following params outside checkzoneparams method as we do not use these params for updatezone
-        //hence the method below is generic to check for common params
-        if ((guestCidr != null) && !NetUtils.isValidCIDR(guestCidr)) {
-        	throw new InvalidParameterValueException("Please enter a valid guest cidr");
-        }
-
-    	checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2,true);
-
-		// Create the new zone in the database
-		DataCenterVO zone = new DataCenterVO(null, zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr);
-		zone = _zoneDao.persist(zone);
-
-		// Add vnet entries for the new zone
-    	_zoneDao.addVnet(zone.getId(), vnetStart, vnetEnd);
-
-		saveConfigurationEvent(userId, null, EventTypes.EVENT_ZONE_CREATE, "Successfully created new zone with name: " + zoneName + ".", "dcId=" + zone.getId(), "dns1=" + dns1, "dns2=" + dns2, "internalDns1=" + internalDns1, "internalDns2=" + internalDns2, "vnetRange=" + vnetRange, "guestCidr=" + guestCidr);
-    	
-		return zone;
+        return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr);
     }
 
     @Override
@@ -1084,8 +1088,21 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         	return null;
         }
     }
-    
-    
+
+    @Override
+    public DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException {
+        if ((numGibibytes != 0) && (numGibibytes < 1)) {
+            throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
+        } else if (numGibibytes > _maxVolumeSizeInGb) {
+            throw new InvalidParameterValueException("The maximum size for a disk is " + _maxVolumeSizeInGb + " Gb.");
+        }
+
+        long diskSize = numGibibytes * 1024;
+        tags = cleanupTags(tags);
+        DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize,tags);
+        return _diskOfferingDao.persist(newDiskOffering);
+    }
+
     @Override
     public DiskOfferingVO createDiskOffering(CreateDiskOfferingCmd cmd) throws InvalidParameterValueException {
         Long domainId = cmd.getDomainId();
@@ -1098,16 +1115,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
             domainId = Long.valueOf(DomainVO.ROOT_DOMAIN);
         }
 
-        if ((numGibibytes != 0) && (numGibibytes < 1)) {
-            throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
-        } else if (numGibibytes > _maxVolumeSizeInGb) {
-            throw new InvalidParameterValueException("The maximum size for a disk is " + _maxVolumeSizeInGb + " Gb.");
-        }
-
-        long diskSize = numGibibytes * 1024;
-    	tags = cleanupTags(tags);
-		DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize,tags);
-		return _diskOfferingDao.persist(newDiskOffering);
+        return createDiskOffering(domainId, name, description, numGibibytes, tags);
     }
     
     public DiskOfferingVO updateDiskOffering(UpdateDiskOfferingCmd cmd) throws InvalidParameterValueException{
@@ -1321,13 +1329,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         		if (!vlanId.equals(Vlan.UNTAGGED)) {
         			throw new InvalidParameterValueException("Direct Attached IP ranges for a pod must be untagged.");
         		}
-        		
+
         		// Check that the pod ID is valid
-        		HostPodVO pod = null;
-        		if (podId != null && ((pod = _podDao.findById(podId)) == null)) {
+        		if (podId != null && ((_podDao.findById(podId)) == null)) {
         			throw new InvalidParameterValueException("Please specify a valid pod.");
         		}
-        		
+
         		// Make sure there aren't any account VLANs in this zone
         		List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAll();
         		for (AccountVlanMapVO accountVlanMap : accountVlanMaps) {
@@ -1336,7 +1343,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         				throw new InvalidParameterValueException("Zone " + zone.getName() + " already has account-wide IP ranges. A zone may contain either pod-wide IP ranges or account-wide IP ranges, but not both.");
         			}
         		}
-        				
     		}
     	} else {
     		throw new InvalidParameterValueException("Please specify a valid IP range type. Valid types are: " + VlanType.values().toString());

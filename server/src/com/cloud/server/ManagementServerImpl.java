@@ -59,6 +59,7 @@ import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.CreateUserCmd;
+import com.cloud.api.commands.DeleteDomainCmd;
 import com.cloud.api.commands.DeletePortForwardingServiceCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
@@ -123,7 +124,6 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.async.dao.AsyncJobDao;
-import com.cloud.async.executor.DeleteDomainParam;
 import com.cloud.async.executor.NetworkGroupIngressParam;
 import com.cloud.async.executor.SecurityGroupParam;
 import com.cloud.async.executor.VMOperationParam;
@@ -4965,24 +4965,19 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public long deleteDomainAsync(Long domainId, Long ownerId, Boolean cleanup) {
-        DeleteDomainParam param = new DeleteDomainParam(domainId, ownerId, cleanup);
-        Gson gson = GsonHelper.getBuilder().create();
+    public String deleteDomain(DeleteDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long domainId = cmd.getId();
+        Boolean cleanup = cmd.getCleanup();
 
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(UserContext.current().getAccountId());
-        job.setCmd("DeleteDomain");
-        job.setCmdInfo(gson.toJson(param));
-        return _asyncMgr.submitAsyncJob(job);
-    }
+        if ((domainId == DomainVO.ROOT_DOMAIN) || ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId))) {
+            throw new PermissionDeniedException("Unable to delete domain " + domainId + ", permission denied.");
+        }
 
-    // FIXME:  need userId so the event can be saved with proper id
-    @Override
-    public String deleteDomain(Long domainId, Long ownerId, Boolean cleanup) {
         try {
             DomainVO domain = _domainDao.findById(domainId);
             if (domain != null) {
+                long ownerId = domain.getOwner();
                 if ((cleanup != null) && cleanup.booleanValue()) {
                     boolean success = cleanupDomain(domainId, ownerId);
                     if (!success) {
@@ -4997,8 +4992,12 @@ public class ManagementServerImpl implements ManagementServer {
                     	EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_DELETE, "Domain with id " + domainId + " was deleted");
                     }
                 }
+            } else {
+                throw new InvalidParameterValueException("Failed to delete domain nable " + domainId + ", domain not found");
             }
-            return null;
+            return "success";
+        } catch (InvalidParameterValueException ex) {
+            throw ex;
         } catch (Exception ex) {
             s_logger.error("Exception deleting domain with id " + domainId, ex);
             return "Delete failed on domain with id " + domainId + " due to an internal server error.";

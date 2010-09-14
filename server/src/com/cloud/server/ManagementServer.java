@@ -28,6 +28,7 @@ import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceCmd;
 import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.CreateUserCmd;
+import com.cloud.api.commands.DeleteDomainCmd;
 import com.cloud.api.commands.DeletePortForwardingServiceCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
@@ -958,12 +959,13 @@ public interface ManagementServer {
 
 	/**
      * delete a domain with the given domainId
-     * @param domainId
-     * @param ownerId
-     * @param cleanup - whether or not to delete all accounts/VMs/sub-domains when deleting the domain
+     * @param cmd the command wrapping the delete parameters
+     *   - domainId
+     *   - ownerId
+     *   - cleanup:  whether or not to delete all accounts/VMs/sub-domains when deleting the domain
      */
-	String deleteDomain(Long domainId, Long ownerId, Boolean cleanup);
-	long deleteDomainAsync(Long domainId, Long ownerId, Boolean cleanup);
+	String deleteDomain(DeleteDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+
     /**
      * update an existing domain
      * @param domainId the id of the domain to be updated
@@ -1379,7 +1381,7 @@ public interface ManagementServer {
 	 * @return comma separated list of tags
 	 */
 	String getStoragePoolTags(long poolId);
-	
+
 	/**
 	 * Checks if a host has running VMs that are using its local storage pool.
 	 * @return true if local storage is active on the host
@@ -1387,9 +1389,7 @@ public interface ManagementServer {
 	boolean isLocalStorageActiveOnHost(HostVO host);
 	
 	public List<PreallocatedLunVO> getPreAllocatedLuns(ListPreallocatedLunsCmd cmd);
-	
-	public String getNetworkGroupsNamesForVm(long vmId);
-	
+
 	boolean checkLocalStorageConfigVal(); 
 
 	boolean updateUser(UpdateUserCmd cmd) throws InvalidParameterValueException;

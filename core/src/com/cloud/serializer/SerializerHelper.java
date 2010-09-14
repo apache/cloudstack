@@ -69,7 +69,7 @@ public class SerializerHelper {
 			}
 			return null;
 		} catch(RuntimeException e) {
-			s_logger.error("Caught runtime exception when doing GSON descrialization on: " + result);
+			s_logger.error("Caught runtime exception when doing GSON deserialization on: " + result);
 			throw e; 
 		}
 	}

@@ -141,7 +141,18 @@ public interface ConfigurationManager extends Manager {
 	 * @return ID
 	 */
 	DiskOfferingVO createDiskOffering(CreateDiskOfferingCmd cmd) throws InvalidParameterValueException;
-	
+
+	/**
+	 * Creates a new disk offering
+	 * @param domainId
+	 * @param name
+	 * @param description
+	 * @param numGibibytes
+	 * @param tags
+	 * @return newly created disk offering
+	 */
+	DiskOfferingVO createDiskOffering(long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException;
+    
 	/**
 	 * Creates a new pod
 	 * @param userId
@@ -193,7 +204,23 @@ public interface ConfigurationManager extends Manager {
 	 * @throws InternalErrorException
 	 */
     DataCenterVO createZone(CreateZoneCmd cmd) throws InvalidParameterValueException, InternalErrorException;
-	
+
+    /**
+     * Creates a new zone
+     * @param userId
+     * @param zoneName
+     * @param dns1
+     * @param dns2
+     * @param internalDns1
+     * @param internalDns2
+     * @param vnetRange
+     * @param guestCidr
+     * @return
+     * @throws InvalidParameterValueException
+     * @throws InternalErrorException
+     */
+    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException;
+    
     /**
      * Edits a zone in the database. Will not allow you to edit DNS values if there are VMs in the specified zone.
      * @param UpdateZoneCmd
