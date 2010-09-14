@@ -56,13 +56,7 @@
                 <p id="description"></p>
                 <div class="close_button" id="close_button">
                 </div>
-            </div>
-            <div class="gridheader_message error" style="border: 1px solid #999; display: none;">
-                <p>
-                    Some problem occured while dettaching disk &hellip;</p>
-                <div class="close_button">
-                </div>
-            </div>
+            </div>           
         </div>
         <div class="grid_container">
             <div class="grid_rows odd">
