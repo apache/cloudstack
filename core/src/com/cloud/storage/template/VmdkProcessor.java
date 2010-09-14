@@ -35,9 +35,11 @@ public class VmdkProcessor implements Processor {
         }
         
         s_logger.info("Template processing - untar OVA package. templatePath: " + templatePath + ", templateName: " + templateName);
-        File templateFile = new File(templatePath);
+        String templateFileFullPath = templatePath + templateName + "." + ImageFormat.OVA.getFileExtension();
+        File templateFile = new File(templateFileFullPath);
+        
         Script command = new Script(true, "tar", 0, s_logger);
-        command.add("-xf", templatePath);
+        command.add("-xf", templateFileFullPath);
         command.setWorkDir(templateFile.getParent());
         String result = command.execute();
         if (result != null) {
