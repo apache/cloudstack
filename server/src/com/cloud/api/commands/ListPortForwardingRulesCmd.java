@@ -25,12 +25,14 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.network.FirewallRuleVO;
+import com.cloud.network.IPAddressVO;
 import com.cloud.serializer.SerializerHelper;
 import com.cloud.server.Criteria;
 import com.cloud.vm.UserVmVO;
@@ -70,6 +72,7 @@ public class ListPortForwardingRulesCmd extends BaseListCmd {
     public String getResponse() {
         List<FirewallRuleVO> firewallRules = (List<FirewallRuleVO>)getResponseObject();
         Map<String, UserVmVO> userVmCache = new HashMap<String, UserVmVO>();
+        IPAddressVO ipAddr = ApiDBUtils.findIpAddressById(ipAddress);
 
         List<FirewallRuleResponse> response = new ArrayList<FirewallRuleResponse>();
         for (FirewallRuleVO fwRule : firewallRules) {
@@ -83,10 +86,10 @@ public class ListPortForwardingRulesCmd extends BaseListCmd {
             UserVmVO userVM = userVmCache.get(fwRule.getPrivateIpAddress());
             if (userVM == null) {
                 Criteria c = new Criteria();
-                c.addCriteria(Criteria.ACCOUNTID, new Object[] {addrOwner.getId()});
-                c.addCriteria(Criteria.DATACENTERID, ipAddressVO.getDataCenterId());
+                c.addCriteria(Criteria.ACCOUNTID, new Object[] {ipAddr.getAccountId()});
+                c.addCriteria(Criteria.DATACENTERID, ipAddr.getDataCenterId());
                 c.addCriteria(Criteria.IPADDRESS, fwRule.getPrivateIpAddress());
-                List<UserVmVO> userVMs = getManagementServer().searchForUserVMs(c);
+                List<UserVmVO> userVMs = ApiDBUtils.searchForUserVMs(c);
 
                 if ((userVMs != null) && (userVMs.size() > 0)) {
                     userVM = userVMs.get(0);

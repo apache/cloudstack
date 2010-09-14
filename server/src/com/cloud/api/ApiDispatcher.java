@@ -152,9 +152,10 @@ public class ApiDispatcher {
         Field[] fields = cmd.getClass().getDeclaredFields();
         for (Field field : fields) {
             Parameter parameterAnnotation = field.getAnnotation(Parameter.class);
-            if (parameterAnnotation == null) {
+            if ((parameterAnnotation == null) || !parameterAnnotation.expose()) {
                 continue;
             }
+
             Object paramObj = unpackedParams.get(parameterAnnotation.name());
             if (paramObj == null) {
                 if (parameterAnnotation.required()) {

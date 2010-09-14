@@ -22,16 +22,18 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.UserVmResponse;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.serializer.SerializerHelper;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
 @Implementation(method="deployVirtualMachine")
@@ -77,6 +79,9 @@ public class DeployVMCmd extends BaseAsyncCmd {
     @Parameter(name="zoneid", type=CommandType.LONG, required=true)
     private Long zoneId;
 
+    // unexposed parameter needed for serializing/deserializing the command
+    @Parameter(name="password", type=CommandType.STRING, expose=false)
+    private String password;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -126,6 +131,14 @@ public class DeployVMCmd extends BaseAsyncCmd {
         return zoneId;
     }
 
+    // not exposed parameter
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -149,7 +162,7 @@ public class DeployVMCmd extends BaseAsyncCmd {
         response.setName(userVm.getName());
         response.setCreated(userVm.getCreated());
         response.setZoneId(userVm.getDataCenterId());
-        response.setZoneName(getManagementServer().findDataCenterById(userVm.getDataCenterId()).getName());
+        response.setZoneName(ApiDBUtils.findZoneById(userVm.getDataCenterId()).getName());
         response.setPrivateIp(userVm.getPrivateIpAddress());
         response.setServiceOfferingId(userVm.getServiceOfferingId());
         response.setHaEnable(userVm.isHaEnabled());
@@ -164,20 +177,25 @@ public class DeployVMCmd extends BaseAsyncCmd {
             response.setState(userVm.getState().toString());
         }
 
-        VMTemplateVO template = managementServer.findTemplateById(userVm.getTemplateId());
+        VMTemplateVO template = ApiDBUtils.findTemplateById(userVm.getTemplateId());
         
-        Account acct = managementServer.findAccountById(Long.valueOf(userVm.getAccountId()));
+        Account acct = ApiDBUtils.findAccountById(Long.valueOf(userVm.getAccountId()));
         if (acct != null) {
             response.setAccountName(acct.getAccountName());
             response.setDomainId(acct.getDomainId());
-            response.setDomain(managementServer.findDomainIdById(acct.getDomainId()).getName());
+            response.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
         }
-        
-        User userExecutingCmd = managementServer.getUser(userId);
+
+        Long userId = UserContext.current().getUserId();
+        if (userId == null) {
+            userId = User.UID_SYSTEM;
+        }
+
         //this is for the case where the admin deploys a vm for a normal user
-        Account acctForUserExecutingCmd = managementServer.findAccountById(Long.valueOf(userExecutingCmd.getAccountId()));
+        User userExecutingCmd = ApiDBUtils.findUserById(userId);
+        Account acctForUserExecutingCmd = ApiDBUtils.findAccountById(Long.valueOf(userExecutingCmd.getAccountId()));
         if ((BaseCmd.isAdmin(acctForUserExecutingCmd.getType()) && (userVm.getHostId() != null)) || (BaseCmd.isAdmin(acct.getType()) && (userVm.getHostId() != null))) {
-            response.setHostName(managementServer.getHostBy(userVm.getHostId()).getName());
+            response.setHostName(ApiDBUtils.findHostById(userVm.getHostId()).getName());
             response.setHostId(userVm.getHostId());
         }
             
@@ -195,13 +213,13 @@ public class DeployVMCmd extends BaseAsyncCmd {
         }
         
         if (templatePasswordEnabled) { // FIXME:  where will the password come from in this case?
-            response.setPassword(param.getPassword());
+            response.setPassword(getPassword());
         } 
         
         // ISO Info
         Long isoId = userVm.getIsoId();
         if (isoId != null) {
-            VMTemplateVO iso = getManagementServer().findTemplateById(isoId.longValue());
+            VMTemplateVO iso = ApiDBUtils.findTemplateById(isoId.longValue());
             if (iso != null) {
                 response.setIsoId(isoId.longValue());
                 response.setIsoName(iso.getName());
@@ -221,7 +239,7 @@ public class DeployVMCmd extends BaseAsyncCmd {
             response.setPasswordEnabled(templatePasswordEnabled);
         }
         
-        ServiceOfferingVO offering = managementServer.findServiceOfferingById(userVm.getServiceOfferingId());
+        ServiceOffering offering = ApiDBUtils.findServiceOfferingById(userVm.getServiceOfferingId());
         response.setServiceOfferingId(userVm.getServiceOfferingId());
         response.setServiceOfferingName(offering.getName());
 
@@ -229,7 +247,7 @@ public class DeployVMCmd extends BaseAsyncCmd {
         response.setCpuSpeed(offering.getSpeed());
         response.setMemory(offering.getRamSize());
         
-        response.setNetworkGroupList(managementServer.getNetworkGroupsNamesForVm(userVm.getId()));
+        response.setNetworkGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(userVm.getId()));
 
         return SerializerHelper.toSerializedString(response);
     }

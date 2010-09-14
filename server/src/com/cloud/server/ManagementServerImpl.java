@@ -6757,13 +6757,6 @@ public class ManagementServerImpl implements ManagementServer {
 	}
 
 	@Override
-	public String getNetworkGroupsNamesForVm(long vmId) 
-	{
-
-		return _networkGroupMgr.getNetworkGroupsNamesForVm(vmId);
-	}
-	
-	@Override
 	public boolean checkLocalStorageConfigVal()
 	{
 		String value = _configs.get("use.local.storage");

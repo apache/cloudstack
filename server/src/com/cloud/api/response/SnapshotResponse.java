@@ -33,7 +33,7 @@ public class SnapshotResponse implements ResponseObject {
     private Long domainId;
 
     @Param(name="domain")
-    private String domain;
+    private String domainName;
 
     @Param(name="snapshottype")
     private String snapshotType;
@@ -86,12 +86,12 @@ public class SnapshotResponse implements ResponseObject {
         this.domainId = domainId;
     }
 
-    public String getDomain() {
-        return domain;
+    public String getDomainName() {
+        return domainName;
     }
 
-    public void setDomain(String domain) {
-        this.domain = domain;
+    public void setDomainName(String domainName) {
+        this.domainName = domainName;
     }
 
     public String getSnapshotType() {

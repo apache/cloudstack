@@ -86,6 +86,9 @@ public class UserVmResponse implements ResponseObject {
     @Param(name="isoname")
     private String isoName;
 
+    @Param(name="isodisplaytext")
+    private String isoDisplayText;
+
     @Param(name="serviceofferingid")
     private Long serviceOfferingId;
 
@@ -115,6 +118,9 @@ public class UserVmResponse implements ResponseObject {
 
     @Param(name="networkgrouplist")
     private String networkGroupList;
+
+    @Param(name="password")
+    private String password;
 
     @Param(name="jobid")
     private Long jobId;
@@ -290,6 +296,14 @@ public class UserVmResponse implements ResponseObject {
         this.isoName = isoName;
     }
 
+    public String getIsoDisplayText() {
+        return isoDisplayText;
+    }
+
+    public void setIsoDisplayText(String isoDisplayText) {
+        this.isoDisplayText = isoDisplayText;
+    }
+
     public Long getServiceOfferingId() {
         return serviceOfferingId;
     }
@@ -368,6 +382,14 @@ public class UserVmResponse implements ResponseObject {
 
     public void setNetworkGroupList(String networkGroupList) {
         this.networkGroupList = networkGroupList;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public Long getJobId() {

@@ -144,11 +144,11 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
     			txt.rollback();
     			return;
     		}
-    		
+
     		job.setCompleteMsid(getMsid());
     		job.setStatus(jobStatus);
     		job.setResultCode(resultCode);
-    		
+
     		// reset attached object
     		job.setInstanceType(null);
     		job.setInstanceId(null);
@@ -164,7 +164,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
     		txt.rollback();
     	}
     }
-    
+
     @Override @DB
     public void updateAsyncJobStatus(long jobId, int processStatus, Object resultObject) {
     	if(s_logger.isDebugEnabled())
@@ -194,7 +194,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
     		txt.rollback();
     	}
     }
-    
+
     @Override @DB
     public void updateAsyncJobAttachment(long jobId, String instanceType, Long instanceId) {
     	if(s_logger.isDebugEnabled())
@@ -204,27 +204,27 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
     	Transaction txt = Transaction.currentTxn();
     	try {
     		txt.start();
-    	
+
 	    	AsyncJobVO job = _jobDao.createForUpdate();
 	    	job.setInstanceType(instanceType);
 	    	job.setInstanceId(instanceId);
 			job.setLastUpdated(DateUtil.currentGMTTime());
 			_jobDao.update(jobId, job);
-			
+
     		txt.commit();
     	} catch(Exception e) {
     		s_logger.error("Unexpected exception while updating async job-" + jobId + " attachment: ", e);
     		txt.rollback();
     	}
     }
-    
+
     @Override
     public void syncAsyncJobExecution(long jobId, String syncObjType, long syncObjId) {
     	if(s_logger.isDebugEnabled())
     		s_logger.debug("Sync job-" + jobId + " execution on object " + syncObjType + "." + syncObjId);
     	
     	SyncQueueVO queue = null;
-    	
+
 		// to deal with temporary DB exceptions like DB deadlock/Lock-wait time out cased rollbacks
     	// we retry five times until we throw an exception
 		Random random = new Random();    		
@@ -246,9 +246,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
 			throw new CloudRuntimeException("Unable to insert queue item into database, DB is full?");
 		}
     }
-    
-    
-    
+
     @Override @DB
     public AsyncJobResult queryAsyncJobResult(long jobId) {
     	if(s_logger.isTraceEnabled())

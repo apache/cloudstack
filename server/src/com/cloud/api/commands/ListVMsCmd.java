@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -214,7 +215,7 @@ public class ListVMsCmd extends BaseListCmd {
             userVmResponse.setOsTypeId(userVm.getGuestOSId());
 
             //network groups
-            userVmResponse.setNetworkGroupList(getManagementServer().getNetworkGroupsNamesForVm(userVm.getId()));
+            userVmResponse.setNetworkGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(userVm.getId()));
 
             response.add(userVmResponse);
         }

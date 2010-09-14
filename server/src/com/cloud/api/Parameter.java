@@ -33,5 +33,6 @@ public @interface Parameter {
     boolean required() default false;
     CommandType type() default CommandType.OBJECT;
     CommandType collectionType() default CommandType.OBJECT;
+    boolean expose() default true;
 }
 

@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
@@ -85,14 +86,14 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
         SnapshotResponse response = new SnapshotResponse();
         response.setId(snapshot.getId());
 
-        Account account = getAsyncJobMgr().getExecutorContext().getAccountDao().findById(snapshot.getAccountId());
+        Account account = ApiDBUtils.findAccountById(snapshot.getAccountId());
         if (account != null) {
             response.setAccountName(account.getAccountName());
             response.setDomainId(account.getDomainId());
-            response.setDomainName(getAsyncJobMgr().getExecutorContext().getManagementServer().findDomainIdById(account.getDomainId()).getName());
+            response.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
         }
 
-        VolumeVO volume = managementServer.findVolumeById(snapshot.getVolumeId());
+        VolumeVO volume = ApiDBUtils.findVolumeById(snapshot.getVolumeId());
         String snapshotTypeStr = SnapshotType.values()[snapshot.getSnapshotType()].name();
         response.setSnapshotType(snapshotTypeStr);
         response.setVolumeId(snapshot.getVolumeId());
