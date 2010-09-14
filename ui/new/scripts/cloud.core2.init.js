@@ -89,11 +89,14 @@ $(document).ready(function() {
     listMidMenuItems("leftmenu_snapshot", "listSnapshots", "listsnapshotsresponse", "snapshot", "jsp/snapshot.jsp", afterLoadSnapshotJSP, snapshotToMidmenu, snapshotToRigntPanel);
     listMidMenuItems("leftmenu_ip", "listPublicIpAddresses", "listpublicipaddressesresponse", "publicipaddress", "jsp/ip_address.jsp", afterLoadIpJSP, ipToMidmenu, ipToRigntPanel);
       
-    listMidMenuItems("leftmenu_submenu_myTemplate", "listTemplates&templatefilter=self", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRigntPanel);
-    listMidMenuItems("leftmenu_submenu_featuredTemplate", "listTemplates&templatefilter=featured", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRigntPanel);
-    listMidMenuItems("leftmenu_submenu_communityTemplate", "listTemplates&templatefilter=community", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRigntPanel);
+    listMidMenuItems("leftmenu_submenu_my_template", "listTemplates&templatefilter=self", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRigntPanel);
+    listMidMenuItems("leftmenu_submenu_featured_template", "listTemplates&templatefilter=featured", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRigntPanel);
+    listMidMenuItems("leftmenu_submenu_community_template", "listTemplates&templatefilter=community", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRigntPanel);
     
-    
+    listMidMenuItems("leftmenu_submenu_my_iso", "listIsos&isofilter=self", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRigntPanel);
+    listMidMenuItems("leftmenu_submenu_featured_iso", "listIsos&isofilter=featured", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRigntPanel);
+    listMidMenuItems("leftmenu_submenu_community_iso", "listIsos&isofilter=community", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRigntPanel);
+        
     $("#leftmenu_instance_group_header").bind("click", function(event) {  
         clearMidMenu(); 
         var $arrowIcon = $(this).find("#arrow_icon");        
