@@ -40,16 +40,7 @@ $(document).ready(function() {
             }             
         }
     });
-    
-    function jsonToMidmenu(jsonObj, $midmenuItem1, propertyForFirstRow, propertyForSecondRow, toRightPanelFn) {  
-        $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));                             
-        $midmenuItem1.data("id", jsonObj.id); 
-        $midmenuItem1.data("jsonObj", jsonObj); 
-        $midmenuItem1.find("#first_row").text(jsonObj[propertyForFirstRow].substring(0,25)); 
-        $midmenuItem1.find("#second_row").text(jsonObj[propertyForSecondRow].substring(0,25));           
-        $midmenuItem1.data("toRightPanelFn", toRightPanelFn);
-    }
-    
+      
     function clearMidMenu() {
         $("#midmenu_container").empty();
         $("#midmenu_action_link").hide();
@@ -71,8 +62,9 @@ $(document).ready(function() {
 	                    var items = json[jsonResponse1][jsonResponse2];
 	                    if(items != null && items.length > 0) {
 	                        for(var i=0; i<items.length;i++) { 
-                                var $midmenuItem1 = $midmenuItem.clone();                               
-                                toMidmenu(items[i], $midmenuItem1, toRightPanel);                             
+                                var $midmenuItem1 = $midmenuItem.clone();  
+                                $midmenuItem1.data("toRightPanelFn", toRightPanel);                             
+                                toMidmenu(items[i], $midmenuItem1);                             
                                 $("#midmenu_container").append($midmenuItem1.show());                            
                             }  
                         }  

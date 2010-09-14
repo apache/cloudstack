@@ -329,17 +329,15 @@ function clickInstanceGroupHeader($arrowIcon) {
             midmenuItem.find("#icon").attr("src", "images/status_gray.png");
     }
       
-    function vmToMidmenu(json, $midmenuItem1, toRightPanelFn) {  
+    function vmToMidmenu(json, $midmenuItem1) {  
         $midmenuItem1.data("jsonObj", json);
-        $midmenuItem1.data("toRightPanelFn", toRightPanelFn);
         $midmenuItem1.attr("id", ("midmenuItem_"+json.id));   
         
         var $iconContainer = $midmenuItem1.find("#icon_container").show();   
         $iconContainer.find("#icon").attr("src", "images/status_gray.png");	        
           
         var vmName = getVmName(json.name, json.displayname);
-        $midmenuItem1.find("#first_row").text(vmName);
-        //$midmenuItem1.find("#second_row_label").text("IP Address:");  
+        $midmenuItem1.find("#first_row").text(vmName);        
         $midmenuItem1.find("#second_row").text(json.ipaddress);                                            
         updateVirtualMachineStateInMidMenu(json, $midmenuItem1);        
         $midmenuItem1.bind("click", function(event) {  
@@ -527,9 +525,10 @@ function clickInstanceGroupHeader($arrowIcon) {
 	                            success: function(json) {		                                                             
 	                                var instances = json.listvirtualmachinesresponse.virtualmachine;                               
                                     for(var i=0; i<instances.length;i++) {  
-                                        var $template = $midmenuItem.clone();                                                                                                                               
-                                        vmToMidmenu(instances[i], $template, vmToRightPanel);  
-                                        $("#midmenu_container").append($template.show());
+                                        var $midmenuItem1 = $midmenuItem.clone();
+                                        $midmenuItem1.data("toRightPanelFn", vmToRightPanel);                                                                                                                               
+                                        vmToMidmenu(instances[i], $midmenuItem1);  
+                                        $("#midmenu_container").append($midmenuItem1.show());
                                     }    
 	                            }
 	                        });                            
@@ -1173,7 +1172,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 											    $t.find("#info_icon").removeClass("error").show();
 						                        $t.data("afterActionInfo", ("Adding succeeded.")); 
 						                        if("virtualmachine" in result)	
-						                            vmToMidmenu(result.virtualmachine[0], $t, vmToRightPanel);													   
+						                            vmToMidmenu(result.virtualmachine[0], $t);													   
 											    
 										    } else if (result.jobstatus == 2) {
 											    // Failed

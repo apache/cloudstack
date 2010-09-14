@@ -27,7 +27,12 @@ function afterLoadVolumeJSP() {
     });
 }
 
-function volumeToMidmenu(jsonObj, $midmenuItem1, toRightPanelFn) {  
+function volumeAfterDetailsTabAction(jsonObj) {
+    $("#midmenuItem_"+jsonObj.id).data("jsonObj", jsonObj);   
+    volumeJsonToDetailsTab(jsonObj);   
+}
+
+function volumeToMidmenu(jsonObj, $midmenuItem1) {  
     $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));  
     $midmenuItem1.data("jsonObj", jsonObj); 
     
@@ -35,8 +40,7 @@ function volumeToMidmenu(jsonObj, $midmenuItem1, toRightPanelFn) {
     $iconContainer.find("#icon").attr("src", "images/midmenuicon_storage_volume.png");		
     
     $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
-    $midmenuItem1.find("#second_row").text(jsonObj.type.substring(0,25));           
-    $midmenuItem1.data("toRightPanelFn", toRightPanelFn);
+    $midmenuItem1.find("#second_row").text(jsonObj.type.substring(0,25));  
 }
 
 function volumeToRigntPanel($midmenuItem) {       
@@ -44,26 +48,26 @@ function volumeToRigntPanel($midmenuItem) {
     volumeJsonToDetailsTab(json);   
 }
  
-function volumeJsonToDetailsTab(json){
+function volumeJsonToDetailsTab(jsonObj){
     var $detailsTab = $("#right_panel_content #tab_content_details");  
-    $detailsTab.data("jsonObj", json);   
-    $detailsTab.find("#id").text(json.id);
-    $detailsTab.find("#name").text(fromdb(json.name));    
-    $detailsTab.find("#zonename").text(fromdb(json.zonename));    
-    $detailsTab.find("#device_id").text(json.deviceid);   
-    $detailsTab.find("#state").text(json.state);    
-    $detailsTab.find("#storage").text(fromdb(json.storage));
-    $detailsTab.find("#account").text(fromdb(json.account)); 
+    $detailsTab.data("jsonObj", jsonObj);   
+    $detailsTab.find("#id").text(jsonObj.id);
+    $detailsTab.find("#name").text(fromdb(jsonObj.name));    
+    $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));    
+    $detailsTab.find("#device_id").text(jsonObj.deviceid);   
+    $detailsTab.find("#state").text(jsonObj.state);    
+    $detailsTab.find("#storage").text(fromdb(jsonObj.storage));
+    $detailsTab.find("#account").text(fromdb(jsonObj.account)); 
     
-    $detailsTab.find("#type").text(json.type + " (" + json.storagetype + " storage)");
-    $detailsTab.find("#size").text((json.size == "0") ? "" : convertBytes(json.size));		
+    $detailsTab.find("#type").text(jsonObj.type + " (" + jsonObj.storagetype + " storage)");
+    $detailsTab.find("#size").text((jsonObj.size == "0") ? "" : convertBytes(jsonObj.size));		
     
-    if (json.virtualmachineid == null) 
+    if (jsonObj.virtualmachineid == null) 
 		$detailsTab.find("#vm_name").text("detached");
 	else 
-		$detailsTab.find("#vm_name").text(getVmName(json.vmname, json.vmdisplayname) + " (" + json.vmstate + ")");
+		$detailsTab.find("#vm_name").text(getVmName(jsonObj.vmname, jsonObj.vmdisplayname) + " (" + jsonObj.vmstate + ")");
 		
-    setDateField(json.created, $detailsTab.find("#created"));	
+    setDateField(jsonObj.created, $detailsTab.find("#created"));	
     
     var $actionLink = $detailsTab.find("#volume_action_link");
 	$actionLink.bind("mouseover", function(event) {	    
@@ -77,11 +81,11 @@ function volumeJsonToDetailsTab(json){
         
     var $actionMenu = $actionLink.find("#volume_action_menu");
     $actionMenu.find("#action_list").empty();
-    if(json.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
-		if (json.vmstate == "Stopped") 
+    if(jsonObj.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
+		if (jsonObj.vmstate == "Stopped") 
 		    buildActionLinkForDetailsTab("Create Template", volumeActionMap, $actionMenu, volumeListAPIMap, $detailsTab);	
 	} 
-	else { //json.type=="DATADISK": "detach disk" is allowed, "create template" is disallowed.			
+	else { //jsonObj.type=="DATADISK": "detach disk" is allowed, "create template" is disallowed.			
 		buildActionLinkForDetailsTab("Detach Disk", volumeActionMap, $actionMenu, volumeListAPIMap, $detailsTab);				
 	}	
 } 
@@ -98,7 +102,7 @@ var volumeActionMap = {
         isAsyncJob: true,
         asyncJobResponse: "detachvolumeresponse",
         inProcessText: "Detaching disk....",
-        afterActionSeccessFn: volumeJsonToDetailsTab
+        afterActionSeccessFn: volumeAfterDetailsTabAction
     },
     "Create Template": {
         isAsyncJob: true,

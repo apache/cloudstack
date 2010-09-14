@@ -2,7 +2,7 @@ function afterLoadEventJSP() {
 
 }
 
-function eventToMidmenu(jsonObj, $midmenuItem1, toRightPanelFn) {
+function eventToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));  
     $midmenuItem1.data("jsonObj", jsonObj); 
     
@@ -15,8 +15,7 @@ function eventToMidmenu(jsonObj, $midmenuItem1, toRightPanelFn) {
         $iconContainer.find("#icon").attr("src", "images/midmenuicon_events_warning.png");
     
     $midmenuItem1.find("#first_row").text(jsonObj.description.substring(0,25)); 
-    $midmenuItem1.find("#second_row").text(jsonObj.type.substring(0,25));           
-    $midmenuItem1.data("toRightPanelFn", toRightPanelFn);
+    $midmenuItem1.find("#second_row").text(jsonObj.type.substring(0,25));  
 }
 
 function eventToRigntPanel($midmenuItem) {      
