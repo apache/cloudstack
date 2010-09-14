@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServlet;
@@ -32,10 +31,10 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.maid.StackMaid;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
-import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @SuppressWarnings("serial")
@@ -134,15 +133,12 @@ public class ApiServlet extends HttpServlet {
 
                     if (username != null) {
                         String pwd = ((password == null) ? null : password[0]);
-                        List<Pair<String, Object>> sessionParams = _apiServer.loginUser(session, username[0], pwd, domainId, domain, params);
-                        if (sessionParams != null) {
-                            for (Pair<String, Object> sessionParam : sessionParams) {
-                                session.setAttribute(sessionParam.first(), sessionParam.second());
-                            }
+                        try {
+                            _apiServer.loginUser(session, username[0], pwd, domainId, domain, params);
                             String loginResponse = getLoginSuccessResponse(session, responseType);
                             writeResponse(resp, loginResponse, false, responseType);
                             return;
-                        } else {
+                        } catch (CloudAuthenticationException ex) {
                             // TODO:  fall through to API key, or just fail here w/ auth error? (HTTP 401)
                             session.invalidate();
                             resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "failed to authenticated user, check username/password are correct");

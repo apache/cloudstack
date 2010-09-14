@@ -27,7 +27,7 @@ package com.cloud.utils;
  **/
 public interface SerialVersionUID {
     public static final long Base = 0x564D4F70 << 32;  // 100 brownie points if you guess what this is and tell me.
-    
+
     public static final long UUID = Base | 0x1;
     public static final long CloudRuntimeException = Base | 0x2;
     public static final long CloudStartupServlet = Base | 0x3;
@@ -55,4 +55,5 @@ public interface SerialVersionUID {
     public static final long StorageUnavailableException = Base | 0x19;
     public static final long InfficientVirtualNetworkCapacityException = Base | 0x1a;
     public static final long DiscoveryException = Base | 0x1b;
+    public static final long CloudAuthenticationException = Base | 0x1c;
 }

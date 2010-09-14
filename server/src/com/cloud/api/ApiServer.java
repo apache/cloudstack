@@ -82,6 +82,7 @@ import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.DomainVO;
+import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.maid.StackMaid;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
@@ -492,7 +493,7 @@ public class ApiServer implements HttpRequestHandler {
         return false;
     }
     
-    public List<Pair<String, Object>> loginUser(HttpSession session, String username, String password, Long domainId, String domainPath, Map<String, Object[]> requestParameters) {
+    public void loginUser(HttpSession session, String username, String password, Long domainId, String domainPath, Map<String, Object[]> requestParameters) throws CloudAuthenticationException {
     	// We will always use domainId first.  If that does not exist, we will use domain name.  If THAT doesn't exist
     	// we will default to ROOT
         if (domainId == null) {
@@ -503,14 +504,13 @@ public class ApiServer implements HttpRequestHandler {
         		if (domainObj != null) {
         			domainId = domainObj.getId();
         		} else { // if an unknown path is passed in, fail the login call
-        			return null;
+        			throw new CloudAuthenticationException("Unable to find the domain from the path " + domainPath);
         		}
         	}
         }
 
         UserAccount userAcct = _ms.authenticateUser(username, password, domainId, requestParameters);
-        if (userAcct != null) 
-        {
+        if (userAcct != null) {
         	String timezone = userAcct.getTimezone();
         	float offsetInHrs = 0f;
         	if (timezone!=null) {
@@ -525,7 +525,6 @@ public class ApiServer implements HttpRequestHandler {
         	}
         	
         	Account account = _ms.findAccountById(userAcct.getAccountId());
-            List<Pair<String, Object>> loginParams = new ArrayList<Pair<String, Object>>();
 
             String networkType = _ms.getConfigurationValue("network.type");
             if (networkType == null) 
@@ -574,9 +573,9 @@ public class ApiServer implements HttpRequestHandler {
             String sessionKey = Base64.encodeBytes(sessionKeyBytes);
             session.setAttribute("sessionkey", sessionKey);
 
-            return loginParams;
+            return;
         }
-        return null;
+        throw new CloudAuthenticationException("Unable to find user " + username + " in domain " + domainId);
     }
 
     public void logoutUser(long userId) {
