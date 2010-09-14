@@ -452,7 +452,7 @@ public class ManagementServerImpl implements ManagementServer {
         // and set them in the right places
 
         String maxVolumeSizeInGbString = _configs.get("max.volume.size.gb");
-        int maxVolumeSizeGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2000);
+        int maxVolumeSizeGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2097152000);
 
         _maxVolumeSizeInGb = maxVolumeSizeGb;
 
