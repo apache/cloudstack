@@ -25,6 +25,7 @@ $(document).ready(function() {
                     selectedItemsInMidMenu[id] = $midmenuItem1; 
                     $midmenuItem1.find("#content").addClass("selected");   
                 }                               
+                clearRightPanel();      
                 var toRightPanelFn = $midmenuItem1.data("toRightPanelFn");
                 toRightPanelFn($midmenuItem1);	          
             }                                             
@@ -40,12 +41,6 @@ $(document).ready(function() {
             }             
         }
     });
-      
-    function clearMidMenu() {
-        $("#midmenu_container").empty();
-        $("#midmenu_action_link").hide();
-        $("#midmenu_add_link").hide();        
-    }
     
     var $midmenuItem = $("#midmenu_item");
     function listMidMenuItems(leftmenuId, commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSP, toMidmenu, toRightPanel) { 

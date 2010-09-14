@@ -512,7 +512,18 @@ function setBooleanField(value, $field) {
     else
         $field.find("#icon").removeClass("tick_icon").addClass("cross_icon").show();	
 }
+  
+function clearMidMenu() {
+    $("#midmenu_container").empty();
+    $("#midmenu_action_link").hide();
+    $("#midmenu_add_link").hide();        
+}
 
+function clearRightPanel() {
+    $("#right_panel_content #action_message_box").hide();     
+}
+    
+    
 
 
 
