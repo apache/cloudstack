@@ -15,7 +15,7 @@
 <!-- account detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
-        <img src="images/accountstitle_icons.gif" alt="Accounts" /></div>
+        <img src="images/title_accountsicon.gif" alt="Accounts" /></div>
     <h1>Accounts</h1>
 </div>
 
