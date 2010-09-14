@@ -15,7 +15,7 @@
 <div class="main_title" id="right_panel_header">
    
     <div class="main_titleicon">
-        <img src="images/title_eventicon.gif" alt="Instance" /></div>
+        <img src="images/title_eventsicon.gif" alt="Event" /></div>
    
     <h1>Event
     </h1>

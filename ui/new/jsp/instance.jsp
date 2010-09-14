@@ -14,7 +14,7 @@
 <!-- VM detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
-        <img src="images/title_instanceicon.gif" alt="Instance" /></div>
+        <img src="images/title_instanceicons.gif" alt="Instance" /></div>
     <h1 id="vm_name">Instance
     </h1>
 </div>
