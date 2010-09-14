@@ -18,6 +18,9 @@
 
 package com.cloud.dc.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -35,13 +38,18 @@ import com.cloud.dc.Vlan.VlanType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value={VlanDao.class})
 public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao {
     
+	private final String FindZoneWideVlans = "SELECT * FROM vlan WHERE data_center_id=? and vlan_type=? and vlan_id!=? and id not in (select vlan_db_id from account_vlan_map)";
+	
 	protected SearchBuilder<VlanVO> ZoneVlanIdSearch;
 	protected SearchBuilder<VlanVO> ZoneSearch;
 	protected SearchBuilder<VlanVO> ZoneTypeSearch;
@@ -83,10 +91,6 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         ZoneTypeSearch.and("vlanType", ZoneTypeSearch.entity().getVlanType(), SearchCriteria.Op.EQ);
         ZoneTypeSearch.done();
         
-        ZoneVlanSearch = createSearchBuilder();
-        ZoneVlanSearch.and("vlanType", ZoneVlanSearch.entity().getVlanType(), SearchCriteria.Op.EQ);
-        ZoneVlanSearch.and("vlanId", ZoneVlanSearch.entity().getVlanId(), SearchCriteria.Op.NEQ);
-        ZoneVlanSearch.and("zoneId", ZoneTypeSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
     }
 
     @Override
@@ -268,6 +272,34 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     		return null;
     	}
 		return new Pair<String, VlanVO>(ipAddress, vlan);
+
+	}
+	
+	@Override
+	@DB
+	public List<VlanVO> searchForZoneWideVlans(long dcId, String vlanType, String vlanId){
+		
+	    StringBuilder sql = new StringBuilder(FindZoneWideVlans);
+
+	    Transaction txn = Transaction.currentTxn();
+		PreparedStatement pstmt = null;
+	    try {
+	        pstmt = txn.prepareAutoCloseStatement(sql.toString());
+	        pstmt.setLong(1, dcId);
+	        pstmt.setString(2, vlanType);
+	        pstmt.setString(3, vlanId);
+	        
+	        ResultSet rs = pstmt.executeQuery();
+	        List<VlanVO> zoneWideVlans = new ArrayList<VlanVO>();
+
+	        while (rs.next()) {
+	        	zoneWideVlans.add(toEntityBean(rs, false));
+	        }
+	        
+	        return zoneWideVlans;
+	    } catch (SQLException e) {
+	        throw new CloudRuntimeException("Unable to execute " + pstmt.toString(), e);
+	    }
 
 	}
     

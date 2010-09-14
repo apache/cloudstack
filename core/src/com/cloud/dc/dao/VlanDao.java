@@ -50,4 +50,6 @@ public interface VlanDao extends GenericDao<VlanVO, Long> {
 
 	List<VlanVO> listZoneWideVlans(long zoneId, VlanType vlanType, String vlanId);
 
+	List<VlanVO> searchForZoneWideVlans(long dcId, String vlanType,String vlanId);
+
 }

@@ -80,10 +80,12 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
+import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -169,6 +171,8 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
@@ -221,12 +225,13 @@ public class UserVmManagerImpl implements UserVmManager {
     @Inject AsyncJobManager _asyncMgr;
     @Inject protected StoragePoolHostDao _storagePoolHostDao;
     @Inject VlanDao _vlanDao;
+    @Inject AccountVlanMapDao _accountVlanMapDao;
     @Inject StoragePoolDao _storagePoolDao;
     @Inject VMTemplateHostDao _vmTemplateHostDao;
     @Inject NetworkGroupManager _networkGroupManager;
     @Inject ServiceOfferingDao _serviceOfferingDao;
     @Inject EventDao _eventDao = null;
-
+    
     private IpAddrAllocator _IpAllocator;
     ScheduledExecutorService _executor = null;
     int _expungeInterval;
@@ -1868,6 +1873,7 @@ public class UserVmManagerImpl implements UserVmManager {
         	Enumeration<IpAddrAllocator> it = ipAllocators.enumeration();
         	_IpAllocator = it.nextElement();
         }
+                
         return true;
     }
 
@@ -2647,15 +2653,30 @@ public class UserVmManagerImpl implements UserVmManager {
             List<VlanVO> vlansForAccount = _vlanDao.listVlansForAccountByType(dc.getId(), account.getId(), VlanType.DirectAttached);
            
             boolean forAccount = false;
+            boolean forZone = false;
             if (vlansForAccount.size() > 0) {
             	forAccount = true;
             	guestVlan = vlansForAccount.get(0);//FIXME: iterate over all vlans
+            }
+            else
+            {
+            	//list zone wide vlans that are direct attached and tagged
+            	//if exists pick random one
+            	//set forZone = true
+            	
+            	//note the dao method below does a NEQ on vlan id, hence passing untagged
+            	List<VlanVO> zoneWideVlans = _vlanDao.listZoneWideVlans(dc.getId(),VlanType.DirectAttached,"untagged");
+            	
+            	if(zoneWideVlans!=null && zoneWideVlans.size()>0){
+            		forZone = true;
+            		guestVlan = zoneWideVlans.get(0);//FIXME: iterate over all vlans
+            	}
             }
             while ((pod = _agentMgr.findPod(template, offering, dc, account.getId(), avoids)) != null) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Attempting to create direct attached vm in pod " + pod.first().getName());
                 }
-                if (!forAccount) {
+                if (!forAccount && !forZone) {
                 	List<VlanVO> vlansForPod = _vlanDao.listVlansForPodByType(pod.first().getId(), VlanType.DirectAttached);
                 	if (vlansForPod.size() < 1) {
                 		avoids.add(pod.first().getId());

@@ -8807,5 +8807,10 @@ public class ManagementServerImpl implements ManagementServer {
 		
 		return false;
     }
+    
+    @Override
+    public List<VlanVO> searchForZoneWideVlans(long dcId, String vlanType, String vlanId){
+    	return _vlanDao.searchForZoneWideVlans(dcId, vlanType, vlanId);
+    }
 }
 

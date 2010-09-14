@@ -2201,4 +2201,5 @@ public interface ManagementServer {
 	VolumeVO getRootVolume(Long instanceId);
 	long getPsMaintenanceCount(long podId);
 	boolean isPoolUp(long instanceId);
+	List<VlanVO> searchForZoneWideVlans(long dcId, String vlanType,String vlanId);
 }
