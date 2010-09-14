@@ -5,16 +5,9 @@ function afterLoadIsoJSP() {
 function isoToMidmenu(jsonObj, $midmenuItem1, toRightPanelFn) {    
     $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));  
     $midmenuItem1.data("jsonObj", jsonObj); 
-    
-    /*
-    var iconContainer = $midmenuItem1.find("#icon_container").show();
-    if(jsonObj.level == "INFO")
-        iconContainer.find("#icon").attr("src", "images/midmenuicon_events_info.png");
-    else if(jsonObj.level == "ERROR")
-        iconContainer.find("#icon").attr("src", "images/midmenuicon_events_error.png");
-    else if(jsonObj.level == "WARN")
-        iconContainer.find("#icon").attr("src", "images/midmenuicon_events_warning.png");
-    */
+        
+    var $iconContainer = $midmenuItem1.find("#icon_container").show();
+    setIconByOsType(jsonObj.ostypename, $iconContainer.find("#icon"));
     
     $midmenuItem1.find("#first_row").text(jsonObj.name.substring(0,25)); 
     $midmenuItem1.find("#second_row").text(jsonObj.zonename.substring(0,25));           

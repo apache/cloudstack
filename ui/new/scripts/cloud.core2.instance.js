@@ -329,19 +329,20 @@ function clickInstanceGroupHeader($arrowIcon) {
             midmenuItem.find("#icon").attr("src", "images/status_gray.png");
     }
       
-    function vmToMidmenu(json, $midmenuItem, toRightPanelFn) {  
-        $midmenuItem.data("jsonObj", json);
-        $midmenuItem.data("toRightPanelFn", toRightPanelFn);
-        $midmenuItem.attr("id", ("midmenuItem_"+json.id));   
+    function vmToMidmenu(json, $midmenuItem1, toRightPanelFn) {  
+        $midmenuItem1.data("jsonObj", json);
+        $midmenuItem1.data("toRightPanelFn", toRightPanelFn);
+        $midmenuItem1.attr("id", ("midmenuItem_"+json.id));   
         
-        $midmenuItem.find("#icon").attr("src", "images/status_gray.png");
-        $midmenuItem.find("#icon_container").show();        
+        var $iconContainer = $midmenuItem1.find("#icon_container").show();   
+        $iconContainer.find("#icon").attr("src", "images/status_gray.png");	        
+          
         var vmName = getVmName(json.name, json.displayname);
-        $midmenuItem.find("#first_row").text(vmName);
-        //$midmenuItem.find("#second_row_label").text("IP Address:");  
-        $midmenuItem.find("#second_row").text(json.ipaddress);                                            
-        updateVirtualMachineStateInMidMenu(json, $midmenuItem);        
-        $midmenuItem.bind("click", function(event) {  
+        $midmenuItem1.find("#first_row").text(vmName);
+        //$midmenuItem1.find("#second_row_label").text("IP Address:");  
+        $midmenuItem1.find("#second_row").text(json.ipaddress);                                            
+        updateVirtualMachineStateInMidMenu(json, $midmenuItem1);        
+        $midmenuItem1.bind("click", function(event) {  
             var $t = $(this);     
             vmToRightPanel($t);	 
             return false;

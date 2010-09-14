@@ -6,13 +6,13 @@ function accountToMidmenu(jsonObj, $midmenuItem1, toRightPanelFn) {
     $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));  
     $midmenuItem1.data("jsonObj", jsonObj); 
     
-    var iconContainer = $midmenuItem1.find("#icon_container").show();   
+    var $iconContainer = $midmenuItem1.find("#icon_container").show();   
     if (jsonObj.accounttype == roleTypeUser) 
-        iconContainer.find("#icon").attr("src", "images/midmenuicon_account_user.png");		
+        $iconContainer.find("#icon").attr("src", "images/midmenuicon_account_user.png");		
 	else if (jsonObj.accounttype == roleTypeAdmin) 
-	    iconContainer.find("#icon").attr("src", "images/midmenuicon_account_admin.png");		
+	    $iconContainer.find("#icon").attr("src", "images/midmenuicon_account_admin.png");		
 	else if (jsonObj.accounttype == roleTypeDomainAdmin) 
-	    iconContainer.find("#icon").attr("src", "images/midmenuicon_account_domain.png");	
+	    $iconContainer.find("#icon").attr("src", "images/midmenuicon_account_domain.png");	
     
     $midmenuItem1.find("#first_row").text(jsonObj.name.substring(0,25)); 
     $midmenuItem1.find("#second_row").text(jsonObj.domain.substring(0,25));           

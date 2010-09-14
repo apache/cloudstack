@@ -5,16 +5,16 @@ function afterLoadTemplateJSP() {
 function templateToMidmenu(jsonObj, $midmenuItem1, toRightPanelFn) {    
     $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));  
     $midmenuItem1.data("jsonObj", jsonObj); 
+       
+    var $iconContainer = $midmenuItem1.find("#icon_container").show();
+    setIconByOsType(jsonObj.ostypename, $iconContainer.find("#icon"));
     
-    /*
-    var iconContainer = $midmenuItem1.find("#icon_container").show();
     if(jsonObj.level == "INFO")
         iconContainer.find("#icon").attr("src", "images/midmenuicon_events_info.png");
     else if(jsonObj.level == "ERROR")
         iconContainer.find("#icon").attr("src", "images/midmenuicon_events_error.png");
     else if(jsonObj.level == "WARN")
-        iconContainer.find("#icon").attr("src", "images/midmenuicon_events_warning.png");
-    */
+        iconContainer.find("#icon").attr("src", "images/midmenuicon_events_warning.png");    
     
     $midmenuItem1.find("#first_row").text(jsonObj.name.substring(0,25)); 
     $midmenuItem1.find("#second_row").text(jsonObj.zonename.substring(0,25));           
@@ -48,4 +48,16 @@ function templateToRigntPanel($midmenuItem) {
 	    $rightPanelContent.find("#size").text(convertBytes(parseInt(jsonObj.size)));        
     
     setDateField(jsonObj.created, $rightPanelContent.find("#created"));	    
+}
+
+//setIconByOsType() is shared by template page and ISO page
+function setIconByOsType(osType, $field) {
+	if (osType == null || osType.length == 0)
+		return; 	
+	if (osType.match("^CentOS") != null)
+		$field.attr("src", "images/midmenuicon_template_centos.png");
+	else if (osType.match("^Windows") != null) 
+		$field.attr("src", "images/midmenuicon_template_windows.png");
+	else 
+		$field.attr("src", "images/midmenuicon_template_linux.png");
 }
