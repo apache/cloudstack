@@ -469,10 +469,10 @@ function clickInstanceGroupHeader($arrowIcon) {
         $actionMenu.find("#action_list").empty();
 		if(json.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
 			if (json.vmstate == "Stopped") 
-			    buildActionLinkForSingleObject("Create Template", vmVolumeActionMap, $actionMenu, volumeListAPIMap, template);	
+			    buildActionLinkForSubgridItem("Create Template", vmVolumeActionMap, $actionMenu, volumeListAPIMap, template);	
 		} 
 		else { //json.type=="DATADISK": "detach disk" is allowed, "create template" is disallowed.			
-			buildActionLinkForSingleObject("Detach Disk", vmVolumeActionMap, $actionMenu, volumeListAPIMap, template);				
+			buildActionLinkForSubgridItem("Detach Disk", vmVolumeActionMap, $actionMenu, volumeListAPIMap, template);				
 		}	
 		
 	}

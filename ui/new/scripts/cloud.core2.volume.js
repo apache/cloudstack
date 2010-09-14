@@ -35,8 +35,11 @@ function volumeToMidmenu(jsonObj, $midmenuItem1, toRightPanelFn) {
 }
 
 function volumeToRigntPanel($midmenuItem) {       
-    var json = $midmenuItem.data("jsonObj");
-        
+    var json = $midmenuItem.data("jsonObj");     
+    volumeJsonToDetailsTab(json);   
+}
+ 
+function volumeJsonToDetailsTab(json){
     var $rightPanelContent = $("#right_panel_content");    
     $rightPanelContent.data("jsonObj", json);   
     $rightPanelContent.find("#id").text(json.id);
@@ -71,12 +74,12 @@ function volumeToRigntPanel($midmenuItem) {
     $actionMenu.find("#action_list").empty();
     if(json.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
 		if (json.vmstate == "Stopped") 
-		    buildActionLinkForSingleObject("Create Template", volumeActionMap, $actionMenu, volumeListAPIMap, $rightPanelContent);	
+		    buildActionLinkForDetailsTab("Create Template", volumeActionMap, $actionMenu, volumeListAPIMap, $rightPanelContent);	
 	} 
 	else { //json.type=="DATADISK": "detach disk" is allowed, "create template" is disallowed.			
-		buildActionLinkForSingleObject("Detach Disk", volumeActionMap, $actionMenu, volumeListAPIMap, $rightPanelContent);				
+		buildActionLinkForDetailsTab("Detach Disk", volumeActionMap, $actionMenu, volumeListAPIMap, $rightPanelContent);				
 	}	
-}
+} 
        
 var volumeListAPIMap = {
     listAPI: "listVolumes",
@@ -90,7 +93,7 @@ var volumeActionMap = {
         isAsyncJob: true,
         asyncJobResponse: "detachvolumeresponse",
         inProcessText: "Detaching disk....",
-        afterActionSeccessFn: function(){}
+        afterActionSeccessFn: volumeJsonToDetailsTab
     },
     "Create Template": {
         isAsyncJob: true,
