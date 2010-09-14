@@ -19,6 +19,11 @@ function afterLoadVolumeJSP() {
 			    }
 		    }	
 	    }
+    });       
+ 
+    $("#right_panel_content #tab_content_details #action_message_box #close_button").bind("click", function(event){    
+        $(this).parent().hide();
+        return false;
     });
 }
 
@@ -40,27 +45,27 @@ function volumeToRigntPanel($midmenuItem) {
 }
  
 function volumeJsonToDetailsTab(json){
-    var $rightPanelContent = $("#right_panel_content");    
-    $rightPanelContent.data("jsonObj", json);   
-    $rightPanelContent.find("#id").text(json.id);
-    $rightPanelContent.find("#name").text(fromdb(json.name));    
-    $rightPanelContent.find("#zonename").text(fromdb(json.zonename));    
-    $rightPanelContent.find("#device_id").text(json.deviceid);   
-    $rightPanelContent.find("#state").text(json.state);    
-    $rightPanelContent.find("#storage").text(fromdb(json.storage));
-    $rightPanelContent.find("#account").text(fromdb(json.account)); 
+    var $detailsTab = $("#right_panel_content #tab_content_details");  
+    $detailsTab.data("jsonObj", json);   
+    $detailsTab.find("#id").text(json.id);
+    $detailsTab.find("#name").text(fromdb(json.name));    
+    $detailsTab.find("#zonename").text(fromdb(json.zonename));    
+    $detailsTab.find("#device_id").text(json.deviceid);   
+    $detailsTab.find("#state").text(json.state);    
+    $detailsTab.find("#storage").text(fromdb(json.storage));
+    $detailsTab.find("#account").text(fromdb(json.account)); 
     
-    $rightPanelContent.find("#type").text(json.type + " (" + json.storagetype + " storage)");
-    $rightPanelContent.find("#size").text((json.size == "0") ? "" : convertBytes(json.size));		
+    $detailsTab.find("#type").text(json.type + " (" + json.storagetype + " storage)");
+    $detailsTab.find("#size").text((json.size == "0") ? "" : convertBytes(json.size));		
     
     if (json.virtualmachineid == null) 
-		$rightPanelContent.find("#vm_name").text("detached");
+		$detailsTab.find("#vm_name").text("detached");
 	else 
-		$rightPanelContent.find("#vm_name").text(getVmName(json.vmname, json.vmdisplayname) + " (" + json.vmstate + ")");
+		$detailsTab.find("#vm_name").text(getVmName(json.vmname, json.vmdisplayname) + " (" + json.vmstate + ")");
 		
-    setDateField(json.created, $rightPanelContent.find("#created"));	
+    setDateField(json.created, $detailsTab.find("#created"));	
     
-    var $actionLink = $rightPanelContent.find("#volume_action_link");
+    var $actionLink = $detailsTab.find("#volume_action_link");
 	$actionLink.bind("mouseover", function(event) {	    
         $(this).find("#volume_action_menu").show();    
         return false;
@@ -74,10 +79,10 @@ function volumeJsonToDetailsTab(json){
     $actionMenu.find("#action_list").empty();
     if(json.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
 		if (json.vmstate == "Stopped") 
-		    buildActionLinkForDetailsTab("Create Template", volumeActionMap, $actionMenu, volumeListAPIMap, $rightPanelContent);	
+		    buildActionLinkForDetailsTab("Create Template", volumeActionMap, $actionMenu, volumeListAPIMap, $detailsTab);	
 	} 
 	else { //json.type=="DATADISK": "detach disk" is allowed, "create template" is disallowed.			
-		buildActionLinkForDetailsTab("Detach Disk", volumeActionMap, $actionMenu, volumeListAPIMap, $rightPanelContent);				
+		buildActionLinkForDetailsTab("Detach Disk", volumeActionMap, $actionMenu, volumeListAPIMap, $detailsTab);				
 	}	
 } 
        

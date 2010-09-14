@@ -181,8 +181,7 @@ function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem) {
 //***** actions for middle menu (end) **************************************************************************
 
 //***** actions for details tab in right panel (begin) ************************************************************************
-function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap, $detailsTab) {
-    //debugger;
+function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap, $detailsTab) { 
     var apiInfo = actionMap[label];
     var $listItem = $("#action_list_item").clone();
     $actionMenu.find("#action_list").append($listItem.show());
@@ -197,8 +196,7 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap,
     
     var id = $detailsTab.data("jsonObj").id;
     
-    $link.bind("click", function(event) {
-        //debugger;	
+    $link.bind("click", function(event) {   
         $actionMenu.hide();    	 
         var $actionLink = $(this);   
         var dialogBeforeActionFn = $actionLink.data("dialogBeforeActionFn"); 
@@ -222,8 +220,7 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, $detailsT
     var listAPI = listAPIMap["listAPI"];
     var listAPIResponse = listAPIMap["listAPIResponse"];
     var listAPIResponseObj = listAPIMap["listAPIResponseObj"];
-    
-    //debugger;      
+       
     var $spinningWheel = $detailsTab.find("#spinning_wheel");
     $spinningWheel.find("#description").text(inProcessText);  
     $spinningWheel.show();        
@@ -233,8 +230,7 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, $detailsT
         $.ajax({
             data: createURL(apiCommand),
             dataType: "json",           
-            success: function(json) {	
-                //debugger;                	                        
+            success: function(json) {	                       	                        
                 var jobId = json[asyncJobResponse].jobid;                  			                        
                 var timerKey = "asyncJob_" + jobId;					                       
                 $("body").everyTime(
@@ -244,16 +240,16 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, $detailsT
                         $.ajax({
                             data: createURL("command=queryAsyncJobResult&jobId="+jobId),
 	                        dataType: "json",									                    					                    
-	                        success: function(json) {	
-	                            //debugger;	                            							                       
+	                        success: function(json) {		                                                     							                       
 		                        var result = json.queryasyncjobresultresponse;										                   
 		                        if (result.jobstatus == 0) {
 			                        return; //Job has not completed
 		                        } else {											                    
 			                        $("body").stopTime(timerKey);				                        
 			                        $spinningWheel.hide();      		                       
-			                        if (result.jobstatus == 1) { // Succeeded 
-			                            $detailsTab.data("afterActionInfo", (label + " action succeeded.")); 
+			                        if (result.jobstatus == 1) { // Succeeded 			                           
+			                            $detailsTab.find("#action_message_box #description").text(label + " action succeeded.");
+			                            $detailsTab.find("#action_message_box").show();
 			                            
 			                            //DestroyVirtualMachine API doesn't return an embedded object on success (Bug 6041)
 	                                    //Before Bug 6041 get fixed, use the temporary solution below.							            
@@ -268,13 +264,13 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, $detailsT
 				                        //After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
 			                            //afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	   
 			                            
-			                        } else if (result.jobstatus == 2) { // Failed				                            
-			                            $detailsTab.data("afterActionInfo", (label + " action failed. Reason: " + sanitizeXSS(result.jobresult)));    
+			                        } else if (result.jobstatus == 2) { // Failed		
+			                            $detailsTab.find("#action_message_box #description").text(label + " action failed. Reason: " + sanitizeXSS(result.jobresult)); 
+			                            $detailsTab.find("#action_message_box").show();
 			                        }											                    
 		                        }
 	                        },
-	                        error: function(XMLHttpResponse) {
-	                            //debugger;
+	                        error: function(XMLHttpResponse) {	                            
 		                        $("body").stopTime(timerKey);		                       		                        
 		                        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label); 		                        
 	                        }
@@ -283,8 +279,7 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, $detailsT
                     0
                 );
             },
-            error: function(XMLHttpResponse) {	 
-                //debugger;
+            error: function(XMLHttpResponse) {	                 
 		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label);    
             }
         });     
@@ -292,14 +287,12 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, $detailsT
     //Async job (end) *****
     
     //Sync job (begin) *****
-    else { 	
-        //debugger;              
+    else { 	               
         $.ajax({
             data: createURL(apiCommand),
 	        dataType: "json",
 	        async: false,
-	        success: function(json) {
-	            //debugger;
+	        success: function(json) {	            
 	            $spinningWheel.hide();      
 														              
 	            //RecoverVirtualMachine API doesn't return an embedded object on success (Bug 6037)
@@ -310,15 +303,16 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, $detailsT
                     dataType: "json",
                     async: false,
                     success: function(json) {
-			            $detailsTab.data("afterActionInfo", (label + " action succeeded.")); 	                                                                                  
+			            $detailsTab.find("#action_message_box #description").text(label + " action succeeded.");
+			            $detailsTab.find("#action_message_box").show();
+			                                                                                              
                         afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	                           
                     }
                 });										
 				//After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
 				//afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	   
 	        },
-            error: function(XMLHttpResponse) {	
-                //debugger;
+            error: function(XMLHttpResponse) {	                
 		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label);    
             }        
         });
@@ -327,7 +321,6 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, $detailsT
 }
 
 function handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label) { 
-    //debugger;
     $detailsTab.find("#spinning_wheel").hide();      
 		                        
     var errorMsg = "";
@@ -337,15 +330,15 @@ function handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label) {
         errorMsg = XMLHttpResponse.responseText.substring(start, end);		
     }
     if(errorMsg.length > 0) 
-        $detailsTab.data("afterActionInfo", ((label + " action failed. Reason: " + sanitizeXSS(unescape(errorMsg)))));    
+        $detailsTab.find("#action_message_box #description").text(label + " action failed. Reason: " + sanitizeXSS(unescape(errorMsg))); 
     else
-        $detailsTab.data("afterActionInfo", (label + " action failed."));  
+        $detailsTab.find("#action_message_box #description").text(label + " action failed.");    
+    $detailsTab.find("#action_message_box").show();
 }    	                
 //***** actions for details tab in right panel (end) **************************************************************************
 
 //***** actions for a subgrid item in right panel (begin) ************************************************************************
 function buildActionLinkForSubgridItem(label, actionMap, $actionMenu, listAPIMap, $subgridItem) {
-    //debugger;
     var apiInfo = actionMap[label];
     var $listItem = $("#action_list_item").clone();
     $actionMenu.find("#action_list").append($listItem.show());
@@ -360,8 +353,7 @@ function buildActionLinkForSubgridItem(label, actionMap, $actionMenu, listAPIMap
     
     var id = $subgridItem.data("jsonObj").id;
     
-    $link.bind("click", function(event) {
-        //debugger;	
+    $link.bind("click", function(event) {   
         $actionMenu.hide();    	 
         var $actionLink = $(this);   
         var dialogBeforeActionFn = $actionLink.data("dialogBeforeActionFn"); 
@@ -385,8 +377,7 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgrid
     var listAPI = listAPIMap["listAPI"];
     var listAPIResponse = listAPIMap["listAPIResponse"];
     var listAPIResponseObj = listAPIMap["listAPIResponseObj"];
-    
-    //debugger;      
+        
     var $spinningWheel = $subgridItem.find("#spinning_wheel");
     $spinningWheel.find("#description").text(inProcessText);  
     $spinningWheel.show();        
@@ -396,8 +387,7 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgrid
         $.ajax({
             data: createURL(apiCommand),
             dataType: "json",           
-            success: function(json) {	
-                //debugger;                	                        
+            success: function(json) {	                    	                        
                 var jobId = json[asyncJobResponse].jobid;                  			                        
                 var timerKey = "asyncJob_" + jobId;					                       
                 $("body").everyTime(
@@ -407,8 +397,7 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgrid
                         $.ajax({
                             data: createURL("command=queryAsyncJobResult&jobId="+jobId),
 	                        dataType: "json",									                    					                    
-	                        success: function(json) {	
-	                            //debugger;	                            							                       
+	                        success: function(json) {		                                              							                       
 		                        var result = json.queryasyncjobresultresponse;										                   
 		                        if (result.jobstatus == 0) {
 			                        return; //Job has not completed
@@ -436,8 +425,7 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgrid
 			                        }											                    
 		                        }
 	                        },
-	                        error: function(XMLHttpResponse) {
-	                            //debugger;
+	                        error: function(XMLHttpResponse) {	                  
 		                        $("body").stopTime(timerKey);		                       		                        
 		                        handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, label); 		                        
 	                        }
@@ -447,7 +435,6 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgrid
                 );
             },
             error: function(XMLHttpResponse) {	 
-                //debugger;
 		        handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, label);    
             }
         });     
@@ -455,14 +442,12 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgrid
     //Async job (end) *****
     
     //Sync job (begin) *****
-    else { 	
-        //debugger;              
+    else { 	            
         $.ajax({
             data: createURL(apiCommand),
 	        dataType: "json",
 	        async: false,
-	        success: function(json) {
-	            //debugger;
+	        success: function(json) {	   
 	            $spinningWheel.hide();      
 														              
 	            //RecoverVirtualMachine API doesn't return an embedded object on success (Bug 6037)
@@ -480,8 +465,7 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgrid
 				//After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
 				//afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $subgridItem);	   
 	        },
-            error: function(XMLHttpResponse) {	
-                //debugger;
+            error: function(XMLHttpResponse) {	             
 		        handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, label);    
             }        
         });
@@ -490,7 +474,6 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgrid
 }
 
 function handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, label) { 
-    //debugger;
     $subgridItem.find("#spinning_wheel").hide();      
 		                        
     var errorMsg = "";
