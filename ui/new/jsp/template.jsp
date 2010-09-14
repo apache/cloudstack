@@ -13,10 +13,10 @@
 
 <!-- template detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
-    <!--  
+  
     <div class="main_titleicon">
-        <img src="images/instancetitle_icons.gif" alt="Instance" /></div>
-    -->
+        <img src="images/title_templatesicon.gif" alt="Instance" /></div>
+
     <h1>Template
     </h1>
 </div>
@@ -29,7 +29,7 @@
             <%=t.t("Details")%></div>        
     </div>
     <div class="grid_container">
-        <div class="grid_rows odd">
+        <div class="grid_rows even">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
                     <%=t.t("ID")%>:</div>
@@ -49,7 +49,7 @@
                 </div>
             </div>
         </div>
-        <div class="grid_rows odd">
+        <div class="grid_rows even">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
                     <%=t.t("Name")%>:</div>
@@ -65,11 +65,11 @@
                     <%=t.t("Display.Text")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="displaytext">
-                </div>
+                <div class="row_celltitles" id="displaytext"></div>
+                <input class="text" style="width:200px; display:none;" type="text" />
             </div>
         </div>
-        <div class="grid_rows odd">
+        <div class="grid_rows even">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
                     <%=t.t("Status")%>:</div>
@@ -86,16 +86,20 @@
             </div>
             <div class="grid_row_cell" style="width: 79%;">
                 <div class="row_celltitles" id="passwordenabled">
-                </div>
+                    <div id="icon">
+                    </div>
+				</div>
             </div>
         </div>
-        <div class="grid_rows odd">
+        <div class="grid_rows even">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
                     <%=t.t("Public")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
                 <div class="row_celltitles" id="ispublic">
+                	<div id="icon">
+                    </div>
                 </div>
             </div>
         </div>
@@ -106,16 +110,20 @@
             </div>
             <div class="grid_row_cell" style="width: 79%;">
                 <div class="row_celltitles" id="isfeatured">
+                	<div id="icon">
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="grid_rows odd">
+        <div class="grid_rows even">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
                     <%=t.t("Cross.Zones")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
                 <div class="row_celltitles" id="crossZones">
+                	<div id="icon">
+                    </div>
                 </div>
             </div>
         </div>
@@ -129,14 +137,14 @@
                 </div>
             </div>
         </div>
-        <div class="grid_rows odd">
+        <div class="grid_rows even">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
                     <%=t.t("Account")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="account">
-                </div>
+                <div class="row_celltitles" id="account"></div>
+                 <select class="select" style="width:202px; display:none;"><option value="opt1">Option 1</option> <option value="opt2">Option 2</option></select>
             </div>
         </div>
         <div class="grid_rows odd">
@@ -149,7 +157,7 @@
                 </div>
             </div>
         </div>
-        <div class="grid_rows odd">
+        <div class="grid_rows even">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
                     <%=t.t("Size")%>:</div>
