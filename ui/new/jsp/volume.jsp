@@ -13,10 +13,10 @@
 %>
 <!-- volume detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
-    <!--  
+
     <div class="main_titleicon">
-        <img src="images/instancetitle_icons.gif" alt="Instance" /></div>
-    -->
+        <img src="images/title_volumeicons.gif" alt="Instance" /></div>
+
     <h1>
         Volume
     </h1>
