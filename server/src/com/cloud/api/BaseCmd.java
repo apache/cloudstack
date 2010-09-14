@@ -223,7 +223,7 @@ public abstract class BaseCmd {
     }
 
     // FIXME:  move this to a utils method so that maps can be unpacked and integer/long values can be appropriately cast
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public Map<String, Object> unpackParams(Map<String, String> params) {
         Map<String, Object> lowercaseParams = new HashMap<String, Object>();
         for (String key : params.keySet()) {

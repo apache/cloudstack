@@ -186,7 +186,7 @@ public class ApiServer implements HttpRequestHandler {
         _ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
         _asyncMgr = locator.getManager(AsyncJobManager.class);
-        _dispatcher = new ApiDispatcher();
+        _dispatcher = ApiDispatcher.getInstance();
 
         int apiPort = 8096; // default port
         ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
@@ -347,6 +347,10 @@ public class ApiServer implements HttpRequestHandler {
 
     private String queueCommand(BaseCmd cmdObj, Map<String, String> params) {
         if (cmdObj instanceof BaseAsyncCmd) {
+            Long objectId = null;
+            if (cmdObj instanceof BaseAsyncCreateCmd) {
+                objectId = _dispatcher.dispatchCreateCmd((BaseAsyncCreateCmd)cmdObj, params);
+            }
             BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmdObj;
 
             Gson gson = GsonHelper.getBuilder().create();
@@ -356,6 +360,9 @@ public class ApiServer implements HttpRequestHandler {
             job.setCmd(cmdObj.getClass().getName());
             job.setCmdInfo(gson.toJson(params));
             long jobId = _asyncMgr.submitAsyncJob(job);
+            if (objectId != null) {
+                return ((BaseAsyncCreateCmd)asyncCmd).getResponse(jobId, objectId);
+            }
             return asyncCmd.getResponse(jobId);
         } else {
             _dispatcher.dispatch(cmdObj, params);
