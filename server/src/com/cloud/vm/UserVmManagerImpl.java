@@ -2665,7 +2665,7 @@ public class UserVmManagerImpl implements UserVmManager {
             	//set forZone = true
             	
             	//note the dao method below does a NEQ on vlan id, hence passing untagged
-            	List<VlanVO> zoneWideVlans = _vlanDao.listZoneWideVlans(dc.getId(),VlanType.DirectAttached,"untagged");
+            	List<VlanVO> zoneWideVlans = _vlanDao.searchForZoneWideVlans(dc.getId(),VlanType.DirectAttached.toString(),"untagged");
             	
             	if(zoneWideVlans!=null && zoneWideVlans.size()>0){
             		forZone = true;
