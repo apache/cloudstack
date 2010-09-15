@@ -508,12 +508,17 @@ function clickInstanceGroupHeader($arrowIcon) {
 		        }
 		        for(var i=0; i < instanceGroupArray.length; i++) {
 		            if(instanceGroupArray[i]!=null && instanceGroupArray[i].length>0) {
-		        	    var $leftmenuSubmenuTemplate = $("#leftmenu_submenu_template").clone().show();				        	            	
+		        	    var $leftmenuSubmenuTemplate = $("#leftmenu_submenu_template").clone().show();			        	    
+		        	    $leftmenuSubmenuTemplate.attr("id", ("leftmenu_instance_group_"+i));			        	            	
 		                $leftmenuSubmenuTemplate.find("#submenu_name").text(instanceGroupArray[i]);
 		                $leftmenuSubmenuTemplate.find("#icon").attr("src", "images/instance_leftmenuicon.png").show();
 		                 		                			                
 		                $leftmenuSubmenuTemplate.bind("click", function(event) { 
-		                    //$(this).removeClass("leftmenu_content").addClass("leftmenu_content_selected");			               
+		                    if(selected_leftmenu_id != null && selected_leftmenu_id.length > 0)
+                                $("#"+selected_leftmenu_id).removeClass("selected");                            
+                            selected_leftmenu_id = $(this).attr("id");
+                            $(this).addClass("selected");		                    
+		                                
                             $("#midmenu_container").empty();
                             selectedItemsInMidMenu = {};
                             

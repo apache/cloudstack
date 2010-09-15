@@ -45,7 +45,13 @@ $(document).ready(function() {
     var $midmenuItem = $("#midmenu_item");
     function listMidMenuItems(leftmenuId, commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSP, toMidmenu, toRightPanel) { 
         $("#"+leftmenuId).bind("click", function(event) {
+            if(selected_leftmenu_id != null && selected_leftmenu_id.length > 0)
+                $("#"+selected_leftmenu_id).removeClass("selected");
+            selected_leftmenu_id = leftmenuId;
+            $(this).addClass("selected");
+            
             clearMidMenu();
+            
             $("#right_panel").load(rightPanelJSP, function(){   
                 afterLoadRightPanelJSP();                
                 $.ajax({

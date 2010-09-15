@@ -529,6 +529,8 @@ function clearRightPanel() {
     $("#right_panel_content #action_message_box").hide();     
 }
     
+var selected_leftmenu_id = null; 
+ 
     
 
 
