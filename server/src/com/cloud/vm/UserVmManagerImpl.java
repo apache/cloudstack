@@ -2432,7 +2432,7 @@ public class UserVmManagerImpl implements UserVmManager {
         
 	    try {
 	        UserVmVO vm = null;
-	    	
+	    	boolean forZone = false;
 	    	final String name = VirtualMachineName.getVmName(vmId, accountId, _instance);
 	
 	        final String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(dc.getId());
@@ -2449,11 +2449,25 @@ public class UserVmManagerImpl implements UserVmManager {
             	forAccount = true;
             	guestVlan = vlansForAccount.get(0);//FIXME: iterate over all vlans
             }
+	        else 
+	        {
+	          	//list zone wide vlans that are direct attached and tagged
+	          	//if exists pick random one
+	          	//set forZone = true
+	          	
+	          	//note the dao method below does a NEQ on vlan id, hence passing untagged
+	          	List<VlanVO> zoneWideVlans = _vlanDao.searchForZoneWideVlans(dc.getId(),VlanType.DirectAttached.toString(),"untagged");
+	          	
+	          	if(zoneWideVlans!=null && zoneWideVlans.size()>0){
+	          		forZone = true;
+	          		guestVlan = zoneWideVlans.get(0);//FIXME: iterate over all vlans
+	          	}
+	        }
             while ((pod = _agentMgr.findPod(template, offering, dc, account.getId(), avoids)) != null) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Attempting to create direct attached vm in pod " + pod.first().getName());
                 }
-                if (!forAccount) {
+                if (!forAccount && !forZone) {
                 	List<VlanVO> vlansForPod = _vlanDao.listVlansForPodByType(pod.first().getId(), VlanType.DirectAttached);
                 	if (vlansForPod.size() < 1) {
                 		avoids.add(pod.first().getId());
