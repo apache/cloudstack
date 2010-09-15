@@ -63,19 +63,7 @@ function volumeJsonToDetailsTab(jsonObj){
 		$detailsTab.find("#vm_name").text(getVmName(jsonObj.vmname, jsonObj.vmdisplayname) + " (" + jsonObj.vmstate + ")");
 		
     setDateField(jsonObj.created, $detailsTab.find("#created"));	
-    
-    /*
-    var $actionLink = $detailsTab.find("#action_link");
-	$actionLink.bind("mouseover", function(event) {	    
-        $(this).find("#action_menu").show();    
-        return false;
-    });
-    $actionLink.bind("mouseout", function(event) {       
-        $(this).find("#action_menu").hide();    
-        return false;
-    });
-    */			
-    
+       
     //actions ***    
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
