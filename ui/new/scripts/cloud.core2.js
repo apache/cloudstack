@@ -518,6 +518,14 @@ function setBooleanField(value, $field) {
     else
         $field.find("#icon").removeClass("tick_icon").addClass("cross_icon").show();	
 }
+ 
+function clearLeftMenu() {
+    var $arrowIcon = $("#leftmenu_instance_group_header #arrow_icon");
+    if($arrowIcon.hasClass("open") == true) {
+        $arrowIcon.removeClass("open").addClass("close");            
+        $("#leftmenu_instance_group_container").empty();   
+    }	
+} 
   
 function clearMidMenu() {
     $("#midmenu_container").empty();

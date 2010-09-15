@@ -50,6 +50,7 @@ $(document).ready(function() {
             selected_leftmenu_id = leftmenuId;
             $(this).addClass("selected");
             
+            clearLeftMenu();
             clearMidMenu();
             
             $("#right_panel").load(rightPanelJSP, function(){   
