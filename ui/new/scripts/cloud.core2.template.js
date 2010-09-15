@@ -1,5 +1,13 @@
-function afterLoadTemplateJSP() {
-
+function afterLoadTemplateJSP() {    
+    $("#edit_icon").bind("click", function(event){        
+        var $rightPanelContent = $("#right_panel_content");
+        $rightPanelContent.find("#name").hide();
+        $rightPanelContent.find("#name_edit").show();
+        $rightPanelContent.find("#displaytext").hide();
+        $rightPanelContent.find("#displaytext_edit").show();
+        $(this).hide();
+        return false;
+    });
 }
 
 function templateToMidmenu(jsonObj, $midmenuItem1) {    
@@ -26,8 +34,12 @@ function templateToRigntPanel($midmenuItem) {
     var $rightPanelContent = $("#right_panel_content");
     $rightPanelContent.find("#id").text(fromdb(jsonObj.id));
     $rightPanelContent.find("#zonename").text(fromdb(jsonObj.zonename));
+    
     $rightPanelContent.find("#name").text(fromdb(jsonObj.name));
+    $rightPanelContent.find("#name_edit").val(fromdb(jsonObj.name));
+    
     $rightPanelContent.find("#displaytext").text(fromdb(jsonObj.displaytext));
+    $rightPanelContent.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
     
     var status = "Ready";
 	if (jsonObj.isready == "false") 
