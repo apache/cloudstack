@@ -978,25 +978,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 if (vifDeviceNum == null) {
                     throw new InternalErrorException("There were no more available slots for a new VIF on router: " + router.getNameLabel(conn));
                 }
-
-                VIF.Record vifr = new VIF.Record();
-                vifr.VM = router;
-                vifr.device = vifDeviceNum;
-                vifr.MAC = vifMacAddress;
-
-                if ("untagged".equalsIgnoreCase(vlanId)) {
-                    vifr.network = Network.getByUuid(conn, _host.publicNetwork);
-                } else {
-                    Network vlanNetwork = enableVlanNetwork(Long.valueOf(vlanId), _host.publicPif);
-
-                    if (vlanNetwork == null) {
-                        throw new InternalErrorException("Failed to enable VLAN network with tag: " + vlanId);
-                    }
-
-                    vifr.network = vlanNetwork;
-                }
-
-                correctVif = VIF.create(conn, vifr);
+                
+                correctVif = createVIF(conn, router, vifMacAddress, vlanId, 0, vifDeviceNum, true);              
                 correctVif.plug(conn);
                 // Add iptables rule for network usage
                 networkUsage(privateIpAddress, "addVif", "eth" + correctVif.getDevice(conn));
@@ -2548,13 +2531,23 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         String msg = "Start VM failed";
         return new StartAnswer(cmd, msg);
     }
-
-    protected void createVIF(Connection conn, VM vm, String mac, String vlanTag, int rate, String devNum, boolean isPub) throws XenAPIException, XmlRpcException,
-            InternalErrorException {
+    
+    protected VIF createVIF(Connection conn, VM vm, String mac, int rate, String devNum, Network network) throws XenAPIException, XmlRpcException,
+    InternalErrorException {
         VIF.Record vifr = new VIF.Record();
         vifr.VM = vm;
         vifr.device = devNum;
         vifr.MAC = mac;
+        vifr.network = network;
+        if ( rate == 0 ) rate = 200;
+        vifr.qosAlgorithmType = "ratelimit";
+        vifr.qosAlgorithmParams = new HashMap<String, String>();
+        vifr.qosAlgorithmParams.put("kbps", Integer.toString(rate * 1000));
+        return VIF.create(conn, vifr);
+    }
+
+    protected VIF createVIF(Connection conn, VM vm, String mac, String vlanTag, int rate, String devNum, boolean isPub) throws XenAPIException, XmlRpcException,
+            InternalErrorException {
 
         String nwUuid = (isPub ? _host.publicNetwork : _host.guestNetwork);
         String pifUuid = (isPub ? _host.publicPif : _host.guestPif);
@@ -2568,15 +2561,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         if (vlanNetwork == null) {
             throw new InternalErrorException("Failed to enable VLAN network with tag: " + vlanTag);
         }
-
-        vifr.network = vlanNetwork;
-        if (rate != 0) {
-            vifr.qosAlgorithmType = "ratelimit";
-            vifr.qosAlgorithmParams = new HashMap<String, String>();
-            vifr.qosAlgorithmParams.put("kbps", Integer.toString(rate * 1000));
-        }
-
-        VIF.create(conn, vifr);
+        return createVIF(conn, vm, mac, rate, devNum,  vlanNetwork);
     }
 
     protected StopAnswer execute(final StopCommand cmd) {
@@ -2878,44 +2863,35 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
 
             /* create VIF0 */
-            VIF.Record vifr = new VIF.Record();
-            vifr.VM = vm;
-            vifr.device = "0";
-            vifr.MAC = guestMacAddr;
+            Network network = null;
             if (VirtualMachineName.isValidConsoleProxyName(vmName) || VirtualMachineName.isValidSecStorageVmName(vmName, null)) {
-            	vifr.network = Network.getByUuid(conn, _host.linkLocalNetwork);
-            } else
-            	vifr.network = nw0;
-            VIF.create(conn, vifr);
+            	network = Network.getByUuid(conn, _host.linkLocalNetwork);
+            } else {
+            	network = nw0;
+            }
+            createVIF(conn, vm, guestMacAddr, 0, "0", network);
+
             /* create VIF1 */
             /* For routing vm, set its network as link local bridge */
-            vifr.VM = vm;
-            vifr.device = "1";
-            vifr.MAC = privateMacAddr;
             if (VirtualMachineName.isValidRouterName(vmName) && privateIp.startsWith("169.254")) {
-                vifr.network = Network.getByUuid(conn, _host.linkLocalNetwork);
+                network = Network.getByUuid(conn, _host.linkLocalNetwork);
             } else {
-                vifr.network = Network.getByUuid(conn, _host.privateNetwork);
+                network = Network.getByUuid(conn, _host.privateNetwork);
             }
-            VIF.create(conn, vifr);
+            createVIF(conn, vm, privateMacAddr,  0, "1", network);
+
+            /* create VIF2 */            
             if( !publicMacAddr.equalsIgnoreCase("FE:FF:FF:FF:FF:FF") ) {
-                /* create VIF2 */
-                vifr.VM = vm;
-                vifr.device = "2";
-                vifr.MAC = publicMacAddr;
-                vifr.network = Network.getByUuid(conn, _host.publicNetwork);
+                network = null;
                 if ("untagged".equalsIgnoreCase(vlanId)) {
-                    vifr.network = Network.getByUuid(conn, _host.publicNetwork);
+                    network = Network.getByUuid(conn, _host.publicNetwork);
                 } else {
-                    Network vlanNetwork = enableVlanNetwork(Long.valueOf(vlanId), _host.publicPif);
-    
-                    if (vlanNetwork == null) {
+                    network = enableVlanNetwork(Long.valueOf(vlanId), _host.publicPif);
+                    if (network == null) {
                         throw new InternalErrorException("Failed to enable VLAN network with tag: " + vlanId);
-                    }
-    
-                    vifr.network = vlanNetwork;
+                    }   
                 }
-                VIF.create(conn, vifr);
+                createVIF(conn, vm, publicMacAddr, 0, "2", network);
             }
             /* set up PV dom argument */
             String pvargs = vm.getPVArgs(conn);
