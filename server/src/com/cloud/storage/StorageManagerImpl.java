@@ -308,7 +308,7 @@ public class StorageManagerImpl implements StorageManager {
             {
             	StoragePoolVO sp = _storagePoolDao.findById(vol.getPoolId());
             	
-            	if(sp.getStatus().equals(Status.PrepareForMaintenance))
+            	if(sp!=null && sp.getStatus().equals(Status.PrepareForMaintenance))
             	{
             		recreateVols.add(vol);
             		continue;

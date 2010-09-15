@@ -1,5 +1,5 @@
 <!--
-<script type="text/javascript" src="scripts/cloud.core.snapshot.js"></script>
+<script type="text/javascript" src="scripts/cloud.core.event.js"></script>
 -->
 
 <%@ page import="java.util.*" %>
@@ -11,13 +11,13 @@
     CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
 %>
 
-<!-- snapshot detail panel (begin) -->
+<!-- ISO detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
-   
+    
     <div class="main_titleicon">
-        <img src="images/title_snapshoticon.gif" alt="Instance" /></div>
+        <img src="images/title_isoicon.gif" alt="ISO" /></div>
   
-    <h1>Snapshot
+    <h1>ISO
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
@@ -39,33 +39,65 @@
                 </div>
             </div>
         </div>
-        <div class="grid_rows even">
+        <div class="grid_rows odd">
+            <div class="grid_row_cell" style="width: 20%;">
+                <div class="row_celltitles">
+                    <%=t.t("Zone")%>:</div>
+            </div>
+            <div class="grid_row_cell" style="width: 79%;">
+                <div class="row_celltitles" id="zonename">
+                </div>
+            </div>
+        </div>
+        <div class="grid_rows odd">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
                     <%=t.t("Name")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
                 <div class="row_celltitles" id="name">
-                    </div>
+                </div>
             </div>
         </div>
         <div class="grid_rows odd">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
-                    <%=t.t("Volume")%>:</div>
+                    <%=t.t("Display.Text")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="volume_name">
+                <div class="row_celltitles" id="displaytext">
                 </div>
             </div>
         </div>
-        <div class="grid_rows even">
+        <div class="grid_rows odd">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
-                    <%=t.t("Interval.Type")%>:</div>
+                    <%=t.t("Status")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="interval_type">
+                <div class="row_celltitles" id="status">
+                </div>
+            </div>
+        </div>
+        <div class="grid_rows odd">
+            <div class="grid_row_cell" style="width: 20%;">
+                <div class="row_celltitles">
+                    <%=t.t("Bootable")%>:</div>
+            </div>
+            <div class="grid_row_cell" style="width: 79%;">
+                <div class="row_celltitles" id="bootable">
+                    <div id="icon">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="grid_rows odd">
+            <div class="grid_row_cell" style="width: 20%;">
+                <div class="row_celltitles">
+                    <%=t.t("Account")%>:</div>
+            </div>
+            <div class="grid_row_cell" style="width: 79%;">
+                <div class="row_celltitles" id="account">
                 </div>
             </div>
         </div>
@@ -79,26 +111,17 @@
                 </div>
             </div>
         </div>
-        <div class="grid_rows even">
-            <div class="grid_row_cell" style="width: 20%;">
-                <div class="row_celltitles">
-                    <%=t.t("Account")%>:</div>
-            </div>
-            <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="account">
-                </div>
-            </div>
-        </div>
         <div class="grid_rows odd">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
-                    <%=t.t("Domain")%>:</div>
+                    <%=t.t("Size")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="domain">
+                <div class="row_celltitles" id="size">
                 </div>
             </div>
-        </div>       
+        </div>
+        
     </div>
 </div>
-<!-- snapshot detail panel (end) -->
+<!-- ISO detail panel (end) -->

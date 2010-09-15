@@ -19,46 +19,57 @@ function afterLoadVolumeJSP() {
 			    }
 		    }	
 	    }
+    });       
+ 
+    $("#right_panel_content #tab_content_details #action_message_box #close_button").bind("click", function(event){    
+        $(this).parent().hide();
+        return false;
     });
 }
 
-function volumeToMidmenu(jsonObj, $midmenuItem1, toRightPanelFn) {  
-    $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));                             
-    $midmenuItem1.data("id", jsonObj.id); 
+function volumeAfterDetailsTabAction(jsonObj) {
+    $("#midmenuItem_"+jsonObj.id).data("jsonObj", jsonObj);   
+    volumeJsonToDetailsTab(jsonObj);   
+}
+
+function volumeToMidmenu(jsonObj, $midmenuItem1) {  
+    $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));  
     $midmenuItem1.data("jsonObj", jsonObj); 
     
-    var iconContainer = $midmenuItem1.find("#icon_container").show();   
-    iconContainer.find("#icon").attr("src", "images/midmenuicon_storage_volume.png");		
+    var $iconContainer = $midmenuItem1.find("#icon_container").show();   
+    $iconContainer.find("#icon").attr("src", "images/midmenuicon_storage_volume.png");		
     
-    $midmenuItem1.find("#first_row").text(jsonObj.name.substring(0,25)); 
-    $midmenuItem1.find("#second_row").text(jsonObj.type.substring(0,25));           
-    $midmenuItem1.data("toRightPanelFn", toRightPanelFn);
+    $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
+    $midmenuItem1.find("#second_row").text(jsonObj.type.substring(0,25));  
 }
 
 function volumeToRigntPanel($midmenuItem) {       
-    var json = $midmenuItem.data("jsonObj");
-        
-    var $rightPanelContent = $("#right_panel_content");    
-    $rightPanelContent.data("jsonObj", json);   
-    $rightPanelContent.find("#id").text(json.id);
-    $rightPanelContent.find("#name").text(fromdb(json.name));    
-    $rightPanelContent.find("#zonename").text(fromdb(json.zonename));    
-    $rightPanelContent.find("#device_id").text(json.deviceid);   
-    $rightPanelContent.find("#state").text(json.state);    
-    $rightPanelContent.find("#storage").text(fromdb(json.storage));
-    $rightPanelContent.find("#account").text(fromdb(json.account)); 
+    var json = $midmenuItem.data("jsonObj");     
+    volumeJsonToDetailsTab(json);   
+}
+ 
+function volumeJsonToDetailsTab(jsonObj){
+    var $detailsTab = $("#right_panel_content #tab_content_details");  
+    $detailsTab.data("jsonObj", jsonObj);   
+    $detailsTab.find("#id").text(jsonObj.id);
+    $detailsTab.find("#name").text(fromdb(jsonObj.name));    
+    $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));    
+    $detailsTab.find("#device_id").text(jsonObj.deviceid);   
+    $detailsTab.find("#state").text(jsonObj.state);    
+    $detailsTab.find("#storage").text(fromdb(jsonObj.storage));
+    $detailsTab.find("#account").text(fromdb(jsonObj.account)); 
     
-    $rightPanelContent.find("#type").text(json.type + " (" + json.storagetype + " storage)");
-    $rightPanelContent.find("#size").text((json.size == "0") ? "" : convertBytes(json.size));		
+    $detailsTab.find("#type").text(jsonObj.type + " (" + jsonObj.storagetype + " storage)");
+    $detailsTab.find("#size").text((jsonObj.size == "0") ? "" : convertBytes(jsonObj.size));		
     
-    if (json.virtualmachineid == null) 
-		$rightPanelContent.find("#vm_name").text("detached");
+    if (jsonObj.virtualmachineid == null) 
+		$detailsTab.find("#vm_name").text("detached");
 	else 
-		$rightPanelContent.find("#vm_name").text(getVmName(json.vmname, json.vmdisplayname) + " (" + json.vmstate + ")");
+		$detailsTab.find("#vm_name").text(getVmName(jsonObj.vmname, jsonObj.vmdisplayname) + " (" + jsonObj.vmstate + ")");
 		
-    setDateField(json.created, $rightPanelContent.find("#created"));	
+    setDateField(jsonObj.created, $detailsTab.find("#created"));	
     
-    var $actionLink = $rightPanelContent.find("#volume_action_link");
+    var $actionLink = $detailsTab.find("#volume_action_link");
 	$actionLink.bind("mouseover", function(event) {	    
         $(this).find("#volume_action_menu").show();    
         return false;
@@ -70,14 +81,14 @@ function volumeToRigntPanel($midmenuItem) {
         
     var $actionMenu = $actionLink.find("#volume_action_menu");
     $actionMenu.find("#action_list").empty();
-    if(json.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
-		if (json.vmstate == "Stopped") 
-		    buildActionLinkForSingleObject("Create Template", volumeActionMap, $actionMenu, volumeListAPIMap, $rightPanelContent);	
+    if(jsonObj.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
+		if (jsonObj.vmstate == "Stopped") 
+		    buildActionLinkForDetailsTab("Create Template", volumeActionMap, $actionMenu, volumeListAPIMap);	
 	} 
-	else { //json.type=="DATADISK": "detach disk" is allowed, "create template" is disallowed.			
-		buildActionLinkForSingleObject("Detach Disk", volumeActionMap, $actionMenu, volumeListAPIMap, $rightPanelContent);				
+	else { //jsonObj.type=="DATADISK": "detach disk" is allowed, "create template" is disallowed.			
+		buildActionLinkForDetailsTab("Detach Disk", volumeActionMap, $actionMenu, volumeListAPIMap);				
 	}	
-}
+} 
        
 var volumeListAPIMap = {
     listAPI: "listVolumes",
@@ -91,19 +102,19 @@ var volumeActionMap = {
         isAsyncJob: true,
         asyncJobResponse: "detachvolumeresponse",
         inProcessText: "Detaching disk....",
-        afterActionSeccessFn: function(){}
+        afterActionSeccessFn: volumeAfterDetailsTabAction
     },
     "Create Template": {
         isAsyncJob: true,
         asyncJobResponse: "createtemplateresponse",            
-        dialogBeforeActionFn : doCreateTemplate,
+        dialogBeforeActionFn : doCreateTemplateFromVolume,
         inProcessText: "Creating template....",
         afterActionSeccessFn: function(){}   
     }  
 }   
 
-function doCreateTemplate($actionLink, listAPIMap, $singleObject) {       
-    var jsonObj = $singleObject.data("jsonObj");
+function doCreateTemplateFromVolume($actionLink, listAPIMap, $detailsTab) {       
+    var jsonObj = $detailsTab.data("jsonObj");
     $("#dialog_create_template").find("#volume_name").text(jsonObj.name);
     
 	$("#dialog_create_template")
@@ -125,9 +136,9 @@ function doCreateTemplate($actionLink, listAPIMap, $singleObject) {
 			var isPublic = thisDialog.find("#create_template_public").val();
             var password = thisDialog.find("#create_template_password").val();				
 			
-			var id = $singleObject.data("jsonObj").id;			
+			var id = $detailsTab.data("jsonObj").id;			
 			var apiCommand = "command=createTemplate&volumeId="+id+"&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
-	    	doActionToSingleObject(id, $actionLink, apiCommand, listAPIMap, $singleObject);					
+	    	doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);					
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 

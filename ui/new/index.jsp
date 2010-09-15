@@ -50,6 +50,10 @@ long milliseconds = new Date().getTime();
     
     <script type="text/javascript" src="scripts/cloud.core2.ipaddress.js?t=<%=milliseconds%>"></script>
   
+    <script type="text/javascript" src="scripts/cloud.core2.template.js?t=<%=milliseconds%>"></script>
+  
+    <script type="text/javascript" src="scripts/cloud.core2.iso.js?t=<%=milliseconds%>"></script>
+  
     <title>Cloud.com CloudStack</title>
 </head>
 <body>
@@ -105,7 +109,7 @@ long milliseconds = new Date().getTime();
                                 </ul>
                             </div>
                         </div>
-                        <div class="actionpanel_button_wrapper" id="add_link" style="display: none">
+                        <div class="actionpanel_button_wrapper" id="midmenu_add_link" style="display: none">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
                                     <img src="images/addvm_actionicon.png" alt="Add" /></div>
@@ -460,18 +464,74 @@ long milliseconds = new Date().getTime();
                     </div>
                 </div>
                 <div class="leftmenu_list">
-                    <div class="leftmenu_content" id="leftmenu_template">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_list_icons">
-                                <img src="images/templates_leftmenuicon.png" alt="Templates" /></div>
-                            Template
+                    <div id="leftmenu_itemplate_filter">    
+                        <div class="leftmenu_content" id="leftmenu_template_filter_header">
+                            <div class="leftmenu_secondindent">                                
+                                <div class="leftmenu_list_icons">
+                                    <img src="images/templates_leftmenuicon.png" alt="Templates" /></div>
+                                Template
+                            </div>
+                        </div>
+                        <div id="leftmenu_template_filter_container">                        
+                            <div class="leftmenu_content" id="leftmenu_submenu_my_template">
+						        <div class="leftmenu_thirdindent">
+						            <div class="leftmenu_list_icons">
+						                <img src="images/templates_leftmenuicon.png" /></div>
+						            <div>
+						                My Templates</div>
+						        </div>
+						    </div>                        
+                            <div class="leftmenu_content" id="leftmenu_submenu_featured_template">
+						        <div class="leftmenu_thirdindent">
+						            <div class="leftmenu_list_icons">
+						                <img src="images/templates_leftmenuicon.png" /></div>
+						            <div>
+						                Featured</div>
+						        </div>
+						    </div>                        
+                            <div class="leftmenu_content" id="leftmenu_submenu_community_template">
+						        <div class="leftmenu_thirdindent">
+						            <div class="leftmenu_list_icons">
+						                <img src="images/templates_leftmenuicon.png" /></div>
+						            <div>
+						                Community</div>
+						        </div>
+						    </div>                        
                         </div>
                     </div>
-                    <div class="leftmenu_content" id="leftmenu_iso">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_list_icons">
-                                <img src="images/templates_leftmenuicon.png" alt="Templates" /></div>
-                            ISO
+                    <div id="leftmenu_iso_filter">    
+                        <div class="leftmenu_content" id="leftmenu_iso_filter_header">
+                            <div class="leftmenu_secondindent">                                
+                                <div class="leftmenu_list_icons">
+                                    <img src="images/templates_leftmenuicon.png" alt="Templates" /></div>
+                                ISO
+                            </div>
+                        </div>
+                        <div id="leftmenu_iso_filter_container">
+                             <div class="leftmenu_content" id="leftmenu_submenu_my_iso">
+						        <div class="leftmenu_thirdindent">
+						            <div class="leftmenu_list_icons">
+						                <img src="images/templates_leftmenuicon.png" /></div>
+						            <div>
+						                My ISOs</div>
+						        </div>
+						    </div>                        
+                            <div class="leftmenu_content" id="leftmenu_submenu_featured_iso">
+						        <div class="leftmenu_thirdindent">
+						            <div class="leftmenu_list_icons">
+						                <img src="images/templates_leftmenuicon.png" /></div>
+						            <div>
+						                Featured</div>
+						        </div>
+						    </div>                        
+                            <div class="leftmenu_content" id="leftmenu_submenu_community_iso">
+						        <div class="leftmenu_thirdindent">
+						            <div class="leftmenu_list_icons">
+						                <img src="images/templates_leftmenuicon.png" /></div>
+						            <div>
+						                Community</div>
+						        </div>
+						    </div>                                         
                         </div>
                     </div>
                 </div>
@@ -605,12 +665,12 @@ long milliseconds = new Date().getTime();
 	</div>
 	
     <!-- templates starts here-->
-    <div class="leftmenu_content" id="leftmenu_instance_group_template" style="display: none">
+    <div class="leftmenu_content" id="leftmenu_submenu_template" style="display: none">
         <div class="leftmenu_thirdindent">
             <div class="leftmenu_list_icons">
-                <img src="images/instance_leftmenuicon.png" alt="Instances" /></div>
-            <div id="group_name">
-                Group 1</div>
+                <img id="icon" style="display:none"/></div>
+            <div id="submenu_name">
+                (submenu)</div>
         </div>
     </div>
     

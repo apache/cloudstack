@@ -84,6 +84,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -224,6 +225,7 @@ public class UserVmManagerImpl implements UserVmManager {
     @Inject AsyncJobManager _asyncMgr;
     @Inject protected StoragePoolHostDao _storagePoolHostDao;
     @Inject VlanDao _vlanDao;
+    @Inject AccountVlanMapDao _accountVlanMapDao;
     @Inject StoragePoolDao _storagePoolDao;
     @Inject VMTemplateHostDao _vmTemplateHostDao;
     @Inject NetworkGroupManager _networkGroupManager;
@@ -1873,6 +1875,7 @@ public class UserVmManagerImpl implements UserVmManager {
         	Enumeration<IpAddrAllocator> it = ipAllocators.enumeration();
         	_IpAllocator = it.nextElement();
         }
+                
         return true;
     }
 
@@ -2653,15 +2656,30 @@ public class UserVmManagerImpl implements UserVmManager {
             List<VlanVO> vlansForAccount = _vlanDao.listVlansForAccountByType(dc.getId(), account.getId(), VlanType.DirectAttached);
            
             boolean forAccount = false;
+            boolean forZone = false;
             if (vlansForAccount.size() > 0) {
             	forAccount = true;
             	guestVlan = vlansForAccount.get(0);//FIXME: iterate over all vlans
             }
+//            else //TODO PLEASE DO NOT REMOVE THIS COMMENTED PART
+//            {
+//            	//list zone wide vlans that are direct attached and tagged
+//            	//if exists pick random one
+//            	//set forZone = true
+//            	
+//            	//note the dao method below does a NEQ on vlan id, hence passing untagged
+//            	List<VlanVO> zoneWideVlans = _vlanDao.searchForZoneWideVlans(dc.getId(),VlanType.DirectAttached.toString(),"untagged");
+//            	
+//            	if(zoneWideVlans!=null && zoneWideVlans.size()>0){
+//            		forZone = true;
+//            		guestVlan = zoneWideVlans.get(0);//FIXME: iterate over all vlans
+//            	}
+//            }
             while ((pod = _agentMgr.findPod(template, offering, dc, account.getId(), avoids)) != null) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Attempting to create direct attached vm in pod " + pod.first().getName());
                 }
-                if (!forAccount) {
+                if (!forAccount && !forZone) {
                 	List<VlanVO> vlansForPod = _vlanDao.listVlansForPodByType(pod.first().getId(), VlanType.DirectAttached);
                 	if (vlansForPod.size() < 1) {
                 		avoids.add(pod.first().getId());

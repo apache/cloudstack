@@ -19,42 +19,42 @@ function clickInstanceGroupHeader($arrowIcon) {
             api: "stopVirtualMachine",            
             isAsyncJob: true,
             asyncJobResponse: "stopvirtualmachineresponse",
-            afterActionSeccessFn: vmJsonToMidmenu
+            afterActionSeccessFn: vmToMidmenu
         },
         "Start Instance": {
             api: "startVirtualMachine",            
             isAsyncJob: true,
             asyncJobResponse: "startvirtualmachineresponse",
-            afterActionSeccessFn: vmJsonToMidmenu
+            afterActionSeccessFn: vmToMidmenu
         },
         "Reboot Instance": {
             api: "rebootVirtualMachine",           
             isAsyncJob: true,
             asyncJobResponse: "rebootvirtualmachineresponse",
-            afterActionSeccessFn: vmJsonToMidmenu
+            afterActionSeccessFn: vmToMidmenu
         },
         "Destroy Instance": {
             api: "destroyVirtualMachine",           
             isAsyncJob: true,
             asyncJobResponse: "destroyvirtualmachineresponse",
-            afterActionSeccessFn: vmJsonToMidmenu
+            afterActionSeccessFn: vmToMidmenu
         },
         "Restore Instance": {
             api: "recoverVirtualMachine",           
             isAsyncJob: false,
-            afterActionSeccessFn: vmJsonToMidmenu
+            afterActionSeccessFn: vmToMidmenu
         },
         "Attach ISO": {
             isAsyncJob: true,
             asyncJobResponse: "attachisoresponse",            
             dialogBeforeActionFn : doAttachISO,
-            afterActionSeccessFn: vmJsonToMidmenu   
+            afterActionSeccessFn: vmToMidmenu   
         },
         "Detach ISO": {
             isAsyncJob: true,
             asyncJobResponse: "detachisoresponse",            
             dialogBeforeActionFn : doDetachISO,
-            afterActionSeccessFn: vmJsonToMidmenu   
+            afterActionSeccessFn: vmToMidmenu   
         },
         "Reset Password": {
             isAsyncJob: true,
@@ -65,28 +65,28 @@ function clickInstanceGroupHeader($arrowIcon) {
         "Change Name": {
             isAsyncJob: false,            
             dialogBeforeActionFn : doChangeName,
-            afterActionSeccessFn: vmJsonToMidmenu
+            afterActionSeccessFn: vmToMidmenu
         },
         "Change Service": {
             isAsyncJob: true,
             asyncJobResponse: "changeserviceforvirtualmachineresponse",
             dialogBeforeActionFn : doChangeService,
-            afterActionSeccessFn: vmJsonToMidmenu
+            afterActionSeccessFn: vmToMidmenu
         },
         "Change Group": {
             isAsyncJob: false,            
             dialogBeforeActionFn : doChangeGroup,
-            afterActionSeccessFn: vmJsonToMidmenu
+            afterActionSeccessFn: vmToMidmenu
         },
         "Enable HA": {
             isAsyncJob: false,            
             dialogBeforeActionFn : doEnableHA,
-            afterActionSeccessFn: vmJsonToMidmenu
+            afterActionSeccessFn: vmToMidmenu
         },
         "Disable HA": {
             isAsyncJob: false,            
             dialogBeforeActionFn : doDisableHA,
-            afterActionSeccessFn: vmJsonToMidmenu
+            afterActionSeccessFn: vmToMidmenu
         }                 
     }            
         
@@ -329,43 +329,25 @@ function clickInstanceGroupHeader($arrowIcon) {
             midmenuItem.find("#icon").attr("src", "images/status_gray.png");
     }
       
-    function vmJsonToMidmenu(json, $midmenuItem) {  
-        $midmenuItem.data("jsonObj", json);
-        $midmenuItem.data("toRightPanelFn", vmMidmenuToRightPanel);
-        $midmenuItem.attr("id", ("midmenuItem_"+json.id));                             
-        $midmenuItem.data("id", json.id);        
+    function vmToMidmenu(json, $midmenuItem1) {  
+        $midmenuItem1.data("jsonObj", json);
+        $midmenuItem1.attr("id", ("midmenuItem_"+json.id));   
         
-        $midmenuItem.find("#icon").attr("src", "images/status_gray.png");
-        $midmenuItem.find("#icon_container").show();        
+        var $iconContainer = $midmenuItem1.find("#icon_container").show();   
+        $iconContainer.find("#icon").attr("src", "images/status_gray.png");	        
+          
         var vmName = getVmName(json.name, json.displayname);
-        $midmenuItem.find("#first_row").text(vmName);
-        //$midmenuItem.find("#second_row_label").text("IP Address:");  
-        $midmenuItem.find("#second_row").text(json.ipaddress);                                            
-        updateVirtualMachineStateInMidMenu(json, $midmenuItem);        
-        $midmenuItem.bind("click", function(event) {  
+        $midmenuItem1.find("#first_row").text(vmName);        
+        $midmenuItem1.find("#second_row").text(json.ipaddress);                                            
+        updateVirtualMachineStateInMidMenu(json, $midmenuItem1);        
+        $midmenuItem1.bind("click", function(event) {  
             var $t = $(this);     
-            vmMidmenuToRightPanel($t);	 
+            vmToRightPanel($t);	 
             return false;
         }); 
     }
     
-    function vmClearRightPanel(jsonObj) {       
-        $rightPanelHeader.find("#vm_name").text("");	
-        updateVirtualMachineStateInRightPanel("");	
-        $rightPanelContent.find("#ipAddress").text("");
-        $rightPanelContent.find("#zoneName").text("");
-        $rightPanelContent.find("#templateName").text("");
-        $rightPanelContent.find("#serviceOfferingName").text("");		
-        $rightPanelContent.find("#ha").hide();  
-        $rightPanelContent.find("#created").text("");
-        $rightPanelContent.find("#account").text("");
-        $rightPanelContent.find("#domain").text("");
-        $rightPanelContent.find("#hostName").text("");
-        $rightPanelContent.find("#group").text("");	
-        $rightPanelContent.find("#iso").hide();
-    }
-    
-    function vmMidmenuToRightPanel($midmenuItem) {
+    function vmToRightPanel($midmenuItem) {
         //details tab 
         if($midmenuItem.find("#info_icon").css("display") != "none") {                
             $rightPanelContent.find("#after_action_info").text($midmenuItem.data("afterActionInfo"));
@@ -387,20 +369,15 @@ function clickInstanceGroupHeader($arrowIcon) {
         $rightPanelContent.find("#ipAddress").text(jsonObj.ipaddress);
         $rightPanelContent.find("#zoneName").text(fromdb(jsonObj.zonename));
         $rightPanelContent.find("#templateName").text(fromdb(jsonObj.templatename));
-        $rightPanelContent.find("#serviceOfferingName").text(fromdb(jsonObj.serviceofferingname));		                                			                                
-        if(jsonObj.haenable == "true")
-            $rightPanelContent.find("#ha").removeClass("cross_icon").addClass("tick_icon").show();
-        else
-            $rightPanelContent.find("#ha").removeClass("tick_icon").addClass("cross_icon").show();		                                
+        $rightPanelContent.find("#serviceOfferingName").text(fromdb(jsonObj.serviceofferingname));		
         $rightPanelContent.find("#created").text(jsonObj.created);
         $rightPanelContent.find("#account").text(fromdb(jsonObj.account));
         $rightPanelContent.find("#domain").text(fromdb(jsonObj.domain));
         $rightPanelContent.find("#hostName").text(fromdb(jsonObj.hostname));
         $rightPanelContent.find("#group").text(fromdb(jsonObj.group));	
-        if(jsonObj.isoid != null && jsonObj.isoid.length > 0)
-            $rightPanelContent.find("#iso").removeClass("cross_icon").addClass("tick_icon").show();
-        else
-            $rightPanelContent.find("#iso").removeClass("tick_icon").addClass("cross_icon").show();    
+        
+        setBooleanField(jsonObj.haenable, $rightPanelContent.find("#ha"));	
+        setBooleanField((jsonObj.isoid != null && jsonObj.isoid.length > 0), $rightPanelContent.find("#iso"));	
             
         //volume tab
         //if (getHypervisorType() == "kvm") 
@@ -423,6 +400,22 @@ function clickInstanceGroupHeader($arrowIcon) {
 			}
 		});           
     }
+        
+    function vmClearRightPanel(jsonObj) {       
+        $rightPanelHeader.find("#vm_name").text("");	
+        updateVirtualMachineStateInRightPanel("");	
+        $rightPanelContent.find("#ipAddress").text("");
+        $rightPanelContent.find("#zoneName").text("");
+        $rightPanelContent.find("#templateName").text("");
+        $rightPanelContent.find("#serviceOfferingName").text("");		
+        $rightPanelContent.find("#ha").hide();  
+        $rightPanelContent.find("#created").text("");
+        $rightPanelContent.find("#account").text("");
+        $rightPanelContent.find("#domain").text("");
+        $rightPanelContent.find("#hostName").text("");
+        $rightPanelContent.find("#group").text("");	
+        $rightPanelContent.find("#iso").hide();
+    }
     
     //***** declaration for volume tab (begin) *********************************************************
     var vmVolumeActionMap = {  
@@ -440,7 +433,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         "Create Template": {
             isAsyncJob: true,
             asyncJobResponse: "createtemplateresponse",            
-            dialogBeforeActionFn : doCreateTemplate,
+            dialogBeforeActionFn : doCreateTemplateFromVmVolume,
             inProcessText: "Creating template....",
             afterActionSeccessFn: function(){}   
         }  
@@ -474,17 +467,21 @@ function clickInstanceGroupHeader($arrowIcon) {
         $actionMenu.find("#action_list").empty();
 		if(json.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
 			if (json.vmstate == "Stopped") 
-			    buildActionLinkForSingleObject("Create Template", vmVolumeActionMap, $actionMenu, volumeListAPIMap, template);	
+			    buildActionLinkForSubgridItem("Create Template", vmVolumeActionMap, $actionMenu, volumeListAPIMap, template);	
 		} 
 		else { //json.type=="DATADISK": "detach disk" is allowed, "create template" is disallowed.			
-			buildActionLinkForSingleObject("Detach Disk", vmVolumeActionMap, $actionMenu, volumeListAPIMap, template);				
+			buildActionLinkForSubgridItem("Detach Disk", vmVolumeActionMap, $actionMenu, volumeListAPIMap, template);				
 		}	
 		
+		template.find("#action_message_box #close_button").bind("click", function(event){
+		    $(this).parent().hide();
+		    return false;
+		});
 	}
     //***** declaration for volume tab (end) *********************************************************
     
        
-    $("#add_link").show(); 
+    $("#midmenu_add_link").show(); 
 	if($arrowIcon.hasClass("close") == true) {
         $arrowIcon.removeClass("close").addClass("open");    
         $.ajax({
@@ -511,15 +508,16 @@ function clickInstanceGroupHeader($arrowIcon) {
 		        }
 		        for(var i=0; i < instanceGroupArray.length; i++) {
 		            if(instanceGroupArray[i]!=null && instanceGroupArray[i].length>0) {
-		        	    var $groupTemplate = $("#leftmenu_instance_group_template").clone().show();				        	            	
-		                $groupTemplate.find("#group_name").text(instanceGroupArray[i]);
-		                		                			                
-		                $groupTemplate.bind("click", function(event) { 
+		        	    var $leftmenuSubmenuTemplate = $("#leftmenu_submenu_template").clone().show();				        	            	
+		                $leftmenuSubmenuTemplate.find("#submenu_name").text(instanceGroupArray[i]);
+		                $leftmenuSubmenuTemplate.find("#icon").attr("src", "images/instance_leftmenuicon.png").show();
+		                 		                			                
+		                $leftmenuSubmenuTemplate.bind("click", function(event) { 
 		                    //$(this).removeClass("leftmenu_content").addClass("leftmenu_content_selected");			               
                             $("#midmenu_container").empty();
                             selectedItemsInMidMenu = {};
                             
-                            var groupName = $(this).find("#group_name").text();                                                         
+                            var groupName = $(this).find("#submenu_name").text();                                                         
                             var group1 = groupName; 
                             if(groupName == noGroupName)
                                 group1 = "";                           
@@ -531,15 +529,16 @@ function clickInstanceGroupHeader($arrowIcon) {
 	                            success: function(json) {		                                                             
 	                                var instances = json.listvirtualmachinesresponse.virtualmachine;                               
                                     for(var i=0; i<instances.length;i++) {  
-                                        var $template = $midmenuItem.clone();                                                                                                                               
-                                        vmJsonToMidmenu(instances[i], $template);  
-                                        $("#midmenu_container").append($template.show());
+                                        var $midmenuItem1 = $midmenuItem.clone();
+                                        $midmenuItem1.data("toRightPanelFn", vmToRightPanel);                                                                                                                               
+                                        vmToMidmenu(instances[i], $midmenuItem1);  
+                                        $("#midmenu_container").append($midmenuItem1.show());
                                     }    
 	                            }
 	                        });                            
                             return false;
                         });	
-		                $("#leftmenu_instance_group_container").append($groupTemplate);
+		                $("#leftmenu_instance_group_container").append($leftmenuSubmenuTemplate);
 		            }
 		        }
 		        
@@ -629,7 +628,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         var currentPageInTemplateGridInVmPopup =1;
 	    var selectedTemplateTypeInVmPopup;  //selectedTemplateTypeInVmPopup will be set to "featured" when new VM dialog box opens
     	   	
-	    $("#add_link").unbind("click").bind("click", function(event) {
+	    $("#midmenu_add_link").unbind("click").bind("click", function(event) {
             vmWizardOpen();			
 		    $.ajax({
 			    data: createURL("command=listZones&available=true"),
@@ -1177,7 +1176,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 											    $t.find("#info_icon").removeClass("error").show();
 						                        $t.data("afterActionInfo", ("Adding succeeded.")); 
 						                        if("virtualmachine" in result)	
-						                            vmJsonToMidmenu(result.virtualmachine[0], $t);													   
+						                            vmToMidmenu(result.virtualmachine[0], $t);													   
 											    
 										    } else if (result.jobstatus == 2) {
 											    // Failed
@@ -1261,5 +1260,37 @@ function clickInstanceGroupHeader($arrowIcon) {
     });	
 }  
 
+function doCreateTemplateFromVmVolume($actionLink, listAPIMap, $subgridItem) {       
+    var jsonObj = $subgridItem.data("jsonObj");
+    $("#dialog_create_template").find("#volume_name").text(jsonObj.name);
+    
+	$("#dialog_create_template")
+	.dialog('option', 'buttons', { 						
+		"Create": function() { 
+		    //debugger;
+		    var thisDialog = $(this);
+		    thisDialog.dialog("close"); 
+									
+			// validate values
+	        var isValid = true;					
+	        isValid &= validateString("Name", thisDialog.find("#create_template_name"), thisDialog.find("#create_template_name_errormsg"));
+			isValid &= validateString("Display Text", thisDialog.find("#create_template_desc"), thisDialog.find("#create_template_desc_errormsg"));			
+	        if (!isValid) return;		
+	        
+	        var name = trim(thisDialog.find("#create_template_name").val());
+			var desc = trim(thisDialog.find("#create_template_desc").val());
+			var osType = thisDialog.find("#create_template_os_type").val();					
+			var isPublic = thisDialog.find("#create_template_public").val();
+            var password = thisDialog.find("#create_template_password").val();				
+			
+			var id = $subgridItem.data("jsonObj").id;			
+			var apiCommand = "command=createTemplate&volumeId="+id+"&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
+	    	doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgridItem);					
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		} 
+	}).dialog("open");
+}   
 
 	 

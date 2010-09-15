@@ -49,6 +49,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import com.cloud.host.Status;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
@@ -529,7 +530,7 @@ public class DatabaseConfig {
          String storageType = _currentObjectParams.get("storageType");
          String uuid = UUID.nameUUIDFromBytes(new String(hostAddress+hostPath).getBytes()).toString();
  
-         String insertSql1 = "INSERT INTO `storage_pool` (`id`, `name`, `uuid` , `pool_type` , `port`, `data_center_id` ,`available_bytes` , `capacity_bytes` ,`host_address`, `path`, `created`, `pod_id` ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+         String insertSql1 = "INSERT INTO `storage_pool` (`id`, `name`, `uuid` , `pool_type` , `port`, `data_center_id` ,`available_bytes` , `capacity_bytes` ,`host_address`, `path`, `created`, `pod_id`,`status` ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
          // String insertSql2 = "INSERT INTO `netfs_storage_pool` VALUES (?,?,?)";
          
          Transaction txn = Transaction.currentTxn();
@@ -550,6 +551,7 @@ public class DatabaseConfig {
              stmt.setString(10, hostPath);
              stmt.setDate(11, new Date(new java.util.Date().getTime()));
              stmt.setLong(12, podId);
+             stmt.setString(13, Status.Up.toString());
              stmt.executeUpdate();
              // stmt = txn.prepareAutoCloseStatement(insertSql2);
              // stmt.setLong(1, 2);

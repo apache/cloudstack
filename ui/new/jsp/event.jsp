@@ -13,10 +13,10 @@
 
 <!-- event detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
-    <!--  
+   
     <div class="main_titleicon">
-        <img src="images/instancetitle_icons.gif" alt="Instance" /></div>
-    -->
+        <img src="images/title_eventsicon.gif" alt="Event" /></div>
+   
     <h1>Event
     </h1>
 </div>
@@ -29,6 +29,16 @@
             <%=t.t("Details")%></div>        
     </div>
     <div class="grid_container">
+        <div class="grid_rows odd">
+            <div class="grid_row_cell" style="width: 20%;">
+                <div class="row_celltitles">
+                    <%=t.t("id")%>:</div>
+            </div>
+            <div class="grid_row_cell" style="width: 79%;">
+                <div class="row_celltitles" id="id">
+                </div>
+            </div>
+        </div>
         <div class="grid_rows odd">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">

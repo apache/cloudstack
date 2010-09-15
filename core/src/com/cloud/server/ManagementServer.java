@@ -2234,4 +2234,7 @@ public interface ManagementServer {
     List<InstanceGroupVO> searchForVmGroups(Criteria c);
     
     InstanceGroupVO getGroupForVm(long vmId);
+
+	List<VlanVO> searchForZoneWideVlans(long dcId, String vlanType,String vlanId);
+
 }

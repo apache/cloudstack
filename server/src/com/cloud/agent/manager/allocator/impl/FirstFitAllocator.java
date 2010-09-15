@@ -99,7 +99,7 @@ public class FirstFitAllocator implements HostAllocator {
         while (it.hasNext()) {
         	HostVO host = it.next();
         	if (avoid.contains(host)) {
-        		clusterHosts.remove(host);
+			it.remove();
         	} else {
         	    if (s_logger.isDebugEnabled()) {
         	        s_logger.debug("Adding host " + host + " as possible pod host");

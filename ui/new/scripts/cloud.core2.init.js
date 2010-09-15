@@ -21,10 +21,11 @@ $(document).ready(function() {
             if(ui.selecting.id.indexOf("midmenuItem") != -1) {                     
                 var $midmenuItem1 = $("#"+ui.selecting.id);
                 if($midmenuItem1.find("#content").hasClass("inaction") == false) { //only items not in action are allowed to be selected
-                    var id =$midmenuItem1.data("id");                
+                    var id =$midmenuItem1.data("jsonObj").id;                
                     selectedItemsInMidMenu[id] = $midmenuItem1; 
                     $midmenuItem1.find("#content").addClass("selected");   
                 }                               
+                clearRightPanel();      
                 var toRightPanelFn = $midmenuItem1.data("toRightPanelFn");
                 toRightPanelFn($midmenuItem1);	          
             }                                             
@@ -32,7 +33,7 @@ $(document).ready(function() {
         unselecting: function(event, ui) {
             if(ui.unselecting.id.indexOf("midmenuItem") != -1) {                     
                 var $midmenuItem1 = $("#"+ui.unselecting.id);
-                var id = $midmenuItem1.data("id");
+                var id = $midmenuItem1.data("jsonObj").id;
                 if(id in selectedItemsInMidMenu) {                    
                     delete selectedItemsInMidMenu[id];
                     $midmenuItem1.find("#content").removeClass("selected"); 
@@ -41,33 +42,24 @@ $(document).ready(function() {
         }
     });
     
-    function jsonToMidmenu(jsonObj, $midmenuItem1, propertyForFirstRow, propertyForSecondRow, toRightPanelFn) {  
-        $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));                             
-        $midmenuItem1.data("id", jsonObj.id); 
-        $midmenuItem1.data("jsonObj", jsonObj); 
-        $midmenuItem1.find("#first_row").text(jsonObj[propertyForFirstRow].substring(0,25)); 
-        $midmenuItem1.find("#second_row").text(jsonObj[propertyForSecondRow].substring(0,25));           
-        $midmenuItem1.data("toRightPanelFn", toRightPanelFn);
-    }
-    
     var $midmenuItem = $("#midmenu_item");
-    function listMidMenuItems(leftmenuId, apiName, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSP, toMidmenu, toRightPanel) { 
+    function listMidMenuItems(leftmenuId, commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSP, toMidmenu, toRightPanel) { 
         $("#"+leftmenuId).bind("click", function(event) {
+            clearMidMenu();
             $("#right_panel").load(rightPanelJSP, function(){   
-                afterLoadRightPanelJSP();
+                afterLoadRightPanelJSP();                
                 $.ajax({
 	                cache: false,
-	                data: createURL("command="+apiName+"&pagesize="+midmenuItemCount),
+	                data: createURL("command="+commandString+"&pagesize="+midmenuItemCount),
 	                dataType: "json",
-	                success: function(json) {	
-	                    $("#midmenu_container").empty();
-	                    selectedItemsInMidMenu = {};
-    	                
+	                success: function(json) {		                    
+	                    selectedItemsInMidMenu = {};    	                
 	                    var items = json[jsonResponse1][jsonResponse2];
 	                    if(items != null && items.length > 0) {
 	                        for(var i=0; i<items.length;i++) { 
-                                var $midmenuItem1 = $midmenuItem.clone();                               
-                                toMidmenu(items[i], $midmenuItem1, toRightPanel);                             
+                                var $midmenuItem1 = $midmenuItem.clone();  
+                                $midmenuItem1.data("toRightPanelFn", toRightPanel);                             
+                                toMidmenu(items[i], $midmenuItem1);                             
                                 $("#midmenu_container").append($midmenuItem1.show());                            
                             }  
                         }  
@@ -83,13 +75,23 @@ $(document).ready(function() {
     listMidMenuItems("leftmenu_volume", "listVolumes", "listvolumesresponse", "volume", "jsp/volume.jsp", afterLoadVolumeJSP, volumeToMidmenu, volumeToRigntPanel);
     listMidMenuItems("leftmenu_snapshot", "listSnapshots", "listsnapshotsresponse", "snapshot", "jsp/snapshot.jsp", afterLoadSnapshotJSP, snapshotToMidmenu, snapshotToRigntPanel);
     listMidMenuItems("leftmenu_ip", "listPublicIpAddresses", "listpublicipaddressesresponse", "publicipaddress", "jsp/ip_address.jsp", afterLoadIpJSP, ipToMidmenu, ipToRigntPanel);
+      
+    listMidMenuItems("leftmenu_submenu_my_template", "listTemplates&templatefilter=self", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRigntPanel);
+    listMidMenuItems("leftmenu_submenu_featured_template", "listTemplates&templatefilter=featured", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRigntPanel);
+    listMidMenuItems("leftmenu_submenu_community_template", "listTemplates&templatefilter=community", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRigntPanel);
     
-    $("#leftmenu_instance_group_header").bind("click", function(event) {   
+    listMidMenuItems("leftmenu_submenu_my_iso", "listIsos&isofilter=self", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRigntPanel);
+    listMidMenuItems("leftmenu_submenu_featured_iso", "listIsos&isofilter=featured", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRigntPanel);
+    listMidMenuItems("leftmenu_submenu_community_iso", "listIsos&isofilter=community", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRigntPanel);
+        
+    $("#leftmenu_instance_group_header").bind("click", function(event) {  
+        clearMidMenu(); 
         var $arrowIcon = $(this).find("#arrow_icon");        
         clickInstanceGroupHeader($arrowIcon);
         return false;
     });
     
+   
     
     
     
