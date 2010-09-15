@@ -672,11 +672,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             long seq = _hostDao.getNextSequence(hostId);
             Request req = new Request(seq, hostId, _nodeId, new Command[] { new CheckHealthCommand() }, true, true);
             Answer[] answers = agent.send(req, 50 * 1000);
-            if (answers[0].getResult()) {
+            if (answers != null && answers[0] != null ) {
+                Status status = answers[0].getResult() ? Status.Up : Status.Down;
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("agent (" + hostId + ") responded to checkHeathCommand, reporting that agent is up");
+                    s_logger.debug("agent (" + hostId + ") responded to checkHeathCommand, reporting that agent is " + status);
                 }
-                return answers[0].getResult() ? Status.Up : Status.Down;
+                return status;
             }
         } catch (AgentUnavailableException e) {
             s_logger.debug("Agent is unavailable so we move on.");

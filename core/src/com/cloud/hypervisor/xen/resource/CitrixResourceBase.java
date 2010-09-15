@@ -281,7 +281,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         s_logger.debug("Logging out of " + _host.uuid);
         if (_host.pool != null) {
             _connPool.disconnect(_host.uuid, _host.pool);
-            _host.pool = null;
         }
     }
 
@@ -445,15 +444,26 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
 
     protected boolean pingxenserver() {
-        String status;
-        status = callHostPlugin("pingxenserver");
-
-        if (status == null || status.isEmpty()) {
+        Session slaveSession = null;
+        Connection slaveConn = null;
+        try {
+            URL slaveUrl = null;
+            slaveUrl = new URL("http://" + _host.ip);
+            slaveConn = new Connection(slaveUrl, 100);
+            slaveSession = Session.slaveLocalLoginWithPassword(slaveConn, _username, _password);
+            return true;
+        } catch (Exception e) {
             return false;
+        } finally {
+            if( slaveSession != null ){
+                try{
+                    Session.localLogout(slaveConn);
+                } catch (Exception e) {
+                    
+                }
+                slaveConn.dispose();
+            }
         }
-
-        return true;
-
     }
 
     protected String logX(XenAPIObject obj, String msg) {
@@ -2217,42 +2227,45 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return vm;
     }
 
-    public boolean joinPool(String address, String username, String password) {
-        Connection conn = getConnection();
+    public boolean joinPool(String masterIp, String username, String password) {
+        Connection slaveConn = null;
         Connection poolConn = null;
+        Session slaveSession = null;
+        URL slaveUrl = null;
+        
         try {
-            // set the _host.poolUuid to the old pool uuid in case it's not set.
-            _host.pool = getPoolUuid();
 
             // Connect and find out about the new connection to the new pool.
-            poolConn = _connPool.connect(address, username, password, _wait);
-            Map<Pool, Pool.Record> pools = Pool.getAllRecords(poolConn);
-            Pool.Record pr = pools.values().iterator().next();
-
-            // Now join it.
-            String masterAddr = pr.master.getAddress(poolConn);
-            Pool.join(conn, masterAddr, username, password);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Joined the pool at " + masterAddr);
+            poolConn = _connPool.masterConnect(masterIp, username, password);
+            //check if this host is already in pool
+            Set<Host> hosts = Host.getAll(poolConn);
+            for( Host host : hosts ) {
+                if(host.getAddress(poolConn).equals(_host.ip)) {
+                    return true;
+                }
             }
-            disconnected(); // Logout of our own session.
+            
+            slaveUrl = new URL("http://" + _host.ip);
+            slaveConn = new Connection(slaveUrl, 100);
+            slaveSession = Session.slaveLocalLoginWithPassword(slaveConn, _username, _password);
+            
+            // Now join it.
+
+            Pool.join(slaveConn, masterIp, username, password);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Joined the pool at " + masterIp);
+            }
+            
             try {
                 // slave will restart xapi in 10 sec
                 Thread.sleep(10000);
             } catch (InterruptedException e) {
             }
 
-            // Set the pool uuid now to the newest pool.
-            _host.pool = pr.uuid;
-            URL url;
-            try {
-                url = new URL("http://" + _host.ip);
-            } catch (MalformedURLException e1) {
-                throw new CloudRuntimeException("Problem with url " + _host.ip);
-            }
-            Connection c = null;
+            // check if the master of this host is set correctly.
+            Connection c = new Connection(slaveUrl, 100);
             for (int i = 0; i < 15; i++) {
-                c = new Connection(url, _wait);
+
                 try {
                     Session.loginWithPassword(c, _username, _password, APIVersion.latest().toString());
                     s_logger.debug("Still waiting for the conversion to the master");
@@ -2278,18 +2291,33 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 } catch (InterruptedException e) {
                 }
             }
+
             return true;
+        } catch (MalformedURLException e) {
+            throw new CloudRuntimeException("Problem with url " + _host.ip);
         } catch (XenAPIException e) {
-            String msg = "Unable to allow host " + _host.uuid + " to join pool " + address + " due to " + e.toString();
+            String msg = "Unable to allow host " + _host.uuid
+                    + " to join pool " + masterIp + " due to " + e.toString();
             s_logger.warn(msg, e);
             throw new RuntimeException(msg);
         } catch (XmlRpcException e) {
-            String msg = "Unable to allow host " + _host.uuid + " to join pool " + address + " due to " + e.getMessage();
+            String msg = "Unable to allow host " + _host.uuid
+                    + " to join pool " + masterIp + " due to " + e.getMessage();
             s_logger.warn(msg, e);
             throw new RuntimeException(msg);
         } finally {
             if (poolConn != null) {
-                XenServerConnectionPool.logout(poolConn);
+                try {
+                    Session.logout(poolConn);
+                } catch (Exception e) {
+                }
+                poolConn.dispose();
+            }
+            if(slaveSession != null) {
+                try {
+                    Session.localLogout(slaveConn);
+                } catch (Exception e) {
+                }
             }
         }
     }
@@ -3106,23 +3134,10 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
     protected String callHostPluginBase(String plugin, String cmd, int timeout, String... params) {
         Map<String, String> args = new HashMap<String, String>();
-        Session slaveSession = null;
-        Connection slaveConn = null;
-        try {
-            URL slaveUrl = null;
-            try {
-                slaveUrl = new URL("http://" + _host.ip);
-            } catch (MalformedURLException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            slaveConn = new Connection(slaveUrl, timeout);
-            slaveSession = Session.slaveLocalLoginWithPassword(slaveConn, _username, _password);
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Slave logon successful. session= " + slaveSession);
-            }
-            Host host = Host.getByUuid(slaveConn, _host.uuid);
+        try {
+            Connection conn = getConnection();
+
             for (int i = 0; i < params.length; i += 2) {
                 args.put(params[i], params[i + 1]);
             }
@@ -3130,8 +3145,10 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("callHostPlugin executing for command " + cmd + " with " + getArgsString(args));
             }
-
-            String result = host.callPlugin(slaveConn, plugin, cmd, args);
+            if( _host.host == null ) {
+                _host.host = Host.getByUuid(conn, _host.uuid);
+            }
+            String result = _host.host.callPlugin(conn, plugin, cmd, args);
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("callHostPlugin Result: " + result);
             }
@@ -3140,13 +3157,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             s_logger.warn("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to " + e.toString());
         } catch (XmlRpcException e) {
             s_logger.debug("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to " + e.getMessage());
-        } finally {
-            if( slaveSession != null) {
-                try {
-                    Session.localLogout(slaveConn);
-                } catch (Exception e) {
-                }
-            }
         }
         return null;
     }
@@ -3547,7 +3557,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
         try {
             Host myself = Host.getByUuid(conn, _host.uuid);
-            _host.pool = getPoolUuid();
 
             String name = "cloud-private";
             if (_privateNetworkName != null) {
@@ -3788,9 +3797,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         cmd.setCluster(_cluster);
 
         StartupStorageCommand sscmd = initializeLocalSR();
-
-        _host.pool = getPoolUuid();
-
         if (sscmd != null) {
             /* report pv driver iso */
             getPVISO(sscmd);
@@ -4097,7 +4103,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
 
     public Connection getConnection() {
-        return _connPool.connect(_host.uuid, _host.ip, _username, _password, _wait);
+        return _connPool.connect(_host.uuid, _host.pool, _host.ip, _username, _password, _wait);
     }
 
     protected void fillHostInfo(StartupRoutingCommand cmd) {
@@ -4228,8 +4234,10 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         } catch (NumberFormatException e) {
             throw new ConfigurationException("Unable to get the zone " + params.get("zone"));
         }
+        _host.host = null;
         _name = _host.uuid;
         _host.ip = (String) params.get("url");
+        _host.pool = (String) params.get("pool");
         _username = (String) params.get("username");
         _password = (String) params.get("password");
         _pod = (String) params.get("pod");
@@ -4273,8 +4281,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         if (_host.uuid == null) {
             throw new ConfigurationException("Unable to get the uuid");
         }
-
-        params.put("domr.scripts.dir", "scripts/network/domr");
 
         String patchPath = getPatchPath();
 
@@ -6050,6 +6056,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     protected class XenServerHost {
         public String uuid;
         public String ip;
+        public Host host;
         public String publicNetwork;
         public String privateNetwork;
         public String linkLocalNetwork;
