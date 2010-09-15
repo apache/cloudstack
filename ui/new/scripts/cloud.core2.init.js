@@ -30,7 +30,13 @@ $(document).ready(function() {
             clearMidMenu();
             
             $("#right_panel").load(rightPanelJSP, function(){   
-                afterLoadRightPanelJSP();                
+                
+                $("#right_panel_content #tab_content_details #action_message_box #close_button").bind("click", function(event){    
+                    $(this).parent().hide();
+                    return false;
+                });                
+                afterLoadRightPanelJSP();    
+                            
                 $.ajax({
 	                cache: false,
 	                data: createURL("command="+commandString+"&pagesize="+midmenuItemCount),
