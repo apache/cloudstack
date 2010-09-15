@@ -527,15 +527,18 @@ public class UserVmManagerImpl implements UserVmManager {
     	}
 
         // Get the path of the ISO
-    	String isoPath = _storageMgr.getAbsoluteIsoPath(isoId, vm.getDataCenterId());
+    	Pair<String, String> isoPathPair = _storageMgr.getAbsoluteIsoPath(isoId, vm.getDataCenterId());
+    	String isoPath;
     	String isoName = _templateDao.findById(isoId).getName();
     	
-	    if (isoPath == null) {
+	    if (isoPathPair == null) {
 	        // we can't send a null path to the ServerResource, so return false if we are unable to find the isoPath
 	    	if (isoName.startsWith("xs-tools"))
 	    		isoPath = isoName;
 	    	else
 	    		return false;
+	    } else {
+	    	isoPath = isoPathPair.first();
 	    }
 
     	String vmName = vm.getInstanceName();
@@ -545,6 +548,8 @@ public class UserVmManagerImpl implements UserVmManager {
     		return false;
 
     	AttachIsoCommand cmd = new AttachIsoCommand(vmName, isoPath, attach);
+    	if(isoPathPair != null)
+    		cmd.setStoreUrl(isoPathPair.second());
     	Answer a = _agentMgr.easySend(vm.getHostId(), cmd);
     	return (a != null);
     }
@@ -670,7 +675,7 @@ public class UserVmManagerImpl implements UserVmManager {
         } else {
             Long isoId = vm.getIsoId();
             if (isoId != null) {
-                isoPath = _storageMgr.getAbsoluteIsoPath(isoId, vm.getDataCenterId());
+                isoPath = _storageMgr.getAbsoluteIsoPath(isoId, vm.getDataCenterId()).first();
             }
         }
         

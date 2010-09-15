@@ -2399,10 +2399,11 @@ public class ManagementServerImpl implements ManagementServer {
             UserVmVO started = null;
             if (isIso)
             {
-                String isoPath = _storageMgr.getAbsoluteIsoPath(templateId, dataCenterId);
+                Pair<String, String> isoPath = _storageMgr.getAbsoluteIsoPath(templateId, dataCenterId);
+                assert(isoPath != null);
                 try
                 {
-					started = _vmMgr.startVirtualMachine(userId, created.getId(), password, isoPath, startEventId);
+					started = _vmMgr.startVirtualMachine(userId, created.getId(), password, isoPath.first(), startEventId);
 				}
                 catch (ExecutionException e)
                 {

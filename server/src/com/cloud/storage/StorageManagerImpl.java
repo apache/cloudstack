@@ -1174,8 +1174,7 @@ public class StorageManagerImpl implements StorageManager {
          return null;
     }
 
-    @Override
-    public String getAbsoluteIsoPath(long templateId, long dataCenterId) {
+    public Pair<String, String> getAbsoluteIsoPath(long templateId, long dataCenterId) {
         String isoPath = null;
 
         List<HostVO> storageHosts = _hostDao.listBy(Host.Type.SecondaryStorage, dataCenterId);
@@ -1184,12 +1183,12 @@ public class StorageManagerImpl implements StorageManager {
                 VMTemplateHostVO templateHostVO = _vmTemplateHostDao.findByHostTemplate(storageHost.getId(), templateId);
                 if (templateHostVO != null) {
                     isoPath = storageHost.getStorageUrl() + "/" + templateHostVO.getInstallPath();
-                    break;
+                    return new Pair<String, String>(isoPath, storageHost.getStorageUrl());
                 }
             }
         }
 
-        return isoPath;
+        return null;
     }
 
     @Override

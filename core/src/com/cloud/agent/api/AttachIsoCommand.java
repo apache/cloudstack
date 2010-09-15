@@ -21,6 +21,7 @@ package com.cloud.agent.api;
 public class AttachIsoCommand extends Command {
 
 	private String vmName;
+	private String storeUrl;
 	private String isoPath;
 	private boolean attach;
 
@@ -48,5 +49,13 @@ public class AttachIsoCommand extends Command {
 
 	public boolean isAttach() {
 	    return attach;
+	}
+	
+	public String getStoreUrl() {
+		return storeUrl;
+	}
+	
+	public void setStoreUrl(String url) {
+		storeUrl = url;
 	}
 }

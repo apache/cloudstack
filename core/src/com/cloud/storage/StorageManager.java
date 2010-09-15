@@ -138,7 +138,7 @@ public interface StorageManager extends Manager {
      * @param datacenterId
      * @return absolute ISO path
      */
-	public String getAbsoluteIsoPath(long templateId, long dataCenterId);
+	public Pair<String, String> getAbsoluteIsoPath(long templateId, long dataCenterId);
 	
 	/**
 	 * Returns the URL of the secondary storage host
