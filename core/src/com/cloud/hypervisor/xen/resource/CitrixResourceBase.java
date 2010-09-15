@@ -172,7 +172,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.ConsoleProxyVO;
-import com.cloud.vm.DiskCharacteristics;
+import com.cloud.vm.DiskProfile;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
@@ -4729,7 +4729,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     @Override
     public CreateAnswer execute(CreateCommand cmd) {
         StoragePoolTO pool = cmd.getPool();
-        DiskCharacteristics dskch = cmd.getDiskCharacteristics();
+        DiskProfile dskch = cmd.getDiskCharacteristics();
 
         VDI vdi = null;
         Connection conn = getConnection();

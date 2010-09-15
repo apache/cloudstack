@@ -89,7 +89,7 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
     public List<LoadBalancerVO> listByIpAddress(String ipAddress) {
         SearchCriteria<LoadBalancerVO> sc = ListByIp.create();
         sc.setParameters("ipAddress", ipAddress);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
@@ -97,7 +97,7 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
         SearchCriteria<LoadBalancerVO> sc = IpAndPublicPortSearch.create();
         sc.setParameters("ipAddress", ipAddress);
         sc.setParameters("publicPort", publicPort);
-        return findOneActiveBy(sc);
+        return findOneBy(sc);
     }
 
     @Override
@@ -105,6 +105,6 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
         SearchCriteria<LoadBalancerVO> sc = AccountAndNameSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("name", name);
-        return findOneActiveBy(sc);
+        return findOneBy(sc);
     }
 }

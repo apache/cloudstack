@@ -136,7 +136,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     public List<VMInstanceVO> findVMInstancesLike(String name) {
         SearchCriteria<VMInstanceVO> sc = NameLikeSearch.create();
         sc.setParameters("name", "%" + name + "%");
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
@@ -180,7 +180,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<VMInstanceVO> sc = HostSearch.create();
         sc.setParameters("host", hostid);
 
-        return listActiveBy(sc);
+        return listBy(sc);
     }
     
     @Override
@@ -188,7 +188,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<VMInstanceVO> sc = LastHostSearch.create();
         sc.setParameters("lastHost", hostId);
         
-        return listActiveBy(sc);
+        return listBy(sc);
 	}
 
     @Override
@@ -196,7 +196,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<VMInstanceVO> sc = ZoneSearch.create();
         sc.setParameters("zone", zoneId);
 
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
@@ -204,7 +204,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<VMInstanceVO> sc = ZoneVmTypeSearch.create();
         sc.setParameters("zone", zoneId);
         sc.setParameters("type", type.toString());
-        return listActiveBy(sc);
+        return listBy(sc);
     }
     
     
@@ -216,7 +216,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         sc.setParameters("template", templateId);
         sc.setParameters("state", State.Expunging);
 
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
@@ -255,7 +255,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<VMInstanceVO> sc = HostIdTypesSearch.create();
         sc.setParameters("hostid", hostid);
         sc.setParameters("types", (Object[]) types);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
@@ -264,14 +264,14 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         sc.setParameters("hostid", hostid);
         sc.setParameters("types", (Object[]) types);
         sc.setParameters("states", new Object[] {State.Destroyed, State.Stopped, State.Expunging}); 
-        return listActiveBy(sc);
+        return listBy(sc);
     }
     
     @Override
     public List<VMInstanceVO> listByTypes(Type... types) {
         SearchCriteria<VMInstanceVO> sc = TypesSearch.create();
         sc.setParameters("types", (Object[]) types);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
@@ -279,7 +279,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<VMInstanceVO> sc = IdTypesSearch.create();
         sc.setParameters("id", id);
         sc.setParameters("types", (Object[]) types);
-        return findOneBy(sc);
+        return findOneIncludingRemovedBy(sc);
     }
 
    

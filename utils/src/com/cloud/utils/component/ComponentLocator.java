@@ -359,6 +359,8 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
                     instance = locator.getManager(fc);
                 } else if (GenericDao.class.isAssignableFrom(fc)) {
                     instance = locator.getDao(fc);
+                } else if (Adapters.class.isAssignableFrom(fc)) {
+                    instance = locator.getAdapters(inject.adapter());
                 }
         
                 if (instance == null) {
@@ -487,6 +489,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         }
     }
 
+    @Override
     public String getParentName() {
         return _parentLocator != null ? _parentLocator.getName() : "None";
     }
@@ -499,6 +502,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         return (T)createInstance(clazz, true, args);
     }
     
+    @Override
     public Map<String, List<String>> getAdapters() {
         HashMap<String, List<String>> result = new HashMap<String, List<String>>();
         for (Map.Entry<String, Adapters<? extends Adapter>> entry : _adapterMap.entrySet()) {
@@ -522,6 +526,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         return parentResults;
     }
 
+    @Override
     public Collection<String> getManagers() {
         Collection<String> names = _parentLocator != null ? _parentLocator.getManagers() : new HashSet<String>();
         for (Map.Entry<String, Info<Manager>> entry : _managerMap.entrySet()) {
@@ -530,6 +535,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         return names;
     }
 
+    @Override
     public Collection<String> getDaos() {
         Collection<String> names = _parentLocator != null ? _parentLocator.getDaos() : new HashSet<String>();
         for (Map.Entry<String, Info<GenericDao<?, ?>>> entry : _daoMap.entrySet()) {

@@ -721,7 +721,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         return _entityBeanType;
     }
 
-    protected T findOneBy(final SearchCriteria<T> sc) {
+    protected T findOneIncludingRemovedBy(final SearchCriteria<T> sc) {
         Filter filter = new Filter(1);
         List<T> results = searchIncludingRemoved(sc, filter, null, false);
         assert results.size() <= 1 : "Didn't the limiting worked?";
@@ -729,34 +729,34 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @DB(txn=false)
-    protected T findOneActiveBy(final SearchCriteria<T> sc) {
+    protected T findOneBy(final SearchCriteria<T> sc) {
         if (_removed != null) {
             sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
         }
-        return findOneBy(sc);
-    }
-
-    @DB(txn=false)
-    protected List<T> listActiveBy(final SearchCriteria<T> sc, final Filter filter) {
-        if (_removed != null) {
-            sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
-        }
-        return listBy(sc, filter);
-    }
-
-    @DB(txn=false)
-    protected List<T> listActiveBy(final SearchCriteria<T> sc) {
-        return listActiveBy(sc, null);
+        return findOneIncludingRemovedBy(sc);
     }
 
     @DB(txn=false)
     protected List<T> listBy(final SearchCriteria<T> sc, final Filter filter) {
-        return searchIncludingRemoved(sc, filter, null, false);
+        if (_removed != null) {
+            sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
+        }
+        return listIncludingRemovedBy(sc, filter);
     }
 
     @DB(txn=false)
     protected List<T> listBy(final SearchCriteria<T> sc) {
         return listBy(sc, null);
+    }
+
+    @DB(txn=false)
+    protected List<T> listIncludingRemovedBy(final SearchCriteria<T> sc, final Filter filter) {
+        return searchIncludingRemoved(sc, filter, null, false);
+    }
+
+    @DB(txn=false)
+    protected List<T> listIncludingRemovedBy(final SearchCriteria<T> sc) {
+        return listIncludingRemovedBy(sc, null);
     }
 
     @Override @DB(txn=false)

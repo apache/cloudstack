@@ -45,7 +45,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         SearchCriteria<ClusterVO> sc = PodSearch.create();
         sc.setParameters("pod", podId);
         
-        return listActiveBy(sc);
+        return listBy(sc);
     }
     
     @Override
@@ -54,6 +54,6 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         sc.setParameters("pod", podId);
         sc.setParameters("name", name);
         
-        return findOneActiveBy(sc);
+        return findOneBy(sc);
     }
 }

@@ -75,41 +75,41 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
 	    SearchCriteria<UserVO> sc = UsernamePasswordSearch.create();
 	    sc.setParameters("username", username);
 	    sc.setParameters("password", password);
-	    return findOneActiveBy(sc);
+	    return findOneBy(sc);
 	}
 	
 	public List<UserVO> listByAccount(long accountId) {
 	    SearchCriteria<UserVO> sc = AccountIdSearch.create();
 	    sc.setParameters("account", accountId);
-	    return listActiveBy(sc, null);
+	    return listBy(sc, null);
 	}
 
 	@Override
 	public UserVO getUser(String username) {
 	    SearchCriteria<UserVO> sc = UsernameSearch.create();
 	    sc.setParameters("username", username);
-	    return findOneActiveBy(sc);
+	    return findOneBy(sc);
 	}
 
     @Override
     public UserVO getUser(long userId) {
         SearchCriteria<UserVO> sc = UserIdSearch.create();
         sc.setParameters("id", userId);
-        return findOneActiveBy(sc);
+        return findOneBy(sc);
     }
 
 	@Override
 	public List<UserVO> findUsersLike(String username) {
         SearchCriteria<UserVO> sc = UsernameLikeSearch.create();
         sc.setParameters("username", "%" + username + "%");
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 	
     @Override
     public UserVO findUserBySecretKey(String secretKey) {
         SearchCriteria<UserVO> sc = SecretKeySearch.create();
         sc.setParameters("secretKey", secretKey);
-        return findOneActiveBy(sc);
+        return findOneBy(sc);
     }
     
     @Override

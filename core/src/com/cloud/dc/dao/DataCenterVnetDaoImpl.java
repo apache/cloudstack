@@ -43,14 +43,14 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     public List<DataCenterVnetVO> listAllocatedVnets(long dcId) {
     	SearchCriteria<DataCenterVnetVO> sc = DcSearchAllocated.create();
     	sc.setParameters("dc", dcId);
-    	return listActiveBy(sc);
+    	return listBy(sc);
     }
     
     public List<DataCenterVnetVO> findVnet(long dcId, String vnet) {
     	SearchCriteria<DataCenterVnetVO> sc = VnetDcSearch.create();;
     	sc.setParameters("dc", dcId);
     	sc.setParameters("vnet", vnet);
-    	return listActiveBy(sc);
+    	return listBy(sc);
     }
     
     public void add(long dcId, int start, int end) {
@@ -114,7 +114,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         sc.setParameters("dc", dcId);
         sc.setParameters("account", accountId);
 
-        DataCenterVnetVO vo = findOneBy(sc);
+        DataCenterVnetVO vo = findOneIncludingRemovedBy(sc);
         if (vo == null) {
             return;
         }

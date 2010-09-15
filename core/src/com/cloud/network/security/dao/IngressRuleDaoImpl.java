@@ -73,7 +73,7 @@ public class IngressRuleDaoImpl extends GenericDaoBase<IngressRuleVO, Long> impl
     public List<IngressRuleVO> listByNetworkGroupId(long networkGroupId) {
         SearchCriteria<IngressRuleVO> sc = networkGroupIdSearch.create();
         sc.setParameters("networkGroupId", networkGroupId);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     public int deleteByNetworkGroup(long networkGroupId) {
@@ -86,7 +86,7 @@ public class IngressRuleDaoImpl extends GenericDaoBase<IngressRuleVO, Long> impl
 	public List<IngressRuleVO> listByAllowedNetworkGroupId(long networkGroupId) {
 		 SearchCriteria<IngressRuleVO> sc = allowedNetworkGroupIdSearch.create();
 		 sc.setParameters("allowedNetworkId", networkGroupId);
-		 return listActiveBy(sc);
+		 return listBy(sc);
 	}
 
 	@Override
@@ -98,7 +98,7 @@ public class IngressRuleDaoImpl extends GenericDaoBase<IngressRuleVO, Long> impl
 		sc.setParameters("startPort", startPort);
 		sc.setParameters("endPort", endPort);
 		sc.setParameters("cidr", cidr);
-		return findOneBy(sc);
+		return findOneIncludingRemovedBy(sc);
 	}
 
 	@Override
@@ -109,7 +109,7 @@ public class IngressRuleDaoImpl extends GenericDaoBase<IngressRuleVO, Long> impl
 		sc.setParameters("startPort", startPort);
 		sc.setParameters("endPort", endPort);
 		sc.setJoinParameters("groupName", "groupName", networkGroup);
-		return findOneBy(sc);
+		return findOneIncludingRemovedBy(sc);
 	}
 
 	@Override
@@ -161,6 +161,6 @@ public class IngressRuleDaoImpl extends GenericDaoBase<IngressRuleVO, Long> impl
 		sc.setParameters("endPort", endPort);
 		sc.setParameters("allowedNetworkId", allowedGroupId);
 		
-        return findOneBy(sc);
+        return findOneIncludingRemovedBy(sc);
 	}
 }

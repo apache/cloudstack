@@ -26,6 +26,7 @@ import com.cloud.async.executor.LoadBalancerParam;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.VlanVO;
+import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
@@ -36,6 +37,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -213,15 +215,17 @@ public interface NetworkManager extends Manager {
      */
     List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat);
     
-    NetworkConfigurationVO setupNetworkProfile(AccountVO account, NetworkOfferingVO offering);
-    NetworkConfigurationVO setupNetworkProfile(AccountVO account, NetworkOfferingVO offering, Map<String, String> params);
-    List<NetworkConfigurationVO> setupNetworkProfiles(AccountVO account, List<NetworkOfferingVO> offerings);
+    NetworkConfigurationVO setupNetworkProfile(AccountVO account, NetworkOfferingVO offering, DeploymentPlan plan);
+    NetworkConfigurationVO setupNetworkProfile(AccountVO account, NetworkOfferingVO offering, Map<String, String> params, DeploymentPlan plan);
+    List<NetworkConfigurationVO> setupNetworkProfiles(AccountVO account, List<NetworkOfferingVO> offerings, DeploymentPlan plan);
     
     List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames);
     
-    <K extends VMInstanceVO> List<NicVO> allocate(K vm, List<Pair<NetworkConfigurationVO, NicVO>> networks) throws InsufficientCapacityException;
+    <K extends VMInstanceVO> List<NicProfile> allocate(K vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException;
 
     <K extends VMInstanceVO> List<NicTO> prepare(K vm);
     
     <K extends VMInstanceVO> void create(K vm);
+    
+    <K extends VMInstanceVO> List<NicVO> getNics(K vm);
 }

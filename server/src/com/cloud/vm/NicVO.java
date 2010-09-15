@@ -17,6 +17,8 @@
  */
 package com.cloud.vm;
 
+import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -71,16 +73,19 @@ public class NicVO implements Nic {
     State state;
     
     @Column(name="name")
-    String conciergeName;
+    String reserver;
     
     @Column(name="reservation_id")
     String reservationId;
     
     @Column(name="device_id")
     int deviceId;
+    
+    @Column(name="update_time")
+    Date updateTime;
 
-    public NicVO(String conciergeName, long instanceId, long profileId) {
-        this.conciergeName = conciergeName;
+    public NicVO(String reserver, long instanceId, long profileId) {
+        this.reserver = reserver;
         this.instanceId = instanceId;
         this.networkProfileId = profileId;
         this.state = State.Allocated;
@@ -129,24 +134,17 @@ public class NicVO implements Nic {
     }
     
     @Override
-    public long getDeviceId() {
+    public int getDeviceId() {
         return deviceId;
     }
     
-    public String getConciergeName() {
-        return conciergeName;
-    }
-    
+    @Override
     public String getReservationId() {
         return reservationId;
     }
     
     public void setReservationId(String id) {
         this.reservationId = id;
-    }
-    
-    public void setConciergeName(String conciergeName) {
-        this.conciergeName = conciergeName;
     }
     
     public void setDeviceId(int deviceId) {
@@ -160,5 +158,29 @@ public class NicVO implements Nic {
     
     public void setMode(Mode mode) {
         this.mode = mode;
+    }
+
+    @Override
+    public String getReserver() {
+        return reserver;
+    }
+    
+    public void setReserver(String reserver) {
+        this.reserver = reserver;
+    }
+
+    @Override
+    public int getExpectedReservationInterval() {
+        return -1;
+    }
+
+    @Override
+    public int getExpectedReleaseInterval() {
+        return -1;
+    }
+
+    @Override
+    public Date getUpdateTime() {
+        return updateTime;
     }
 }

@@ -401,7 +401,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	checkPodAttributes(podId, newPodName, pod.getDataCenterId(), gateway, cidr, startIp, endIp, checkForDuplicates);
     	
     	String cidrAddress = getCidrAddress(cidr);
-    	long cidrSize = getCidrSize(cidr);
+    	int cidrSize = getCidrSize(cidr);
     	
     	if (startIp != null && endIp == null) {
     		endIp = NetUtils.getIpRangeEndIpFromCidr(cidrAddress, cidrSize);
@@ -457,7 +457,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	checkPodAttributes(-1, podName, zoneId, gateway, cidr, startIp, endIp, true);
 		
 		String cidrAddress = getCidrAddress(cidr);
-		long cidrSize = getCidrSize(cidr);
+		int cidrSize = getCidrSize(cidr);
 		
 		if (startIp != null) {
 			if (endIp == null) {
@@ -1562,9 +1562,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		return cidrPair[0];
 	}
 	
-	private long getCidrSize(String cidr) {
+	private int getCidrSize(String cidr) {
 		String[] cidrPair = cidr.split("\\/");
-		return Long.parseLong(cidrPair[1]);
+		return Integer.parseInt(cidrPair[1]);
 	}
 	
 	private String getCidrAddress(long podId) {

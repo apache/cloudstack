@@ -28,7 +28,7 @@ public interface NetworkConfiguration {
 
     String getCidr();
 
-    void setCidr(String cidr);
+    public long getDataCenterId();
     
     long getNetworkOfferingId();
 }

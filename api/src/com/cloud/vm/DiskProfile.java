@@ -25,7 +25,7 @@ import com.cloud.storage.Volume;
  * and resources to allocate and create disks.  There object is immutable once
  * it has been created.
  */
-public class DiskCharacteristics {
+public class DiskProfile {
     private long size;
     private String[] tags;
     private Volume.VolumeType type;
@@ -36,10 +36,10 @@ public class DiskCharacteristics {
     private Long templateId;
     private long volumeId;
     
-    protected DiskCharacteristics() {
+    protected DiskProfile() {
     }
     
-    public DiskCharacteristics(long volumeId, Volume.VolumeType type, String name, long diskOfferingId, long size, String[] tags, boolean useLocalStorage, boolean recreatable, Long templateId) {
+    public DiskProfile(long volumeId, Volume.VolumeType type, String name, long diskOfferingId, long size, String[] tags, boolean useLocalStorage, boolean recreatable, Long templateId) {
         this.type = type;
         this.name = name;
         this.size = size;

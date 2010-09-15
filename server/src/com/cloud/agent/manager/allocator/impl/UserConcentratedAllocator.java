@@ -56,7 +56,7 @@ import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VmCharacteristics;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -352,7 +352,7 @@ public class UserConcentratedAllocator implements PodAllocator {
     }
 
     @Override
-    public Pod allocateTo(VmCharacteristics vm, DataCenter dc, Set<? extends Pod> avoids) {
+    public Pod allocateTo(VirtualMachineProfile vm, DataCenter dc, Set<? extends Pod> avoids) {
         return null;
     }
 }

@@ -41,7 +41,7 @@ import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VmCharacteristics;
+import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=HostAllocator.class)
 public class RecreateHostAllocator extends FirstFitRoutingAllocator {
@@ -53,7 +53,7 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
     @Inject AgentManager _agentMgr;
     
     @Override
-    public Host allocateTo(VmCharacteristics vm, ServiceOffering offering, Host.Type type, DataCenterVO dc, HostPodVO pod,
+    public Host allocateTo(VirtualMachineProfile vm, ServiceOffering offering, Host.Type type, DataCenterVO dc, HostPodVO pod,
     		Long clusterId, VMTemplateVO template, Set<Host> avoid) {
         Host host = super.allocateTo(vm, offering, type, dc, pod, clusterId, template, avoid);
         if (host != null) {

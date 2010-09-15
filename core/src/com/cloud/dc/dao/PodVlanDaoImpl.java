@@ -42,7 +42,7 @@ public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements G
     public List<PodVlanVO> listAllocatedVnets(long podId) {
     	SearchCriteria<PodVlanVO> sc = PodSearchAllocated.create();
     	sc.setParameters("podId", podId);
-    	return listActiveBy(sc);
+    	return listBy(sc);
     }
     
     public void add(long podId, int start, int end) {
@@ -106,7 +106,7 @@ public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements G
         sc.setParameters("podId", podId);
         sc.setParameters("account", accountId);
 
-        PodVlanVO vo = findOneBy(sc);
+        PodVlanVO vo = findOneIncludingRemovedBy(sc);
         if (vo == null) {
             return;
         }

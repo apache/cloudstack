@@ -113,7 +113,8 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 		PoolTemplateSearch.done();
 	}
 	
-	public void update(VMTemplateHostVO instance) {
+	@Override
+    public void update(VMTemplateHostVO instance) {
         Transaction txn = Transaction.currentTxn();
 		PreparedStatement pstmt = null;
 		try {
@@ -138,7 +139,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 	public List<VMTemplateHostVO> listByHostId(long id) {
 	    SearchCriteria<VMTemplateHostVO> sc = HostSearch.create();
 	    sc.setParameters("host_id", id);
-	    return listBy(sc);
+	    return listIncludingRemovedBy(sc);
 	}
 
 	@Override
@@ -146,14 +147,14 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 	    SearchCriteria<VMTemplateHostVO> sc = TemplateSearch.create();
 	    sc.setParameters("template_id", templateId);
 	    sc.setParameters("destroyed", false);
-	    return listBy(sc);
+	    return listIncludingRemovedBy(sc);
 	}
 	
 	@Override
 	public List<VMTemplateHostVO> listByOnlyTemplateId(long templateId) {
 	    SearchCriteria<VMTemplateHostVO> sc = TemplateSearch.create();
 	    sc.setParameters("template_id", templateId);	    
-	    return listBy(sc);
+	    return listIncludingRemovedBy(sc);
 	}
 
 	@Override
@@ -161,17 +162,15 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 		SearchCriteria<VMTemplateHostVO> sc = HostTemplateSearch.create();
 	    sc.setParameters("host_id", hostId);
 	    sc.setParameters("template_id", templateId);
-	    return findOneBy(sc);
+	    return findOneIncludingRemovedBy(sc);
 	}
 
-
-	
 	@Override
 	public List<VMTemplateHostVO> listByTemplateStatus(long templateId, VMTemplateHostVO.Status downloadState) {
 		SearchCriteria<VMTemplateHostVO> sc = TemplateStatusSearch.create();
 		sc.setParameters("template_id", templateId);
 		sc.setParameters("download_state", downloadState.toString());
-		return listBy(sc);
+		return listIncludingRemovedBy(sc);
 	}
 	
 	@Override
@@ -257,7 +256,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 	    sc.setParameters("host_id", hostId);
 	    sc.setParameters("template_id", templateId);
 	    sc.setParameters("pool_id", poolId);
-	    return findOneBy(sc);
+	    return findOneIncludingRemovedBy(sc);
 	}
 
 	@Override
@@ -265,7 +264,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 		SearchCriteria<VMTemplateHostVO> sc = HostTemplateSearch.create();
 	    sc.setParameters("host_id", hostId);
 	    sc.setParameters("template_id", templateId);
-	    return listBy(sc);
+	    return listIncludingRemovedBy(sc);
 	}
 
 	@Override
@@ -273,7 +272,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 		SearchCriteria<VMTemplateHostVO> sc = PoolTemplateSearch.create();
 	    sc.setParameters("pool_id", poolId);
 	    sc.setParameters("template_id", templateId);
-	    return listBy(sc);
+	    return listIncludingRemovedBy(sc);
 	}
 	
 	@Override
@@ -281,7 +280,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 		SearchCriteria<VMTemplateHostVO> sc = HostDestroyedSearch.create();
 		sc.setParameters("host_id", hostId);
 		sc.setParameters("destroyed", true);
-		return listBy(sc);
+		return listIncludingRemovedBy(sc);
 	}
 
 	@Override
@@ -290,7 +289,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 	    sc.setParameters("host_id", hostId);
 	    sc.setParameters("template_id", templateId);
 	    if (!lock)
-	    	return findOneBy(sc);
+	    	return findOneIncludingRemovedBy(sc);
 	    else
 	    	return lock(sc, true);
 	}

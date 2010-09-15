@@ -112,26 +112,26 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     public List<AccountVO> findAccountsLike(String accountName) {
         SearchCriteria<AccountVO> sc = createSearchCriteria();
         sc.addAnd("accountName", SearchCriteria.Op.LIKE, "%"+accountName+"%");
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
     public Account findActiveAccount(String accountName, Long domainId) {
         SearchCriteria<AccountVO> sc = AccountNameSearch.create("accountName", accountName);
         sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        return findOneActiveBy(sc);
+        return findOneBy(sc);
     }
 
     @Override
     public Account findAccount(String accountName, Long domainId) {
         SearchCriteria<AccountVO> sc = AccountNameSearch.create("accountName", accountName);
         sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        return findOneBy(sc);
+        return findOneIncludingRemovedBy(sc);
     }
     
     public Account findActiveAccountByName(String accountName) {
     	SearchCriteria<AccountVO> sc = AccountNameSearch.create("accountName", accountName);
-        return findOneActiveBy(sc);
+        return findOneBy(sc);
     }
 
     public List<AccountVO> findActiveAccounts(Long maxAccountId, Filter filter) {
@@ -140,7 +140,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         SearchCriteria<AccountVO> sc = createSearchCriteria();
         sc.addAnd("id", SearchCriteria.Op.LTEQ, maxAccountId);
 
-        return listActiveBy(sc, filter);
+        return listBy(sc, filter);
     }
 
     public List<AccountVO> findRecentlyDeletedAccounts(Long maxAccountId, Date earliestRemovedDate, Filter filter) {
@@ -152,7 +152,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         sc.addAnd("removed", SearchCriteria.Op.NNULL);
         sc.addAnd("removed", SearchCriteria.Op.GTEQ, earliestRemovedDate);
 
-        return listBy(sc, filter);
+        return listIncludingRemovedBy(sc, filter);
     }
 
     public List<AccountVO> findNewAccounts(Long minAccountId, Filter filter) {
@@ -161,7 +161,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         SearchCriteria<AccountVO> sc = createSearchCriteria();
         sc.addAnd("id", SearchCriteria.Op.GT, minAccountId);
 
-        return listBy(sc, filter);
+        return listIncludingRemovedBy(sc, filter);
     }
 
 	@Override

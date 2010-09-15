@@ -172,14 +172,14 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
     public List<IPAddressVO> listByAccount(long accountId) {
     	SearchCriteria<IPAddressVO> sc = AccountSearch.create();
         sc.setParameters("accountId", accountId);
-        return listBy(sc);
+        return listIncludingRemovedBy(sc);
     }
 	
 	public List<IPAddressVO> listByDcIdIpAddress(long dcId, String ipAddress) {
 		SearchCriteria<IPAddressVO> sc = DcIpSearch.create();
 		sc.setParameters("dataCenterId", dcId);
 		sc.setParameters("ipAddress", ipAddress);
-		return listBy(sc);
+		return listIncludingRemovedBy(sc);
 	}
 	
 	@Override @DB

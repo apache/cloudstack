@@ -18,19 +18,13 @@
 package com.cloud.vm;
 
 import com.cloud.network.Network.Mode;
+import com.cloud.resource.Resource;
 
 
 /**
  * Nic represents one nic on the VM.
  */
-public interface Nic {
-    enum State {
-        Allocated,
-        AcquireIp,
-        IpAcquired,
-    }
-
-    State getState();
+public interface Nic extends Resource {
 
     String getIp4Address();
     
@@ -42,16 +36,11 @@ public interface Nic {
     long getNetworkProfileId();
     
     /**
-     * @return the unique id to reference this nic.
-     */
-    long getId();
-    
-    /**
      * @return the vm instance id that this nic belongs to.
      */
     long getInstanceId();
     
-    long getDeviceId();
+    int getDeviceId();
     
     Mode getMode();
 }
