@@ -183,7 +183,30 @@ function templateJsonToDetailsTab(jsonObj) {
     if(jsonObj.size != null)
 	    $detailsTab.find("#size").text(convertBytes(parseInt(jsonObj.size)));        
     
-    setDateField(jsonObj.created, $detailsTab.find("#created"));	    
+    setDateField(jsonObj.created, $detailsTab.find("#created"));	
+    
+    //actions ***
+    var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
+    $actionMenu.find("#action_list").empty();
+    
+    // action Edit, Copy, Create VM 			
+	if ((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.id==DomRTemplateId || jsonObj.isready == "false") {
+		//template.find("#template_edit_container, #template_copy_container, #template_create_vm_container").hide(); 
+		$("edit_button").hide();		
+    }
+    else {
+        $("edit_button").show();
+        //buildActionLinkForDetailsTab("Copy Template", templateActionMap, $actionMenu, templateListAPIMap);			
+        //buildActionLinkForDetailsTab("Create VM", templateActionMap, $actionMenu, templateListAPIMap);			
+    }
+	
+	// action Delete 			
+	if (((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.id==DomRTemplateId) || (jsonObj.isready == "false" && jsonObj.templatestatus != null && jsonObj.templatestatus.indexOf("% Downloaded") != -1)) {
+		//template.find("#template_delete_container").hide();
+    }
+    else {
+        buildActionLinkForDetailsTab("Delete Template", templateActionMap, $actionMenu, templateListAPIMap);	
+    }
 }
 
 //setIconByOsType() is shared by template page and ISO page
@@ -197,3 +220,59 @@ function setIconByOsType(osType, $field) {
 	else 
 		$field.attr("src", "images/midmenuicon_template_linux.png");
 }
+
+function templateClearRightPanel() {       
+    var $detailsTab = $("#right_panel_content #tab_content_details");   
+    $detailsTab.data("jsonObj", null);
+    $detailsTab.find("#id").text("");
+    $detailsTab.find("#zonename").text("");
+    
+    $detailsTab.find("#name").text("");
+    $detailsTab.find("#name_edit").val("");
+    
+    $detailsTab.find("#displaytext").text("");
+    $detailsTab.find("#displaytext_edit").val("");
+        
+	$detailsTab.find("#status").text("");    
+    
+    setBooleanField(null, $detailsTab.find("#passwordenabled"));	
+    $detailsTab.find("#passwordenabled_edit").val(null);
+    
+    setBooleanField(null, $detailsTab.find("#ispublic"));	
+    $detailsTab.find("#ispublic_edit").val(null);
+    
+    setBooleanField(null, $detailsTab.find("#isfeatured"));
+    $detailsTab.find("#isfeatured_edit").val(null);
+    
+    setBooleanField(null, $detailsTab.find("#crossZones"));
+    
+    $detailsTab.find("#ostypename").text("");
+    $detailsTab.find("#ostypename_edit").val(null);    
+    
+    $detailsTab.find("#account").text("");  
+	$detailsTab.find("#size").text("");  
+    $detailsTab.find("#created").text("");      
+}
+
+var templateActionMap = {  
+    "Delete Template": {
+        api: "deleteTemplate",            
+        isAsyncJob: true,
+        asyncJobResponse: "deletetemplateresponse",
+        inProcessText: "Deleting Template....",
+        afterActionSeccessFn: function(jsonObj) {           
+            var $midmenuItem1 = $("#midmenuItem_"+jsonObj.id);
+            $midmenuItem1.remove();
+            clearRightPanel();
+            templateClearRightPanel();
+        }
+    }
+}   
+
+var templateListAPIMap = {
+    listAPI: "listTemplates&templatefilter=self",
+    listAPIResponse: "listtemplatesresponse",
+    listAPIResponseObj: "template"
+}; 
+
+var DomRTemplateId = 1;

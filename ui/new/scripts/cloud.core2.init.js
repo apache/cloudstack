@@ -29,12 +29,22 @@ $(document).ready(function() {
             clearLeftMenu();
             clearMidMenu();
             
-            $("#right_panel").load(rightPanelJSP, function(){   
-                
+            $("#right_panel").load(rightPanelJSP, function(){                   
                 $("#right_panel_content #tab_content_details #action_message_box #close_button").bind("click", function(event){    
                     $(this).parent().hide();
                     return false;
-                });                
+                });  
+                                     
+                var $actionLink = $("#right_panel_content #tab_content_details #action_link");
+	            $actionLink.bind("mouseover", function(event) {	    
+                    $(this).find("#action_menu").show();    
+                    return false;
+                });
+                $actionLink.bind("mouseout", function(event) {       
+                    $(this).find("#action_menu").hide();    
+                    return false;
+                });	   
+                              
                 afterLoadRightPanelJSP();    
                             
                 $.ajax({
