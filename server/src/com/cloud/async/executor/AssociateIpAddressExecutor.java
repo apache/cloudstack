@@ -62,7 +62,7 @@ public class AssociateIpAddressExecutor extends BaseAsyncJobExecutor {
 		} else {
 	    	try {
 				String ipAddress = managementServer.associateIpAddress(param.getUserId(), param.getAccountId(), 
-						param.getDomainId(), param.getZoneId(), false);
+						param.getDomainId(), param.getZoneId());
 				asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, 
 					composeResultObject(managementServer, param, ipAddress));
 			} catch (ResourceAllocationException e) {

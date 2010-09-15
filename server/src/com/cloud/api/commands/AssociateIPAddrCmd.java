@@ -71,8 +71,6 @@ public class AssociateIPAddrCmd extends BaseCmd {
         Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
         String accountName = (String)params.get(BaseCmd.Properties.ACCOUNT.getName());
         Long domainId = (Long)params.get(BaseCmd.Properties.DOMAIN_ID.getName());
-        boolean oneToOneNat = false;
-        oneToOneNat = (Boolean)params.get(BaseCmd.Properties.ONE_TO_ONE_NAT.getName()); 
         String newIpAddr = null;
         String errorDesc = null;
         Long accountId = null;
@@ -109,7 +107,7 @@ public class AssociateIPAddrCmd extends BaseCmd {
         }
 
         try {
-            newIpAddr = getManagementServer().associateIpAddress(userId.longValue(), accountId.longValue(), domainId.longValue(), zoneId.longValue(), oneToOneNat);
+            newIpAddr = getManagementServer().associateIpAddress(userId.longValue(), accountId.longValue(), domainId.longValue(), zoneId.longValue());
         } catch (ResourceAllocationException rae) {
         	if (rae.getResourceType().equals("vm")) throw new ServerApiException (BaseCmd.VM_ALLOCATION_ERROR, rae.getMessage());
         	else if (rae.getResourceType().equals("ip")) throw new ServerApiException (BaseCmd.IP_ALLOCATION_ERROR, rae.getMessage());

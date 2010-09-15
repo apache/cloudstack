@@ -1288,7 +1288,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
 
     protected void assignPublicIpAddress(final String vmName, final String privateIpAddress, final String publicIpAddress, final boolean add, final boolean firstIP,
-            final boolean sourceNat, final String vlanId, final String vlanGateway, final String vlanNetmask, final String vifMacAddress, final boolean oneToOneNat) throws InternalErrorException {
+            final boolean sourceNat, final String vlanId, final String vlanGateway, final String vlanNetmask, final String vifMacAddress) throws InternalErrorException {
 
         try {
             Connection conn = getConnection();
@@ -1405,7 +1405,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     protected Answer execute(final IPAssocCommand cmd) {
         try {
             assignPublicIpAddress(cmd.getRouterName(), cmd.getRouterIp(), cmd.getPublicIp(), cmd.isAdd(), cmd.isFirstIP(), cmd.isSourceNat(), cmd.getVlanId(),
-                    cmd.getVlanGateway(), cmd.getVlanNetmask(), cmd.getVifMacAddress(), cmd.isOneToOneNat());
+                    cmd.getVlanGateway(), cmd.getVlanNetmask(), cmd.getVifMacAddress());
         } catch (InternalErrorException e) {
             return new Answer(cmd, false, e.getMessage());
         }
