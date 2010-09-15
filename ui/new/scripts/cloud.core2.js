@@ -538,6 +538,7 @@ function clearRightPanel() {
 }
     
 var selected_leftmenu_id = null; 
+var selected_midmenu_id = null;
  
     
 

@@ -1,4 +1,33 @@
 function clickInstanceGroupHeader($arrowIcon) {   
+    
+    //midmenu needs multiple-selection for actions like start VM, stop VM, reboot VM.
+    $("#midmenu_container").selectable({
+        selecting: function(event, ui) {	 	                               
+            if(ui.selecting.id.indexOf("midmenuItem") != -1) {                     
+                var $midmenuItem1 = $("#"+ui.selecting.id);
+                if($midmenuItem1.find("#content").hasClass("inaction") == false) { //only items not in action are allowed to be selected
+                    var id =$midmenuItem1.data("jsonObj").id;                
+                    selectedItemsInMidMenu[id] = $midmenuItem1; 
+                    $midmenuItem1.find("#content").addClass("selected");   
+                }                               
+                clearRightPanel();      
+                var toRightPanelFn = $midmenuItem1.data("toRightPanelFn");
+                toRightPanelFn($midmenuItem1);	          
+            }                                             
+        },
+        unselecting: function(event, ui) {
+            if(ui.unselecting.id.indexOf("midmenuItem") != -1) {                     
+                var $midmenuItem1 = $("#"+ui.unselecting.id);
+                var id = $midmenuItem1.data("jsonObj").id;
+                if(id in selectedItemsInMidMenu) {                    
+                    delete selectedItemsInMidMenu[id];
+                    $midmenuItem1.find("#content").removeClass("selected"); 
+                }
+            }             
+        }
+    });
+    
+    
     //***** VM Detail (begin) ******************************************************************************
     var $vmPopup
     var $rightPanelHeader;  
