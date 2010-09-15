@@ -281,7 +281,6 @@ public abstract class BaseCmd {
         OS_TYPE_ID("ostypeid", BaseCmd.TYPE_LONG, "osTypeId"),
         OS_TYPE_NAME("ostypename", BaseCmd.TYPE_STRING, "osTypeName"),
         OP("op", BaseCmd.TYPE_STRING, "op"),
-        ONE_TO_ONE_NAT("onetoonenat",BaseCmd.TYPE_BOOLEAN,"oneToOneNat"),
         PAGE("page", BaseCmd.TYPE_INT, "page"),
         PAGESIZE("pagesize", BaseCmd.TYPE_INT, "pagesize"),
         PARENT_ID("parentid", BaseCmd.TYPE_LONG, "parentId"),
