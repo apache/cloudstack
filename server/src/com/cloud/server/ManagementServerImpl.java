@@ -171,7 +171,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
-import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -506,17 +505,6 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public StorageStats getStorageStatistics(long hostId) {
         return _statsCollector.getStorageStats(hostId);
-    }
-    
-    @Override
-    public GuestOSCategoryVO getHostGuestOSCategory(long hostId) {
-    	Long guestOSCategoryID = _agentMgr.getGuestOSCategoryId(hostId);
-    	
-    	if (guestOSCategoryID != null) {
-    		return _guestOSCategoryDao.findById(guestOSCategoryID);
-    	} else {
-    		return null;
-    	}
     }
     
     @Override
@@ -3562,11 +3550,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<UserVmVO> listUserVMsByHostId(long hostId) {
-        return _userVmDao.listByHostId(hostId);
-    }
-
-    @Override
     public List<UserVmVO> searchForUserVMs(ListVMsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Account account = (Account)UserContext.current().getAccountObject();
         Long domainId = cmd.getDomainId();
@@ -6173,11 +6156,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public ClusterVO findClusterById(long clusterId) {
-        return _clusterDao.findById(clusterId);
-    }
-    
-    @Override
     public List<ClusterVO> listClusterByPodId(long podId) {
         return _clusterDao.listByPodId(podId);
     }
@@ -6671,11 +6649,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job);
 	}
 
-	@Override
-	public HostStats getHostStatistics(long hostId) {
-		return _statsCollector.getHostStats(hostId);
-	}
-
     /**
      * {@inheritDoc}
      */
@@ -6684,11 +6657,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _isHypervisorSnapshotCapable;
     }
     
-    @Override
-    public boolean isLocalStorageActiveOnHost(HostVO host) {
-    	return _storageMgr.isLocalStorageActiveOnHost(host);
-    }
-
     @Override
     public List<EventVO> listPendingEvents(int entryTime, int duration) {
         Calendar calMin = Calendar.getInstance();

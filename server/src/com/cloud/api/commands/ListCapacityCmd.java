@@ -29,6 +29,7 @@ import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -116,9 +117,8 @@ public class ListCapacityCmd extends BaseListCmd {
             capacityResponse.setCapacityUsed(summedCapacity.getUsedCapacity());
             capacityResponse.setPodId(summedCapacity.getPodId());
             capacityResponse.setZoneId(summedCapacity.getDataCenterId());
-            // TODO:  implement
-//            capacityResponse.setPodName(podName);
-//            capacityResponse.setZoneName(zoneName);
+            capacityResponse.setPodName(ApiDBUtils.findPodById(summedCapacity.getPodId()).getName());
+            capacityResponse.setZoneName(ApiDBUtils.findZoneById(summedCapacity.getDataCenterId()).getName());
             if (summedCapacity.getTotalCapacity() != 0) {
                 capacityResponse.setPercentUsed(s_percentFormat.format(summedCapacity.getUsedCapacity() / summedCapacity.getTotalCapacity()));
             } else {
@@ -136,7 +136,7 @@ public class ListCapacityCmd extends BaseListCmd {
         Set<Long> poolIdsToIgnore = new HashSet<Long>();
         Criteria c = new Criteria();
         // TODO:  implement
-        List<? extends StoragePoolVO> allStoragePools = getManagementServer().searchForStoragePools(c);
+        List<? extends StoragePoolVO> allStoragePools = ApiDBUtils.searchForStoragePools(c);
         for (StoragePoolVO pool : allStoragePools) {
         	StoragePoolType poolType = pool.getPoolType();
         	if (!(poolType.equals(StoragePoolType.NetworkFilesystem) || poolType.equals(StoragePoolType.IscsiLUN))) {

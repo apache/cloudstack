@@ -106,7 +106,6 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.FirewallRuleVO;
@@ -164,7 +163,6 @@ public interface ManagementServer {
      */
     UserAccount createUser(CreateUserCmd cmd);
 
-    ClusterVO findClusterById(long clusterId);
     List<ClusterVO> listClusterByPodId(long podId);
 
     /**
@@ -299,13 +297,6 @@ public interface ManagementServer {
      */
     StorageStats getStorageStatistics(long hostId);
     
-    /**
-     * Gets the guest OS category for a host
-     * @param hostId
-     * @return guest OS Category
-     */
-    GuestOSCategoryVO getHostGuestOSCategory(long hostId);
-
 	/** Get storage statistics (used/available) for a pool
 	 * @param id pool id
 	 * @return storage statistics
@@ -718,13 +709,6 @@ public interface ManagementServer {
      * @return template-host reference
      */
     VMTemplateHostVO findTemplateHostRef(long templateId, long zoneId);
-    
-    /**
-     * Obtains a list of virtual machines that match the specified host ID.
-     * @param hostId
-     * @return List of UserVMs.
-     */
-    List<UserVmVO> listUserVMsByHostId(long hostId);
     
     /**
      * Obtains a list of virtual machines by the specified search criteria.
@@ -1345,8 +1329,6 @@ public interface ManagementServer {
 	 */
 	long revokeNetworkGroupIngressAsync(Long accountId, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups);
 
-	HostStats getHostStatistics(long hostId);
-	
 	/**
 	 * Is the hypervisor snapshot capable.
 	 * @return True if the hypervisor.type is XenServer
@@ -1361,12 +1343,6 @@ public interface ManagementServer {
 	 */
 	String getStoragePoolTags(long poolId);
 
-	/**
-	 * Checks if a host has running VMs that are using its local storage pool.
-	 * @return true if local storage is active on the host
-	 */
-	boolean isLocalStorageActiveOnHost(HostVO host);
-	
 	public List<PreallocatedLunVO> getPreAllocatedLuns(ListPreallocatedLunsCmd cmd);
 
 	boolean checkLocalStorageConfigVal(); 
