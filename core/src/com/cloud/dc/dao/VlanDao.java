@@ -48,4 +48,6 @@ public interface VlanDao extends GenericDao<VlanVO, Long> {
 	
 	boolean zoneHasDirectAttachUntaggedVlans(long zoneId);
 
+	List<VlanVO> searchForZoneWideVlans(long dcId, String vlanType,String vlanId);
+
 }
