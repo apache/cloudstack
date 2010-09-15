@@ -24,6 +24,9 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.response.SuccessResponse;
+import com.cloud.serializer.SerializerHelper;
 
 @Implementation(method="updateConfiguration", manager=Manager.ConfigManager)
 public class UpdateCfgCmd extends BaseCmd {
@@ -59,27 +62,17 @@ public class UpdateCfgCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//        String name = (String) params.get(BaseCmd.Properties.NAME.getName());
-//        String value = (String) params.get(BaseCmd.Properties.VALUE.getName());
-//        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-//        
-//        if (userId == null) {
-//            userId = Long.valueOf(User.UID_SYSTEM);
-//        }
-//        
-//        try {
-//        	getManagementServer().updateConfiguration(userId, name, value);
-//        } catch (Exception ex) {
-//        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-//        }
-//
-//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), "true"));
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_TEXT.getName(), "Successfully updated configuration value."));
-//        
-//        return returnValues;
-//    }
+    
+    @Override
+    public String getResponse() {
+        SuccessResponse response = new SuccessResponse();
+        Boolean responseObject = (Boolean)getResponseObject();
+      
+        if (responseObject != null) {
+        	response.setSuccess(responseObject);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update config");
+        }
+        return SerializerHelper.toSerializedString(responseObject);
+    }
 }

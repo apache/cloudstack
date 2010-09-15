@@ -182,11 +182,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	saveConfigurationEvent(userId, null, EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, "Successfully edited configuration value.", "name=" + name, "value=" + value);
     }
     
-    public void updateConfiguration(UpdateCfgCmd cmd) throws InvalidParameterValueException, InternalErrorException{
+    public boolean updateConfiguration(UpdateCfgCmd cmd) throws InvalidParameterValueException, InternalErrorException{
     	Long userId = UserContext.current().getUserId();
     	String name = cmd.getName();
     	String value = cmd.getValue();
     	updateConfiguration (userId, name, value);
+    	if (_configDao.getValue(name).equalsIgnoreCase(value))
+    		return true;
+    	else 
+    		return false;
     }
     
     
@@ -387,7 +391,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
     
     @DB
-    public void deletePod(DeletePodCmd cmd) throws InvalidParameterValueException, InternalErrorException {
+    public boolean deletePod(DeletePodCmd cmd) throws InvalidParameterValueException, InternalErrorException {
     	Long podId = cmd.getId();
     	Long userId = 1L;
     	
@@ -403,13 +407,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	
     	HostPodVO pod = _podDao.findById(podId);
     	DataCenterVO zone = _zoneDao.findById(pod.getDataCenterId());
-
-    	_podDao.delete(podId);
     	
-    	// Delete private IP addresses in the pod
-    	_privateIpAddressDao.deleteIpAddressByPod(podId);
-    	
-		saveConfigurationEvent(userId, null, EventTypes.EVENT_POD_DELETE, "Successfully deleted pod with name: " + pod.getName() + " in zone: " + zone.getName() + ".", "podId=" + podId, "dcId=" + zone.getId());
+    	//Delete the pod and private IP addresses in the pod
+    	if (_podDao.delete(podId) && _privateIpAddressDao.deleteIpAddressByPod(podId)) {
+    		saveConfigurationEvent(userId, null, EventTypes.EVENT_POD_DELETE, "Successfully deleted pod with name: " + pod.getName() + " in zone: " + zone.getName() + ".", "podId=" + podId, "dcId=" + zone.getId());
+    		return true;
+    		
+    	} else {
+    		return false;
+    	}
     }
     
     @DB

@@ -25,6 +25,10 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.response.ConfigurationResponse;
+import com.cloud.configuration.ConfigurationVO;
+import com.cloud.serializer.SerializerHelper;
 
 @Implementation(method="addConfig", manager=Manager.ConfigManager)
 public class AddConfigCmd extends BaseCmd {
@@ -92,35 +96,19 @@ public class AddConfigCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-
-    /*
+    
     @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-    	String instance = (String) params.get(BaseCmd.Properties.INSTANCE.getName());
-    	String component = (String) params.get(BaseCmd.Properties.COMPONENT.getName()); 
-    	String category = (String) params.get(BaseCmd.Properties.CATEGORY.getName());
-    	String name = (String) params.get(BaseCmd.Properties.NAME.getName());
-    	String value = (String) params.get(BaseCmd.Properties.VALUE.getName());
-    	String description = (String) params.get(BaseCmd.Properties.DESCRIPTION.getName());
-    	    	
-		try 
-		{
-			boolean status = getManagementServer().addConfig(instance, component, category, name, value, description);
-			List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-			
-			if(status)
-			{	
-				returnValues.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), name));
-				returnValues.add(new Pair<String, Object>(BaseCmd.Properties.VALUE.getName(), value));
-			}
-            
-            return returnValues;
-		}
-		catch (Exception ex) {
-			s_logger.error("Exception adding config value: ", ex);
-			throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add config value : " + ex.getMessage());
-		}
+    public String getResponse() {
+        ConfigurationResponse response = new ConfigurationResponse();
+        ConfigurationVO responseObject = (ConfigurationVO)getResponseObject();
+        if (responseObject != null) {
+            response.setName(responseObject.getName());
+            response.setValue(responseObject.getValue());
+            //TODO - return description and category if needed (didn't return in 2.1 release)
 
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add config");
+        }
+        return SerializerHelper.toSerializedString(responseObject);
     }
-    */
 }

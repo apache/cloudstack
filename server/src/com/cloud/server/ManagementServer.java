@@ -223,8 +223,9 @@ public interface ManagementServer {
      * Enables an account by accountId
      * @param cmd - the enableAccount command defining the accountId to be deleted.
      * @return true if enable was successful, false otherwise
+     * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    boolean enableAccount(EnableAccountCmd cmd) throws InvalidParameterValueException;
+    boolean enableAccount(EnableAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 
     /**
      * Locks an account by accountId.  A locked account cannot access the API, but will still have running VMs/IP addresses allocated/etc.
@@ -235,18 +236,20 @@ public interface ManagementServer {
 
     /**
      * Updates an account name
-     * @param cmd
+     * @param cmd - the parameter containing accountId
      * @return true if update was successful, false otherwise
+     * @throws InvalidParameterValueException, PermissionDeniedException
      */
     
-    boolean updateAccount(UpdateAccountCmd cmd) throws InvalidParameterValueException;
+    boolean updateAccount(UpdateAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 
     /**
      * Enables a user
-     * @param cmd
+     * @param cmd - the command containing userId
      * @return true if enable was successful, false otherwise
+     * @throws InvalidParameterValueException
      */
-    boolean enableUser(EnableUserCmd cmd) throws InvalidParameterValueException;
+    boolean enableUser(EnableUserCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 
     /**
      * Locks a user by userId.  A locked user cannot access the API, but will still have running VMs/IP addresses allocated/etc.

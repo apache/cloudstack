@@ -22,8 +22,11 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.response.SuccessResponse;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
+import com.cloud.serializer.SerializerHelper;
 
 @Implementation(method="deleteDiskOffering", manager=Manager.ConfigManager)
 public class DeleteDiskOfferingCmd extends BaseCmd {
@@ -58,8 +61,14 @@ public class DeleteDiskOfferingCmd extends BaseCmd {
   
     @Override
     public String getResponse() {
-        // There's no specific response for this command, if the command failed an exception would have been thrown.  If we are here, then it succeeded.
-        // Seems like we should return success/true as the response though, so this will probably have to change.
-        return null;
+    	 SuccessResponse response = new SuccessResponse();
+         Boolean responseObject = (Boolean)getResponseObject();
+       
+         if (responseObject != null) {
+         	response.setSuccess(responseObject);
+         } else {
+             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete disk offering");
+         }
+         return SerializerHelper.toSerializedString(responseObject);
     }
 }

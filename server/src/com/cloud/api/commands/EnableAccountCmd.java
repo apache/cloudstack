@@ -22,8 +22,11 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.response.SuccessResponse;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
+import com.cloud.serializer.SerializerHelper;
 
 @Implementation(method="enableAccount", manager=Manager.ManagementServer)
 public class EnableAccountCmd extends BaseCmd {
@@ -63,36 +66,16 @@ public class EnableAccountCmd extends BaseCmd {
         return s_name;
     }
 
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//        Account adminAccount = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-//        Long domainId = (Long)params.get(BaseCmd.Properties.DOMAIN_ID.getName());
-//        String accountName = (String)params.get(BaseCmd.Properties.ACCOUNT.getName());
-//
-//        if ((adminAccount != null) && !getManagementServer().isChildDomain(adminAccount.getDomainId(), domainId)) {
-//            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Failed to enable account " + accountName + " in domain " + domainId + ", permission denied.");
-//        }
-//
-//        Account account = getManagementServer().findActiveAccount(accountName, domainId);
-//        if (account == null) {
-//            throw new ServerApiException (BaseCmd.PARAM_ERROR, "Unable to find active account with name " + accountName + " in domain " + domainId);
-//        }
-//
-//        // don't allow modify system account
-//        if (account.getId().longValue() == Account.ACCOUNT_ID_SYSTEM) {
-//            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "can not enable system account");
-//        }
-//
-//        boolean success = true;
-//        try {
-//            success = getManagementServer().enableAccount(account.getId().longValue());
-//        } catch (Exception ex) {
-//            s_logger.error("error enabling account " + accountName + " in domain " + domainId, ex);
-//            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error enabling account " + accountName + " in domain " + domainId);
-//        }
-//
-//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), Boolean.valueOf(success).toString()));
-//        return returnValues;
-//    }
+    @Override
+    public String getResponse() {
+        SuccessResponse response = new SuccessResponse();
+        Boolean responseObject = (Boolean)getResponseObject();
+      
+        if (responseObject != null) {
+        	response.setSuccess(responseObject);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to enable account");
+        }
+        return SerializerHelper.toSerializedString(responseObject);
+    }
 }

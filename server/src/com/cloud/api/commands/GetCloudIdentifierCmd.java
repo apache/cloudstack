@@ -18,12 +18,17 @@
 
 package com.cloud.api.commands;
 
+import java.util.ArrayList;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.response.CloudIdentifierResponse;
+import com.cloud.serializer.SerializerHelper;
 
 @Implementation(method="getCloudIdentifierResponse", manager=Manager.ManagementServer)
 public class GetCloudIdentifierCmd extends BaseCmd {
@@ -54,19 +59,18 @@ public class GetCloudIdentifierCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-//
-//        ArrayList<String> signedResponse = getManagementServer().getCloudIdentifierResponse(userId);
-//        
-//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//        
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.CLOUD_IDENTIFIER.getName(),signedResponse.get(0)));
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SIGNATURE.getName(),signedResponse.get(1)));
-//        return returnValues;
-//    }
     
+    @Override
+    public String getResponse() {
+        CloudIdentifierResponse response = new CloudIdentifierResponse();
+        ArrayList<String> responseObject = (ArrayList<String>)getResponseObject();
+        if (responseObject != null) {
+            response.setCloudIdentifier(responseObject.get(0));
+            response.setSignature(responseObject.get(1));
 
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add config");
+        }
+        return SerializerHelper.toSerializedString(responseObject);
+    }
 }

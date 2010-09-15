@@ -63,11 +63,11 @@ public interface ConfigurationManager extends Manager {
 	
 	/**
 	 * Updates a configuration entry with a new value
-	 * @param userId
-	 * @param name
-	 * @param value
+	 * @param cmd - the command wrapping name and value parameters
+	 * @return true or false
+	 * @throws InvalidParameterValueException, InternalErrorException
 	 */
-	void updateConfiguration(UpdateCfgCmd cmd) throws InvalidParameterValueException, InternalErrorException;
+	boolean updateConfiguration(UpdateCfgCmd cmd) throws InvalidParameterValueException, InternalErrorException;
 
 	/**
 	 * Creates a new service offering
@@ -107,19 +107,17 @@ public interface ConfigurationManager extends Manager {
 	
 	/**
 	 * Updates a disk offering
-	 * @param userId
-	 * @param diskOfferingId
-	 * @param name
-	 * @param description
-	 * @param tags
+	 * @param cmd - the command specifying diskOfferingId, name, description, tags
 	 * @return updated disk offering
+	 * @throws InvalidParameterValueException
 	 */
 	DiskOfferingVO updateDiskOffering(UpdateDiskOfferingCmd cmd) throws InvalidParameterValueException;
 	
 	/**
 	 * Deletes a disk offering
-	 * @param userId
-	 * @param diskOfferingId
+	 * @param cmd - the command specifying disk offering id
+	 * @return true or false
+	 * @throws InvalidParameterValueException
 	 */
 	boolean deleteDiskOffering(DeleteDiskOfferingCmd cmd) throws InvalidParameterValueException;
 	
@@ -187,14 +185,15 @@ public interface ConfigurationManager extends Manager {
 	 * @throws InternalErrorException 
 	 * @throws InvalidParameterValueException 
      */
-//	HostPodVO editPod(long userId, long podId, String newPodName, String gateway, String cidr, String startIp, String endIp) throws InvalidParameterValueException, InternalErrorException;
 	HostPodVO editPod(UpdatePodCmd cmd) throws InvalidParameterValueException, InternalErrorException;
+	
 	 /**
      * Deletes a pod from the database. Will not allow you to delete pods that are being used anywhere in the system.
-     * @param userId
-     * @param podId
+     * @param cmd - the command containing podId
+     * @return true or false
+     * @throws InvalidParameterValueException, InternalErrorException
      */
-	void deletePod(DeletePodCmd cmd) throws InvalidParameterValueException, InternalErrorException;
+	boolean deletePod(DeletePodCmd cmd) throws InvalidParameterValueException, InternalErrorException;
 	
 	/**
 	 * Creates a new zone
@@ -308,13 +307,9 @@ public interface ConfigurationManager extends Manager {
 
 	/**
 	 * Persists a config value via the API call
-	 * @param instance
-	 * @param component
-	 * @param category
-	 * @param name
-	 * @param value
-	 * @param description
-	 * @return
+	 * @param cmd - the command that wraps instance, component, category, name, value, description parameters
+	 * @throws InvalidParameterValueException, InternalErrorException
+	 * @return true or false
 	 */
-	public boolean addConfig(AddConfigCmd cmd);
+	boolean addConfig(AddConfigCmd cmd);
 }

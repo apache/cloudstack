@@ -983,7 +983,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean enableUser(EnableUserCmd cmd) throws InvalidParameterValueException{
+    public boolean enableUser(EnableUserCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	Long userId = cmd.getId();
     	Account adminAccount = (Account)UserContext.current().getAccountObject();
         boolean success = false;
@@ -1000,7 +1000,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         if ((adminAccount != null) && !isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
-        	throw new InvalidParameterValueException("Failed to enable user " + userId + ", permission denied.");
+        	throw new PermissionDeniedException("Failed to enable user " + userId + ", permission denied.");
         }
         
         success = doSetUserStatus(userId, Account.ACCOUNT_STATE_ENABLED);
@@ -1108,7 +1108,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean updateAccount(UpdateAccountCmd cmd) throws InvalidParameterValueException{
+    public boolean updateAccount(UpdateAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	Long domainId = cmd.getDomainId();
     	String accountName = cmd.getAccountName();
     	String newAccountName = cmd.getNewName();
@@ -1134,7 +1134,7 @@ public class ManagementServerImpl implements ManagementServer {
         //Check if user performing the action is allowed to modify this account
         Account adminAccount = (Account)UserContext.current().getAccountObject();
         if ((adminAccount != null) && isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
-          throw new InvalidParameterValueException("Invalid account " + accountName + " in domain " + domainId + " given, unable to update account.");
+          throw new PermissionDeniedException("Invalid account " + accountName + " in domain " + domainId + " given, permission denied");
         }
         
         if (account.getAccountName().equals(accountName)) {
@@ -1177,7 +1177,7 @@ public class ManagementServerImpl implements ManagementServer {
     	
     
     @Override
-    public boolean enableAccount(EnableAccountCmd cmd) throws InvalidParameterValueException{
+    public boolean enableAccount(EnableAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	String accountName = cmd.getAccountName();
     	Long domainId = cmd.getDomainId();
         boolean success = false;
@@ -1188,6 +1188,18 @@ public class ManagementServerImpl implements ManagementServer {
         	s_logger.error("Unable to find account " + accountName + " in domain " + domainId);
     		throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
         }
+        
+        //Don't allow to modify system account
+        if (account.getId().longValue() == Account.ACCOUNT_ID_SYSTEM) {
+    		throw new InvalidParameterValueException ("Can not modify system account");
+    	}
+        
+        //Check if user performing the action is allowed to modify this account
+        Account adminAccount = (Account)UserContext.current().getAccountObject();
+        if ((adminAccount != null) && isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
+          throw new PermissionDeniedException("Invalid account " + accountName + " in domain " + domainId + " given, permission denied");
+        }
+        
         success = enableAccount(account.getId());
         return success;
     }
