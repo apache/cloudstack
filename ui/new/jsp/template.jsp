@@ -25,8 +25,8 @@
     </div>    
     <div id="tab_content_details">
         <div class="grid_actionpanel">
-            <div class="grid_actionbox" id="volume_action_link">
-                <div class="grid_actionsdropdown_box" id="volume_action_menu" style="display: none;">
+            <div class="grid_actionbox" id="action_link">
+                <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                     <ul class="actionsdropdown_boxlist" id="action_list">
                         <!--  
                     	<li> <a href="#"> Delete </a> </li>
@@ -35,7 +35,7 @@
                     </ul>
                 </div>
             </div>
-            <div class="grid_editbox" id="edit_icon">
+            <div class="grid_editbox" id="edit_button">
             </div>
             <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
                 display: none;">
@@ -81,6 +81,7 @@
                     <div class="row_celltitles" id="name">
                     </div>
                     <input class="text" id="name_edit" style="width: 200px; display: none;" type="text" />
+                    <div id="name_edit_errormsg" style="display:none"></div>
                 </div>
             </div>
             <div class="grid_rows odd">
@@ -92,6 +93,7 @@
                     <div class="row_celltitles" id="displaytext">
                     </div>
                     <input class="text" id="displaytext_edit" style="width: 200px; display: none;" type="text" />
+                    <div id="displaytext_edit_errormsg" style="display:none"></div>
                 </div>
             </div>
             <div class="grid_rows even">
@@ -114,6 +116,10 @@
                         <div id="icon">
                         </div>
                     </div>
+                    <select class="select" id="passwordenabled_edit" style="width: 202px; display: none;">
+                        <option value="false">No</option>
+						<option value="true">Yes</option>
+                    </select>
                 </div>
             </div>
             <div class="grid_rows even">
@@ -126,6 +132,10 @@
                         <div id="icon">
                         </div>
                     </div>
+                    <select class="select" id="ispublic_edit" style="width: 202px; display: none;">
+                        <option value="true">Yes</option>
+						<option value="false">No</option>
+                    </select>
                 </div>
             </div>
             <div class="grid_rows odd">
@@ -138,6 +148,10 @@
                         <div id="icon">
                         </div>
                     </div>
+                    <select class="select" id="isfeatured_edit" style="width: 202px; display: none;">
+                        <option value="true">Yes</option>
+						<option value="false">No</option>
+                    </select>
                 </div>
             </div>
             <div class="grid_rows even">
@@ -160,6 +174,8 @@
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="ostypename">
                     </div>
+                    <select class="select" id="ostypename_edit" style="width: 202px; display: none;">                      
+                    </select>
                 </div>
             </div>
             <div class="grid_rows even">
@@ -169,11 +185,7 @@
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="account">
-                    </div>
-                    <select class="select" style="width: 202px; display: none;">
-                        <option value="opt1">Option 1</option>
-                        <option value="opt2">Option 2</option>
-                    </select>
+                    </div>                   
                 </div>
             </div>
             <div class="grid_rows odd">
@@ -197,9 +209,9 @@
                 </div>
             </div>
         </div>
-        <div class="grid_botactionpanel" style="display:none;">
-        	<div class="gridbot_buttons">Save</div>
-            <div class="gridbot_buttons">Cancel</div>
+        <div class="grid_botactionpanel">
+        	<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
+            <div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
         </div>
     </div>
 </div>

@@ -2,11 +2,6 @@ function afterLoadRouterJSP() {
     
 }
 
-function routerAfterDetailsTabAction(jsonObj) {
-    $("#midmenuItem_"+jsonObj.id).data("jsonObj", jsonObj);   
-    routerJsonToDetailsTab(jsonObj);   
-}
-
 function routerToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));  
     $midmenuItem1.data("jsonObj", jsonObj); 
@@ -18,6 +13,11 @@ function routerToMidmenu(jsonObj, $midmenuItem1) {
     
     $midmenuItem1.find("#first_row").text(jsonObj.name.substring(0,25)); 
     $midmenuItem1.find("#second_row").text(jsonObj.publicip.substring(0,25));     
+}
+
+function routerAfterDetailsTabAction(jsonObj) {
+    $("#midmenuItem_"+jsonObj.id).data("jsonObj", jsonObj);   
+    routerJsonToDetailsTab(jsonObj);   
 }
 
 function routerToRigntPanel($midmenuItem) {      

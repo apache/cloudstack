@@ -1,13 +1,127 @@
-function afterLoadTemplateJSP() {    
-    $("#edit_icon").bind("click", function(event){        
-        var $rightPanelContent = $("#right_panel_content");
-        $rightPanelContent.find("#name").hide();
-        $rightPanelContent.find("#name_edit").show();
-        $rightPanelContent.find("#displaytext").hide();
-        $rightPanelContent.find("#displaytext_edit").show();
+function afterLoadTemplateJSP() {        
+   var $detailsTab = $("#right_panel_content #tab_content_details");   
+    
+    //edit button
+    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #passwordenabled, #ispublic, #isfeatured, #ostypename");
+    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit, #ispublic_edit, #isfeatured_edit, #ostypename_edit"); 
+    $("#edit_button").bind("click", function(event){    
+        $readonlyFields.hide();
+        $editFields.show();        
         $(this).hide();
+        $("#cancel_button, #save_button").show()
+        return false;
+    });    
+    $("#cancel_button").bind("click", function(event){    
+        $editFields.hide();
+        $readonlyFields.show();   
+        $("#save_button, #cancel_button").hide();
+        $("#edit_button").show();
         return false;
     });
+    $("#save_button").bind("click", function(event){        
+        updateTemplate();     
+        $editFields.hide();      
+        $readonlyFields.show();       
+        $("#save_button, #cancel_button").hide();
+        $("#edit_button").show();
+        return false;
+    });
+    
+    
+    //OS type dropdown
+    $.ajax({
+	    data: createURL("command=listOsTypes&response=json"+maxPageSize),
+		dataType: "json",
+		success: function(json) {
+			types = json.listostypesresponse.ostype;
+			if (types != null && types.length > 0) {
+				var osTypeDropdown = $detailsTab.find("#ostypename_edit").empty();
+				for (var i = 0; i < types.length; i++) {
+					var html = "<option value='" + types[i].id + "'>" + types[i].description + "</option>";
+					osTypeDropdown.append(html);					
+				}
+			}	
+		}
+	});
+}
+
+function updateTemplate() {    
+    var $detailsTab = $("#right_panel_content #tab_content_details");  
+            
+    // validate values
+    var isValid = true;					
+    isValid &= validateString("Name", $detailsTab.find("#name_edit"), $detailsTab.find("#name_edit_errormsg"));
+    isValid &= validateString("Display Text", $detailsTab.find("#displaytext_edit"), $detailsTab.find("#displaytext_edit_errormsg"));			
+    if (!isValid) 
+        return;					
+	
+	var jsonObj = $detailsTab.data("jsonObj"); 
+	var id = jsonObj.id;
+	
+	//updateTemplate	
+	var array1 = [];
+	var oldName = jsonObj.name
+	var newName = trim($detailsTab.find("#name_edit").val());
+	if(newName != oldName)
+	    array1.push("&name="+todb(newName));
+	
+	var oldDesc = jsonObj.displaytext;
+	var newDesc = trim($detailsTab.find("#displaytext_edit").val());	
+	if(newDesc != oldDesc)
+	    array1.push("&displaytext="+todb(newDesc));
+	    
+	var oldPasswordEnabled = jsonObj.passwordenabled;	
+	var newPasswordEnabled = $detailsTab.find("#passwordenabled_edit").val();     
+	if(newPasswordEnabled != oldPasswordEnabled)
+	    array1.push("&passwordenabled="+newPasswordEnabled);	
+		
+	var oldOsTypeId = jsonObj.ostypeid;
+	var newOsTypeId = $detailsTab.find("#ostypename_edit").val();
+	if(newOsTypeId != oldOsTypeId)
+	    array1.push("&ostypeid="+newOsTypeId);
+				
+	if(array1.length > 0) {	
+	    $.ajax({
+		    data: createURL("command=updateTemplate&id="+id+array1.join("")),
+		    dataType: "json",
+		    async: false,
+		    success: function(json) {		        
+		        //embedded object (json.updatetemplateresponse) is returned, but the embedded object doesn't include all properties.(API needs to be fixed)		
+		    }
+	    });
+	}
+		
+	//updateTemplatePermissions	
+	var array2 = [];		
+	var oldIsPublic = jsonObj.ispublic;
+	var newIsPublic = $detailsTab.find("#ispublic_edit").val();        
+	if(newIsPublic != oldIsPublic)
+	    array2.push("&ispublic="+newIsPublic);
+	    
+	var oldIsFeatured = jsonObj.isfeatured;
+	var newIsFeatured = $detailsTab.find("#isfeatured_edit").val();           
+    if(newIsFeatured != oldIsFeatured)
+        array2.push("&isfeatured="+newIsFeatured);											
+								
+	if(array2.length > 0) {	
+	    $.ajax({
+		    data: createURL("command=updateTemplatePermissions&id="+id+array2.join("")),
+		    dataType: "json",
+		    async: false,
+		    success: function(json) {			        						       					    
+		        //no embedded object is returned. (API needs to be fixed)		
+    		}
+	    });
+	}	
+	
+	//since embedded object is not returned (updateTemplatePermissions API) or embedded object doesn't include all properties (updateTemplate API), call listTemplates API again.	
+	$.ajax({
+        data:createURL("command=listTemplates&templatefilter=self&id="+id),
+        dataType: "json",
+        success: function(json) {            
+            templateAfterDetailsTabAction(json.listtemplatesresponse.template[0]);
+        }
+    });   
 }
 
 function templateToMidmenu(jsonObj, $midmenuItem1) {    
@@ -17,47 +131,59 @@ function templateToMidmenu(jsonObj, $midmenuItem1) {
     var $iconContainer = $midmenuItem1.find("#icon_container").show();
     setIconByOsType(jsonObj.ostypename, $iconContainer.find("#icon"));
     
-    if(jsonObj.level == "INFO")
-        iconContainer.find("#icon").attr("src", "images/midmenuicon_events_info.png");
-    else if(jsonObj.level == "ERROR")
-        iconContainer.find("#icon").attr("src", "images/midmenuicon_events_error.png");
-    else if(jsonObj.level == "WARN")
-        iconContainer.find("#icon").attr("src", "images/midmenuicon_events_warning.png");    
-    
     $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
     $midmenuItem1.find("#second_row").text(fromdb(jsonObj.zonename).substring(0,25));   
 }
 
+function templateAfterDetailsTabAction(jsonObj) {
+    var $midmenuItem1 = $("#midmenuItem_"+jsonObj.id);
+    $midmenuItem1.data("jsonObj", jsonObj);   
+    templateToMidmenu(jsonObj, $midmenuItem1);
+    templateJsonToDetailsTab(jsonObj);       
+}
+
 function templateToRigntPanel($midmenuItem) {       
     var jsonObj = $midmenuItem.data("jsonObj");
+    templateJsonToDetailsTab(jsonObj);   
+}
+
+function templateJsonToDetailsTab(jsonObj) {   
+    var $detailsTab = $("#right_panel_content #tab_content_details");   
+    $detailsTab.data("jsonObj", jsonObj);
+    $detailsTab.find("#id").text(fromdb(jsonObj.id));
+    $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));
     
-    var $rightPanelContent = $("#right_panel_content");
-    $rightPanelContent.find("#id").text(fromdb(jsonObj.id));
-    $rightPanelContent.find("#zonename").text(fromdb(jsonObj.zonename));
+    $detailsTab.find("#name").text(fromdb(jsonObj.name));
+    $detailsTab.find("#name_edit").val(fromdb(jsonObj.name));
     
-    $rightPanelContent.find("#name").text(fromdb(jsonObj.name));
-    $rightPanelContent.find("#name_edit").val(fromdb(jsonObj.name));
-    
-    $rightPanelContent.find("#displaytext").text(fromdb(jsonObj.displaytext));
-    $rightPanelContent.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
+    $detailsTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
+    $detailsTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
     
     var status = "Ready";
 	if (jsonObj.isready == "false") 
 		status = jsonObj.templatestatus;	
-	$rightPanelContent.find("#status").text(status);    
+	$detailsTab.find("#status").text(status);    
     
-    setBooleanField(jsonObj.passwordenabled, $rightPanelContent.find("#passwordenabled"));	
-    setBooleanField(jsonObj.ispublic, $rightPanelContent.find("#ispublic"));	
-    setBooleanField(jsonObj.isfeatured, $rightPanelContent.find("#isfeatured"));
-    setBooleanField(jsonObj.crossZones, $rightPanelContent.find("#crossZones"));
+    setBooleanField(jsonObj.passwordenabled, $detailsTab.find("#passwordenabled"));	
+    $detailsTab.find("#passwordenabled_edit").val(jsonObj.passwordenabled);
     
-    $rightPanelContent.find("#ostypename").text(fromdb(jsonObj.ostypename));
-    $rightPanelContent.find("#account").text(fromdb(jsonObj.account));
+    setBooleanField(jsonObj.ispublic, $detailsTab.find("#ispublic"));	
+    $detailsTab.find("#ispublic_edit").val(jsonObj.ispublic);
+    
+    setBooleanField(jsonObj.isfeatured, $detailsTab.find("#isfeatured"));
+    $detailsTab.find("#isfeatured_edit").val(jsonObj.isfeatured);
+    
+    setBooleanField(jsonObj.crossZones, $detailsTab.find("#crossZones"));
+    
+    $detailsTab.find("#ostypename").text(fromdb(jsonObj.ostypename));
+    $detailsTab.find("#ostypename_edit").val(jsonObj.ostypeid);    
+    
+    $detailsTab.find("#account").text(fromdb(jsonObj.account));
     
     if(jsonObj.size != null)
-	    $rightPanelContent.find("#size").text(convertBytes(parseInt(jsonObj.size)));        
+	    $detailsTab.find("#size").text(convertBytes(parseInt(jsonObj.size)));        
     
-    setDateField(jsonObj.created, $rightPanelContent.find("#created"));	    
+    setDateField(jsonObj.created, $detailsTab.find("#created"));	    
 }
 
 //setIconByOsType() is shared by template page and ISO page

@@ -515,8 +515,15 @@ var midmenuItemCount = 20;
 function setBooleanField(value, $field) {
     if(value == "true")
         $field.find("#icon").removeClass("cross_icon").addClass("tick_icon").show();
-    else
+    else // value == "false"
         $field.find("#icon").removeClass("tick_icon").addClass("cross_icon").show();	
+}
+
+function getBooleanField($field) {
+    if($field.find("#icon").hasClass("tick_icon")==true)
+        return "true";
+    else // $field.find("#icon").hasClass("cross_icon")==true
+        return "false";    
 }
  
 function clearLeftMenu() {
