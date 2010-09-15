@@ -29,14 +29,18 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.StorageStats;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
@@ -73,6 +77,7 @@ public class ApiDBUtils {
     private static IPAddressDao _ipAddressDao;
     private static HostPodDao _podDao;
     private static ServiceOfferingDao _serviceOfferingDao;
+    private static SnapshotDao _snapshotDao;
     private static StoragePoolDao _storagePoolDao;
     private static VMTemplateDao _templateDao;
     private static VMTemplateHostDao _templateHostDao;
@@ -102,6 +107,7 @@ public class ApiDBUtils {
         _ipAddressDao = locator.getDao(IPAddressDao.class);
         _podDao = locator.getDao(HostPodDao.class);
         _serviceOfferingDao = locator.getDao(ServiceOfferingDao.class);
+        _snapshotDao = locator.getDao(SnapshotDao.class);
         _storagePoolDao = locator.getDao(StoragePoolDao.class);
         _templateDao = locator.getDao(VMTemplateDao.class);
         _templateHostDao = locator.getDao(VMTemplateHostDao.class);
@@ -167,6 +173,10 @@ public class ApiDBUtils {
         return _networkGroupMgr.getNetworkGroupsNamesForVm(vmId);
     }
 
+    public static String getStoragePoolTags(long poolId) {
+        return _storageMgr.getStoragePoolTags(poolId);
+    }
+    
     public static boolean isLocalStorageActiveOnHost(HostVO host) {
         return _storageMgr.isLocalStorageActiveOnHost(host);
     }
@@ -177,6 +187,10 @@ public class ApiDBUtils {
 
     public static HostStats getHostStatistics(long hostId) {
         return _statsCollector.getHostStats(hostId);
+    }
+
+    public static StorageStats getStoragePoolStatistics(long id) {
+        return _statsCollector.getStoragePoolStats(id);
     }
 
     /////////////////////////////////////////////////////////////
@@ -229,12 +243,31 @@ public class ApiDBUtils {
         return _serviceOfferingDao.findById(serviceOfferingId);
     }
 
+    public static Snapshot findSnapshotById(long snapshotId) {
+        SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
+        if (snapshot != null && snapshot.getRemoved() == null && snapshot.getStatus() == Snapshot.Status.BackedUp) {
+            return snapshot;
+        }
+        else {
+            return null;
+        }
+    }
+
     public static StoragePoolVO findStoragePoolById(Long storagePoolId) {
         return _storagePoolDao.findById(storagePoolId);
     }
 
     public static VMTemplateVO findTemplateById(Long templateId) {
         return _templateDao.findById(templateId);
+    }
+
+    public static VMTemplateHostVO findTemplateHostRef(long templateId, long zoneId) {
+        HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
+        if (secondaryStorageHost == null) {
+            return null;
+        } else {
+            return _templateHostDao.findByHostTemplate(secondaryStorageHost.getId(), templateId);
+        }
     }
 
     public static User findUserById(Long userId) {

@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -125,8 +126,7 @@ public class CreateUserCmd extends BaseCmd {
         response.setAccountType(user.getType());
         response.setCreated(user.getCreated());
         response.setDomainId(user.getDomainId());
-        // TODO:  implement
-//        response.setDomainName(user.getDomainName());
+        response.setDomainName(ApiDBUtils.findDomainById(user.getDomainId()).getName());
         response.setEmail(user.getEmail());
         response.setFirstname(user.getFirstname());
         response.setId(user.getId());

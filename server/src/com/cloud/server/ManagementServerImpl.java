@@ -213,7 +213,6 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeStats;
@@ -228,7 +227,6 @@ import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDao;
@@ -321,7 +319,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final ServiceOfferingDao _offeringsDao;
     private final DiskOfferingDao _diskOfferingDao;
     private final VMTemplateDao _templateDao;
-    private final VMTemplateHostDao _templateHostDao;
     private final LaunchPermissionDao _launchPermissionDao;
     private final DomainDao _domainDao;
     private final AccountDao _accountDao;
@@ -414,7 +411,6 @@ public class ManagementServerImpl implements ManagementServer {
         _offeringsDao = locator.getDao(ServiceOfferingDao.class);
         _diskOfferingDao = locator.getDao(DiskOfferingDao.class);
         _templateDao = locator.getDao(VMTemplateDao.class);
-        _templateHostDao = locator.getDao(VMTemplateHostDao.class);
         _launchPermissionDao = locator.getDao(LaunchPermissionDao.class);
         _domainDao = locator.getDao(DomainDao.class);
         _accountDao = locator.getDao(AccountDao.class);
@@ -3520,16 +3516,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public VMTemplateHostVO findTemplateHostRef(long templateId, long zoneId) {
-    	HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
-    	if (secondaryStorageHost == null) {
-    		return null;
-    	} else {
-    		return _templateHostDao.findByHostTemplate(secondaryStorageHost.getId(), templateId);
-    	}
-    }
-
-    @Override
     public List<UserVmVO> searchForUserVMs(ListVMsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Account account = (Account)UserContext.current().getAccountObject();
         Long domainId = cmd.getDomainId();
@@ -5227,17 +5213,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public Snapshot findSnapshotById(long snapshotId) {
-        SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
-        if (snapshot != null && snapshot.getRemoved() == null && snapshot.getStatus() == Snapshot.Status.BackedUp) {
-            return snapshot;
-        }
-        else {
-            return null;
-        }
-    }
-
-    @Override
     public DiskOfferingVO findDiskOfferingById(long diskOfferingId) {
         return _diskOfferingDao.findById(diskOfferingId);
     }
@@ -6223,19 +6198,9 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public StorageStats getStoragePoolStatistics(long id) {
-        return _statsCollector.getStoragePoolStats(id);
-    }
-    
-    @Override
     public List<String> searchForStoragePoolDetails(long poolId, String value)
     {
     	return _poolDao.searchForStoragePoolDetails(poolId, value);
-    }
-    
-    @Override
-    public String getStoragePoolTags(long poolId) {
-    	return _storageMgr.getStoragePoolTags(poolId);
     }
     
     @Override

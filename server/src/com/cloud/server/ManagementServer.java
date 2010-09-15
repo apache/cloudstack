@@ -119,12 +119,10 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.DiskTemplateVO;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
@@ -295,13 +293,7 @@ public interface ManagementServer {
      * @return StorageStats
      */
     StorageStats getStorageStatistics(long hostId);
-    
-	/** Get storage statistics (used/available) for a pool
-	 * @param id pool id
-	 * @return storage statistics
-	 */
-	StorageStats getStoragePoolStatistics(long id);
-    
+
     /**
      * Gets Host/VM statistics for a given host
      * 
@@ -693,14 +685,6 @@ public interface ManagementServer {
     VMTemplateVO findTemplateById(long templateId);
     
     /**
-     * Finds a template-host reference by the specified template and zone IDs
-     * @param templateId
-     * @param zoneId
-     * @return template-host reference
-     */
-    VMTemplateHostVO findTemplateHostRef(long templateId, long zoneId);
-    
-    /**
      * Obtains a list of virtual machines by the specified search criteria.
      * Can search by: "userId", "name", "state", "dataCenterId", "podId", "hostId"
      * @param c
@@ -1074,13 +1058,6 @@ public interface ManagementServer {
     List<SnapshotVO> listSnapshots(ListSnapshotsCmd cmd) throws InvalidParameterValueException;
 
     /**
-     * find a single snapshot by id
-     * @param snapshotId
-     * @return the snapshot if found, null otherwise
-     */
-    Snapshot findSnapshotById(long snapshotId);
-
-    /**
      * Finds a diskOffering by the specified ID.
      * @param diskOfferingId
      * @return A DiskOffering
@@ -1318,13 +1295,6 @@ public interface ManagementServer {
 	boolean isHypervisorSnapshotCapable();
 	List<String> searchForStoragePoolDetails(long poolId, String value);
 	
-	/**
-	 * Returns a comma separated list of tags for the specified storage pool
-	 * @param poolId
-	 * @return comma separated list of tags
-	 */
-	String getStoragePoolTags(long poolId);
-
 	public List<PreallocatedLunVO> getPreAllocatedLuns(ListPreallocatedLunsCmd cmd);
 
 	boolean checkLocalStorageConfigVal(); 
