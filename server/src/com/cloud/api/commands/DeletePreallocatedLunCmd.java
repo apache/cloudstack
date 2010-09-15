@@ -17,28 +17,15 @@
  */
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.log4j.Logger;
-
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.server.ManagementServer;
-import com.cloud.utils.Pair;
+import com.cloud.api.response.DeletePreallocatedLunResponse;
+import com.cloud.serializer.SerializerHelper;
 
+@Implementation(method="unregisterPreallocatedLun")
 public class DeletePreallocatedLunCmd extends BaseCmd {
-    
-    private static final Logger s_logger = Logger.getLogger(DeletePreallocatedLunCmd.class);
-    
     private static final String s_name = "deletePreallocatedLunsResponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-    	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -46,7 +33,6 @@ public class DeletePreallocatedLunCmd extends BaseCmd {
 
     @Parameter(name="id", type=CommandType.LONG, required=true)
     private Long id;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -56,28 +42,9 @@ public class DeletePreallocatedLunCmd extends BaseCmd {
         return id;
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long id = (Long) params.get(BaseCmd.Properties.ID.getName());
-
-        boolean success = false;
-        ManagementServer ms = getManagementServer();
-        try {
-            success = ms.unregisterPreallocatedLun(id);            
-        } catch (Exception e) {
-            s_logger.error("Unable to unregister lun ", e);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to unregister lun due to: " + e.getMessage());
-        }
-        
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), Boolean.toString(success)));
-        return returnValues;
-    }
 
     @Override
     public String getName() {
@@ -85,8 +52,12 @@ public class DeletePreallocatedLunCmd extends BaseCmd {
     }
 
     @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
+    public String getResponse() {
+        Boolean result = (Boolean)getResponseObject();
 
+        DeletePreallocatedLunResponse response = new DeletePreallocatedLunResponse();
+        response.setSuccess(result);
+
+        return SerializerHelper.toSerializedString(response);
+    }
 }

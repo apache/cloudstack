@@ -30,6 +30,7 @@ import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.DeleteDomainCmd;
 import com.cloud.api.commands.DeletePortForwardingServiceCmd;
+import com.cloud.api.commands.DeletePreallocatedLunCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.EnableAccountCmd;
@@ -75,6 +76,7 @@ import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
+import com.cloud.api.commands.RegisterPreallocatedLunCmd;
 import com.cloud.api.commands.RemovePortForwardingServiceCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
 import com.cloud.api.commands.StopSystemVmCmd;
@@ -256,23 +258,24 @@ public interface ManagementServer {
     /**
      * registerPreallocatedLun registers a preallocated lun in our database.
      * 
-     * @param targetIqn iqn for the storage server.
-     * @param portal portal ip address for the storage server.
-     * @param lun lun #
-     * @param size size of the lun
-     * @param dcId data center to attach to
-     * @param tags tags to attach to the lun
+     * @param cmd the API command wrapping the register parameters
+     *   - targetIqn iqn for the storage server.
+     *   - portal portal ip address for the storage server.
+     *   - lun lun #
+     *   - size size of the lun
+     *   - dcId data center to attach to
+     *   - tags tags to attach to the lun
      * @return the new PreAllocatedLun 
      */
-    PreallocatedLunVO registerPreallocatedLun(String targetIqn, String portal, int lun, long size, long dcId, String tags);
+    PreallocatedLunVO registerPreallocatedLun(RegisterPreallocatedLunCmd cmd);
     
     /**
      * Unregisters a preallocated lun in our database
-     * @param id id of the lun
+     * @param cmd the api command wrapping the id of the lun
      * @return true if unregistered; false if not.
      * @throws IllegalArgumentException
      */
-    boolean unregisterPreallocatedLun(long id) throws IllegalArgumentException;
+    boolean unregisterPreallocatedLun(DeletePreallocatedLunCmd cmd) throws IllegalArgumentException;
 
     String updateAdminPassword(long userId, String oldPassword, String newPassword);
 

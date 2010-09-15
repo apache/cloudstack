@@ -17,33 +17,16 @@
  */
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.log4j.Logger;
-
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
-import com.cloud.server.ManagementServer;
+import com.cloud.api.response.PreallocatedLunResponse;
+import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
-import com.cloud.utils.Pair;
 
+@Implementation(method="registerPreallocatedLun")
 public class RegisterPreallocatedLunCmd extends BaseCmd {
-    private static final Logger s_logger = Logger.getLogger(RegisterPreallocatedLunCmd.class);
-    
     private static final String s_name = "registerPreallocatedLunsResponse";
-    private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
-
-    static {
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISK_SIZE, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.LUN, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PORTAL, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TAGS, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TARGET_IQN, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.TRUE));
-    }
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -100,51 +83,24 @@ public class RegisterPreallocatedLunCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        String targetIqn = (String)params.get(BaseCmd.Properties.TARGET_IQN.getName());
-        String portal = (String)params.get(BaseCmd.Properties.PORTAL.getName());
-        Long size = (Long)params.get(BaseCmd.Properties.DISK_SIZE.getName());
-        Long dcId = (Long)params.get(BaseCmd.Properties.ZONE_ID.getName());
-        Integer lun = (Integer)params.get(BaseCmd.Properties.LUN.getName());
-        String t = (String)params.get(BaseCmd.Properties.TAGS.getName());
-        
-        PreallocatedLunVO registeredLun = null;
-        ManagementServer ms = getManagementServer();        
-        try {
-            registeredLun = ms.registerPreallocatedLun(targetIqn, portal, lun, size, dcId, t);            
-        } catch (Exception e) {
-            s_logger.error("Unable to register lun", e);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to register lun");
-        }
-        
-        List<Pair<String, Object>> embeddedObject = new ArrayList<Pair<String, Object>>();
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        if (registeredLun == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Failed to register LUN.");
-        } else {
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), registeredLun.getId()));
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.VOLUME_ID.getName(), registeredLun.getVolumeId()));
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_ID.getName(), registeredLun.getDataCenterId()));
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.LUN.getName(), registeredLun.getLun()));
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.PORTAL.getName(), registeredLun.getPortal()));
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SIZE.getName(), registeredLun.getSize()));
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.TAKEN.getName(), registeredLun.getTaken()));
-        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.TARGET_IQN.getName(), registeredLun.getTargetIqn()));
-            
-            embeddedObject.add(new Pair<String, Object>("preallocatedlun", new Object[] { returnValues } ));
-        }
-        
-        return embeddedObject;
-    }
-
-    @Override
     public String getName() {
         return s_name;
     }
 
     @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
-    }
+    public String getResponse() {
+        PreallocatedLunVO preallocatedLun = (PreallocatedLunVO)getResponseObject();
 
+        PreallocatedLunResponse response = new PreallocatedLunResponse();
+        response.setId(preallocatedLun.getId());
+        response.setVolumeId(preallocatedLun.getVolumeId());
+        response.setZoneId(preallocatedLun.getDataCenterId());
+        response.setLun(preallocatedLun.getLun());
+        response.setPortal(preallocatedLun.getPortal());
+        response.setSize(preallocatedLun.getSize());
+        response.setTaken(preallocatedLun.getTaken());
+        response.setTargetIqn(preallocatedLun.getTargetIqn());
+
+        return SerializerHelper.toSerializedString(response);
+    }
 }

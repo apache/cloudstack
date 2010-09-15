@@ -61,6 +61,7 @@ import com.cloud.api.commands.CreatePortForwardingServiceRuleCmd;
 import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.api.commands.DeleteDomainCmd;
 import com.cloud.api.commands.DeletePortForwardingServiceCmd;
+import com.cloud.api.commands.DeletePreallocatedLunCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.EnableAccountCmd;
@@ -106,6 +107,7 @@ import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
+import com.cloud.api.commands.RegisterPreallocatedLunCmd;
 import com.cloud.api.commands.RemovePortForwardingServiceCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
 import com.cloud.api.commands.StopSystemVmCmd;
@@ -518,7 +520,14 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public PreallocatedLunVO registerPreallocatedLun(String targetIqn, String portal, int lun, long size, long dcId, String t) {
+    public PreallocatedLunVO registerPreallocatedLun(RegisterPreallocatedLunCmd cmd) {
+        Long zoneId = cmd.getZoneId();
+        String portal = cmd.getPortal();
+        String targetIqn = cmd.getTargetIqn();
+        Integer lun = cmd.getLun();
+        Long size = cmd.getDiskSize();
+        String t = cmd.getTags();
+
         String[] tags = null;
         if (t != null) {
             tags = t.split(",");
@@ -529,12 +538,13 @@ public class ManagementServerImpl implements ManagementServer {
             tags = new String[0];
         }
         
-        PreallocatedLunVO vo = new PreallocatedLunVO(dcId, portal, targetIqn, lun, size);
+        PreallocatedLunVO vo = new PreallocatedLunVO(zoneId, portal, targetIqn, lun, size);
         return _lunDao.persist(vo, tags);
     }
     
     @Override
-    public boolean unregisterPreallocatedLun(long id) throws IllegalArgumentException {
+    public boolean unregisterPreallocatedLun(DeletePreallocatedLunCmd cmd) throws IllegalArgumentException {
+        Long id = cmd.getId();
     	PreallocatedLunVO lun = null;
     	if ((lun = _lunDao.findById(id)) == null) {
     		throw new IllegalArgumentException("Unable to find a LUN with ID " + id);
