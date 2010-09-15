@@ -181,7 +181,7 @@ function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem) {
 //***** actions for middle menu (end) **************************************************************************
 
 //***** actions for details tab in right panel (begin) ************************************************************************
-function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap, $detailsTab) { 
+function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap) { 
     var apiInfo = actionMap[label];
     var $listItem = $("#action_list_item").clone();
     $actionMenu.find("#action_list").append($listItem.show());
@@ -194,6 +194,7 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap,
     $link.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);
     $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);      
     
+    var $detailsTab = $("#right_panel_content #tab_content_details");  
     var id = $detailsTab.data("jsonObj").id;
     
     $link.bind("click", function(event) {   
@@ -202,7 +203,7 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap,
         var dialogBeforeActionFn = $actionLink.data("dialogBeforeActionFn"); 
         if(dialogBeforeActionFn == null) {	 
             var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
-            doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, $detailsTab); 
+            doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap); 
         }
         else {
             dialogBeforeActionFn($actionLink, listAPIMap, $detailsTab);	
@@ -211,7 +212,7 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap,
     });  
 } 
 
-function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, $detailsTab) {       
+function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap) {       
     var label = $actionLink.data("label");	
     var inProcessText = $actionLink.data("inProcessText");		           
     var isAsyncJob = $actionLink.data("isAsyncJob");
@@ -220,7 +221,8 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, $detailsT
     var listAPI = listAPIMap["listAPI"];
     var listAPIResponse = listAPIMap["listAPIResponse"];
     var listAPIResponseObj = listAPIMap["listAPIResponseObj"];
-       
+     
+    var $detailsTab = $("#right_panel_content #tab_content_details");     
     var $spinningWheel = $detailsTab.find("#spinning_wheel");
     $spinningWheel.find("#description").text(inProcessText);  
     $spinningWheel.show();        
@@ -249,7 +251,7 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, $detailsT
 			                        $spinningWheel.hide();      		                       
 			                        if (result.jobstatus == 1) { // Succeeded 			                           
 			                            $detailsTab.find("#action_message_box #description").text(label + " action succeeded.");
-			                            $detailsTab.find("#action_message_box").show();
+			                            $detailsTab.find("#action_message_box").removeClass("error").show();
 			                            
 			                            //DestroyVirtualMachine API doesn't return an embedded object on success (Bug 6041)
 	                                    //Before Bug 6041 get fixed, use the temporary solution below.							            
@@ -266,7 +268,7 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, $detailsT
 			                            
 			                        } else if (result.jobstatus == 2) { // Failed		
 			                            $detailsTab.find("#action_message_box #description").text(label + " action failed. Reason: " + sanitizeXSS(result.jobresult)); 
-			                            $detailsTab.find("#action_message_box").show();
+			                            $detailsTab.find("#action_message_box").addClass("error").show();
 			                        }											                    
 		                        }
 	                        },
@@ -304,7 +306,7 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, $detailsT
                     async: false,
                     success: function(json) {
 			            $detailsTab.find("#action_message_box #description").text(label + " action succeeded.");
-			            $detailsTab.find("#action_message_box").show();
+			            $detailsTab.find("#action_message_box").removeClass("error").show();
 			                                                                                              
                         afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	                           
                     }
@@ -333,7 +335,7 @@ function handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label) {
         $detailsTab.find("#action_message_box #description").text(label + " action failed. Reason: " + sanitizeXSS(unescape(errorMsg))); 
     else
         $detailsTab.find("#action_message_box #description").text(label + " action failed.");    
-    $detailsTab.find("#action_message_box").show();
+    $detailsTab.find("#action_message_box").addClass("error").show();
 }    	                
 //***** actions for details tab in right panel (end) **************************************************************************
 

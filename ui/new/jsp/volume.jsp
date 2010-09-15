@@ -1,3 +1,4 @@
+
 <!--
 <script type="text/javascript" src="scripts/cloud.core.volume.js"></script>
 -->
@@ -13,10 +14,10 @@
 %>
 <!-- volume detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
-
+  
     <div class="main_titleicon">
-        <img src="images/title_volumeicons.gif" alt="Instance" /></div>
-
+        <img src="images/title_volumeicons.gif" alt="Volume" /></div>
+    
     <h1>
         Volume
     </h1>
@@ -56,13 +57,7 @@
                 <p id="description"></p>
                 <div class="close_button" id="close_button">
                 </div>
-            </div>
-            <div class="gridheader_message error" style="border: 1px solid #999; display: none;">
-                <p>
-                    Some problem occured while dettaching disk &hellip;</p>
-                <div class="close_button">
-                </div>
-            </div>
+            </div>           
         </div>
         <div class="grid_container">
             <div class="grid_rows odd">
@@ -228,3 +223,4 @@
         </form>
     </div>
 </div>
+

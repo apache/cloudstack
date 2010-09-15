@@ -83,10 +83,10 @@ function volumeJsonToDetailsTab(jsonObj){
     $actionMenu.find("#action_list").empty();
     if(jsonObj.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
 		if (jsonObj.vmstate == "Stopped") 
-		    buildActionLinkForDetailsTab("Create Template", volumeActionMap, $actionMenu, volumeListAPIMap, $detailsTab);	
+		    buildActionLinkForDetailsTab("Create Template", volumeActionMap, $actionMenu, volumeListAPIMap);	
 	} 
 	else { //jsonObj.type=="DATADISK": "detach disk" is allowed, "create template" is disallowed.			
-		buildActionLinkForDetailsTab("Detach Disk", volumeActionMap, $actionMenu, volumeListAPIMap, $detailsTab);				
+		buildActionLinkForDetailsTab("Detach Disk", volumeActionMap, $actionMenu, volumeListAPIMap);				
 	}	
 } 
        
@@ -138,7 +138,7 @@ function doCreateTemplate($actionLink, listAPIMap, $singleObject) {
 			
 			var id = $singleObject.data("jsonObj").id;			
 			var apiCommand = "command=createTemplate&volumeId="+id+"&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
-	    	doActionToSingleObject(id, $actionLink, apiCommand, listAPIMap, $singleObject);					
+	    	doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);					
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
