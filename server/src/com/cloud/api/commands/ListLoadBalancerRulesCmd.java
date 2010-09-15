@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -113,11 +114,11 @@ public class ListLoadBalancerRulesCmd extends BaseListCmd {
             lbResponse.setAlgorithm(loadBalancer.getAlgorithm());
 
             // TODO:  implement
-            Account accountTemp = getManagementServer().findAccountById(loadBalancer.getAccountId());
+            Account accountTemp = ApiDBUtils.findAccountById(loadBalancer.getAccountId());
             if (accountTemp != null) {
                 lbResponse.setAccountName(accountTemp.getAccountName());
                 lbResponse.setDomainId(accountTemp.getDomainId());
-                lbResponse.setDomainName(getManagementServer().findDomainIdById(accountTemp.getDomainId()).getName());
+                lbResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
             }
 
             response.add(lbResponse);

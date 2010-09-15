@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
@@ -29,6 +30,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.StorageStats;
 
 @SuppressWarnings("rawtypes")
 @Implementation(method="createPool", manager=Manager.StorageManager)
@@ -109,12 +111,8 @@ public class CreateStoragePoolCmd extends BaseCmd {
 
         StoragePoolResponse response = new StoragePoolResponse();
         response.setClusterId(pool.getClusterId());
-        // TODO: Implement
-        //response.setClusterName(pool.getClusterName());
-        //response.setDiskSizeAllocated(pool.getDiskSizeAllocated());
-        //response.setDiskSizeTotal(pool.getDiskSizeTotal());
-        //response.setPodName(pool.getPodName());
-        //response.setTags(pool.getTags());
+        response.setClusterName(ApiDBUtils.findClusterById(pool.getClusterId()).getName());
+        response.setPodName(ApiDBUtils.findPodById(pool.getPodId()).getName());
         response.setCreated(pool.getCreated());
         response.setId(pool.getId());
         response.setIpAddress(pool.getHostAddress());
@@ -122,6 +120,15 @@ public class CreateStoragePoolCmd extends BaseCmd {
         response.setPath(pool.getPath());
         response.setPodId(pool.getPodId());
         response.setType(pool.getPoolType().toString());
+        response.setTags(ApiDBUtils.getStoragePoolTags(pool.getId()));
+
+        StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
+        long used = pool.getCapacityBytes() - pool.getAvailableBytes();
+        if (stats != null) {
+            used = stats.getByteUsed();
+        }
+        response.setDiskSizeTotal(pool.getCapacityBytes());
+        response.setDiskSizeAllocated(used);
 
         return SerializerHelper.toSerializedString(response);
     }

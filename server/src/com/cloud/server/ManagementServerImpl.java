@@ -171,7 +171,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
-import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -202,7 +201,6 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.DiskTemplateVO;
-import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
@@ -215,7 +213,6 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeStats;
@@ -230,7 +227,6 @@ import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDao;
@@ -280,7 +276,6 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -323,7 +318,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final ServiceOfferingDao _offeringsDao;
     private final DiskOfferingDao _diskOfferingDao;
     private final VMTemplateDao _templateDao;
-    private final VMTemplateHostDao _templateHostDao;
     private final LaunchPermissionDao _launchPermissionDao;
     private final DomainDao _domainDao;
     private final AccountDao _accountDao;
@@ -416,7 +410,6 @@ public class ManagementServerImpl implements ManagementServer {
         _offeringsDao = locator.getDao(ServiceOfferingDao.class);
         _diskOfferingDao = locator.getDao(DiskOfferingDao.class);
         _templateDao = locator.getDao(VMTemplateDao.class);
-        _templateHostDao = locator.getDao(VMTemplateHostDao.class);
         _launchPermissionDao = locator.getDao(LaunchPermissionDao.class);
         _domainDao = locator.getDao(DomainDao.class);
         _accountDao = locator.getDao(AccountDao.class);
@@ -509,17 +502,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public GuestOSCategoryVO getHostGuestOSCategory(long hostId) {
-    	Long guestOSCategoryID = _agentMgr.getGuestOSCategoryId(hostId);
-    	
-    	if (guestOSCategoryID != null) {
-    		return _guestOSCategoryDao.findById(guestOSCategoryID);
-    	} else {
-    		return null;
-    	}
-    }
-    
-    @Override
     public PreallocatedLunVO registerPreallocatedLun(RegisterPreallocatedLunCmd cmd) {
         Long zoneId = cmd.getZoneId();
         String portal = cmd.getPortal();
@@ -555,11 +537,6 @@ public class ManagementServerImpl implements ManagementServer {
     	}
     	
         return _lunDao.delete(id);
-    }
-
-    @Override
-    public VmStats getVmStatistics(long hostId) {
-        return _statsCollector.getVmStats(hostId);
     }
 
     @Override
@@ -1941,17 +1918,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public DataCenterVO getDataCenterBy(long dataCenterId) {
-        return _dcDao.findById(dataCenterId);
-    }
-
-    @Override
-    public HostPodVO getPodBy(long podId) {
-        return _hostPodDao.findById(podId);
-    }
-
-    
-    @Override
     public List<DataCenterVO> listDataCenters(ListZonesByCmd cmd) {
         List<DataCenterVO> dcs = _dcDao.listAllActive();
 
@@ -3013,16 +2979,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public Long getAccountIdForVlan(long vlanDbId) {
-    	List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAccountVlanMapsByVlan(vlanDbId);
-    	if (accountVlanMaps.isEmpty()) {
-    		return null;
-    	} else {
-    		return accountVlanMaps.get(0).getAccountId();
-    	}
-    }
-
-    @Override
     public List<ConfigurationVO> searchForConfigurations(ListCfgsByCmd cmd) {
         Filter searchFilter = new Filter(ConfigurationVO.class, "name", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<ConfigurationVO> sc = _configDao.createSearchCriteria();
@@ -3224,20 +3180,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<VMTemplateHostVO> listTemplateHostBy(long templateId, Long zoneId) {
-    	if (zoneId != null) {
-    		HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
-    		if (secondaryStorageHost == null) {
-    			return new ArrayList<VMTemplateHostVO>();
-    		} else {
-    			return _templateHostDao.listByHostTemplate(secondaryStorageHost.getId(), templateId);
-    		}
-    	} else {
-    		return _templateHostDao.listByOnlyTemplateId(templateId);
-    	}
-    }
-
-    @Override
     public List<HostPodVO> listPods(long dataCenterId) {
         return _hostPodDao.listByDataCenterId(dataCenterId);
     }
@@ -3280,11 +3222,6 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public Account findAccountById(Long accountId) {
         return _accountDao.findById(accountId);
-    }
-
-    @Override
-    public GuestOS findGuestOSById(Long id) {
-        return this._guestOSDao.findById(id);
     }
 
     @Override
@@ -3388,29 +3325,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _resourceLimitDao.findById(limitId);
     }
 
-
-    @Override
-    public long findCorrectResourceLimit(ResourceType type, long accountId) {
-        AccountVO account = _accountDao.findById(accountId);
-        
-        if (account == null) {
-            return -1;
-        }
-        
-        return _accountMgr.findCorrectResourceLimit(account, type);
-    }
-    
-    @Override
-    public long getResourceCount(ResourceType type, long accountId) {
-    	AccountVO account = _accountDao.findById(accountId);
-        
-        if (account == null) {
-            return -1;
-        }
-        
-        return _accountMgr.getResourceCount(account, type);
-    }
-
     @Override
     public List<VMTemplateVO> listIsos(Criteria c) {
         Filter searchFilter = new Filter(VMTemplateVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
@@ -3442,11 +3356,6 @@ public class ManagementServerImpl implements ManagementServer {
         sc.addAnd("format", SearchCriteria.Op.EQ, ImageFormat.ISO);
 
         return _templateDao.search(sc, searchFilter);
-    }
-
-    @Override
-    public List<UserStatisticsVO> listUserStatsBy(Long accountId) {
-        return _userStatsDao.listBy(accountId);
     }
 
     @Override
@@ -3482,11 +3391,6 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public DataCenterVO findDataCenterById(long dataCenterId) {
         return _dcDao.findById(dataCenterId);
-    }
-
-    @Override
-    public VlanVO findVlanById(long vlanDbId) {
-        return _vlanDao.findById(vlanDbId);
     }
 
     @Override
@@ -3591,21 +3495,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _templateDao.findById(templateId);
     }
     
-    @Override
-    public VMTemplateHostVO findTemplateHostRef(long templateId, long zoneId) {
-    	HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
-    	if (secondaryStorageHost == null) {
-    		return null;
-    	} else {
-    		return _templateHostDao.findByHostTemplate(secondaryStorageHost.getId(), templateId);
-    	}
-    }
-
-    @Override
-    public List<UserVmVO> listUserVMsByHostId(long hostId) {
-        return _userVmDao.listByHostId(hostId);
-    }
-
     @Override
     public List<UserVmVO> searchForUserVMs(ListVMsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Account account = (Account)UserContext.current().getAccountObject();
@@ -4206,22 +4095,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public VolumeVO findVolumeById(long id) {
-         VolumeVO volume = _volumeDao.findById(id);
-         if (volume != null && !volume.getDestroyed() && volume.getRemoved() == null) {
-             return volume;
-         }
-         else {
-             return null;
-         }
-    }
-
-    @Override
-    public VolumeVO findAnyVolumeById(long volumeId) {
-        return _volumeDao.findById(volumeId);
-    }
-    
-    @Override
     public List<VolumeVO> searchForVolumes(ListVolumesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Account account = (Account)UserContext.current().getAccountObject();
         Long domainId = cmd.getDomainId();
@@ -4346,17 +4219,6 @@ public class ManagementServerImpl implements ManagementServer {
         sc.setParameters("destroyed", false);
 
         return _volumeDao.search(sc, searchFilter);
-    }
-
-    @Override
-    public boolean volumeIsOnSharedStorage(long volumeId) throws InvalidParameterValueException {
-        // Check that the volume is valid
-        VolumeVO volume = _volumeDao.findById(volumeId);
-        if (volume == null) {
-            throw new InvalidParameterValueException("Please specify a valid volume ID.");
-        }
-
-        return _storageMgr.volumeOnSharedStoragePool(volume);
     }
 
     @Override
@@ -5070,7 +4932,7 @@ public class ManagementServerImpl implements ManagementServer {
     	String domainName = cmd.getName();
     	
         //check if domain exists in the system
-    	DomainVO domain = findDomainIdById(domainId);
+    	DomainVO domain = _domainDao.findById(domainId);
     	if (domain == null) {
     		throw new InvalidParameterValueException("Unable to find domain " + domainId);
     	} else if (domain.getParent() == null) {
@@ -5113,10 +4975,6 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         return null;
-    }
-
-    public DomainVO findDomainIdById(Long domainId) {
-        return _domainDao.findById(domainId);
     }
 
     @Override
@@ -5301,17 +5159,6 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         return _snapshotDao.search(sc, searchFilter);
-    }
-
-    @Override
-    public Snapshot findSnapshotById(long snapshotId) {
-        SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
-        if (snapshot != null && snapshot.getRemoved() == null && snapshot.getStatus() == Snapshot.Status.BackedUp) {
-            return snapshot;
-        }
-        else {
-            return null;
-        }
     }
 
     @Override
@@ -5638,11 +5485,6 @@ public class ManagementServerImpl implements ManagementServer {
         	}
         }
         return _asyncMgr.queryAsyncJobResult(jobId);
-    }
-
-    @Override
-    public AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId) {
-        return _asyncMgr.findInstancePendingAsyncJob(instanceType, instanceId);
     }
 
     @Override
@@ -6213,11 +6055,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public ClusterVO findClusterById(long clusterId) {
-        return _clusterDao.findById(clusterId);
-    }
-    
-    @Override
     public List<ClusterVO> listClusterByPodId(long podId) {
         return _clusterDao.listByPodId(podId);
     }
@@ -6310,19 +6147,9 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public StorageStats getStoragePoolStatistics(long id) {
-        return _statsCollector.getStoragePoolStats(id);
-    }
-    
-    @Override
     public List<String> searchForStoragePoolDetails(long poolId, String value)
     {
     	return _poolDao.searchForStoragePoolDetails(poolId, value);
-    }
-    
-    @Override
-    public String getStoragePoolTags(long poolId) {
-    	return _storageMgr.getStoragePoolTags(poolId);
     }
     
     @Override
@@ -6389,24 +6216,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _snapshotPolicyDao.findById(policyId);
     }
 
-	@Override
-	public String getSnapshotIntervalTypes(long snapshotId){
-	    String intervalTypes = "";
-	    List<SnapshotPolicyVO> policies = _snapMgr.listPoliciesforSnapshot(snapshotId);
-	    for (SnapshotPolicyVO policy : policies){
-	        if(!intervalTypes.isEmpty()){
-	            intervalTypes += ",";
-	        }
-	        if(policy.getId() == Snapshot.MANUAL_POLICY_ID){
-	            intervalTypes+= "MANUAL";
-	        }
-	        else {
-	            intervalTypes += DateUtil.getIntervalType(policy.getInterval()).toString();
-	        }
-	    }
-	    return intervalTypes;
-	}
-	
     @Override
     public boolean isChildDomain(Long parentId, Long childId) {
         return _domainDao.isChildDomain(parentId, childId);
@@ -6711,11 +6520,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _asyncMgr.submitAsyncJob(job);
 	}
 
-	@Override
-	public HostStats getHostStatistics(long hostId) {
-		return _statsCollector.getHostStats(hostId);
-	}
-
     /**
      * {@inheritDoc}
      */
@@ -6724,11 +6528,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _isHypervisorSnapshotCapable;
     }
     
-    @Override
-    public boolean isLocalStorageActiveOnHost(HostVO host) {
-    	return _storageMgr.isLocalStorageActiveOnHost(host);
-    }
-
     @Override
     public List<EventVO> listPendingEvents(int entryTime, int duration) {
         Calendar calMin = Calendar.getInstance();

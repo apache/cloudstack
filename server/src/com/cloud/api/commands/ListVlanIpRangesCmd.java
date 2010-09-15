@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -103,8 +104,8 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
 
         List<VlanIpRangeResponse> response = new ArrayList<VlanIpRangeResponse>();
         for (VlanVO vlan : vlans) {
-            Long accountId = getManagementServer().getAccountIdForVlan(vlan.getId());
-            Long podId = getManagementServer().getPodIdForVlan(vlan.getId());
+            Long accountId = ApiDBUtils.getAccountIdForVlan(vlan.getId());
+            Long podId = ApiDBUtils.getPodIdForVlan(vlan.getId());
 
             VlanIpRangeResponse vlanResponse = new VlanIpRangeResponse();
             vlanResponse.setId(vlan.getId());
@@ -113,14 +114,14 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
             vlanResponse.setZoneId(vlan.getDataCenterId());
             
             if (accountId != null) {
-                Account account = getManagementServer().findAccountById(accountId);
+                Account account = ApiDBUtils.findAccountById(accountId);
                 vlanResponse.setAccountName(account.getAccountName());
                 vlanResponse.setDomainId(account.getDomainId());
-                vlanResponse.setDomainName(getManagementServer().findDomainIdById(account.getDomainId()).getName());
+                vlanResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
             }
 
             if (podId != null) {
-                HostPodVO pod = getManagementServer().findHostPodById(podId);
+                HostPodVO pod = ApiDBUtils.findPodById(podId);
                 vlanResponse.setPodId(podId);
                 vlanResponse.setPodName(pod.getName());
             }

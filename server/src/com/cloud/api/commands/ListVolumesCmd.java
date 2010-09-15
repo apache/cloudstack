@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -131,7 +132,7 @@ public class ListVolumesCmd extends BaseListCmd {
             VolumeResponse volResponse = new VolumeResponse();
             volResponse.setId(volume.getId());
 
-            AsyncJobVO asyncJob = getManagementServer().findInstancePendingAsyncJob("volume", volume.getId());
+            AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("volume", volume.getId());
             if (asyncJob != null) {
                 volResponse.setJobId(asyncJob.getId());
                 volResponse.setJobStatus(asyncJob.getStatus());
@@ -144,14 +145,14 @@ public class ListVolumesCmd extends BaseListCmd {
             }
             
             volResponse.setZoneId(volume.getDataCenterId());
-            volResponse.setZoneName(getManagementServer().findDataCenterById(volume.getDataCenterId()).getName());
+            volResponse.setZoneName(ApiDBUtils.findZoneById(volume.getDataCenterId()).getName());
 
             volResponse.setVolumeType(volume.getVolumeType().toString());
             volResponse.setDeviceId(volume.getDeviceId());
             
             Long instanceId = volume.getInstanceId();
             if (instanceId != null) {
-                VMInstanceVO vm = getManagementServer().findVMInstanceById(instanceId);
+                VMInstanceVO vm = ApiDBUtils.findVMInstanceById(instanceId);
                 volResponse.setVirtualMachineId(vm.getId());
                 volResponse.setVirtualMachineName(vm.getName());
                 volResponse.setVirtualMachineDisplayName(vm.getName());
@@ -164,11 +165,11 @@ public class ListVolumesCmd extends BaseListCmd {
             volResponse.setCreated(volume.getCreated());
             volResponse.setState(volume.getStatus().toString());
             
-            Account accountTemp = getManagementServer().findAccountById(volume.getAccountId());
+            Account accountTemp = ApiDBUtils.findAccountById(volume.getAccountId());
             if (accountTemp != null) {
                 volResponse.setAccountName(accountTemp.getAccountName());
                 volResponse.setDomainId(accountTemp.getDomainId());
-                volResponse.setDomainName(getManagementServer().findDomainIdById(accountTemp.getDomainId()).getName());
+                volResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
             }
 
             String storageType;
@@ -176,7 +177,7 @@ public class ListVolumesCmd extends BaseListCmd {
                 if(volume.getPoolId() == null){
                     storageType = "unknown";
                 } else {
-                    storageType = getManagementServer().volumeIsOnSharedStorage(volume.getId()) ? "shared" : "local";
+                    storageType = ApiDBUtils.volumeIsOnSharedStorage(volume.getId()) ? "shared" : "local";
                 }
             } catch (InvalidParameterValueException e) {
                 s_logger.error(e.getMessage(), e);
@@ -187,13 +188,13 @@ public class ListVolumesCmd extends BaseListCmd {
             
             volResponse.setDiskOfferingId(volume.getDiskOfferingId());
             if (volume.getDiskOfferingId() != null) {
-                DiskOfferingVO diskOffering = getManagementServer().findDiskOfferingById(volume.getDiskOfferingId());
+                DiskOfferingVO diskOffering = ApiDBUtils.findDiskOfferingById(volume.getDiskOfferingId());
                 volResponse.setDiskOfferingName(diskOffering.getName());
                 volResponse.setDiskOfferingDisplayText(diskOffering.getDisplayText());
             }
 
             Long poolId = volume.getPoolId();
-            String poolName = (poolId == null) ? "none" : getManagementServer().findPoolById(poolId).getName();
+            String poolName = (poolId == null) ? "none" : ApiDBUtils.findStoragePoolById(poolId).getName();
             volResponse.setStoragePoolName(poolName);
 
             response.add(volResponse);

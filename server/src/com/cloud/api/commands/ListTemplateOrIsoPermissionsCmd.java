@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -62,10 +63,10 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseListCmd {
         Account account = (Account)UserContext.current().getAccountObject();
         boolean isAdmin = ((account == null) || isAdmin(account.getType()));
         Long templateOwnerDomain = null;
-        VMTemplateVO template = getManagementServer().findTemplateById(id);
+        VMTemplateVO template = ApiDBUtils.findTemplateById(id);
         if (isAdmin) {
             // FIXME:  we have just template id and need to get template owner from that
-            Account templateOwner = getManagementServer().findAccountById(template.getAccountId());
+            Account templateOwner = ApiDBUtils.findAccountById(template.getAccountId());
             if (templateOwner != null) {
                 templateOwnerDomain = templateOwner.getDomainId();
             }

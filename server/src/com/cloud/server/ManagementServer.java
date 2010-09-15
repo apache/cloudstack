@@ -90,7 +90,6 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.configuration.ConfigurationVO;
-import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterIpAddressVO;
@@ -107,7 +106,6 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.FirewallRuleVO;
@@ -119,15 +117,12 @@ import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.DiskTemplateVO;
-import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
@@ -137,7 +132,6 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserAccountVO;
-import com.cloud.user.UserStatisticsVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.ExecutionException;
@@ -148,7 +142,6 @@ import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VmStats;
 
 
 /**
@@ -166,7 +159,6 @@ public interface ManagementServer {
      */
     UserAccount createUser(CreateUserCmd cmd);
 
-    ClusterVO findClusterById(long clusterId);
     List<ClusterVO> listClusterByPodId(long podId);
 
     /**
@@ -302,29 +294,8 @@ public interface ManagementServer {
      * @param hostId
      * @return StorageStats
      */
-    StorageStats getStorageStatistics(long hostId);
-    
-    /**
-     * Gets the guest OS category for a host
-     * @param hostId
-     * @return guest OS Category
-     */
-    GuestOSCategoryVO getHostGuestOSCategory(long hostId);
+    StorageStats getStorageStatistics(long hostId);;
 
-	/** Get storage statistics (used/available) for a pool
-	 * @param id pool id
-	 * @return storage statistics
-	 */
-	StorageStats getStoragePoolStatistics(long id);
-    
-    /**
-     * Gets Host/VM statistics for a given host
-     * 
-     * @param hostId
-     * @return HostStats/VMStats depending on the id passed
-     */
-    VmStats getVmStatistics(long hostId);
-    
     /**
      * Gets Volume statistics.  The array returned will contain VolumeStats in the same order
      * as the array of volumes requested.
@@ -348,13 +319,6 @@ public interface ManagementServer {
      * @return pod ID, or null
      */
     Long getPodIdForVlan(long vlanDbId);
-    
-    /**
-     * If the specified VLAN is associated with a specific account, returns the account ID. Else, returns null.
-     * @param accountId
-     * @return account ID, or null
-     */
-    Long getAccountIdForVlan(long vlanDbId);
 
     /**
      * Finds the root volume of the VM
@@ -472,22 +436,6 @@ public interface ManagementServer {
      * @return a domainRouter
      */
 	DomainRouterVO findDomainRouterById(long domainRouterId);
-
-    /**
-     * Retrieves a data center by id
-     * 
-     * @param dataCenterId
-     * @return DataCenter
-     */
-    DataCenterVO getDataCenterBy(long dataCenterId);
-    
-    /**
-     * Retrieves a pod by id
-     * 
-     * @param podId
-     * @return Pod
-     */
-    HostPodVO getPodBy(long podId);
     
     /**
      * Retrieves the list of data centers with search criteria.
@@ -595,15 +543,6 @@ public interface ManagementServer {
     List<VMTemplateVO> searchForTemplates(Criteria c);
 
     /**
-     * Lists the template host records by template Id
-     * 
-     * @param templateId
-     * @param zoneId
-     * @return List of VMTemplateHostVO
-     */
-    List<VMTemplateHostVO> listTemplateHostBy(long templateId, Long zoneId);
-    
-    /**
      * Obtains pods that match the data center ID
      * @param dataCenterId
      * @return List of Pods
@@ -636,13 +575,6 @@ public interface ManagementServer {
      * @return
      */
     User getUser(long userId, boolean active);
-    
-    /**
-     * Obtains a list of user statistics for the specified user ID.
-     * @param userId
-     * @return List of UserStatistics
-     */
-    List<UserStatisticsVO> listUserStatsBy(Long userId);
     
     /**
      * Obtains a list of virtual machines that are similar to the VM with the specified name.
@@ -692,13 +624,6 @@ public interface ManagementServer {
     DataCenterVO findDataCenterById(long dataCenterId);
     
     /**
-     * Finds a VLAN with the specified ID.
-     * @param vlanDbId
-     * @return VLAN
-     */
-    VlanVO findVlanById(long vlanDbId);
-    
-    /**
      * Creates a new template
      * @param cmd
      * @return success/failure
@@ -722,21 +647,6 @@ public interface ManagementServer {
      * @return A VMTemplate
      */
     VMTemplateVO findTemplateById(long templateId);
-    
-    /**
-     * Finds a template-host reference by the specified template and zone IDs
-     * @param templateId
-     * @param zoneId
-     * @return template-host reference
-     */
-    VMTemplateHostVO findTemplateHostRef(long templateId, long zoneId);
-    
-    /**
-     * Obtains a list of virtual machines that match the specified host ID.
-     * @param hostId
-     * @return List of UserVMs.
-     */
-    List<UserVmVO> listUserVMsByHostId(long hostId);
     
     /**
      * Obtains a list of virtual machines by the specified search criteria.
@@ -815,16 +725,6 @@ public interface ManagementServer {
     
     List<ConsoleProxyVO> searchForConsoleProxy(Criteria c);
     
-    /**
-     * Finds a volume which is not destroyed or removed.
-     */
-    VolumeVO findVolumeById(long id);
-    
-    /**
-     * Return the volume with the given id even if its destroyed or removed.
-     */
-    VolumeVO findAnyVolumeById(long volumeId);
-    
     /** revisit
      * Obtains a list of storage volumes by the specified search criteria.
      * Can search by: "userId", "vType", "instanceId", "dataCenterId", "podId", "hostId"
@@ -832,14 +732,7 @@ public interface ManagementServer {
      * @return List of Volumes.
      */
     List<VolumeVO> searchForVolumes(ListVolumesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
-    
-    /**
-	 * Checks that the volume is stored on a shared storage pool.
-	 * @param volumeId
-	 * @return true if the volume is on a shared storage pool, false otherwise
-	 */
-    boolean volumeIsOnSharedStorage(long volumeId) throws InvalidParameterValueException;
-    
+
     /**
      * Finds a pod by the specified ID.
      * @param podId
@@ -984,12 +877,6 @@ public interface ManagementServer {
      * @param accountId the id of the account to use to look up the domain
      */
     Long findDomainIdByAccountId(Long accountId);
-    
-    /**
-     * find the domain by id
-     * @param domainId the id of the domainId
-     */
-    DomainVO findDomainIdById(Long domainId);
 
     /**
      * find the domain by its path
@@ -1034,13 +921,6 @@ public interface ManagementServer {
      * @return Account
      */
     Account findAccountById(Long accountId);
-
-    /**
-     * Finds a GuestOS by the ID.
-     * @param id
-     * @return GuestOS
-     */
-    GuestOS findGuestOSById(Long id);
     
     /**
      * Searches for accounts by the specified search criteria
@@ -1072,21 +952,6 @@ public interface ManagementServer {
      */
     ResourceLimitVO findLimitById(long limitId);
     
-    /**
-	 * Finds the correct limit for an account. I.e. if an account's limit is not present, it will check the account's domain, and as a last resort use the global limit.
-	 * @param type
-	 * @param accountId
-	 */
-	long findCorrectResourceLimit(ResourceType type, long accountId);
-	
-	/**
-	 * Gets the count of resources for a resource type and account
-	 * @param Type
-	 * @param accountId
-	 * @return count of resources
-	 */
-	long getResourceCount(ResourceType type, long accountId);
-
     /**
      * Lists ISOs that are available for the specified account ID.
      * @param accountId
@@ -1132,13 +997,6 @@ public interface ManagementServer {
      * @throws InvalidParameterValueException
      */
     List<SnapshotVO> listSnapshots(ListSnapshotsCmd cmd) throws InvalidParameterValueException;
-
-    /**
-     * find a single snapshot by id
-     * @param snapshotId
-     * @return the snapshot if found, null otherwise
-     */
-    Snapshot findSnapshotById(long snapshotId);
 
     /**
      * Finds a diskOffering by the specified ID.
@@ -1203,7 +1061,6 @@ public interface ManagementServer {
      */
     AsyncJobResult queryAsyncJobResult(QueryAsyncJobResultCmd cmd) throws PermissionDeniedException;
 
-    AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId);
     AsyncJobVO findAsyncJobById(long jobId);
 
     /**
@@ -1325,13 +1182,6 @@ public interface ManagementServer {
 	 */
     boolean isChildDomain(Long parentId, Long childId);
 
-    /**
-     * List interval types the specified snapshot belongs to
-     * @param snapshotId
-     * @return
-     */
-    String getSnapshotIntervalTypes(long snapshotId);
-
 	List<SecondaryStorageVmVO> searchForSecondaryStorageVm(Criteria c);
 
 	/**
@@ -1372,27 +1222,12 @@ public interface ManagementServer {
 	 */
 	long revokeNetworkGroupIngressAsync(Long accountId, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups);
 
-	HostStats getHostStatistics(long hostId);
-	
 	/**
 	 * Is the hypervisor snapshot capable.
 	 * @return True if the hypervisor.type is XenServer
 	 */
 	boolean isHypervisorSnapshotCapable();
 	List<String> searchForStoragePoolDetails(long poolId, String value);
-	
-	/**
-	 * Returns a comma separated list of tags for the specified storage pool
-	 * @param poolId
-	 * @return comma separated list of tags
-	 */
-	String getStoragePoolTags(long poolId);
-
-	/**
-	 * Checks if a host has running VMs that are using its local storage pool.
-	 * @return true if local storage is active on the host
-	 */
-	boolean isLocalStorageActiveOnHost(HostVO host);
 	
 	public List<PreallocatedLunVO> getPreAllocatedLuns(ListPreallocatedLunsCmd cmd);
 

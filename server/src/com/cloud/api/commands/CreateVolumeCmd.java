@@ -22,10 +22,12 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.VolumeResponse;
 import com.cloud.serializer.SerializerHelper;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VolumeVO;
 
 @Implementation(createMethod="createVolumeDB", method="createVolume", manager=Manager.StorageManager)
@@ -116,20 +118,22 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
         response.setSize(volume.getSize());
         response.setCreated(volume.getCreated());
         response.setState(volume.getStatus().toString());
-        response.setAccountName(ggetManagementServer().findAccountById(volume.getAccountId()).getAccountName());
+        response.setAccountName(ApiDBUtils.findAccountById(volume.getAccountId()).getAccountName());
         response.setDomainId(volume.getDomainId());
         response.setDiskOfferingId(volume.getDiskOfferingId());
         
         if (volume.getDiskOfferingId() != null) {
-            response.setDiskOfferingName(getManagementServer().findDiskOfferingById(volume.getDiskOfferingId()).getName());
-            response.setDiskOfferingDisplayText(getManagementServer().findDiskOfferingById(volume.getDiskOfferingId()).getDisplayText());
+            DiskOfferingVO diskOffering = ApiDBUtils.findDiskOfferingById(volume.getDiskOfferingId());
+            response.setDiskOfferingName(diskOffering.getName());
+            response.setDiskOfferingDisplayText(diskOffering.getDisplayText());
         }
-        response.setDomain(getManagementServer().findDomainIdById(volume.getDomainId()).getName());
+        response.setDomainName(ApiDBUtils.findDomainById(volume.getDomainId()).getName());
         response.setStorageType("shared"); // NOTE: You can never create a local disk volume but if that changes, we need to change this
-        if (volume.getPoolId() != null)
-            response.setStorage(getManagementServer().findPoolById(volume.getPoolId()).getName());
+        if (volume.getPoolId() != null) {
+            response.setStoragePoolName(ApiDBUtils.findStoragePoolById(volume.getPoolId()).getName());
+        }
         response.setZoneId(volume.getDataCenterId());
-        response.setZoneName(getManagementServer().getDataCenterBy(volume.getDataCenterId()).getName());
+        response.setZoneName(ApiDBUtils.findZoneById(volume.getDataCenterId()).getName());
 
         return SerializerHelper.toSerializedString(response);
     }

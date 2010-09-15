@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -97,8 +98,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
             response.setDiskSize(responseObject.getDiskSize());
             response.setDisplayText(responseObject.getDisplayText());
             response.setDomainId(responseObject.getDomainId());
-            // FIXME:  domain name in the response
-//            response.setDomain(responseObject.getDomain());
+            response.setDomain(ApiDBUtils.findDomainById(responseObject.getDomainId()).getName());
             response.setName(responseObject.getName());
             response.setTags(responseObject.getTags());
         } else {

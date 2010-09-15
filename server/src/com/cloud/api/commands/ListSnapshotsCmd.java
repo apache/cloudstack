@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -116,14 +117,14 @@ public class ListSnapshotsCmd extends BaseListCmd {
             SnapshotResponse snapshotResponse = new SnapshotResponse();
             snapshotResponse.setId(snapshot.getId());
 
-            Account acct = getManagementServer().findAccountById(Long.valueOf(snapshot.getAccountId()));
+            Account acct = ApiDBUtils.findAccountById(Long.valueOf(snapshot.getAccountId()));
             if (acct != null) {
                 snapshotResponse.setAccountName(acct.getAccountName());
                 snapshotResponse.setDomainId(acct.getDomainId());
-                snapshotResponse.setDomain(getManagementServer().findDomainIdById(acct.getDomainId()).getName());
+                snapshotResponse.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
             }
 
-            VolumeVO volume = getManagementServer().findAnyVolumeById(snapshot.getVolumeId());
+            VolumeVO volume = ApiDBUtils.findVolumeById(snapshot.getVolumeId());
             String snapshotTypeStr = SnapshotType.values()[snapshot.getSnapshotType()].name();
             snapshotResponse.setSnapshotType(snapshotTypeStr);
             snapshotResponse.setVolumeId(snapshot.getVolumeId());
@@ -132,12 +133,12 @@ public class ListSnapshotsCmd extends BaseListCmd {
             snapshotResponse.setCreated(snapshot.getCreated());
             snapshotResponse.setName(snapshot.getName());
 
-            AsyncJobVO asyncJob = getManagementServer().findInstancePendingAsyncJob("snapshot", snapshot.getId());
+            AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("snapshot", snapshot.getId());
             if (asyncJob != null) {
                 snapshotResponse.setJobId(asyncJob.getId());
                 snapshotResponse.setJobStatus(asyncJob.getStatus());
             }
-            snapshotResponse.setIntervalType(getManagementServer().getSnapshotIntervalTypes(snapshot.getId()));
+            snapshotResponse.setIntervalType(ApiDBUtils.getSnapshotIntervalTypes(snapshot.getId()));
 
             response.add(snapshotResponse);
         }

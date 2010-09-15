@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -81,7 +82,7 @@ public class ListNetworkGroupsCmd extends BaseListCmd {
             netGrpResponse.setDescription(networkGroup.getDescription());
             netGrpResponse.setAccountName(networkGroup.getAccountName());
             netGrpResponse.setDomainId(networkGroup.getDomainId());
-            netGrpResponse.setDomainName(getManagementServer().findDomainIdById(networkGroup.getDomainId()).getName());
+            netGrpResponse.setDomainName(ApiDBUtils.findDomainById(networkGroup.getDomainId()).getName());
 
             List<IngressRuleResultObject> ingressRules = networkGroup.getIngressRules();
             if ((ingressRules != null) && !ingressRules.isEmpty()) {

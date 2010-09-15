@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -112,7 +113,7 @@ public class ListUsersCmd extends BaseListCmd {
             userResponse.setAccountName(user.getAccountName());
             userResponse.setAccountType(user.getType());
             userResponse.setDomainId(user.getDomainId());
-            userResponse.setDomainName(getManagementServer().findDomainIdById(user.getDomainId()).getName());
+            userResponse.setDomainName(ApiDBUtils.findDomainById(user.getDomainId()).getName());
             userResponse.setTimezone(user.getTimezone());
             userResponse.setApiKey(user.getApiKey());
             userResponse.setSecretKey(user.getSecretKey());

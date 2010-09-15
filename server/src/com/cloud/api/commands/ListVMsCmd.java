@@ -29,8 +29,8 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.async.AsyncJobVO;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.serializer.SerializerHelper;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -124,7 +124,7 @@ public class ListVMsCmd extends BaseListCmd {
         for (UserVmVO userVm : userVms) {
             UserVmResponse userVmResponse = new UserVmResponse();
             userVmResponse.setId(userVm.getId());
-            AsyncJobVO asyncJob = getManagementServer().findInstancePendingAsyncJob("vm_instance", userVm.getId());
+            AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("vm_instance", userVm.getId());
             if (asyncJob != null) {
                 userVmResponse.setJobId(asyncJob.getId());
                 userVmResponse.setJobStatus(asyncJob.getStatus());
@@ -137,11 +137,11 @@ public class ListVMsCmd extends BaseListCmd {
                 userVmResponse.setState(userVm.getState().toString());
             }
 
-            Account acct = getManagementServer().findAccountById(Long.valueOf(userVm.getAccountId()));
+            Account acct = ApiDBUtils.findAccountById(Long.valueOf(userVm.getAccountId()));
             if (acct != null) {
                 userVmResponse.setAccountName(acct.getAccountName());
                 userVmResponse.setDomainId(acct.getDomainId());
-                userVmResponse.setDomainName(getManagementServer().findDomainIdById(acct.getDomainId()).getName());
+                userVmResponse.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
             }
 
             userVmResponse.setHaEnable(userVm.isHaEnabled());
@@ -156,17 +156,17 @@ public class ListVMsCmd extends BaseListCmd {
 
             // Data Center Info
             userVmResponse.setZoneId(userVm.getDataCenterId());
-            userVmResponse.setZoneName(getManagementServer().findDataCenterById(userVm.getDataCenterId()).getName());
+            userVmResponse.setZoneName(ApiDBUtils.findZoneById(userVm.getDataCenterId()).getName());
 
             Account account = (Account)UserContext.current().getAccountObject();
             //if user is an admin, display host id
             if (((account == null) || isAdmin(account.getType())) && (userVm.getHostId() != null)) {
                 userVmResponse.setHostId(userVm.getHostId());
-                userVmResponse.setHostName(getManagementServer().getHostBy(userVm.getHostId()).getName());
+                userVmResponse.setHostName(ApiDBUtils.findHostById(userVm.getHostId()).getName());
             }
 
             // Template Info
-            VMTemplateVO template = getManagementServer().findTemplateById(userVm.getTemplateId());
+            VMTemplateVO template = ApiDBUtils.findTemplateById(userVm.getTemplateId());
             if (template != null) {
                 userVmResponse.setTemplateId(userVm.getTemplateId());
                 userVmResponse.setTemplateName(template.getName());
@@ -181,7 +181,7 @@ public class ListVMsCmd extends BaseListCmd {
 
             // ISO Info
             if (userVm.getIsoId() != null) {
-                VMTemplateVO iso = getManagementServer().findTemplateById(userVm.getIsoId().longValue());
+                VMTemplateVO iso = ApiDBUtils.findTemplateById(userVm.getIsoId().longValue());
                 if (iso != null) {
                     userVmResponse.setIsoId(userVm.getIsoId());
                     userVmResponse.setIsoName(iso.getName());
@@ -189,7 +189,7 @@ public class ListVMsCmd extends BaseListCmd {
             }
 
             // Service Offering Info
-            ServiceOfferingVO offering = getManagementServer().findServiceOfferingById(vmInstance.getServiceOfferingId());
+            ServiceOffering offering = ApiDBUtils.findServiceOfferingById(userVm.getServiceOfferingId());
             userVmResponse.setServiceOfferingId(userVm.getServiceOfferingId());
             userVmResponse.setServiceOfferingName(offering.getName());
             userVmResponse.setCpuNumber(offering.getCpu());
@@ -199,7 +199,7 @@ public class ListVMsCmd extends BaseListCmd {
             //stats calculation
             DecimalFormat decimalFormat = new DecimalFormat("#.##");
             String cpuUsed = null;
-            VmStats vmStats = getManagementServer().getVmStatistics(userVm.getId());
+            VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId());
             if (vmStats != null) {
                 float cpuUtil = (float) vmStats.getCPUUtilization();
                 cpuUsed = decimalFormat.format(cpuUtil) + "%";

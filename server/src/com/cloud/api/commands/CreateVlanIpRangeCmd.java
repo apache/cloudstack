@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
@@ -127,6 +128,11 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     public String getResponse() {
         VlanVO vlan = (VlanVO)getResponseObject();
 
+        String domainNameResponse = null;
+        if ((accountName != null) && (domainId != null)) {
+            domainNameResponse = ApiDBUtils.findDomainById(domainId).getName();
+        }
+
         VlanIpRangeResponse response = new VlanIpRangeResponse();
         response.setAccountName(accountName);
         response.setDescription(vlan.getIpRange());
@@ -140,9 +146,10 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
         response.setStartIp(startIp);
         response.setVlan(vlan.getVlanId());
         response.setZoneId(vlan.getDataCenterId());
-        // TODO:  implement
-//      response.setDomainName(vlan.getDomainName());
-//      response.setPodName(podName);
+        response.setDomainName(domainNameResponse);
+        if (podId != null) {
+            response.setPodName(ApiDBUtils.findPodById(podId).getName());
+        }
 
         return SerializerHelper.toSerializedString(response);
     }

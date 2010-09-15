@@ -27,6 +27,7 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -141,19 +142,19 @@ public class ListStoragePoolsAndHostsCmd extends BaseListCmd {
         poolResponse.setPath(pool.getPath());
         poolResponse.setIpAddress(pool.getHostAddress());
         poolResponse.setZoneId(pool.getDataCenterId());
-        poolResponse.setZoneName(getManagementServer().getDataCenterBy(pool.getDataCenterId()).getName());
+        poolResponse.setZoneName(ApiDBUtils.findZoneById(pool.getDataCenterId()).getName());
         if (pool.getPoolType() != null) {
             poolResponse.setType(pool.getPoolType().toString());
         }
         if (pool.getPodId() != null) {
             poolResponse.setPodId(pool.getPodId());
-            poolResponse.setPodName(getManagementServer().getPodBy(pool.getPodId()).getName());
+            poolResponse.setPodName(ApiDBUtils.findPodById(pool.getPodId()).getName());
         }
         if (pool.getCreated() != null) {
             poolResponse.setCreated(pool.getCreated());
         }
 
-        StorageStats stats = getManagementServer().getStoragePoolStatistics(pool.getId());
+        StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
         long capacity = pool.getCapacityBytes();
         long available = pool.getAvailableBytes() ;
         long used = capacity - available;
@@ -167,12 +168,12 @@ public class ListStoragePoolsAndHostsCmd extends BaseListCmd {
         poolResponse.setDiskSizeAllocated(used);
 
         if (pool.getClusterId() != null) {
-            ClusterVO cluster = getManagementServer().findClusterById(pool.getClusterId());
+            ClusterVO cluster = ApiDBUtils.findClusterById(pool.getClusterId());
             poolResponse.setClusterId(cluster.getId());
             poolResponse.setClusterName(cluster.getName());
         }           
 
-        poolResponse.setTags(getManagementServer().getStoragePoolTags(pool.getId()));
+        poolResponse.setTags(ApiDBUtils.getStoragePoolTags(pool.getId()));
 
         return poolResponse;
     }
@@ -198,21 +199,21 @@ public class ListStoragePoolsAndHostsCmd extends BaseListCmd {
         hostResponse.setVersion(host.getVersion());
 
         // TODO:  implement
-        GuestOSCategoryVO guestOSCategory = getManagementServer().getHostGuestOSCategory(host.getId());
+        GuestOSCategoryVO guestOSCategory = ApiDBUtils.getHostGuestOSCategory(host.getId());
         if (guestOSCategory != null) {
             hostResponse.setOsCategoryId(guestOSCategory.getId());
             hostResponse.setOsCategoryName(guestOSCategory.getName());
         }
-        hostResponse.setZoneName(getManagementServer().getDataCenterBy(host.getDataCenterId()).getName());
-        hostResponse.setPodName(getManagementServer().findHostPodById(host.getPodId()).getName());
+        hostResponse.setZoneName(ApiDBUtils.findZoneById(host.getDataCenterId()).getName());
+        hostResponse.setPodName(ApiDBUtils.findPodById(host.getPodId()).getName());
 
         // calculate cpu allocated by vm
         int cpu = 0;
         String cpuAlloc = null;
         DecimalFormat decimalFormat = new DecimalFormat("#.##");
-        List<UserVmVO> instances = getManagementServer().listUserVMsByHostId(host.getId());
+        List<UserVmVO> instances = ApiDBUtils.listUserVMsByHostId(host.getId());
         for (UserVmVO vm : instances) {
-            ServiceOffering so = getManagementServer().findServiceOfferingById(vm.getServiceOfferingId());
+            ServiceOffering so = ApiDBUtils.findServiceOfferingById(vm.getServiceOfferingId());
             cpu += so.getCpu() * so.getSpeed();
         }
         cpuAlloc = decimalFormat.format(((float) cpu / (float) (host.getCpus() * host.getSpeed())) * 100f) + "%";
@@ -220,7 +221,7 @@ public class ListStoragePoolsAndHostsCmd extends BaseListCmd {
 
         // calculate cpu utilized
         String cpuUsed = null;
-        HostStats hostStats = getManagementServer().getHostStatistics(host.getId());
+        HostStats hostStats = ApiDBUtils.getHostStatistics(host.getId());
         if (hostStats != null) {
             float cpuUtil = (float) hostStats.getCpuUtilization();
             cpuUsed = decimalFormat.format(cpuUtil) + "%";
@@ -234,7 +235,7 @@ public class ListStoragePoolsAndHostsCmd extends BaseListCmd {
             hostResponse.setMemoryTotal(host.getTotalMemory());
             
             // calculate memory allocated by systemVM and userVm
-            long mem = getManagementServer().getMemoryUsagebyHost(host.getId());
+            long mem = ApiDBUtils.getMemoryUsagebyHost(host.getId());
             hostResponse.setMemoryAllocated(mem);
             hostResponse.setMemoryUsed(mem);
         } else if (host.getType().toString().equals("Storage")) {
@@ -243,11 +244,11 @@ public class ListStoragePoolsAndHostsCmd extends BaseListCmd {
         }
 
         if (host.getClusterId() != null) {
-            ClusterVO cluster = getManagementServer().findClusterById(host.getClusterId());
+            ClusterVO cluster = ApiDBUtils.findClusterById(host.getClusterId());
             hostResponse.setClusterName(cluster.getName());
         }
 
-        hostResponse.setLocalStorageActive(getManagementServer().isLocalStorageActiveOnHost(host));
+        hostResponse.setLocalStorageActive(ApiDBUtils.isLocalStorageActiveOnHost(host));
 
         Set<Event> possibleEvents = host.getStatus().getPossibleEvents();
         if ((possibleEvents != null) && !possibleEvents.isEmpty()) {

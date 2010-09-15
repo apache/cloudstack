@@ -22,11 +22,19 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.TemplateResponse;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.serializer.SerializerHelper;
+import com.cloud.storage.GuestOS;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.VMTemplateHostVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.user.Account;
 
 @Implementation(method="createPrivateTemplate", createMethod="createPrivateTemplateRecord", manager=Manager.UserVmManager)
 public class CreateTemplateCmd extends BaseAsyncCreateCmd {
@@ -138,28 +146,39 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
         response.setPasswordEnabled(template.getEnablePassword());
         response.setCrossZones(template.isCrossZones());
 
-        // TODO: implement
-//        VMTemplateHostVO templateHostRef = managerServer.findTemplateHostRef(template.getId(), volume.getDataCenterId());
-//        response.setCreated(templateHostRef.getCreated());
-//        response.setReady(templateHostRef != null && templateHostRef.getDownloadState() == Status.DOWNLOADED);
-//        if (os != null) {
-//            resultObject.setOsTypeId(os.getId());
-//            resultObject.setOsTypeName(os.getDisplayName());
-//        } else {
-//            resultObject.setOsTypeId(-1L);
-//            resultObject.setOsTypeName("");
-//        }
-//        Account owner = managerServer.findAccountById(template.getAccountId());
-//        if (owner != null) {
-//            resultObject.setAccount(owner.getAccountName());
-//            resultObject.setDomainId(owner.getDomainId());
-//            resultObject.setDomainName(managerServer.findDomainIdById(owner.getDomainId()).getName());
-//        }
-//        DataCenterVO zone = managerServer.findDataCenterById(dataCenterId);
-//        if (zone != null) {
-//            resultObject.setZoneId(zone.getId());
-//            resultObject.setZoneName(zone.getName());
-//        }
+        VolumeVO volume = null;
+        if (snapshotId != null) {
+            Snapshot snapshot = ApiDBUtils.findSnapshotById(snapshotId);
+            volume = ApiDBUtils.findVolumeById(snapshot.getVolumeId());
+        } else {
+            volume = ApiDBUtils.findVolumeById(volumeId);
+        }
+
+        VMTemplateHostVO templateHostRef = ApiDBUtils.findTemplateHostRef(template.getId(), volume.getDataCenterId());
+        response.setCreated(templateHostRef.getCreated());
+        response.setReady(templateHostRef != null && templateHostRef.getDownloadState() == Status.DOWNLOADED);
+
+        GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
+        if (os != null) {
+            response.setOsTypeId(os.getId());
+            response.setOsTypeName(os.getDisplayName());
+        } else {
+            response.setOsTypeId(-1L);
+            response.setOsTypeName("");
+        }
+
+        Account owner = ApiDBUtils.findAccountById(template.getAccountId());
+        if (owner != null) {
+            response.setAccount(owner.getAccountName());
+            response.setDomainId(owner.getDomainId());
+            response.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
+        }
+
+        DataCenterVO zone = ApiDBUtils.findZoneById(volume.getDataCenterId());
+        if (zone != null) {
+            response.setZoneId(zone.getId());
+            response.setZoneName(zone.getName());
+        }
 
         return SerializerHelper.toSerializedString(response);
     }

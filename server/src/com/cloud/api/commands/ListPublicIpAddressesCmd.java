@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -112,7 +113,7 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
 
         List<IPAddressResponse> response = new ArrayList<IPAddressResponse>();
         for (IPAddressVO ipAddress : ipAddresses) {
-            VlanVO vlan  = getManagementServer().findVlanById(ipAddress.getVlanDbId());
+            VlanVO vlan  = ApiDBUtils.findVlanById(ipAddress.getVlanDbId());
             boolean forVirtualNetworks = vlan.getVlanType().equals(VlanType.VirtualNetwork);
 
             IPAddressResponse ipResponse = new IPAddressResponse();
@@ -121,15 +122,15 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
                 ipResponse.setAllocated(ipAddress.getAllocated());
             }
             ipResponse.setZoneId(ipAddress.getDataCenterId());
-            ipResponse.setZoneName(getManagementServer().findDataCenterById(ipAddress.getDataCenterId()).getName());
+            ipResponse.setZoneName(ApiDBUtils.findZoneById(ipAddress.getDataCenterId()).getName());
             ipResponse.setSourceNat(ipAddress.isSourceNat());
 
             //get account information
-            Account accountTemp = getManagementServer().findAccountById(ipAddress.getAccountId());
+            Account accountTemp = ApiDBUtils.findAccountById(ipAddress.getAccountId());
             if (accountTemp !=null){
                 ipResponse.setAccountName(accountTemp.getAccountName());
                 ipResponse.setDomainId(accountTemp.getDomainId());
-                ipResponse.setDomainName(getManagementServer().findDomainIdById(accountTemp.getDomainId()).getName());
+                ipResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
             } 
             
             ipResponse.setForVirtualNetwork(forVirtualNetworks);
@@ -138,7 +139,7 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
             Account account = (Account)UserContext.current().getAccountObject();
             if ((account == null)  || isAdmin(account.getType())) {
                 ipResponse.setVlanId(ipAddress.getVlanDbId());
-                ipResponse.setVlanName(getManagementServer().findVlanById(ipAddress.getVlanDbId()).getVlanId());
+                ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddress.getVlanDbId()).getVlanId());
             }
 
             response.add(ipResponse);
