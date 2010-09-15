@@ -21,6 +21,7 @@ package com.cloud.api.commands;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -42,6 +43,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
+import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.VmStats;
 
 public class ListVMsCmd extends BaseCmd {
@@ -56,7 +58,7 @@ public class ListVMsCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.STATE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.POD_ID, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.GROUP, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.GROUP_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HOST_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.KEYWORD, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
@@ -86,7 +88,7 @@ public class ListVMsCmd extends BaseCmd {
         Long zoneId = (Long)params.get(BaseCmd.Properties.ZONE_ID.getName());
         Long podId = (Long)params.get(BaseCmd.Properties.POD_ID.getName());
         Long hostId = (Long)params.get(BaseCmd.Properties.HOST_ID.getName());
-        String group = (String)params.get(BaseCmd.Properties.GROUP.getName());
+        Long groupId = (Long)params.get(BaseCmd.Properties.GROUP_ID.getName());
         String keyword = (String)params.get(BaseCmd.Properties.KEYWORD.getName());
         Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
         Integer pageSize = (Integer)params.get(BaseCmd.Properties.PAGESIZE.getName());
@@ -145,14 +147,6 @@ public class ListVMsCmd extends BaseCmd {
             if(zoneId != null)
             	c.addCriteria(Criteria.DATACENTERID, zoneId);
 
-            if(group != null)
-            {
-            	if(group.equals(""))
-            		c.addCriteria(Criteria.EMPTY_GROUP, group);
-            	else
-            		c.addCriteria(Criteria.GROUP, group);
-            }
-
             // ignore these search requests if it's not an admin
             if (isAdmin == true) {
     	        c.addCriteria(Criteria.DOMAINID, domainId);
@@ -165,13 +159,14 @@ public class ListVMsCmd extends BaseCmd {
 
         c.addCriteria(Criteria.ACCOUNTID, accountIds);
         c.addCriteria(Criteria.ISADMIN, isAdmin); 
+        c.addCriteria(Criteria.GROUPID, groupId); 
 
         List<? extends UserVm> virtualMachines = getManagementServer().searchForUserVMs(c);
 
         if (virtualMachines == null) {
             throw new ServerApiException(BaseCmd.VM_LIST_ERROR, "unable to find virtual machines for account id " + accountName.toString());
         }
-
+        
         Object[] vmTag = new Object[virtualMachines.size()];
         int i = 0;
 
@@ -220,11 +215,14 @@ public class ListVMsCmd extends BaseCmd {
             else {
             	vmData.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_NAME.getName(), vmInstance.getName()));
             }
-
-    		if (vmInstance.getGroup() != null) {
-    			vmData.add(new Pair<String, Object>(BaseCmd.Properties.GROUP.getName(), vmInstance.getGroup()));
-    		}
-
+            
+            //Groups
+            InstanceGroupVO group = getManagementServer().getGroupForVm(vmInstance.getId());
+            if (group != null) {
+            	vmData.add(new Pair<String, Object>(BaseCmd.Properties.GROUP_ID.getName(), group.getId()));
+                vmData.add(new Pair<String, Object>(BaseCmd.Properties.GROUP.getName(), group.getName()));
+            }
+            
             // Data Center Info
             vmData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_ID.getName(), Long.valueOf(vmInstance.getDataCenterId()).toString()));
             vmData.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), getManagementServer().findDataCenterById(vmInstance.getDataCenterId()).getName()));

@@ -247,6 +247,7 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -261,18 +262,22 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.InstanceGroupVMMapVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.InstanceGroupDao;
 import com.google.gson.Gson;
 
 public class ManagementServerImpl implements ManagementServer {
@@ -343,6 +348,8 @@ public class ManagementServerImpl implements ManagementServer {
     private final int _purgeDelay;
     private final boolean _directAttachNetworkExternalIpAllocator;
     private final PreallocatedLunDao _lunDao;
+    private final InstanceGroupDao _vmGroupDao;
+    private final InstanceGroupVMMapDao _groupVMMapDao;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -419,6 +426,8 @@ public class ManagementServerImpl implements ManagementServer {
         _poolDao = locator.getDao(StoragePoolDao.class);
         _poolHostDao = locator.getDao(StoragePoolHostDao.class);
         _vmDao = locator.getDao(UserVmDao.class);
+        _vmGroupDao = locator.getDao(InstanceGroupDao.class);
+        _groupVMMapDao = locator.getDao(InstanceGroupVMMapDao.class);
 
         _configs = _configDao.getConfiguration();
         _userStatsDao = locator.getDao(UserStatisticsDao.class);
@@ -898,6 +907,15 @@ public class ManagementServerImpl implements ManagementServer {
         boolean accountCleanupNeeded = false;
         
         try {
+        	//delete all vm groups belonging to accont
+        	List<InstanceGroupVO> groups = _vmGroupDao.listByAccountId(accountId);
+            for (InstanceGroupVO group : groups) {
+                if (!_vmMgr.deleteVmGroup(group.getId())) {
+                    s_logger.error("Unable to delete group: " + group.getId());
+                    accountCleanupNeeded = true;
+                } 
+            }
+        	
             // Delete the snapshots dir for the account. Have to do this before destroying the VMs.
             boolean success = _snapMgr.deleteSnapshotDirsForAccount(accountId);
             if (success) {
@@ -2291,7 +2309,7 @@ public class ManagementServerImpl implements ManagementServer {
             ArrayList<StoragePoolVO> a = new ArrayList<StoragePoolVO>(avoids.values());
             if (_directAttachNetworkExternalIpAllocator) {
             	try {
-            		created = _vmMgr.createDirectlyAttachedVMExternal(vmId, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, networkGroupVOs, startEventId, size);
+            		created = _vmMgr.createDirectlyAttachedVMExternal(vmId, userId, account, dc, offering, template, diskOffering, displayName, userData, a, networkGroupVOs, startEventId, size);
             	} catch (ResourceAllocationException rae) {
             		throw rae;
             	}
@@ -2312,19 +2330,32 @@ public class ManagementServerImpl implements ManagementServer {
             		}
 
             		try {
-            			created = _vmMgr.createVirtualMachine(vmId, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, startEventId, size);
+            			created = _vmMgr.createVirtualMachine(vmId, userId, account, dc, offering, template, diskOffering, displayName, userData, a, startEventId, size);
             		} catch (ResourceAllocationException rae) {
             			throw rae;
             		}
             	} else {
             		try {
-            			created = _vmMgr.createDirectlyAttachedVM(vmId, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, networkGroupVOs, startEventId, size);
+            			created = _vmMgr.createDirectlyAttachedVM(vmId, userId, account, dc, offering, template, diskOffering, displayName, userData, a, networkGroupVOs, startEventId, size);
             		} catch (ResourceAllocationException rae) {
             			throw rae;
             		}
             	}
             }
 
+            //assign vm to the group
+            try{
+            	if (group != null) {
+            	boolean addToGroup = _vmMgr.addInstanceToGroup(Long.valueOf(vmId), group);
+            	if (!addToGroup) {
+            		throw new InternalErrorException("Unable to assing Vm to the group " + group);
+            	}
+                }
+            } catch (Exception ex) {
+            	throw new InternalErrorException("Unable to assing Vm to the group " + group);
+            }
+            
+            
             if (created == null) {
                 throw new InternalErrorException("Unable to create VM for account (" + accountId + "): " + account.getAccountName());
             }
@@ -2743,9 +2774,16 @@ public class ManagementServerImpl implements ManagementServer {
         if (vm == null) {
             throw new CloudRuntimeException("Unable to find virual machine with id " + vmId);
         }
+        
+        if (group != null) {
+        	boolean addToGroup = _vmMgr.addInstanceToGroup(Long.valueOf(vmId), group);
+        	if (!addToGroup) {
+        		throw new CloudRuntimeException("Unable to update Vm with the the group " + group);
+        	}
+        }
 
         boolean haEnabled = vm.isHaEnabled();
-        _userVmDao.updateVM(vmId, displayName, group, enable);
+        _userVmDao.updateVM(vmId, displayName, enable);
         if (haEnabled != enable) {
             String description = null;
             String type = null;
@@ -5044,11 +5082,13 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public List<UserVmVO> searchForUserVMs(Criteria c) {
         Filter searchFilter = new Filter(UserVmVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+        
         SearchBuilder<UserVmVO> sb = _userVmDao.createSearchBuilder();
+       
         // some criteria matter for generating the join condition
         Object[] accountIds = (Object[]) c.getCriteria(Criteria.ACCOUNTID);
         Object domainId = c.getCriteria(Criteria.DOMAINID);
-
+        
         // get the rest of the criteria
         Object id = c.getCriteria(Criteria.ID);
         Object name = c.getCriteria(Criteria.NAME);
@@ -5061,8 +5101,8 @@ public class ManagementServerImpl implements ManagementServer {
         Object keyword = c.getCriteria(Criteria.KEYWORD);
         Object isAdmin = c.getCriteria(Criteria.ISADMIN);
         Object ipAddress = c.getCriteria(Criteria.IPADDRESS);
-        Object vmGroup = c.getCriteria(Criteria.GROUP);
-        Object emptyGroup = c.getCriteria(Criteria.EMPTY_GROUP);
+        Object groupId = c.getCriteria(Criteria.GROUPID);
+        
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("accountIdEQ", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
@@ -5076,7 +5116,6 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("hostIdEQ", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("hostIdIN", sb.entity().getHostId(), SearchCriteria.Op.IN);
         sb.and("guestIP", sb.entity().getGuestIpAddress(), SearchCriteria.Op.EQ);
-        sb.and("groupEQ", sb.entity().getGroup(),SearchCriteria.Op.EQ);
         
         if ((accountIds == null) && (domainId != null)) {
             // if accountId isn't specified, we can do a domain match for the admin case
@@ -5084,15 +5123,24 @@ public class ManagementServerImpl implements ManagementServer {
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId());
         }
+        
+        if (groupId != null) {
+        	SearchBuilder<InstanceGroupVMMapVO> groupSearch = _groupVMMapDao.createSearchBuilder();
+        	groupSearch.and("groupId", groupSearch.entity().getGroupId(), SearchCriteria.Op.EQ);
+            sb.join("groupSearch", groupSearch, sb.entity().getId(), groupSearch.entity().getInstanceId());
+        }
 
         // populate the search criteria with the values passed in
         SearchCriteria<UserVmVO> sc = sb.create();
+        
+        if (groupId != null) {
+        	sc.setJoinParameters("groupSearch", "groupId", groupId);
+        }
 
         if (keyword != null) {
             SearchCriteria<UserVmVO> ssc = _userVmDao.createSearchCriteria();
             ssc.addOr("displayName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("group", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
@@ -5165,22 +5213,6 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (ipAddress != null) {
             sc.setParameters("guestIP", ipAddress);
-        }
-        
-        if(vmGroup!=null)
-        	sc.setParameters("groupEQ", vmGroup);
-        
-        if (emptyGroup!= null) 
-        {
-        	SearchBuilder<UserVmVO> emptyGroupSearch = _userVmDao.createSearchBuilder();
-        	emptyGroupSearch.and("group", emptyGroupSearch.entity().getGroup(), SearchCriteria.Op.EQ);
-        	emptyGroupSearch.or("null", emptyGroupSearch.entity().getGroup(), SearchCriteria.Op.NULL);
-
-        	SearchCriteria<UserVmVO> sc1 = _userVmDao.createSearchCriteria();
-        	sc1 = emptyGroupSearch.create();
-        	sc1.setParameters("group", "");
-        	
-        	sc.addAnd("group", SearchCriteria.Op.SC, sc1);
         }
         
         return _userVmDao.search(sc, searchFilter);
@@ -8759,5 +8791,99 @@ public class ManagementServerImpl implements ManagementServer {
 		
 		return false;
     }
+    
+    //Move this section to UserVmManager when merge with api refactor branch is done
+    @Override
+    public InstanceGroupVO createVmGroup(String name, Long accountId){
+    	return _vmMgr.createVmGroup(name, accountId);
+    }
+    
+    @Override
+    public InstanceGroupVO findVmGroupById(long groupId) {
+    	InstanceGroupVO group = _vmGroupDao.findById(groupId);
+    	//return only active vm groups
+    	if (group.getRemoved() == null) {
+    		return group;
+    	}
+    	else {
+    		return null;
+    	}
+    }
+    
+    @Override
+    public InstanceGroupVO updateVmGroup(long groupId, String name){
+          
+        if (name != null) {
+        	_vmGroupDao.updateVmGroup(groupId, name);
+        }
+        InstanceGroupVO vmGroup = _vmGroupDao.findById(groupId);
+        return vmGroup;
+    }
+    
+    @Override
+    public boolean isVmGroupNameInUse(Long accountId, String name) {
+        return _vmGroupDao.isNameInUse(accountId, name);
+    }
+    
+    @Override
+    public boolean deleteVmGroup(long groupId) throws InternalErrorException{
+        return _vmMgr.deleteVmGroup(groupId);
+    }
+    
+    @Override
+    public List<InstanceGroupVO> searchForVmGroups(Criteria c) {
+        Filter searchFilter = new Filter(InstanceGroupVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+
+        Object[] accountIds = (Object[]) c.getCriteria(Criteria.ACCOUNTID);
+        Object id = c.getCriteria(Criteria.ID);
+        Object name = c.getCriteria(Criteria.NAME);
+        Object domainId = c.getCriteria(Criteria.DOMAINID);
+        Object keyword = c.getCriteria(Criteria.KEYWORD);
+
+        SearchBuilder<InstanceGroupVO> sb = _vmGroupDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.IN);
+
+        if ((accountIds == null) && (domainId != null)) {
+            // if accountId isn't specified, we can do a domain match for the admin case
+            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId());
+        }
+
+        SearchCriteria<InstanceGroupVO> sc = sb.create();
+        if (keyword != null) {
+            SearchCriteria<InstanceGroupVO> ssc = _vmGroupDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+        }
+        
+    	if (id != null) {
+        	sc.setParameters("id", id);
+    	}
+        
+        if (name != null) {
+            sc.setParameters("name", "%" + name + "%");
+        }
+
+        if (accountIds != null) {
+            sc.setParameters("accountId", accountIds);
+        } else if (domainId != null) {
+            DomainVO domain = _domainDao.findById((Long)domainId);
+            if (domain != null){
+            	sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+            }   
+        }
+
+        return _vmGroupDao.search(sc, searchFilter);
+    }
+    
+	@Override
+	public InstanceGroupVO getGroupForVm(long vmId){
+		return _vmMgr.getGroupForVm(vmId);
+	}
+    
+    
+    //Move section above to UserVmManager when merge with api refactor branch is done
 }
 

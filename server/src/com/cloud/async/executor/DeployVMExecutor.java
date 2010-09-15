@@ -42,6 +42,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.ExecutionException;
+import com.cloud.vm.InstanceGroupVO;
 import com.google.gson.Gson;
 
 public class DeployVMExecutor extends VMOperationExecutor {
@@ -155,14 +156,17 @@ public class DeployVMExecutor extends VMOperationExecutor {
 			resultObject.setDisplayName(vm.getDisplayName());
 		}
 		
-		if (vm.getGroup() != null) {
-			resultObject.setGroup(vm.getGroup());
-		}
-		
 		if(vm.getState() != null)
 			resultObject.setState(vm.getState().toString());
 		
 		ManagementServer managementServer = getAsyncJobMgr().getExecutorContext().getManagementServer();
+		
+		InstanceGroupVO group = managementServer.getGroupForVm(vm.getId());
+		if (group != null) {
+			resultObject.setGroupId(group.getId());
+			resultObject.setGroup(group.getName());
+		}
+		
         VMTemplateVO template = managementServer.findTemplateById(vm.getTemplateId());
         
         Account acct = managementServer.findAccountById(Long.valueOf(vm.getAccountId()));

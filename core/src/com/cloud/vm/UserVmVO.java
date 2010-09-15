@@ -60,9 +60,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     
     @Column(name="external_ip_address")
 	String externalIpAddress;
-    
-    @Column(name="group", updatable=true, nullable=true)
-    private String group;
 
     @Column(name="external_mac_address")
 	String externalMacAddress;
@@ -146,15 +143,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
         return vnet;
     }
     
-    @Override
-    public String getGroup() {
-        return group;
-    }
-    
-    public void setGroup(String group) {
-        this.group = group;
-    }
-    
     public UserVmVO(long id,
                     String instanceName,
                     String displayName,
@@ -164,10 +152,8 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
                     long domainId,
                     long accountId,
                     long serviceOfferingId,
-                    String group,
                     String userData) {
         super(id, displayName, instanceName, Type.User, templateId, guestOsId, haEnabled);
-        this.group = group;
         this.userData = userData;
         this.displayName = displayName;
         
@@ -191,7 +177,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
                     long dcId,
                     boolean haEnabled,
                     String displayName,
-                    String group,
                     String userData) {
         super(id, name, name, Type.User, templateId, guestOSId, guestMacAddress, guestIpAddress, guestNetMask, dcId, podId, haEnabled, null);
         this.serviceOfferingId = serviceOfferingId;
@@ -205,10 +190,8 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
         this.externalMacAddress = externalMacAddress;
         this.setUserData(userData);
         this.setExternalVlanDbId(vlanDbId);
-        this.group = group;
         this.isoId = null;
         this.displayName = displayName;
-        this.group = group;
     }
 
     protected UserVmVO() {

@@ -90,6 +90,10 @@ public class DeployVMCmd extends BaseCmd {
         Long size = (Long)params.get(BaseCmd.Properties.SIZE.getName());
         String password = null;
         Long accountId = null;
+        
+        //don't accept empty group names
+        if (group != null && group.isEmpty())
+        	group = null;
 
         if(size == null)
         	size = Long.valueOf(0);

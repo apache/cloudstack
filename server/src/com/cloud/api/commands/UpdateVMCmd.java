@@ -67,6 +67,10 @@ public class UpdateVMCmd extends BaseCmd{
         if (userId == null) {
             userId = Long.valueOf(1);
         }
+        
+        //don't accept empty parameter for the group
+        if (group != null && group.isEmpty())
+        	group = null;
 
         // Verify input parameters
         try {
@@ -86,10 +90,6 @@ public class UpdateVMCmd extends BaseCmd{
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid virtual machine id (" + vmId + ") given, unable to update virtual machine.");
             }
         }
-
-        if (group == null) {
-    		group = vmInstance.getGroup();
-    	}
 
     	if (displayName == null) {
     		displayName = vmInstance.getDisplayName();

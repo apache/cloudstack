@@ -60,8 +60,6 @@ public interface UserVm extends VirtualMachine, OwnedBy, PartOf {
     
     String getDisplayName();
     
-    String getGroup();
-    
     String getUserData();
     
     void setUserData(String userData);

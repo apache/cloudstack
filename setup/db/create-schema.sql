@@ -79,6 +79,8 @@ DROP TABLE IF EXISTS `cloud`.`network_offerings`;
 DROP TABLE IF EXISTS `cloud`.`host_master`;
 DROP TABLE IF EXISTS `cloud`.`hypervisor_properties`;
 DROP TABLE IF EXISTS `cloud`.`account_network_ref`;
+DROP TABLE IF EXISTS `cloud`.`instance_group`;
+DROP TABLE IF EXISTS `cloud`.`instance_group_vm_map`;
 
 CREATE TABLE `cloud`.`hypervsior_properties` (
   `hypervisor` varchar(32) NOT NULL UNIQUE COMMENT 'hypervisor type',
@@ -582,7 +584,6 @@ CREATE TABLE  `cloud`.`vm_instance` (
 
 CREATE TABLE `cloud`.`user_vm` (
   `id` bigint unsigned UNIQUE NOT NULL,
-  `group` varchar(255),
   `iso_id` bigint unsigned,
   `display_name` varchar(255),
   `domain_router_id` bigint unsigned COMMENT 'router id',
@@ -1086,6 +1087,22 @@ CREATE TABLE `cloud`.`host_master` (
   `admin` varchar(32) NOT NULL,
   `password` varchar(32),
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`instance_group` (
+  `id` bigint unsigned NOT NULL UNIQUE auto_increment,
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner.  foreign key to account table',
+  `name` varchar(255) NOT NULL,
+  `removed` datetime COMMENT 'date the group was removed',
+  `created` datetime COMMENT 'date the group was created',
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`instance_group_vm_map` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `group_id` bigint unsigned NOT NULL,
+  `instance_id` bigint unsigned NOT NULL,
+  PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;

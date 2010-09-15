@@ -99,6 +99,9 @@ public class VMOperationResultObject {
 	@Param(name="group")
 	private String group;
 	
+	@Param(name="groupid")
+	private Long groupId;
+	
 	@Param(name="domainid")
 	private Long domainId;
 	
@@ -323,6 +326,14 @@ public class VMOperationResultObject {
 
 	public void setGroup(String group) {
 		this.group = group;
+	}
+	
+	public Long getGroupId() {
+		return groupId;
+	}
+
+	public void setGroupId(Long groupId) {
+		this.groupId = groupId;
 	}
 	
 	public Long getDomainId() {

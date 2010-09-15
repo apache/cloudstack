@@ -18,15 +18,13 @@
 
 package com.cloud.async.executor;
 
-import java.util.List;
-
 import com.cloud.api.BaseCmd;
-import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.InstanceGroupVO;
 
 public class VMExecutorHelper {
 	public static VMOperationResultObject composeResultObject(ManagementServer managementServer, UserVmVO vm, String vmPassword) {
@@ -48,12 +46,14 @@ public class VMExecutorHelper {
 			resultObject.setDisplayName(vm.getDisplayName());
 		}
 		
-		if (vm.getGroup() != null) {
-			resultObject.setGroup(vm.getGroup());
-		}
-		
 		if(vm.getState() != null)
 			resultObject.setState(vm.getState().toString());
+		
+		InstanceGroupVO group = managementServer.getGroupForVm(vm.getId());
+		if (group != null) {
+			resultObject.setGroupId(group.getId());
+			resultObject.setGroup(group.getName());
+		}
 		
         VMTemplateVO template = managementServer.findTemplateById(vm.getTemplateId());
         

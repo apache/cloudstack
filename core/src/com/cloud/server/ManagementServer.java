@@ -96,6 +96,7 @@ import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.VmStats;
 
 /**
@@ -2201,4 +2202,36 @@ public interface ManagementServer {
 	VolumeVO getRootVolume(Long instanceId);
 	long getPsMaintenanceCount(long podId);
 	boolean isPoolUp(long instanceId);
+	
+	
+	//Move this part to UserVmManagerImpl after merge with api refactor branch
+	/**
+	 * Creates a vm group
+	 * @param name - group name
+	 * @param accountId - account_id
+	 *  
+	 */
+	InstanceGroupVO createVmGroup(String name, Long accountId);
+	
+    /**
+     * Finds a vm group with the specified ID.
+     * @param groupId
+     * @return vmGroupVO
+     */
+    InstanceGroupVO findVmGroupById(long groupId);
+    
+    InstanceGroupVO updateVmGroup(long groupId, String name);
+    
+    /**
+     * Check if vm group name is already in use by this account
+     * @param name - name of the group
+     * @param accountId - accountId
+     */
+    boolean isVmGroupNameInUse(Long accountId, String name);
+    
+    boolean deleteVmGroup(long groupId) throws InternalErrorException;
+    
+    List<InstanceGroupVO> searchForVmGroups(Criteria c);
+    
+    InstanceGroupVO getGroupForVm(long vmId);
 }

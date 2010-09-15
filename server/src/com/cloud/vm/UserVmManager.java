@@ -80,11 +80,11 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @param diskOffering the disk offering for the root disk (deploying from ISO) or the data disk (deploying from a normal template)
      * @return UserVmVO if created; null if not.
      */
-    UserVmVO createVirtualMachine(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> avoids, long startEventId, long size) throws InsufficientStorageCapacityException, InternalErrorException, ResourceAllocationException;
+    UserVmVO createVirtualMachine(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String userData, List<StoragePoolVO> avoids, long startEventId, long size) throws InsufficientStorageCapacityException, InternalErrorException, ResourceAllocationException;
     
-	UserVmVO createDirectlyAttachedVM(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> a, List<NetworkGroupVO> networkGroupVO, long startEventId, long size) throws InternalErrorException, ResourceAllocationException;
+	UserVmVO createDirectlyAttachedVM(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String userData, List<StoragePoolVO> a, List<NetworkGroupVO> networkGroupVO, long startEventId, long size) throws InternalErrorException, ResourceAllocationException;
 
-	UserVmVO createDirectlyAttachedVMExternal(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> a, List<NetworkGroupVO> networkGroupVO, long startEventId, long size) throws InternalErrorException, ResourceAllocationException;
+	UserVmVO createDirectlyAttachedVMExternal(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String userData, List<StoragePoolVO> a, List<NetworkGroupVO> networkGroupVO, long startEventId, long size) throws InternalErrorException, ResourceAllocationException;
 
     /**
      * Destroys one virtual machine
@@ -219,5 +219,18 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @param userVm
      */
     void releaseGuestIpAddress(UserVmVO userVm);
+    
+    /**
+     * Creates a vm group.
+     * @param name - name of the group
+     * @param accountId - accountId
+     */
+    InstanceGroupVO createVmGroup(String name, Long accountId);
+    
+    boolean deleteVmGroup(long groupId);
+    
+    boolean addInstanceToGroup(long userVmId, String group);
+    
+    InstanceGroupVO getGroupForVm(long vmId);
 
 }

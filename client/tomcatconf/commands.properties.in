@@ -210,3 +210,10 @@ listNetworkGroups=com.cloud.api.commands.ListNetworkGroupsCmd;11
 registerPreallocatedLun=com.cloud.server.api.commands.RegisterPreallocatedLunCmd;1
 deletePreallocatedLun=com.cloud.server.api.commands.DeletePreallocatedLunCmd;1
 listPreallocatedLuns=com.cloud.api.commands.ListPreallocatedLunsCmd;1
+
+
+#### vm group commands
+createInstanceGroup=com.cloud.api.commands.CreateVMGroupCmd;15
+deleteInstanceGroup=com.cloud.api.commands.DeleteVMGroupCmd;15
+updateInstanceGroup=com.cloud.api.commands.UpdateVMGroupCmd;15
+listInstanceGroups=com.cloud.api.commands.ListVMGroupsCmd;15

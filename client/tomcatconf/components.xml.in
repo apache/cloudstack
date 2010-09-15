@@ -113,6 +113,8 @@
         <dao name="NetworkConfigurationDao" class="com.cloud.network.dao.NetworkConfigurationDaoImpl"/>
         <dao name="NetworkOfferingDao" class="com.cloud.offerings.dao.NetworkOfferingDaoImpl"/>
         <dao name="NicDao" class="com.cloud.vm.dao.NicDaoImpl"/>
+        <dao name="InstanceGroupDao" class="com.cloud.vm.dao.InstanceGroupDaoImpl"/>
+        <dao name="Instance Group to VM Mapping" class="com.cloud.vm.dao.InstanceGroupVMMapDaoImpl"/>
 
         <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
             <adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator"/>

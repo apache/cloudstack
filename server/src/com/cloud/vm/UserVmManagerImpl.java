@@ -82,8 +82,8 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -128,18 +128,18 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Snapshot.SnapshotType;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume.VolumeType;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.DiskTemplateDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -150,8 +150,8 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
@@ -169,6 +169,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
@@ -177,7 +178,9 @@ import com.cloud.vm.DomainRouter.Role;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.InstanceGroupDao;
 
 @Local(value={UserVmManager.class})
 public class UserVmManagerImpl implements UserVmManager {
@@ -226,6 +229,8 @@ public class UserVmManagerImpl implements UserVmManager {
     @Inject NetworkGroupManager _networkGroupManager;
     @Inject ServiceOfferingDao _serviceOfferingDao;
     @Inject EventDao _eventDao = null;
+    @Inject InstanceGroupDao _vmGroupDao;
+    @Inject InstanceGroupVMMapDao _groupVMMapDao;
 
     private IpAddrAllocator _IpAllocator;
     ScheduledExecutorService _executor = null;
@@ -1401,7 +1406,7 @@ public class UserVmManagerImpl implements UserVmManager {
     }
     
     @Override @DB
-    public UserVmVO createVirtualMachine(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> avoids, long startEventId, long size) throws InternalErrorException, ResourceAllocationException {
+    public UserVmVO createVirtualMachine(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String userData, List<StoragePoolVO> avoids, long startEventId, long size) throws InternalErrorException, ResourceAllocationException {
         long accountId = account.getId();
         long dataCenterId = dc.getId();
         long serviceOfferingId = offering.getId();
@@ -1475,7 +1480,7 @@ public class UserVmManagerImpl implements UserVmManager {
                     		serviceOfferingId, null, null, router.getGuestNetmask(),
                     		null,null,null,
                     		routerId, pod.first().getId(), dataCenterId,
-                    		offering.getOfferHA(), displayName, group, userData);
+                    		offering.getOfferHA(), displayName, userData);
                     
                     if (diskOffering != null) {
                     	vm.setMirroredVols(diskOffering.isMirrored());
@@ -2170,6 +2175,7 @@ public class UserVmManagerImpl implements UserVmManager {
                 
                 _vmDao.remove(vm.getId());
                 _networkGroupManager.removeInstanceFromGroups(vm.getId());
+                removeInstanceFromGroup(vm.getId());
                 
                 s_logger.debug("vm is destroyed");
             } catch (Exception e) {
@@ -2588,7 +2594,7 @@ public class UserVmManagerImpl implements UserVmManager {
     
     @DB
     @Override
-	public UserVmVO createDirectlyAttachedVM(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> a, List<NetworkGroupVO>  networkGroups, long startEventId, long size) throws InternalErrorException, ResourceAllocationException {
+	public UserVmVO createDirectlyAttachedVM(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String userData, List<StoragePoolVO> a, List<NetworkGroupVO>  networkGroups, long startEventId, long size) throws InternalErrorException, ResourceAllocationException {
     	
     	long accountId = account.getId();
 	    long dataCenterId = dc.getId();
@@ -2698,7 +2704,7 @@ public class UserVmManagerImpl implements UserVmManager {
 	            		serviceOfferingId, guestMacAddress, guestIp, guestVlan.getVlanNetmask(),
 	            		null, externalMacAddress, externalVlanDbId,
 	            		routerId, pod.first().getId(), dataCenterId,
-	            		offering.getOfferHA(), displayName, group, userData);
+	            		offering.getOfferHA(), displayName, userData);
 	            
 	            if (diskOffering != null) {
                 	vm.setMirroredVols(diskOffering.isMirrored());
@@ -2790,7 +2796,7 @@ public class UserVmManagerImpl implements UserVmManager {
     
     @DB
     @Override
-	public UserVmVO createDirectlyAttachedVMExternal(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> a, List<NetworkGroupVO>  networkGroups, long startEventId, long size) throws InternalErrorException, ResourceAllocationException {
+	public UserVmVO createDirectlyAttachedVMExternal(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String userData, List<StoragePoolVO> a, List<NetworkGroupVO>  networkGroups, long startEventId, long size) throws InternalErrorException, ResourceAllocationException {
 	    long accountId = account.getId();
 	    long dataCenterId = dc.getId();
 	    long serviceOfferingId = offering.getId();
@@ -2858,7 +2864,7 @@ public class UserVmManagerImpl implements UserVmManager {
 	            		serviceOfferingId, guestMacAddress, publicIpAddr, publicIpNetMask,
 	            		null, externalMacAddress, null,
 	            		routerId, pod.first().getId(), dataCenterId,
-	            		offering.getOfferHA(), displayName, group, userData);
+	            		offering.getOfferHA(), displayName, userData);
 	            
 	            if (diskOffering != null) {
                 	vm.setMirroredVols(diskOffering.isMirrored());
@@ -2971,4 +2977,133 @@ public class UserVmManagerImpl implements UserVmManager {
     		}
     	}
     }
+	
+	@DB
+	@Override
+	public InstanceGroupVO createVmGroup(String name, Long accountId) {
+		final Transaction txn = Transaction.currentTxn();
+		AccountVO account = null;
+		txn.start();
+		try {
+			account = _accountDao.acquire(accountId); //to ensure duplicate vm group names are not created.
+			if (account == null) {
+				s_logger.warn("Failed to acquire lock on account");
+				return null;
+			}
+			InstanceGroupVO group = _vmGroupDao.findByAccountAndName(accountId, name);
+			if (group == null){
+				group = new InstanceGroupVO(name, accountId);
+				group =  _vmGroupDao.persist(group);
+			}
+			return group;
+		} finally {
+			if (account != null) {
+				_accountDao.release(accountId);
+			}
+			txn.commit();
+		}
+    }
+	
+    @Override
+    public boolean deleteVmGroup(long groupId){
+    	
+    	//delete all the mappings from group_vm_map table
+        List<InstanceGroupVMMapVO> groupVmMaps = _groupVMMapDao.listByGroupId(groupId);
+        for (InstanceGroupVMMapVO groupMap : groupVmMaps) {
+	        SearchCriteria<InstanceGroupVMMapVO> sc = _groupVMMapDao.createSearchCriteria();
+	        sc.addAnd("instanceId", SearchCriteria.Op.EQ, groupMap.getInstanceId());
+	        _groupVMMapDao.expunge(sc);
+        }
+    	
+    	if (_vmGroupDao.remove(groupId)) {
+    		return true;
+    	} else {
+    		return false;
+    	}
+    }
+    
+	@Override
+	@DB
+	public boolean addInstanceToGroup(long userVmId, String groupName) {
+		
+		UserVmVO vm = _vmDao.findById(userVmId);
+		
+        InstanceGroupVO group = _vmGroupDao.findByAccountAndName(vm.getAccountId(), groupName);
+    	//Create vm group if the group doesn't exist for this account
+        if (group == null) {
+        	group = createVmGroup(groupName, vm.getAccountId());
+        }
+		
+		if (group != null) {
+			final Transaction txn = Transaction.currentTxn();
+			txn.start();
+			UserVm userVm = _vmDao.acquire(userVmId);
+			if (userVm == null) {
+				s_logger.warn("Failed to acquire lock on user vm id=" + userVmId);
+			}
+			try {
+				//don't let the group be deleted when we are assigning vm to it.
+				InstanceGroupVO ngrpLock = _vmGroupDao.lock(group.getId(), false);
+				if (ngrpLock == null) {
+					s_logger.warn("Failed to acquire lock on vm group id=" + group.getId() + " name=" + group.getName());
+					txn.rollback();
+					return false;
+				}
+				
+				//Currently don't allow to assign a vm to more than one group
+				if (_groupVMMapDao.listByInstanceId(userVmId) != null) {
+					//Delete all mappings from group_vm_map table
+			        List<InstanceGroupVMMapVO> groupVmMaps = _groupVMMapDao.listByInstanceId(userVmId);
+			        for (InstanceGroupVMMapVO groupMap : groupVmMaps) {
+				        SearchCriteria<InstanceGroupVMMapVO> sc = _groupVMMapDao.createSearchCriteria();
+				        sc.addAnd("instanceId", SearchCriteria.Op.EQ, groupMap.getInstanceId());
+				        _groupVMMapDao.expunge(sc);
+			        }
+				}
+				InstanceGroupVMMapVO groupVmMapVO = new InstanceGroupVMMapVO(group.getId(), userVmId);
+				_groupVMMapDao.persist(groupVmMapVO);
+				
+				txn.commit();
+				return true;
+			} finally {
+				if (userVm != null) {
+					_vmDao.release(userVmId);
+				}
+			}
+	    }
+		return false;
+	}
+	
+	@Override
+	public InstanceGroupVO getGroupForVm(long vmId) {
+		//TODO - in future releases vm can be assigned to multiple groups; but currently return just one group per vm
+		try {
+			List<InstanceGroupVMMapVO> groupsToVmMap =  _groupVMMapDao.listByInstanceId(vmId);
+
+            if(groupsToVmMap != null && groupsToVmMap.size() != 0){
+            	InstanceGroupVO group = _vmGroupDao.findById(groupsToVmMap.get(0).getGroupId());
+            	return group;
+            } else {
+            	return null;
+            }
+		}
+		catch (Exception e){
+			s_logger.warn("Error trying to get group for a vm: "+e);
+			return null;
+		}
+	}
+	
+	public void removeInstanceFromGroup(long vmId) {
+		try {
+			List<InstanceGroupVMMapVO> groupVmMaps = _groupVMMapDao.listByInstanceId(vmId);
+	        for (InstanceGroupVMMapVO groupMap : groupVmMaps) {
+		        SearchCriteria<InstanceGroupVMMapVO> sc = _groupVMMapDao.createSearchCriteria();
+		        sc.addAnd("instanceId", SearchCriteria.Op.EQ, groupMap.getInstanceId());
+		        _groupVMMapDao.expunge(sc);
+	        }
+		} catch (Exception e){
+			s_logger.warn("Error trying to remove vm from group: "+e);
+		}
+	}
+	
 }
