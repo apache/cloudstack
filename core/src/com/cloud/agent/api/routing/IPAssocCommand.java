@@ -29,6 +29,7 @@ public class IPAssocCommand extends RoutingCommand {
 	private String publicIp;
 	private boolean sourceNat;
 	private boolean add;
+	private boolean oneToOneNat;
 	private boolean firstIP;
 	private String vlanId;
 	private String vlanGateway;
@@ -61,6 +62,10 @@ public class IPAssocCommand extends RoutingCommand {
 
 	public boolean isAdd() {
 		return add;
+	}
+	
+	public boolean isOneToOneNat(){
+		return this.oneToOneNat;
 	}
 	
 	public boolean isFirstIP() {

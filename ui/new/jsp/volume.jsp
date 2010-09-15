@@ -1,14 +1,8 @@
-
-<!--
-<script type="text/javascript" src="scripts/cloud.core.volume.js"></script>
--->
-
 <%@ page import="java.util.*" %>
 
 <%@ page import="com.cloud.utils.*" %>
 
 <%
-
     Locale browserLocale = request.getLocale();
     CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
 %>
@@ -34,8 +28,8 @@
     <!--Details tab (start)-->
     <div id="tab_content_details">
         <div class="grid_actionpanel">
-            <div class="grid_actionbox" id="volume_action_link">
-                <div class="grid_actionsdropdown_box" id="volume_action_menu" style="display: none;">
+            <div class="grid_actionbox" id="action_link">
+                <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                     <ul class="actionsdropdown_boxlist" id="action_list">
                         <!--  
                     	<li> <a href="#"> Delete </a> </li>

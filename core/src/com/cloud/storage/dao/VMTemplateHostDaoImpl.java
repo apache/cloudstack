@@ -50,25 +50,16 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 	protected final SearchBuilder<VMTemplateHostVO> HostTemplatePoolSearch;
 	protected final SearchBuilder<VMTemplateHostVO> TemplateStatusSearch;
 	protected final SearchBuilder<VMTemplateHostVO> TemplateStatesSearch;
-	protected final SearchBuilder<VMTemplateHostVO> TemplateUploadStatusSearch;
+	
 	
 	protected static final String UPDATE_TEMPLATE_HOST_REF =
-		"UPDATE template_host_ref SET download_state = ?, download_pct= ?, last_updated = ? "
+		"UPDATE type_host_ref SET download_state = ?, download_pct= ?, last_updated = ? "
 	+   ", error_str = ?, local_path = ?, job_id = ? "
-	+   "WHERE host_id = ? and template_id = ?";
-	
-	protected static final String UPDATE_UPLOAD_INFO =
-		"UPDATE template_host_ref SET upload_state = ?, upload_pct= ?, last_updated = ? "
-	+   ", upload_error_str = ?, upload_job_id = ? "
-	+   "WHERE host_id = ? and template_id = ?";
-	
+	+   "WHERE host_id = ? and type_id = ?";
+			
 	protected static final String DOWNLOADS_STATE_DC=
 		"SELECT * FROM template_host_ref t, host h where t.host_id = h.id and h.data_center_id=? "
 	+	" and t.template_id=? and t.download_state = ?" ;
-
-	protected static final String UPLOADS_STATE_DC=
-		"SELECT * FROM template_host_ref t, host h where t.host_id = h.id and h.data_center_id=? "
-	+	" and t.template_id=? and t.upload_state = ?" ;
 	
 	protected static final String DOWNLOADS_STATE_DC_POD=
 		"SELECT * FROM template_host_ref t, host h where t.host_id = h.id and h.data_center_id=? and h.pod_id=? "
@@ -79,9 +70,6 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 	+	" where t.template_id=? and t.download_state=?";
 	
 
-	protected static final String UPLOADS_STATE=
-		"SELECT * FROM template_host_ref t "
-	+	" where t.template_id=? and t.upload_state=?";
 		
 	public VMTemplateHostDaoImpl () {
 		HostSearch = createSearchBuilder();
@@ -112,12 +100,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 		TemplateStatusSearch = createSearchBuilder();
 		TemplateStatusSearch.and("template_id", TemplateStatusSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
 		TemplateStatusSearch.and("download_state", TemplateStatusSearch.entity().getDownloadState(), SearchCriteria.Op.EQ);
-		TemplateStatusSearch.done();
-		
-		TemplateUploadStatusSearch = createSearchBuilder();
-		TemplateUploadStatusSearch.and("template_id", TemplateUploadStatusSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
-		TemplateUploadStatusSearch.and("upload_state", TemplateUploadStatusSearch.entity().getUploadState(), SearchCriteria.Op.EQ);
-		TemplateUploadStatusSearch.done();
+		TemplateStatusSearch.done();		
 		
 		TemplateStatesSearch = createSearchBuilder();
 		TemplateStatesSearch.and("template_id", TemplateStatesSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
@@ -149,28 +132,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 		} catch (Exception e) {
 			s_logger.warn("Exception: ", e);
 		}
-	}
-	
-	public void updateUploadStatus(long hostId, long templateId, int uploadPercent, Status uploadState,
-			String uploadJobId, String uploadUrl ) {
-        Transaction txn = Transaction.currentTxn();
-		PreparedStatement pstmt = null;
-		try {
-			Date now = new Date();
-			String sql = UPDATE_UPLOAD_INFO;
-			pstmt = txn.prepareAutoCloseStatement(sql);
-			pstmt.setString(1, uploadState.toString());
-			pstmt.setInt(2, uploadPercent);
-			pstmt.setString(3, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), now));
-			pstmt.setString(4, uploadJobId);
-			pstmt.setLong(5, hostId);
-			pstmt.setLong(6, templateId);
-			pstmt.setString(7, uploadUrl);
-			pstmt.executeUpdate();
-		} catch (Exception e) {
-			s_logger.warn("Exception: ", e);
-		}
-	}
+	}	
 
 	@Override
 	public List<VMTemplateHostVO> listByHostId(long id) {
@@ -202,13 +164,7 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
 	    return findOneBy(sc);
 	}
 
-	@Override
-	public List<VMTemplateHostVO> listByTemplateUploadStatus(long templateId, VMTemplateHostVO.Status uploadState) {
-		SearchCriteria<VMTemplateHostVO> sc = TemplateUploadStatusSearch.create();
-		sc.setParameters("template_id", templateId);
-		sc.setParameters("upload_state", uploadState.toString());
-		return listBy(sc);
-	}
+
 	
 	@Override
 	public List<VMTemplateHostVO> listByTemplateStatus(long templateId, VMTemplateHostVO.Status downloadState) {

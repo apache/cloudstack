@@ -331,4 +331,5 @@ public interface StorageManager extends Manager {
     <T extends VMInstanceVO> VolumeVO allocate(VolumeType type, DiskOfferingVO offering, String name, Long size, VMTemplateVO template, T vm, AccountVO account);
     
     <T extends VMInstanceVO> void create(T vm);
+    Long findHostIdForStoragePool(StoragePoolVO pool);
 }

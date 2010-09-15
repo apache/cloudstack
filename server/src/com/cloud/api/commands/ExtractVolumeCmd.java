@@ -1,6 +1,5 @@
 package com.cloud.api.commands;
 
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -12,15 +11,15 @@ import com.cloud.api.ServerApiException;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
-public class ExtractTemplateCmd extends BaseCmd {
+public class ExtractVolumeCmd extends BaseCmd {
 
-	public static final Logger s_logger = Logger.getLogger(ExtractTemplateCmd.class.getName());
+	public static final Logger s_logger = Logger.getLogger(ExtractVolumeCmd.class.getName());
 
-    private static final String s_name = "extracttemplateresponse";
+    private static final String s_name = "extractvolumeresponse";
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     static {        
@@ -33,17 +32,14 @@ public class ExtractTemplateCmd extends BaseCmd {
 	@Override
 	public List<Pair<String, Object>> execute(Map<String, Object> params) {
 		String url		   = (String) params.get(BaseCmd.Properties.URL.getName());
-		Long templateId    = (Long) params.get(BaseCmd.Properties.ID.getName());
+		Long volumeId    = (Long) params.get(BaseCmd.Properties.ID.getName());
 		Long zoneId		   = (Long) params.get(BaseCmd.Properties.ZONE_ID.getName());
 		Account account = (Account) params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());				
 		
 		ManagementServer managementServer = getManagementServer();
-        VMTemplateVO template = managementServer.findTemplateById(templateId.longValue());
-        if (template == null) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to find template with id " + templateId);
-        }
-        if (template.getFormat() == ImageFormat.ISO ){
-        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unsupported format, could not extract the template");
+        VolumeVO volume = managementServer.findVolumeById(volumeId);
+        if (volume == null) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to find volume with id " + volumeId);
         }
 		
         if(url.toLowerCase().contains("file://")){
@@ -52,29 +48,28 @@ public class ExtractTemplateCmd extends BaseCmd {
                 
     	if (account != null) {    		    	
     		if(!isAdmin(account.getType())){
-    			if (template.getAccountId() != account.getId()){
-    				throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find template with ID: " + templateId + " for account: " + account.getAccountName());
+    			if (volume.getAccountId() != account.getId()){
+    				throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
     			}
-    		}else if(!managementServer.isChildDomain(account.getDomainId(), managementServer.findDomainIdByAccountId(template.getAccountId())) ) {
-    			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to extract template " + templateId + " to " + url + ", permission denied.");
+    		}else if(!managementServer.isChildDomain(account.getDomainId(), volume.getDomainId())){
+    			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to extract volume " + volumeId + " to " + url + ", permission denied.");
     		}
     	}
     	
         try {
-			managementServer.extractTemplate(url, templateId, zoneId);
+			managementServer.extractVolume(url, volumeId, zoneId);
 		} catch (Exception e) {			
 			s_logger.error(e.getMessage(), e);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal Error Extracting the template " + e.getMessage());
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal Error Extracting the volume " + e.getMessage());
 		}
 		DataCenterVO zone = managementServer.getDataCenterBy(zoneId);		
 		List<Pair<String, Object>> response = new ArrayList<Pair<String, Object>>();
-		response.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_ID.getName(), templateId));
-		response.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), template.getName()));
-		response.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_TEXT.getName(), template.getDisplayText()));
+		response.add(new Pair<String, Object>(BaseCmd.Properties.VOLUME_ID.getName(), volumeId));
+		response.add(new Pair<String, Object>(BaseCmd.Properties.VOLUME_NAME.getName(), volume.getName()));		
 		response.add(new Pair<String, Object>(BaseCmd.Properties.URL.getName(), url));
 		response.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_ID.getName(), zoneId));
 		response.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), zone.getName()));
-		response.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_STATUS.getName(), "Processing"));		
+		response.add(new Pair<String, Object>(BaseCmd.Properties.STATUS.getName(), "Processing"));
 		return response;
 	}
 

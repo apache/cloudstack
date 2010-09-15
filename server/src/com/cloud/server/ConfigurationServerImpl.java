@@ -424,7 +424,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 throw new RuntimeException("No home directory was detected.  Set the HOME environment variable to point to your user profile or home directory.");
             }
 
-            String keygenOutput = Script.runSimpleBashScript("if [ -f ~/.ssh/id_rsa ] ; then true ; else yes '' | ssh-keygen -t rsa -q -O no-pty ; fi");
+            String keygenOutput = Script.runSimpleBashScript("if [ -f ~/.ssh/id_rsa ] ; then true ; else yes '' | ssh-keygen -t rsa -q ; fi");
 
             File privkeyfile = new File(homeDir + "/.ssh/id_rsa");
             File pubkeyfile  = new File(homeDir + "/.ssh/id_rsa.pub");

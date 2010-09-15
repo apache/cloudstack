@@ -165,8 +165,7 @@ public abstract class StorageResource extends ServerResourceBase implements Serv
     	return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
-	private Answer execute(UploadCommand cmd) {	
-		s_logger.warn(" Nitin got the cmd " +cmd);
+	private Answer execute(UploadCommand cmd) {		
 		return _uploadManager.handleUploadCommand(cmd);
 	}
     

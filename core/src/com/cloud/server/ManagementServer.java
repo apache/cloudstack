@@ -2236,5 +2236,18 @@ public interface ManagementServer {
     InstanceGroupVO getGroupForVm(long vmId);
 
 	List<VlanVO> searchForZoneWideVlans(long dcId, String vlanType,String vlanId);
+	
+    /**
+     * Extracts the volume to a particular location.
+     * @param url - the url  where the volume needs to be extracted to
+     * @param zoneId - zone id of the volume
+     * @param volume id - the id of the volume
+     * @throws URISyntaxException
+     * @throws InternalErrorException
+     *
+     */
+    void extractVolume(String url, Long volumeId, Long zoneId) throws 
+    URISyntaxException, InternalErrorException;
+
 
 }

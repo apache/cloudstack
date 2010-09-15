@@ -15,39 +15,28 @@ $(document).ready(function() {
         }
     });
     $("#accordion_menu").show();
-    
-    $("#midmenu_container").selectable({
-        selecting: function(event, ui) {	 	                               
-            if(ui.selecting.id.indexOf("midmenuItem") != -1) {                     
-                var $midmenuItem1 = $("#"+ui.selecting.id);
-                if($midmenuItem1.find("#content").hasClass("inaction") == false) { //only items not in action are allowed to be selected
-                    var id =$midmenuItem1.data("jsonObj").id;                
-                    selectedItemsInMidMenu[id] = $midmenuItem1; 
-                    $midmenuItem1.find("#content").addClass("selected");   
-                }                               
-                clearRightPanel();      
-                var toRightPanelFn = $midmenuItem1.data("toRightPanelFn");
-                toRightPanelFn($midmenuItem1);	          
-            }                                             
-        },
-        unselecting: function(event, ui) {
-            if(ui.unselecting.id.indexOf("midmenuItem") != -1) {                     
-                var $midmenuItem1 = $("#"+ui.unselecting.id);
-                var id = $midmenuItem1.data("jsonObj").id;
-                if(id in selectedItemsInMidMenu) {                    
-                    delete selectedItemsInMidMenu[id];
-                    $midmenuItem1.find("#content").removeClass("selected"); 
-                }
-            }             
-        }
-    });
-    
+       
     var $midmenuItem = $("#midmenu_item");
     function listMidMenuItems(leftmenuId, commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSP, toMidmenu, toRightPanel) { 
         $("#"+leftmenuId).bind("click", function(event) {
+            if(selected_leftmenu_id != null && selected_leftmenu_id.length > 0)
+                $("#"+selected_leftmenu_id).removeClass("selected");
+            selected_leftmenu_id = leftmenuId;
+            $(this).addClass("selected");
+            
+            $("#midmenu_container").selectable("destroy" ); //midmenu doesn't need multiple selection
+            
+            clearLeftMenu();
             clearMidMenu();
+            
             $("#right_panel").load(rightPanelJSP, function(){   
-                afterLoadRightPanelJSP();                
+                
+                $("#right_panel_content #tab_content_details #action_message_box #close_button").bind("click", function(event){    
+                    $(this).parent().hide();
+                    return false;
+                });                
+                afterLoadRightPanelJSP();    
+                            
                 $.ajax({
 	                cache: false,
 	                data: createURL("command="+commandString+"&pagesize="+midmenuItemCount),
@@ -59,7 +48,19 @@ $(document).ready(function() {
 	                        for(var i=0; i<items.length;i++) { 
                                 var $midmenuItem1 = $midmenuItem.clone();  
                                 $midmenuItem1.data("toRightPanelFn", toRightPanel);                             
-                                toMidmenu(items[i], $midmenuItem1);                             
+                                toMidmenu(items[i], $midmenuItem1);                                  
+                                $midmenuItem1.bind("click", function(event){  
+                                    var thisMidmenuItem = $(this);
+                                    
+                                    if(selected_midmenu_id != null && selected_midmenu_id.length > 0)
+                                        $("#"+selected_midmenu_id).find("#content").removeClass("selected");
+                                    selected_midmenu_id = ("midmenuItem_"+thisMidmenuItem.data("jsonObj").id);
+                                
+                                    thisMidmenuItem.find("#content").addClass("selected");                                               
+                                    clearRightPanel();        
+                                    toRightPanel(thisMidmenuItem);	  
+                                    return false;
+                                });                                                              
                                 $("#midmenu_container").append($midmenuItem1.show());                            
                             }  
                         }  
@@ -75,6 +76,7 @@ $(document).ready(function() {
     listMidMenuItems("leftmenu_volume", "listVolumes", "listvolumesresponse", "volume", "jsp/volume.jsp", afterLoadVolumeJSP, volumeToMidmenu, volumeToRigntPanel);
     listMidMenuItems("leftmenu_snapshot", "listSnapshots", "listsnapshotsresponse", "snapshot", "jsp/snapshot.jsp", afterLoadSnapshotJSP, snapshotToMidmenu, snapshotToRigntPanel);
     listMidMenuItems("leftmenu_ip", "listPublicIpAddresses", "listpublicipaddressesresponse", "publicipaddress", "jsp/ip_address.jsp", afterLoadIpJSP, ipToMidmenu, ipToRigntPanel);
+    listMidMenuItems("leftmenu_router", "listRouters", "listroutersresponse", "router", "jsp/router.jsp", afterLoadRouterJSP, routerToMidmenu, routerToRigntPanel);
       
     listMidMenuItems("leftmenu_submenu_my_template", "listTemplates&templatefilter=self", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRigntPanel);
     listMidMenuItems("leftmenu_submenu_featured_template", "listTemplates&templatefilter=featured", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRigntPanel);

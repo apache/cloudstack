@@ -24,6 +24,7 @@ import com.cloud.agent.api.storage.UploadAnswer;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.StorageResource;
+import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.template.TemplateUploader.UploadCompleteCallback;
@@ -225,31 +226,31 @@ public class UploadManagerImpl implements UploadManager {
         return Status.UNKNOWN;
 	}
 	
-    public static VMTemplateHostVO.Status convertStatus(Status tds) {
+    public static UploadVO.Status convertStatus(Status tds) {
         switch (tds) {
         case ABORTED:
-            return VMTemplateHostVO.Status.NOT_UPLOADED;
+            return UploadVO.Status.NOT_UPLOADED;
         case UPLOAD_FINISHED:
-            return VMTemplateHostVO.Status.UPLOAD_IN_PROGRESS;
+            return UploadVO.Status.UPLOAD_IN_PROGRESS;
         case IN_PROGRESS:
-            return VMTemplateHostVO.Status.UPLOAD_IN_PROGRESS;
+            return UploadVO.Status.UPLOAD_IN_PROGRESS;
         case NOT_STARTED:
-            return VMTemplateHostVO.Status.NOT_UPLOADED;
+            return UploadVO.Status.NOT_UPLOADED;
         case RECOVERABLE_ERROR:
-            return VMTemplateHostVO.Status.NOT_UPLOADED;
+            return UploadVO.Status.NOT_UPLOADED;
         case UNKNOWN:
-            return VMTemplateHostVO.Status.UNKNOWN;
+            return UploadVO.Status.UNKNOWN;
         case UNRECOVERABLE_ERROR:
-            return VMTemplateHostVO.Status.UPLOAD_ERROR;
+            return UploadVO.Status.UPLOAD_ERROR;
         case POST_UPLOAD_FINISHED:
-            return VMTemplateHostVO.Status.UPLOADED;
+            return UploadVO.Status.UPLOADED;
         default:
-            return VMTemplateHostVO.Status.UNKNOWN;
+            return UploadVO.Status.UNKNOWN;
         }
     }
 
     @Override
-    public com.cloud.storage.VMTemplateHostVO.Status getUploadStatus2(String jobId) {
+    public com.cloud.storage.UploadVO.Status getUploadStatus2(String jobId) {
         return convertStatus(getUploadStatus(jobId));
     }
 	@Override
@@ -265,7 +266,7 @@ public class UploadManagerImpl implements UploadManager {
         if (jobId != null)
             uj = jobs.get(jobId);
         if (uj == null) {           
-           return new UploadAnswer(null, 0, "Cannot find job", com.cloud.storage.VMTemplateHostVO.Status.UNKNOWN, "", "", 0);            
+           return new UploadAnswer(null, 0, "Cannot find job", com.cloud.storage.UploadVO.Status.UNKNOWN, "", "", 0);            
         }
         TemplateUploader td = uj.getTemplateUploader();
         switch (cmd.getRequest()) {
@@ -294,31 +295,20 @@ public class UploadManagerImpl implements UploadManager {
 	
     @Override
     public UploadAnswer handleUploadCommand(UploadCommand cmd) {
-    	s_logger.warn(" handliing the upload " +cmd.getInstallPath() + " " + cmd.getId());
+    	s_logger.warn("Handling the upload " +cmd.getInstallPath() + " " + cmd.getId());
         if (cmd instanceof UploadProgressCommand) {
             return handleUploadProgressCmd((UploadProgressCommand) cmd);
         }
-        /*
-        if (cmd.getUrl() == null) {
-            return new UploadAnswer(null, 0, "Template is corrupted on storage due to an invalid url , cannot Upload", com.cloud.storage.VMTemplateStorageResourceAssoc.Status.UPLOAD_ERROR, "", "", 0);
-        }
-
-        if (cmd.getName() == null) {
-            return new UploadAnswer(null, 0, "Invalid Name", com.cloud.storage.VMTemplateStorageResourceAssoc.Status.UPLOAD_ERROR, "", "", 0);
-        }*/
-
-       // String installPathPrefix = null;
-       // installPathPrefix = publicTemplateRepo;
 
         String user = null;
-        String password = null;                
+        String password = null;
         String jobId = uploadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), 
         									cmd.getFormat(), cmd.getAccountId(), cmd.getDescription(),
         									cmd.getChecksum(), cmd.getInstallPath(), user, password,
         									cmd.getTemplateSizeInBytes());
         sleep();
         if (jobId == null) {
-            return new UploadAnswer(null, 0, "Internal Error", com.cloud.storage.VMTemplateStorageResourceAssoc.Status.UPLOAD_ERROR, "", "", 0);
+            return new UploadAnswer(null, 0, "Internal Error", com.cloud.storage.UploadVO.Status.UPLOAD_ERROR, "", "", 0);
         }
         return new UploadAnswer(jobId, getUploadPct(jobId), getUploadError(jobId), getUploadStatus2(jobId), getUploadLocalPath(jobId), getInstallPath(jobId),
                 getUploadTemplateSize(jobId));

@@ -4,7 +4,7 @@ import org.apache.log4j.Level;
 
 import com.cloud.agent.api.storage.UploadAnswer;
 import com.cloud.agent.api.storage.UploadProgressCommand.RequestType;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.Upload.Status;
 
 public class UploadErrorState extends UploadInactiveState {
 

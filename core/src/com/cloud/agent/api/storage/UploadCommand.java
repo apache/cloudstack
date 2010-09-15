@@ -1,6 +1,7 @@
 package com.cloud.agent.api.storage;
 
 import com.cloud.storage.VMTemplateHostVO;
+import com.cloud.storage.Upload.Type;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.agent.api.storage.AbstractUploadCommand;
 import com.cloud.agent.api.storage.DownloadCommand.PasswordAuth;
@@ -17,6 +18,7 @@ public class UploadCommand extends AbstractUploadCommand {
 	private PasswordAuth auth;
 	private long templateSizeInBytes;
 	private long id;
+	private Type type;
 
 	public UploadCommand(VMTemplateVO template, String url, VMTemplateHostVO vmTemplateHost) {
 		
@@ -27,6 +29,15 @@ public class UploadCommand extends AbstractUploadCommand {
 		this.id = template.getId();
 		this.templateSizeInBytes = vmTemplateHost.getSize();
 		
+	}
+	
+	public UploadCommand(String url, long id, long sizeInBytes, String installPath, Type type){
+		this.template = null;
+		this.url = url;
+		this.installPath = installPath;
+		this.id = id;
+		this.type = type;
+		this.templateSizeInBytes = sizeInBytes;
 	}
 	
 	protected UploadCommand() {

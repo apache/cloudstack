@@ -27,10 +27,13 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.host.HostVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.Upload.Status;
+import com.cloud.storage.Upload.Type;
 import com.cloud.storage.download.DownloadState.DownloadEvent;
 import com.cloud.storage.upload.UploadMonitorImpl;
 import com.cloud.storage.upload.UploadState.UploadEvent;
@@ -79,13 +82,12 @@ public class UploadListener implements Listener {
 	public static final String UPLOAD_ABANDONED=Status.ABANDONED.toString();
 
 
-	private HostVO sserver;
-	private VMTemplateVO template;
+	private HostVO sserver;	
 	
 	private boolean uploadActive = true;
-
-	private VMTemplateHostDao vmTemplateHostDao;
-
+	
+	private UploadDao uploadDao;
+	
 	private final UploadMonitorImpl uploadMonitor;
 	
 	private UploadState currState;
@@ -98,17 +100,24 @@ public class UploadListener implements Listener {
 	private TimeoutTask timeoutTask;
 	private Date lastUpdated = new Date();
 	private String jobId;
+	private Long accountId;
+	private String typeName;
+	private Type type;
 	
 	private final Map<String,  UploadState> stateMap = new HashMap<String, UploadState>();
-	private Long templateHostId;
+	private Long uploadId;	
 	
-	public UploadListener(HostVO host, VMTemplateVO template, Timer _timer, VMTemplateHostDao dao, Long templHostId, UploadMonitorImpl uploadMonitor, UploadCommand cmd) {
-		this.sserver = host;
-		this.template = template;
-		this.vmTemplateHostDao = dao;
+	public UploadListener(HostVO host, Timer _timer, UploadDao uploadDao,
+			Long uploadId, UploadMonitorImpl uploadMonitor, UploadCommand cmd,
+			Long accountId, String typeName, Type type) {
+		this.sserver = host;				
+		this.uploadDao = uploadDao;
 		this.uploadMonitor = uploadMonitor;
 		this.cmd = cmd;
-		this.templateHostId = templHostId;
+		this.uploadId = uploadId;
+		this.accountId = accountId;
+		this.typeName = typeName;
+		this.type = type;
 		initStateMachine();
 		this.currState = getState(Status.NOT_UPLOADED.toString());
 		this.timer = _timer;
@@ -203,11 +212,19 @@ public class UploadListener implements Listener {
 	
 	public void setUploadInactive(Status reason) {
 		uploadActive=false;
-		uploadMonitor.handleUploadEvent(sserver, template, reason);
+		uploadMonitor.handleUploadEvent(sserver, accountId, typeName, type, uploadId, reason);
 	}
 	
 	public void logUploadStart() {
-		uploadMonitor.logEvent(template.getAccountId(), EventTypes.EVENT_TEMPLATE_UPLOAD_START, "Storage server " + sserver.getName() + " started upload of template " + template.getName(), EventVO.LEVEL_INFO);
+		String event;
+		if (type == Type.TEMPLATE){
+			event = EventTypes.EVENT_TEMPLATE_UPLOAD_START;
+		}else if (type == Type.ISO){
+			event = EventTypes.EVENT_ISO_UPLOAD_START;
+		}else{
+			event = EventTypes.EVENT_VOLUME_UPLOAD_START;
+		}
+		uploadMonitor.logEvent(accountId, event, "Storage server " + sserver.getName() + " started upload of " +type.toString() + " " + typeName, EventVO.LEVEL_INFO);
 	}
 	
 	public void cancelTimeoutTask() {
@@ -268,7 +285,7 @@ public class UploadListener implements Listener {
 	}
 	
 	public void log(String message, Level level) {
-		s_logger.log(level, message + ", template=" + template.getName() + " at host " + sserver.getName());
+		s_logger.log(level, message + ", " + type.toString() + " = " + typeName + " at host " + sserver.getName());
 	}
 
 	public void setDisconnected() {
@@ -294,44 +311,44 @@ public class UploadListener implements Listener {
 	
 	public void updateDatabase(Status state, String uploadErrorString) {
 		
-		VMTemplateHostVO vo = vmTemplateHostDao.createForUpdate();
+		UploadVO vo = uploadDao.createForUpdate();
 		vo.setUploadState(state);
 		vo.setLastUpdated(new Date());
-		vo.setUpload_errorString(uploadErrorString);
-		vmTemplateHostDao.update(getTemplateHostId(), vo);
+		vo.setErrorString(uploadErrorString);
+		uploadDao.update(getUploadId(), vo);
 	}
 	
 	public void updateDatabase(Status state, String uploadUrl,String uploadErrorString) {
 		
-		VMTemplateHostVO vo = vmTemplateHostDao.createForUpdate();
+		UploadVO vo = uploadDao.createForUpdate();
 		vo.setUploadState(state);
 		vo.setLastUpdated(new Date());
 		vo.setUploadUrl(uploadUrl);
-		vo.setUploadJobId(null);
+		vo.setJobId(null);
 		vo.setUploadPercent(0);
-		vo.setUpload_errorString(uploadErrorString);
+		vo.setErrorString(uploadErrorString);
 		
-		vmTemplateHostDao.update(getTemplateHostId(), vo);
+		uploadDao.update(getUploadId(), vo);
 	}
 	
-	private Long getTemplateHostId() {
-		if (templateHostId == null){
+	private Long getUploadId() {
+		/*if (uploadId == null){
 			VMTemplateHostVO templHost = vmTemplateHostDao.findByHostTemplate(sserver.getId(), template.getId());
-			templateHostId = templHost.getId();
-		}
-		return templateHostId;
+			uploadId = templHost.getId();
+		}*/ //TO DO
+		return uploadId;
 	}
 
 	public synchronized void updateDatabase(UploadAnswer answer) {		
 		
-        VMTemplateHostVO updateBuilder = vmTemplateHostDao.createForUpdate();
+        UploadVO updateBuilder = uploadDao.createForUpdate();
 		updateBuilder.setUploadPercent(answer.getUploadPct());
 		updateBuilder.setUploadState(answer.getUploadStatus());
 		updateBuilder.setLastUpdated(new Date());
-		updateBuilder.setUpload_errorString(answer.getErrorString());
-		updateBuilder.setUploadJobId(answer.getJobId());
+		updateBuilder.setErrorString(answer.getErrorString());
+		updateBuilder.setJobId(answer.getJobId());
 		
-		vmTemplateHostDao.update(getTemplateHostId(), updateBuilder);
+		uploadDao.update(getUploadId(), updateBuilder);
 	}
 
 	public void sendCommand(RequestType reqType) {
@@ -352,8 +369,16 @@ public class UploadListener implements Listener {
 	}
 
 	public void logDisconnect() {
-		s_logger.warn("Unable to monitor upload progress of " + template.getName() + " at host " + sserver.getName());
-		uploadMonitor.logEvent(template.getAccountId(), EventTypes.EVENT_TEMPLATE_UPLOAD_FAILED, "Storage server " + sserver.getName() + " disconnected during upload of template " + template.getName(), EventVO.LEVEL_WARN);
+		s_logger.warn("Unable to monitor upload progress of " + typeName + " at host " + sserver.getName());
+		String event;
+		if (type == Type.TEMPLATE){
+			event = EventTypes.EVENT_TEMPLATE_UPLOAD_FAILED;
+		}else if (type == Type.ISO){
+			event = EventTypes.EVENT_ISO_UPLOAD_FAILED;
+		}else{
+			event = EventTypes.EVENT_VOLUME_UPLOAD_FAILED;
+		}
+		uploadMonitor.logEvent(accountId, event, "Storage server " + sserver.getName() + " disconnected during upload of " + typeName, EventVO.LEVEL_WARN);
 	}
 	
 	public void scheduleImmediateStatusCheck(RequestType request) {

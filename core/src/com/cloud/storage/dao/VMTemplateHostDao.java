@@ -42,10 +42,7 @@ public interface VMTemplateHostDao extends GenericDao<VMTemplateHostVO, Long> {
 
     List<VMTemplateHostVO> listByTemplatePool(long templateId, long poolId);
 
-    void update(VMTemplateHostVO instance);
-    
-    void updateUploadStatus(long hostId, long templateId, int uploadPercent, Status uploadState,
-			String jobId, String uploadUrl );
+    void update(VMTemplateHostVO instance);    
 
     List<VMTemplateHostVO> listByTemplateStatus(long templateId, VMTemplateHostVO.Status downloadState);
 
@@ -58,6 +55,5 @@ public interface VMTemplateHostDao extends GenericDao<VMTemplateHostVO, Long> {
     List<VMTemplateHostVO> listDestroyed(long hostId);
 
     boolean templateAvailable(long templateId, long hostId);
-
-	List<VMTemplateHostVO> listByTemplateUploadStatus(long templateId,Status UploadState);
+	
 }

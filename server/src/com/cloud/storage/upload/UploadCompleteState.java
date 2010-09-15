@@ -1,7 +1,7 @@
 package com.cloud.storage.upload;
 
 import com.cloud.agent.api.storage.UploadProgressCommand.RequestType;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.Upload.Status;
 
 public class UploadCompleteState extends UploadInactiveState {
 

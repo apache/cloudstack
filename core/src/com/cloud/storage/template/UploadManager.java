@@ -1,14 +1,10 @@
 package com.cloud.storage.template;
 
-import java.util.List;
-import java.util.Map;
-
 import com.cloud.agent.api.storage.UploadAnswer;
 import com.cloud.agent.api.storage.UploadCommand;
-import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.storage.StorageResource;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Upload.Status;
 import com.cloud.utils.component.Manager;
 
 public interface UploadManager extends Manager {
@@ -26,7 +22,7 @@ public interface UploadManager extends Manager {
 	 * @param jobId job Id
 	 * @return status of the upload job
 	 */
-	public VMTemplateHostVO.Status getUploadStatus2(String jobId);
+	public Status getUploadStatus2(String jobId);
 
 	/**
 	 * Get the upload percent of a upload job

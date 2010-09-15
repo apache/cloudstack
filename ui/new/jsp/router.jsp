@@ -6,12 +6,15 @@
     Locale browserLocale = request.getLocale();
     CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
 %>
-<!-- account detail panel (begin) -->
+<!-- router detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
+    <!--  
     <div class="main_titleicon">
-        <img src="images/title_accountsicon.gif" alt="Accounts" /></div>
+        <img src="images/title_eventsicon.gif" alt="Event" /></div>
+    -->
     <h1>
-        Accounts</h1>
+        Router
+    </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
     <div class="info_detailbox errorbox" id="after_action_info_container" style="display: none">
@@ -53,24 +56,84 @@
             <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        <%=t.t("id")%>:</div>
+                        <%=t.t("Status")%>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="id">
+                    <div class="row_celltitles" id="state">
+                    </div>
+                </div>
+            </div>
+            <div class="grid_rows even">
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles">
+                        <%=t.t("Zone")%>:</div>
+                </div>
+                <div class="grid_row_cell" style="width: 79%;">
+                    <div class="row_celltitles" id="zonename">
                     </div>
                 </div>
             </div>
             <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        <%=t.t("Role")%>:</div>
+                        <%=t.t("Name")%>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="role">
+                    <div class="row_celltitles" id="name">
                     </div>
                 </div>
             </div>
             <div class="grid_rows even">
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles">
+                        <%=t.t("Public IP")%>:</div>
+                </div>
+                <div class="grid_row_cell" style="width: 79%;">
+                    <div class="row_celltitles" id="publicip">
+                    </div>
+                </div>
+            </div>
+            <div class="grid_rows odd">
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles">
+                        <%=t.t("Private IP")%>:</div>
+                </div>
+                <div class="grid_row_cell" style="width: 79%;">
+                    <div class="row_celltitles" id="privateip">
+                    </div>
+                </div>
+            </div>
+            <div class="grid_rows even">
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles">
+                        <%=t.t("Guest IP")%>:</div>
+                </div>
+                <div class="grid_row_cell" style="width: 79%;">
+                    <div class="row_celltitles" id="guestipaddress">
+                    </div>
+                </div>
+            </div>
+            <div class="grid_rows odd">
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles">
+                        <%=t.t("Host")%>:</div>
+                </div>
+                <div class="grid_row_cell" style="width: 79%;">
+                    <div class="row_celltitles" id="hostname">
+                    </div>
+                </div>
+            </div>
+            <div class="grid_rows even">
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles">
+                        <%=t.t("Network Domain")%>:</div>
+                </div>
+                <div class="grid_row_cell" style="width: 79%;">
+                    <div class="row_celltitles" id="networkdomain">
+                    </div>
+                </div>
+            </div>
+            <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
                         <%=t.t("Account")%>:</div>
@@ -80,67 +143,17 @@
                     </div>
                 </div>
             </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Domain")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="domain">
-                    </div>
-                </div>
-            </div>
             <div class="grid_rows even">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        <%=t.t("VMs")%>:</div>
+                        <%=t.t("Created")%>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="vm_total">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("IPs")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="ip_total">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Bytes.Received")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="bytes_received">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Bytes.Sent")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="bytes_sent">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("State")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="state">
+                    <div class="row_celltitles" id="created">
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </div>   
 </div>
-<!-- account detail panel (end) -->
+<!-- router detail panel (end) -->

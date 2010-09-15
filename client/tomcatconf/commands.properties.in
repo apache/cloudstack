@@ -73,6 +73,7 @@ deleteIso=com.cloud.api.commands.DeleteIsoCmd;15
 copyIso=com.cloud.api.commands.CopyIsoCmd;15
 updateIsoPermissions=com.cloud.api.commands.UpdateIsoPermissionsCmd;15
 listIsoPermissions=com.cloud.api.commands.ListIsoPermissionsCmd;15
+extractIso=com.cloud.api.commands.ExtractIsoCmd;15
 
 #### guest OS commands
 listOsTypes=com.cloud.api.commands.ListGuestOsCmd;15
@@ -179,6 +180,7 @@ detachVolume=com.cloud.api.commands.DetachVolumeCmd;15
 createVolume=com.cloud.api.commands.CreateVolumeCmd;15
 deleteVolume=com.cloud.api.commands.DeleteVolumeCmd;15
 listVolumes=com.cloud.api.commands.ListVolumesCmd;15
+extractVolume=com.cloud.api.commands.ExtractVolumeCmd;15
 
 #### registration command:  FIXME -- this really should be something in management server that
 ####                                 generates a new key for the user and they just have to

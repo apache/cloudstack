@@ -1,4 +1,33 @@
 function clickInstanceGroupHeader($arrowIcon) {   
+    
+    //midmenu needs multiple-selection for actions like start VM, stop VM, reboot VM.
+    $("#midmenu_container").selectable({
+        selecting: function(event, ui) {	 	                               
+            if(ui.selecting.id.indexOf("midmenuItem") != -1) {                     
+                var $midmenuItem1 = $("#"+ui.selecting.id);
+                if($midmenuItem1.find("#content").hasClass("inaction") == false) { //only items not in action are allowed to be selected
+                    var id =$midmenuItem1.data("jsonObj").id;                
+                    selectedItemsInMidMenu[id] = $midmenuItem1; 
+                    $midmenuItem1.find("#content").addClass("selected");   
+                }                               
+                clearRightPanel();      
+                var toRightPanelFn = $midmenuItem1.data("toRightPanelFn");
+                toRightPanelFn($midmenuItem1);	          
+            }                                             
+        },
+        unselecting: function(event, ui) {
+            if(ui.unselecting.id.indexOf("midmenuItem") != -1) {                     
+                var $midmenuItem1 = $("#"+ui.unselecting.id);
+                var id = $midmenuItem1.data("jsonObj").id;
+                if(id in selectedItemsInMidMenu) {                    
+                    delete selectedItemsInMidMenu[id];
+                    $midmenuItem1.find("#content").removeClass("selected"); 
+                }
+            }             
+        }
+    });
+    
+    
     //***** VM Detail (begin) ******************************************************************************
     var $vmPopup
     var $rightPanelHeader;  
@@ -508,12 +537,17 @@ function clickInstanceGroupHeader($arrowIcon) {
 		        }
 		        for(var i=0; i < instanceGroupArray.length; i++) {
 		            if(instanceGroupArray[i]!=null && instanceGroupArray[i].length>0) {
-		        	    var $leftmenuSubmenuTemplate = $("#leftmenu_submenu_template").clone().show();				        	            	
+		        	    var $leftmenuSubmenuTemplate = $("#leftmenu_submenu_template").clone().show();			        	    
+		        	    $leftmenuSubmenuTemplate.attr("id", ("leftmenu_instance_group_"+i));			        	            	
 		                $leftmenuSubmenuTemplate.find("#submenu_name").text(instanceGroupArray[i]);
 		                $leftmenuSubmenuTemplate.find("#icon").attr("src", "images/instance_leftmenuicon.png").show();
 		                 		                			                
 		                $leftmenuSubmenuTemplate.bind("click", function(event) { 
-		                    //$(this).removeClass("leftmenu_content").addClass("leftmenu_content_selected");			               
+		                    if(selected_leftmenu_id != null && selected_leftmenu_id.length > 0)
+                                $("#"+selected_leftmenu_id).removeClass("selected");                            
+                            selected_leftmenu_id = $(this).attr("id");
+                            $(this).addClass("selected");		                    
+		                                
                             $("#midmenu_container").empty();
                             selectedItemsInMidMenu = {};
                             

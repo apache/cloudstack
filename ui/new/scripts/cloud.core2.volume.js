@@ -19,12 +19,7 @@ function afterLoadVolumeJSP() {
 			    }
 		    }	
 	    }
-    });       
- 
-    $("#right_panel_content #tab_content_details #action_message_box #close_button").bind("click", function(event){    
-        $(this).parent().hide();
-        return false;
-    });
+    });    
 }
 
 function volumeAfterDetailsTabAction(jsonObj) {
@@ -69,17 +64,17 @@ function volumeJsonToDetailsTab(jsonObj){
 		
     setDateField(jsonObj.created, $detailsTab.find("#created"));	
     
-    var $actionLink = $detailsTab.find("#volume_action_link");
+    var $actionLink = $detailsTab.find("#action_link");
 	$actionLink.bind("mouseover", function(event) {	    
-        $(this).find("#volume_action_menu").show();    
+        $(this).find("#action_menu").show();    
         return false;
     });
     $actionLink.bind("mouseout", function(event) {       
-        $(this).find("#volume_action_menu").hide();    
+        $(this).find("#action_menu").hide();    
         return false;
     });			
         
-    var $actionMenu = $actionLink.find("#volume_action_menu");
+    var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();
     if(jsonObj.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
 		if (jsonObj.vmstate == "Stopped") 

@@ -54,6 +54,8 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.storage.CopyVolumeAnswer;
+import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
@@ -4799,7 +4801,49 @@ public class ManagementServerImpl implements ManagementServer {
     public VlanVO findVlanById(long vlanDbId) {
         return _vlanDao.findById(vlanDbId);
     }
+    
+    @Override
+    public void extractVolume(String url, Long volumeId, Long zoneId) throws URISyntaxException, InternalErrorException{
+    
+        URI uri = new URI(url);
+        if ( (uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("ftp") )) {
+           throw new IllegalArgumentException("Unsupported scheme for url: " + url);
+        }
+        String host = uri.getHost();
+        
+        try {
+        	InetAddress hostAddr = InetAddress.getByName(host);
+        	if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress() ) {
+        		throw new IllegalArgumentException("Illegal host specified in url");
+        	}
+        	if (hostAddr instanceof Inet6Address) {
+        		throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
+        	}
+        } catch (UnknownHostException uhe) {
+        	throw new IllegalArgumentException("Unable to resolve " + host);
+        }
+        
+        if (_dcDao.findById(zoneId) == null) {
+    		throw new IllegalArgumentException("Please specify a valid zone.");
+    	}
+        
+        VolumeVO volume = findVolumeById(volumeId);        
+        String secondaryStorageURL = _storageMgr.getSecondaryStorageURL(zoneId); 
+        StoragePoolVO srcPool = _poolDao.findById(volume.getPoolId());
+        Long sourceHostId = _storageMgr.findHostIdForStoragePool(srcPool);
+        
+     // Copy the volume from the source storage pool to secondary storage
+        CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(), volume.getPath(), srcPool, secondaryStorageURL, true);
+        CopyVolumeAnswer cvAnswer = (CopyVolumeAnswer) _agentMgr.easySend(sourceHostId, cvCmd);
 
+        if (cvAnswer == null || !cvAnswer.getResult()) {
+            throw new InternalErrorException("Failed to copy the volume from the source primary storage pool to secondary storage.");
+        }
+        
+        
+        
+    }
+    
     @Override
     public void extractTemplate(String url, Long templateId, Long zoneId) throws URISyntaxException{
     
