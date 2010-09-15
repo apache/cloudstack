@@ -16,3 +16,4 @@ cloud-*.tar.bz2
 *.log
 *.pyc
 build.number
+cloud.log.*.*
