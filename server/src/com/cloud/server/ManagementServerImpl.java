@@ -366,7 +366,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final int _proxyRamSize;
     private final int _ssRamSize;
 
-    private final int _maxVolumeSizeInGb;
+    private final long _maxVolumeSizeInTb;
     private final Map<String, Boolean> _availableIdsMap;
 
 	private boolean _networkGroupsEnabled = false;
@@ -462,10 +462,10 @@ public class ManagementServerImpl implements ManagementServer {
         // Parse the max number of UserVMs and public IPs from server-setup.xml,
         // and set them in the right places
 
-        String maxVolumeSizeInGbString = _configs.get("max.volume.size.gb");
-        int maxVolumeSizeGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2097152000);
+        String maxVolumeSizeInTbString = _configs.get("max.volume.size.gb");
+        long maxVolumeSizeTb = NumbersUtil.parseLong(maxVolumeSizeInTbString, new Long("2199023255552"));
 
-        _maxVolumeSizeInGb = maxVolumeSizeGb;
+        _maxVolumeSizeInTb = maxVolumeSizeTb;
 
         _routerRamSize = NumbersUtil.parseInt(_configs.get("router.ram.size"),NetworkManager.DEFAULT_ROUTER_VM_RAMSIZE);
         _proxyRamSize = NumbersUtil.parseInt(_configs.get("consoleproxy.ram.size"), ConsoleProxyManager.DEFAULT_PROXY_VM_RAMSIZE);
@@ -7068,8 +7068,8 @@ public class ManagementServerImpl implements ManagementServer {
     public DiskOfferingVO createDiskOffering(long userId, long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException {
         if (numGibibytes!=0 && numGibibytes < 1) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
-        } else if (numGibibytes > _maxVolumeSizeInGb) {
-        	throw new InvalidParameterValueException("The maximum size for a disk is " + _maxVolumeSizeInGb + " Gb.");
+        } else if (numGibibytes > _maxVolumeSizeInTb) {
+        	throw new InvalidParameterValueException("The maximum size for a disk is " + _maxVolumeSizeInTb + " Gb.");
         }
 
         return _configMgr.createDiskOffering(userId, domainId, name, description, numGibibytes, tags);
@@ -8792,10 +8792,10 @@ public class ManagementServerImpl implements ManagementServer {
 
 	@Override
 	public boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException {
-        if (size<0 || (size>0 && size < 1)) {
-            throw new InvalidParameterValueException("Please specify a size of at least 1 Gb.");
-        } else if (size > _maxVolumeSizeInGb) {
-        	throw new InvalidParameterValueException("The maximum size allowed is " + _maxVolumeSizeInGb + " Gb.");
+        if (size<0 || (size>0 && size < 2097152)) {
+            throw new InvalidParameterValueException("Please specify a size (in bytes) of at least 2 MB or above.");
+        } else if (size > _maxVolumeSizeInTb) {
+        	throw new InvalidParameterValueException("The maximum size allowed is 2 TB");
         }
 
 		return true;
