@@ -1,28 +1,25 @@
-<!--
-<script type="text/javascript" src="scripts/cloud.core.instance.js"></script>
--->
-
 <%@ page import="java.util.*" %>
+
 <%@ page import="com.cloud.utils.*" %>
 
 <%
-
     Locale browserLocale = request.getLocale();
     CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
 %>
-
 <!-- VM detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
         <img src="images/title_instanceicons.gif" alt="Instance" /></div>
-    <h1 id="vm_name">Instance
+    <h1 id="vm_name">
+        Instance
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
-    <div class="info_detailbox errorbox" id="after_action_info_container" style="display:none">
-        <p id="after_action_info"></p>
+    <div class="info_detailbox errorbox" id="after_action_info_container" style="display: none">
+        <p id="after_action_info">
+        </p>
     </div>
-    <div class="tabbox" style="margin-top:15px;">
+    <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
             <%=t.t("Details")%></div>
         <div class="content_tabs off" id="tab_volume">
@@ -30,9 +27,8 @@
         <div class="content_tabs off" id="tab_statistics">
             <%=t.t("Statistics")%></div>
     </div>
-    
     <!--Details tab (start)-->
-    <div class="grid_container" style="display:block;" id="tab_content_details">
+    <div class="grid_container" style="display: block;" id="tab_content_details">
         <div class="grid_rows odd">
             <div class="vm_statusbox">
                 <div class="vm_consolebox">
@@ -53,7 +49,7 @@
             </div>
             <div class="grid_row_cell" style="width: 79%;">
                 <div class="row_celltitles" id="zoneName">
-                    </div>
+                </div>
             </div>
         </div>
         <div class="grid_rows odd">
@@ -140,7 +136,7 @@
                 </div>
             </div>
         </div>
-         <div class="grid_rows odd">
+        <div class="grid_rows odd">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
                     <%=t.t("Group")%>:</div>
@@ -152,25 +148,27 @@
         </div>
     </div>
     <!--Details tab (end)-->
-    
     <!--Volume tab (start)-->
-    <div style="display:none;" id="tab_content_volume">
-          
-        <div class="grid_container" id="volume_tab_template" style="display:block">
-	        <div class="grid_header">
-       	        <div class="grid_header_title" id="name"></div>
-                <div class="grid_actionbox" id="volume_action_link" style="display:block;">
-                    <div class="grid_actionsdropdown_box" id="volume_action_menu" style="display: none;">	                    
-	                    <ul class="actionsdropdown_boxlist" id="action_list">
-                    	    <li> <a href="#"> Delete </a> </li>
-                            <li> <a href="#"> Attach Disk </a> </li>
-                        </ul>	                    
-	                </div>        
+    <div style="display: none;" id="tab_content_volume">
+        <div class="grid_container" id="volume_tab_template" style="display: block">
+            <div class="grid_header">
+                <div class="grid_header_title" id="name">
                 </div>
-                <div class="gridheader_loaderbox" style="height:18px;">
-                    <div class="gridheader_loader"></div>
-                    <p> Creating Template &hellip; </p>
-                </div>       
+                <div class="grid_actionbox" id="volume_action_link" style="display: block;">
+                    <div class="grid_actionsdropdown_box" id="volume_action_menu" style="display: none;">
+                        <ul class="actionsdropdown_boxlist" id="action_list">
+                            <li><a href="#">Delete </a></li>
+                            <li><a href="#">Attach Disk </a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="gridheader_loaderbox" style="height: 18px;">
+                    <div class="gridheader_loader">
+                    </div>
+                    <p>
+                        Creating Template &hellip;
+                    </p>
+                </div>
             </div>
             <div class="grid_rows even">
                 <div class="grid_row_cell" style="width: 20%;">
@@ -178,16 +176,18 @@
                         ID:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="id"></div>
+                    <div class="row_celltitles" id="id">
+                    </div>
                 </div>
             </div>
             <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
-                   <div class="row_celltitles">
+                    <div class="row_celltitles">
                         Type:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="type"></div>
+                    <div class="row_celltitles" id="type">
+                    </div>
                 </div>
             </div>
             <div class="grid_rows even">
@@ -196,7 +196,8 @@
                         Size:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="size"></div>
+                    <div class="row_celltitles" id="size">
+                    </div>
                 </div>
             </div>
             <div class="grid_rows odd">
@@ -205,19 +206,17 @@
                         Created:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="created"></div>
+                    <div class="row_celltitles" id="created">
+                    </div>
                 </div>
             </div>
-        </div>  
-          
-     
+        </div>
     </div>
     <!--Volume tab (end)-->
-    
     <!--Statistics tab (start)-->
-    <div class="grid_container" style="display:none;" id="tab_content_statistics">
-    statistics....
-    </div>    
+    <div class="grid_container" style="display: none;" id="tab_content_statistics">
+        statistics....
+    </div>
     <!--Statistics tab (start)-->
 </div>
 <!-- VM detail panel (end) -->
@@ -237,7 +236,8 @@
                 Step 5</div>
             <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
-            <div class="vmpopup_container_closebutton" id="close_button"></div>
+            <div class="vmpopup_container_closebutton" id="close_button">
+            </div>
         </div>
         <div class="vmpopup_container_mid">
             <div class="vmpopup_maincontentarea">
@@ -349,19 +349,24 @@
                 Step 5</div>
             <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
-            <div class="vmpopup_container_closebutton" id="close_button"></div>
+            <div class="vmpopup_container_closebutton" id="close_button">
+            </div>
         </div>
         <div class="vmpopup_container_mid">
             <div class="vmpopup_maincontentarea">
                 <div class="vmpopup_titlebox">
                     <h2>
                         Step 2: <strong>Service Offering</strong></h2>
-                    <p><!--  
+                    <p>
+                        <!--  
                         Please select the CPU, Memory and Storage requirement you need for your new Virtual
-                        Instance--></p>
+                        Instance-->
+                    </p>
                 </div>
                 <div class="vmpopup_contentpanel">
-                    <h3><!--Service Offering--></h3>
+                    <h3>
+                        <!--Service Offering-->
+                    </h3>
                     <div class="vmpopup_offeringpanel" id="service_offering_container">
                         <!--
                         <div class="vmpopup_offeringbox">
@@ -444,20 +449,23 @@
                 Step 5</div>
             <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
-            <div class="vmpopup_container_closebutton" id="close_button"></div>
+            <div class="vmpopup_container_closebutton" id="close_button">
+            </div>
         </div>
         <div class="vmpopup_container_mid">
             <div class="vmpopup_maincontentarea">
                 <div class="vmpopup_titlebox">
                     <h2>
                         Step 3: <strong id="step3_label">Select a Disk Offering</strong></h2>
-                    <p></p>
+                    <p>
+                    </p>
                 </div>
                 <div class="vmpopup_contentpanel">
-                    <h3></h3>
-                    <div class="vmpopup_offeringpanel" id="data_disk_offering_container" style="display:none">
+                    <h3>
+                    </h3>
+                    <div class="vmpopup_offeringpanel" id="data_disk_offering_container" style="display: none">
                     </div>
-                    <div class="vmpopup_offeringpanel" id="root_disk_offering_container" style="display:none">
+                    <div class="vmpopup_offeringpanel" id="root_disk_offering_container" style="display: none">
                     </div>
                 </div>
                 <div class="vmpopup_navigationpanel">
@@ -485,17 +493,20 @@
                 Step 5</div>
             <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
-            <div class="vmpopup_container_closebutton" id="close_button"></div>
+            <div class="vmpopup_container_closebutton" id="close_button">
+            </div>
         </div>
         <div class="vmpopup_container_mid">
             <div class="vmpopup_maincontentarea">
                 <div class="vmpopup_titlebox">
                     <h2>
                         Step 4: <strong>Network</strong></h2>
-                    <p></p>
+                    <p>
+                    </p>
                 </div>
                 <div class="vmpopup_contentpanel">
-                    <h3></h3>
+                    <h3>
+                    </h3>
                     <div class="vmpopup_offeringpanel">
                         <div class="vmpopup_offeringbox">
                             <input type="radio" name="radiogroup" class="radio" />
@@ -559,17 +570,20 @@
                 Step 5</div>
             <div class="vmpopup_steps" style="background: url(images/laststep_slectedbg.gif) no-repeat top left">
             </div>
-            <div class="vmpopup_container_closebutton" id="close_button"></div>
+            <div class="vmpopup_container_closebutton" id="close_button">
+            </div>
         </div>
         <div class="vmpopup_container_mid">
             <div class="vmpopup_maincontentarea">
                 <div class="vmpopup_titlebox">
                     <h2>
                         Step 5: <strong>Last Step</strong></h2>
-                    <p></p>
+                    <p>
+                    </p>
                 </div>
                 <div class="vmpopup_contentpanel">
-                    <h3></h3>
+                    <h3>
+                    </h3>
                     <div class="vmpopup_offeringpanel" style="margin-top: 10px;">
                         <div class="vmpopup_reviewbox_odd">
                             <div class="vmopopup_reviewtextbox">
@@ -617,7 +631,7 @@
                                     Network:</div>
                                 <span id="wizard_review_network"></span>
                             </div>
-                        </div>                        
+                        </div>
                         <div class="vmpopup_reviewbox_even">
                             <div class="vmopopup_reviewtextbox">
                                 <div class="vmpopup_reviewtick">
@@ -626,7 +640,8 @@
                                     Name (optional):
                                 </div>
                                 <input class="text" type="text" id="wizard_vm_name" />
-                                <div id="wizard_vm_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;"></div>
+                                <div id="wizard_vm_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                                </div>
                             </div>
                         </div>
                         <div class="vmpopup_reviewbox_odd">
@@ -636,9 +651,10 @@
                                 <div class="vmopopup_review_label">
                                     Group (optional):</div>
                                 <input class="text" type="text" id="wizard_vm_group" />
-                                <div id="wizard_vm_group_errormsg" class="dialog_formcontent_errormsg" style="display: none;"></div>
+                                <div id="wizard_vm_group_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                                </div>
                             </div>
-                        </div>             
+                        </div>
                     </div>
                 </div>
                 <div class="vmpopup_navigationpanel">
@@ -683,7 +699,8 @@
         Disk Size:</label>
     <input type="text" id="custom_disk_size" class="text" />
     <span>MB</span>
-    <div id="custom_disk_size_errormsg" class="dialog_formcontent_errormsg" style="display: none;">    
+    <div id="custom_disk_size_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+    </div>
 </div>
 <div class="vmpopup_offeringbox" id="vm_popup_disk_offering_template_existing" style="display: none">
     <input type="radio" class="radio" checked />
@@ -699,9 +716,8 @@
     </div>
 </div>
 <!-- VM Wizard - disk Offering template (end)-->
-
 <!-- Attach ISO Dialog -->
-<div id="dialog_attach_iso" title="Attach ISO" style="display:none">
+<div id="dialog_attach_iso" title="Attach ISO" style="display: none">
     <p>
         Please specify the ISO you wish to attach to virtual instance.
     </p>
@@ -719,9 +735,8 @@
         </form>
     </div>
 </div>
-
 <!-- Change Name Dialog -->
-<div id="dialog_change_name" title="Change Name" style="display:none">
+<div id="dialog_change_name" title="Change Name" style="display: none">
     <p>
         Please specify the new name you want to change for virtual instance.
     </p>
@@ -739,11 +754,11 @@
         </form>
     </div>
 </div>
-
 <!-- Change Service Offering Dialog -->
-<div id="dialog_change_service_offering" title="Change Service Offering" style="display:none">
-    <p>  
-        After changing service offering, you must restart virtual instance for the new service offering to take effect.
+<div id="dialog_change_service_offering" title="Change Service Offering" style="display: none">
+    <p>
+        After changing service offering, you must restart virtual instance for the new service
+        offering to take effect.
     </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
@@ -758,12 +773,11 @@
         </form>
     </div>
 </div>
-
 <!-- Change Group Dialog -->
-<div id="dialog_change_group" title="Change Group" style="display:none">
+<div id="dialog_change_group" title="Change Group" style="display: none">
     <p>
-        Please specify the new group you want to assign to your Virtual Instance. If no such group exists, a new one will be created
-        for you.</p>
+        Please specify the new group you want to assign to your Virtual Instance. If no
+        such group exists, a new one will be created for you.</p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>
@@ -778,21 +792,29 @@
         </form>
     </div>
 </div>
-
 <!--  volume tab template -->
-<div class="grid_container" id="volume_tab_template" style="display:none">
-	<div class="grid_header">
-       	<div class="grid_header_title" id="name"></div>
+<div class="grid_container" id="volume_tab_template" style="display: none">
+    <div class="grid_header">
+        <div class="grid_header_title" id="name">
+        </div>
         <div class="grid_actionbox" id="volume_action_link">
             <div class="grid_actionsdropdown_box" id="volume_action_menu" style="display: none;">
-	            <ul class="actionsdropdown_boxlist" id="action_list">
-	            </ul>
-	        </div>        
+                <ul class="actionsdropdown_boxlist" id="action_list">
+                </ul>
+            </div>
         </div>
-        <div class="gridheader_loaderbox" id="spinning_wheel" style="display:none; height:18px;">
-            <div class="gridheader_loader" id="icon"></div>
-            <p id="description"> Waiting &hellip; </p>
-        </div>              
+        <div class="gridheader_loaderbox" id="spinning_wheel" style="display: none; height: 18px;">
+            <div class="gridheader_loader" id="icon">
+            </div>
+            <p id="description">
+                Waiting &hellip;
+            </p>
+        </div>
+        <div class="gridheader_message" id="action_message_box" style="border: 1px solid #999; display: none;">
+            <p id="description"></p>
+            <div class="close_button" id="close_button">
+            </div>
+        </div>   
     </div>
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
@@ -800,16 +822,18 @@
                 ID:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="id"></div>
+            <div class="row_celltitles" id="id">
+            </div>
         </div>
     </div>
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
-           <div class="row_celltitles">
+            <div class="row_celltitles">
                 Type:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="type"></div>
+            <div class="row_celltitles" id="type">
+            </div>
         </div>
     </div>
     <div class="grid_rows even">
@@ -818,7 +842,8 @@
                 Size:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="size"></div>
+            <div class="row_celltitles" id="size">
+            </div>
         </div>
     </div>
     <div class="grid_rows odd">
@@ -827,13 +852,13 @@
                 Created:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="created"></div>
+            <div class="row_celltitles" id="created">
+            </div>
         </div>
     </div>
 </div>
-
 <!-- Create Template Dialog -->
-<div id="dialog_create_template" title="Create Template" style="display:none">
+<div id="dialog_create_template" title="Create Template" style="display: none">
     <p>
         Please specify the following information before creating a template of your disk
         volume: <b><span id="volume_name"></span></b>. Creating a template could take up
@@ -864,7 +889,7 @@
             <li>
                 <label for="create_template_public">
                     Public:</label>
-                <select class="select" name="create_template_public" id="create_template_public">                    
+                <select class="select" name="create_template_public" id="create_template_public">
                     <option value="false">No</option>
                     <option value="true">Yes</option>
                 </select>
@@ -872,7 +897,7 @@
             <li>
                 <label for="user_name">
                     Password Enabled?:</label>
-                <select class="select" name="create_template_password" id="create_template_password">                    
+                <select class="select" name="create_template_password" id="create_template_password">
                     <option value="false">No</option>
                     <option value="true">Yes</option>
                 </select>

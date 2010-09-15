@@ -107,14 +107,14 @@ var volumeActionMap = {
     "Create Template": {
         isAsyncJob: true,
         asyncJobResponse: "createtemplateresponse",            
-        dialogBeforeActionFn : doCreateTemplate,
+        dialogBeforeActionFn : doCreateTemplateFromVolume,
         inProcessText: "Creating template....",
         afterActionSeccessFn: function(){}   
     }  
 }   
 
-function doCreateTemplate($actionLink, listAPIMap, $singleObject) {       
-    var jsonObj = $singleObject.data("jsonObj");
+function doCreateTemplateFromVolume($actionLink, listAPIMap, $detailsTab) {       
+    var jsonObj = $detailsTab.data("jsonObj");
     $("#dialog_create_template").find("#volume_name").text(jsonObj.name);
     
 	$("#dialog_create_template")
@@ -136,7 +136,7 @@ function doCreateTemplate($actionLink, listAPIMap, $singleObject) {
 			var isPublic = thisDialog.find("#create_template_public").val();
             var password = thisDialog.find("#create_template_password").val();				
 			
-			var id = $singleObject.data("jsonObj").id;			
+			var id = $detailsTab.data("jsonObj").id;			
 			var apiCommand = "command=createTemplate&volumeId="+id+"&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
 	    	doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);					
 		}, 

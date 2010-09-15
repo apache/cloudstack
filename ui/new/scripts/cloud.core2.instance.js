@@ -433,7 +433,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         "Create Template": {
             isAsyncJob: true,
             asyncJobResponse: "createtemplateresponse",            
-            dialogBeforeActionFn : doCreateTemplate,
+            dialogBeforeActionFn : doCreateTemplateFromVmVolume,
             inProcessText: "Creating template....",
             afterActionSeccessFn: function(){}   
         }  
@@ -473,6 +473,10 @@ function clickInstanceGroupHeader($arrowIcon) {
 			buildActionLinkForSubgridItem("Detach Disk", vmVolumeActionMap, $actionMenu, volumeListAPIMap, template);				
 		}	
 		
+		template.find("#action_message_box #close_button").bind("click", function(event){
+		    $(this).parent().hide();
+		    return false;
+		});
 	}
     //***** declaration for volume tab (end) *********************************************************
     
@@ -1256,5 +1260,37 @@ function clickInstanceGroupHeader($arrowIcon) {
     });	
 }  
 
+function doCreateTemplateFromVmVolume($actionLink, listAPIMap, $subgridItem) {       
+    var jsonObj = $subgridItem.data("jsonObj");
+    $("#dialog_create_template").find("#volume_name").text(jsonObj.name);
+    
+	$("#dialog_create_template")
+	.dialog('option', 'buttons', { 						
+		"Create": function() { 
+		    //debugger;
+		    var thisDialog = $(this);
+		    thisDialog.dialog("close"); 
+									
+			// validate values
+	        var isValid = true;					
+	        isValid &= validateString("Name", thisDialog.find("#create_template_name"), thisDialog.find("#create_template_name_errormsg"));
+			isValid &= validateString("Display Text", thisDialog.find("#create_template_desc"), thisDialog.find("#create_template_desc_errormsg"));			
+	        if (!isValid) return;		
+	        
+	        var name = trim(thisDialog.find("#create_template_name").val());
+			var desc = trim(thisDialog.find("#create_template_desc").val());
+			var osType = thisDialog.find("#create_template_os_type").val();					
+			var isPublic = thisDialog.find("#create_template_public").val();
+            var password = thisDialog.find("#create_template_password").val();				
+			
+			var id = $subgridItem.data("jsonObj").id;			
+			var apiCommand = "command=createTemplate&volumeId="+id+"&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
+	    	doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgridItem);					
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		} 
+	}).dialog("open");
+}   
 
 	 
