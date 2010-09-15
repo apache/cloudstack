@@ -15,10 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
-
-import java.util.List;
 
 import org.apache.log4j.Logger;
 
@@ -26,8 +23,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.utils.Pair;
-
 
 @Implementation(method="disableAccount", manager=Manager.ManagementServer)
 public class DisableAccountCmd extends BaseCmd {
@@ -44,7 +39,6 @@ public class DisableAccountCmd extends BaseCmd {
     @Parameter(name="domainid", type=CommandType.LONG)
     private Long domainId;
 
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -57,7 +51,6 @@ public class DisableAccountCmd extends BaseCmd {
         return domainId;
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -66,10 +59,11 @@ public class DisableAccountCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-    
+
     @Override
-    public List<Pair<Enum, Boolean>> getProperties() {
-        return s_properties;
+    public String getResponse() {
+        // TODO:  implement
+        return null;
     }
 
 //    @Override

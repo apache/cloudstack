@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -124,14 +125,14 @@ public class ListSystemVMsCmd extends BaseListCmd {
                                                      //         different instance types at the moment
                 }
 
-                AsyncJobVO asyncJob = getManagementServer().findInstancePendingAsyncJob(instanceType, vm.getId());
+                AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob(instanceType, vm.getId());
                 if (asyncJob != null) {
                     vmResponse.setJobId(asyncJob.getId());
                     vmResponse.setJobStatus(asyncJob.getStatus());
                 } 
 
                 vmResponse.setZoneId(vm.getDataCenterId());
-                vmResponse.setZoneName(getManagementServer().findDataCenterById(vm.getDataCenterId()).getName());
+                vmResponse.setZoneName(ApiDBUtils.findZoneById(vm.getDataCenterId()).getName());
                 vmResponse.setDns1(vm.getDns1());
                 vmResponse.setDns2(vm.getDns2());
                 vmResponse.setNetworkDomain(vm.getDomain());
@@ -140,7 +141,7 @@ public class ListSystemVMsCmd extends BaseListCmd {
                 vmResponse.setPodId(vm.getPodId());
                 if (vm.getHostId() != null) {
                     vmResponse.setHostId(vm.getHostId());
-                    vmResponse.setHostName(getManagementServer().getHostBy(vm.getHostId()).getName());
+                    vmResponse.setHostName(ApiDBUtils.findHostById(vm.getHostId()).getName());
                 }
                 vmResponse.setPrivateIp(vm.getPrivateIpAddress());
                 vmResponse.setPrivateMacAddress(vm.getPrivateMacAddress());

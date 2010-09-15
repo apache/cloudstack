@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -94,11 +95,11 @@ public class ListPortForwardingServicesCmd extends BaseListCmd {
             pfsData.setName(group.getName());
             pfsData.setDescription(group.getDescription());
 
-            Account accountTemp = getManagementServer().findAccountById(group.getAccountId());
+            Account accountTemp = ApiDBUtils.findAccountById(group.getAccountId());
             if (accountTemp != null) {
                 pfsData.setAccountName(accountTemp.getAccountName());
                 pfsData.setDomainId(accountTemp.getDomainId());
-                pfsData.setDomainName(getManagementServer().findDomainIdById(accountTemp.getDomainId()).getName());
+                pfsData.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
             }
 
             response.add(pfsData);

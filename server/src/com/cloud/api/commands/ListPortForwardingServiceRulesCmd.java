@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -96,7 +97,7 @@ public class ListPortForwardingServiceRulesCmd extends BaseListCmd {
             ruleResponse.setPrivatePort(rule.getPrivatePort());
             ruleResponse.setProtocol(rule.getProtocol());
 
-            AsyncJobVO asyncJob = getManagementServer().findInstancePendingAsyncJob("network_rule_config", rule.getId());
+            AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("network_rule_config", rule.getId());
             if(asyncJob != null) {
                 ruleResponse.setJobId(asyncJob.getId());
                 ruleResponse.setJobStatus(asyncJob.getStatus());

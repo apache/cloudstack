@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -142,7 +143,7 @@ public class ListTemplatesCmd extends BaseListCmd {
                 continue;
             }
 
-            List<VMTemplateHostVO> templateHostRefsForTemplate = getManagementServer().listTemplateHostBy(template.getId(), zoneId);
+            List<VMTemplateHostVO> templateHostRefsForTemplate = ApiDBUtils.listTemplateHostBy(template.getId(), zoneId);
 
             for (VMTemplateHostVO templateHostRef : templateHostRefsForTemplate) {
                 if (onlyReady && templateHostRef.getDownloadState() != Status.DOWNLOADED) {
@@ -164,7 +165,7 @@ public class ListTemplatesCmd extends BaseListCmd {
                 templateResponse.setCrossZones(template.isCrossZones());
                 templateResponse.setFormat(template.getFormat());
                 
-                GuestOS os = getManagementServer().findGuestOSById(template.getGuestOSId());
+                GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
                 if (os != null) {
                     templateResponse.setOsTypeId(os.getId());
                     templateResponse.setOsTypeName(os.getDisplayName());
@@ -174,15 +175,15 @@ public class ListTemplatesCmd extends BaseListCmd {
                 }
                 
                 // add account ID and name
-                Account owner = getManagementServer().findAccountById(template.getAccountId());
+                Account owner = ApiDBUtils.findAccountById(template.getAccountId());
                 if (owner != null) {
                     templateResponse.setAccount(owner.getAccountName());
                     templateResponse.setDomainId(owner.getDomainId());
-                    templateResponse.setDomainName(getManagementServer().findDomainIdById(owner.getDomainId()).getName());
+                    templateResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
                 }
                 
-                HostVO host = getManagementServer().getHostBy(templateHostRef.getHostId());
-                DataCenterVO datacenter = getManagementServer().getDataCenterBy(host.getDataCenterId());
+                HostVO host = ApiDBUtils.findHostById(templateHostRef.getHostId());
+                DataCenterVO datacenter = ApiDBUtils.findZoneById(host.getDataCenterId());
                 
                 // Add the zone ID
                 templateResponse.setZoneId(host.getDataCenterId());
@@ -215,7 +216,7 @@ public class ListTemplatesCmd extends BaseListCmd {
                     templateResponse.setSize(templateSize);
                 }
                 
-                AsyncJobVO asyncJob = getManagementServer().findInstancePendingAsyncJob("vm_template", template.getId());
+                AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("vm_template", template.getId());
                 if (asyncJob != null) {
                     templateResponse.setJobId(asyncJob.getId());
                     templateResponse.setJobStatus(asyncJob.getStatus());

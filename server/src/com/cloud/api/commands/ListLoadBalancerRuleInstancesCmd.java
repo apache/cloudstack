@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -83,11 +84,11 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
             userVmResponse.setPrivateIp(instance.getPrivateIpAddress());
 
             // TODO:  implement
-            Account accountTemp = getManagementServer().findAccountById(instance.getAccountId());
+            Account accountTemp = ApiDBUtils.findAccountById(instance.getAccountId());
             if (accountTemp != null) {
                 userVmResponse.setAccountName(accountTemp.getAccountName());
                 userVmResponse.setDomainId(accountTemp.getDomainId());
-                userVmResponse.setDomainName(getManagementServer().findDomainIdById(accountTemp.getDomainId()).getName());
+                userVmResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
             }
 
             response.add(userVmResponse);

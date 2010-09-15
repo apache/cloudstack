@@ -276,7 +276,6 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -538,11 +537,6 @@ public class ManagementServerImpl implements ManagementServer {
     	}
     	
         return _lunDao.delete(id);
-    }
-
-    @Override
-    public VmStats getVmStatistics(long hostId) {
-        return _statsCollector.getVmStats(hostId);
     }
 
     @Override
@@ -1912,17 +1906,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public DataCenterVO getDataCenterBy(long dataCenterId) {
-        return _dcDao.findById(dataCenterId);
-    }
-
-    @Override
-    public HostPodVO getPodBy(long podId) {
-        return _hostPodDao.findById(podId);
-    }
-
-    
-    @Override
     public List<DataCenterVO> listDataCenters(ListZonesByCmd cmd) {
         List<DataCenterVO> dcs = _dcDao.listAllActive();
 
@@ -2984,16 +2967,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public Long getAccountIdForVlan(long vlanDbId) {
-    	List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAccountVlanMapsByVlan(vlanDbId);
-    	if (accountVlanMaps.isEmpty()) {
-    		return null;
-    	} else {
-    		return accountVlanMaps.get(0).getAccountId();
-    	}
-    }
-
-    @Override
     public List<ConfigurationVO> searchForConfigurations(ListCfgsByCmd cmd) {
         Filter searchFilter = new Filter(ConfigurationVO.class, "name", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<ConfigurationVO> sc = _configDao.createSearchCriteria();
@@ -3406,11 +3379,6 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public DataCenterVO findDataCenterById(long dataCenterId) {
         return _dcDao.findById(dataCenterId);
-    }
-
-    @Override
-    public VlanVO findVlanById(long vlanDbId) {
-        return _vlanDao.findById(vlanDbId);
     }
 
     @Override
@@ -4115,22 +4083,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public VolumeVO findVolumeById(long id) {
-         VolumeVO volume = _volumeDao.findById(id);
-         if (volume != null && !volume.getDestroyed() && volume.getRemoved() == null) {
-             return volume;
-         }
-         else {
-             return null;
-         }
-    }
-
-    @Override
-    public VolumeVO findAnyVolumeById(long volumeId) {
-        return _volumeDao.findById(volumeId);
-    }
-    
-    @Override
     public List<VolumeVO> searchForVolumes(ListVolumesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Account account = (Account)UserContext.current().getAccountObject();
         Long domainId = cmd.getDomainId();
@@ -4255,17 +4207,6 @@ public class ManagementServerImpl implements ManagementServer {
         sc.setParameters("destroyed", false);
 
         return _volumeDao.search(sc, searchFilter);
-    }
-
-    @Override
-    public boolean volumeIsOnSharedStorage(long volumeId) throws InvalidParameterValueException {
-        // Check that the volume is valid
-        VolumeVO volume = _volumeDao.findById(volumeId);
-        if (volume == null) {
-            throw new InvalidParameterValueException("Please specify a valid volume ID.");
-        }
-
-        return _storageMgr.volumeOnSharedStoragePool(volume);
     }
 
     @Override
@@ -4979,7 +4920,7 @@ public class ManagementServerImpl implements ManagementServer {
     	String domainName = cmd.getName();
     	
         //check if domain exists in the system
-    	DomainVO domain = findDomainIdById(domainId);
+    	DomainVO domain = _domainDao.findById(domainId);
     	if (domain == null) {
     		throw new InvalidParameterValueException("Unable to find domain " + domainId);
     	} else if (domain.getParent() == null) {
@@ -5022,10 +4963,6 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         return null;
-    }
-
-    public DomainVO findDomainIdById(Long domainId) {
-        return _domainDao.findById(domainId);
     }
 
     @Override
@@ -6267,24 +6204,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _snapshotPolicyDao.findById(policyId);
     }
 
-	@Override
-	public String getSnapshotIntervalTypes(long snapshotId){
-	    String intervalTypes = "";
-	    List<SnapshotPolicyVO> policies = _snapMgr.listPoliciesforSnapshot(snapshotId);
-	    for (SnapshotPolicyVO policy : policies){
-	        if(!intervalTypes.isEmpty()){
-	            intervalTypes += ",";
-	        }
-	        if(policy.getId() == Snapshot.MANUAL_POLICY_ID){
-	            intervalTypes+= "MANUAL";
-	        }
-	        else {
-	            intervalTypes += DateUtil.getIntervalType(policy.getInterval()).toString();
-	        }
-	    }
-	    return intervalTypes;
-	}
-	
     @Override
     public boolean isChildDomain(Long parentId, Long childId) {
         return _domainDao.isChildDomain(parentId, childId);

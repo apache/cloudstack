@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -109,19 +110,19 @@ public class ListStoragePoolsCmd extends BaseListCmd {
             poolResponse.setPath(pool.getPath());
             poolResponse.setIpAddress(pool.getHostAddress());
             poolResponse.setZoneId(pool.getDataCenterId());
-            poolResponse.setZoneName(getManagementServer().getDataCenterBy(pool.getDataCenterId()).getName());
+            poolResponse.setZoneName(ApiDBUtils.findZoneById(pool.getDataCenterId()).getName());
             if (pool.getPoolType() != null) {
                 poolResponse.setType(pool.getPoolType().toString());
             }
             if (pool.getPodId() != null) {
                 poolResponse.setPodId(pool.getPodId());
-                poolResponse.setPodName(getManagementServer().getPodBy(pool.getPodId()).getName());
+                poolResponse.setPodName(ApiDBUtils.findPodById(pool.getPodId()).getName());
             }
             if (pool.getCreated() != null) {
                 poolResponse.setCreated(pool.getCreated());
             }
 
-            StorageStats stats = getManagementServer().getStoragePoolStatistics(pool.getId());
+            StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
             long capacity = pool.getCapacityBytes();
             long available = pool.getAvailableBytes() ;
             long used = capacity - available;
@@ -135,12 +136,12 @@ public class ListStoragePoolsCmd extends BaseListCmd {
             poolResponse.setDiskSizeAllocated(used);
 
             if (pool.getClusterId() != null) {
-                ClusterVO cluster = getManagementServer().findClusterById(pool.getClusterId());
+                ClusterVO cluster = ApiDBUtils.findClusterById(pool.getClusterId());
                 poolResponse.setClusterId(cluster.getId());
                 poolResponse.setClusterName(cluster.getName());
             }           
 
-            poolResponse.setTags(getManagementServer().getStoragePoolTags(pool.getId()));
+            poolResponse.setTags(ApiDBUtils.getStoragePoolTags(pool.getId()));
 
             response.add(poolResponse);
         }

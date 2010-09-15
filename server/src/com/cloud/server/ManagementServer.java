@@ -142,7 +142,6 @@ import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VmStats;
 
 
 /**
@@ -292,16 +291,8 @@ public interface ManagementServer {
      * @param hostId
      * @return StorageStats
      */
-    StorageStats getStorageStatistics(long hostId);
+    StorageStats getStorageStatistics(long hostId);;
 
-    /**
-     * Gets Host/VM statistics for a given host
-     * 
-     * @param hostId
-     * @return HostStats/VMStats depending on the id passed
-     */
-    VmStats getVmStatistics(long hostId);
-    
     /**
      * Gets Volume statistics.  The array returned will contain VolumeStats in the same order
      * as the array of volumes requested.
@@ -325,13 +316,6 @@ public interface ManagementServer {
      * @return pod ID, or null
      */
     Long getPodIdForVlan(long vlanDbId);
-    
-    /**
-     * If the specified VLAN is associated with a specific account, returns the account ID. Else, returns null.
-     * @param accountId
-     * @return account ID, or null
-     */
-    Long getAccountIdForVlan(long vlanDbId);
 
     /**
      * Finds the root volume of the VM
@@ -449,22 +433,6 @@ public interface ManagementServer {
      * @return a domainRouter
      */
 	DomainRouterVO findDomainRouterById(long domainRouterId);
-
-    /**
-     * Retrieves a data center by id
-     * 
-     * @param dataCenterId
-     * @return DataCenter
-     */
-    DataCenterVO getDataCenterBy(long dataCenterId);
-    
-    /**
-     * Retrieves a pod by id
-     * 
-     * @param podId
-     * @return Pod
-     */
-    HostPodVO getPodBy(long podId);
     
     /**
      * Retrieves the list of data centers with search criteria.
@@ -653,13 +621,6 @@ public interface ManagementServer {
     DataCenterVO findDataCenterById(long dataCenterId);
     
     /**
-     * Finds a VLAN with the specified ID.
-     * @param vlanDbId
-     * @return VLAN
-     */
-    VlanVO findVlanById(long vlanDbId);
-    
-    /**
      * Creates a new template
      * @param cmd
      * @return success/failure
@@ -761,16 +722,6 @@ public interface ManagementServer {
     
     List<ConsoleProxyVO> searchForConsoleProxy(Criteria c);
     
-    /**
-     * Finds a volume which is not destroyed or removed.
-     */
-    VolumeVO findVolumeById(long id);
-    
-    /**
-     * Return the volume with the given id even if its destroyed or removed.
-     */
-    VolumeVO findAnyVolumeById(long volumeId);
-    
     /** revisit
      * Obtains a list of storage volumes by the specified search criteria.
      * Can search by: "userId", "vType", "instanceId", "dataCenterId", "podId", "hostId"
@@ -778,14 +729,7 @@ public interface ManagementServer {
      * @return List of Volumes.
      */
     List<VolumeVO> searchForVolumes(ListVolumesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
-    
-    /**
-	 * Checks that the volume is stored on a shared storage pool.
-	 * @param volumeId
-	 * @return true if the volume is on a shared storage pool, false otherwise
-	 */
-    boolean volumeIsOnSharedStorage(long volumeId) throws InvalidParameterValueException;
-    
+
     /**
      * Finds a pod by the specified ID.
      * @param podId
@@ -930,12 +874,6 @@ public interface ManagementServer {
      * @param accountId the id of the account to use to look up the domain
      */
     Long findDomainIdByAccountId(Long accountId);
-    
-    /**
-     * find the domain by id
-     * @param domainId the id of the domainId
-     */
-    DomainVO findDomainIdById(Long domainId);
 
     /**
      * find the domain by its path
@@ -1240,13 +1178,6 @@ public interface ManagementServer {
 	 * @return True if the domainIds are equal, or if the second domain is a child of the first domain.  False otherwise.
 	 */
     boolean isChildDomain(Long parentId, Long childId);
-
-    /**
-     * List interval types the specified snapshot belongs to
-     * @param snapshotId
-     * @return
-     */
-    String getSnapshotIntervalTypes(long snapshotId);
 
 	List<SecondaryStorageVmVO> searchForSecondaryStorageVm(Criteria c);
 

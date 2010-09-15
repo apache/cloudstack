@@ -7,14 +7,19 @@ import com.cloud.agent.manager.AgentManager;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -30,6 +35,7 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
@@ -45,6 +51,7 @@ import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -54,8 +61,11 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.UserVmDao;
 
 public class ApiDBUtils {
@@ -64,10 +74,12 @@ public class ApiDBUtils {
     private static AgentManager _agentMgr;
     private static AsyncJobManager _asyncMgr;
     private static NetworkGroupManager _networkGroupMgr;
+    private static SnapshotManager _snapMgr;
     private static StorageManager _storageMgr;
     private static StatsCollector _statsCollector;
 
     private static AccountDao _accountDao;
+    private static AccountVlanMapDao _accountVlanMapDao;
     private static ClusterDao _clusterDao;
     private static DiskOfferingDao _diskOfferingDao;
     private static DomainDao _domainDao;
@@ -84,6 +96,7 @@ public class ApiDBUtils {
     private static UserDao _userDao;
     private static UserStatisticsDao _userStatsDao;
     private static UserVmDao _userVmDao;
+    private static VlanDao _vlanDao;
     private static VolumeDao _volumeDao;
     private static DataCenterDao _zoneDao;
 
@@ -95,9 +108,11 @@ public class ApiDBUtils {
         _agentMgr = locator.getManager(AgentManager.class);
         _asyncMgr = locator.getManager(AsyncJobManager.class);
         _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
+        _snapMgr = locator.getManager(SnapshotManager.class);
         _storageMgr = locator.getManager(StorageManager.class);
 
         _accountDao = locator.getDao(AccountDao.class);
+        _accountVlanMapDao = locator.getDao(AccountVlanMapDao.class);
         _clusterDao = locator.getDao(ClusterDao.class);
         _diskOfferingDao = locator.getDao(DiskOfferingDao.class);
         _domainDao = locator.getDao(DomainDao.class);        
@@ -114,6 +129,7 @@ public class ApiDBUtils {
         _userDao = locator.getDao(UserDao.class);
         _userStatsDao = locator.getDao(UserStatisticsDao.class);
         _userVmDao = locator.getDao(UserVmDao.class);
+        _vlanDao = locator.getDao(VlanDao.class);
         _volumeDao = locator.getDao(VolumeDao.class);
         _zoneDao = locator.getDao(DataCenterDao.class);
 
@@ -125,12 +141,20 @@ public class ApiDBUtils {
     //               ManagementServer methods                  //
     /////////////////////////////////////////////////////////////
 
+    public static VMInstanceVO findVMInstanceById(long vmId) {
+        return _ms.findVMInstanceById(vmId);
+    }
+
     public static long getMemoryUsagebyHost(Long hostId) {
         // TODO:  This method is for the API only, but it has configuration values (ramSize for system vms)
         // so if this Utils class can have some kind of config rather than a static initializer (maybe from
         // management server instantiation?) then maybe the management server method can be moved entirely
         // into this utils class.
         return _ms.getMemoryUsagebyHost(hostId);
+    }
+
+    public static Long getPodIdForVlan(long vlanDbId) {
+        return _ms.getPodIdForVlan(vlanDbId);
     }
 
     public static List<UserVmVO> searchForUserVMs(Criteria c) {
@@ -173,6 +197,23 @@ public class ApiDBUtils {
         return _networkGroupMgr.getNetworkGroupsNamesForVm(vmId);
     }
 
+    public static String getSnapshotIntervalTypes(long snapshotId){
+        String intervalTypes = "";
+        List<SnapshotPolicyVO> policies = _snapMgr.listPoliciesforSnapshot(snapshotId);
+        for (SnapshotPolicyVO policy : policies){
+            if(!intervalTypes.isEmpty()){
+                intervalTypes += ",";
+            }
+            if(policy.getId() == Snapshot.MANUAL_POLICY_ID){
+                intervalTypes+= "MANUAL";
+            }
+            else {
+                intervalTypes += DateUtil.getIntervalType(policy.getInterval()).toString();
+            }
+        }
+        return intervalTypes;
+    }
+    
     public static String getStoragePoolTags(long poolId) {
         return _storageMgr.getStoragePoolTags(poolId);
     }
@@ -191,6 +232,10 @@ public class ApiDBUtils {
 
     public static StorageStats getStoragePoolStatistics(long id) {
         return _statsCollector.getStoragePoolStats(id);
+    }
+
+    public static VmStats getVmStatistics(long hostId) {
+        return _statsCollector.getVmStats(hostId);
     }
 
     /////////////////////////////////////////////////////////////
@@ -278,12 +323,25 @@ public class ApiDBUtils {
         return _userVmDao.findById(vmId);
     }
 
+    public static VlanVO findVlanById(long vlanDbId) {
+        return _vlanDao.findById(vlanDbId);
+    }
+
     public static VolumeVO findVolumeById(Long volumeId) {
         return _volumeDao.findById(volumeId);
     }
 
     public static DataCenterVO findZoneById(Long zoneId) {
         return _zoneDao.findById(zoneId);
+    }
+
+    public static Long getAccountIdForVlan(long vlanDbId) {
+        List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAccountVlanMapsByVlan(vlanDbId);
+        if (accountVlanMaps.isEmpty()) {
+            return null;
+        } else {
+            return accountVlanMaps.get(0).getAccountId();
+        }
     }
 
     public static List<VMTemplateHostVO> listTemplateHostBy(long templateId, Long zoneId) {
@@ -305,5 +363,15 @@ public class ApiDBUtils {
 
     public static List<UserVmVO> listUserVMsByHostId(long hostId) {
         return _userVmDao.listByHostId(hostId);
+    }
+
+    public static boolean volumeIsOnSharedStorage(long volumeId) throws InvalidParameterValueException {
+        // Check that the volume is valid
+        VolumeVO volume = _volumeDao.findById(volumeId);
+        if (volume == null) {
+            throw new InvalidParameterValueException("Please specify a valid volume ID.");
+        }
+
+        return _storageMgr.volumeOnSharedStoragePool(volume);
     }
 }

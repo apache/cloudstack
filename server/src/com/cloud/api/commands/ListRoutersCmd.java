@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -113,14 +114,14 @@ public class ListRoutersCmd extends BaseListCmd {
             DomainRouterResponse routerResponse = new DomainRouterResponse();
             routerResponse.setId(router.getId());
 
-            AsyncJobVO asyncJob = getManagementServer().findInstancePendingAsyncJob("domain_router", router.getId());
+            AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("domain_router", router.getId());
             if (asyncJob != null) {
                 routerResponse.setJobId(asyncJob.getId());
                 routerResponse.setJobStatus(asyncJob.getStatus());
             } 
 
             routerResponse.setZoneId(router.getDataCenterId());
-            routerResponse.setZoneName(getManagementServer().findDataCenterById(router.getDataCenterId()).getName());
+            routerResponse.setZoneName(ApiDBUtils.findZoneById(router.getDataCenterId()).getName());
             routerResponse.setDns1(router.getDns1());
             routerResponse.setDns2(router.getDns2());
             routerResponse.setNetworkDomain(router.getDomain());
@@ -130,7 +131,7 @@ public class ListRoutersCmd extends BaseListCmd {
 
             if (router.getHostId() != null) {
                 routerResponse.setHostId(router.getHostId());
-                routerResponse.setHostName(getManagementServer().getHostBy(router.getHostId()).getName());
+                routerResponse.setHostName(ApiDBUtils.findHostById(router.getHostId()).getName());
             } 
 
             routerResponse.setPrivateIp(router.getPrivateIpAddress());
@@ -146,11 +147,11 @@ public class ListRoutersCmd extends BaseListCmd {
             routerResponse.setCreated(router.getCreated());
             routerResponse.setState(router.getState());
 
-            Account accountTemp = getManagementServer().findAccountById(router.getAccountId());
+            Account accountTemp = ApiDBUtils.findAccountById(router.getAccountId());
             if (accountTemp != null) {
                 routerResponse.setAccountName(accountTemp.getAccountName());
                 routerResponse.setDomainId(accountTemp.getDomainId());
-                routerResponse.setDomain(getManagementServer().findDomainIdById(accountTemp.getDomainId()).getName());
+                routerResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
             }
 
             response.add(routerResponse);
