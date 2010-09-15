@@ -216,3 +216,54 @@
     </div>
 </div>
 <!-- template detail panel (end) -->
+
+<!-- Copy Template Dialog (begin) -->
+<div id="dialog_copy_template" title="Copy Template" style="display:none">
+	<p>Copy template <b id="copy_template_name_text">XXX</b> from zone <b id="copy_template_source_zone_text">XXX</b> to</p>
+	<div class="dialog_formcontent">
+		<form action="#" method="post" id="form3">
+			<ol>				
+				<li>
+                    <label>Zone:</label>
+                    <select class="select" id="copy_template_zone">  
+                        <option value=""></option>                      
+                    </select>
+                </li>		
+			</ol>
+			<div id="copy_template_zone_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div> 
+		</form>
+	</div>
+</div>
+<!--  Copy Template Dialog (end) -->
+
+<!-- Create VM from template (begin) -->
+<div id="dialog_create_vm_from_template" title="Create VM" style="display:none">
+	<p>Create VM from <b id="template">xxx</b></p>
+	<div class="dialog_formcontent">
+		<form action="#" method="post" id="form5">
+			<ol>			   
+				<li>
+					<label>Name:</label>
+					<input class="text" type="text" id="name"/>
+					<div id="name_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+				</li>
+				<li>
+					<label>Group:</label>
+					<input class="text" type="text" id="group"/>
+					<div id="group_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+				</li>				
+				<li>
+                    <label>Service Offering:</label>
+                    <select class="select" id="service_offering">
+                    </select>
+                </li>					
+				<li>
+                    <label>Disk Offering:</label>
+                    <select class="select" id="disk_offering">
+                    </select>
+                </li>					
+			</ol>
+		</form>
+	</div>
+</div>
+<!-- Create VM from template (end) -->

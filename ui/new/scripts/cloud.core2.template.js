@@ -1,7 +1,10 @@
+var g_zoneIds = []; 
+var g_zoneNames = [];	
+
 function afterLoadTemplateJSP() {        
    var $detailsTab = $("#right_panel_content #tab_content_details");   
     
-    //edit button
+    //edit button ***
     var $readonlyFields  = $detailsTab.find("#name, #displaytext, #passwordenabled, #ispublic, #isfeatured, #ostypename");
     var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit, #ispublic_edit, #isfeatured_edit, #ostypename_edit"); 
     $("#edit_button").bind("click", function(event){    
@@ -19,7 +22,7 @@ function afterLoadTemplateJSP() {
         return false;
     });
     $("#save_button").bind("click", function(event){        
-        updateTemplate();     
+        doUpdateTemplate();     
         $editFields.hide();      
         $readonlyFields.show();       
         $("#save_button, #cancel_button").hide();
@@ -28,7 +31,7 @@ function afterLoadTemplateJSP() {
     });
     
     
-    //OS type dropdown
+    //OS type dropdown ***
     $.ajax({
 	    data: createURL("command=listOsTypes&response=json"+maxPageSize),
 		dataType: "json",
@@ -43,9 +46,207 @@ function afterLoadTemplateJSP() {
 			}	
 		}
 	});
+	
+	//initialize dialog box ***
+	activateDialog($("#dialog_copy_template").dialog({ 
+		width:300,
+		autoOpen: false,
+		modal: true,
+		zIndex: 2000
+	}));
+	
+	activateDialog($("#dialog_create_vm_from_template").dialog({ 
+		width:300,
+		autoOpen: false,
+		modal: true,
+		zIndex: 2000
+	}));
+	
+	//populate zone dropdown excluding source zone ***				
+	var addTemplateZoneField = $("#dialog_add_template #add_template_zone");
+    
+	// Add default zone
+	if (isAdmin()) {
+		addTemplateZoneField.append("<option value='-1'>All Zones</option>"); 		
+	}
+    $.ajax({
+        data: createURL("command=listZones&available=true"+maxPageSize),
+	    dataType: "json",
+	    success: function(json) {		        
+		    var zones = json.listzonesresponse.zone;	 			     			    	
+		    if (zones != null && zones.length > 0) {
+		        for (var i = 0; i < zones.length; i++) {
+			        addTemplateZoneField.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 			        
+			        g_zoneIds.push(zones[i].id);
+			        g_zoneNames.push(zones[i].name);			       
+		        }
+		    }				    			
+	    }
+	});			
 }
 
-function updateTemplate() {    
+function templateToMidmenu(jsonObj, $midmenuItem1) {    
+    $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));  
+    $midmenuItem1.data("jsonObj", jsonObj); 
+       
+    var $iconContainer = $midmenuItem1.find("#icon_container").show();
+    setIconByOsType(jsonObj.ostypename, $iconContainer.find("#icon"));
+    
+    $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
+    $midmenuItem1.find("#second_row").text(fromdb(jsonObj.zonename).substring(0,25));   
+}
+
+function templateAfterDetailsTabAction(jsonObj) {
+    var $midmenuItem1 = $("#midmenuItem_"+jsonObj.id);
+    $midmenuItem1.data("jsonObj", jsonObj);   
+    templateToMidmenu(jsonObj, $midmenuItem1);
+    templateJsonToDetailsTab(jsonObj);       
+}
+
+function templateToRigntPanel($midmenuItem) {       
+    var jsonObj = $midmenuItem.data("jsonObj");
+    templateJsonToDetailsTab(jsonObj);   
+}
+
+function templateJsonToDetailsTab(jsonObj) {   
+    var $detailsTab = $("#right_panel_content #tab_content_details");   
+    $detailsTab.data("jsonObj", jsonObj);
+    $detailsTab.find("#id").text(fromdb(jsonObj.id));
+    $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));
+    
+    $detailsTab.find("#name").text(fromdb(jsonObj.name));
+    $detailsTab.find("#name_edit").val(fromdb(jsonObj.name));
+    
+    $detailsTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
+    $detailsTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
+    
+    var status = "Ready";
+	if (jsonObj.isready == "false") 
+		status = jsonObj.templatestatus;	
+	$detailsTab.find("#status").text(status);    
+    
+    setBooleanField(jsonObj.passwordenabled, $detailsTab.find("#passwordenabled"));	
+    $detailsTab.find("#passwordenabled_edit").val(jsonObj.passwordenabled);
+    
+    setBooleanField(jsonObj.ispublic, $detailsTab.find("#ispublic"));	
+    $detailsTab.find("#ispublic_edit").val(jsonObj.ispublic);
+    
+    setBooleanField(jsonObj.isfeatured, $detailsTab.find("#isfeatured"));
+    $detailsTab.find("#isfeatured_edit").val(jsonObj.isfeatured);
+    
+    setBooleanField(jsonObj.crossZones, $detailsTab.find("#crossZones"));
+    
+    $detailsTab.find("#ostypename").text(fromdb(jsonObj.ostypename));
+    $detailsTab.find("#ostypename_edit").val(jsonObj.ostypeid);    
+    
+    $detailsTab.find("#account").text(fromdb(jsonObj.account));
+    
+    if(jsonObj.size != null)
+	    $detailsTab.find("#size").text(convertBytes(parseInt(jsonObj.size)));        
+    
+    setDateField(jsonObj.created, $detailsTab.find("#created"));	
+    
+    //actions ***
+    var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
+    $actionMenu.find("#action_list").empty();
+    
+    // action Edit, Copy, Create VM 			
+	if ((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.id==DomRTemplateId || jsonObj.isready == "false") {
+		//template.find("#template_edit_container, #template_copy_container, #template_create_vm_container").hide(); 
+		$("edit_button").hide();		
+    }
+    else {
+        $("edit_button").show();
+        buildActionLinkForDetailsTab("Copy Template", templateActionMap, $actionMenu, templateListAPIMap);			
+        //buildActionLinkForDetailsTab("Create VM", templateActionMap, $actionMenu, templateListAPIMap);			
+    }
+	
+	// action Delete 			
+	if (((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.id==DomRTemplateId) || (jsonObj.isready == "false" && jsonObj.templatestatus != null && jsonObj.templatestatus.indexOf("% Downloaded") != -1)) {
+		//template.find("#template_delete_container").hide();
+    }
+    else {
+        buildActionLinkForDetailsTab("Delete Template", templateActionMap, $actionMenu, templateListAPIMap);	
+    }
+}
+
+//setIconByOsType() is shared by template page and ISO page
+function setIconByOsType(osType, $field) {
+	if (osType == null || osType.length == 0)
+		return; 	
+	if (osType.match("^CentOS") != null)
+		$field.attr("src", "images/midmenuicon_template_centos.png");
+	else if (osType.match("^Windows") != null) 
+		$field.attr("src", "images/midmenuicon_template_windows.png");
+	else 
+		$field.attr("src", "images/midmenuicon_template_linux.png");
+}
+
+function templateClearRightPanel() {       
+    var $detailsTab = $("#right_panel_content #tab_content_details");   
+    $detailsTab.data("jsonObj", null);
+    $detailsTab.find("#id").text("");
+    $detailsTab.find("#zonename").text("");
+    
+    $detailsTab.find("#name").text("");
+    $detailsTab.find("#name_edit").val("");
+    
+    $detailsTab.find("#displaytext").text("");
+    $detailsTab.find("#displaytext_edit").val("");
+        
+	$detailsTab.find("#status").text("");    
+    
+    setBooleanField(null, $detailsTab.find("#passwordenabled"));	
+    $detailsTab.find("#passwordenabled_edit").val(null);
+    
+    setBooleanField(null, $detailsTab.find("#ispublic"));	
+    $detailsTab.find("#ispublic_edit").val(null);
+    
+    setBooleanField(null, $detailsTab.find("#isfeatured"));
+    $detailsTab.find("#isfeatured_edit").val(null);
+    
+    setBooleanField(null, $detailsTab.find("#crossZones"));
+    
+    $detailsTab.find("#ostypename").text("");
+    $detailsTab.find("#ostypename_edit").val(null);    
+    
+    $detailsTab.find("#account").text("");  
+	$detailsTab.find("#size").text("");  
+    $detailsTab.find("#created").text("");      
+}
+
+var templateActionMap = {  
+    "Delete Template": {
+        api: "deleteTemplate",            
+        isAsyncJob: true,
+        asyncJobResponse: "deletetemplateresponse",
+        inProcessText: "Deleting Template....",
+        afterActionSeccessFn: function(jsonObj) {           
+            var $midmenuItem1 = $("#midmenuItem_"+jsonObj.id);
+            $midmenuItem1.remove();
+            clearRightPanel();
+            templateClearRightPanel();
+        }
+    },
+    "Copy Template": {
+        isAsyncJob: true,
+        asyncJobResponse: "createtemplateresponse",            
+        dialogBeforeActionFn : doCopyTemplate,
+        inProcessText: "Copy Template....",
+        afterActionSeccessFn: function(){}   
+    }  
+}   
+
+var templateListAPIMap = {
+    listAPI: "listTemplates&templatefilter=self",
+    listAPIResponse: "listtemplatesresponse",
+    listAPIResponseObj: "template"
+}; 
+
+var DomRTemplateId = 1;
+
+
+function doUpdateTemplate() {    
     var $detailsTab = $("#right_panel_content #tab_content_details");  
             
     // validate values
@@ -124,155 +325,48 @@ function updateTemplate() {
     });   
 }
 
-function templateToMidmenu(jsonObj, $midmenuItem1) {    
-    $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));  
-    $midmenuItem1.data("jsonObj", jsonObj); 
-       
-    var $iconContainer = $midmenuItem1.find("#icon_container").show();
-    setIconByOsType(jsonObj.ostypename, $iconContainer.find("#icon"));
-    
-    $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
-    $midmenuItem1.find("#second_row").text(fromdb(jsonObj.zonename).substring(0,25));   
-}
 
-function templateAfterDetailsTabAction(jsonObj) {
-    var $midmenuItem1 = $("#midmenuItem_"+jsonObj.id);
-    $midmenuItem1.data("jsonObj", jsonObj);   
-    templateToMidmenu(jsonObj, $midmenuItem1);
-    templateJsonToDetailsTab(jsonObj);       
-}
-
-function templateToRigntPanel($midmenuItem) {       
-    var jsonObj = $midmenuItem.data("jsonObj");
-    templateJsonToDetailsTab(jsonObj);   
-}
-
-function templateJsonToDetailsTab(jsonObj) {   
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
-    $detailsTab.data("jsonObj", jsonObj);
-    $detailsTab.find("#id").text(fromdb(jsonObj.id));
-    $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));
-    
-    $detailsTab.find("#name").text(fromdb(jsonObj.name));
-    $detailsTab.find("#name_edit").val(fromdb(jsonObj.name));
-    
-    $detailsTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
-    $detailsTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
-    
-    var status = "Ready";
-	if (jsonObj.isready == "false") 
-		status = jsonObj.templatestatus;	
-	$detailsTab.find("#status").text(status);    
-    
-    setBooleanField(jsonObj.passwordenabled, $detailsTab.find("#passwordenabled"));	
-    $detailsTab.find("#passwordenabled_edit").val(jsonObj.passwordenabled);
-    
-    setBooleanField(jsonObj.ispublic, $detailsTab.find("#ispublic"));	
-    $detailsTab.find("#ispublic_edit").val(jsonObj.ispublic);
-    
-    setBooleanField(jsonObj.isfeatured, $detailsTab.find("#isfeatured"));
-    $detailsTab.find("#isfeatured_edit").val(jsonObj.isfeatured);
-    
-    setBooleanField(jsonObj.crossZones, $detailsTab.find("#crossZones"));
-    
-    $detailsTab.find("#ostypename").text(fromdb(jsonObj.ostypename));
-    $detailsTab.find("#ostypename_edit").val(jsonObj.ostypeid);    
-    
-    $detailsTab.find("#account").text(fromdb(jsonObj.account));
-    
-    if(jsonObj.size != null)
-	    $detailsTab.find("#size").text(convertBytes(parseInt(jsonObj.size)));        
-    
-    setDateField(jsonObj.created, $detailsTab.find("#created"));	
-    
-    //actions ***
-    var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
-    $actionMenu.find("#action_list").empty();
-    
-    // action Edit, Copy, Create VM 			
-	if ((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.id==DomRTemplateId || jsonObj.isready == "false") {
-		//template.find("#template_edit_container, #template_copy_container, #template_create_vm_container").hide(); 
-		$("edit_button").hide();		
-    }
-    else {
-        $("edit_button").show();
-        //buildActionLinkForDetailsTab("Copy Template", templateActionMap, $actionMenu, templateListAPIMap);			
-        //buildActionLinkForDetailsTab("Create VM", templateActionMap, $actionMenu, templateListAPIMap);			
-    }
-	
-	// action Delete 			
-	if (((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.id==DomRTemplateId) || (jsonObj.isready == "false" && jsonObj.templatestatus != null && jsonObj.templatestatus.indexOf("% Downloaded") != -1)) {
-		//template.find("#template_delete_container").hide();
-    }
-    else {
-        buildActionLinkForDetailsTab("Delete Template", templateActionMap, $actionMenu, templateListAPIMap);	
-    }
-}
-
-//setIconByOsType() is shared by template page and ISO page
-function setIconByOsType(osType, $field) {
-	if (osType == null || osType.length == 0)
-		return; 	
-	if (osType.match("^CentOS") != null)
-		$field.attr("src", "images/midmenuicon_template_centos.png");
-	else if (osType.match("^Windows") != null) 
-		$field.attr("src", "images/midmenuicon_template_windows.png");
-	else 
-		$field.attr("src", "images/midmenuicon_template_linux.png");
-}
-
-function templateClearRightPanel() {       
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
-    $detailsTab.data("jsonObj", null);
-    $detailsTab.find("#id").text("");
-    $detailsTab.find("#zonename").text("");
-    
-    $detailsTab.find("#name").text("");
-    $detailsTab.find("#name_edit").val("");
-    
-    $detailsTab.find("#displaytext").text("");
-    $detailsTab.find("#displaytext_edit").val("");
-        
-	$detailsTab.find("#status").text("");    
-    
-    setBooleanField(null, $detailsTab.find("#passwordenabled"));	
-    $detailsTab.find("#passwordenabled_edit").val(null);
-    
-    setBooleanField(null, $detailsTab.find("#ispublic"));	
-    $detailsTab.find("#ispublic_edit").val(null);
-    
-    setBooleanField(null, $detailsTab.find("#isfeatured"));
-    $detailsTab.find("#isfeatured_edit").val(null);
-    
-    setBooleanField(null, $detailsTab.find("#crossZones"));
-    
-    $detailsTab.find("#ostypename").text("");
-    $detailsTab.find("#ostypename_edit").val(null);    
-    
-    $detailsTab.find("#account").text("");  
-	$detailsTab.find("#size").text("");  
-    $detailsTab.find("#created").text("");      
-}
-
-var templateActionMap = {  
-    "Delete Template": {
-        api: "deleteTemplate",            
-        isAsyncJob: true,
-        asyncJobResponse: "deletetemplateresponse",
-        inProcessText: "Deleting Template....",
-        afterActionSeccessFn: function(jsonObj) {           
-            var $midmenuItem1 = $("#midmenuItem_"+jsonObj.id);
-            $midmenuItem1.remove();
-            clearRightPanel();
-            templateClearRightPanel();
+function populateZoneFieldExcludeSourceZone(zoneField, excludeZoneId) {	  
+    zoneField.empty();  
+    if (g_zoneIds != null && g_zoneIds.length > 0) {
+        for (var i = 0; i < g_zoneIds.length; i++) {
+            if(g_zoneIds[i]	!= excludeZoneId)			            
+	            zoneField.append("<option value='" + g_zoneIds[i] + "'>" + sanitizeXSS(g_zoneNames[i]) + "</option>"); 			        			       
         }
-    }
-}   
+    }			    
+}
 
-var templateListAPIMap = {
-    listAPI: "listTemplates&templatefilter=self",
-    listAPIResponse: "listtemplatesresponse",
-    listAPIResponseObj: "template"
-}; 
-
-var DomRTemplateId = 1;
+function doCopyTemplate($actionLink, listAPIMap, $detailsTab) { 
+	var jsonObj = $detailsTab.data("jsonObj");
+	var id = jsonObj.id;
+	var name = jsonObj.name;						
+	var sourceZoneId = jsonObj.zoneid;				
+		
+	populateZoneFieldExcludeSourceZone($("#dialog_copy_template #copy_template_zone"), sourceZoneId);
+	
+	$("#dialog_copy_template #copy_template_name_text").text(name);
+		
+	var sourceZoneName = jsonObj.zonename;
+	$("#dialog_copy_template #copy_template_source_zone_text").text(sourceZoneName);
+		
+	$("#dialog_copy_template")
+	.dialog('option', 'buttons', {				    
+	    "OK": function() {				       
+	        var thisDialog = $(this);
+	        thisDialog.dialog("close");		
+	        				        
+	        var isValid = true;	 
+            isValid &= validateDropDownBox("Zone", thisDialog.find("#copy_template_zone"), thisDialog.find("#copy_template_zone_errormsg"), false);  //reset error text		         
+	        if (!isValid) return;     
+	        				        
+	        var destZoneId = thisDialog.find("#copy_template_zone").val();	
+	        
+            var id = $detailsTab.data("jsonObj").id;			
+	        var apiCommand = "command=copyTemplate&id="+id+"&sourcezoneid="+sourceZoneId+"&destzoneid="+destZoneId;
+	        doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);	
+	    }, 
+	    "Cancel": function() {				        
+		    $(this).dialog("close");
+	    }				
+	}).dialog("open");			
+}		
