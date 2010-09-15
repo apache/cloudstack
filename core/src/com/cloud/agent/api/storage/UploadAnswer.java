@@ -4,8 +4,7 @@ import java.io.File;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.UploadVO;
 
 public class UploadAnswer extends Answer {
 
@@ -13,7 +12,7 @@ public class UploadAnswer extends Answer {
 	private String jobId;
 	private int uploadPct;
 	private String errorString;
-	private VMTemplateHostVO.Status uploadStatus;
+	private UploadVO.Status uploadStatus;
 	private String uploadPath;
 	private String installPath;
 	public Long templateSize = 0L;
@@ -29,7 +28,7 @@ public class UploadAnswer extends Answer {
 		return uploadStatus.toString();
 	}
 	
-	public VMTemplateHostVO.Status getUploadStatus() {
+	public UploadVO.Status getUploadStatus() {
 		return uploadStatus;
 	}
 	
@@ -48,7 +47,7 @@ public class UploadAnswer extends Answer {
 	}
 	
 	public UploadAnswer(String jobId, int uploadPct, String errorString,
-			Status uploadStatus, String fileSystemPath, String installPath, long templateSize) {
+			UploadVO.Status uploadStatus, String fileSystemPath, String installPath, long templateSize) {
 		super();
 		this.jobId = jobId;
 		this.uploadPct = uploadPct;
@@ -60,7 +59,7 @@ public class UploadAnswer extends Answer {
 	}
 
    public UploadAnswer(String jobId, int uploadPct, Command command,
-            Status uploadStatus, String fileSystemPath, String installPath) {
+		   UploadVO.Status uploadStatus, String fileSystemPath, String installPath) {
 	    super(command);
         this.jobId = jobId;
         this.uploadPct = uploadPct;
@@ -81,7 +80,7 @@ public class UploadAnswer extends Answer {
 		return path;
 	}
 	
-	public void setUploadStatus(VMTemplateHostVO.Status uploadStatus) {
+	public void setUploadStatus(UploadVO.Status uploadStatus) {
 		this.uploadStatus = uploadStatus;
 	}
 	

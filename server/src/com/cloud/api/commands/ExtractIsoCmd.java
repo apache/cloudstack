@@ -1,6 +1,5 @@
 package com.cloud.api.commands;
 
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -16,11 +15,10 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
-public class ExtractTemplateCmd extends BaseCmd {
+public class ExtractIsoCmd extends BaseCmd {
+	public static final Logger s_logger = Logger.getLogger(ExtractIsoCmd.class.getName());
 
-	public static final Logger s_logger = Logger.getLogger(ExtractTemplateCmd.class.getName());
-
-    private static final String s_name = "extracttemplateresponse";
+    private static final String s_name = "extractisoresponse";
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     static {        
@@ -29,21 +27,24 @@ public class ExtractTemplateCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
     }
-    
+
 	@Override
 	public List<Pair<String, Object>> execute(Map<String, Object> params) {
 		String url		   = (String) params.get(BaseCmd.Properties.URL.getName());
 		Long templateId    = (Long) params.get(BaseCmd.Properties.ID.getName());
 		Long zoneId		   = (Long) params.get(BaseCmd.Properties.ZONE_ID.getName());
-		Account account = (Account) params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());				
+		Account account    = (Account) params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());				
 		
 		ManagementServer managementServer = getManagementServer();
         VMTemplateVO template = managementServer.findTemplateById(templateId.longValue());
         if (template == null) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to find template with id " + templateId);
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to find ISO with id " + templateId);
         }
-        if (template.getFormat() == ImageFormat.ISO ){
-        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unsupported format, could not extract the template");
+        if (template.getName().startsWith("xs-tools") ){
+        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to extract the ISO " + template.getName() + " It is not supported yet");
+        }
+        if (template.getFormat() != ImageFormat.ISO ){
+        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unsupported format, could not extract the ISO");
         }
 		
         if(url.toLowerCase().contains("file://")){
@@ -53,10 +54,10 @@ public class ExtractTemplateCmd extends BaseCmd {
     	if (account != null) {    		    	
     		if(!isAdmin(account.getType())){
     			if (template.getAccountId() != account.getId()){
-    				throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find template with ID: " + templateId + " for account: " + account.getAccountName());
+    				throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find ISO with ID: " + templateId + " for account: " + account.getAccountName());
     			}
     		}else if(!managementServer.isChildDomain(account.getDomainId(), managementServer.findDomainIdByAccountId(template.getAccountId())) ) {
-    			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to extract template " + templateId + " to " + url + ", permission denied.");
+    			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to extract ISO " + templateId + " to " + url + ", permission denied.");
     		}
     	}
     	
@@ -64,7 +65,7 @@ public class ExtractTemplateCmd extends BaseCmd {
 			managementServer.extractTemplate(url, templateId, zoneId);
 		} catch (Exception e) {			
 			s_logger.error(e.getMessage(), e);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal Error Extracting the template " + e.getMessage());
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal Error Extracting the ISO " + e.getMessage());
 		}
 		DataCenterVO zone = managementServer.getDataCenterBy(zoneId);		
 		List<Pair<String, Object>> response = new ArrayList<Pair<String, Object>>();
@@ -76,6 +77,7 @@ public class ExtractTemplateCmd extends BaseCmd {
 		response.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), zone.getName()));
 		response.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_STATUS.getName(), "Processing"));		
 		return response;
+
 	}
 
 	@Override
@@ -87,5 +89,4 @@ public class ExtractTemplateCmd extends BaseCmd {
 	public List<Pair<Enum, Boolean>> getProperties() {
 		return s_properties;
 	}
-
 }

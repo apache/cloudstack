@@ -159,6 +159,10 @@ ALTER TABLE `cloud`.`template_host_ref` ADD INDEX `i_template_host_ref__host_id`
 ALTER TABLE `cloud`.`template_host_ref` ADD CONSTRAINT `fk_template_host_ref__template_id` FOREIGN KEY `fk_template_host_ref__template_id` (`template_id`) REFERENCES `vm_template` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`template_host_ref` ADD INDEX `i_template_host_ref__template_id`(`template_id`);
 
+ALTER TABLE `cloud`.`upload` ADD CONSTRAINT `fk_upload__host_id` FOREIGN KEY `fk_upload__host_id` (`host_id`) REFERENCES `host` (`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`upload` ADD INDEX `i_upload__host_id`(`host_id`);
+ALTER TABLE `cloud`.`upload` ADD INDEX `i_upload__type_id`(`type_id`);
+
 ALTER TABLE `cloud`.`template_zone_ref` ADD CONSTRAINT `fk_template_zone_ref__zone_id` FOREIGN KEY `fk_template_zone_ref__zone_id` (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`template_zone_ref` ADD INDEX `i_template_zone_ref__zone_id`(`zone_id`);
 ALTER TABLE `cloud`.`template_zone_ref` ADD CONSTRAINT `fk_template_zone_ref__template_id` FOREIGN KEY `fk_template_zone_ref__template_id` (`template_id`) REFERENCES `vm_template` (`id`) ON DELETE CASCADE;

@@ -87,7 +87,10 @@ public class EventTypes {
 	public static final String EVENT_VOLUME_CREATE = "VOLUME.CREATE";
 	public static final String EVENT_VOLUME_DELETE = "VOLUME.DELETE";
 	public static final String EVENT_VOLUME_ATTACH = "VOLUME.ATTACH";
-	public static final String EVENT_VOLUME_DETACH = "VOLUME.DETACH";	
+	public static final String EVENT_VOLUME_DETACH = "VOLUME.DETACH";
+	public static final String EVENT_VOLUME_UPLOAD_START = "VOLUME.UPLOAD.START";
+	public static final String EVENT_VOLUME_UPLOAD_SUCCESS = "VOLUME.UPLOAD.SUCCESS";
+	public static final String EVENT_VOLUME_UPLOAD_FAILED = "VOLUME.UPLOAD.FAILED";
 	
 	// Domains
 	public static final String EVENT_DOMAIN_CREATE = "DOMAIN.CREATE";
@@ -107,6 +110,9 @@ public class EventTypes {
     public static final String EVENT_ISO_COPY = "ISO.COPY";
     public static final String EVENT_ISO_ATTACH = "ISO.ATTACH";
     public static final String EVENT_ISO_DETACH = "ISO.DETACH";
+    public static final String EVENT_ISO_UPLOAD_FAILED = "ISO.UPLOAD.FAILED";
+	public static final String EVENT_ISO_UPLOAD_START = "ISO.UPLOAD.START";
+	public static final String EVENT_ISO_UPLOAD_SUCCESS = "ISO.UPLOAD.SUCCESS";
     
     //SSVM
     public static final String EVENT_SSVM_CREATE = "SSVM.CREATE";

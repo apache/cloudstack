@@ -34,7 +34,7 @@ public class FtpTemplateUploader implements TemplateUploader {
 		this.ftpUrl = url;
 		this.completionCallback = callback;
 		this.templateSizeinBytes = templateSizeinBytes;
-		s_logger.warn("Nitin in  FtpTemplateUploader " +url + " "+sourcePath);
+		
 	}
 	
 	public long upload(UploadCompleteCallback callback )
@@ -50,7 +50,7 @@ public class FtpTemplateUploader implements TemplateUploader {
 				}
 				
 	             Date start = new Date();
-				 s_logger.warn("Nitin in  FtpTemplateUploader ");
+				 
 		         StringBuffer sb = new StringBuffer();
 		         // check for authentication else assume its anonymous access.
 		        /* if (user != null && password != null)
@@ -90,17 +90,16 @@ public class FtpTemplateUploader implements TemplateUploader {
 		            		done = true;
 		            	}
 		            }		            
-		            status = TemplateUploader.Status.UPLOAD_FINISHED;
-		            s_logger.warn("Nitin in  FtpTemplateUploader " +status);
+		            status = TemplateUploader.Status.UPLOAD_FINISHED;		            
 		            return totalBytes;
 		         } catch (MalformedURLException e) {
 		        	status = TemplateUploader.Status.UNRECOVERABLE_ERROR;
 		 			errorString = e.getMessage();
-		 			s_logger.error("Nitin in  FtpTemplateUploader " +errorString);
+		 			s_logger.error(errorString);
 				} catch (IOException e) {
 					status = TemplateUploader.Status.UNRECOVERABLE_ERROR;
 		 			errorString = e.getMessage();
-		 			s_logger.error("Nitin in  FtpTemplateUploader " +errorString);
+		 			s_logger.error(errorString);
 				}
 		         finally
 		         {

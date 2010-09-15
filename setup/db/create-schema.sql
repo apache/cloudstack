@@ -24,6 +24,7 @@ DROP TABLE IF EXISTS `cloud`.`pricing`;
 DROP TABLE IF EXISTS `cloud`.`sequence`;
 DROP TABLE IF EXISTS `cloud`.`user_vm`;
 DROP TABLE IF EXISTS `cloud`.`template_host_ref`;
+DROP TABLE IF EXISTS `cloud`.`upload`;
 DROP TABLE IF EXISTS `cloud`.`template_zone_ref`;
 DROP TABLE IF EXISTS `cloud`.`ha_work`;
 DROP TABLE IF EXISTS `cloud`.`dc_vnet_alloc`;
@@ -627,6 +628,21 @@ CREATE TABLE `cloud`.`domain_router` (
   PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT = 'information about the domR instance';
 
+CREATE TABLE  `cloud`.`upload` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `host_id` bigint unsigned NOT NULL,
+  `type_id` bigint unsigned NOT NULL,
+  `type` varchar(255),
+  `created` DATETIME NOT NULL,
+  `last_updated` DATETIME,
+  `job_id` varchar(255),
+  `upload_pct` int(10) unsigned,
+  `upload_state` varchar(255),
+  `error_str` varchar(255),
+  `url` varchar(255),
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
 CREATE TABLE  `cloud`.`template_host_ref` (
   `id` bigint unsigned NOT NULL auto_increment,
   `host_id` bigint unsigned NOT NULL,
@@ -635,18 +651,13 @@ CREATE TABLE  `cloud`.`template_host_ref` (
   `created` DATETIME NOT NULL,
   `last_updated` DATETIME,
   `job_id` varchar(255),
-  `upload_job_id` varchar(255),
   `download_pct` int(10) unsigned,
-  `upload_pct` int(10) unsigned,
   `size` bigint unsigned,
   `download_state` varchar(255),
-  `upload_state` varchar(255),
   `error_str` varchar(255),
-  `upload_error_str` varchar(255),
   `local_path` varchar(255),
   `install_path` varchar(255),
   `url` varchar(255),
-  `upload_url` varchar(255),
   `destroyed` tinyint(1) COMMENT 'indicates whether the template_host entry was destroyed by the user or not',
   `is_copy` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'indicates whether this was copied ',
   PRIMARY KEY  (`id`)

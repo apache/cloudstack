@@ -423,7 +423,8 @@ public class StorageManagerImpl implements StorageManager {
         return null;
     }
 
-    protected Long findHostIdForStoragePool(StoragePoolVO pool) {
+    @Override
+    public Long findHostIdForStoragePool(StoragePoolVO pool) {
         List<StoragePoolHostVO> poolHosts = _poolHostDao.listByHostStatus(pool.getId(), Status.Up);
 
         if (poolHosts.size() == 0) {
