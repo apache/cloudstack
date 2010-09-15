@@ -170,9 +170,10 @@ public interface NetworkManager extends Manager {
      * @param router router object to send the association to
      * @param ipAddrList list of public IP addresses
      * @param add true if associate, false if disassociate
+     * @param whether one to one nat mapping or not
      * @return
      */
-    boolean associateIP(DomainRouterVO router, List<String> ipAddrList, boolean add) throws ResourceAllocationException;
+    boolean associateIP(DomainRouterVO router, List<String> ipAddrList, boolean add, boolean oneToOneNat) throws ResourceAllocationException;
     
     boolean updateFirewallRule(FirewallRuleVO fwRule, String oldPrivateIP, String oldPrivatePort);
     boolean executeAssignToLoadBalancer(AssignToLoadBalancerExecutor executor, LoadBalancerParam param);

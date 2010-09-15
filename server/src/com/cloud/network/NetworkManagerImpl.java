@@ -1109,7 +1109,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 				ipAddrList.add(ipVO.getAddress());
 			}
 			if (!ipAddrList.isEmpty()) {
-				final boolean success = associateIP(router, ipAddrList, true);
+				final boolean success = associateIP(router, ipAddrList, true, false);
 				if (!success) {
 					return false;
 				}
@@ -1344,7 +1344,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     }
 
     @Override
-    public boolean associateIP(final DomainRouterVO router, final List<String> ipAddrList, final boolean add) {
+    public boolean associateIP(final DomainRouterVO router, final List<String> ipAddrList, final boolean add, final boolean oneToOneNat) {
         final Command [] cmds = new Command[ipAddrList.size()];
         int i=0;
         boolean sourceNat = false;
@@ -1365,7 +1365,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             	vifMacAddress = macAddresses[1];
 			}
 
-            cmds[i++] = new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ipAddress, add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress);
+            cmds[i++] = new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ipAddress, add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, oneToOneNat);
             
             sourceNat = false;
         }
@@ -1708,7 +1708,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                     s_logger.debug("Disassociate ip " + router.getName());
                 }
 
-                if (associateIP(router, ipAddrs, false)) {
+                if (associateIP(router, ipAddrs, false, false)) {
                     _ipAddressDao.unassignIpAddress(ipAddress);
                 } else {
                 	if (s_logger.isDebugEnabled()) {
