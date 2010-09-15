@@ -197,6 +197,10 @@
                 </div>
             </div>
         </div>
+        <div class="grid_botactionpanel" style="display:none;">
+        	<div class="gridbot_buttons">Save</div>
+            <div class="gridbot_buttons">Cancel</div>
+        </div>
     </div>
 </div>
 <!-- template detail panel (end) -->
