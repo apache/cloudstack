@@ -3376,29 +3376,6 @@ public class ManagementServerImpl implements ManagementServer {
         return _resourceLimitDao.findById(limitId);
     }
 
-
-    @Override
-    public long findCorrectResourceLimit(ResourceType type, long accountId) {
-        AccountVO account = _accountDao.findById(accountId);
-        
-        if (account == null) {
-            return -1;
-        }
-        
-        return _accountMgr.findCorrectResourceLimit(account, type);
-    }
-    
-    @Override
-    public long getResourceCount(ResourceType type, long accountId) {
-    	AccountVO account = _accountDao.findById(accountId);
-        
-        if (account == null) {
-            return -1;
-        }
-        
-        return _accountMgr.getResourceCount(account, type);
-    }
-
     @Override
     public List<VMTemplateVO> listIsos(Criteria c) {
         Filter searchFilter = new Filter(VMTemplateVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
@@ -3430,11 +3407,6 @@ public class ManagementServerImpl implements ManagementServer {
         sc.addAnd("format", SearchCriteria.Op.EQ, ImageFormat.ISO);
 
         return _templateDao.search(sc, searchFilter);
-    }
-
-    @Override
-    public List<UserStatisticsVO> listUserStatsBy(Long accountId) {
-        return _userStatsDao.listBy(accountId);
     }
 
     @Override

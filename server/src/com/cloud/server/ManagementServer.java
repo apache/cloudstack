@@ -90,7 +90,6 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.configuration.ConfigurationVO;
-import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterIpAddressVO;
@@ -137,7 +136,6 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserAccountVO;
-import com.cloud.user.UserStatisticsVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.ExecutionException;
@@ -635,13 +633,6 @@ public interface ManagementServer {
     User getUser(long userId, boolean active);
     
     /**
-     * Obtains a list of user statistics for the specified user ID.
-     * @param userId
-     * @return List of UserStatistics
-     */
-    List<UserStatisticsVO> listUserStatsBy(Long userId);
-    
-    /**
      * Obtains a list of virtual machines that are similar to the VM with the specified name.
      * @param vmInstanceName
      * @return List of VMInstances
@@ -1069,21 +1060,6 @@ public interface ManagementServer {
      */
     ResourceLimitVO findLimitById(long limitId);
     
-    /**
-	 * Finds the correct limit for an account. I.e. if an account's limit is not present, it will check the account's domain, and as a last resort use the global limit.
-	 * @param type
-	 * @param accountId
-	 */
-	long findCorrectResourceLimit(ResourceType type, long accountId);
-	
-	/**
-	 * Gets the count of resources for a resource type and account
-	 * @param Type
-	 * @param accountId
-	 * @return count of resources
-	 */
-	long getResourceCount(ResourceType type, long accountId);
-
     /**
      * Lists ISOs that are available for the specified account ID.
      * @param accountId

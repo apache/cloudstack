@@ -27,10 +27,6 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.async.AsyncJobResult;
-import com.cloud.async.AsyncJobVO;
-import com.cloud.serializer.SerializerHelper;
-import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
@@ -365,6 +361,7 @@ public abstract class BaseCmd {
         }
     }
 
+    @SuppressWarnings("rawtypes")
     private void writeObjectArray(String responseType, StringBuffer sb, int propertyCount, String tagName, Object[] subObjects) {
         if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
             String separator = ((propertyCount > 0) ? ", " : "");
@@ -383,6 +380,7 @@ public abstract class BaseCmd {
         }
     }
 
+    @SuppressWarnings("rawtypes")
     private void writeSubObject(StringBuffer sb, String tagName, List tagList, String responseType, int objectCount) {
         if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
             sb.append(((objectCount == 0) ? "\"" + tagName + "\" : [  { " : ", { "));
@@ -447,65 +445,6 @@ public abstract class BaseCmd {
 	    return str.replace("\"", "\\\"");
 	}
 
-	protected long waitInstanceCreation(long jobId) {
-        ManagementServer mgr = getManagementServer();
-
-        long instanceId = 0;
-        AsyncJobVO job = null;
-        boolean interruped = false;
-        
-        // as job may be executed in other management server, we need to do a database polling here
-        try {
-        	boolean quit = false;
-	        while(!quit) {
-	        	job = mgr.findAsyncJobById(jobId);
-	        	if(job == null) {
-	        		s_logger.error("Async command " + this.getClass().getName() + " waitInstanceCreation error: job-" + jobId + " no longer exists");
-	        		break;
-	        	}
-	        	
-	        	switch(job.getStatus()) {
-	        	case AsyncJobResult.STATUS_IN_PROGRESS :
-	        		if(job.getProcessStatus() == BaseCmd.PROGRESS_INSTANCE_CREATED) {
-	        			Long id = (Long)SerializerHelper.fromSerializedString(job.getResult());
-	        			if(id != null) {
-	        				instanceId = id.longValue();
-	        				if(s_logger.isDebugEnabled())
-	        					s_logger.debug("Async command " + this.getClass().getName() + " succeeded in waiting for new instance to be created, instance Id: " + instanceId);
-	        			} else {
-	        				s_logger.warn("Async command " + this.getClass().getName() + " has new instance created, but value as null?");
-	        			}
-	        			quit = true;
-	        		}
-	        		break;
-	        		
-	        	case AsyncJobResult.STATUS_SUCCEEDED :
-	        		instanceId = getInstanceIdFromJobSuccessResult(job.getResult());
-	        		quit = true;
-	        		break;
-	        		
-	        	case AsyncJobResult.STATUS_FAILED :
-        			s_logger.error("Async command " + this.getClass().getName() + " executing job-" + jobId + " failed, result: " + job.getResult());
-	        		quit = true;
-	        		break;
-	        	}
-	        	
-	        	if(quit)
-	        		break;
-	        	
-	        	try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-					interruped = true;
-				}
-	        }
-        } finally {
-	        if(interruped)
-	        	Thread.currentThread().interrupt();
-        }
-        return instanceId;
-	}
-	
 	protected long getInstanceIdFromJobSuccessResult(String result) {
 		s_logger.debug("getInstanceIdFromJobSuccessResult not overridden in subclass " + this.getClass().getName());
 		return 0;
@@ -515,63 +454,5 @@ public abstract class BaseCmd {
 	    return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
 	            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
 	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
-	}
-	
-	private Account getAccount(Map<String, Object> params) throws ServerApiException {
-		// FIXME:  This should go into the context!
-	    Long domainId      = (Long)   params.get("domainid");
-        Account account    = (Account)params.get("accountobj");
-        String accountName = (String) params.get("account");
-        
-        Long accountId = null;
-        Account finalAccount = null;
-	    ManagementServer managementServer = getManagementServer();
-        if ((account == null) || isAdmin(account.getType())) {
-            if (domainId != null) {
-                if ((account != null) && !managementServer.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new ServerApiException(PARAM_ERROR, "Invalid domain id (" + domainId + ") ");
-                }
-                if (accountName != null) {
-                    Account userAccount = managementServer.findActiveAccount(accountName, domainId);
-                    if (userAccount == null) {
-                        throw new ServerApiException(PARAM_ERROR, "Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                    accountId = userAccount.getId();
-                }
-            } else {
-                accountId = ((account != null) ? account.getId() : null);
-            }
-        } else {
-            accountId = account.getId();
-        }
-
-        if (accountId != null) {
-            finalAccount = managementServer.findAccountById(accountId);
-        }
-        return finalAccount;
-	}
-	
-    protected Long checkAccountPermissions(Map<String, Object> params,
-                                           long targetAccountId,
-                                           long targetDomainId,
-                                           String targetDesc,
-                                           long targetId)
-    throws ServerApiException
-    {
-	    Long accountId = null;
-	    
-        Account account = getAccount(params);
-        if (account != null) {
-            if (!isAdmin(account.getType())) {
-                if (account.getId().longValue() != targetAccountId) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find a " + targetDesc + " with id " + targetId + " for this account");
-                }
-            } else if (!getManagementServer().isChildDomain(account.getDomainId(), targetDomainId)) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to perform operation for " + targetDesc + " with id " + targetId + ", permission denied.");
-            }
-            accountId = account.getId();
-        }
-        
-        return accountId;
 	}
 }

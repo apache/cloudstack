@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
@@ -125,10 +126,10 @@ public class ListAccountsCmd extends BaseListCmd {
             acctResponse.setName(account.getAccountName());
             acctResponse.setAccountType(account.getType());
             acctResponse.setDomainId(account.getDomainId());
-            acctResponse.setDomainName(getManagementServer().findDomainIdById(account.getDomainId()).getName());
+            acctResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
 
             //get network stat
-            List<UserStatisticsVO> stats = getManagementServer().listUserStatsBy(account.getId());
+            List<UserStatisticsVO> stats = ApiDBUtils.listUserStatsBy(account.getId());
             if (stats == null) {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error searching for user stats");
             }
@@ -146,41 +147,41 @@ public class ListAccountsCmd extends BaseListCmd {
 
             // Get resource limits and counts
             
-            long vmLimit = getManagementServer().findCorrectResourceLimit(ResourceType.user_vm, account.getId());
+            long vmLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.user_vm, account.getId());
             String vmLimitDisplay = (accountIsAdmin || vmLimit == -1) ? "Unlimited" : String.valueOf(vmLimit);
-            long vmTotal = getManagementServer().getResourceCount(ResourceType.user_vm, account.getId());
+            long vmTotal = ApiDBUtils.getResourceCount(ResourceType.user_vm, account.getId());
             String vmAvail = (accountIsAdmin || vmLimit == -1) ? "Unlimited" : String.valueOf(vmLimit - vmTotal);
             acctResponse.setVmLimit(vmLimitDisplay);
             acctResponse.setVmTotal(vmTotal);
             acctResponse.setVmAvailable(vmAvail);
             
-            long ipLimit = getManagementServer().findCorrectResourceLimit(ResourceType.public_ip, account.getId());
+            long ipLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.public_ip, account.getId());
             String ipLimitDisplay = (accountIsAdmin || ipLimit == -1) ? "Unlimited" : String.valueOf(ipLimit);
-            long ipTotal = getManagementServer().getResourceCount(ResourceType.public_ip, account.getId());
+            long ipTotal = ApiDBUtils.getResourceCount(ResourceType.public_ip, account.getId());
             String ipAvail = (accountIsAdmin || ipLimit == -1) ? "Unlimited" : String.valueOf(ipLimit - ipTotal);
             acctResponse.setIpLimit(ipLimitDisplay);
             acctResponse.setIpTotal(ipTotal);
             acctResponse.setIpAvailable(ipAvail);
             
-            long volumeLimit = getManagementServer().findCorrectResourceLimit(ResourceType.volume, account.getId());
+            long volumeLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.volume, account.getId());
             String volumeLimitDisplay = (accountIsAdmin || volumeLimit == -1) ? "Unlimited" : String.valueOf(volumeLimit);
-            long volumeTotal = getManagementServer().getResourceCount(ResourceType.volume, account.getId());
+            long volumeTotal = ApiDBUtils.getResourceCount(ResourceType.volume, account.getId());
             String volumeAvail = (accountIsAdmin || volumeLimit == -1) ? "Unlimited" : String.valueOf(volumeLimit - volumeTotal);
             acctResponse.setVolumeLimit(volumeLimitDisplay);
             acctResponse.setVolumeTotal(volumeTotal);
             acctResponse.setVolumeAvailable(volumeAvail);
             
-            long snapshotLimit = getManagementServer().findCorrectResourceLimit(ResourceType.snapshot, account.getId());
+            long snapshotLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.snapshot, account.getId());
             String snapshotLimitDisplay = (accountIsAdmin || snapshotLimit == -1) ? "Unlimited" : String.valueOf(snapshotLimit);
-            long snapshotTotal = getManagementServer().getResourceCount(ResourceType.snapshot, account.getId());
+            long snapshotTotal = ApiDBUtils.getResourceCount(ResourceType.snapshot, account.getId());
             String snapshotAvail = (accountIsAdmin || snapshotLimit == -1) ? "Unlimited" : String.valueOf(snapshotLimit - snapshotTotal);
             acctResponse.setSnapshotLimit(snapshotLimitDisplay);
             acctResponse.setSnapshotTotal(snapshotTotal);
             acctResponse.setSnapshotAvailable(snapshotAvail);
             
-            long templateLimit = getManagementServer().findCorrectResourceLimit(ResourceType.template, account.getId());
+            long templateLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.template, account.getId());
             String templateLimitDisplay = (accountIsAdmin || templateLimit == -1) ? "Unlimited" : String.valueOf(templateLimit);
-            long templateTotal = getManagementServer().getResourceCount(ResourceType.template, account.getId());
+            long templateTotal = ApiDBUtils.getResourceCount(ResourceType.template, account.getId());
             String templateAvail = (accountIsAdmin || templateLimit == -1) ? "Unlimited" : String.valueOf(templateLimit - templateTotal);
             acctResponse.setTemplateLimit(templateLimitDisplay);
             acctResponse.setTemplateTotal(templateTotal);
@@ -195,7 +196,7 @@ public class ListAccountsCmd extends BaseListCmd {
 
             Criteria c1 = new Criteria();
             c1.addCriteria(Criteria.ACCOUNTID, accountIds);
-            List<? extends UserVm> virtualMachines = getManagementServer().searchForUserVMs(c1);
+            List<? extends UserVm> virtualMachines = ApiDBUtils.searchForUserVMs(c1);
 
             //get Running/Stopped VMs
             for (Iterator<? extends UserVm> iter = virtualMachines.iterator(); iter.hasNext();) {
