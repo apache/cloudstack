@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.server.api.commands;
+package com.cloud.api.commands;
 
 import java.util.ArrayList;
 import java.util.List;
