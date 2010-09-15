@@ -1,6 +1,8 @@
 package com.cloud.migration;
 
 import java.io.File;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.List;
 
 import org.apache.log4j.xml.DOMConfigurator;
@@ -16,16 +18,25 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.vm.InstanceGroupVMMapVO;
+import com.cloud.vm.InstanceGroupVO;
+import com.cloud.vm.dao.InstanceGroupDao;
+import com.cloud.vm.dao.InstanceGroupVMMapDao;
 
 public class Db21to22MigrationUtil {
     private AccountDao _accountDao;
     private DomainDao _domainDao;
     private ResourceCountDao _resourceCountDao;
+    private InstanceGroupDao _vmGroupDao;
+    private InstanceGroupVMMapDao _groupVMMapDao;
 
     private void doMigration() {
         setupComponents();
 
         migrateResourceCounts();
+        
+        setupInstanceGroups();
 
         System.out.println("Migration done");
     }
@@ -62,7 +73,48 @@ public class Db21to22MigrationUtil {
         _accountDao = locator.getDao(AccountDao.class);
         _domainDao = locator.getDao(DomainDao.class);
         _resourceCountDao = locator.getDao(ResourceCountDao.class);
+        _vmGroupDao = locator.getDao(InstanceGroupDao.class);
+        _groupVMMapDao = locator.getDao(InstanceGroupVMMapDao.class);
     }
+    
+    private void setupInstanceGroups() {
+    	System.out.println("setting up vm instance groups");
+    	
+    	//Search for all the vms that have not null groups
+    	long vmId = 0;
+    	long accountId = 0;
+    	String groupName;
+    	Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+    	txn.start();
+		try {
+	    	String request = "SELECT vm.id, uservm.account_id, vm.group from vm_instance vm, user_vm uservm where vm.group is not null and vm.removed is null and vm.id=uservm.id order by id";
+	    	PreparedStatement statement = txn.prepareAutoCloseStatement(request);
+	    	ResultSet result = statement.executeQuery();
+	    	while (result.next()) {
+	    		vmId = result.getLong(1);
+	    		accountId = result.getLong(2);
+	    		groupName = result.getString(3);
+		        InstanceGroupVO group = _vmGroupDao.findByAccountAndName(vmId, groupName);
+		    	//Create vm group if the group doesn't exist for this account
+		        if (group == null) {
+					group = new InstanceGroupVO(groupName, accountId);
+					group =  _vmGroupDao.persist(group);
+		        }
+				
+				if (group != null) {
+					InstanceGroupVMMapVO groupVmMapVO = new InstanceGroupVMMapVO(group.getId(), vmId);
+					_groupVMMapDao.persist(groupVmMapVO);
+				}
+	    	}
+	    	statement.close();
+			txn.commit();
+		} catch (Exception e) {
+			System.out.println("Unhandled exception: " + e);
+		} finally {
+			txn.close();
+		}
+    }
+
 
     public static void main(String[] args) {
         File file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
