@@ -102,6 +102,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, String username, String password) throws DiscoveryException {
         Map<CitrixResourceBase, Map<String, String>> resources = new HashMap<CitrixResourceBase, Map<String, String>>();
         Connection conn = null;
+        Connection slaveConn = null;
         if (!url.getScheme().equals("http")) {
             String msg = "urlString is not http so we're not taking care of the discovery for this: " + url;
             s_logger.debug(msg);
@@ -113,7 +114,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             InetAddress ia = InetAddress.getByName(hostname);
             String addr = ia.getHostAddress();
             
-            conn = _connPool.connect(addr, username, password, _wait);
+            conn = _connPool.masterConnect(addr, username, password);
+            
             if (conn == null) {
                 String msg = "Unable to get a connection to " + url;
                 s_logger.debug(msg);
@@ -133,33 +135,33 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             if (clusterId != null) {
                 cluster = Long.toString(clusterId);
             }
-            
+            Set<Pool> pools = Pool.getAll(conn);
+            Pool pool = pools.iterator().next();
+            String poolUuid = pool.getUuid(conn);
             Map<Host, Host.Record> hosts = Host.getAllRecords(conn);
             
             if (_checkHvm) {
-            for (Map.Entry<Host, Host.Record> entry : hosts.entrySet()) {
-                Host.Record record = entry.getValue();
-                
-                boolean support_hvm = false;
-                for ( String capability : record.capabilities ) {
-                    if(capability.contains("hvm")) {
-                       support_hvm = true;
-                       break;
+                for (Map.Entry<Host, Host.Record> entry : hosts.entrySet()) {
+                    Host.Record record = entry.getValue();
+                    
+                    boolean support_hvm = false;
+                    for ( String capability : record.capabilities ) {
+                        if(capability.contains("hvm")) {
+                           support_hvm = true;
+                           break;
+                        }
+                    }
+                    if( !support_hvm ) {
+                        String msg = "Unable to add host " + record.address + " because it doesn't support hvm";
+                        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
+                        s_logger.debug(msg);
+                        throw new RuntimeException(msg);
                     }
                 }
-                if( !support_hvm ) {
-                    String msg = "Unable to add host " + record.address + " because it doesn't support hvm";
-                    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
-                    s_logger.debug(msg);
-                    throw new RuntimeException(msg);
-                    }
-                }
-
             }
             for (Map.Entry<Host, Host.Record> entry : hosts.entrySet()) {
-                Host.Record record = entry.getValue();
                 Host host = entry.getKey();
-                
+                Host.Record record = entry.getValue();
                 String hostAddr = record.address;
                 
                 String prodVersion = record.softwareVersion.get("product_version");
@@ -180,6 +182,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 Map<String, Object> params = new HashMap<String, Object>();
                 details.put("url", hostAddr);
                 params.put("url", hostAddr);
+                details.put("pool", poolUuid);
+                params.put("pool", poolUuid);
                 details.put("username", username);
                 params.put("username", username);
                 details.put("password", password);
@@ -253,10 +257,13 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             return null;
         } finally {
             if (conn != null) {
-                XenServerConnectionPool.logout(conn);
+                try{
+                    Session.logout(conn);
+                } catch (Exception e ) {
+                }
+                conn.dispose();
             }
         }
-        
         return resources;
     }
     
@@ -333,20 +340,30 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             username = host.getDetail("username");
             password = host.getDetail("password");
             address = host.getDetail("url");
-            Connection hostConn = _connPool.connect(address, username, password, _wait);
+            Connection hostConn = _connPool.slaveConnect(address, username, password);
+            if (hostConn == null) {
+                continue;
+            }
             try {
-                if (hostConn == null) {
-                    continue;
-                }
                 Set<Pool> pools = Pool.getAll(hostConn);
                 Pool pool = pools.iterator().next();
                 poolUuid1 = pool.getUuid(hostConn);
                 poolMaster = pool.getMaster(hostConn).getAddress(hostConn);
-                Session.logout(hostConn);
-            } finally {
-                hostConn.dispose();
+                break;
+
+            } catch (Exception e ) {
+                s_logger.warn("Can not get master ip address from host " + address);
             }
-            break;
+            finally {
+                try{
+                    Session.localLogout(hostConn);
+                } catch (Exception e ) {
+                }
+                hostConn.dispose();
+                hostConn = null;
+                poolMaster = null;
+                poolUuid1 = null;
+            }
         }
         
         if (poolMaster == null) {
