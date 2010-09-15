@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -76,8 +77,7 @@ public class CreateDomainCmd extends BaseCmd {
             response.setDomainName(responseObject.getName());
             response.setLevel(responseObject.getLevel());
             response.setParentDomainId(responseObject.getParent());
-//            FIXME:  domain name from id for parent domain
-//            response.setParentDomainName(responseObject.getParentDomainName());
+            response.setParentDomainName(ApiDBUtils.findDomainById(responseObject.getParent()).getName());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create domain");
         }

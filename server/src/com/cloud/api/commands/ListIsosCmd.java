@@ -25,6 +25,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -163,14 +164,14 @@ public class ListIsosCmd extends BaseListCmd {
         Map<Long, List<VMTemplateHostVO>> isoHostsMap = new HashMap<Long, List<VMTemplateHostVO>>();
         for (VMTemplateVO iso : isos) {
             // TODO:  implement
-            List<VMTemplateHostVO> isoHosts = getManagementServer().listTemplateHostBy(iso.getId(), zoneId);
+            List<VMTemplateHostVO> isoHosts = ApiDBUtils.listTemplateHostBy(iso.getId(), zoneId);
             if (iso.getName().equals("xs-tools.iso")) {
                 List<Long> xstoolsZones = new ArrayList<Long>();
                 // the xs-tools.iso is a special case since it will be available on every computing host in the zone and we want to return it once per zone
                 List<VMTemplateHostVO> xstoolsHosts = new ArrayList<VMTemplateHostVO>();
                 for (VMTemplateHostVO isoHost : isoHosts) {
                     // TODO:  implement
-                    HostVO host = getManagementServer().getHostBy(isoHost.getHostId());
+                    HostVO host = ApiDBUtils.findHostById(isoHost.getHostId());
                     if (!xstoolsZones.contains(Long.valueOf(host.getDataCenterId()))) {
                         xstoolsZones.add(Long.valueOf(host.getDataCenterId()));
                         xstoolsHosts.add(isoHost);
@@ -202,7 +203,7 @@ public class ListIsosCmd extends BaseListCmd {
                 isoResponse.setCrossZones(iso.isCrossZones());
 
                 // TODO:  implement
-                GuestOS os = getManagementServer().findGuestOSById(iso.getGuestOSId());
+                GuestOS os = ApiDBUtils.findGuestOSById(iso.getGuestOSId());
                 if (os != null) {
                     isoResponse.setOsTypeId(os.getId());
                     isoResponse.setOsTypeName(os.getDisplayName());
@@ -212,18 +213,18 @@ public class ListIsosCmd extends BaseListCmd {
                 }
                     
                 // add account ID and name
-                Account owner = getManagementServer().findAccountById(iso.getAccountId());
+                Account owner = ApiDBUtils.findAccountById(iso.getAccountId());
                 if (owner != null) {
                     isoResponse.setAccount(owner.getAccountName());
                     isoResponse.setDomainId(owner.getDomainId());
                     // TODO:  implement
-                    isoResponse.setDomainName(getManagementServer().findDomainIdById(owner.getDomainId()).getName());
+                    isoResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
                 }
                 
                 // Add the zone ID
                 // TODO:  implement
-                HostVO host = getManagementServer().getHostBy(isoHost.getHostId());
-                DataCenterVO datacenter = getManagementServer().getDataCenterBy(host.getDataCenterId());
+                HostVO host = ApiDBUtils.findHostById(isoHost.getHostId());
+                DataCenterVO datacenter = ApiDBUtils.findZoneById(host.getDataCenterId());
                 isoResponse.setZoneId(host.getDataCenterId());
                 isoResponse.setZoneName(datacenter.getName());
                             
@@ -254,7 +255,7 @@ public class ListIsosCmd extends BaseListCmd {
                     isoResponse.setSize(isoSize);
                 }
                 
-                AsyncJobVO asyncJob = getManagementServer().findInstancePendingAsyncJob("vm_template", iso.getId());
+                AsyncJobVO asyncJob = ApiDBUtils.findInstancePendingAsyncJob("vm_template", iso.getId());
                 if(asyncJob != null) {
                     isoResponse.setJobId(asyncJob.getId());
                     isoResponse.setJobStatus(asyncJob.getStatus());

@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -90,8 +91,7 @@ public class CreatePortForwardingServiceCmd extends BaseCmd {
         response.setDescription(group.getDescription());
         response.setAccountName(group.getAccountName());
         response.setDomainId(group.getDomainId());
-        // TODO: implement
-        //response.setDomainName(group.getDomainName());
+        response.setDomainName(ApiDBUtils.findDomainById(group.getDomainId()).getName());
 
         return SerializerHelper.toSerializedString(response);
     }

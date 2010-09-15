@@ -117,7 +117,6 @@ import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.DiskTemplateVO;
-import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
@@ -581,15 +580,6 @@ public interface ManagementServer {
     List<VMTemplateVO> searchForTemplates(Criteria c);
 
     /**
-     * Lists the template host records by template Id
-     * 
-     * @param templateId
-     * @param zoneId
-     * @return List of VMTemplateHostVO
-     */
-    List<VMTemplateHostVO> listTemplateHostBy(long templateId, Long zoneId);
-    
-    /**
      * Obtains pods that match the data center ID
      * @param dataCenterId
      * @return List of Pods
@@ -1006,13 +996,6 @@ public interface ManagementServer {
      * @return Account
      */
     Account findAccountById(Long accountId);
-
-    /**
-     * Finds a GuestOS by the ID.
-     * @param id
-     * @return GuestOS
-     */
-    GuestOS findGuestOSById(Long id);
     
     /**
      * Searches for accounts by the specified search criteria
@@ -1160,7 +1143,6 @@ public interface ManagementServer {
      */
     AsyncJobResult queryAsyncJobResult(QueryAsyncJobResultCmd cmd) throws PermissionDeniedException;
 
-    AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId);
     AsyncJobVO findAsyncJobById(long jobId);
 
     /**

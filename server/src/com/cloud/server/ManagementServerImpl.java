@@ -201,7 +201,6 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.DiskTemplateVO;
-import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
@@ -3200,20 +3199,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<VMTemplateHostVO> listTemplateHostBy(long templateId, Long zoneId) {
-    	if (zoneId != null) {
-    		HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
-    		if (secondaryStorageHost == null) {
-    			return new ArrayList<VMTemplateHostVO>();
-    		} else {
-    			return _templateHostDao.listByHostTemplate(secondaryStorageHost.getId(), templateId);
-    		}
-    	} else {
-    		return _templateHostDao.listByOnlyTemplateId(templateId);
-    	}
-    }
-
-    @Override
     public List<HostPodVO> listPods(long dataCenterId) {
         return _hostPodDao.listByDataCenterId(dataCenterId);
     }
@@ -3256,11 +3241,6 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public Account findAccountById(Long accountId) {
         return _accountDao.findById(accountId);
-    }
-
-    @Override
-    public GuestOS findGuestOSById(Long id) {
-        return this._guestOSDao.findById(id);
     }
 
     @Override
@@ -5581,11 +5561,6 @@ public class ManagementServerImpl implements ManagementServer {
         	}
         }
         return _asyncMgr.queryAsyncJobResult(jobId);
-    }
-
-    @Override
-    public AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId) {
-        return _asyncMgr.findInstancePendingAsyncJob(instanceType, instanceId);
     }
 
     @Override

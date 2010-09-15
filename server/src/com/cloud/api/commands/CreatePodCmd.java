@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.PodResponse;
@@ -101,10 +102,9 @@ public class CreatePodCmd extends BaseCmd {
         PodResponse response = new PodResponse();
         response.setId(pod.getId());
         response.setCidr(pod.getCidrAddress() + "/" + pod.getCidrSize());
-        // TODO: implement
-//        response.setEndIp(pod.getEndIp());
-//      response.setStartIp(pod.getStartIp());
-//      response.setZoneName(pod.getZoneName());
+        response.setEndIp(endIp == null ? "" : endIp);
+        response.setStartIp(startIp);
+        response.setZoneName(ApiDBUtils.findZoneById(pod.getDataCenterId()).getName());
         response.setGateway(pod.getGateway());
         response.setName(pod.getName());
         response.setZoneId(pod.getDataCenterId());

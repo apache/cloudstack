@@ -1,8 +1,11 @@
 package com.cloud.api;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.cloud.agent.manager.AgentManager;
+import com.cloud.async.AsyncJobManager;
+import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -24,15 +27,19 @@ import com.cloud.server.ManagementServer;
 import com.cloud.server.StatsCollector;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
+import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -42,6 +49,7 @@ import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
@@ -50,6 +58,7 @@ public class ApiDBUtils {
     private static ManagementServer _ms;
     private static AccountManager _accountMgr;
     private static AgentManager _agentMgr;
+    private static AsyncJobManager _asyncMgr;
     private static NetworkGroupManager _networkGroupMgr;
     private static StorageManager _storageMgr;
     private static StatsCollector _statsCollector;
@@ -58,6 +67,7 @@ public class ApiDBUtils {
     private static ClusterDao _clusterDao;
     private static DiskOfferingDao _diskOfferingDao;
     private static DomainDao _domainDao;
+    private static GuestOSDao _guestOSDao;
     private static GuestOSCategoryDao _guestOSCategoryDao;
     private static HostDao _hostDao;
     private static IPAddressDao _ipAddressDao;
@@ -65,6 +75,7 @@ public class ApiDBUtils {
     private static ServiceOfferingDao _serviceOfferingDao;
     private static StoragePoolDao _storagePoolDao;
     private static VMTemplateDao _templateDao;
+    private static VMTemplateHostDao _templateHostDao;
     private static UserDao _userDao;
     private static UserStatisticsDao _userStatsDao;
     private static UserVmDao _userVmDao;
@@ -77,6 +88,7 @@ public class ApiDBUtils {
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
         _accountMgr = locator.getManager(AccountManager.class);
         _agentMgr = locator.getManager(AgentManager.class);
+        _asyncMgr = locator.getManager(AsyncJobManager.class);
         _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
         _storageMgr = locator.getManager(StorageManager.class);
 
@@ -84,6 +96,7 @@ public class ApiDBUtils {
         _clusterDao = locator.getDao(ClusterDao.class);
         _diskOfferingDao = locator.getDao(DiskOfferingDao.class);
         _domainDao = locator.getDao(DomainDao.class);        
+        _guestOSDao = locator.getDao(GuestOSDao.class);
         _guestOSCategoryDao = locator.getDao(GuestOSCategoryDao.class);
         _hostDao = locator.getDao(HostDao.class);
         _ipAddressDao = locator.getDao(IPAddressDao.class);
@@ -91,6 +104,7 @@ public class ApiDBUtils {
         _serviceOfferingDao = locator.getDao(ServiceOfferingDao.class);
         _storagePoolDao = locator.getDao(StoragePoolDao.class);
         _templateDao = locator.getDao(VMTemplateDao.class);
+        _templateHostDao = locator.getDao(VMTemplateHostDao.class);
         _userDao = locator.getDao(UserDao.class);
         _userStatsDao = locator.getDao(UserStatisticsDao.class);
         _userVmDao = locator.getDao(UserVmDao.class);
@@ -134,7 +148,11 @@ public class ApiDBUtils {
 
         return _accountMgr.findCorrectResourceLimit(account, type);
     }
-    
+
+    public static AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId) {
+        return _asyncMgr.findInstancePendingAsyncJob(instanceType, instanceId);
+    }
+
     public static long getResourceCount(ResourceType type, long accountId) {
         AccountVO account = _accountDao.findById(accountId);
         
@@ -181,6 +199,10 @@ public class ApiDBUtils {
         return _domainDao.findById(domainId);
     }
 
+    public static GuestOS findGuestOSById(Long id) {
+        return _guestOSDao.findById(id);
+    }
+
     public static HostVO findHostById(Long hostId) {
         return _hostDao.findById(hostId);
     }
@@ -219,12 +241,29 @@ public class ApiDBUtils {
         return _userDao.findById(userId);
     }
 
+    public static UserVm findUserVmById(Long vmId) {
+        return _userVmDao.findById(vmId);
+    }
+
     public static VolumeVO findVolumeById(Long volumeId) {
         return _volumeDao.findById(volumeId);
     }
 
     public static DataCenterVO findZoneById(Long zoneId) {
         return _zoneDao.findById(zoneId);
+    }
+
+    public static List<VMTemplateHostVO> listTemplateHostBy(long templateId, Long zoneId) {
+        if (zoneId != null) {
+            HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
+            if (secondaryStorageHost == null) {
+                return new ArrayList<VMTemplateHostVO>();
+            } else {
+                return _templateHostDao.listByHostTemplate(secondaryStorageHost.getId(), templateId);
+            }
+        } else {
+            return _templateHostDao.listByOnlyTemplateId(templateId);
+        }
     }
 
     public static List<UserStatisticsVO> listUserStatsBy(Long accountId) {

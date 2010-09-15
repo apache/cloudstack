@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.LoadBalancerResponse;
@@ -108,8 +109,7 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd {
         response.setPublicPort(responseObj.getPublicPort());
         response.setAccountName(responseObj.getAccountName());
         response.setDomainId(responseObj.getDomainId());
-        // TODO:  implement
-//        response.setDomainName(responseObj.getDomainName());
+        response.setDomainName(ApiDBUtils.findDomainById(responseObj.getDomainId()).getName());
 
         return SerializerHelper.toSerializedString(response);
     }

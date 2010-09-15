@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.NetworkGroupResponse;
@@ -88,8 +89,7 @@ public class CreateNetworkGroupCmd extends BaseCmd {
         response.setAccountName(group.getAccountName());
         response.setDescription(group.getDescription());
         response.setDomainId(group.getDomainId());
-        // TODO:  implement
-//        response.setDomainName(group.getDomainName());
+        response.setDomainName(ApiDBUtils.findDomainById(group.getDomainId()).getName());
         response.setId(group.getId());
         response.setName(group.getName());
 
