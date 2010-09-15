@@ -2,7 +2,6 @@
 <%@ page import="com.cloud.utils.*" %>
 
 <%
-
     Locale browserLocale = request.getLocale();
     CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
 %>

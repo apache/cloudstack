@@ -1,13 +1,7 @@
-
-<!--
-<script type="text/javascript" src="scripts/cloud.core.account.js"></script>
--->
-
 <%@ page import="java.util.*" %>
 <%@ page import="com.cloud.utils.*" %>
 
 <%
-
     Locale browserLocale = request.getLocale();
     CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
 %>
