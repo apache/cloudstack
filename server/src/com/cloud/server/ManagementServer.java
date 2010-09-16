@@ -627,8 +627,9 @@ public interface ManagementServer {
      * Creates a new template
      * @param cmd
      * @return success/failure
+     * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    boolean updateTemplate(UpdateTemplateOrIsoCmd cmd) throws InvalidParameterValueException;
+    boolean updateTemplate(UpdateTemplateOrIsoCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
     /**
      * Copies a template from one secondary storage server to another
@@ -867,10 +868,11 @@ public interface ManagementServer {
 
     /**
      * update an existing domain
-     * @param domainId the id of the domain to be updated
-     * @param domainName the new name of the domain
+     * @param cmd - the command containing domainId and new domainName
+     * @return true if domain is updated, false otherwise
+     * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    void updateDomain(UpdateDomainCmd cmd) throws InvalidParameterValueException;
+    boolean updateDomain(UpdateDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 
     /**
      * find the domain Id associated with the given account

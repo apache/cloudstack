@@ -661,12 +661,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     		throw new InvalidParameterValueException("Host with id " + id.toString() + " doesn't exist");
     	}
     	
-    	if (deleteHost(id)) {
-    		return true;
-    	}
-    	else {
-    		return false;
-    	}
+    	return deleteHost(id);
     }
     
 

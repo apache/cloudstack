@@ -6,8 +6,11 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.response.SuccessResponse;
+import com.cloud.serializer.SerializerHelper;
 
-@Implementation(method="deleteHost", manager=Manager.StorageManager)
+@Implementation(method="deletePool", manager=Manager.StorageManager)
 public class DeletePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePoolCmd.class.getName());
     private static final String s_name = "deletepoolresponse";
@@ -28,7 +31,7 @@ public class DeletePoolCmd extends BaseCmd {
         return id;
     }
 
-
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -37,36 +40,17 @@ public class DeletePoolCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//    	Long poolId = (Long) params.get(BaseCmd.Properties.ID.getName());
-//    	
-//    	//verify parameters
-//    	StoragePoolVO sPool = getManagementServer().findPoolById(poolId);
-//    	if (sPool == null) {
-//    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find pool by id " + poolId);
-//    	}
-//    	
-//    	if (sPool.getPoolType().equals(StoragePoolType.LVM)) {
-//    		throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "Unable to delete local storage id: " + poolId);
-//    	}
-//    	
-//    	boolean deleted = true;
-//        try {
-//             deleted = getManagementServer().deletePool(poolId);
-//             
-//        } catch (Exception ex) {
-//            s_logger.error("Exception deleting pool", ex);
-//            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-//        }
-//        if (!deleted) {
-//       	 	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Volumes exist on primary storage, unable to delete");
-//        }
-//
-//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), "true"));
-//        
-//        return returnValues;
-//    }
+    
+    @Override
+    public String getResponse() {
+        SuccessResponse response = new SuccessResponse();
+        Boolean responseObject = (Boolean)getResponseObject();
+      
+        if (responseObject != null) {
+        	response.setSuccess(responseObject);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete pool");
+        }
+        return SerializerHelper.toSerializedString(responseObject);
+    }
 }

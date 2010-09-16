@@ -153,6 +153,8 @@ public interface TemplateManager extends Manager {
     /**
      * Deletes a template
      * @param cmd - the command specifying isoId
+     * @return true if deletion is successful, false otherwise
+     * @throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException
      */
     boolean deleteIso(DeleteIsoCmd cmd) throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException;
     

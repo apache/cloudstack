@@ -22,8 +22,11 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.response.SuccessResponse;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
+import com.cloud.serializer.SerializerHelper;
 
 
 @Implementation(method="deleteHost", manager=Manager.AgentManager)
@@ -57,30 +60,17 @@ public class DeleteHostCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//    	Long hostId = (Long)params.get(BaseCmd.Properties.ID.getName());
-//    	
-//    	//verify input parameters
-//    	HostVO host = getManagementServer().getHostBy(hostId);
-//    	if (host == null) {
-//    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Host with id " + hostId.toString() + " doesn't exist");
-//    	}
-// 
-//    	boolean success = false;
-//    	try {
-//    		success = getManagementServer().deleteHost(hostId);
-//    	} catch (Exception ex) {
-//    	    s_logger.warn("Unable to delete host " + hostId, ex);
-//    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete the host " + hostId.toString() + ". Current host status is " + host.getStatus());
-//    	}
-//        
-//        if (success == false) {
-//            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete the host with id " + hostId.toString());
-//        }
-//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), Boolean.valueOf(success).toString()));
-//        return returnValues;
-//    }
+    
+    @Override
+    public String getResponse() {
+        SuccessResponse response = new SuccessResponse();
+        Boolean responseObject = (Boolean)getResponseObject();
+      
+        if (responseObject != null) {
+        	response.setSuccess(responseObject);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete host");
+        }
+        return SerializerHelper.toSerializedString(responseObject);
+    }
 }

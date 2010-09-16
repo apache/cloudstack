@@ -3394,7 +3394,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean updateTemplate(UpdateTemplateOrIsoCmd cmd) throws InvalidParameterValueException {
+    public boolean updateTemplate(UpdateTemplateOrIsoCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
     	Long id = cmd.getId();
     	String name = cmd.getName();
     	String displayText = cmd.getDisplayText();
@@ -3407,12 +3407,12 @@ public class ManagementServerImpl implements ManagementServer {
     	//verify that template exists
     	VMTemplateVO template = findTemplateById(id);
     	if (template == null) {
-    		throw new InvalidParameterValueException("unable to find template with id " + id);
+    		throw new InvalidParameterValueException("unable to find template/iso with id " + id);
     	}
     	
         //Don't allow to modify system template
         if (id == Long.valueOf(1)) {
-        	throw new InvalidParameterValueException("Unable to update template with id " + id);
+        	throw new InvalidParameterValueException("Unable to update template/iso with id " + id);
         }
     	
     	//do a permission check
@@ -3420,12 +3420,12 @@ public class ManagementServerImpl implements ManagementServer {
             Long templateOwner = template.getAccountId();
             if (!BaseCmd.isAdmin(account.getType())) {
                 if ((templateOwner == null) || (account.getId().longValue() != templateOwner.longValue())) {
-                    throw new InvalidParameterValueException("Unable to modify template with id " + id);
+                    throw new PermissionDeniedException("Unable to modify template/iso with id " + id + ", permission denied.");
                 }
             } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
                 Long templateOwnerDomainId = findDomainIdByAccountId(templateOwner);
                 if (!isChildDomain(account.getDomainId(), templateOwnerDomainId)) {
-                    throw new InvalidParameterValueException("Unable to modify template with id " + id);
+                    throw new PermissionDeniedException("Unable to modify template/iso with id " + id + ", permission denied");
                 }
             }
         }
@@ -4927,7 +4927,7 @@ public class ManagementServerImpl implements ManagementServer {
         return success && deleteDomainSuccess;
     }
 
-    public void updateDomain(UpdateDomainCmd cmd) throws InvalidParameterValueException{
+    public boolean updateDomain(UpdateDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	Long domainId = cmd.getId();
     	String domainName = cmd.getName();
     	
@@ -4943,13 +4943,12 @@ public class ManagementServerImpl implements ManagementServer {
     	// check permissions
     	Account account = (Account)UserContext.current().getAccountObject();
     	if ((account != null) && !isChildDomain(account.getDomainId(), domain.getId())) {
-            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to update domain " + domainId + ", permission denied");
+            throw new PermissionDeniedException("Unable to update domain " + domainId + ", permission denied");
     	}
 
     	if (domainName == null) {
     		domainName = domain.getName();
     	}
-    	
     	
         SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
         sc.addAnd("name", SearchCriteria.Op.EQ, domainName);
@@ -4958,9 +4957,11 @@ public class ManagementServerImpl implements ManagementServer {
             _domainDao.update(domainId, domainName);
             domain = _domainDao.findById(domainId);
             EventUtils.saveEvent(new Long(1), domain.getOwner(), EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_UPDATE, "Domain, " + domainName + " was updated");
+            return true;
         } else {
             domain = _domainDao.findById(domainId);
             EventUtils.saveEvent(new Long(1), domain.getOwner(), EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_UPDATE, "Failed to update domain " + domain.getName() + " with name " + domainName + ", name in use.");
+            return false;
         }
     }
 

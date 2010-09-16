@@ -20,8 +20,13 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.response.TemplateResponse;
+import com.cloud.serializer.SerializerHelper;
+import com.cloud.storage.VMTemplateVO;
 
 @Implementation(method="updateTemplate", manager=Manager.ManagementServer)
 public class UpdateIsoCmd extends UpdateTemplateOrIsoCmd {
@@ -49,59 +54,23 @@ public class UpdateIsoCmd extends UpdateTemplateOrIsoCmd {
     public String getName() {
         return s_name;
     }
-
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-//        String displayText = (String)params.get(BaseCmd.Properties.DISPLAY_TEXT.getName());
-//        String name = (String)params.get(BaseCmd.Properties.NAME.getName());
-//        Long isoId = (Long)params.get(BaseCmd.Properties.ID.getName());
-//        Long guestOSId = (Long) params.get(BaseCmd.Properties.OS_TYPE_ID.getName());
-//        Boolean bootable = (Boolean) params.get(BaseCmd.Properties.BOOTABLE.getName());
-//
-//        VMTemplateVO iso = getManagementServer().findTemplateById(isoId.longValue());
-//        if ((iso == null) || iso.getFormat() != Storage.ImageFormat.ISO) {
-//            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find ISO with id " + isoId);
-//        }
-//
-//        // do a permission check
-//        if (account != null) {
-//            Long isoOwner = iso.getAccountId();
-//            if (!isAdmin(account.getType())) {
-//                if ((isoOwner == null) || (account.getId().longValue() != isoOwner.longValue())) {
-//                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to modify ISO with id " + isoId);
-//                }
-//            } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-//                Long isoOwnerDomainId = getManagementServer().findDomainIdByAccountId(isoOwner);
-//                if (!getManagementServer().isChildDomain(account.getDomainId(), isoOwnerDomainId)) {
-//                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to modify ISO with id " + isoId);
-//                }
-//            }
-//        }
-//        
-//        // do the update
-//        boolean success = false;
-//        try {
-//        	success = getManagementServer().updateTemplate(isoId, name, displayText, null, guestOSId, null, bootable);
-//        } catch (Exception ex) {
-//        	 s_logger.error("Exception editing ISO", ex);
-//             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update ISO " + isoId + ": " + ex.getMessage());
-//        }
-//
-//        VMTemplateVO updatedIso = getManagementServer().findTemplateById(isoId);
-//        if (success) {
-//            List<Pair<String, Object>> isoData = new ArrayList<Pair<String, Object>>();
-//            isoData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), updatedIso.getId().toString()));
-//            isoData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), updatedIso.getName()));
-//            isoData.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_TEXT.getName(), updatedIso.getDisplayText()));
-//            isoData.add(new Pair<String, Object>(BaseCmd.Properties.IS_PUBLIC.getName(), Boolean.valueOf(updatedIso.isPublicTemplate()).toString()));
-//            isoData.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), getDateString(updatedIso.getCreated())));
-//            isoData.add(new Pair<String, Object>(BaseCmd.Properties.FORMAT.getName(), updatedIso.getFormat()));
-//            isoData.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_ID.getName(), updatedIso.getGuestOSId()));
-//            isoData.add(new Pair<String, Object>(BaseCmd.Properties.BOOTABLE.getName(), updatedIso.isBootable()));
-//            return isoData;
-//        } else {
-//            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "internal error updating ISO");
-//        }
-//    }
+    
+    public String getResponse() {
+        TemplateResponse response = new TemplateResponse();
+        VMTemplateVO responseObject = (VMTemplateVO)getResponseObject();
+        if (responseObject != null) {
+            response.setId(responseObject.getId());
+            response.setName(responseObject.getName());
+            response.setDisplayText(responseObject.getDisplayText());
+            response.setPublic(responseObject.isPublicTemplate());
+            response.setCreated(responseObject.getCreated());
+            response.setFormat(responseObject.getFormat());
+            response.setOsTypeId(responseObject.getGuestOSId());
+            response.setBootable(responseObject.isBootable());
+            
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update iso");
+        }
+        return SerializerHelper.toSerializedString(responseObject);
+    }
 }

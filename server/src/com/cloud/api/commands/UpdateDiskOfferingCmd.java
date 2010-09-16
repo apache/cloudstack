@@ -19,6 +19,7 @@
 package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
@@ -80,7 +81,6 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
         return s_name;
     }
     
-    
     public String getResponse() {
         DiskOfferingResponse response = new DiskOfferingResponse();
         if (responseObject != null) {
@@ -91,8 +91,8 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
             response.setDomainId(responseObject.getDomainId());
             response.setName(responseObject.getName());
             response.setTags(responseObject.getTags());
-            // FIXME:  domain name in the response
-//          response.setDomain(responseObject.getDomain());
+            response.setDomainId(ApiDBUtils.findDomainById(responseObject.getDomainId()).getId());
+            response.setDomain(ApiDBUtils.findDomainById(responseObject.getDomainId()).getName());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update disk offering");
         }
