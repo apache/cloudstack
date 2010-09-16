@@ -1394,7 +1394,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
         if(numRowsUsed == 0)
         {
-        	if((!Double.isInfinite(value))&&(!Double.isInfinite(value)))
+        	if((!Double.isInfinite(value))&&(!Double.isNaN(value)))
         	{
         		return value;
         	}
@@ -1406,7 +1406,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
         else
         {
-        	if((!Double.isInfinite(value/numRowsUsed))&&(!Double.isInfinite(value/numRowsUsed)))
+        	if((!Double.isInfinite(value/numRowsUsed))&&(!Double.isNaN(value/numRowsUsed)))
         	{
         		return (value/numRowsUsed);
         	}
