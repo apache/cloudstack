@@ -159,16 +159,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                     }
                 }
             }
-            for( int i = 0; i < 2; i++ ) {
+
             for (Map.Entry<Host, Host.Record> entry : hosts.entrySet()) {
-                Host host = entry.getKey();
-                if( i== 0 ) {
-                    if(!host.equals(master)) {
-                		continue;
-                    } else {
-                    	hosts.remove(host);
-                    }
-                } 
                 Host.Record record = entry.getValue();
                 String hostAddr = record.address;
                 
@@ -246,7 +238,6 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
 
                 resource.start();
                 resources.put(resource, details);
-            }
             }
             
             if (!addHostsToPool(url, conn, dcId, podId, clusterId, resources)) {

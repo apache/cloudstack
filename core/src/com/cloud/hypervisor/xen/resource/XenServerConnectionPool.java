@@ -161,8 +161,6 @@ public class XenServerConnectionPool {
     protected synchronized void cleanup(String poolUuid) {
         ConnectionInfo info = _infos.remove(poolUuid);
         if (info == null) {
-            s_logger.debug("Unable to find any information for pool "
-                    + poolUuid);
             return;
         }
 
@@ -573,6 +571,22 @@ public class XenServerConnectionPool {
                     masterConn = null;
                     masterIp = null;
                 }
+            } else {
+            	try {
+                    Pool.Record pr = getPoolRecord(slaveConn);
+                    masterIp = pr.master.getAddress(slaveConn);
+                    masterUrl = new URL("http://" + masterIp);;
+                    masterConn = new XenServerConnection(masterUrl, username,
+                            password, _retries, _interval, wait);
+                    Session.loginWithPassword(masterConn, username, password,
+                            APIVersion.latest().toString());
+                    create_new_session = false;
+            		
+            	} catch (Exception e) {
+                    cleanup(poolUuid);
+                    masterConn = null;
+                    masterIp = null;
+            	}
             }
             if (create_new_session) {
                 try{ 
