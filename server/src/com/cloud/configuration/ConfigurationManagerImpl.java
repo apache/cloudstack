@@ -937,35 +937,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	} 
     	else if (vlanType.equals(VlanType.DirectAttached)) 
     	{
-//    		if (!((accountId != null && podId == null) || (accountId == null && podId != null))) {
-//    			throw new InvalidParameterValueException("Direct Attached VLANs must either be pod-wide, or for one account.");
-//    		}
-    		
-    		if (accountId!=null && podId!=null) 
+			if (accountId!=null && podId!=null) 
 			{
 				throw new InvalidParameterValueException("Direct Attached VLANs must either be pod-wide,for one account or zone wide");
 			}
-    		
-    		if (accountId != null) {
-    			// VLANs for an account must be tagged
-        		if (vlanId.equals(Vlan.UNTAGGED)) {
-        			throw new InvalidParameterValueException("Direct Attached VLANs for an account must be tagged.");
-        		}
-        		
-        		// Check that the account ID is valid
-        		AccountVO account;
-        		if ((account = _accountDao.findById(accountId)) == null) {
-        			throw new InvalidParameterValueException("Please specify a valid account.");
-        		}
-        		
-        		// Make sure there aren't any pod VLANs in this zone
-        		List<HostPodVO> podsInZone = _podDao.listByDataCenterId(zone.getId());
-        		for (HostPodVO pod : podsInZone) {
-        			if (_podVlanMapDao.listPodVlanMapsByPod(pod.getId()).size() > 0) {
-        				throw new InvalidParameterValueException("Zone " + zone.getName() + " already has pod VLANs. A zone may contain either pod VLANs or account VLANs, but not both.");
-        			}
-        		}
-    		} else if (podId != null) {
+    		if (podId != null) 
+    		{
     			// Pod-wide VLANs must be untagged
         		if (!vlanId.equals(Vlan.UNTAGGED)) {
         			throw new InvalidParameterValueException("Direct Attached VLANs for a pod must be untagged.");
@@ -987,9 +964,40 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         		}
         				
     		}
-    	} else {
-    		throw new InvalidParameterValueException("Please specify a valid VLAN type. Valid types are: " + VlanType.values().toString());
-    	}
+    		else 
+    		{
+    			// VLANs for an account must be tagged
+        		if (vlanId.equals(Vlan.UNTAGGED)) {
+        			throw new InvalidParameterValueException("Direct Attached VLANs for an account must be tagged.");
+        		}
+        		
+        		if(accountId!=null)
+        		{
+	        		// Check that the account ID is valid
+	        		AccountVO account;
+	        		if ((account = _accountDao.findById(accountId)) == null) {
+	        			throw new InvalidParameterValueException("Please specify a valid account.");
+	        		}
+	        		
+	        		// Make sure there aren't any pod VLANs in this zone
+	        		List<HostPodVO> podsInZone = _podDao.listByDataCenterId(zone.getId());
+	        		for (HostPodVO pod : podsInZone) {
+	        			if (_podVlanMapDao.listPodVlanMapsByPod(pod.getId()).size() > 0) {
+	        				throw new InvalidParameterValueException("Zone " + zone.getName() + " already has pod VLANs. A zone may contain either pod VLANs or account VLANs, but not both.");
+	        			}
+	        		}
+	        		
+	        		// Make sure the specified account isn't already assigned to a VLAN in this zone
+	        		List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAccountVlanMapsByAccount(accountId);
+	        		for (AccountVlanMapVO accountVlanMap : accountVlanMaps) {
+	        			VlanVO vlan = _vlanDao.findById(accountVlanMap.getVlanDbId());
+	        			if (vlan.getDataCenterId() == zone.getId().longValue()) {
+	        				throw new InvalidParameterValueException("The account " + account.getAccountName() + " is already assigned to the VLAN with ID " + vlan.getVlanId() + " in zone " + zone.getName() + ".");
+	        			}
+	        		}
+        		}
+    		} 
+    	} 
 
     	// Make sure the gateway is valid
 		if (!NetUtils.isValidIp(vlanGateway)) {
