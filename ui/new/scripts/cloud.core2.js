@@ -20,6 +20,166 @@
 
 // Version: @VERSION@
 
+
+//***** actions for details tab in right panel (begin) ************************************************************************
+function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap) { 
+    var apiInfo = actionMap[label];
+    var $listItem = $("#action_list_item").clone();
+    $actionMenu.find("#action_list").append($listItem.show());
+    var $link = $listItem.find("#link").text(label);
+    $link.data("label", label);	  
+    $link.data("inProcessText", apiInfo.inProcessText);	 
+    $link.data("api", apiInfo.api);				                 
+    $link.data("isAsyncJob", apiInfo.isAsyncJob);
+    $link.data("asyncJobResponse", apiInfo.asyncJobResponse);		     
+    $link.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);
+    $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);      
+    
+    var $detailsTab = $("#right_panel_content #tab_content_details");  
+    var id = $detailsTab.data("jsonObj").id;
+    
+    $link.bind("click", function(event) {   
+        $actionMenu.hide();    	 
+        var $actionLink = $(this);   
+        var dialogBeforeActionFn = $actionLink.data("dialogBeforeActionFn"); 
+        if(dialogBeforeActionFn == null) {	 
+            var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
+            doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap); 
+        }
+        else {
+            dialogBeforeActionFn($actionLink, listAPIMap, $detailsTab);	
+        }                        
+        return false;
+    });  
+} 
+
+function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap) {       
+    var label = $actionLink.data("label");	
+    var inProcessText = $actionLink.data("inProcessText");		           
+    var isAsyncJob = $actionLink.data("isAsyncJob");
+    var asyncJobResponse = $actionLink.data("asyncJobResponse");	
+    var afterActionSeccessFn = $actionLink.data("afterActionSeccessFn");	
+    var listAPI = listAPIMap["listAPI"];
+    var listAPIResponse = listAPIMap["listAPIResponse"];
+    var listAPIResponseObj = listAPIMap["listAPIResponseObj"];
+     
+    var $detailsTab = $("#right_panel_content #tab_content_details");     
+    var $spinningWheel = $detailsTab.find("#spinning_wheel");
+    $spinningWheel.find("#description").text(inProcessText);  
+    $spinningWheel.show();        
+    
+	//Async job (begin) *****
+	if(isAsyncJob == true) {	                     
+        $.ajax({
+            data: createURL(apiCommand),
+            dataType: "json",           
+            success: function(json) {	                       	                        
+                var jobId = json[asyncJobResponse].jobid;                  			                        
+                var timerKey = "asyncJob_" + jobId;					                       
+                $("body").everyTime(
+                    10000,
+                    timerKey,
+                    function() {
+                        $.ajax({
+                            data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+	                        dataType: "json",									                    					                    
+	                        success: function(json) {		                                                     							                       
+		                        var result = json.queryasyncjobresultresponse;										                   
+		                        if (result.jobstatus == 0) {
+			                        return; //Job has not completed
+		                        } else {											                    
+			                        $("body").stopTime(timerKey);				                        
+			                        $spinningWheel.hide();      		                       
+			                        if (result.jobstatus == 1) { // Succeeded 			                           
+			                            $detailsTab.find("#action_message_box #description").text(label + " action succeeded.");
+			                            $detailsTab.find("#action_message_box").removeClass("error").show();
+			                            
+			                            //DestroyVirtualMachine API doesn't return an embedded object on success (Bug 6041)
+	                                    //Before Bug 6041 get fixed, use the temporary solution below.							            
+	                                    $.ajax({
+                                            cache: false,
+                                            data: createURL("command="+listAPI+"&id="+id),
+                                            dataType: "json",                                            
+                                            success: function(json) {		                                                                                  
+                                                afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	                        
+                                            }
+                                        });										
+				                        //After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
+			                            //afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	   
+			                            
+			                        } else if (result.jobstatus == 2) { // Failed		
+			                            $detailsTab.find("#action_message_box #description").text(label + " action failed. Reason: " + sanitizeXSS(result.jobresult)); 
+			                            $detailsTab.find("#action_message_box").addClass("error").show();
+			                        }											                    
+		                        }
+	                        },
+	                        error: function(XMLHttpResponse) {	                            
+		                        $("body").stopTime(timerKey);		                       		                        
+		                        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label); 		                        
+	                        }
+                        });
+                    },
+                    0
+                );
+            },
+            error: function(XMLHttpResponse) {	                 
+		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label);    
+            }
+        });     
+    }     
+    //Async job (end) *****
+    
+    //Sync job (begin) *****
+    else { 	               
+        $.ajax({
+            data: createURL(apiCommand),
+	        dataType: "json",
+	        async: false,
+	        success: function(json) {	            
+	            $spinningWheel.hide();      
+														              
+	            //RecoverVirtualMachine API doesn't return an embedded object on success (Bug 6037)
+	            //Before Bug 6037 get fixed, use the temporary solution below.							            
+	            $.ajax({
+                    cache: false,
+                    data: createURL("command="+listAPI+"&id="+id),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {
+			            $detailsTab.find("#action_message_box #description").text(label + " action succeeded.");
+			            $detailsTab.find("#action_message_box").removeClass("error").show();
+			                                                                                              
+                        afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	                           
+                    }
+                });										
+				//After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
+				//afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	   
+	        },
+            error: function(XMLHttpResponse) {	                
+		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label);    
+            }        
+        });
+    }
+    //Sync job (end) *****
+}
+
+function handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label) { 
+    $detailsTab.find("#spinning_wheel").hide();      
+		                        
+    var errorMsg = "";
+    if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {
+        var start = XMLHttpResponse.responseText.indexOf("h1") + 3;
+        var end = XMLHttpResponse.responseText.indexOf("</h1");
+        errorMsg = XMLHttpResponse.responseText.substring(start, end);		
+    }
+    if(errorMsg.length > 0) 
+        $detailsTab.find("#action_message_box #description").text(label + " action failed. Reason: " + sanitizeXSS(unescape(errorMsg))); 
+    else
+        $detailsTab.find("#action_message_box #description").text(label + " action failed.");    
+    $detailsTab.find("#action_message_box").addClass("error").show();
+}    	                
+//***** actions for details tab in right panel (end) **************************************************************************
+
 //***** actions for middle menu (begin) ************************************************************************
 var selectedItemsInMidMenu = {};
 
@@ -180,164 +340,6 @@ function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem) {
 }    	                
 //***** actions for middle menu (end) **************************************************************************
 
-//***** actions for details tab in right panel (begin) ************************************************************************
-function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap) { 
-    var apiInfo = actionMap[label];
-    var $listItem = $("#action_list_item").clone();
-    $actionMenu.find("#action_list").append($listItem.show());
-    var $link = $listItem.find("#link").text(label);
-    $link.data("label", label);	  
-    $link.data("inProcessText", apiInfo.inProcessText);	 
-    $link.data("api", apiInfo.api);				                 
-    $link.data("isAsyncJob", apiInfo.isAsyncJob);
-    $link.data("asyncJobResponse", apiInfo.asyncJobResponse);		     
-    $link.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);
-    $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);      
-    
-    var $detailsTab = $("#right_panel_content #tab_content_details");  
-    var id = $detailsTab.data("jsonObj").id;
-    
-    $link.bind("click", function(event) {   
-        $actionMenu.hide();    	 
-        var $actionLink = $(this);   
-        var dialogBeforeActionFn = $actionLink.data("dialogBeforeActionFn"); 
-        if(dialogBeforeActionFn == null) {	 
-            var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
-            doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap); 
-        }
-        else {
-            dialogBeforeActionFn($actionLink, listAPIMap, $detailsTab);	
-        }                        
-        return false;
-    });  
-} 
-
-function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap) {       
-    var label = $actionLink.data("label");	
-    var inProcessText = $actionLink.data("inProcessText");		           
-    var isAsyncJob = $actionLink.data("isAsyncJob");
-    var asyncJobResponse = $actionLink.data("asyncJobResponse");	
-    var afterActionSeccessFn = $actionLink.data("afterActionSeccessFn");	
-    var listAPI = listAPIMap["listAPI"];
-    var listAPIResponse = listAPIMap["listAPIResponse"];
-    var listAPIResponseObj = listAPIMap["listAPIResponseObj"];
-     
-    var $detailsTab = $("#right_panel_content #tab_content_details");     
-    var $spinningWheel = $detailsTab.find("#spinning_wheel");
-    $spinningWheel.find("#description").text(inProcessText);  
-    $spinningWheel.show();        
-    
-	//Async job (begin) *****
-	if(isAsyncJob == true) {	                     
-        $.ajax({
-            data: createURL(apiCommand),
-            dataType: "json",           
-            success: function(json) {	                       	                        
-                var jobId = json[asyncJobResponse].jobid;                  			                        
-                var timerKey = "asyncJob_" + jobId;					                       
-                $("body").everyTime(
-                    10000,
-                    timerKey,
-                    function() {
-                        $.ajax({
-                            data: createURL("command=queryAsyncJobResult&jobId="+jobId),
-	                        dataType: "json",									                    					                    
-	                        success: function(json) {		                                                     							                       
-		                        var result = json.queryasyncjobresultresponse;										                   
-		                        if (result.jobstatus == 0) {
-			                        return; //Job has not completed
-		                        } else {											                    
-			                        $("body").stopTime(timerKey);				                        
-			                        $spinningWheel.hide();      		                       
-			                        if (result.jobstatus == 1) { // Succeeded 			                           
-			                            $detailsTab.find("#action_message_box #description").text(label + " action succeeded.");
-			                            $detailsTab.find("#action_message_box").removeClass("error").show();
-			                            
-			                            //DestroyVirtualMachine API doesn't return an embedded object on success (Bug 6041)
-	                                    //Before Bug 6041 get fixed, use the temporary solution below.							            
-	                                    $.ajax({
-                                            cache: false,
-                                            data: createURL("command="+listAPI+"&id="+id),
-                                            dataType: "json",                                            
-                                            success: function(json) {		                                                                                  
-                                                afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	                        
-                                            }
-                                        });										
-				                        //After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
-			                            //afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	   
-			                            
-			                        } else if (result.jobstatus == 2) { // Failed		
-			                            $detailsTab.find("#action_message_box #description").text(label + " action failed. Reason: " + sanitizeXSS(result.jobresult)); 
-			                            $detailsTab.find("#action_message_box").addClass("error").show();
-			                        }											                    
-		                        }
-	                        },
-	                        error: function(XMLHttpResponse) {	                            
-		                        $("body").stopTime(timerKey);		                       		                        
-		                        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label); 		                        
-	                        }
-                        });
-                    },
-                    0
-                );
-            },
-            error: function(XMLHttpResponse) {	                 
-		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label);    
-            }
-        });     
-    }     
-    //Async job (end) *****
-    
-    //Sync job (begin) *****
-    else { 	               
-        $.ajax({
-            data: createURL(apiCommand),
-	        dataType: "json",
-	        async: false,
-	        success: function(json) {	            
-	            $spinningWheel.hide();      
-														              
-	            //RecoverVirtualMachine API doesn't return an embedded object on success (Bug 6037)
-	            //Before Bug 6037 get fixed, use the temporary solution below.							            
-	            $.ajax({
-                    cache: false,
-                    data: createURL("command="+listAPI+"&id="+id),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-			            $detailsTab.find("#action_message_box #description").text(label + " action succeeded.");
-			            $detailsTab.find("#action_message_box").removeClass("error").show();
-			                                                                                              
-                        afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	                           
-                    }
-                });										
-				//After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
-				//afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	   
-	        },
-            error: function(XMLHttpResponse) {	                
-		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label);    
-            }        
-        });
-    }
-    //Sync job (end) *****
-}
-
-function handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label) { 
-    $detailsTab.find("#spinning_wheel").hide();      
-		                        
-    var errorMsg = "";
-    if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {
-        var start = XMLHttpResponse.responseText.indexOf("h1") + 3;
-        var end = XMLHttpResponse.responseText.indexOf("</h1");
-        errorMsg = XMLHttpResponse.responseText.substring(start, end);		
-    }
-    if(errorMsg.length > 0) 
-        $detailsTab.find("#action_message_box #description").text(label + " action failed. Reason: " + sanitizeXSS(unescape(errorMsg))); 
-    else
-        $detailsTab.find("#action_message_box #description").text(label + " action failed.");    
-    $detailsTab.find("#action_message_box").addClass("error").show();
-}    	                
-//***** actions for details tab in right panel (end) **************************************************************************
 
 //***** actions for a subgrid item in right panel (begin) ************************************************************************
 function buildActionLinkForSubgridItem(label, actionMap, $actionMenu, listAPIMap, $subgridItem) {

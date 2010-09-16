@@ -185,7 +185,22 @@ function isoJsonToDetailsTab(jsonObj) {
 }
 
 function isoClearRightPanel() {
-
+    var $detailsTab = $("#right_panel_content #tab_content_details");   
+    
+    $detailsTab.find("#id").text("");
+    $detailsTab.find("#zonename").text("");
+    
+    $detailsTab.find("#name").text("");
+    $detailsTab.find("#name_edit").val("");
+    
+    $detailsTab.find("#displaytext").text("");
+    $detailsTab.find("#displaytext_edit").val("");
+    
+    $detailsTab.find("#account").text("");    
+    $detailsTab.find("#size").text("");  
+	$detailsTab.find("#status").text(""); 
+	$detailsTab.find("#bootable").text("");
+    $detailsTab.find("#created").text("");   
 }
 
 var isoActionMap = {  
@@ -194,7 +209,7 @@ var isoActionMap = {
         isAsyncJob: true,
         asyncJobResponse: "deleteisosresponse",
         inProcessText: "Deleting ISO....",
-        afterActionSeccessFn: function(jsonObj) {           
+        afterActionSeccessFn: function(jsonObj) {          
             var $midmenuItem1 = $("#midmenuItem_"+jsonObj.id);
             $midmenuItem1.remove();
             clearRightPanel();
@@ -219,7 +234,7 @@ var isoActionMap = {
 }   
 
 var isoListAPIMap = {
-    listAPI: "listisos&isofilter=self",
+    listAPI: "listIsos&isofilter=self",
     listAPIResponse: "listisosresponse",
     listAPIResponseObj: "iso"
 }; 

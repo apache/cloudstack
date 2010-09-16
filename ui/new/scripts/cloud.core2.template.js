@@ -220,16 +220,16 @@ function templateClearRightPanel() {
         
 	$detailsTab.find("#status").text("");    
     
-    setBooleanField(null, $detailsTab.find("#passwordenabled"));	
+    $detailsTab.find("#passwordenabled").text("");
     $detailsTab.find("#passwordenabled_edit").val(null);
     
-    setBooleanField(null, $detailsTab.find("#ispublic"));	
+    $detailsTab.find("#ispublic").text("");
     $detailsTab.find("#ispublic_edit").val(null);
     
-    setBooleanField(null, $detailsTab.find("#isfeatured"));
+    $detailsTab.find("#isfeatured").text("");
     $detailsTab.find("#isfeatured_edit").val(null);
     
-    setBooleanField(null, $detailsTab.find("#crossZones"));
+    $detailsTab.find("#crossZones").text("");    
     
     $detailsTab.find("#ostypename").text("");
     $detailsTab.find("#ostypename_edit").val(null);    
