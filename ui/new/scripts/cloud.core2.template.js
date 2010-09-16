@@ -31,7 +31,7 @@ function afterLoadTemplateJSP() {
     });
     
     
-    //OS type dropdown ***
+    //populate dropdown ***
     $.ajax({
 	    data: createURL("command=listOsTypes&response=json"+maxPageSize),
 		dataType: "json",
@@ -46,6 +46,33 @@ function afterLoadTemplateJSP() {
 			}	
 		}
 	});
+	
+	$.ajax({
+	    data: createURL("command=listServiceOfferings&response=json"+maxPageSize),
+	    dataType: "json",
+	    success: function(json) {
+	        var items = json.listserviceofferingsresponse.serviceoffering;
+	        if(items != null && items.length > 0 ) {
+	            var serviceOfferingField = $("#dialog_create_vm_from_template #service_offering").empty();
+	            for(var i = 0; i < items.length; i++)		        
+	                serviceOfferingField.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>");
+	        }		        
+	    }
+	});		
+	
+	$.ajax({
+	    data: createURL("command=listDiskOfferings&response=json"+maxPageSize),
+	    dataType: "json",
+	    success: function(json) {
+	        var items = json.listdiskofferingsresponse.diskoffering;
+	        if(items != null && items.length > 0 ) {
+	            var diskOfferingField = $("#dialog_create_vm_from_template #disk_offering").empty();
+	            for(var i = 0; i < items.length; i++)		        
+	                diskOfferingField.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>");
+	        }		  
+	        
+	    }
+	});		
 	
 	//initialize dialog box ***
 	activateDialog($("#dialog_copy_template").dialog({ 
@@ -153,12 +180,12 @@ function templateJsonToDetailsTab(jsonObj) {
     // action Edit, Copy, Create VM 			
 	if ((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.id==DomRTemplateId || jsonObj.isready == "false") {
 		//template.find("#template_edit_container, #template_copy_container, #template_create_vm_container").hide(); 
-		$("edit_button").hide();		
+		$("#edit_button").hide();		
     }
     else {
-        $("edit_button").show();
+        $("#edit_button").show();
         buildActionLinkForDetailsTab("Copy Template", templateActionMap, $actionMenu, templateListAPIMap);			
-        //buildActionLinkForDetailsTab("Create VM", templateActionMap, $actionMenu, templateListAPIMap);			
+        buildActionLinkForDetailsTab("Create VM", templateActionMap, $actionMenu, templateListAPIMap);			
     }
 	
 	// action Delete 			
@@ -232,7 +259,15 @@ var templateActionMap = {
         isAsyncJob: true,
         asyncJobResponse: "createtemplateresponse",            
         dialogBeforeActionFn : doCopyTemplate,
-        inProcessText: "Copy Template....",
+        inProcessText: "Copying Template....",
+        afterActionSeccessFn: function(){}   
+    }  
+    ,
+    "Create VM": {
+        isAsyncJob: true,
+        asyncJobResponse: "deployvirtualmachineresponse",            
+        dialogBeforeActionFn : doCreateVMFromTemplate,
+        inProcessText: "Creating VM....",
         afterActionSeccessFn: function(){}   
     }  
 }   
@@ -368,5 +403,40 @@ function doCopyTemplate($actionLink, listAPIMap, $detailsTab) {
 	    "Cancel": function() {				        
 		    $(this).dialog("close");
 	    }				
+	}).dialog("open");			
+}
+
+function doCreateVMFromTemplate($actionLink, listAPIMap, $detailsTab) { 
+    var jsonObj = $detailsTab.data("jsonObj");
+	var id = jsonObj.id;		
+	var name = jsonObj.name;				
+	var zoneId = jsonObj.zoneid;		
+					
+	var createVmDialog = $("#dialog_create_vm_from_template");				
+	createVmDialog.find("#template").text(name);
+		
+	createVmDialog
+	.dialog('option', 'buttons', {			    
+	    "Create": function() {
+	        var thisDialog = $(this);	
+	        thisDialog.dialog("close");
+	        			        
+	        // validate values
+		    var isValid = true;		
+		    isValid &= validateString("Name", thisDialog.find("#name"), thisDialog.find("#name_errormsg"), true);
+		    isValid &= validateString("Group", thisDialog.find("#group"), thisDialog.find("#group_errormsg"), true);				
+		    if (!isValid) return;	       
+	                
+	        var name = trim(thisDialog.find("#name").val());		
+	        var group = trim(thisDialog.find("#group").val());		
+	        var serviceOfferingId = thisDialog.find("#service_offering").val();				        
+	        var diskOfferingId = thisDialog.find("#disk_offering").val();		        
+	        
+		    var apiCommand = "command=deployVirtualMachine&zoneId="+zoneId+"&serviceOfferingId="+serviceOfferingId+"&diskOfferingId="+diskOfferingId+"&templateId="+id+"&group="+encodeURIComponent(group)+"&displayname="+encodeURIComponent(name);
+    	    doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);		
+	    }, 
+	    "Cancel": function() {
+	        $(this).dialog("close");
+	    }
 	}).dialog("open");			
 }		
