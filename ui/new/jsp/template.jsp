@@ -112,9 +112,7 @@
                         <%=t.t("Password.Enabled")%>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="passwordenabled">
-                        <div id="icon">
-                        </div>
+                    <div class="row_celltitles" id="passwordenabled">                        
                     </div>
                     <select class="select" id="passwordenabled_edit" style="width: 202px; display: none;">
                         <option value="false">No</option>
@@ -128,9 +126,7 @@
                         <%=t.t("Public")%>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="ispublic">
-                        <div id="icon">
-                        </div>
+                    <div class="row_celltitles" id="ispublic">                       
                     </div>
                     <select class="select" id="ispublic_edit" style="width: 202px; display: none;">
                         <option value="true">Yes</option>
@@ -144,9 +140,7 @@
                         <%=t.t("Featured")%>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="isfeatured">
-                        <div id="icon">
-                        </div>
+                    <div class="row_celltitles" id="isfeatured">                        
                     </div>
                     <select class="select" id="isfeatured_edit" style="width: 202px; display: none;">
                         <option value="true">Yes</option>
@@ -160,9 +154,7 @@
                         <%=t.t("Cross.Zones")%>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="crossZones">
-                        <div id="icon">
-                        </div>
+                    <div class="row_celltitles" id="crossZones">                        
                     </div>
                 </div>
             </div>

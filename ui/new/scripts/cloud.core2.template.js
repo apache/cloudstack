@@ -9,24 +9,21 @@ function afterLoadTemplateJSP() {
     var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit, #ispublic_edit, #isfeatured_edit, #ostypename_edit"); 
     $("#edit_button").bind("click", function(event){    
         $readonlyFields.hide();
-        $editFields.show();        
-        $(this).hide();
+        $editFields.show();  
         $("#cancel_button, #save_button").show()
         return false;
     });    
     $("#cancel_button").bind("click", function(event){    
         $editFields.hide();
         $readonlyFields.show();   
-        $("#save_button, #cancel_button").hide();
-        $("#edit_button").show();
+        $("#save_button, #cancel_button").hide();       
         return false;
     });
     $("#save_button").bind("click", function(event){        
         doUpdateTemplate();     
         $editFields.hide();      
         $readonlyFields.show();       
-        $("#save_button, #cancel_button").hide();
-        $("#edit_button").show();
+        $("#save_button, #cancel_button").hide();       
         return false;
     });
     
@@ -223,16 +220,16 @@ function templateClearRightPanel() {
         
 	$detailsTab.find("#status").text("");    
     
-    setBooleanField(null, $detailsTab.find("#passwordenabled"));	
+    $detailsTab.find("#passwordenabled").text("");
     $detailsTab.find("#passwordenabled_edit").val(null);
     
-    setBooleanField(null, $detailsTab.find("#ispublic"));	
+    $detailsTab.find("#ispublic").text("");
     $detailsTab.find("#ispublic_edit").val(null);
     
-    setBooleanField(null, $detailsTab.find("#isfeatured"));
+    $detailsTab.find("#isfeatured").text("");
     $detailsTab.find("#isfeatured_edit").val(null);
     
-    setBooleanField(null, $detailsTab.find("#crossZones"));
+    $detailsTab.find("#crossZones").text("");    
     
     $detailsTab.find("#ostypename").text("");
     $detailsTab.find("#ostypename_edit").val(null);    
