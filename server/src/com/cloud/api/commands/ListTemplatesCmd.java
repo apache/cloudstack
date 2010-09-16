@@ -29,6 +29,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.host.HostVO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -57,6 +58,7 @@ public class ListTemplatesCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HYPERVISOR_TYPE, Boolean.FALSE));
 
     }
 
@@ -83,6 +85,7 @@ public class ListTemplatesCmd extends BaseCmd {
         Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
         Integer pageSize = (Integer)params.get(BaseCmd.Properties.PAGESIZE.getName());
         Long zoneId = (Long)params.get(BaseCmd.Properties.ZONE_ID.getName());   
+        Hypervisor.Type hyperType = Hypervisor.getType((String)params.get(BaseCmd.Properties.HYPERVISOR_TYPE.getName()));
         
         boolean isAdmin = false;                                        
         Long accountId = null;
@@ -136,7 +139,7 @@ public class ListTemplatesCmd extends BaseCmd {
         
         List<VMTemplateVO> templates = null;
         try {
-        	templates = getManagementServer().listTemplates(id, name, keyword, templateFilter, false, null, accountId, pageSize, startIndex, zoneId);
+        	templates = getManagementServer().listTemplates(id, name, keyword, templateFilter, false, null, accountId, pageSize, startIndex, zoneId, hyperType);
         } catch (Exception e) {
         	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
         }

@@ -140,7 +140,7 @@ public class LaunchPermissionDaoImpl extends GenericDaoBase<LaunchPermissionVO, 
                 if (isPublic) {
                     continue; // if it's public already, skip adding it to permitted templates as this for private templates only
                 }
-                VMTemplateVO template = new VMTemplateVO(id, uniqueName, name, format, isPublic, featured, FileSystem.valueOf(filesystem), url, createdDate, requiresHVM, bits, templateAccountId, checksum, displayText, enablePassword, guestOSId, true);
+                VMTemplateVO template = new VMTemplateVO(id, uniqueName, name, format, isPublic, featured, FileSystem.valueOf(filesystem), url, createdDate, requiresHVM, bits, templateAccountId, checksum, displayText, enablePassword, guestOSId, true, null);
                 permittedTemplates.add(template);
             }
         } catch (Exception e) {

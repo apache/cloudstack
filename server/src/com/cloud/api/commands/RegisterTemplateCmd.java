@@ -58,7 +58,7 @@ public class RegisterTemplateCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.FORMAT, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.OS_TYPE_ID, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.TRUE));
-
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HYPERVISOR_TYPE, Boolean.FALSE));
         
     }
 

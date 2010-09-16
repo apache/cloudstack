@@ -53,6 +53,8 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
@@ -484,11 +486,12 @@ public interface ManagementServer {
      * @param zoneId - id of the zone to create this volume on
      * @param diskOfferingId - id of the disk offering to create this volume with
      * @param size - size of the volume
+     * @param hyperType - hypervisor type
      * @return true if success, false if not
      */
     VolumeVO createVolume(long accountId, long userId, String name, long zoneId, long diskOfferingId, long startEventId, long size) throws InternalErrorException;
-    long createVolumeAsync(long accountId, long userId, String name, long zoneId, long diskOfferingId, long size) throws InvalidParameterValueException, InternalErrorException, ResourceAllocationException;
-    
+              
+    long createVolumeAsync(long userId, long accountId, String name, long zoneId, long diskOfferingId, long size) throws InvalidParameterValueException, InternalErrorException, ResourceAllocationException;
     /**
      * Finds the root volume of the VM
      * @param vmId
@@ -1814,7 +1817,7 @@ public interface ManagementServer {
      * @param zoneId optional zoneid to limit search
      * @return list of templates
      */
-    List<VMTemplateVO> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long accountId, Integer pageSize, Long startIndex, Long zoneId) throws InvalidParameterValueException;
+    List<VMTemplateVO> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long accountId, Integer pageSize, Long startIndex, Long zoneId, HypervisorType hyperType) throws InvalidParameterValueException;
 
     /**
      * Search for disk offerings based on search criteria

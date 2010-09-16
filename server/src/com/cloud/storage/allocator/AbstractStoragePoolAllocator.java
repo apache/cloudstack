@@ -144,6 +144,13 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 		if (!poolIsCorrectType(dskCh, pool, vm)) {
 			return false;
 		}
+		
+		/*hypervisor type is correct*/
+		Long clusterId = pool.getClusterId();
+		ClusterVO cluster = _clusterDao.findById(clusterId);
+		if (!cluster.getHypervisorType().equalsIgnoreCase(offering.gethypervisorType())) {
+		return false;
+		}
 
 		/*hypervisor type is correct*/
 		// TODO : when creating a standalone volume, offering is passed as NULL, need to 

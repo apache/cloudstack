@@ -32,6 +32,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.domain.DomainVO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
@@ -132,6 +133,13 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         sc.setParameters("accountId", accountId);
         return listBy(sc);
 	}
+	
+	@Override
+	public List<VMTemplateVO> listByHypervisorType(Hypervisor.Type hyperType) {
+		SearchCriteria<VMTemplateVO> sc = createSearchCriteria();
+		sc.addAnd("hypervisor_type", SearchCriteria.Op.EQ, hyperType.toString());
+		return listBy(sc);
+	}
 
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -174,7 +182,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	}
 
 	@Override
-	public List<VMTemplateVO> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Account account, DomainVO domain, Integer pageSize, Long startIndex, Long zoneId) {
+	public List<VMTemplateVO> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Account account, DomainVO domain, Integer pageSize, Long startIndex, Long zoneId, Hypervisor.Type hyperType) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         List<VMTemplateVO> templates = new ArrayList<VMTemplateVO>();
@@ -225,7 +233,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             	whereClause += " AND ";
             }
             
-            sql += whereClause + getExtrasWhere(templateFilter, name, keyword, isIso, bootable) + getOrderByLimit(pageSize, startIndex);
+            sql += whereClause + getExtrasWhere(templateFilter, name, keyword, isIso, bootable, hyperType) + getOrderByLimit(pageSize, startIndex);
 
             pstmt = txn.prepareStatement(sql);
             rs = pstmt.executeQuery();
@@ -259,7 +267,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         return templates;
 	}
 
-	private String getExtrasWhere(TemplateFilter templateFilter, String name, String keyword, boolean isIso, Boolean bootable) {
+	private String getExtrasWhere(TemplateFilter templateFilter, String name, String keyword, boolean isIso, Boolean bootable, Hypervisor.Type hyperType) {
 	    String sql = "";
         if (keyword != null) {
             sql += " t.name LIKE \"%" + keyword + "%\" AND";
@@ -275,6 +283,10 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         
         if (bootable != null) {
         	sql += " AND t.bootable = " + bootable;
+        }
+        
+        if (hyperType != null) {
+        	sql += " AND t.hypervisor_type = " + hyperType.toString();
         }
 
         sql += " AND t.removed IS NULL";

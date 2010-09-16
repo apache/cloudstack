@@ -339,7 +339,7 @@ public class StorageManagerImpl implements StorageManager {
             } else {
                 offering = _offeringDao.findById(vol.getDiskOfferingId());
             }
-            VolumeVO created = createVolume(create, vm, template, dc, pod, host.getClusterId(), offering, diskOffering, new ArrayList<StoragePoolVO>(),0);
+            VolumeVO created = createVolume(create, vm, template, dc, pod, host.getClusterId(), offering, diskOffering, new ArrayList<StoragePoolVO>(),0, Hypervisor.Type.Any);
             if (created == null) {
                 break;
             }
@@ -719,9 +719,10 @@ public class StorageManagerImpl implements StorageManager {
         return new Pair<String, String>(vdiUUID, basicErrMsg);
     }
     
-    @DB 
-    protected VolumeVO createVolume(VolumeVO volume, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, Long clusterId,
-                                    ServiceOfferingVO offering, DiskOfferingVO diskOffering, List<StoragePoolVO> avoids, long size) {
+    @DB
+    @Override
+	public VolumeVO createVolume(VolumeVO volume, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, Long clusterId,
+                                    ServiceOfferingVO offering, DiskOfferingVO diskOffering, List<StoragePoolVO> avoids, long size, Hypervisor.Type hyperType) {
         StoragePoolVO pool = null;
         final HashSet<StoragePool> avoidPools = new HashSet<StoragePool>(avoids);
        

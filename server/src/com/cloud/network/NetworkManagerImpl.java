@@ -255,7 +255,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     }
     
     @Override @DB
-    public String assignSourceNatIpAddress(AccountVO account, final DataCenterVO dc, final String domain, final ServiceOfferingVO serviceOffering, long startEventId) throws ResourceAllocationException {
+    public String assignSourceNatIpAddress(AccountVO account, final DataCenterVO dc, final String domain, final ServiceOfferingVO serviceOffering, long startEventId, HypervisorType hyperType) throws ResourceAllocationException {
     	if (serviceOffering.getGuestIpType() == NetworkOffering.GuestIpType.DirectDual || serviceOffering.getGuestIpType() == NetworkOffering.GuestIpType.DirectSingle) {
     		return null;
     	}

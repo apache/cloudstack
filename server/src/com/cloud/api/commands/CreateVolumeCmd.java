@@ -28,6 +28,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.async.executor.VolumeOperationResultObject;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Snapshot;
@@ -49,6 +50,7 @@ public class CreateVolumeCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISK_OFFERING_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SNAPSHOT_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SIZE, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HYPERVISOR_TYPE, Boolean.FALSE));
     }
 
     public String getName() {
@@ -74,6 +76,7 @@ public class CreateVolumeCmd extends BaseCmd {
     	Long diskOfferingId = (Long) params.get(BaseCmd.Properties.DISK_OFFERING_ID.getName());
         Long snapshotId = (Long)params.get(BaseCmd.Properties.SNAPSHOT_ID.getName());
         Long size = (Long)params.get(BaseCmd.Properties.SIZE.getName());
+        Hypervisor.Type hyperType = Hypervisor.getType((String)params.get(BaseCmd.Properties.HYPERVISOR_TYPE.getName()));
 
     	if (account == null) {
     		// Admin API call
@@ -184,7 +187,7 @@ public class CreateVolumeCmd extends BaseCmd {
     		if (useSnapshot) {
                 jobId = getManagementServer().createVolumeFromSnapshotAsync(userId, account.getId(), snapshotId, name);
     		} else {
-    		    jobId = getManagementServer().createVolumeAsync(userId, account.getId(), name, zoneId, diskOfferingId, size);
+    		    jobId = getManagementServer().createVolumeAsync(userId, account.getId(), name, zoneId, diskOfferingId, size, hyperType);
     		}
     		
     		if (jobId == 0) {
