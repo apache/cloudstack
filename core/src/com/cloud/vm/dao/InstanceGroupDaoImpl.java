@@ -33,7 +33,7 @@ public class InstanceGroupDaoImpl extends GenericDaoBase<InstanceGroupVO, Long> 
         if (accountId != null) {
             sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
         }
-        List<InstanceGroupVO> vmGroups = listActiveBy(sc);
+        List<InstanceGroupVO> vmGroups = listBy(sc);
         return ((vmGroups != null) && !vmGroups.isEmpty());
     }
     
@@ -42,7 +42,7 @@ public class InstanceGroupDaoImpl extends GenericDaoBase<InstanceGroupVO, Long> 
 		SearchCriteria<InstanceGroupVO> sc = AccountIdNameSearch.create();
 		sc.setParameters("accountId", accountId);
 		sc.setParameters("groupName", name);
-		return findOneActiveBy(sc);
+		return findOneBy(sc);
 	}
 	
     @Override
@@ -56,6 +56,6 @@ public class InstanceGroupDaoImpl extends GenericDaoBase<InstanceGroupVO, Long> 
     public List<InstanceGroupVO> listByAccountId(long id) {
         SearchCriteria<InstanceGroupVO> sc = AccountSearch.create();
         sc.setParameters("account", id);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 }

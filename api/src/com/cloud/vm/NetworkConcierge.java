@@ -11,7 +11,7 @@ import com.cloud.utils.component.Adapter;
 
 /**
  * NetworkConcierge reserves network settings for a VM based
- * on the NetworkCharacteristics given.  A Concierge must
+ * on the NetworkCharacteristics given.  A concierge must
  * return a unique name so we know to call it to release
  * the reservation. 
  *
