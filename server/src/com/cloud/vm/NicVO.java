@@ -29,7 +29,6 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.network.Network.Mode;
-import com.cloud.network.Network.TrafficType;
 
 @Entity
 @Table(name="nics")
@@ -45,34 +44,24 @@ public class NicVO implements Nic {
     @Column(name="instance_id")
     long instanceId;
     
-    @Column(name="type")
-    @Enumerated(value=EnumType.STRING)
-    TrafficType trafficType;
-    
     @Column(name="ip4_address")
     String ip4Address;
     
     @Column(name="mac_address")
     String macAddress;
     
-    @Column(name="netmask")
-    String netMask;
-    
     @Column(name="mode")
     @Enumerated(value=EnumType.STRING)
     Mode mode;
     
-    @Column(name="network_profile_id")
-    long networkProfileId;
-    
-    @Column(name="String")
-    String vlan;
+    @Column(name="network_configuration_id")
+    long networkConfigurationId;
     
     @Column(name="state")
     @Enumerated(value=EnumType.STRING)
     State state;
     
-    @Column(name="name")
+    @Column(name="reserver_name")
     String reserver;
     
     @Column(name="reservation_id")
@@ -84,10 +73,10 @@ public class NicVO implements Nic {
     @Column(name="update_time")
     Date updateTime;
 
-    public NicVO(String reserver, long instanceId, long profileId) {
+    public NicVO(String reserver, long instanceId, long configurationId) {
         this.reserver = reserver;
         this.instanceId = instanceId;
-        this.networkProfileId = profileId;
+        this.networkConfigurationId = configurationId;
         this.state = State.Allocated;
     }
     
@@ -129,8 +118,8 @@ public class NicVO implements Nic {
     }
 
     @Override
-    public long getNetworkProfileId() {
-        return networkProfileId;
+    public long getNetworkConfigurationId() {
+        return networkConfigurationId;
     }
     
     @Override

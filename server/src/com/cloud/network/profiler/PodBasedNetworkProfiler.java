@@ -31,7 +31,7 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
 
-@Local(value=NetworkProfiler.class)
+@Local(value={NetworkProfiler.class, NetworkConcierge.class})
 public class PodBasedNetworkProfiler extends AdapterBase implements NetworkProfiler, NetworkConcierge {
     private static final Logger s_logger = Logger.getLogger(PodBasedNetworkProfiler.class);
     @Inject DataCenterDao _dcDao;

@@ -2413,6 +2413,8 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
+        int deviceId = 0;
+        
         for (Pair<NetworkConfigurationVO, NicProfile> network : networks) {
             for (NetworkConcierge concierge : _networkConcierges) {
                 NicProfile profile = concierge.allocate(vm, network.first(), network.second());
@@ -2420,7 +2422,8 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                     continue;
                 }
                 NicVO vo = new NicVO(concierge.getUniqueName(), vm.getId(), network.first().getId());
-                
+                vo.setDeviceId(deviceId++);
+                vo.setMode(network.first().getMode());
                 if (profile.getIp4Address() != null) {
                     vo.setIp4Address(profile.getIp4Address());
                     vo.setState(NicVO.State.Reserved);

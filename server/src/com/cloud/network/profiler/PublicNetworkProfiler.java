@@ -26,7 +26,7 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
 
-@Local(value=NetworkProfiler.class)
+@Local(value={NetworkProfiler.class, NetworkConcierge.class})
 public class PublicNetworkProfiler extends AdapterBase implements NetworkProfiler, NetworkConcierge {
 
     @Override

@@ -45,7 +45,6 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume.VolumeType;
-import com.cloud.storage.VolumeVO;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
@@ -86,18 +85,30 @@ public class MauriceMoss implements VmManager {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Allocating entries for VM: " + vm);
         }
-        VirtualMachineProfile vmProfile = new VirtualMachineProfile(vm, serviceOffering);
+        VMInstanceVO instance = _vmDao.findById(vm.getId());
+        VirtualMachineProfile vmProfile = new VirtualMachineProfile(instance, serviceOffering);
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        List<NicProfile> nics = _networkMgr.allocate(vm, networks);
+        instance.setDataCenterId(plan.getDataCenterId());
+        _vmDao.update(instance.getId(), instance);
+        List<NicProfile> nics = _networkMgr.allocate(instance, networks);
         vmProfile.setNics(nics);
 
-        List<DiskProfile> disks = new ArrayList<DiskProfile>(dataDiskOfferings.size() + 1);
-        VolumeVO volume = _storageMgr.allocate(VolumeType.ROOT, rootDiskOffering.first(), "ROOT-" + vm.getId(), rootDiskOffering.second(), template.getFormat() != ImageFormat.ISO ? template : null, vm, owner);
-        for (Pair<DiskOfferingVO, Long> offering : dataDiskOfferings) {
-            volume = _storageMgr.allocate(VolumeType.DATADISK, offering.first(), "DATA-" + vm.getId(), offering.second(), null, vm, owner);
+        if (dataDiskOfferings == null) {
+            dataDiskOfferings = new ArrayList<Pair<DiskOfferingVO, Long>>(0);
         }
+        
+        List<DiskProfile> disks = new ArrayList<DiskProfile>(dataDiskOfferings.size() + 1);
+        if (template.getFormat() == ImageFormat.ISO) {
+            disks.add(_storageMgr.allocateRawVolume(VolumeType.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), rootDiskOffering.second(), instance, owner));
+        } else {
+            disks.add(_storageMgr.allocateTemplatedVolume(VolumeType.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), template, instance, owner));
+        }
+        for (Pair<DiskOfferingVO, Long> offering : dataDiskOfferings) {
+            disks.add(_storageMgr.allocateRawVolume(VolumeType.DATADISK, "DATA-" + vm.getId(), offering.first(), offering.second(), instance, owner));
+        }
+        vmProfile.setDisks(disks);
         
         txn.commit();
         if (s_logger.isDebugEnabled()) {
@@ -118,7 +129,7 @@ public class MauriceMoss implements VmManager {
         
         return vmProfile;
     }
-
+    
     @Override
     public <T extends VMInstanceVO> VirtualMachineProfile allocate(T vm,
             VMTemplateVO template,

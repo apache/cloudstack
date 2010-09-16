@@ -33,7 +33,7 @@ public interface Nic extends Resource {
     /**
      * @return network profile id that this 
      */
-    long getNetworkProfileId();
+    long getNetworkConfigurationId();
     
     /**
      * @return the vm instance id that this nic belongs to.

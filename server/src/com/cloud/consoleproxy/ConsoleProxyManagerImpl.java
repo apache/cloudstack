@@ -1009,7 +1009,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         }
     }
 
-    @DB
     protected Map<String, Object> createProxyInstance2(long dataCenterId) {
 
         long id = _consoleProxyDao.getNextInSequence(Long.class, "id");
