@@ -4502,22 +4502,6 @@ public class ManagementServerImpl implements ManagementServer {
             NetworkRuleConfigVO netRule = new NetworkRuleConfigVO(securityGroupId, port, privatePort, protocol);
             netRule.setCreateStatus(AsyncInstanceCreateStatus.Creating);
             rule = _networkRuleConfigDao.persist(netRule);
-
-            /* FIXME:  async job needs to be hooked up...
-            // check if we are within context of async-execution
-            AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-            if (asyncExecutor != null) {
-                AsyncJobVO job = asyncExecutor.getJob();
-
-                if (s_logger.isInfoEnabled())
-                    s_logger.info("Created a new port forwarding service rule instance " + rule.getId() + ", update async job-" + job.getId() + " progress status");
-
-                _asyncMgr.updateAsyncJobAttachment(job.getId(), "network_rule_config", rule.getId());
-                _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, rule.getId());
-            }
-            */
-
-//            rule = createNetworkRuleConfig(userId, securityGroupId, port, privatePort, protocol);
         } catch (Exception e) {
             if (e instanceof NetworkRuleConflictException) {
                 throw (NetworkRuleConflictException) e;
