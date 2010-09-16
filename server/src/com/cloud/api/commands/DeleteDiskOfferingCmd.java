@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.offering.DiskOffering;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
@@ -63,6 +64,11 @@ public class DeleteDiskOfferingCmd extends BaseCmd {
         	throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a disk offering with id " + id);
         }
 
+        if(disk.getName().equals("Private") && disk.getDisplayText().equals("Private Disk")){
+        	//block deletion of these disks
+        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR,"Cannot delete this diskoffering as it is private");
+        }
+        
         boolean result = getManagementServer().deleteDiskOffering(userId, id);
 
         List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
