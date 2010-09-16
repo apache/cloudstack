@@ -35,7 +35,7 @@
                     </ul>
                 </div>
             </div>
-            <div class="grid_editbox">
+            <div class="grid_editbox" id="edit_button">
             </div>
             <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
                 display: none;">
@@ -79,6 +79,8 @@
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="name">
                     </div>
+                    <input class="text" id="name_edit" style="width: 200px; display: none;" type="text" />
+                    <div id="name_edit_errormsg" style="display:none"></div>
                 </div>
             </div>
             <div class="grid_rows odd">
@@ -89,6 +91,8 @@
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="displaytext">
                     </div>
+                    <input class="text" id="displaytext_edit" style="width: 200px; display: none;" type="text" />
+                    <div id="displaytext_edit_errormsg" style="display:none"></div>
                 </div>
             </div>
             <div class="grid_rows odd">
@@ -140,8 +144,12 @@
                     <div class="row_celltitles" id="size">
                     </div>
                 </div>
-            </div>
-        </div>
+            </div> 
+        </div>        
+        <div class="grid_botactionpanel">
+        	<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
+            <div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
+        </div>  
     </div>
 </div>
 <!-- ISO detail panel (end) -->
