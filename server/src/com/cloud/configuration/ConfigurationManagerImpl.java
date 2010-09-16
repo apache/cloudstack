@@ -934,10 +934,17 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     		if (!(accountId == null && podId == null) && false) {
     			throw new InvalidParameterValueException("VLANs for the virtual network must be zone-wide.");
     		}
-    	} else if (vlanType.equals(VlanType.DirectAttached)) {
-    		if (!((accountId != null && podId == null) || (accountId == null && podId != null))) {
-    			throw new InvalidParameterValueException("Direct Attached VLANs must either be pod-wide, or for one account.");
-    		}
+    	} 
+    	else if (vlanType.equals(VlanType.DirectAttached)) 
+    	{
+//    		if (!((accountId != null && podId == null) || (accountId == null && podId != null))) {
+//    			throw new InvalidParameterValueException("Direct Attached VLANs must either be pod-wide, or for one account.");
+//    		}
+    		
+    		if (accountId!=null && podId!=null) 
+			{
+				throw new InvalidParameterValueException("Direct Attached VLANs must either be pod-wide,for one account or zone wide");
+			}
     		
     		if (accountId != null) {
     			// VLANs for an account must be tagged
