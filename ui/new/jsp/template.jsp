@@ -237,8 +237,8 @@
 <!--  Copy Template Dialog (end) -->
 
 <!-- Create VM from template (begin) -->
-<div id="dialog_create_vm_from_template" title="Create VM" style="display:none">
-	<p>Create VM from <b id="template">xxx</b></p>
+<div id="dialog_create_vm_from_template" title="Create VM from template" style="display:none">
+	<p>Create VM from template <b id="p_name">xxx</b></p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form5">
 			<ol>			   

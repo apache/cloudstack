@@ -413,7 +413,7 @@ function doCreateVMFromTemplate($actionLink, listAPIMap, $detailsTab) {
 	var zoneId = jsonObj.zoneid;		
 					
 	var createVmDialog = $("#dialog_create_vm_from_template");				
-	createVmDialog.find("#template").text(name);
+	createVmDialog.find("#p_name").text(name);
 		
 	createVmDialog
 	.dialog('option', 'buttons', {			    
