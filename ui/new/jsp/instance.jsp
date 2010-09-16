@@ -75,12 +75,10 @@
         <div class="grid_rows odd">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
-                    <%=t.t("HA")%>:</div>
+                    <%=t.t("HA.Enabled")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="ha">
-                    <div id="icon">
-                    </div>
+                <div class="row_celltitles" id="haenable">                   
                 </div>
             </div>
         </div>
@@ -127,12 +125,10 @@
         <div class="grid_rows odd">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
-                    <%=t.t("ISO")%>:</div>
+                    <%=t.t("ISO.attached")%>:</div>
             </div>
             <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="iso">
-                    <div id="icon">
-                    </div>
+                <div class="row_celltitles" id="iso">                    
                 </div>
             </div>
         </div>

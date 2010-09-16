@@ -107,9 +107,7 @@
                         <%=t.t("Bootable")%>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="bootable">
-                        <div id="icon">
-                        </div>
+                    <div class="row_celltitles" id="bootable">                      
                     </div>
                 </div>
             </div>

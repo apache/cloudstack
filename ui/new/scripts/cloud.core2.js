@@ -513,12 +513,12 @@ function todb(val) {
 var midmenuItemCount = 20;
 
 function setBooleanField(value, $field) {
-    if(value == "true")
-        $field.find("#icon").removeClass("cross_icon").addClass("tick_icon").show();
-    else if(value == "false")
-        $field.find("#icon").removeClass("tick_icon").addClass("cross_icon").show();	
+    if(value == "true" || value == true)
+        $field.text("Yes").show();
+    else if(value == "false" || value == false)
+        $field.text("No").show();	
     else
-        $field.find("#icon").hide();
+        $field.hide();
 }
  
 function clearLeftMenu() {
