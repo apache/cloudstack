@@ -531,7 +531,7 @@ function clearLeftMenu() {
     }	
 } 
   
-function clearMidMenu() {
+function clearMiddleMenu() {
     $("#midmenu_container").empty();
     $("#midmenu_action_link").hide();
     $("#midmenu_add_link").hide();        
@@ -544,7 +544,15 @@ function clearRightPanel() {
 var selected_leftmenu_id = null; 
 var selected_midmenu_id = null;
  
-    
+function hideMiddleMenu() {
+    $("#middle_menu, #search_panel").hide();
+    $("#right_panel").removeClass("main_contentarea").addClass("main_contentarea_dashboard");
+}
+
+function showMiddleMenu() {
+    $("#middle_menu, #search_panel").show();
+    $("#right_panel").removeClass("main_contentarea_dashboard").addClass("main_contentarea");
+}    
 
 
 
