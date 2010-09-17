@@ -4,6 +4,65 @@ var g_zoneNames = [];
 function afterLoadIsoJSP() {
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     
+    //add button ***
+    $("#midmenu_add_link").show(); 
+    
+    $("#midmenu_add_link").bind("click", function(event) {     
+        $("#dialog_add_iso")
+	    .dialog('option', 'buttons', { 				
+		    "Create": function() { 	
+		        var thisDialog = $(this);
+    			thisDialog.dialog("close");					
+    				
+			    // validate values
+			    var isValid = true;					
+			    isValid &= validateString("Name", thisDialog.find("#add_iso_name"), thisDialog.find("#add_iso_name_errormsg"));
+			    isValid &= validateString("Display Text", thisDialog.find("#add_iso_display_text"), thisDialog.find("#add_iso_display_text_errormsg"));
+			    isValid &= validateString("URL", thisDialog.find("#add_iso_url"), thisDialog.find("#add_iso_url_errormsg"));			
+			    if (!isValid) 
+			        return;		
+			    
+			    var name = trim(thisDialog.find("#add_iso_name").val());
+			    var desc = trim(thisDialog.find("#add_iso_display_text").val());
+			    var url = trim(thisDialog.find("#add_iso_url").val());						
+			    var zoneId = thisDialog.find("#add_iso_zone").val();	
+			    //var isPublic = thisDialog.find("#add_iso_public").val();
+			    var isPublic = "false"; //default to private for now
+			    var osType = thisDialog.find("#add_iso_os_type").val();
+			    var bootable = thisDialog.find("#add_iso_bootable").val();			
+    		    				    
+		        var $midmenuItem1 = beforeAddingMidMenuItem() ;				    
+    		    				
+			    $.ajax({
+			        data: createURL("command=registerIso&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&url="+encodeURIComponent(url)+"&zoneId="+zoneId+"&isPublic="+isPublic+"&osTypeId="+osType+"&bootable="+bootable+"&response=json"),
+				    dataType: "json",
+				    success: function(json) {					
+				        var result = json.registerisoresponse;
+				        isoToMidmenu(result.iso[0], $midmenuItem1);
+						bindClickToMidMenu($midmenuItem1, isoToRigntPanel);  
+						
+                        /*
+                        if(result.iso.length > 1) {                               
+                            for(var i=1; i<result.iso.length; i++) {         
+                                var template2 = $("#vm_iso_template").clone(true);                                                               
+                                isoJSONToTemplate(result.iso[i], template2);	
+                                submenuContent.find("#grid_content").prepend(template2.fadeIn("slow"));	 
+                                changeGridRowsTotal(submenuContent.find("#grid_rows_total"), 1); 	 
+                            }                                    
+                        }      
+                        */
+                        
+                        afterAddingMidMenuItem($midmenuItem1, true);							
+				    }				
+			    });
+		    },
+		    "Cancel": function() { 
+			    $(this).dialog("close"); 
+		    } 
+	    }).dialog("open");
+        return false;
+    });
+    
     //edit button ***
     var $readonlyFields  = $detailsTab.find("#name, #displaytext");
     var $editFields = $detailsTab.find("#name_edit, #displaytext_edit"); 
@@ -28,16 +87,36 @@ function afterLoadIsoJSP() {
     });
     
     //populate dropdown ***
+    var addIsoZoneField = $("#dialog_add_iso #add_iso_zone");    	
+	if (isAdmin())  
+		addIsoZoneField.append("<option value='-1'>All Zones</option>"); 	
+    $.ajax({
+        data: createURL("command=listZones&available=true"+maxPageSize),
+	    dataType: "json",
+	    success: function(json) {		        
+		    var zones = json.listzonesresponse.zone;	 			     			    	
+		    if (zones != null && zones.length > 0) {
+		        for (var i = 0; i < zones.length; i++) {
+			        addIsoZoneField.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 			        
+			        g_zoneIds.push(zones[i].id);
+			        g_zoneNames.push(zones[i].name);			       
+		        }
+		    }				    			
+	    }
+	});	
+    
     $.ajax({
 	    data: createURL("command=listOsTypes&response=json"+maxPageSize),
 		dataType: "json",
 		success: function(json) {
 			types = json.listostypesresponse.ostype;
 			if (types != null && types.length > 0) {
-				var osTypeDropdown = $detailsTab.find("#ostypename_edit").empty();
+				var osTypeDropDownAdd = $("#dialog_add_iso #add_iso_os_type").empty();
+				var osTypeDropdownEdit = $detailsTab.find("#ostypename_edit").empty();
 				for (var i = 0; i < types.length; i++) {
 					var html = "<option value='" + types[i].id + "'>" + types[i].description + "</option>";
-					osTypeDropdown.append(html);					
+					osTypeDropDownAdd.append(html);			
+					osTypeDropdownEdit.append(html);					
 				}
 			}	
 		}
@@ -76,36 +155,19 @@ function afterLoadIsoJSP() {
 		autoOpen: false,
 		modal: true,
 		zIndex: 2000
-	}));
-	
+	}));	
 	activateDialog($("#dialog_create_vm_from_iso").dialog({ 
 		width:300,
 		autoOpen: false,
 		modal: true,
 		zIndex: 2000
+	}));	
+	activateDialog($("#dialog_add_iso").dialog({ 
+		width:450,
+		autoOpen: false,
+		modal: true,
+		zIndex: 2000
 	}));
-    
-    //populate zone dropdown excluding source zone ***				
-	var addTemplateZoneField = $("#dialog_add_template #add_template_zone");
-    
-	// Add default zone
-	if (isAdmin()) {
-		addTemplateZoneField.append("<option value='-1'>All Zones</option>"); 		
-	}
-    $.ajax({
-        data: createURL("command=listZones&available=true"+maxPageSize),
-	    dataType: "json",
-	    success: function(json) {		        
-		    var zones = json.listzonesresponse.zone;	 			     			    	
-		    if (zones != null && zones.length > 0) {
-		        for (var i = 0; i < zones.length; i++) {
-			        addTemplateZoneField.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 			        
-			        g_zoneIds.push(zones[i].id);
-			        g_zoneNames.push(zones[i].name);			       
-		        }
-		    }				    			
-	    }
-	});			
 }
 
 function isoToMidmenu(jsonObj, $midmenuItem1) {    
