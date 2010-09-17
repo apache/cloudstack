@@ -13,6 +13,7 @@ import com.cloud.serializer.SerializerHelper;
 public abstract class BaseAsyncCmd extends BaseCmd {
     private AsyncJobManager _asyncJobMgr = null;
     private AsyncJobVO _job = null;
+    private Long startEventId;
 
     public String getResponse(long jobId) {
         return SerializerHelper.toSerializedString(Long.valueOf(jobId));
@@ -28,5 +29,13 @@ public abstract class BaseAsyncCmd extends BaseCmd {
 
     public void setJob(AsyncJobVO job) {
         _job = job;
+    }
+
+    public Long getStartEventId() {
+        return startEventId;
+    }
+
+    public void setStartEventId(Long startEventId) {
+        this.startEventId = startEventId;
     }
 }

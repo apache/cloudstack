@@ -1673,11 +1673,12 @@ public class StorageManagerImpl implements StorageManager {
 
     @Override @DB
     public VolumeVO createVolume(CreateVolumeCmd cmd) {
-        VolumeVO createdVolume = _volsDao.findById(cmd.getId());
+        VolumeVO volume = _volsDao.findById(cmd.getId());
+        VolumeVO createdVolume = null;
         Long userId = UserContext.current().getUserId();
 
         if (cmd.getSnapshotId() != null) {
-            return createVolumeFromSnapshot(createdVolume, cmd.getSnapshotId());
+            return createVolumeFromSnapshot(volume, cmd.getSnapshotId());
         } else {
             DataCenterVO dc = _dcDao.findById(cmd.getZoneId());
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(cmd.getDiskOfferingId());
@@ -1688,8 +1689,8 @@ public class StorageManagerImpl implements StorageManager {
                 Set<Long> podsToAvoid = new HashSet<Long>();
                 Pair<HostPodVO, Long> pod = null;
         
-                while ((pod = _agentMgr.findPod(null, null, dc, createdVolume.getAccountId(), podsToAvoid)) != null) {
-                    if ((createdVolume = createVolume(createdVolume, null, null, dc, pod.first(), null, null, diskOffering, poolsToAvoid, size)) != null) {
+                while ((pod = _agentMgr.findPod(null, null, dc, volume.getAccountId(), podsToAvoid)) != null) {
+                    if ((createdVolume = createVolume(volume, null, null, dc, pod.first(), null, null, diskOffering, poolsToAvoid, size)) != null) {
                         break;
                     } else {
                         podsToAvoid.add(pod.first().getId());
@@ -1698,10 +1699,10 @@ public class StorageManagerImpl implements StorageManager {
 
                 // Create an event
                 EventVO event = new EventVO();
-                event.setAccountId(createdVolume.getAccountId());
+                event.setAccountId(volume.getAccountId());
                 event.setUserId(userId);
                 event.setType(EventTypes.EVENT_VOLUME_CREATE);
-                event.setStartId(startEventId); // FIX other event stuff as well for createVolume
+                event.setStartId(cmd.getStartEventId());
         
                 Transaction txn = Transaction.currentTxn();
 
@@ -1718,17 +1719,18 @@ public class StorageManagerImpl implements StorageManager {
                     event.setLevel(EventVO.LEVEL_INFO);
                     event.setDescription("Created volume: " + createdVolume.getName() + " with size: " + sizeMB + " MB in pool: " + pool.getName());
                     event.setParameters(eventParams);
+                    event.setState(EventState.Completed);
                     _eventDao.persist(event);
                 } else {
-                    // Mark the existing volume record as corrupted
-                    createdVolume.setStatus(AsyncInstanceCreateStatus.Corrupted);
-                    createdVolume.setDestroyed(true);
-                    _volsDao.update(createdVolume.getId(), createdVolume);
+                    event.setDescription("Unable to create a volume for " + volume);
+                    event.setLevel(EventVO.LEVEL_ERROR);
+                    event.setState(EventState.Completed);
+                    _eventDao.persist(event);
                 }            
 
                 txn.commit();
             } catch (Exception e) {
-                s_logger.error("Unhandled exception while creating volume " + createdVolume.getName(), e);
+                s_logger.error("Unhandled exception while creating volume " + volume.getName(), e);
             }
         }
 
