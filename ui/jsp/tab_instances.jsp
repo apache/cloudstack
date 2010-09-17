@@ -629,7 +629,7 @@ long milliseconds = new Date().getTime();
                     <h2>
                         <strong>Step 2:</strong> Select a Service</h2>
                     <p>
-                        Please select the CPU, Memory, and Storage requirements you need for your new Virtual
+                        Please select the CPU and Memory requirements you need for your new Virtual
                         Instance.</p>
                 </div>
                 <div class="rev_wizmid_contentbox">
