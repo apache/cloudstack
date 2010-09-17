@@ -26,7 +26,7 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachine;
 
 @Local(value={NetworkGuru.class, NetworkConcierge.class})
-public class PublicNetworkProfiler extends AdapterBase implements NetworkGuru, NetworkConcierge {
+public class PublicNetworkGuru extends AdapterBase implements NetworkGuru, NetworkConcierge {
     @Inject DataCenterDao _dcDao;
 
     @Override
@@ -38,7 +38,7 @@ public class PublicNetworkProfiler extends AdapterBase implements NetworkGuru, N
         return new NetworkConfigurationVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.Vlan, offering.getId(), plan.getDataCenterId());
     }
     
-    protected PublicNetworkProfiler() {
+    protected PublicNetworkGuru() {
         super();
     }
 
