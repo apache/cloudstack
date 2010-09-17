@@ -130,11 +130,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 			}
 			
 			boolean externalIpAlloator = Boolean.parseBoolean(_configDao.getValue("direct.attach.network.externalIpAllocator.enabled"));
-			String hyperVisor = _configDao.getValue("hypervisor.type");
-			if (hyperVisor.equalsIgnoreCase("KVM") && !externalIpAlloator) {
-				/*For KVM, it's enabled by default*/
-				_configDao.update("direct.attach.network.externalIpAllocator.enabled", "true");
-			}
+			_configDao.update("direct.attach.network.externalIpAllocator.enabled", "true");
+
 			
 			// Save Direct Networking service offerings
 			_configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Direct Networking", 1, 512, 500, "Small Instance, Direct Networking, $0.05 per hour", false, false, false, null);			
