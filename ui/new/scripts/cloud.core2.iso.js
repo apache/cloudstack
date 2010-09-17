@@ -33,27 +33,24 @@ function afterLoadIsoJSP() {
 			    var bootable = thisDialog.find("#add_iso_bootable").val();			
     		    				    
 		        var $midmenuItem1 = beforeAddingMidMenuItem() ;				    
-    		    				
+    		       		    				
 			    $.ajax({
 			        data: createURL("command=registerIso&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&url="+encodeURIComponent(url)+"&zoneId="+zoneId+"&isPublic="+isPublic+"&osTypeId="+osType+"&bootable="+bootable+"&response=json"),
 				    dataType: "json",
 				    success: function(json) {					
-				        var items = json.registerisoresponse.iso;
+				        var items = json.registerisoresponse.iso;				       
 				        isoToMidmenu(items[0], $midmenuItem1);
-						bindClickToMidMenu($midmenuItem1, isoToRigntPanel);  
-						
-                        /*
+						bindClickToMidMenu($midmenuItem1, isoToRigntPanel, isoGetMidmenuId);  
+						afterAddingMidMenuItem($midmenuItem1, true);
+						                        
                         if(items.length > 1) {                               
-                            for(var i=1; i<items.length; i++) {         
-                                var template2 = $("#vm_iso_template").clone(true);                                                               
-                                isoJSONToTemplate(items[i], template2);	
-                                submenuContent.find("#grid_content").prepend(template2.fadeIn("slow"));	 
-                                changeGridRowsTotal(submenuContent.find("#grid_rows_total"), 1); 	 
+                            for(var i=1; i<items.length; i++) {   
+                                var $midmenuItem2 = $("#midmenu_item").clone();
+                                isoToMidmenu(items[i], $midmenuItem2);
+                                bindClickToMidMenu($midmenuItem2, isoToRigntPanel, isoGetMidmenuId); 
+                                $("#midmenu_container").append($midmenuItem2.show());
                             }                                    
-                        }      
-                        */
-                        
-                        afterAddingMidMenuItem($midmenuItem1, true);							
+                        }  						
 				    }, 
 					error: function(XMLHttpResponse) {					    
 					    handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);					  
@@ -174,8 +171,13 @@ function afterLoadIsoJSP() {
 	}));
 }
 
+function isoGetMidmenuId(jsonObj) {
+    return "midmenuItem_" + jsonObj.id + "_" + fromdb(jsonObj.zonename).replace(/\s/g, ""); //remove all spaces in zonename
+}
+
 function isoToMidmenu(jsonObj, $midmenuItem1) {    
-    $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));  
+    var id = isoGetMidmenuId(jsonObj);
+    $midmenuItem1.attr("id", id);   
     $midmenuItem1.data("jsonObj", jsonObj); 
         
     var $iconContainer = $midmenuItem1.find("#icon_container").show();
@@ -276,7 +278,7 @@ var isoActionMap = {
         asyncJobResponse: "deleteisosresponse",
         inProcessText: "Deleting ISO....",
         afterActionSeccessFn: function(jsonObj) {          
-            var $midmenuItem1 = $("#midmenuItem_"+jsonObj.id);
+            var $midmenuItem1 = $("#"+isoGetMidmenuId(jsonObj)); 
             $midmenuItem1.remove();
             clearRightPanel();
             isoClearRightPanel();

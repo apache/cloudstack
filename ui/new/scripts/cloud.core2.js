@@ -582,13 +582,16 @@ function afterAddingMidMenuItem($midmenuItem1, isSuccessful, extraMessage) {
 	}
 }
 
-function bindClickToMidMenu($midmenuItem1, toRightPanel) {
+function bindClickToMidMenu($midmenuItem1, toRightPanel, getMidmenuId) {
     $midmenuItem1.bind("click", function(event){  
         var thisMidmenuItem = $(this);
-        
+
         if(selected_midmenu_id != null && selected_midmenu_id.length > 0)
             $("#"+selected_midmenu_id).find("#content").removeClass("selected");
-        selected_midmenu_id = ("midmenuItem_"+thisMidmenuItem.data("jsonObj").id);
+        if(getMidmenuId == null)
+            selected_midmenu_id = "midmenuItem_"+thisMidmenuItem.data("jsonObj").id;
+        else
+            selected_midmenu_id = getMidmenuId(thisMidmenuItem.data("jsonObj"));
     
         thisMidmenuItem.find("#content").addClass("selected");                                               
         clearRightPanel();        
