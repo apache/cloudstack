@@ -64,14 +64,14 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     	SearchCriteria<VlanVO> sc = ZoneVlanIdSearch.create();
     	sc.setParameters("zoneId", zoneId);
     	sc.setParameters("vlanId", vlanId);
-        return findOneActiveBy(sc);
+        return findOneBy(sc);
     }
     
     @Override
     public List<VlanVO> findByZone(long zoneId) {
     	SearchCriteria<VlanVO> sc = ZoneSearch.create();
     	sc.setParameters("zoneId", zoneId);
-    	return listBy(sc);
+    	return listIncludingRemovedBy(sc);
     }
 	
     public VlanDaoImpl() {
@@ -105,7 +105,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
 		SearchCriteria<VlanVO> sc = ZoneTypeSearch.create();
     	sc.setParameters("zoneId", zoneId);
     	sc.setParameters("vlanType", vlanType);
-        return listBy(sc);
+        return listIncludingRemovedBy(sc);
 	}
 
 	@Override
@@ -248,7 +248,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     	sc.setParameters("zoneId", zoneId);
     	sc.setParameters("vlanType", VlanType.DirectAttached);
     	
-        return listBy(sc).size() > 0;
+        return listIncludingRemovedBy(sc).size() > 0;
 	}
 
 
@@ -260,7 +260,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     	sc.setParameters("vlanType", VlanType.DirectAttached);
     	sc.setJoinParameters("vlan", "podId", podId);
     	
-    	VlanVO vlan = findOneBy(sc);
+    	VlanVO vlan = findOneIncludingRemovedBy(sc);
     	if (vlan == null) {
     		return null;
     	}

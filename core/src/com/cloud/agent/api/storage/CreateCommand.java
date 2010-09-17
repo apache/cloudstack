@@ -21,13 +21,13 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.StoragePoolTO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.vm.DiskCharacteristics;
+import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 
 public class CreateCommand extends Command {
     private long volId;
     private StoragePoolTO pool;
-    private DiskCharacteristics diskCharacteristics;
+    private DiskProfile diskCharacteristics;
     private String templateUrl;
     private long size;
     private String instanceName;
@@ -45,7 +45,7 @@ public class CreateCommand extends Command {
      * @param templateUrl
      * @param pool
      */
-    public CreateCommand(VolumeVO vol, VMInstanceVO vm, DiskCharacteristics diskCharacteristics, String templateUrl, StoragePoolVO pool) {
+    public CreateCommand(VolumeVO vol, VMInstanceVO vm, DiskProfile diskCharacteristics, String templateUrl, StoragePoolVO pool) {
         this(vol, vm, diskCharacteristics, pool, 0);
         this.templateUrl = templateUrl;
     }
@@ -58,7 +58,7 @@ public class CreateCommand extends Command {
      * @param diskCharacteristics
      * @param pool
      */
-    public CreateCommand(VolumeVO vol, VMInstanceVO vm, DiskCharacteristics diskCharacteristics, StoragePoolVO pool, long size) {
+    public CreateCommand(VolumeVO vol, VMInstanceVO vm, DiskProfile diskCharacteristics, StoragePoolVO pool, long size) {
         this.volId = vol.getId();
         this.diskCharacteristics = diskCharacteristics;        
         this.pool = new StoragePoolTO(pool);
@@ -80,7 +80,7 @@ public class CreateCommand extends Command {
         return pool;
     }
     
-    public DiskCharacteristics getDiskCharacteristics() {
+    public DiskProfile getDiskCharacteristics() {
         return diskCharacteristics;
     }
     

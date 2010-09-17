@@ -42,6 +42,8 @@ public interface Volume extends PartOf, OwnedBy, BasedOn {
 	enum SourceType {
 		Snapshot,DiskOffering,Template,Blank
 	}
+	
+	long getId();
 	/**
      * @return the volume name
      */

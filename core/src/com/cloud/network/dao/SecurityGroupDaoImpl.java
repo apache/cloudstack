@@ -49,7 +49,7 @@ public class SecurityGroupDaoImpl extends GenericDaoBase<SecurityGroupVO, Long> 
     public List<SecurityGroupVO> listByAccountId(long accountId) {
         SearchCriteria<SecurityGroupVO> sc = AccountIdSearch.create();
         sc.setParameters("accountId", accountId);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
@@ -63,7 +63,7 @@ public class SecurityGroupDaoImpl extends GenericDaoBase<SecurityGroupVO, Long> 
             sc.addAnd("accountId", SearchCriteria.Op.NULL);
         }
 
-        List<SecurityGroupVO> securityGroups = listActiveBy(sc);
+        List<SecurityGroupVO> securityGroups = listBy(sc);
         return ((securityGroups != null) && !securityGroups.isEmpty());
     }
 
@@ -74,7 +74,7 @@ public class SecurityGroupDaoImpl extends GenericDaoBase<SecurityGroupVO, Long> 
             if (accountId != null) {
                 SearchCriteria<SecurityGroupVO> sc = createSearchCriteria();
                 sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-                List<SecurityGroupVO> accountGroups = listActiveBy(sc);
+                List<SecurityGroupVO> accountGroups = listBy(sc);
                 availableGroups.addAll(accountGroups);
             } else if (domainId != null) {
                 while (domainId != null) {
@@ -83,7 +83,7 @@ public class SecurityGroupDaoImpl extends GenericDaoBase<SecurityGroupVO, Long> 
                     if (accountId != null) {
                         sc.addAnd("accountId", SearchCriteria.Op.NEQ, accountId); // we added the account specific ones above
                     }
-                    List<SecurityGroupVO> domainGroups = listActiveBy(sc);
+                    List<SecurityGroupVO> domainGroups = listBy(sc);
                     availableGroups.addAll(domainGroups);
 
                     // get the parent domain, repeat the loop

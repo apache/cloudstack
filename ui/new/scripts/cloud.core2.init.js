@@ -24,13 +24,30 @@ $(document).ready(function() {
             selected_leftmenu_id = leftmenuId;
             $(this).addClass("selected");
             
-            $("#midmenu_container").selectable("destroy" ); //midmenu doesn't need multiple selection
+            showMiddleMenu();
+            $("#midmenu_container").selectable("destroy" ); //Most pages don't need multiple selection in middle menu.
             
             clearLeftMenu();
-            clearMidMenu();
+            clearMiddleMenu();
             
-            $("#right_panel").load(rightPanelJSP, function(){   
-                afterLoadRightPanelJSP();                
+            $("#right_panel").load(rightPanelJSP, function(){                   
+                $("#right_panel_content #tab_content_details #action_message_box #close_button").bind("click", function(event){    
+                    $(this).parent().hide();
+                    return false;
+                });  
+                                     
+                var $actionLink = $("#right_panel_content #tab_content_details #action_link");
+	            $actionLink.bind("mouseover", function(event) {	    
+                    $(this).find("#action_menu").show();    
+                    return false;
+                });
+                $actionLink.bind("mouseout", function(event) {       
+                    $(this).find("#action_menu").hide();    
+                    return false;
+                });	   
+                              
+                afterLoadRightPanelJSP();    
+                            
                 $.ajax({
 	                cache: false,
 	                data: createURL("command="+commandString+"&pagesize="+midmenuItemCount),
@@ -42,19 +59,8 @@ $(document).ready(function() {
 	                        for(var i=0; i<items.length;i++) { 
                                 var $midmenuItem1 = $midmenuItem.clone();  
                                 $midmenuItem1.data("toRightPanelFn", toRightPanel);                             
-                                toMidmenu(items[i], $midmenuItem1);                                  
-                                $midmenuItem1.bind("click", function(event){  
-                                    var thisMidmenuItem = $(this);
-                                    
-                                    if(selected_midmenu_id != null && selected_midmenu_id.length > 0)
-                                        $("#"+selected_midmenu_id).find("#content").removeClass("selected");
-                                    selected_midmenu_id = ("midmenuItem_"+thisMidmenuItem.data("jsonObj").id);
-                                
-                                    thisMidmenuItem.find("#content").addClass("selected");                                               
-                                    clearRightPanel();        
-                                    toRightPanel(thisMidmenuItem);	  
-                                    return false;
-                                });                                                              
+                                toMidmenu(items[i], $midmenuItem1);    
+                                bindClickToMidMenu($midmenuItem1, toRightPanel);             
                                 $("#midmenu_container").append($midmenuItem1.show());                            
                             }  
                         }  
@@ -81,13 +87,18 @@ $(document).ready(function() {
     listMidMenuItems("leftmenu_submenu_community_iso", "listIsos&isofilter=community", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRigntPanel);
         
     $("#leftmenu_instance_group_header").bind("click", function(event) {  
-        clearMidMenu(); 
+        showMiddleMenu();
+        clearMiddleMenu(); 
         var $arrowIcon = $(this).find("#arrow_icon");        
         clickInstanceGroupHeader($arrowIcon);
         return false;
     });
     
-   
+    $("#leftmenu_dashboard").bind("click", function(event) {      
+        hideMiddleMenu();
+        $("#right_panel").load("jsp/dashboard.jsp", function(){});
+        return false;
+    });
     
     
     

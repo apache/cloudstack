@@ -27,14 +27,18 @@ import com.cloud.network.Network.TrafficType;
 import com.cloud.network.NetworkAccountDaoImpl;
 import com.cloud.network.NetworkAccountVO;
 import com.cloud.network.NetworkConfigurationVO;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 
-@Local(value=NetworkConfigurationDao.class)
+@Local(value=NetworkConfigurationDao.class) @DB(txn=false)
 public class NetworkConfigurationDaoImpl extends GenericDaoBase<NetworkConfigurationVO, Long> implements NetworkConfigurationDao {
     final SearchBuilder<NetworkConfigurationVO> ProfileSearch;
     final SearchBuilder<NetworkConfigurationVO> AccountSearch;
+    final SearchBuilder<NetworkConfigurationVO> OfferingSearch;
+    
     NetworkAccountDaoImpl _accountsDao = new NetworkAccountDaoImpl();
     
     protected NetworkConfigurationDaoImpl() {
@@ -44,29 +48,31 @@ public class NetworkConfigurationDaoImpl extends GenericDaoBase<NetworkConfigura
         ProfileSearch.and("trafficType", ProfileSearch.entity().getTrafficType(), SearchCriteria.Op.EQ);
         ProfileSearch.and("cidr", ProfileSearch.entity().getCidr(), SearchCriteria.Op.EQ);
         ProfileSearch.and("broadcastType", ProfileSearch.entity().getBroadcastDomainType(), SearchCriteria.Op.EQ);
-        SearchBuilder<NetworkAccountVO> join = _accountsDao.createSearchBuilder();
-        join.and("account", join.entity().getAccountId(), SearchCriteria.Op.EQ);
-        ProfileSearch.join("accounts", join, ProfileSearch.entity().getId(), join.entity().getNetworkConfigurationId());
+        ProfileSearch.and("offering", ProfileSearch.entity().getNetworkOfferingId(), SearchCriteria.Op.EQ);
+        ProfileSearch.and("datacenter", ProfileSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         ProfileSearch.done();
         
         AccountSearch = createSearchBuilder();
         AccountSearch.and("offering", AccountSearch.entity().getNetworkOfferingId(), SearchCriteria.Op.EQ);
-        join = _accountsDao.createSearchBuilder();
+        SearchBuilder<NetworkAccountVO> join = _accountsDao.createSearchBuilder();
         join.and("account", join.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountSearch.join("accounts", join, AccountSearch.entity().getId(), join.entity().getNetworkConfigurationId());
+        AccountSearch.and("datacenter", AccountSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         AccountSearch.done();
-        
-        
+    
+        OfferingSearch = createSearchBuilder();
+        OfferingSearch.and("offering", OfferingSearch.entity().getNetworkOfferingId(), SearchCriteria.Op.EQ);
+        OfferingSearch.and("datacenter", OfferingSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
     }
     
-    public NetworkConfigurationVO findBy(TrafficType trafficType, Mode mode, BroadcastDomainType broadcastType, long accountId) {
+    public List<NetworkConfigurationVO> findBy(TrafficType trafficType, Mode mode, BroadcastDomainType broadcastType, long networkOfferingId, long dataCenterId) {
         SearchCriteria<NetworkConfigurationVO> sc = ProfileSearch.create();
         sc.setParameters("trafficType", trafficType);
         sc.setParameters("broadcastType", broadcastType);
-        sc.setJoinParameters("accounts", "account", accountId);
+        sc.setParameters("offering", networkOfferingId);
+        sc.setParameters("datacenter", dataCenterId);
         
-        return null;
-        
+        return search(sc, null);
     }
     
     @Override
@@ -75,15 +81,37 @@ public class NetworkConfigurationDaoImpl extends GenericDaoBase<NetworkConfigura
         sc.setParameters("account", accountId);
         sc.setJoinParameters("accounts", "account", accountId);
         
-        return listActiveBy(sc);
+        return listBy(sc);
     }
     
     @Override
-    public List<NetworkConfigurationVO> listBy(long accountId, long offeringId) {
+    public List<NetworkConfigurationVO> listBy(long accountId, long offeringId, long dataCenterId) {
         SearchCriteria<NetworkConfigurationVO> sc = AccountSearch.create();
         sc.setParameters("offering", offeringId);
         sc.setJoinParameters("accounts", "account", accountId);
+        sc.setParameters("datacenter", dataCenterId);
         
-        return listActiveBy(sc);
+        return listBy(sc);
+    }
+    
+    @Override
+    public NetworkConfigurationVO persist(NetworkConfigurationVO config) {
+        throw new UnsupportedOperationException("Use the persist for NetworkConfigurationDao");
+    }
+    
+    @Override @DB
+    public NetworkConfigurationVO persist(NetworkConfigurationVO config, long accountId) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        config = super.persist(config);
+        addAccountToNetworkConfiguration(config.getId(), accountId);
+        txn.commit();
+        return config;
+    }
+    
+    @Override
+    public void addAccountToNetworkConfiguration(long configurationId, long accountId) {
+        NetworkAccountVO account = new NetworkAccountVO(configurationId, accountId);
+        _accountsDao.persist(account);
     }
 }

@@ -53,7 +53,7 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
 
 	@Override
 	public List<EventVO> searchAllEvents(SearchCriteria<EventVO> sc, Filter filter) {
-	    return listBy(sc, filter);
+	    return listIncludingRemovedBy(sc, filter);
 	}
 
     @Override
@@ -61,7 +61,7 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         if (oldTime == null) return null;
         SearchCriteria<EventVO> sc = createSearchCriteria();
         sc.addAnd("createDate", SearchCriteria.Op.LT, oldTime);
-        return listBy(sc, null);
+        return listIncludingRemovedBy(sc, null);
         
     }
     
@@ -72,7 +72,7 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         sc.setParameters("state", EventState.Completed);
         sc.setParameters("startId", 0);
         sc.setParameters("createDate", minTime, maxTime);
-        return listBy(sc, null);
+        return listIncludingRemovedBy(sc, null);
     }
     
     @Override
@@ -80,6 +80,6 @@ public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements Event
         SearchCriteria<EventVO> sc = CompletedEventSearch.create();
         sc.setParameters("state", EventState.Completed);
         sc.setParameters("startId", startId);
-        return findOneBy(sc);
+        return findOneIncludingRemovedBy(sc);
     }
 }

@@ -26,4 +26,5 @@ import java.lang.annotation.Target;
 @Target(FIELD)
 @Retention(RUNTIME)
 public @interface Inject {
+    Class<? extends Adapter> adapter() default Adapter.class;
 }

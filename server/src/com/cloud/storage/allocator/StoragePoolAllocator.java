@@ -26,7 +26,7 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.component.Adapter;
-import com.cloud.vm.DiskCharacteristics;
+import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 
@@ -36,7 +36,7 @@ import com.cloud.vm.VirtualMachine;
  */
 public interface StoragePoolAllocator extends Adapter {
 	
-	StoragePool allocateToPool(DiskCharacteristics dskCh, ServiceOffering offering, DataCenterVO dc, HostPodVO pod, Long cluster, VMInstanceVO vm, VMTemplateVO template, Set<? extends StoragePool> avoids);
+	StoragePool allocateToPool(DiskProfile dskCh, ServiceOffering offering, DataCenterVO dc, HostPodVO pod, Long cluster, VMInstanceVO vm, VMTemplateVO template, Set<? extends StoragePool> avoids);
 	
 	String chooseStorageIp(VirtualMachine vm, Host host, Host storage);
 }

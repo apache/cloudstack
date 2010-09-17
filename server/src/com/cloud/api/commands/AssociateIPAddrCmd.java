@@ -49,6 +49,7 @@ public class AssociateIPAddrCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VIRTUAL_MACHINE_ID, Boolean.FALSE));
     }
 
     public String getName() {
@@ -70,6 +71,7 @@ public class AssociateIPAddrCmd extends BaseCmd {
         Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
         String accountName = (String)params.get(BaseCmd.Properties.ACCOUNT.getName());
         Long domainId = (Long)params.get(BaseCmd.Properties.DOMAIN_ID.getName());
+        Long vmId = (Long)params.get(BaseCmd.Properties.VIRTUAL_MACHINE_ID.getName());
         String newIpAddr = null;
         String errorDesc = null;
         Long accountId = null;
@@ -105,6 +107,12 @@ public class AssociateIPAddrCmd extends BaseCmd {
             userId = Long.valueOf(1);
         }
 
+        //vmId == 0 => general flow
+        //vmId = 1 => 1:1 NAT
+        if(vmId == null){
+        	vmId = Long.valueOf(0);
+        }
+        
         try {
             newIpAddr = getManagementServer().associateIpAddress(userId.longValue(), accountId.longValue(), domainId.longValue(), zoneId.longValue());
         } catch (ResourceAllocationException rae) {

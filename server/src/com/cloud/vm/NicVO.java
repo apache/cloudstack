@@ -17,6 +17,8 @@
  */
 package com.cloud.vm;
 
+import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -27,7 +29,6 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.network.Network.Mode;
-import com.cloud.network.Network.TrafficType;
 
 @Entity
 @Table(name="nics")
@@ -43,46 +44,39 @@ public class NicVO implements Nic {
     @Column(name="instance_id")
     long instanceId;
     
-    @Column(name="type")
-    @Enumerated(value=EnumType.STRING)
-    TrafficType trafficType;
-    
     @Column(name="ip4_address")
     String ip4Address;
     
     @Column(name="mac_address")
     String macAddress;
     
-    @Column(name="netmask")
-    String netMask;
-    
     @Column(name="mode")
     @Enumerated(value=EnumType.STRING)
     Mode mode;
     
-    @Column(name="network_profile_id")
-    long networkProfileId;
-    
-    @Column(name="String")
-    String vlan;
+    @Column(name="network_configuration_id")
+    long networkConfigurationId;
     
     @Column(name="state")
     @Enumerated(value=EnumType.STRING)
     State state;
     
-    @Column(name="name")
-    String conciergeName;
+    @Column(name="reserver_name")
+    String reserver;
     
     @Column(name="reservation_id")
     String reservationId;
     
     @Column(name="device_id")
     int deviceId;
+    
+    @Column(name="update_time")
+    Date updateTime;
 
-    public NicVO(String conciergeName, long instanceId, long profileId) {
-        this.conciergeName = conciergeName;
+    public NicVO(String reserver, long instanceId, long configurationId) {
+        this.reserver = reserver;
         this.instanceId = instanceId;
-        this.networkProfileId = profileId;
+        this.networkConfigurationId = configurationId;
         this.state = State.Allocated;
     }
     
@@ -124,29 +118,22 @@ public class NicVO implements Nic {
     }
 
     @Override
-    public long getNetworkProfileId() {
-        return networkProfileId;
+    public long getNetworkConfigurationId() {
+        return networkConfigurationId;
     }
     
     @Override
-    public long getDeviceId() {
+    public int getDeviceId() {
         return deviceId;
     }
     
-    public String getConciergeName() {
-        return conciergeName;
-    }
-    
+    @Override
     public String getReservationId() {
         return reservationId;
     }
     
     public void setReservationId(String id) {
         this.reservationId = id;
-    }
-    
-    public void setConciergeName(String conciergeName) {
-        this.conciergeName = conciergeName;
     }
     
     public void setDeviceId(int deviceId) {
@@ -160,5 +147,29 @@ public class NicVO implements Nic {
     
     public void setMode(Mode mode) {
         this.mode = mode;
+    }
+
+    @Override
+    public String getReserver() {
+        return reserver;
+    }
+    
+    public void setReserver(String reserver) {
+        this.reserver = reserver;
+    }
+
+    @Override
+    public int getExpectedReservationInterval() {
+        return -1;
+    }
+
+    @Override
+    public int getExpectedReleaseInterval() {
+        return -1;
+    }
+
+    @Override
+    public Date getUpdateTime() {
+        return updateTime;
     }
 }

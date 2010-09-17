@@ -9,5 +9,5 @@ import com.cloud.utils.component.Adapter;
 
 public interface VirtualMachineProfiler extends Adapter {
     
-    VmCharacteristics convert(ServiceOffering offering, VirtualMachineTemplate template);
+    VirtualMachineProfile convert(ServiceOffering offering, VirtualMachineTemplate template);
 }

@@ -144,7 +144,7 @@ import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
 import com.cloud.vm.State;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VmCharacteristics;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 
 /**
@@ -400,7 +400,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 	public Host findHost(final Host.Type type, final DataCenterVO dc, final HostPodVO pod, final StoragePoolVO sp,
     		final ServiceOffering offering, final VMTemplateVO template, VMInstanceVO vm,
     		Host currentHost, final Set<Host> avoid) {
-        VmCharacteristics vmc = new VmCharacteristics(vm.getType());
+        VirtualMachineProfile vmc = new VirtualMachineProfile(vm.getType());
         Enumeration<HostAllocator> en = _hostAllocators.enumeration();
         while (en.hasMoreElements()) {
             final HostAllocator allocator = en.nextElement();
@@ -1065,7 +1065,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         return null;
     }
     
-    public Pod findPod(VmCharacteristics vm, DataCenter dc, Set<? extends Pod> avoids) {
+    public Pod findPod(VirtualMachineProfile vm, DataCenter dc, Set<? extends Pod> avoids) {
         for (PodAllocator allocator : _podAllocators) {
             Pod pod = allocator.allocateTo(vm, dc, avoids);
             if (pod != null) {
@@ -1774,7 +1774,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
     
     @Override
-    public Host findHost(VmCharacteristics vm, Set<? extends Host> avoids) {
+    public Host findHost(VirtualMachineProfile vm, Set<? extends Host> avoids) {
         return null;
     }
 

@@ -35,14 +35,14 @@ public class InstanceGroupVMMapDaoImpl extends GenericDaoBase<InstanceGroupVMMap
     public List<InstanceGroupVMMapVO> listByInstanceId(long vmId) {
         SearchCriteria<InstanceGroupVMMapVO> sc = ListByVmId.create();
         sc.setParameters("instanceId", vmId);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
     
     @Override
     public List<InstanceGroupVMMapVO> listByGroupId(long groupId) {
         SearchCriteria<InstanceGroupVMMapVO> sc = ListByGroupId.create();
         sc.setParameters("groupId", groupId);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
     
 	@Override

@@ -164,4 +164,10 @@ public class NetworkOfferingVO implements NetworkOffering {
     public NetworkOfferingVO(String name, TrafficType trafficType, GuestIpType type) {
         this(name, "System Offering for " + name, trafficType, type, true, null, null, null);
     }
+    
+    @Override
+    public String toString() {
+        StringBuilder buf = new StringBuilder("[Network Offering [");
+        return buf.append(id).append("-").append(trafficType).append("-").append(name).append("-").append(guestIpType).append("]").toString();
+    }
 }

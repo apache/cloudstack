@@ -128,6 +128,7 @@ public class VMInstanceVO implements VirtualMachine {
                         Type type,
                         Long vmTemplateId,
                         long guestOSId,
+                        
                         boolean haEnabled) {
         this.id = id;
         this.name = name;
@@ -138,6 +139,9 @@ public class VMInstanceVO implements VirtualMachine {
         this.type = type;
         this.guestOSId = guestOSId;
         this.haEnabled = haEnabled;
+        this.mirroredVols = false;
+        this.vncPassword = Long.toHexString(new Random().nextLong());
+        this.state = State.Creating;
     }
                        
 	
@@ -193,11 +197,13 @@ public class VMInstanceVO implements VirtualMachine {
     	return updated;
     }
     
-	public long getId() {
+	@Override
+    public long getId() {
 		return id;
 	}
 	
-	public Date getCreated() {
+	@Override
+    public Date getCreated() {
 		return created;
 	}
 	
@@ -205,7 +211,8 @@ public class VMInstanceVO implements VirtualMachine {
 		return updateTime;
 	}
 	
-	public long getDataCenterId() {
+	@Override
+    public long getDataCenterId() {
 	    return dataCenterId;
 	}
 	
@@ -292,7 +299,8 @@ public class VMInstanceVO implements VirtualMachine {
 		this.templateId = templateId;
 	}
 
-	public long getGuestOSId() {
+	@Override
+    public long getGuestOSId() {
 		return guestOSId;
 	}
 	

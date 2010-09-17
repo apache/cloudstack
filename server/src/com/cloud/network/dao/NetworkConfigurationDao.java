@@ -24,5 +24,7 @@ import com.cloud.utils.db.GenericDao;
 
 public interface NetworkConfigurationDao extends GenericDao<NetworkConfigurationVO, Long> {
     List<NetworkConfigurationVO> listBy(long accountId);
-    List<NetworkConfigurationVO> listBy(long accountId, long offeringId);
+    List<NetworkConfigurationVO> listBy(long accountId, long offeringId, long dataCenterId);
+    NetworkConfigurationVO persist(NetworkConfigurationVO config, long accountId);
+    void addAccountToNetworkConfiguration(long configId, long accountId);
 }

@@ -40,7 +40,7 @@ public class SnapshotPolicyDaoImpl extends GenericDaoBase<SnapshotPolicyVO, Long
 		SearchCriteria<SnapshotPolicyVO> sc = VolumeIdIntervalSearch.create();
         sc.setParameters("volumeId", volumeId);
         sc.setParameters("interval", interval);
-		return findOneBy(sc);
+		return findOneIncludingRemovedBy(sc);
 	}
 	
 	@Override
@@ -53,7 +53,7 @@ public class SnapshotPolicyDaoImpl extends GenericDaoBase<SnapshotPolicyVO, Long
         SearchCriteria<SnapshotPolicyVO> sc = VolumeIdSearch.create();
         sc.setParameters("volumeId", volumeId);
         sc.setParameters("active", true);
-        return listActiveBy(sc, filter);
+        return listBy(sc, filter);
     }
 	
     protected SnapshotPolicyDaoImpl() {
@@ -76,6 +76,6 @@ public class SnapshotPolicyDaoImpl extends GenericDaoBase<SnapshotPolicyVO, Long
     public List<SnapshotPolicyVO> listActivePolicies() {
         SearchCriteria<SnapshotPolicyVO> sc = ActivePolicySearch.create();
         sc.setParameters("active", true);
-        return listBy(sc);
+        return listIncludingRemovedBy(sc);
     }	
 }

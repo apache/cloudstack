@@ -54,7 +54,7 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
         SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();
         sc.addAnd("instanceId", SearchCriteria.Op.EQ, instanceId);
 
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
@@ -62,7 +62,7 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
         SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
 
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
@@ -71,6 +71,6 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
         sc.addAnd("pending", SearchCriteria.Op.EQ, pending);
 
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 }

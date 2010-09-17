@@ -40,7 +40,7 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
             sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
         }
 
-        List<AlertVO> alerts = listActiveBy(sc, searchFilter);
+        List<AlertVO> alerts = listBy(sc, searchFilter);
         if ((alerts != null) && !alerts.isEmpty()) {
             return alerts.get(0);
         }

@@ -553,5 +553,5 @@ public class VolumeVO implements Volume {
 	public void setAttached(Date attached){
 		this.attached = attached;
 	}
-	
+
 }

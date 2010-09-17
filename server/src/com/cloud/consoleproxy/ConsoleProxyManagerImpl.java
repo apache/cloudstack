@@ -72,6 +72,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
@@ -140,6 +141,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmManager;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -1007,21 +1009,23 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         }
     }
 
-    @DB
     protected Map<String, Object> createProxyInstance2(long dataCenterId) {
 
         long id = _consoleProxyDao.getNextInSequence(Long.class, "id");
         String name = VirtualMachineName.getConsoleProxyName(id, _instance);
-        
         DataCenterVO dc = _dcDao.findById(dataCenterId);
         
-        ConsoleProxyVO proxy = new ConsoleProxyVO(id, name, _template.getId(), _template.getGuestOSId(), dataCenterId, 0);
-        proxy = _consoleProxyDao.persist(proxy);
+        DataCenterDeployment plan = new DataCenterDeployment(dataCenterId, 1);
+        
         List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmControlNetwork, NetworkOfferingVO.SystemVmManagementNetwork, NetworkOfferingVO.SystemVmPublicNetwork);
         List<NetworkConfigurationVO> profiles = new ArrayList<NetworkConfigurationVO>(offerings.size());
+        for (NetworkOfferingVO offering : offerings) {
+            profiles.add(_networkMgr.setupNetworkProfile(_accountMgr.getSystemAccount(), offering, plan));
+        }
+        ConsoleProxyVO proxy = new ConsoleProxyVO(id, name, _template.getId(), _template.getGuestOSId(), dataCenterId, 0);
+        proxy = _consoleProxyDao.persist(proxy);
         try {
-            proxy = _vmMgr.allocate(proxy, _template, _serviceOffering, profiles, dc, _accountMgr.getSystemAccount());
-            proxy = _vmMgr.create(proxy);
+            VirtualMachineProfile vmProfile = _vmMgr.allocate(proxy, _template, _serviceOffering, profiles, plan, _accountMgr.getSystemAccount());
         } catch (InsufficientCapacityException e) {
             s_logger.warn("InsufficientCapacity", e);
             throw new CloudRuntimeException("Insufficient capcity exception", e);
@@ -1030,95 +1034,14 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
             throw new CloudRuntimeException("Unable to contact storage", e);
         }
         
-        return null;
-        
-        
-/*
-        Transaction txn = Transaction.currentTxn();
-        try {
-            DataCenterVO dc = _dcDao.findById(dataCenterId);
-            assert (dc != null);
-            context.put("dc", dc);
+        Map<String, Object> context = new HashMap<String, Object>();
+        context.put("dc", dc);
+//        context.put("publicIpAddress", publicIpAndVlan._ipAddr);
+        HostPodVO pod = _podDao.findById(proxy.getPodId());
+        context.put("pod", pod);
+        context.put("proxyVmId", proxy.getId());
 
-            // this will basically allocate the pod based on data center id as
-            // we use system user id here
-            Set<Long> avoidPods = new HashSet<Long>();
-            Pair<HostPodVO, Long> pod = null;
-            networkInfo publicIpAndVlan = null;
-
-            // About MAC address allocation
-            // MAC address used by User VM is inherited from DomR MAC address,
-            // with the least 16 bits overrided. to avoid
-            // potential conflicts, domP will mask bit 31
-            //
-            String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(dataCenterId, (1L << 31));
-            String privateMacAddress = macAddresses[0];
-            String publicMacAddress = macAddresses[1];
-            macAddresses = _dcDao.getNextAvailableMacAddressPair(dataCenterId, (1L << 31));
-            String guestMacAddress = macAddresses[0];
-            while ((pod = _agentMgr.findPod(_template, _serviceOffering, dc, Account.ACCOUNT_ID_SYSTEM, avoidPods)) != null) {
-                publicIpAndVlan = allocPublicIpAddress(dataCenterId, pod.first().getId(), publicMacAddress);
-                if (publicIpAndVlan == null) {
-                    s_logger.warn("Unable to allocate public IP address for console proxy vm in data center : " + dataCenterId + ", pod="
-                            + pod.first().getId());
-                    avoidPods.add(pod.first().getId());
-                } else {
-                    break;
-                }
-            }
-
-            if (pod == null || publicIpAndVlan == null) {
-                s_logger.warn("Unable to allocate pod for console proxy vm in data center : " + dataCenterId);
-
-                context.put("proxyVmId", (long) 0);
-                return context;
-            }
-            long id = _consoleProxyDao.getNextInSequence(Long.class, "id");
-
-            context.put("publicIpAddress", publicIpAndVlan._ipAddr);
-            context.put("pod", pod);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Pod allocated " + pod.first().getName());
-            }
-
-            String cidrNetmask = NetUtils.getCidrNetmask(pod.first().getCidrSize());
-
-            // Find the VLAN ID, VLAN gateway, and VLAN netmask for
-            // publicIpAddress
-            publicIpAddress = publicIpAndVlan._ipAddr;
-
-            String vlanGateway = publicIpAndVlan._gateWay;
-            String vlanNetmask = publicIpAndVlan._netMask;
-
-            txn.start();
-            ConsoleProxyVO proxy;
-            String name = VirtualMachineName.getConsoleProxyName(id, _instance).intern();
-            proxy = new ConsoleProxyVO(id, name, guestMacAddress, null, NetUtils.getLinkLocalNetMask(), privateMacAddress, null, cidrNetmask,
-                    _template.getId(), _template.getGuestOSId(), publicMacAddress, publicIpAddress, vlanNetmask, publicIpAndVlan._vlanDbId,
-                    publicIpAndVlan._vlanid, pod.first().getId(), dataCenterId, vlanGateway, null, dc.getDns1(), dc.getDns2(), _domain,
-                    _proxyRamSize, 0);
-
-            proxy.setLastHostId(pod.second());
-            proxy = _consoleProxyDao.persist(proxy);
-            long proxyVmId = proxy.getId();
-
-            final EventVO event = new EventVO();
-            event.setUserId(User.UID_SYSTEM);
-            event.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-            event.setType(EventTypes.EVENT_PROXY_CREATE);
-            event.setLevel(EventVO.LEVEL_INFO);
-            event.setDescription("New console proxy created - " + proxy.getName());
-            _eventDao.persist(event);
-            txn.commit();
-
-            context.put("proxyVmId", proxyVmId);
-            return context;
-        } catch (Throwable e) {
-            s_logger.error("Unexpected exception : ", e);
-
-            context.put("proxyVmId", (long) 0);
-            return context;
-        }*/
+        return context;
     }
     
     @DB

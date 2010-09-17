@@ -100,14 +100,14 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
 	public List<VMTemplateStoragePoolVO> listByPoolId(long id) {
 	    SearchCriteria<VMTemplateStoragePoolVO> sc = PoolSearch.create();
 	    sc.setParameters("pool_id", id);
-	    return listBy(sc);
+	    return listIncludingRemovedBy(sc);
 	}
 
 	@Override
 	public List<VMTemplateStoragePoolVO> listByTemplateId(long templateId) {
 	    SearchCriteria<VMTemplateStoragePoolVO> sc = TemplateSearch.create();
 	    sc.setParameters("template_id", templateId);
-	    return listBy(sc);
+	    return listIncludingRemovedBy(sc);
 	}
 
 	@Override
@@ -115,7 +115,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
 		SearchCriteria<VMTemplateStoragePoolVO> sc = PoolTemplateSearch.create();
 	    sc.setParameters("pool_id", hostId);
 	    sc.setParameters("template_id", templateId);
-	    return findOneBy(sc);
+	    return findOneIncludingRemovedBy(sc);
 	}
 
 	@Override
@@ -123,7 +123,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
 		SearchCriteria<VMTemplateStoragePoolVO> sc = TemplateStatusSearch.create();
 		sc.setParameters("template_id", templateId);
 		sc.setParameters("download_state", downloadState.toString());
-		return listBy(sc);
+		return listIncludingRemovedBy(sc);
 	}
 
 	@Override
@@ -132,7 +132,7 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
         sc.setParameters("pool_id", poolId);
         sc.setParameters("template_id", templateId);
         sc.setParameters("download_state", downloadState.toString());
-        return listBy(sc);
+        return listIncludingRemovedBy(sc);
     }
 
 	@Override

@@ -60,7 +60,7 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
 		SearchCriteria<HostPodVO> sc = DataCenterIdSearch.create();
 		sc.setParameters("dcId", id);
 		
-	    return listActiveBy(sc);
+	    return listBy(sc);
 	}
 	
 	public HostPodVO findByName(String name, long dcId) {
@@ -68,7 +68,7 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
 	    sc.setParameters("dc", dcId);
 	    sc.setParameters("name", name);
 	    
-	    return findOneActiveBy(sc);
+	    return findOneBy(sc);
 	}
 	
 	@Override

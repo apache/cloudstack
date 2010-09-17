@@ -1381,6 +1381,7 @@ a:visited {
 	padding:0;
 }
 
+
 .searchpanel {
 	width:223px;
 	height:27px;
@@ -2157,6 +2158,26 @@ a:visited {
 	border-right:1px solid #CCC;
 }
 
+.grid_header_formbox {
+	width:auto;
+	height:auto;
+	float:right;
+	margin:0;
+	padding:0;
+}
+
+.grid_header_cell .select {
+	height:15px;
+	float:left;
+	margin:2px 10px 0 0;
+	display:inline;
+	padding:0;
+	border:1px solid #999;
+	background:#e7e7e7;
+	color:#333;
+	font-size:11px;
+}
+
 .grid_header_title {
 	width:auto;
 	height:auto;
@@ -2178,6 +2199,34 @@ a:visited {
 	margin:4px 0 0 0;
 	padding:0 0 0 0;
 }
+
+.grid_botactionpanel {
+	width:100%;
+	height:23px;
+	float:left;
+	margin:15px 0 0 0;
+	padding:0 0 0 0;
+}
+
+.gridbot_buttons {
+	width:64px;
+	height:17px;
+	float:left;
+	color:#FFF;
+	background:url(../images/gridbot_actionbutton.gif) no-repeat top left;
+	text-align:center;
+	font-weight:normal;
+	font-size:12px;
+	margin:0 10px 0 0;
+	padding:4px 0 0 0;
+	cursor:pointer;
+	cursor:hand;
+}
+
+.gridbot_buttons:hover {
+	background:url(../images/gridbot_actionbutton_hover.gif) no-repeat top left;
+}
+
 
 .grid_actionbox {
 	width:35px;
@@ -2360,4 +2409,74 @@ a:visited {
 	margin:0;
 	padding:0;
 	z-index:1002;
+}
+
+.dbrow {
+	width:100%;
+	height:44px;
+	float:left;
+	border-bottom:1px solid #e2e2e2;
+	margin:0;
+	padding:0;
+}
+
+.dbrow.even {
+	background:url(../images/dbrow_even.gif) repeat-x top left;
+}
+
+.dbrow.odd {
+	background:url(../images/dbrow_odd.gif) repeat-x top left;
+}
+
+.dbrow_cell {
+	height:44px;
+	float:left;
+	border-right:1px solid #e2e2e2;
+	margin:0;
+	padding:0;
+}
+
+.dbgraph_titlebox {
+	width:95%;
+	height:auto;
+	float:left;
+	margin:5px 0 0 10px;
+	padding:0;
+}
+
+.dbgraph_titlebox h2{
+	width:80%;
+	height:auto;
+	float:left;
+	color:#333;
+	font-size:11px;
+	font-weight:normal;
+	text-align:left;
+	margin:0;
+	padding:0;
+}
+
+.dbgraph_title_usedbox {
+	width:170px;
+	height:16px;
+	float:left;
+	background:url(../images/db_usedbox.gif) no-repeat top left;
+	margin:3px 0 0 0;
+	padding:0;
+}
+
+.dbgraph_title_usedbox p {
+	width: auto;
+	height:auto;
+	float:left;
+	color:#FFF;
+	font-size:11px;
+	font-weight:normal;
+	text-align:left;
+	margin:2px 0 0 5px;
+	padding:0;
+}
+
+.dbgraph_title_usedbox span {
+	font-weight:bold;
 }
