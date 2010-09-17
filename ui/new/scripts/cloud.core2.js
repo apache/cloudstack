@@ -545,12 +545,12 @@ var selected_leftmenu_id = null;
 var selected_midmenu_id = null;
  
 function hideMiddleMenu() {
-    $("#middle_menu, #search_panel").hide();
+    $("#middle_menu, #search_panel, #middle_menu_pagination").hide();
     $("#right_panel").removeClass("main_contentarea").addClass("main_contentarea_dashboard");
 }
 
 function showMiddleMenu() {
-    $("#middle_menu, #search_panel").show();
+    $("#middle_menu, #search_panel, #middle_menu_pagination").show();
     $("#right_panel").removeClass("main_contentarea_dashboard").addClass("main_contentarea");
 }    
 

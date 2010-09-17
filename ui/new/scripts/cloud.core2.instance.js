@@ -377,31 +377,33 @@ function clickInstanceGroupHeader($arrowIcon) {
     }
     
     function vmToRightPanel($midmenuItem) {
-        var json = $midmenuItem.data("jsonObj");  
-        vmJsonToDetailsTab(json, $midmenuItem);   
+        var jsonObj = $midmenuItem.data("jsonObj");          
+        
+        var vmName = getVmName(jsonObj.name, jsonObj.displayname);        
+        $("right_panel_header").find("#vm_name").text(fromdb(vmName));	
+        
+        var $rightPanelContent = $("#right_panel_content");        
+        if($midmenuItem.find("#info_icon").css("display") != "none") {                
+            $rightPanelContent.find("#after_action_info").text($midmenuItem.data("afterActionInfo"));
+            if($midmenuItem.find("#info_icon").hasClass("error"))
+                $rightPanelContent.find("#after_action_info_container").addClass("errorbox");
+             else
+                $rightPanelContent.find("#after_action_info_container").removeClass("errorbox");                                        
+            $rightPanelContent.find("#after_action_info_container").show();                                         
+        } 
+        else {
+            $rightPanelContent.find("#after_action_info").text("");
+            $rightPanelContent.find("#after_action_info_container").hide();                
+        }
+        
+        vmJsonToDetailsTab(jsonObj, $midmenuItem);   
     }
      
     function vmJsonToDetailsTab(jsonObj, $midmenuItem){
         var $detailsTab = $("#right_panel_content #tab_content_details");  
         $detailsTab.data("jsonObj", jsonObj);  
     
-        //details tab 
-        if($midmenuItem.find("#info_icon").css("display") != "none") {                
-            $detailsTab.find("#after_action_info").text($midmenuItem.data("afterActionInfo"));
-            if($midmenuItem.find("#info_icon").hasClass("error"))
-                $detailsTab.find("#after_action_info_container").addClass("errorbox");
-             else
-                $detailsTab.find("#after_action_info_container").removeClass("errorbox");                                        
-            $detailsTab.find("#after_action_info_container").show();                                         
-        } 
-        else {
-            $detailsTab.find("#after_action_info").text("");
-            $detailsTab.find("#after_action_info_container").hide();                
-        }
-        
-          
-        var vmName = getVmName(jsonObj.name, jsonObj.displayname);        
-        $rightPanelHeader.find("#vm_name").text(fromdb(vmName));	
+        //details tab         
         updateVirtualMachineStateInRightPanel(jsonObj.state);	
         $detailsTab.find("#ipAddress").text(jsonObj.ipaddress);
         $detailsTab.find("#zoneName").text(fromdb(jsonObj.zonename));
@@ -569,13 +571,15 @@ function clickInstanceGroupHeader($arrowIcon) {
 	                            data: createURL("command=listVirtualMachines&group="+group1+"&pagesize="+midmenuItemCount),
 	                            dataType: "json",
 	                            success: function(json) {		                                                             
-	                                var instances = json.listvirtualmachinesresponse.virtualmachine;                               
-                                    for(var i=0; i<instances.length;i++) {  
-                                        var $midmenuItem1 = $midmenuItem.clone();
-                                        $midmenuItem1.data("toRightPanelFn", vmToRightPanel);                                                                                                                               
-                                        vmToMidmenu(instances[i], $midmenuItem1);  
-                                        $("#midmenu_container").append($midmenuItem1.show());
-                                    }    
+	                                var instances = json.listvirtualmachinesresponse.virtualmachine;    
+	                                if (instances != null && instances.length > 0) {	                           
+                                        for(var i=0; i<instances.length;i++) {  
+                                            var $midmenuItem1 = $midmenuItem.clone();
+                                            $midmenuItem1.data("toRightPanelFn", vmToRightPanel);                                                                                                                               
+                                            vmToMidmenu(instances[i], $midmenuItem1);  
+                                            $("#midmenu_container").append($midmenuItem1.show());
+                                        }  
+                                    }  
 	                            }
 	                        });                            
                             return false;

@@ -252,7 +252,7 @@ long milliseconds = new Date().getTime();
                         </div>
                         -->
                     </div>
-                    <div class="midmenu_navigationbox">
+                    <div class="midmenu_navigationbox" id="middle_menu_pagination">
                         <div class="midmenu_prevbutton">
                         </div>
                         <div class="midmenu_nextbutton">
