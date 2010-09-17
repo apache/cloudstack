@@ -7,12 +7,11 @@ function afterLoadIsoJSP() {
     //add button ***
     $("#midmenu_add_link").show(); 
     
-    $("#midmenu_add_link").bind("click", function(event) {     
+    $("#midmenu_add_link").unbind("click").bind("click", function(event) {     
         $("#dialog_add_iso")
 	    .dialog('option', 'buttons', { 				
 		    "Create": function() { 	
 		        var thisDialog = $(this);
-    			thisDialog.dialog("close");					
     				
 			    // validate values
 			    var isValid = true;					
@@ -21,6 +20,8 @@ function afterLoadIsoJSP() {
 			    isValid &= validateString("URL", thisDialog.find("#add_iso_url"), thisDialog.find("#add_iso_url_errormsg"));			
 			    if (!isValid) 
 			        return;		
+			        
+			    thisDialog.dialog("close");	
 			    
 			    var name = trim(thisDialog.find("#add_iso_name").val());
 			    var desc = trim(thisDialog.find("#add_iso_display_text").val());
@@ -37,15 +38,15 @@ function afterLoadIsoJSP() {
 			        data: createURL("command=registerIso&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&url="+encodeURIComponent(url)+"&zoneId="+zoneId+"&isPublic="+isPublic+"&osTypeId="+osType+"&bootable="+bootable+"&response=json"),
 				    dataType: "json",
 				    success: function(json) {					
-				        var result = json.registerisoresponse;
-				        isoToMidmenu(result.iso[0], $midmenuItem1);
+				        var items = json.registerisoresponse.iso;
+				        isoToMidmenu(items[0], $midmenuItem1);
 						bindClickToMidMenu($midmenuItem1, isoToRigntPanel);  
 						
                         /*
-                        if(result.iso.length > 1) {                               
-                            for(var i=1; i<result.iso.length; i++) {         
+                        if(items.length > 1) {                               
+                            for(var i=1; i<items.length; i++) {         
                                 var template2 = $("#vm_iso_template").clone(true);                                                               
-                                isoJSONToTemplate(result.iso[i], template2);	
+                                isoJSONToTemplate(items[i], template2);	
                                 submenuContent.find("#grid_content").prepend(template2.fadeIn("slow"));	 
                                 changeGridRowsTotal(submenuContent.find("#grid_rows_total"), 1); 	 
                             }                                    
@@ -53,7 +54,10 @@ function afterLoadIsoJSP() {
                         */
                         
                         afterAddingMidMenuItem($midmenuItem1, true);							
-				    }				
+				    }, 
+					error: function(XMLHttpResponse) {					    
+					    handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);					  
+					}				
 			    });
 		    },
 		    "Cancel": function() { 

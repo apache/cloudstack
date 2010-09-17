@@ -322,10 +322,11 @@ function doActionForMidMenu(id, $actionLink, apiCommand, listAPIMap) {
     //Sync job (end) *****
 }
 
-function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem) { 
-    $midmenuItem.find("#content").removeClass("inaction");
-	$midmenuItem.find("#spinning_wheel").hide();	
-	$midmenuItem.find("#info_icon").addClass("error").show();		
+function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1) { 
+    $midmenuItem1.find("#content").removeClass("inaction");
+	$midmenuItem1.find("#spinning_wheel").hide();	
+	$midmenuItem1.find("#info_icon").addClass("error").show();		
+	$midmenuItem1.find("#first_row").text("Adding failed");	
 		                        
     var errorMsg = "";
     if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {
@@ -334,10 +335,10 @@ function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem) {
         errorMsg = XMLHttpResponse.responseText.substring(start, end);		
     }
     if(errorMsg.length > 0) 
-        $midmenuItem.data("afterActionInfo", ((label + " action failed. Reason: " + sanitizeXSS(unescape(errorMsg)))));    
+        $midmenuItem1.find("#second_row").text(fromdb(errorMsg));   
     else
-        $midmenuItem.data("afterActionInfo", (label + " action failed."));  
-}    	                
+        $midmenuItem1.find("#second_row").text("");     
+}       	                
 //***** actions for middle menu (end) **************************************************************************
 
 
@@ -557,9 +558,11 @@ function showMiddleMenu() {
 // adding middle menu item ***
 function beforeAddingMidMenuItem() {
     var $midmenuItem1 = $("#midmenu_item").clone();
-	$midmenuItem1.find("#first_row").text("Adding....");    			
+	$midmenuItem1.find("#first_row").text("Adding....");    	
+	$midmenuItem1.find("#second_row").html("&nbsp;");    			
 	$midmenuItem1.find("#content").addClass("inaction"); 
 	$midmenuItem1.find("#spinning_wheel").show();
+	$midmenuItem1.find("#info_icon").removeClass("error").hide();
 	$("#midmenu_container").append($midmenuItem1.show());
 	return $midmenuItem1;
 }

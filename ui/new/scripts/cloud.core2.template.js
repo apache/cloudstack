@@ -18,19 +18,20 @@ function afterLoadTemplateJSP() {
 	
     $("#midmenu_add_link").show(); 
     
-    $("#midmenu_add_link").bind("click", function(event) {        
+    $("#midmenu_add_link").unbind("click").bind("click", function(event) {        
         $("#dialog_add_template")
 		.dialog('option', 'buttons', { 				
 			"Create": function() { 		
 			    var thisDialog = $(this);
-				thisDialog.dialog("close");
-									
+													
 				// validate values
 				var isValid = true;					
 				isValid &= validateString("Name", thisDialog.find("#add_template_name"), thisDialog.find("#add_template_name_errormsg"));
 				isValid &= validateString("Display Text", thisDialog.find("#add_template_display_text"), thisDialog.find("#add_template_display_text_errormsg"));
 				isValid &= validateString("URL", thisDialog.find("#add_template_url"), thisDialog.find("#add_template_url_errormsg"));			
 				if (!isValid) return;		
+				
+				thisDialog.dialog("close");
 										
 				var name = trim(thisDialog.find("#add_template_name").val());
 				var desc = trim(thisDialog.find("#add_template_display_text").val());
@@ -53,14 +54,14 @@ function afterLoadTemplateJSP() {
 				    data: createURL("command=registerTemplate&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&url="+encodeURIComponent(url)+"&zoneid="+zoneId+"&ispublic="+isPublic+moreCriteria.join("")+"&format="+format+"&passwordEnabled="+password+"&osTypeId="+osType+"&response=json"),
 					dataType: "json",
 					success: function(json) {	
-						var result = json.registertemplateresponse;							
-						templateToMidmenu(result.template[0], $midmenuItem1);
+						var items = json.registertemplateresponse.template;												
+						templateToMidmenu(items[0], $midmenuItem1);
 						bindClickToMidMenu($midmenuItem1, templateToRigntPanel);     
 						/*
-                        if(result.template.length > 1) {                               
-                            for(var i=1; i<result.template.length; i++) {         
+                        if(items.length > 1) {                               
+                            for(var i=1; i<items.length; i++) {         
                                 var template2 = $("#vm_template_template").clone(true);                                                               
-                                templateJSONToTemplate(result.template[i], template2);	
+                                templateJSONToTemplate(items[i], template2);	
                                 submenuContent.find("#grid_content").prepend(template2.fadeIn("slow"));	 	
                                 changeGridRowsTotal(submenuContent.find("#grid_rows_total"), 1);  
                             }                                     
@@ -68,6 +69,9 @@ function afterLoadTemplateJSP() {
 						*/				
 							
 						afterAddingMidMenuItem($midmenuItem1, true);	                              			                  				
+					}, 
+					error: function(XMLHttpResponse) {					    
+					    handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);					  
 					}						
 				});
 			},
