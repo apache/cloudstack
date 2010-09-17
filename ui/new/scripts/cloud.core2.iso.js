@@ -272,10 +272,10 @@ function isoClearRightPanel() {
 }
 
 var isoActionMap = {  
-    "Delete ISO": {
-        api: "deleteIso",            
+    "Delete ISO": {                  
         isAsyncJob: true,
         asyncJobResponse: "deleteisosresponse",
+        dialogBeforeActionFn : doDeleteIso,
         inProcessText: "Deleting ISO....",
         afterActionSeccessFn: function(jsonObj) {          
             var $midmenuItem1 = $("#"+isoGetMidmenuId(jsonObj)); 
@@ -334,6 +334,38 @@ function doUpdateIso() {
 	});
 }
 
+function doDeleteIso($actionLink, listAPIMap, $detailsTab) {   
+    var $detailsTab = $("#right_panel_content #tab_content_details"); 
+    var jsonObj = $detailsTab.data("jsonObj");
+	var id = jsonObj.id;
+	var name = jsonObj.name;			
+	var zoneId = jsonObj.zoneid;
+
+    var moreCriteria = [];						
+	if (zoneId != null) 
+		moreCriteria.push("&zoneid="+zoneId);	
+	
+	var htmlMsg; 
+	if(jsonObj.crossZones == "true")
+	    htmlMsg = "<p>ISO <b>"+name+"</b> is used by all zones. Please confirm you want to delete it from all zones.</p>";
+	else
+	    htmlMsg = "<p>Please confirm you want to delete ISO <b>"+name+"</b>.</p>";
+					
+	$("#dialog_confirmation")
+	.html(htmlMsg)
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=deleteIso&id="+id+moreCriteria.join("");
+            doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
+
+}
+
 function populateZoneFieldExcludeSourceZone(zoneField, excludeZoneId) {	  
     zoneField.empty();  
     if (g_zoneIds != null && g_zoneIds.length > 0) {
@@ -361,16 +393,14 @@ function doCopyIso($actionLink, listAPIMap, $detailsTab) {
 	.dialog('option', 'buttons', {				    
 	    "OK": function() {				       
 	        var thisDialog = $(this);
-	        thisDialog.dialog("close");
-	        	        
+	        	        	        
 	        var isValid = true;	 
             isValid &= validateDropDownBox("Zone", thisDialog.find("#copy_iso_zone"), thisDialog.find("#copy_iso_zone_errormsg"), false);  //reset error text		         
 	        if (!isValid) return;     
-	        				        
-	        var destZoneId = thisDialog.find("#copy_iso_zone").val();				        				        
-	        thisDialog.dialog("close");		        
-	          				        
 	        
+	        thisDialog.dialog("close");
+	        				        
+	        var destZoneId = thisDialog.find("#copy_iso_zone").val();	
             var apiCommand = "command=copyIso&id="+id+"&sourcezoneid="+sourceZoneId+"&destzoneid="+destZoneId;
             doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);	 
 	    }, 
@@ -393,13 +423,14 @@ function doCreateVMFromIso($actionLink, listAPIMap, $detailsTab) {
 	.dialog('option', 'buttons', {			    
 	    "Create": function() {
 	        var thisDialog = $(this);	
-	        thisDialog.dialog("close");
 	      
 	        // validate values
 		    var isValid = true;		
 		    isValid &= validateString("Name", thisDialog.find("#name"), thisDialog.find("#name_errormsg"), true);
 		    isValid &= validateString("Group", thisDialog.find("#group"), thisDialog.find("#group_errormsg"), true);				
 		    if (!isValid) return;	       
+	           
+	        thisDialog.dialog("close");   
 	                
 	        var name = trim(thisDialog.find("#name").val());		
 	        var group = trim(thisDialog.find("#group").val());		
