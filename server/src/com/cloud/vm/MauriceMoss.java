@@ -29,6 +29,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeployDestination;
@@ -55,6 +56,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value=VmManager.class)
@@ -85,14 +87,15 @@ public class MauriceMoss implements VmManager {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Allocating entries for VM: " + vm);
         }
-        VMInstanceVO instance = _vmDao.findById(vm.getId());
-        VirtualMachineProfile vmProfile = new VirtualMachineProfile(instance, serviceOffering);
+        //VMInstanceVO vm = _vmDao.findById(vm.getId());
+        VirtualMachineProfile vmProfile = new VirtualMachineProfile(vm, serviceOffering);
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        instance.setDataCenterId(plan.getDataCenterId());
-        _vmDao.update(instance.getId(), instance);
-        List<NicProfile> nics = _networkMgr.allocate(instance, networks);
+        vm.setDataCenterId(plan.getDataCenterId());
+        _vmDao.update(vm.getId(), vm);
+        
+        List<NicProfile> nics = _networkMgr.allocate(vm, networks);
         vmProfile.setNics(nics);
 
         if (dataDiskOfferings == null) {
@@ -101,30 +104,19 @@ public class MauriceMoss implements VmManager {
         
         List<DiskProfile> disks = new ArrayList<DiskProfile>(dataDiskOfferings.size() + 1);
         if (template.getFormat() == ImageFormat.ISO) {
-            disks.add(_storageMgr.allocateRawVolume(VolumeType.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), rootDiskOffering.second(), instance, owner));
+            disks.add(_storageMgr.allocateRawVolume(VolumeType.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), rootDiskOffering.second(), vm, owner));
         } else {
-            disks.add(_storageMgr.allocateTemplatedVolume(VolumeType.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), template, instance, owner));
+            disks.add(_storageMgr.allocateTemplatedVolume(VolumeType.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), template, vm, owner));
         }
         for (Pair<DiskOfferingVO, Long> offering : dataDiskOfferings) {
-            disks.add(_storageMgr.allocateRawVolume(VolumeType.DATADISK, "DATA-" + vm.getId(), offering.first(), offering.second(), instance, owner));
+            disks.add(_storageMgr.allocateRawVolume(VolumeType.DATADISK, "DATA-" + vm.getId(), offering.first(), offering.second(), vm, owner));
         }
         vmProfile.setDisks(disks);
-        
+
+        _vmDao.updateIf(vm, Event.OperationSucceeded, null);
         txn.commit();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Allocation completed for VM: " + vm);
-        }
-        
-        boolean created = false;
-        try {
-            vmProfile = create(vmProfile, plan);
-            created = vmProfile != null;
-        } catch (InsufficientCapacityException e) {
-            throw e;
-        } finally {
-            if (!created) {
-                // TODO: Error handling
-            }
         }
         
         return vmProfile;
@@ -240,8 +232,45 @@ public class MauriceMoss implements VmManager {
     }
 
     @Override
-    public <T extends VMInstanceVO> T start(T vm) {
-        // TODO Auto-generated method stub
+    public <T extends VMInstanceVO> T start(VirtualMachineProfile vmProfile, DeploymentPlan plan) throws InsufficientCapacityException {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Creating actual resources for VM " + vmProfile);
+        }
+        
+        Journal journal = new Journal.LogJournal("Creating " + vmProfile, s_logger);
+
+        Set<DeployDestination> avoids = new HashSet<DeployDestination>();
+        int retry = _retry;
+        while (_retry-- > 0) {
+            DeployDestination context = null;
+            for (DeploymentDispatcher dispatcher : _dispatchers) {
+                context = dispatcher.plan(vmProfile, plan, avoids);
+                if (context != null) {
+                    avoids.add(context);
+                    journal.record("Deployment found ", vmProfile, context);
+                    break;
+                }
+            }
+            
+            if (context == null) {
+                throw new CloudRuntimeException("Unable to create a deployment for " + vmProfile);
+            }
+            
+            VMInstanceVO vm = _vmDao.findById(vmProfile.getId());
+
+            vm.setDataCenterId(context.getDataCenter().getId());
+            vm.setPodId(context.getPod().getId());
+            _vmDao.updateIf(vm, Event.StartRequested, context.getHost().getId());
+            
+            VirtualMachineTO vmTO = new VirtualMachineTO();
+//            _networkMgr.prepare(vmProfile);
+//            _storageMgr.prepare(vm);
+        }
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Creation complete for VM " + vmProfile);
+        }
+        
         return null;
     }
 

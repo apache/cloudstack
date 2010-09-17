@@ -67,8 +67,16 @@ public class VirtualMachineProfile {
         this._nics = profiles;
     }
     
+    public List<NicProfile> getNics() {
+        return _nics;
+    }
+    
     public void setDisks(List<DiskProfile> profiles) {
         this._disks = profiles;
+    }
+    
+    public List<DiskProfile> getDisks() {
+        return _disks;
     }
     
     public Hypervisor.Type getHypervisorType() {

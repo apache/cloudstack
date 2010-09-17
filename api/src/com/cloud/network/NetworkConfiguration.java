@@ -12,6 +12,11 @@ import com.cloud.network.Network.TrafficType;
  * owned by an account. 
  */
 public interface NetworkConfiguration {
+    enum State {
+        Allocated,  // Indicates the network configuration is in allocated but not setup.
+        Setup,      // Indicates the network configuration is setup.
+        InUse;      // Indicates the network configuration is in use.
+    }
     
     /**
      * @return id of the network profile.  Null means the network profile is not from the database.
@@ -28,7 +33,9 @@ public interface NetworkConfiguration {
 
     String getCidr();
 
-    public long getDataCenterId();
+    long getDataCenterId();
     
     long getNetworkOfferingId();
+    
+    State getState();
 }

@@ -1370,4 +1370,5 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     	SearchBuilder<T> builder = createSearchBuilder();
     	return builder.create();
     }
+    
 }

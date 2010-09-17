@@ -1020,7 +1020,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmControlNetwork, NetworkOfferingVO.SystemVmManagementNetwork, NetworkOfferingVO.SystemVmPublicNetwork);
         List<NetworkConfigurationVO> profiles = new ArrayList<NetworkConfigurationVO>(offerings.size());
         for (NetworkOfferingVO offering : offerings) {
-            profiles.add(_networkMgr.setupNetworkProfile(_accountMgr.getSystemAccount(), offering, plan));
+            profiles.add(_networkMgr.setupNetworkConfiguration(_accountMgr.getSystemAccount(), offering, plan));
         }
         ConsoleProxyVO proxy = new ConsoleProxyVO(id, name, _template.getId(), _template.getGuestOSId(), dataCenterId, 0);
         proxy = _consoleProxyDao.persist(proxy);

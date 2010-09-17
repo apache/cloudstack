@@ -70,11 +70,20 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     @Column(name="data_center_id")
     long dataCenterId;
     
+    @Column(name="handler_name")
+    String handlerName;
+    
+    @Column(name="state")
+    @Enumerated(value=EnumType.STRING)
+    State state;
+    
     public NetworkConfigurationVO() {
     }
     
-    public NetworkConfigurationVO(NetworkConfiguration that, long offeringId, long dataCenterId) {
+    public NetworkConfigurationVO(NetworkConfiguration that, long offeringId, long dataCenterId, String handlerName) {
         this(that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId);
+        this.handlerName = handlerName;
+        this.state = that.getState();
     }
     
     public NetworkConfigurationVO(TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId) {
@@ -83,6 +92,16 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
         this.broadcastDomainType = broadcastDomainType;
         this.networkOfferingId = networkOfferingId;
         this.dataCenterId = dataCenterId;
+        this.state = State.Allocated;
+    }
+    
+    @Override
+    public State getState() {
+        return state;
+    }
+    
+    public void setState(State state) {
+        this.state = state;
     }
 
     @Override
@@ -107,6 +126,14 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     @Override
     public BroadcastDomainType getBroadcastDomainType() {
         return broadcastDomainType;
+    }
+    
+    public String getHandlerName() {
+        return handlerName;
+    }
+    
+    public void setHandlerName(String handlerName) {
+        this.handlerName = handlerName;
     }
 
     public void setBroadcastDomainType(BroadcastDomainType broadcastDomainType) {

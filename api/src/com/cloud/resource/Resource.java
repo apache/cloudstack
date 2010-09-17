@@ -19,6 +19,12 @@ public interface Resource {
         Releasing,
     }
     
+    enum ReservationStrategy {
+        UserSpecified,
+        Create,
+        Start
+    }
+    
     /**
      * @return id in the CloudStack database
      */
@@ -56,4 +62,6 @@ public interface Resource {
      * @return the reservation state of the resource.
      */
     State getState();
+    
+    ReservationStrategy getReservationStrategy();
 }

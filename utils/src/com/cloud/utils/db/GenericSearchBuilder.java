@@ -43,7 +43,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  * @param <T> VO object this Search is build for.
  * @param <K> Result object that should contain the results.
  */
-public class GenericSearchBuilder<T, K> implements DaoSearch<T, K>, MethodInterceptor {
+public class GenericSearchBuilder<T, K> implements MethodInterceptor {
     final protected Map<String, Attribute> _attrs;
     
     protected ArrayList<Condition> _conditions;

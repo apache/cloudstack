@@ -157,6 +157,11 @@ public class NicVO implements Nic {
     public void setReserver(String reserver) {
         this.reserver = reserver;
     }
+    
+    @Override
+    public ReservationStrategy getReservationStrategy() {
+        return ReservationStrategy.Start;
+    }
 
     @Override
     public int getExpectedReservationInterval() {

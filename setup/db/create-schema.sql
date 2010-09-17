@@ -100,7 +100,9 @@ CREATE TABLE `cloud`.`network_configurations` (
   `mode` varchar(32) COMMENT 'How to retrieve ip address in this network',
   `vlan_id` bigint unsigned NULL COMMENT 'vlan id if the broadcast_domain_type is the vlan',
   `network_offering_id` bigint unsigned NOT NULL COMMENT 'network offering id that this configuration is created from',
-  `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id that this configuration is used in', 
+  `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id that this configuration is used in',
+  `handler_name` varchar(255) NOT NULL COMMENT 'who is responsible for this type of network configuration',
+  `state` varchar(32) NOT NULL COMMENT 'what state is this configuration in', 
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

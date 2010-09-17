@@ -74,7 +74,7 @@ public class Adapters<T extends Adapter> implements Iterable<T> {
         this._adapters = adapters;
     }
     
-    protected T get(String name) {
+    public T get(String name) {
         return _map.get(name);
     }
 
