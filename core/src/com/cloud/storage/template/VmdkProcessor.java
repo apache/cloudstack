@@ -54,7 +54,7 @@ public class VmdkProcessor implements Processor {
         info.virtualSize = info.size;
 
         // delete original OVA file
-        templateFile.delete();
+        // templateFile.delete();
         return info;
     }
     
