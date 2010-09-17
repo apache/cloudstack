@@ -1,47 +1,121 @@
 var g_zoneIds = []; 
 var g_zoneNames = [];	
 
-function afterLoadTemplateJSP() {        
-   var $detailsTab = $("#right_panel_content #tab_content_details");   
+function afterLoadTemplateJSP() {      
+    var $detailsTab = $("#right_panel_content #tab_content_details");   
+    
+     //add button ***
+    $("#midmenu_add_link").show(); 
+    $("#midmenu_add_link").bind("click", function(event) {        
+        $("#dialog_add_template")
+		.dialog('option', 'buttons', { 				
+			"Create": function() { 		
+			    var thisDialog = $(this);
+				thisDialog.dialog("close");
+				
+				debugger;		
+				// validate values
+				var isValid = true;					
+				isValid &= validateString("Name", thisDialog.find("#add_template_name"), thisDialog.find("#add_template_name_errormsg"));
+				isValid &= validateString("Display Text", thisDialog.find("#add_template_display_text"), thisDialog.find("#add_template_display_text_errormsg"));
+				isValid &= validateString("URL", thisDialog.find("#add_template_url"), thisDialog.find("#add_template_url_errormsg"));			
+				if (!isValid) return;		
+										
+				var name = trim(thisDialog.find("#add_template_name").val());
+				var desc = trim(thisDialog.find("#add_template_display_text").val());
+				var url = trim(thisDialog.find("#add_template_url").val());						
+				var zoneId = thisDialog.find("#add_template_zone").val();												
+				var format = thisDialog.find("#add_template_format").val();					
+				var password = thisDialog.find("#add_template_password").val();		
+				var isPublic = thisDialog.find("#add_template_public").val();	                    	
+				var osType = thisDialog.find("#add_template_os_type").val();
+				
+				var moreCriteria = [];				
+				if(thisDialog.find("#add_template_featured_container").css("display")!="none") {				
+				    var isFeatured = thisDialog.find("#add_template_featured").val();						    	
+                    moreCriteria.push("&isfeatured="+isFeatured);
+                }					
+				
+				//middle menu spinning wheel....		
+												
+				$.ajax({
+				    data: createURL("command=registerTemplate&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&url="+encodeURIComponent(url)+"&zoneid="+zoneId+"&ispublic="+isPublic+moreCriteria.join("")+"&format="+format+"&passwordEnabled="+password+"&osTypeId="+osType+"&response=json"),
+					dataType: "json",
+					success: function(json) {						  
+						var result = json.registertemplateresponse;		
+						debugger;						
+						//spinning wheel disappear			                              			                  				
+					},			
+                    error: function(XMLHttpResponse) {		                   
+	                    debugger;
+	                    				    
+                    }							
+				});
+			},
+			"Cancel": function() { 
+				$(this).dialog("close"); 
+			} 
+		}).dialog("open");     
+        return false;
+    });
     
     //edit button ***
     var $readonlyFields  = $detailsTab.find("#name, #displaytext, #passwordenabled, #ispublic, #isfeatured, #ostypename");
     var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit, #ispublic_edit, #isfeatured_edit, #ostypename_edit"); 
     $("#edit_button").bind("click", function(event){    
         $readonlyFields.hide();
-        $editFields.show();        
-        $(this).hide();
+        $editFields.show();  
         $("#cancel_button, #save_button").show()
         return false;
     });    
     $("#cancel_button").bind("click", function(event){    
         $editFields.hide();
         $readonlyFields.show();   
-        $("#save_button, #cancel_button").hide();
-        $("#edit_button").show();
+        $("#save_button, #cancel_button").hide();       
         return false;
     });
     $("#save_button").bind("click", function(event){        
         doUpdateTemplate();     
         $editFields.hide();      
         $readonlyFields.show();       
-        $("#save_button, #cancel_button").hide();
-        $("#edit_button").show();
+        $("#save_button, #cancel_button").hide();       
         return false;
     });
     
     
-    //populate dropdown ***
+    //populate dropdown ***   			
+	var addTemplateZoneField = $("#dialog_add_template #add_template_zone");    	
+	if (isAdmin())  
+		addTemplateZoneField.append("<option value='-1'>All Zones</option>"); 	
+    $.ajax({
+        data: createURL("command=listZones&available=true"+maxPageSize),
+	    dataType: "json",
+	    success: function(json) {		        
+		    var zones = json.listzonesresponse.zone;	 			     			    	
+		    if (zones != null && zones.length > 0) {
+		        for (var i = 0; i < zones.length; i++) {
+			        addTemplateZoneField.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 			        
+			        g_zoneIds.push(zones[i].id);
+			        g_zoneNames.push(zones[i].name);			       
+		        }
+		    }				    			
+	    }
+	});	
+    
     $.ajax({
 	    data: createURL("command=listOsTypes&response=json"+maxPageSize),
 		dataType: "json",
 		success: function(json) {
 			types = json.listostypesresponse.ostype;
-			if (types != null && types.length > 0) {
-				var osTypeDropdown = $detailsTab.find("#ostypename_edit").empty();
-				for (var i = 0; i < types.length; i++) {
-					var html = "<option value='" + types[i].id + "'>" + types[i].description + "</option>";
-					osTypeDropdown.append(html);					
+			if (types != null && types.length > 0) {		
+			    var osTypeDropdownAdd = $("#dialog_add_template #add_template_os_type");    
+				var osTypeDropdownEdit = $detailsTab.find("#ostypename_edit").empty();
+				if(types != null && types.length > 0) {
+				    for(var i = 0; i < types.length; i++) {
+					    var html = "<option value='" + types[i].id + "'>" + types[i].description + "</option>";
+					    osTypeDropdownAdd.append(html);	
+					    osTypeDropdownEdit.append(html);					
+				    }
 				}
 			}	
 		}
@@ -75,6 +149,13 @@ function afterLoadTemplateJSP() {
 	});		
 	
 	//initialize dialog box ***
+	activateDialog($("#dialog_add_template").dialog({ 
+		width:450,
+		autoOpen: false,
+		modal: true,
+		zIndex: 2000
+	}));
+	
 	activateDialog($("#dialog_copy_template").dialog({ 
 		width:300,
 		autoOpen: false,
@@ -88,28 +169,6 @@ function afterLoadTemplateJSP() {
 		modal: true,
 		zIndex: 2000
 	}));
-	
-	//populate zone dropdown excluding source zone ***				
-	var addTemplateZoneField = $("#dialog_add_template #add_template_zone");
-    
-	// Add default zone
-	if (isAdmin()) {
-		addTemplateZoneField.append("<option value='-1'>All Zones</option>"); 		
-	}
-    $.ajax({
-        data: createURL("command=listZones&available=true"+maxPageSize),
-	    dataType: "json",
-	    success: function(json) {		        
-		    var zones = json.listzonesresponse.zone;	 			     			    	
-		    if (zones != null && zones.length > 0) {
-		        for (var i = 0; i < zones.length; i++) {
-			        addTemplateZoneField.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 			        
-			        g_zoneIds.push(zones[i].id);
-			        g_zoneNames.push(zones[i].name);			       
-		        }
-		    }				    			
-	    }
-	});			
 }
 
 function templateToMidmenu(jsonObj, $midmenuItem1) {    
@@ -223,16 +282,16 @@ function templateClearRightPanel() {
         
 	$detailsTab.find("#status").text("");    
     
-    setBooleanField(null, $detailsTab.find("#passwordenabled"));	
+    $detailsTab.find("#passwordenabled").text("");
     $detailsTab.find("#passwordenabled_edit").val(null);
     
-    setBooleanField(null, $detailsTab.find("#ispublic"));	
+    $detailsTab.find("#ispublic").text("");
     $detailsTab.find("#ispublic_edit").val(null);
     
-    setBooleanField(null, $detailsTab.find("#isfeatured"));
+    $detailsTab.find("#isfeatured").text("");
     $detailsTab.find("#isfeatured_edit").val(null);
     
-    setBooleanField(null, $detailsTab.find("#crossZones"));
+    $detailsTab.find("#crossZones").text("");    
     
     $detailsTab.find("#ostypename").text("");
     $detailsTab.find("#ostypename_edit").val(null);    

@@ -117,6 +117,14 @@ public class CreateVolumeCmd extends BaseCmd {
         	size = Long.valueOf(0);
         }
         
+        if(diskOfferingId != null){
+        	DiskOfferingVO dOffering = getManagementServer().findDiskOfferingById(diskOfferingId.longValue());
+        	
+        	if(dOffering == null){
+        		throw new ServerApiException(BaseCmd.PARAM_ERROR,"Diskoffering id:"+diskOfferingId+" is invalid");
+        	}
+        }
+        
         boolean useSnapshot = false;
         if (snapshotId == null) 
         {

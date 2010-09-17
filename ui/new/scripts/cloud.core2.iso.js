@@ -4,6 +4,28 @@ var g_zoneNames = [];
 function afterLoadIsoJSP() {
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     
+    //edit button ***
+    var $readonlyFields  = $detailsTab.find("#name, #displaytext");
+    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit"); 
+    $("#edit_button").bind("click", function(event){    
+        $readonlyFields.hide();
+        $editFields.show();  
+        $("#cancel_button, #save_button").show()
+        return false;
+    });    
+    $("#cancel_button").bind("click", function(event){    
+        $editFields.hide();
+        $readonlyFields.show();   
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });
+    $("#save_button").bind("click", function(event){        
+        doUpdateIso();     
+        $editFields.hide();      
+        $readonlyFields.show();       
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });
     
     //populate dropdown ***
     $.ajax({
@@ -107,8 +129,13 @@ function isoJsonToDetailsTab(jsonObj) {
     $detailsTab.data("jsonObj", jsonObj);      
     $detailsTab.find("#id").text(fromdb(jsonObj.id));
     $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));
+    
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
+    $detailsTab.find("#name_edit").val(fromdb(jsonObj.name));
+    
     $detailsTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
+    $detailsTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
+    
     $detailsTab.find("#account").text(fromdb(jsonObj.account));
     
     if(jsonObj.size != null)
@@ -158,7 +185,22 @@ function isoJsonToDetailsTab(jsonObj) {
 }
 
 function isoClearRightPanel() {
-
+    var $detailsTab = $("#right_panel_content #tab_content_details");   
+    
+    $detailsTab.find("#id").text("");
+    $detailsTab.find("#zonename").text("");
+    
+    $detailsTab.find("#name").text("");
+    $detailsTab.find("#name_edit").val("");
+    
+    $detailsTab.find("#displaytext").text("");
+    $detailsTab.find("#displaytext_edit").val("");
+    
+    $detailsTab.find("#account").text("");    
+    $detailsTab.find("#size").text("");  
+	$detailsTab.find("#status").text(""); 
+	$detailsTab.find("#bootable").text("");
+    $detailsTab.find("#created").text("");   
 }
 
 var isoActionMap = {  
@@ -167,7 +209,7 @@ var isoActionMap = {
         isAsyncJob: true,
         asyncJobResponse: "deleteisosresponse",
         inProcessText: "Deleting ISO....",
-        afterActionSeccessFn: function(jsonObj) {           
+        afterActionSeccessFn: function(jsonObj) {          
             var $midmenuItem1 = $("#midmenuItem_"+jsonObj.id);
             $midmenuItem1.remove();
             clearRightPanel();
@@ -192,10 +234,37 @@ var isoActionMap = {
 }   
 
 var isoListAPIMap = {
-    listAPI: "listisos&isofilter=self",
+    listAPI: "listIsos&isofilter=self",
     listAPIResponse: "listisosresponse",
     listAPIResponseObj: "iso"
 }; 
+
+function doUpdateIso() { 
+    var $detailsTab = $("#right_panel_content #tab_content_details");      
+    
+    // validate values
+    var isValid = true;					
+    isValid &= validateString("Name", $detailsTab.find("#name_edit"), $detailsTab.find("#name_edit_errormsg"));
+    isValid &= validateString("Display Text", $detailsTab.find("#displaytext_edit"), $detailsTab.find("#displaytext_edit_errormsg"));			
+    if (!isValid) 
+        return;
+       
+    var jsonObj = $detailsTab.data("jsonObj"); 
+	var id = jsonObj.id;
+							
+	var name = trim($detailsTab.find("#name_edit").val());
+	var displaytext = trim($detailsTab.find("#displaytext_edit").val());
+	
+	$.ajax({
+	    data: createURL("command=updateIso&id="+id+"&name="+todb(name)+"&displayText="+todb(displaytext)),
+		dataType: "json",
+		success: function(json) {	
+		    var jsonObj = json.updateisoresponse;
+		    isoToMidmenu(jsonObj, $("#midmenuItem_"+jsonObj.id)); 
+		    isoJsonToDetailsTab(jsonObj);						
+		}
+	});
+}
 
 function populateZoneFieldExcludeSourceZone(zoneField, excludeZoneId) {	  
     zoneField.empty();  

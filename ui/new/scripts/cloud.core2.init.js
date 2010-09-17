@@ -24,10 +24,11 @@ $(document).ready(function() {
             selected_leftmenu_id = leftmenuId;
             $(this).addClass("selected");
             
-            $("#midmenu_container").selectable("destroy" ); //midmenu doesn't need multiple selection
+            showMiddleMenu();
+            $("#midmenu_container").selectable("destroy" ); //Most pages don't need multiple selection in middle menu.
             
             clearLeftMenu();
-            clearMidMenu();
+            clearMiddleMenu();
             
             $("#right_panel").load(rightPanelJSP, function(){                   
                 $("#right_panel_content #tab_content_details #action_message_box #close_button").bind("click", function(event){    
@@ -97,13 +98,18 @@ $(document).ready(function() {
     listMidMenuItems("leftmenu_submenu_community_iso", "listIsos&isofilter=community", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRigntPanel);
         
     $("#leftmenu_instance_group_header").bind("click", function(event) {  
-        clearMidMenu(); 
+        showMiddleMenu();
+        clearMiddleMenu(); 
         var $arrowIcon = $(this).find("#arrow_icon");        
         clickInstanceGroupHeader($arrowIcon);
         return false;
     });
     
-   
+    $("#leftmenu_dashboard").bind("click", function(event) {      
+        hideMiddleMenu();
+        $("#right_panel").load("jsp/dashboard.jsp", function(){});
+        return false;
+    });
     
     
     

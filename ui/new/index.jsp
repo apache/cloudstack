@@ -83,7 +83,7 @@ long milliseconds = new Date().getTime();
                 <div id="contentwrapper">
                     <!-- Action Panel starts here-->
                     <div class="actionpanel">
-                        <div class="searchpanel">
+                        <div class="searchpanel" id="search_panel">
                             <form method="post" action="#">
                             <ol>
                                 <li>
@@ -252,7 +252,7 @@ long milliseconds = new Date().getTime();
                         </div>
                         -->
                     </div>
-                    <div class="midmenu_navigationbox">
+                    <div class="midmenu_navigationbox" id="middle_menu_pagination">
                         <div class="midmenu_prevbutton">
                         </div>
                         <div class="midmenu_nextbutton">
@@ -261,7 +261,7 @@ long milliseconds = new Date().getTime();
                     <!-- Right Panel ends here-->
                 </div>
                 <!-- Mid Menu starts here-->
-                <div class="midmenu_panel">
+                <div class="midmenu_panel" id="middle_menu">
                     <div class="midmenu_box" id="midmenu_container">
                     	
                         <!--  
