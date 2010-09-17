@@ -75,6 +75,9 @@ public class EventTypes {
 	public static final String EVENT_TEMPLATE_CREATE = "TEMPLATE.CREATE";
 	public static final String EVENT_TEMPLATE_DELETE = "TEMPLATE.DELETE";
 	public static final String EVENT_TEMPLATE_UPDATE = "TEMPLATE.UPDATE";
+    public static final String EVENT_TEMPLATE_DOWNLOAD_START = "TEMPLATE.DOWNLOAD.START";
+    public static final String EVENT_TEMPLATE_DOWNLOAD_SUCCESS = "TEMPLATE.DOWNLOAD.SUCCESS";
+    public static final String EVENT_TEMPLATE_DOWNLOAD_FAILED = "TEMPLATE.DOWNLOAD.FAILED";
 	public static final String EVENT_TEMPLATE_COPY = "TEMPLATE.COPY";	
 	public static final String EVENT_TEMPLATE_UPLOAD = "TEMPLATE.UPLOAD";	
 	
