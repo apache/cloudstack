@@ -77,7 +77,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru, Net
     }
 
     @Override
-    public String reserve(long vmId, NicProfile nic, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException,
+    public String reserve(VirtualMachine vm, NicProfile nic, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         Pod pod = dest.getPod();
         String ip = _dcDao.allocatePrivateIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), nic.getId());

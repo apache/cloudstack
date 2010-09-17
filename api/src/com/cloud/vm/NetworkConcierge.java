@@ -23,7 +23,7 @@ public interface NetworkConcierge extends Concierge<Nic> {
     
     boolean create(Nic nic) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException;
     
-    String reserve(long vmId, NicProfile ch, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException;
+    String reserve(VirtualMachine vm, NicProfile ch, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException;
     
     boolean release(String uniqueName, String uniqueId);
 }

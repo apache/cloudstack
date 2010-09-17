@@ -59,8 +59,8 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -83,19 +83,18 @@ import com.cloud.info.RunningHostCountInfo;
 import com.cloud.info.RunningHostInfoAgregator;
 import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.network.IpAddrAllocator;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.IpAddrAllocator.networkInfo;
+import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -103,6 +102,7 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
@@ -123,9 +123,9 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
-import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -204,6 +204,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     @Inject private ConfigurationDao _configDao;
     @Inject private EventDao _eventDao;
     @Inject private ServiceOfferingDao _offeringDao;
+    @Inject private AccountManager _accountMgr;
     
     private IpAddrAllocator _IpAllocator;
     
@@ -525,7 +526,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		return null;
 	}
 	
-	public boolean  generateFirewallConfiguration(Long hostId){
+	@Override
+    public boolean  generateFirewallConfiguration(Long hostId){
 		if (hostId == null) {
 			return true;
 		}
@@ -740,14 +742,15 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             String vlanGateway = publicIpAndVlan._gateWay;
             String vlanNetmask = publicIpAndVlan._netMask;
 
+            AccountVO systemAcct = _accountMgr.getSystemAccount();
 			txn.start();
 			SecondaryStorageVmVO secStorageVm;
 			String name = VirtualMachineName.getSystemVmName(id, _instance, "s").intern();
 	        
-			secStorageVm = new SecondaryStorageVmVO(id, name, guestMacAddress, null, NetUtils.getLinkLocalNetMask(),
+			secStorageVm = new SecondaryStorageVmVO(id, _serviceOffering.getId(), name, guestMacAddress, null, NetUtils.getLinkLocalNetMask(),
 					privateMacAddress, null, cidrNetmask, _template.getId(), _template.getGuestOSId(),
 					publicMacAddress, publicIpAddress, vlanNetmask, publicIpAndVlan._vlanDbId, publicIpAndVlan._vlanid,
-					pod.first().getId(), dataCenterId, vlanGateway, null,
+					pod.first().getId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId(), vlanGateway, null,
 					dc.getInternalDns1(), dc.getInternalDns2(), _domain, _secStorageVmRamSize, secHost.getGuid(), secHost.getStorageUrl());
 
 			secStorageVm.setLastHostId(pod.second());

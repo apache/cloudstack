@@ -539,26 +539,6 @@ CREATE TABLE  `cloud`.`vm_template` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE  `cloud`.`vm_instance2` (
-  `id` bigint unsigned UNIQUE NOT NULL,
-  `instance_name` varchar(255) NOT NULL COMMENT 'name of the vm instance running on the hosts',
-  `state` varchar(32) NOT NULL,
-  `update_count` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'date state was updated',
-  `vm_template_id` bigint unsigned,
-  `guest_os_id` bigint unsigned NOT NULL,
-  `host_id` bigint unsigned,
-  `last_host_id` bigint unsigned COMMENT 'tentative host for first run or last host that it has been running on',
-  `proxy_id` bigint unsigned NULL COMMENT 'console proxy allocated in previous session',
-  `proxy_assign_time` DATETIME NULL COMMENT 'time when console proxy was assigned',
-  `vnc_password` varchar(255) NOT NULL COMMENT 'vnc password',
-  `ha_enabled` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Should HA be enabled for this VM',
-  `update_time` datetime COMMENT 'date the destroy was requested',
-  `created` datetime NOT NULL COMMENT 'date created',
-  `removed` datetime COMMENT 'date removed if not null',
-  `type` varchar(32) NOT NULL COMMENT 'type of vm it is',
-  PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 CREATE TABLE  `cloud`.`vm_instance` (
   `id` bigint unsigned UNIQUE NOT NULL,
   `name` varchar(255) NOT NULL,
@@ -583,6 +563,9 @@ CREATE TABLE  `cloud`.`vm_instance` (
   `created` datetime NOT NULL COMMENT 'date created',
   `removed` datetime COMMENT 'date removed if not null',
   `type` varchar(32) NOT NULL COMMENT 'type of vm it is',
+  `account_id` bigint unsigned NOT NULL COMMENT 'user id of owner',
+  `domain_id` bigint unsigned NOT NULL,
+  `service_offering_id` bigint unsigned NOT NULL COMMENT 'service offering id',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -593,8 +576,6 @@ CREATE TABLE `cloud`.`user_vm` (
   `domain_router_id` bigint unsigned COMMENT 'router id',
   `vnet` varchar(18) COMMENT 'vnet',
   `dc_vlan` varchar(18) COMMENT 'zone vlan',
-  `account_id` bigint unsigned NOT NULL COMMENT 'user id of owner',
-  `domain_id` bigint unsigned NOT NULL,
   `guest_ip_address` varchar(15) COMMENT 'ip address within the guest network',
   `guest_mac_address` varchar(17) COMMENT 'mac address within the guest network',
   `guest_netmask` varchar(15) COMMENT 'netmask within the guest network',
@@ -602,7 +583,6 @@ CREATE TABLE `cloud`.`user_vm` (
   `external_mac_address` varchar(17)  COMMENT 'mac address within the external network',
   `external_vlan_db_id` bigint unsigned  COMMENT 'foreign key into vlan table',
   `user_data` varchar(2048),
-  `service_offering_id` bigint unsigned NOT NULL COMMENT 'service offering id',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

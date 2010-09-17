@@ -427,6 +427,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 
             router =
                 new DomainRouterVO(id,
+                        _offering.getId(),
                         name,
                         mgmtMacAddress,
                         null,
@@ -612,6 +613,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                 }
 
                 router = new DomainRouterVO(id,
+                            _offering.getId(),
                             name,
                             privateMacAddress,
                             null,
@@ -2475,7 +2477,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                 NetworkConcierge concierge = _networkConcierges.get(nic.getReserver());
                 nic.setState(Resource.State.Reserving);
                 _nicDao.update(nic.getId(), nic);
-                concierge.reserve(vmProfile.getId(), toNicProfile(nic), dest);
+                concierge.reserve(null, toNicProfile(nic), dest);
             } else {
                 
             }

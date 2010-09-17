@@ -125,13 +125,24 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Temporal(value=TemporalType.TIMESTAMP)
     Date updateTime;
     
+    @Column(name="domain_id")
+    long domainId;
+    
+    @Column(name="account_id")
+    long accountId;
+    
+    @Column(name="service_offering_id")
+    long serviceOfferingId;
+    
     public VMInstanceVO(long id,
+                        long serviceOfferingId,
                         String name,
                         String instanceName,
                         Type type,
                         Long vmTemplateId,
                         long guestOSId,
-                        
+                        long domainId,
+                        long accountId,
                         boolean haEnabled) {
         this.id = id;
         this.name = name;
@@ -145,10 +156,14 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.mirroredVols = false;
         this.vncPassword = Long.toHexString(new Random().nextLong());
         this.state = State.Creating;
+        this.accountId = accountId;
+        this.domainId = domainId;
+        this.serviceOfferingId = serviceOfferingId;
     }
                        
 	
     public VMInstanceVO(long id,
+                        long serviceOfferingId,
                         String name,
                         String instanceName,
                         Type type,
@@ -159,6 +174,8 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
                         String privateNetmask,
                         long dataCenterId,
                         long podId,
+                        long domainId,
+                        long accountId,
                         boolean haEnabled,
                         Long hostId) {
         super();
@@ -182,6 +199,9 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.updateTime = new Date();
 		this.vncPassword = Long.toHexString(new Random().nextLong());
 		this.state = State.Creating;
+		this.serviceOfferingId = serviceOfferingId;
+		this.domainId = domainId;
+		this.accountId =  accountId;
     }
 
     protected VMInstanceVO() {
@@ -189,6 +209,16 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     
     public Date getRemoved() {
     	return removed;
+    }
+    
+    @Override
+    public long getDomainId() {
+        return domainId;
+    }
+    
+    @Override
+    public long getAccountId() {
+        return accountId;
     }
     
     @Override
@@ -273,6 +303,10 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Override
     public String getVncPassword() {
         return vncPassword;
+    }
+    
+    public long getServiceOfferingId() {
+        return serviceOfferingId;
     }
     
 	public Long getProxyId() {

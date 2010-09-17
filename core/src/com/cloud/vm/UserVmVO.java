@@ -31,12 +31,6 @@ import com.cloud.uservm.UserVm;
 @PrimaryKeyJoinColumn(name="id")
 public class UserVmVO extends VMInstanceVO implements UserVm {
 
-    @Column(name="account_id", updatable=false, nullable=false)
-    private long accountId = -1;
-    
-    @Column(name="domain_id", updatable=false, nullable=false)
-    private long domainId = -1;
-    
     @Column(name="domain_router_id", updatable=true, nullable=true)
     Long domainRouterId;
 
@@ -74,15 +68,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     private String displayName;
 
     @Override
-    public long getAccountId() {
-        return accountId;
-    }
-
-    @Override
-    public long getDomainId() {
-        return domainId;
-    }
-
     public String getGuestIpAddress() {
 		return guestIpAddress;
 	}
@@ -92,7 +77,8 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
 		setPrivateIpAddress(guestIpAddress);
 	}
 
-	public String getGuestMacAddress() {
+	@Override
+    public String getGuestMacAddress() {
 		return guestMacAddress;
 	}
 
@@ -153,7 +139,7 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
                     long accountId,
                     long serviceOfferingId,
                     String userData) {
-        super(id, displayName, instanceName, Type.User, templateId, guestOsId, haEnabled);
+        super(id, serviceOfferingId, displayName, instanceName, Type.User, templateId, guestOsId, domainId, accountId, haEnabled);
         this.userData = userData;
         this.displayName = displayName;
         
@@ -178,11 +164,8 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
                     boolean haEnabled,
                     String displayName,
                     String userData) {
-        super(id, name, name, Type.User, templateId, guestOSId, guestMacAddress, guestIpAddress, guestNetMask, dcId, podId, haEnabled, null);
-        this.serviceOfferingId = serviceOfferingId;
+        super(id, serviceOfferingId, name, name, Type.User, templateId, guestOSId, guestMacAddress, guestIpAddress, guestNetMask, dcId, podId, domainId, accountId, haEnabled, null);
         this.domainRouterId = routerId;
-        this.accountId = accountId;
-        this.domainId = domainId;
         this.guestIpAddress = guestIpAddress;
         this.guestNetmask = guestNetMask;
         this.guestMacAddress = guestMacAddress;

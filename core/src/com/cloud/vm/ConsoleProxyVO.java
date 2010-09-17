@@ -97,13 +97,14 @@ public class ConsoleProxyVO extends VMInstanceVO implements ConsoleProxy {
 	/**
 	 * Correct constructor to use.
 	 */
-	public ConsoleProxyVO(long id, String name, long templateId, long guestOSId, long dataCenterId, int activeSession) {
-	    super(id, name, name, Type.ConsoleProxy, templateId, guestOSId, false);
+	public ConsoleProxyVO(long id, long serviceOfferingId, String name, long templateId, long guestOSId, long dataCenterId, long domainId, long accountId, int activeSession) {
+	    super(id, serviceOfferingId, name, name, Type.ConsoleProxy, templateId, guestOSId, domainId, accountId, false);
 	    this.activeSession = activeSession;
 	}
 	
     public ConsoleProxyVO(
     		long id,
+    		long serviceOfferingId,
             String name,
             String guestMacAddress,
             String guestIpAddress,
@@ -120,6 +121,8 @@ public class ConsoleProxyVO extends VMInstanceVO implements ConsoleProxy {
             String vlanId,
             long podId,
             long dataCenterId,
+            long domainId,
+            long accountId,
             String gateway,
             Long hostId,
             String dns1,
@@ -127,8 +130,8 @@ public class ConsoleProxyVO extends VMInstanceVO implements ConsoleProxy {
             String domain,
             int ramSize,
             int activeSession) {
-    	super(id, name, name, Type.ConsoleProxy, templateId, guestOSId,
-    			privateMacAddress, privateIpAddress, privateNetmask, dataCenterId, podId, true, hostId);
+    	super(id, serviceOfferingId, name, name, Type.ConsoleProxy, templateId, guestOSId,
+    			privateMacAddress, privateIpAddress, privateNetmask, dataCenterId, podId, domainId, accountId, true, hostId);
     	this.gateway = gateway;
     	this.publicIpAddress = publicIpAddress;
     	this.publicNetmask = publicNetmask;

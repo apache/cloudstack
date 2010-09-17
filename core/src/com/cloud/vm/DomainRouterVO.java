@@ -35,12 +35,6 @@ import com.cloud.utils.net.NetUtils;
 @PrimaryKeyJoinColumn(name="id")
 @DiscriminatorValue(value="DomainRouter")
 public class DomainRouterVO extends VMInstanceVO implements DomainRouter {
-    @Column(name="account_id", updatable=false, nullable=false)
-    private long accountId = -1;
-
-    @Column(name="domain_id", updatable=false, nullable=false)
-    private long domainId = 0;
-
     @Column(name="ram_size", updatable=false, nullable=false)
     private int ramSize;
     
@@ -94,6 +88,7 @@ public class DomainRouterVO extends VMInstanceVO implements DomainRouter {
     private Role role = Role.DHCP_FIREWALL_LB_PASSWD_USERDATA;
     
     public DomainRouterVO(long id,
+                          long serviceOfferingId,
                           String name,
                           String instanceName,
                           String privateMacAddress,
@@ -120,7 +115,7 @@ public class DomainRouterVO extends VMInstanceVO implements DomainRouter {
                           Long hostId,
                           String dns1,
                           String dns2) {
-        super(id, name, instanceName, Type.DomainRouter, templateId, guestOSId, privateMacAddress, privateIpAddress, privateNetmask, dataCenterId, podId, true, hostId);
+        super(id, serviceOfferingId, name, instanceName, Type.DomainRouter, templateId, guestOSId, privateMacAddress, privateIpAddress, privateNetmask, dataCenterId, podId, domainId, accountId, true, hostId);
         this.privateMacAddress = privateMacAddress;
         this.guestMacAddress = guestMacAddress;
         this.guestIpAddress = guestIpAddress;
@@ -142,6 +137,7 @@ public class DomainRouterVO extends VMInstanceVO implements DomainRouter {
     }
     
     public DomainRouterVO(long id,
+                          long serviceOfferingId,
                           String name,
                           String privateMacAddress,
                           String privateIpAddress,
@@ -164,15 +160,7 @@ public class DomainRouterVO extends VMInstanceVO implements DomainRouter {
                           String domain,
                           String dns1,
                           String dns2) {
-        this(id, name, name, privateMacAddress, privateIpAddress, privateNetmask, templateId, guestOSId, guestMacAddress, guestIpAddress, guestNetmask, null, accountId, domainId, publicMacAddress, publicIpAddress, publicNetMask, vlanDbId, vlanId, podId, dataCenterId, ramSize, gateway, domain, null, dns1, dns2);
-    }
-
-    public long getAccountId() {
-        return accountId;
-    }
-
-    public long getDomainId() {
-        return domainId;
+        this(id, serviceOfferingId, name, name, privateMacAddress, privateIpAddress, privateNetmask, templateId, guestOSId, guestMacAddress, guestIpAddress, guestNetmask, null, accountId, domainId, publicMacAddress, publicIpAddress, publicNetMask, vlanDbId, vlanId, podId, dataCenterId, ramSize, gateway, domain, null, dns1, dns2);
     }
 
     public void setGateway(String gateway) {
@@ -319,6 +307,7 @@ public class DomainRouterVO extends VMInstanceVO implements DomainRouter {
         this.zoneVlan = zoneVlan;
     }
 
+    @Override
     public String getZoneVlan() {
         return zoneVlan;
     }
@@ -327,6 +316,7 @@ public class DomainRouterVO extends VMInstanceVO implements DomainRouter {
         this.guestZoneMacAddress = guestZoneMacAddress;
     }
 
+    @Override
     public String getGuestZoneMacAddress() {
         return guestZoneMacAddress;
     }

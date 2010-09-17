@@ -106,9 +106,9 @@ public class ControlNetworkGuru extends AdapterBase implements NetworkGuru, Netw
     }
 
     @Override
-    public String reserve(long vmId, NicProfile nic, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException,
+    public String reserve(VirtualMachine vm, NicProfile nic, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
-        String ip = _dcDao.allocateLinkLocalPrivateIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), vmId);
+        String ip = _dcDao.allocateLinkLocalPrivateIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), vm.getId());
         nic.setIp4Address(ip);
         nic.setMacAddress("FE:FF:FF:FF:FF:FF");
         return Long.toString(nic.getId());

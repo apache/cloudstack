@@ -845,7 +845,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         if (s_logger.isDebugEnabled())
             s_logger.debug("Assign console proxy from a newly started instance for request from data center : " + dataCenterId);
 
-        Map<String, Object> context = createProxyInstance(dataCenterId);
+        Map<String, Object> context = createProxyInstance2(dataCenterId);
 
         long proxyVmId = (Long) context.get("proxyVmId");
         if (proxyVmId == 0) {
@@ -884,7 +884,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         if (s_logger.isDebugEnabled())
             s_logger.debug("Assign console proxy from a newly started instance for request from data center : " + dataCenterId);
 
-        Map<String, Object> context = createProxyInstance(dataCenterId);
+        Map<String, Object> context = createProxyInstance2(dataCenterId);
 
         long proxyVmId = (Long) context.get("proxyVmId");
         if (proxyVmId == 0) {
@@ -979,13 +979,15 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
 
             String vlanGateway = publicIpAndVlan._gateWay;
             String vlanNetmask = publicIpAndVlan._netMask;
+            
+            AccountVO systemAccount = _accountMgr.getSystemAccount();
 
             txn.start();
             ConsoleProxyVO proxy;
             String name = VirtualMachineName.getConsoleProxyName(id, _instance).intern();
-            proxy = new ConsoleProxyVO(id, name, guestMacAddress, null, NetUtils.getLinkLocalNetMask(), privateMacAddress, null, cidrNetmask,
+            proxy = new ConsoleProxyVO(id, _serviceOffering.getId(), name, guestMacAddress, null, NetUtils.getLinkLocalNetMask(), privateMacAddress, null, cidrNetmask,
                     _template.getId(), _template.getGuestOSId(), publicMacAddress, publicIpAddress, vlanNetmask, publicIpAndVlan._vlanDbId,
-                    publicIpAndVlan._vlanid, pod.first().getId(), dataCenterId, vlanGateway, null, dc.getDns1(), dc.getDns2(), _domain,
+                    publicIpAndVlan._vlanid, pod.first().getId(), dataCenterId, systemAccount.getDomainId(), systemAccount.getId(), vlanGateway, null, dc.getDns1(), dc.getDns2(), _domain,
                     _proxyRamSize, 0);
 
             proxy.setLastHostId(pod.second());
@@ -1016,6 +1018,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         long id = _consoleProxyDao.getNextInSequence(Long.class, "id");
         String name = VirtualMachineName.getConsoleProxyName(id, _instance);
         DataCenterVO dc = _dcDao.findById(dataCenterId);
+        AccountVO systemAcct = _accountMgr.getSystemAccount();
         
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId, 1);
         
@@ -1024,7 +1027,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         for (NetworkOfferingVO offering : offerings) {
             profiles.add(_networkMgr.setupNetworkConfiguration(_accountMgr.getSystemAccount(), offering, plan));
         }
-        ConsoleProxyVO proxy = new ConsoleProxyVO(id, name, _template.getId(), _template.getGuestOSId(), dataCenterId, 0);
+        ConsoleProxyVO proxy = new ConsoleProxyVO(id, _serviceOffering.getId(), name, _template.getId(), _template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId(), 0);
         proxy = _consoleProxyDao.persist(proxy);
         try {
             VirtualMachineProfile vmProfile = _vmMgr.allocate(proxy, _template, _serviceOffering, profiles, plan, _accountMgr.getSystemAccount());
