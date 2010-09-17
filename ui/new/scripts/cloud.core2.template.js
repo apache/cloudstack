@@ -328,10 +328,10 @@ function templateClearRightPanel() {
 }
 
 var templateActionMap = {  
-    "Delete Template": {
-        api: "deleteTemplate",            
+    "Delete Template": {              
         isAsyncJob: true,
         asyncJobResponse: "deletetemplateresponse",
+        dialogBeforeActionFn : doDeleteTemplate,
         inProcessText: "Deleting Template....",
         afterActionSeccessFn: function(jsonObj) {           
             var $midmenuItem1 = $("#"+templateGetMidmenuId(jsonObj)); 
@@ -445,6 +445,36 @@ function doUpdateTemplate() {
     });   
 }
 
+function doDeleteTemplate($actionLink, listAPIMap, $detailsTab) {   
+    var $detailsTab = $("#right_panel_content #tab_content_details"); 
+    var jsonObj = $detailsTab.data("jsonObj");
+	var id = jsonObj.id;
+	var name = jsonObj.name;			
+	var zoneId = jsonObj.zoneid;
+
+    var moreCriteria = [];						
+	if (zoneId != null) 
+		moreCriteria.push("&zoneid="+zoneId);	
+	
+	var htmlMsg; 
+	if(jsonObj.crossZones == "true")
+	    htmlMsg = "<p>Template <b>"+name+"</b> is used by all zones. Please confirm you want to delete it from all zones.</p>";
+	else
+	    htmlMsg = "<p>Please confirm you want to delete template <b>"+name+"</b>.</p>";
+					
+	$("#dialog_confirmation")
+	.html(htmlMsg)
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=deleteTemplate&id="+id+moreCriteria.join("");
+            doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
+}
 
 function populateZoneFieldExcludeSourceZone(zoneField, excludeZoneId) {	  
     zoneField.empty();  

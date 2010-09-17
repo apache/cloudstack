@@ -363,7 +363,6 @@ function doDeleteIso($actionLink, listAPIMap, $detailsTab) {
 			$(this).dialog("close"); 
 		}
 	}).dialog("open");
-
 }
 
 function populateZoneFieldExcludeSourceZone(zoneField, excludeZoneId) {	  
