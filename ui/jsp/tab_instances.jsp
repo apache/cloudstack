@@ -533,6 +533,13 @@ long milliseconds = new Date().getTime();
                             Availability Zone:</label>
                         <select class="select" id="wizard_zone" name="zone">
                         </select>
+			<label for="wizard_zone">
+                            Hypervisor:</label>
+                        <select class="select" id="wizard_hypervisor" name="hypervisor">
+			  <option value='VmWare'>VMware ESX</option>
+			  <option value='XenServer'>Citrix XenServer</option>
+			  <option value='KVM'>KVM</option>
+                        </select>
                         <div class="rev_tempsearchbox">
                             <form method="post" action="#">
                             <ol>
@@ -817,6 +824,12 @@ long milliseconds = new Date().getTime();
                             <div class="rev_wiz_reviewlabel">
                                 Group:</div>
                             <div class="rev_wiz_reviewanswers" id="wizard_review_group">
+                            </div>
+                        </div>
+			<div class="rev_wiz_reviewlist">
+                            <div class="rev_wiz_reviewlabel">
+                                Hypervisor:</div>
+                            <div class="rev_wiz_reviewanswers" id="wizard_review_hypervisor">
                             </div>
                         </div>
                         <div class="rev_wiz_reviewlist">

@@ -256,7 +256,15 @@ long milliseconds = new Date().getTime();
 					<label for="add_template_os_type">OS Type:</label>
 					<select class="select" name="add_template_os_type" id="add_template_os_type">
 					</select>
-				</li>	
+				</li>
+				<li>
+					<label for="add_template_hypervisor">Hypervisor:</label>
+					<select class="select" name="add_template_hypervisor" id="add_template_hypervisor">
+						<option value='VmWare'>VMware ESX</option>
+						<option value='XenServer'>Citrix XenServer</option>
+						<option value='KVM'>KVM</option>
+					</select>
+				</li>
 				<li>
 					<label for="add_template_format">Format:</label>
 					<select class="select" name="add_template_format" id="add_template_format">

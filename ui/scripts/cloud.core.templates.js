@@ -174,6 +174,7 @@ function showTemplatesTab() {
 				var password = thisDialog.find("#add_template_password").val();		
 				var isPublic = thisDialog.find("#add_template_public").val();	                    	
 				var osType = thisDialog.find("#add_template_os_type").val();
+				var hypervisor = thisDialog.find("#add_template_hypervisor").val();
 				
 				var moreCriteria = [];				
 				if(thisDialog.find("#add_template_featured_container").css("display")!="none") {				
@@ -193,7 +194,7 @@ function showTemplatesTab() {
 			    submenuContent.find("#grid_content").prepend(template.fadeIn("slow"));	 				
 												
 				$.ajax({
-				        data: createURL("command=registerTemplate&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&url="+encodeURIComponent(url)+"&zoneid="+zoneId+"&ispublic="+isPublic+moreCriteria.join("")+"&format="+format+"&passwordEnabled="+password+"&osTypeId="+osType+"&response=json"),
+				        data: createURL("command=registerTemplate&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&url="+encodeURIComponent(url)+"&zoneid="+zoneId+"&ispublic="+isPublic+moreCriteria.join("")+"&format="+format+"&passwordEnabled="+password+"&osTypeId="+osType+"&hypervisor="+hypervisor+"&response=json"),
 					dataType: "json",
 					success: function(json) {						  
 						var result = json.registertemplateresponse;								

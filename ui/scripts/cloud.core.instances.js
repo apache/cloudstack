@@ -1618,6 +1618,7 @@ function showInstancesTab(p_domainId, p_account) {
 			thisPopup.find("#wizard_review_zone").text(thisPopup.find("#wizard_zone option:selected").text());
 			thisPopup.find("#wizard_review_name").text(thisPopup.find("#wizard_vm_name").val());
 			thisPopup.find("#wizard_review_group").text(thisPopup.find("#wizard_vm_group").val());
+			thisPopup.find("#wizard_review_hypervisor").text(thisPopup.find("#wizard_hypervisor option:selected").text());
 			
 			if(thisPopup.find("#wizard_network_groups_container").css("display") != "none" && thisPopup.find("#wizard_network_groups").val() != null) {
 			    var networkGroupList = thisPopup.find("#wizard_network_groups").val().join(",");
@@ -1632,6 +1633,7 @@ function showInstancesTab(p_domainId, p_account) {
 			// Create a new VM!!!!
 			var moreCriteria = [];								
 			moreCriteria.push("&zoneId="+thisPopup.find("#wizard_zone").val());
+			moreCriteria.push("&hypervisor="+thisPopup.find("#wizard_hypervisor").val());
 			
 			var name = trim(thisPopup.find("#wizard_vm_name").val());
 			if (name != null && name.length > 0) 
