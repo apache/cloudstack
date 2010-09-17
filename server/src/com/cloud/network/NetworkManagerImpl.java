@@ -1933,6 +1933,9 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         	throw new InvalidParameterValueException("Failed to assign to load balancer " + loadBalancerId + ", the load balancer was not found.");
         }
 
+        DomainRouterVO syncObject = _routerDao.findByPublicIpAddress(loadBalancer.getIpAddress());
+        cmd.synchronizeCommand("Router", syncObject.getId());
+
         // Permission check...
         Account account = (Account)UserContext.current().getAccountObject();
         if (account != null) {

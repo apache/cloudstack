@@ -44,7 +44,7 @@ public class VolumeOperationExecutor extends BaseAsyncJobExecutor {
     	Gson gson = GsonHelper.getBuilder().create();
     	AsyncJobManager asyncMgr = getAsyncJobMgr();
     	AsyncJobVO job = getJob();
-    	
+    	/*
     	if (getSyncSource() == null) {
     		VolumeOperationParam param = gson.fromJson(job.getCmdInfo(), VolumeOperationParam.class);
 	    	asyncMgr.syncAsyncJobExecution(job.getId(), "Volume", param.getVolumeId());
@@ -104,9 +104,10 @@ public class VolumeOperationExecutor extends BaseAsyncJobExecutor {
     		        asyncMgr.getExecutorContext().getManagementServer().saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_ERROR, eventType, failureDescription, null, param.getEventId());
     		    }
     		}
-
     		return true;
     	}
+*/
+    	return true;
 	}
     
 	public void processAnswer(VolumeOperationListener listener, long agentId, long seq, Answer answer) {
@@ -138,12 +139,12 @@ public class VolumeOperationExecutor extends BaseAsyncJobExecutor {
 			resultObject.setDiskOfferingName(getAsyncJobMgr().getExecutorContext().getManagementServer().findDiskOfferingById(diskOfferingId).getName());
 			resultObject.setDiskOfferingDisplayText(getAsyncJobMgr().getExecutorContext().getManagementServer().findDiskOfferingById(diskOfferingId).getDisplayText());
 		}
-		resultObject.setDomain(getAsyncJobMgr().getExecutorContext().getManagementServer().findDomainIdById(volume.getDomainId()).getName());
+//		resultObject.setDomain(getAsyncJobMgr().getExecutorContext().getManagementServer().findDomainIdById(volume.getDomainId()).getName());
 		resultObject.setStorageType("shared"); // NOTE: You can never create a local disk volume but if that changes, we need to change this
 		if (volume.getPoolId() != null)
 			resultObject.setStorage(getAsyncJobMgr().getExecutorContext().getManagementServer().findPoolById(volume.getPoolId()).getName());
 		resultObject.setZoneId(volume.getDataCenterId());
-		resultObject.setZoneName(getAsyncJobMgr().getExecutorContext().getManagementServer().getDataCenterBy(volume.getDataCenterId()).getName());
+//		resultObject.setZoneName(getAsyncJobMgr().getExecutorContext().getManagementServer().getDataCenterBy(volume.getDataCenterId()).getName());
 		return resultObject;
 	}
 

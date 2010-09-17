@@ -28,6 +28,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 
 import com.cloud.utils.db.GenericDao;
 
@@ -106,7 +107,13 @@ public class AsyncJobVO {
     
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
-    
+
+    @Transient
+    private SyncQueueItemVO syncSource = null;
+
+    @Transient
+    private boolean fromPreviousSession = false;
+
     public AsyncJobVO() {
     }
     
@@ -302,6 +309,22 @@ public class AsyncJobVO {
 		this.cmdOriginator = cmdOriginator;
 	}
 	
+    public SyncQueueItemVO getSyncSource() {
+        return syncSource;
+    }
+    
+    public void setSyncSource(SyncQueueItemVO syncSource) {
+        this.syncSource = syncSource;
+    }
+    
+    public boolean isFromPreviousSession() {
+        return fromPreviousSession;
+    }
+    
+    public void setFromPreviousSession(boolean fromPreviousSession) {
+        this.fromPreviousSession = fromPreviousSession;
+    }
+    
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append("AsyncJobVO {id:").append(getId());

@@ -357,6 +357,16 @@ public class ApiServer implements HttpRequestHandler {
 
             Gson gson = GsonHelper.getBuilder().create();
 
+            UserContext ctx = UserContext.current();
+            Long userId = ctx.getUserId();
+            Account account = (Account)ctx.getAccountObject();
+            if (userId != null) {
+                params.put("ctxUserId", userId.toString());
+            }
+            if (account != null) {
+                params.put("ctxAccountId", account.getId().toString());
+            }
+
             AsyncJobVO job = new AsyncJobVO();
             job.setUserId(UserContext.current().getUserId());
             job.setCmd(cmdObj.getClass().getName());
