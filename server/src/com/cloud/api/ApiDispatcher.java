@@ -102,8 +102,12 @@ public class ApiDispatcher {
 
         try {
             Method method = mgr.getClass().getMethod(methodName, cmd.getClass());
-            method.invoke(mgr, cmd);
-            return cmd.getId();
+            Object dbObject = method.invoke(mgr, cmd);
+
+            Method getIdMethod = dbObject.getClass().getMethod("getId");
+            Object id = getIdMethod.invoke(dbObject);
+            
+            return (Long)id;
         } catch (NoSuchMethodException nsme) {
             s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), nsme);
             throw new CloudRuntimeException("Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", unable to find implementation.");
@@ -148,7 +152,8 @@ public class ApiDispatcher {
 
         try {
             Method method = mgr.getClass().getMethod(methodName, cmd.getClass());
-            method.invoke(mgr, cmd);
+            Object result = method.invoke(mgr, cmd);
+            cmd.setResponseObject(result);
         } catch (NoSuchMethodException nsme) {
             s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), nsme);
             throw new CloudRuntimeException("Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", unable to find implementation.");

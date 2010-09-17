@@ -151,8 +151,11 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
     		job.setInstanceId(null);
 
     		// FIXME:  do we need to re-serialize here?
-    		if(resultObject != null)
-    			job.setResult(SerializerHelper.toSerializedString(resultObject));
+    		if (resultObject != null) {
+//                job.setResult(SerializerHelper.toSerializedString(resultObject));
+                job.setResult((String)resultObject);
+    		}
+
     		job.setLastUpdated(DateUtil.currentGMTTime());
     		_jobDao.update(jobId, job);
     		txt.commit();

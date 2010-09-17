@@ -16,6 +16,7 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     private Long startEventId;
 
     public String getResponse(long jobId) {
+        // FIXME:  We need a generic response object here, see BaseAsyncCreateCmd
         return SerializerHelper.toSerializedString(Long.valueOf(jobId));
     }
 
