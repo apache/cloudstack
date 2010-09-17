@@ -17,10 +17,9 @@
  */
 package com.cloud.api.response;
 
-import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 
-public class GuestOSCategoryResponse implements ResponseObject {
+public class GuestOSCategoryResponse extends BaseResponse {
     @Param(name="id")
     private Long id;
 

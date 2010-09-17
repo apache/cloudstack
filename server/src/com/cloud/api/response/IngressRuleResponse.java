@@ -17,10 +17,9 @@
  */
 package com.cloud.api.response;
 
-import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 
-public class IngressRuleResponse implements ResponseObject {
+public class IngressRuleResponse extends BaseResponse {
     @Param(name="ruleid")
     private Long ruleId;
 

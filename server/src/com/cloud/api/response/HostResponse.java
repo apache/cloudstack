@@ -19,13 +19,12 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
-import com.cloud.api.ResponseObject;
 import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.serializer.Param;
 
-public class HostResponse implements ResponseObject {
+public class HostResponse extends BaseResponse {
     @Param(name="id")
     private Long id;
 

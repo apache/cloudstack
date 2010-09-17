@@ -17,10 +17,9 @@
  */
 package com.cloud.api.response;
 
-import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 
-public class ConfigurationResponse implements ResponseObject {
+public class ConfigurationResponse extends BaseResponse {
     @Param(name="category")
     private String category;
 

@@ -17,10 +17,9 @@
  */
 package com.cloud.api.response;
 
-import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 
-public class CapacityResponse implements ResponseObject {
+public class CapacityResponse extends BaseResponse {
     @Param(name="type")
     private Short capacityType;
 

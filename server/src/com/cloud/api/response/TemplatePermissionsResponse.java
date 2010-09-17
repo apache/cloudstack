@@ -19,10 +19,9 @@ package com.cloud.api.response;
 
 import java.util.List;
 
-import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 
-public class TemplatePermissionsResponse implements ResponseObject {
+public class TemplatePermissionsResponse extends BaseResponse {
     @Param(name="id")
     private Long id;
 

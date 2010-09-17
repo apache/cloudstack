@@ -17,10 +17,9 @@
  */
 package com.cloud.api.response;
 
-import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 
-public class ResourceLimitResponse implements ResponseObject {
+public class ResourceLimitResponse extends BaseResponse {
     @Param(name="account")
     private String accountName;
 

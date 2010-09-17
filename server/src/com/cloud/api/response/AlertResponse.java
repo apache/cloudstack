@@ -19,10 +19,9 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
-import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 
-public class AlertResponse implements ResponseObject {
+public class AlertResponse extends BaseResponse {
     @Param(name="type")
     private Short alertType;
 

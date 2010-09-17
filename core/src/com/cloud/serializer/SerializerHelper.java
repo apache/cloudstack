@@ -48,16 +48,6 @@ public class SerializerHelper {
 		return null;
 	}
 
-	// FIXME:  what about XML response?
-	public static String toSerializedString(Object result) {
-        if (result != null) {
-            Gson gson = GsonHelper.getBuilder().create();
-            
-            return gson.toJson(result); 
-        } 
-        return null;
-    }
-	
 	public static Object fromSerializedString(String result) {
 		try {
 			if(result != null && !result.isEmpty()) {

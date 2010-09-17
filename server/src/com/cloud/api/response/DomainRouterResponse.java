@@ -19,11 +19,10 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
-import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 import com.cloud.vm.State;
 
-public class DomainRouterResponse implements ResponseObject {
+public class DomainRouterResponse extends BaseResponse {
     @Param(name="id")
     private Long id;
 

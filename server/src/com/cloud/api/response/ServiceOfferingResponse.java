@@ -19,10 +19,9 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
-import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 
-public class ServiceOfferingResponse implements ResponseObject {
+public class ServiceOfferingResponse extends BaseResponse {
     @Param(name="id")
     private Long id;
 

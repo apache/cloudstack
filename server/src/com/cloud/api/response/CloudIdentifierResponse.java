@@ -1,9 +1,8 @@
 package com.cloud.api.response;
 
-import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 
-public class CloudIdentifierResponse implements ResponseObject{
+public class CloudIdentifierResponse extends BaseResponse {
 	
     @Param(name="userid")
     private Long userId;

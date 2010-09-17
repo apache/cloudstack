@@ -17,10 +17,9 @@
  */
 package com.cloud.api.response;
 
-import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 
-public class DomainResponse implements ResponseObject {
+public class DomainResponse extends BaseResponse {
     @Param(name="id")
     private Long id;
 

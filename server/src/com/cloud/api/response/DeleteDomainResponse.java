@@ -17,10 +17,9 @@
  */
 package com.cloud.api.response;
 
-import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 
-public class DeleteDomainResponse implements ResponseObject {
+public class DeleteDomainResponse extends BaseResponse {
     @Param(name="result")
     private String result;
 

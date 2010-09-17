@@ -19,11 +19,10 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
-import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 import com.cloud.storage.Storage.ImageFormat;
 
-public class TemplateResponse implements ResponseObject {
+public class TemplateResponse extends BaseResponse {
     @Param(name="id")
     private long id;
 

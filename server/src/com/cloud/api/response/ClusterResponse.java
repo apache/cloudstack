@@ -17,10 +17,9 @@
  */
 package com.cloud.api.response;
 
-import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 
-public class ClusterResponse implements ResponseObject {
+public class ClusterResponse extends BaseResponse {
     @Param(name="id")
     private Long id;
 

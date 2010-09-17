@@ -19,10 +19,9 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
-import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 
-public class IPAddressResponse implements ResponseObject {
+public class IPAddressResponse extends BaseResponse {
     @Param(name="ipaddress")
     private String ipAddress;
 

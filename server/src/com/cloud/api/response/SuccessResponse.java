@@ -1,9 +1,8 @@
 package com.cloud.api.response;
 
-import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 
-public class SuccessResponse implements ResponseObject{
+public class SuccessResponse extends BaseResponse {
 	 @Param(name="success")
 	 private Boolean success;
 	 

@@ -1,9 +1,8 @@
 package com.cloud.api.response;
 
-import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 
-public class DeletePreallocatedLunResponse implements ResponseObject {
+public class DeletePreallocatedLunResponse extends BaseResponse {
     @Param(name="success")
     private Boolean success;
 

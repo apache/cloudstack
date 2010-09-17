@@ -19,10 +19,9 @@ package com.cloud.api.response;
 
 import java.util.List;
 
-import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 
-public class NetworkGroupResponse implements ResponseObject {
+public class NetworkGroupResponse extends BaseResponse {
     @Param(name="id")
     private Long id;
 

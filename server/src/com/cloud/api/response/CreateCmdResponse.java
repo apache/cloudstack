@@ -1,9 +1,8 @@
 package com.cloud.api.response;
 
-import com.cloud.api.ResponseObject;
 import com.cloud.serializer.Param;
 
-public class CreateCmdResponse implements ResponseObject {
+public class CreateCmdResponse extends BaseResponse {
     @Param(name="jobid")
     private Long jobId;
 
