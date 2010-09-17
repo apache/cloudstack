@@ -693,7 +693,7 @@ public class UserVmManagerImpl implements UserVmManager {
             s_logger.debug(msg); 
             throw new CloudRuntimeException(msg);
         } else {
-            guestOSDescription = guestOS.getName();
+        	guestOSDescription = guestOS.getDisplayName();
         }
 
         HashSet<Host> avoid = new HashSet<Host>();
