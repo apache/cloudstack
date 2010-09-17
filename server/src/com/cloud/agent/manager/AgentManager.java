@@ -164,9 +164,10 @@ public interface AgentManager extends Manager {
 	/**
 	 * Updates a host
 	 * @param cmd - the command specifying hostId
+	 * @return hostObject
 	 * @throws InvalidParameterValueException
 	 */
-	void updateHost(UpdateHostCmd cmd) throws InvalidParameterValueException;
+	HostVO updateHost(UpdateHostCmd cmd) throws InvalidParameterValueException;
 	
 	/**
      * Deletes a host

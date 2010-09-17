@@ -20,13 +20,17 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.response.SuccessResponse;
+import com.cloud.serializer.SerializerHelper;
 
 @Implementation(method="deleteSecurityGroup", manager=Manager.ManagementServer)
-public class DeletePortForwardingServiceCmd extends BaseCmd {
+public class DeletePortForwardingServiceCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePortForwardingServiceCmd.class.getName());
     private static final String s_name = "deleteportforwardingserviceresponse";
 
@@ -53,42 +57,17 @@ public class DeletePortForwardingServiceCmd extends BaseCmd {
     public String getName() {
         return s_name;
     }
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-//        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-//        Long id = (Long)params.get(BaseCmd.Properties.ID.getName());
-//
-//        if (userId == null) {
-//            userId = Long.valueOf(User.UID_SYSTEM);
-//        }
-//
-//        //verify parameters
-//        SecurityGroupVO sg = getManagementServer().findSecurityGroupById(id.longValue());
-//        if (sg == null) {
-//        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find port forwarding service with id " + id);
-//        }
-//
-//        if (account != null) {
-//            if (!isAdmin(account.getType())) {
-//                if (account.getId().longValue() != sg.getAccountId()) {
-//                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to find a port forwarding service with id " + id + " for this account");
-//                }
-//            } else if (!getManagementServer().isChildDomain(account.getDomainId(), sg.getDomainId())) {
-//                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to delete port forwarding service " + id + ", permission denied.");
-//            }
-//        }
-//
-//        long jobId = getManagementServer().deleteSecurityGroupAsync(userId.longValue(), sg.getAccountId(), id.longValue());
-//
-//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId).toString()));
-//        return returnValues;
-//    }
     
-	@Override
-	public String getResponse() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public String getResponse() {
+        SuccessResponse response = new SuccessResponse();
+        Boolean responseObject = (Boolean)getResponseObject();
+      
+        if (responseObject != null) {
+        	response.setSuccess(responseObject);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete port forwarding service");
+        }
+        return SerializerHelper.toSerializedString(responseObject);
+    }
 }

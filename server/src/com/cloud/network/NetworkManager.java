@@ -117,6 +117,7 @@ public interface NetworkManager extends Manager {
      * Starts domain router
      * @param cmd the command specifying router's id
      * @return DomainRouter object
+     * @throws InvalidParameterValueException, PermissionDeniedException
      */
     DomainRouterVO startRouter(StartRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
@@ -130,6 +131,7 @@ public interface NetworkManager extends Manager {
      * Stops domain router
      * @param cmd the command specifying router's id
      * @return success or failure
+     * @throws InvalidParameterValueException, PermissionDeniedException
      */
     boolean stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
@@ -141,6 +143,7 @@ public interface NetworkManager extends Manager {
      * Reboots domain router
      * @param cmd the command specifying router's id
      * @return success or failure
+     * @throws InvalidParameterValueException, PermissionDeniedException
      */
     boolean rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     /**
@@ -231,9 +234,10 @@ public interface NetworkManager extends Manager {
     /**
      * Associates a public IP address for a router.
      * @param cmd - the command specifying ipAddress
-     * @return
+     * @return ip address object
+     * @throws ResourceAllocationException, InsufficientCapacityException, InternalErrorException, InvalidParameterValueException, PermissionDeniedException
      */
-    String associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, InternalErrorException, InvalidParameterValueException;    
+    IPAddressVO associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, InternalErrorException, InvalidParameterValueException, PermissionDeniedException;    
     
     boolean updateFirewallRule(FirewallRuleVO fwRule, String oldPrivateIP, String oldPrivatePort);
 

@@ -614,7 +614,7 @@ public class TemplateManagerImpl implements TemplateManager {
     }
       
     @Override
-    public boolean copyIso(CopyIsoCmd cmd) throws InvalidParameterValueException, StorageUnavailableException, PermissionDeniedException {
+    public VMTemplateVO copyIso(CopyIsoCmd cmd) throws InvalidParameterValueException, StorageUnavailableException, PermissionDeniedException {
     	Long isoId = cmd.getId();
     	Long userId = UserContext.current().getUserId();
     	Long sourceZoneId = cmd.getSourceZoneId();
@@ -637,12 +637,18 @@ public class TemplateManagerImpl implements TemplateManager {
         userId = accountAndUserValidation(account, userId, null, iso, errMsg);
         
         long eventId = EventUtils.saveScheduledEvent(userId, iso.getAccountId(), EventTypes.EVENT_ISO_COPY, "copying iso with Id: " + isoId +" from zone: " + sourceZoneId +" to: " + destZoneId);
-        return copy(userId, isoId, sourceZoneId, destZoneId, eventId);
+        boolean success = copy(userId, isoId, sourceZoneId, destZoneId, eventId);
+        
+        VMTemplateVO copiedIso = null;
+        if (success) 
+        	copiedIso = _tmpltDao.findById(isoId);
+       
+        return copiedIso;
     }
     
     
     @Override
-    public boolean copyTemplate(CopyTemplateCmd cmd) throws InvalidParameterValueException, StorageUnavailableException, PermissionDeniedException {
+    public VMTemplateVO copyTemplate(CopyTemplateCmd cmd) throws InvalidParameterValueException, StorageUnavailableException, PermissionDeniedException {
     	Long templateId = cmd.getId();
     	Long userId = UserContext.current().getUserId();
     	Long sourceZoneId = cmd.getSourceZoneId();
@@ -665,7 +671,13 @@ public class TemplateManagerImpl implements TemplateManager {
         userId = accountAndUserValidation(account, userId, null, template, errMsg);
         
         long eventId = EventUtils.saveScheduledEvent(userId, template.getAccountId(), EventTypes.EVENT_TEMPLATE_COPY, "copying template with Id: " + templateId+" from zone: " + sourceZoneId +" to: " + destZoneId);
-        return copy(userId, templateId, sourceZoneId, destZoneId, eventId);
+        boolean success = copy(userId, templateId, sourceZoneId, destZoneId, eventId);
+        
+        VMTemplateVO copiedTemplate = null;
+        if (success) 
+        	copiedTemplate = _tmpltDao.findById(templateId);
+       
+        return copiedTemplate;
     }
     
     @Override

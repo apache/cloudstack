@@ -20,10 +20,15 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.DomainRouterResponse;
+import com.cloud.serializer.SerializerHelper;
+import com.cloud.user.Account;
+import com.cloud.vm.DomainRouterVO;
 
 
 @Implementation(method="startRouter", manager=Manager.NetworkManager)
@@ -58,36 +63,47 @@ public class StartRouterCmd extends BaseAsyncCmd {
     public static String getResultObjectName() {
     	return "router"; 
     }
-
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//	    Long routerId = (Long)params.get(BaseCmd.Properties.ID.getName());
-//        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-//
-//	    //verify parameters
-//        DomainRouterVO router = getManagementServer().findDomainRouterById(routerId);
-//        if (router == null) {
-//        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a domain router with id " + routerId);
-//        }
-//        if ((account != null) && !getManagementServer().isChildDomain(account.getDomainId(), router.getDomainId())) {
-//            throw new ServerApiException (BaseCmd.PARAM_ERROR, "Invalid domain router id (" + routerId + ") given, unable to start router.");
-//        }
-//
-//        long jobId = getManagementServer().startRouterAsync(routerId.longValue());
-//        if (jobId == 0) {
-//        	s_logger.warn("Unable to schedule async-job for StartRouter comamnd");
-//        } else {
-//	        if(s_logger.isDebugEnabled())
-//	        	s_logger.debug("StartRouter command has been accepted, job id: " + jobId);
-//        }
-//	    
-//	    List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//	    returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-//	    return returnValues;
-//    }
     
 	@Override
 	public String getResponse() {
-		// TODO Auto-generated method stub
-		return null;
+        DomainRouterResponse routerResponse = new DomainRouterResponse();
+        DomainRouterVO router = (DomainRouterVO)getResponseObject();
+        
+        routerResponse.setId(router.getId());
+        routerResponse.setZoneId(router.getDataCenterId());
+        routerResponse.setZoneName(ApiDBUtils.findZoneById(router.getDataCenterId()).getName());
+        routerResponse.setDns1(router.getDns1());
+        routerResponse.setDns2(router.getDns2());
+        routerResponse.setNetworkDomain(router.getDomain());
+        routerResponse.setGateway(router.getGateway());
+        routerResponse.setName(router.getName());
+        routerResponse.setPodId(router.getPodId());
+
+        if (router.getHostId() != null) {
+            routerResponse.setHostId(router.getHostId());
+            routerResponse.setHostName(ApiDBUtils.findHostById(router.getHostId()).getName());
+        } 
+
+        routerResponse.setPrivateIp(router.getPrivateIpAddress());
+        routerResponse.setPrivateMacAddress(router.getPrivateMacAddress());
+        routerResponse.setPrivateNetmask(router.getPrivateNetmask());
+        routerResponse.setPublicIp(router.getPublicIpAddress());
+        routerResponse.setPublicMacAddress(router.getPublicMacAddress());
+        routerResponse.setPublicNetmask(router.getPublicNetmask());
+        routerResponse.setGuestIpAddress(router.getGuestIpAddress());
+        routerResponse.setGuestMacAddress(router.getGuestMacAddress());
+        routerResponse.setGuestNetmask(router.getGuestNetmask());
+        routerResponse.setTemplateId(router.getTemplateId());
+        routerResponse.setCreated(router.getCreated());
+        routerResponse.setState(router.getState());
+
+        Account accountTemp = ApiDBUtils.findAccountById(router.getAccountId());
+        if (accountTemp != null) {
+            routerResponse.setAccountName(accountTemp.getAccountName());
+            routerResponse.setDomainId(accountTemp.getDomainId());
+            routerResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
+        }
+        
+        return SerializerHelper.toSerializedString(routerResponse);
 	}
 }

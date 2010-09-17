@@ -2314,7 +2314,7 @@ public class ManagementServerImpl implements ManagementServer {
             userId = Long.valueOf(1);
         }
 
-        long eventId = EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_REMOVE, "removing security groups for Vm with Id: "+vmId);
+        long eventId = EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_REMOVE, "removing port forwarding services for Vm with Id: "+vmId);
 
         /*TODO : ASK KRIS AS TO WHAT DO WE DO WITH THIS PART IN THE EXECUTOR CODE
         UserVmVO userVm = userVmDao.findById(param.getInstanceId());
@@ -2347,7 +2347,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (userVm == null) {
             throw new InvalidParameterValueException("Unable to find vm: " + vmId);
         }
-        EventUtils.saveStartedEvent(userId, userVm.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_REMOVE, "Removing security groups for Vm with Id: "+vmId, startEventId);
+        EventUtils.saveStartedEvent(userId, userVm.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_REMOVE, "Removing port forwarding services for Vm with Id: "+vmId, startEventId);
         SecurityGroupVO securityGroup = _securityGroupDao.findById(Long.valueOf(securityGroupId));
         if (securityGroup == null) {
             throw new InvalidParameterValueException("Unable to find port forwarding service: " + securityGroupId);
@@ -2472,7 +2472,7 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public long removeSecurityGroupAsync(Long userId, long securityGroupId, String publicIp, long vmId) {
         UserVm userVm = _userVmDao.findById(vmId);
-        long eventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_REMOVE, "removing security groups for Vm with Id: "+vmId);
+        long eventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_REMOVE, "removing port forwarding services for Vm with Id: "+vmId);
         SecurityGroupParam param = new SecurityGroupParam(userId, securityGroupId, null, publicIp, vmId, eventId);
         Gson gson = GsonHelper.getBuilder().create();
 
@@ -5559,14 +5559,14 @@ public class ManagementServerImpl implements ManagementServer {
         if (account != null) {
             if (!isAdmin(account.getType())) {
                 if (account.getId().longValue() != securityGroup.getAccountId()) {
-                    throw new PermissionDeniedException("unable to find a port forwarding service with id " + securityGroupId + " for this account, permission denied");
+                    throw new PermissionDeniedException("unable to find port forwarding service with id " + securityGroupId + " for this account, permission denied");
                 }
             } else if (!isChildDomain(account.getDomainId(), securityGroup.getDomainId())) {
                 throw new PermissionDeniedException("Unable to delete port forwarding service " + securityGroupId + ", permission denied.");
             }
         }
         
-        long startEventId = EventUtils.saveScheduledEvent(userId, securityGroup.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_DELETE, "deleting security group with Id: " + securityGroupId);
+        long startEventId = EventUtils.saveScheduledEvent(userId, securityGroup.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_DELETE, "deleting port forwarding service with Id: " + securityGroupId);
         
         final EventVO event = new EventVO();
         event.setUserId(userId);
@@ -5596,7 +5596,7 @@ public class ManagementServerImpl implements ManagementServer {
                 s_logger.debug("Invalid parameter value exception deleting port forwarding service " + securityGroup.getName() + " (id: " + securityGroup.getId() + "), " + ex2);
             }
             event.setLevel(EventVO.LEVEL_ERROR);
-            event.setDescription("ailed to delete port forwarding service - " + securityGroup.getName() + " (id: " + securityGroup.getId() + ")");
+            event.setDescription("failed to delete port forwarding service - " + securityGroup.getName() + " (id: " + securityGroup.getId() + ")");
             _eventDao.persist(event);
             throw ex2;
         }

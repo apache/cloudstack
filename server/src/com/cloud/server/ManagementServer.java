@@ -1123,6 +1123,7 @@ public interface ManagementServer {
      * Delete a security group.  If the group is being actively used, it cannot be deleted.
      * @param cmd - the command containing securityGroupId
      * @return true if the security group is deleted, exception is thrown otherwise
+     * @throws InvalidParameterValueException, PermissionDeniedException
      */
     boolean deleteSecurityGroup(DeletePortForwardingServiceCmd cmd)  throws InvalidParameterValueException, PermissionDeniedException;
 

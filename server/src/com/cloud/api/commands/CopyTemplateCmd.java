@@ -20,10 +20,21 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.response.TemplateResponse;
+import com.cloud.serializer.SerializerHelper;
+import com.cloud.storage.GuestOS;
+import com.cloud.storage.VMTemplateHostVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(method="copyTemplate", manager=Manager.TemplateManager)
 public class CopyTemplateCmd extends BaseAsyncCmd {
@@ -74,80 +85,79 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
         return s_name;
     }
 
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//        Long templateId = (Long)params.get(BaseCmd.Properties.ID.getName());
-//        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-//        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-//        Long sourceZoneId = (Long)params.get(BaseCmd.Properties.SOURCE_ZONE_ID.getName());
-//        Long destZoneId = (Long)params.get(BaseCmd.Properties.DEST_ZONE_ID.getName());
-//
-//        if (userId == null) {
-//            userId = Long.valueOf(1);
-//        }
-//
-//        VMTemplateVO template1 = getManagementServer().findTemplateById(templateId.longValue());
-//        if (template1 == null) {
-//            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find template with id " + templateId);
-//        }
-//        
-//        boolean isIso = Storage.ImageFormat.ISO.equals(template1.getFormat());
-//        if (isIso) {
-//        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid template.");
-//        }
-//
-//        if (account != null) {
-//            if (!isAdmin(account.getType())) {
-//                if (template1.getAccountId() != account.getId()) {
-//                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to copy template with id " + templateId);
-//                }
-//            } else {
-//                Account templateOwner = getManagementServer().findAccountById(template1.getAccountId());
-//                if ((templateOwner != null) && !getManagementServer().isChildDomain(account.getDomainId(), templateOwner.getDomainId())) {
-//                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to copy template with id " + templateId + " to zone " + destZoneId);
-//                }
-//            }
-//        }
-//        
-//        try {
-//    		long jobId = getManagementServer().copyTemplateAsync(userId, templateId, sourceZoneId, destZoneId);
-//
-//    		if (jobId == 0) {
-//            	s_logger.warn("Unable to schedule async-job for CopyTemplate command");
-//            } else {
-//    	        if (s_logger.isDebugEnabled()) {
-//    	        	s_logger.debug("CopyTemplate command has been accepted, job id: " + jobId);
-//    	        }
-//            }
-//    		
-//    		templateId = waitInstanceCreation(jobId);
-//    		List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-//            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_ID.getName(), Long.valueOf(templateId))); 
-//            
-//            return returnValues;
-//    	} catch (Exception ex) {
-//    	    if (ex instanceof ServerApiException) {
-//    	        throw (ServerApiException)ex;
-//    	    }
-//    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to copy template: " + ex.getMessage());
-//    	}
-// 
-//    }
-//    
-//    protected long getInstanceIdFromJobSuccessResult(String result) {
-//    	CopyTemplateResultObject resultObject = (CopyTemplateResultObject)SerializerHelper.fromSerializedString(result);
-//		if (resultObject != null) {
-//			return resultObject.getId();
-//		}
-//
-//		return 0;
-//	}
-    
 	@Override
 	public String getResponse() {
-		// TODO Add the response object as per executor
-		return null;
+        TemplateResponse templateResponse = new TemplateResponse();
+        VMTemplateVO template = (VMTemplateVO)getResponseObject();
+        
+        if (template != null) {
+            templateResponse.setId(template.getId());
+            templateResponse.setName(template.getName());
+            templateResponse.setDisplayText(template.getDisplayText());
+            templateResponse.setPublic(template.isPublicTemplate());
+            templateResponse.setBootable(template.isBootable());
+            templateResponse.setFeatured(template.isFeatured());
+            templateResponse.setCrossZones(template.isCrossZones());
+            templateResponse.setCreated(template.getCreated());
+            templateResponse.setFormat(template.getFormat());
+            templateResponse.setPasswordEnabled(template.getEnablePassword());
+            templateResponse.setZoneId(destZoneId);
+            templateResponse.setZoneName(ApiDBUtils.findZoneById(destZoneId).getName());
+             
+            GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
+            if (os != null) {
+                templateResponse.setOsTypeId(os.getId());
+                templateResponse.setOsTypeName(os.getDisplayName());
+            } else {
+                templateResponse.setOsTypeId(-1L);
+                templateResponse.setOsTypeName("");
+            }
+                
+            // add account ID and name
+            Account owner = ApiDBUtils.findAccountById(template.getAccountId());
+            if (owner != null) {
+                templateResponse.setAccount(owner.getAccountName());
+                templateResponse.setDomainId(owner.getDomainId());
+                templateResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
+            }
+            
+            //set status 
+            Account account = (Account)UserContext.current().getAccountObject();
+            boolean isAdmin = false;
+            if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
+                isAdmin = true;
+            }
+    		
+    		//Return download status for admin users
+            VMTemplateHostVO templateHostRef = ApiDBUtils.findTemplateHostRef(template.getId(), destZoneId);
+            
+    		if (isAdmin || template.getAccountId() == account.getId().longValue()) {
+                if (templateHostRef.getDownloadState()!=Status.DOWNLOADED) {
+                    String templateStatus = "Processing";
+                    if (templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
+                        if (templateHostRef.getDownloadPercent() == 100) {
+                            templateStatus = "Installing Template";
+                        } else {
+                            templateStatus = templateHostRef.getDownloadPercent() + "% Downloaded";
+                        }
+                    } else {
+                        templateStatus = templateHostRef.getErrorString();
+                    }
+                    templateResponse.setStatus(templateStatus);
+                } else if (templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
+                	templateResponse.setStatus("Download Complete");
+                } else {
+                	templateResponse.setStatus("Successfully Installed");
+                }
+            }
+    		
+    		templateResponse.setReady(templateHostRef != null && templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED);
+            
+        } else {
+        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to copy template");
+        }
+        
+        return SerializerHelper.toSerializedString(templateResponse);
 	}
 }
 

@@ -70,7 +70,7 @@ public class StartRouterExecutor extends VMOperationExecutor {
 			} finally {
 			    if(!success){
                     // Save completed event when operation fails
-                    asyncMgr.getExecutorContext().getManagementServer().saveEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_START, "Failed to start router", null, param.getEventId());
+//                    asyncMgr.getExecutorContext().getManagementServer().saveEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_START, "Failed to start router", null, param.getEventId());
 			    }
 			}
 	    	return true;

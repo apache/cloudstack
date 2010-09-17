@@ -1455,7 +1455,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     
     
     @Override
-    public String associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, InvalidParameterValueException, InternalErrorException  {
+    public IPAddressVO associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, InvalidParameterValueException, InternalErrorException, PermissionDeniedException  {
     	String accountName = cmd.getAccountName();
     	Long domainId = cmd.getDomainId();
     	Long zoneId = cmd.getZoneId();
@@ -1466,14 +1466,14 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         if ((account == null) || isAdmin(account.getType())) {
             if (domainId != null) {
                 if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid domain id (" + domainId + ") given, unable to associate IP address.");
+                    throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to associate IP address, permission denied");
                 }
                 if (accountName != null) {
                     Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
                     if (userAccount != null) {
                         accountId = userAccount.getId();
                     } else {
-                        throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find account " + accountName + " in domain " + domainId);
+                        throw new PermissionDeniedException("Unable to find account " + accountName + " in domain " + domainId + ", permission denied");
                     }
                 }
             } else if (account != null) {
@@ -1481,7 +1481,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                 accountId = account.getId();
                 domainId = account.getDomainId();
             } else {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Account information is not specified.");
+                throw new InvalidParameterValueException("Account information is not specified.");
             }
         } else {
             accountId = account.getId();
@@ -1572,7 +1572,9 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             }
 
             txn.commit();
-            return ipAddress;
+            IPAddressVO ip = _ipAddressDao.findById(ipAddress);
+            
+            return ip;
         } catch (ResourceAllocationException rae) {
             s_logger.error("Associate IP threw a ResourceAllocationException.", rae);
             throw rae;

@@ -1727,7 +1727,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
     }
     
-    public void updateHost(UpdateHostCmd cmd) throws InvalidParameterValueException{
+    public HostVO updateHost(UpdateHostCmd cmd) throws InvalidParameterValueException{
     	Long hostId = cmd.getId();
     	Long guestOSCategoryId = cmd.getOsCategoryId();
     	
@@ -1759,6 +1759,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         	_hostDetailsDao.persist(hostId, hostDetails);
     	}
     	
+    	HostVO updatedHost = _hostDao.findById(hostId);
+    	return updatedHost;
     }
 
     protected void updateHost(final HostVO host, final StartupCommand startup, final Host.Type type, final long msId) throws IllegalArgumentException {

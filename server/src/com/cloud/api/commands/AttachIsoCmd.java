@@ -20,13 +20,17 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.response.SuccessResponse;
+import com.cloud.serializer.SerializerHelper;
 
 @Implementation(method="attachIso", manager=Manager.TemplateManager)
-public class AttachIsoCmd extends BaseCmd {
+public class AttachIsoCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AttachIsoCmd.class.getName());
 
     private static final String s_name = "attachisoresponse";
@@ -64,76 +68,16 @@ public class AttachIsoCmd extends BaseCmd {
         return s_name;
     }
     
-	@Override
-	public String getResponse() {
-		// TODO Add the response object as per executor
-		return null;
-	}
-
-    /*
     @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-    	Account account = (Account) params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-    	Long userId = (Long) params.get(BaseCmd.Properties.USER_ID.getName());
-    	Long vmId = (Long) params.get(BaseCmd.Properties.VIRTUAL_MACHINE_ID.getName());
-    	Long isoId = (Long) params.get(BaseCmd.Properties.ID.getName());
-
-    	// Verify input parameters
-    	UserVmVO vmInstanceCheck = getManagementServer().findUserVMInstanceById(vmId.longValue());
-    	if (vmInstanceCheck == null) {
-            throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, "Unable to find a virtual machine with id " + vmId);
+    public String getResponse() {
+        SuccessResponse response = new SuccessResponse();
+        Boolean responseObject = (Boolean)getResponseObject();
+      
+        if (responseObject != null) {
+        	response.setSuccess(responseObject);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to attach iso");
         }
-    	VMTemplateVO iso = getManagementServer().findTemplateById(isoId);
-    	if (iso == null) {
-            throw new ServerApiException (BaseCmd.PARAM_ERROR, "Unable to find an ISO with id " + isoId);
-    	}
-
-    	if (account != null) {
-    	    if (!isAdmin(account.getType())) {
-                if (account.getId().longValue() != vmInstanceCheck.getAccountId()) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to attach ISO " + iso.getName() + " to virtual machine " + vmInstanceCheck.getName() + " for this account");
-                }
-                if (!iso.isPublicTemplate() && (account.getId().longValue() != iso.getAccountId()) && (!iso.getName().startsWith("xs-tools"))) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to attach ISO " + iso.getName() + " to virtual machine " + vmInstanceCheck.getName() + " for this account");
-                }
-    	    } else {
-    	        if (!getManagementServer().isChildDomain(account.getDomainId(), vmInstanceCheck.getDomainId())) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to attach ISO " + iso.getName() + " to virtual machine " + vmInstanceCheck.getName());
-    	        }
-    	        // FIXME:  if ISO owner is null we probably need to throw some kind of exception
-    	        Account isoOwner = getManagementServer().findAccountById(iso.getAccountId());
-    	        if ((isoOwner != null) && !getManagementServer().isChildDomain(account.getDomainId(), isoOwner.getDomainId())) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to attach ISO " + iso.getName() + " to virtual machine " + vmInstanceCheck.getName());
-    	        }
-    	    }
-    	}
-
-    	// If command is executed via 8096 port, set userId to the id of System account (1)
-    	if (userId == null)
-    		userId = new Long(1);
-    	
-		try {
-			long jobId = getManagementServer().attachISOToVMAsync(vmId.longValue(), userId, isoId.longValue());
-			
-            if (jobId == 0) {
-            	s_logger.warn("Unable to schedule async-job for AttachIsoCmd");
-            } else {
-    	        if (s_logger.isDebugEnabled())
-    	        	s_logger.debug("AttachIsoCmd has been accepted, job id: " + jobId);
-            }
-			
-            List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId)));
-            
-            return returnValues;
-		} catch (ServerApiException apiEx) {
-			s_logger.error("Exception attaching ISO", apiEx);
-			throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to attach ISO: " + apiEx.getDescription());
-		} catch (Exception ex) {
-			s_logger.error("Exception attaching ISO", ex);
-			throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to attach ISO: " + ex.getMessage());
-		}
-
+        return SerializerHelper.toSerializedString(responseObject);
     }
-    */
 }
