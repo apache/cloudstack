@@ -1836,8 +1836,9 @@ public interface ManagementServer {
      * @param mirrored boolean value of whether or not the offering provides disk mirroring
      * @param tags Comma separated string to indicate special tags for the disk offering.
      * @return the created disk offering, null if failed to create
+     * @throws InternalErrorException 
      */
-    DiskOfferingVO createDiskOffering(long userId, long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException;
+    DiskOfferingVO createDiskOffering(long userId, long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException, InternalErrorException;
 
     /**
      * Delete a disk offering

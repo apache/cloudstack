@@ -64,7 +64,7 @@ public class DeleteDiskOfferingCmd extends BaseCmd {
         	throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a disk offering with id " + id);
         }
 
-        if(disk.getName().equals("Private") && disk.getDisplayText().equals("Private Disk")){
+        if(disk.getDiskSize()==0){
         	//block deletion of these disks
         	throw new ServerApiException(BaseCmd.INTERNAL_ERROR,"Cannot delete this diskoffering as it is private");
         }

@@ -368,7 +368,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final int _proxyRamSize;
     private final int _ssRamSize;
 
-    private final long _maxVolumeSizeInTb;
+    private final long _maxVolumeSizeInGb;
     private final Map<String, Boolean> _availableIdsMap;
 
 	private boolean _networkGroupsEnabled = false;
@@ -465,9 +465,9 @@ public class ManagementServerImpl implements ManagementServer {
         // and set them in the right places
 
         String maxVolumeSizeInTbString = _configs.get("max.volume.size.gb");
-        long maxVolumeSizeTb = NumbersUtil.parseLong(maxVolumeSizeInTbString, new Long("2093049000000"));
+        long maxVolumeSizeBytes = NumbersUtil.parseLong(maxVolumeSizeInTbString, new Long("2093049000000"));
 
-        _maxVolumeSizeInTb = maxVolumeSizeTb;
+        _maxVolumeSizeInGb = maxVolumeSizeBytes/1000000000;
 
         _routerRamSize = NumbersUtil.parseInt(_configs.get("router.ram.size"),NetworkManager.DEFAULT_ROUTER_VM_RAMSIZE);
         _proxyRamSize = NumbersUtil.parseInt(_configs.get("consoleproxy.ram.size"), ConsoleProxyManager.DEFAULT_PROXY_VM_RAMSIZE);
@@ -7091,12 +7091,22 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public DiskOfferingVO createDiskOffering(long userId, long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException {
-        if (numGibibytes!=0 && numGibibytes < 1) {
-            throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
-        } else if (numGibibytes > _maxVolumeSizeInTb) {
-        	throw new InvalidParameterValueException("The maximum size for a disk is " + _maxVolumeSizeInTb + " Gb.");
+    public DiskOfferingVO createDiskOffering(long userId, long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException, InternalErrorException {
+    	
+    	if(numGibibytes!=0 && numGibibytes<1){
+    		throw new InvalidParameterValueException("The minimum disk offering size is 1 GB");
+    	}
+    		
+    	if (numGibibytes > _maxVolumeSizeInGb) {
+        	throw new InvalidParameterValueException("The maximum allowed size for a disk is " + _maxVolumeSizeInGb + " Gb.");
         }
+    	
+    	if(numGibibytes==0){
+    		List<DiskOfferingVO> existingOffering = _diskOfferingDao.findPrivateDiskOffering();
+    		
+    		if(existingOffering!=null && existingOffering.size()>0)
+    			throw new InternalErrorException("There already exists a private disk offering");
+    	}
 
         return _configMgr.createDiskOffering(userId, domainId, name, description, numGibibytes, tags);
     }
@@ -8820,7 +8830,7 @@ public class ManagementServerImpl implements ManagementServer {
 	public boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException {
         if (size<0 || (size>0 && size < 2097152)) {
             throw new InvalidParameterValueException("Please specify a size (in bytes) of at least 2 MB or above.");
-        } else if (size > _maxVolumeSizeInTb) {
+        } else if (size > (_maxVolumeSizeInGb*1000000000)) {
         	throw new InvalidParameterValueException("The maximum size allowed is 2 TB");
         }
 

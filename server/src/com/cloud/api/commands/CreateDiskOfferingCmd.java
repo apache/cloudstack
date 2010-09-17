@@ -27,6 +27,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.domain.DomainVO;
+import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.user.User;
@@ -86,7 +87,9 @@ public class CreateDiskOfferingCmd extends BaseCmd {
         	diskOffering = getManagementServer().createDiskOffering(userId, domainId.longValue(), name, displayText, numGB.intValue(),tags);
         } catch (InvalidParameterValueException ex) {
         	throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, ex.getMessage());
-        }
+        } catch (InternalErrorException e) {
+        	throw new ServerApiException (BaseCmd.INTERNAL_ERROR, e.getMessage());
+		}
         
         if (diskOffering == null) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create disk offering");
