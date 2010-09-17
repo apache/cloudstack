@@ -56,6 +56,7 @@ public class PrimaryStorageDownloadCommand extends AbstractDownloadCommand {
     
     @Override
     public boolean executeInSequence() {
-        return true;
+    	//Temporary relaxing serialization
+        return false;
     }
 }

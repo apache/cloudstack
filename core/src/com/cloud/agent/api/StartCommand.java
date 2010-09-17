@@ -106,7 +106,8 @@ public class StartCommand extends AbstractStartCommand {
 
 	@Override
     public boolean executeInSequence() {
-        return true;
+		//Temporary relaxing serialization
+        return false;
     }
 
     public int getCpu() {

@@ -35,7 +35,8 @@ public class StartRouterCommand extends AbstractStartCommand {
     
     @Override
     public boolean executeInSequence() {
-        return true;
+    	//Temporary relaxing serialization
+        return false;
     }
     
     public StartRouterCommand(DomainRouterVO router, String routerName, String[] storageIps, List<VolumeVO> vols, boolean mirroredVols) {
