@@ -7100,14 +7100,7 @@ public class ManagementServerImpl implements ManagementServer {
     	if (numGibibytes > _maxVolumeSizeInGb) {
         	throw new InvalidParameterValueException("The maximum allowed size for a disk is " + _maxVolumeSizeInGb + " Gb.");
         }
-    	
-    	if(numGibibytes==0){
-    		List<DiskOfferingVO> existingOffering = _diskOfferingDao.findPrivateDiskOffering();
-    		
-    		if(existingOffering!=null && existingOffering.size()>0)
-    			throw new InternalErrorException("There already exists a private disk offering");
-    	}
-
+   
         return _configMgr.createDiskOffering(userId, domainId, name, description, numGibibytes, tags);
     }
 

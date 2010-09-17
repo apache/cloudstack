@@ -155,7 +155,7 @@ public class CreateVolumeCmd extends BaseCmd {
             	
             	//this is the case of creating var size vol with private disk offering
             	List<DiskOfferingVO> privateTemplateList = getManagementServer().findPrivateDiskOffering();
-            	diskOfferingId = privateTemplateList.get(0).getId(); //we use this id for creating volume
+            	diskOfferingId = privateTemplateList.get(0).getId(); //we use this id for creating volume, randomly tagging it to a pool with an offering
             }
         } 
         else 
