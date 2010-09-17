@@ -259,3 +259,82 @@
 	</div>
 </div>
 <!-- Create VM from template (end) -->
+
+<!-- Add Template Dialog (begin) -->
+<div id="dialog_add_template" title="Add Template" style="display:none">
+	<p>Please enter the following data to create your new template</p>
+	<div class="dialog_formcontent">
+		<form action="#" method="post" id="form_acquire">
+			<ol>
+				<li>
+					<label for="user_name">Name:</label>
+					<input class="text" type="text" name="add_template_name" id="add_template_name" style="width:250px"/>
+					<div id="add_template_name_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+				</li>
+				<li>
+					<label for="user_name">Display Text:</label>
+					<input class="text" type="text" name="add_template_display_text" id="add_template_display_text" style="width:250px"/>
+					<div id="add_template_display_text_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+				</li>
+				<li>
+					<label for="user_name">URL:</label>
+					<input class="text" type="text" name="add_template_url" id="add_template_url" style="width:250px"/>
+					<div id="add_template_url_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+				</li>
+				<li>
+                    <label>Zone:</label>
+                    <select class="select" id="add_template_zone">
+                    </select>
+                </li>					
+				<li>
+					<label for="add_template_os_type">OS Type:</label>
+					<select class="select" name="add_template_os_type" id="add_template_os_type">
+					</select>
+				</li>	
+				<li>
+					<label for="add_template_format">Format:</label>
+					<select class="select" name="add_template_format" id="add_template_format">
+					</select>
+				</li>	
+				<!--		
+				<li>
+					<label for="user_name">Require HVM?:</label>
+					<select class="select" name="add_template_hvm" id="add_template_hvm">
+						<option value="true">Yes</option>
+						<option value="false">No</option>
+					</select>
+				</li>
+				<li>
+					<label for="user_name">OS Arch:</label>
+					<select class="select" name="add_template_os" id="add_template_os">
+						<option value="64">64 Bit</option>
+						<option value="32">32 Bit</option>
+					</select>
+				</li>
+				!-->
+				<li>
+					<label>Password Enabled?:</label>
+					<select class="select" id="add_template_password">						
+						<option value="false">No</option>
+						<option value="true">Yes</option>
+					</select>
+				</li>
+				<li>
+					<label>Public?:</label>
+					<select class="select" id="add_template_public">
+						<option value="false">No</option>
+						<option value="true">Yes</option>						
+					</select>
+				</li>				
+				<li id="add_template_featured_container" style="display:none">
+					<label>Featured?:</label>
+					<select class="select" id="add_template_featured">
+					    <option value="false">No</option>
+						<option value="true">Yes</option>						
+					</select>
+				</li>
+			</ol>
+		</form>
+	</div>
+</div>
+<!-- Add Template Dialog (end) -->

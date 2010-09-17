@@ -1186,19 +1186,14 @@ function clickInstanceGroupHeader($arrowIcon) {
 				    moreCriteria.push("&group="+todb(group));		
     						
 			    vmWizardClose();
-    			
-    			var $t = $("#midmenu_item").clone();
-    			$t.find("#first_row").text("Adding....");    			
-    			$t.find("#content").addClass("inaction"); 
-    			$t.find("#spinning_wheel").show();
-    			$("#midmenu_container").append($t.show());
-    			
+    			    		
+    			var $midmenuItem1 = beforeAddingMidMenuItem() ;
+    			    			
 			    $.ajax({
 				    data: createURL("command=deployVirtualMachine"+moreCriteria.join("")),
 				    dataType: "json",
 				    success: function(json) {
-					    var jobId = json.deployvirtualmachineresponse.jobid;
-					    $t.attr("id","vmNew"+jobId).data("jobId", jobId);
+					    var jobId = json.deployvirtualmachineresponse.jobid;					   
 					    var timerKey = "vmNew"+jobId;
     					
 					    // Process the async job
@@ -1214,35 +1209,23 @@ function clickInstanceGroupHeader($arrowIcon) {
 									    if (result.jobstatus == 0) {
 										    return; //Job has not completed
 									    } else {
-										    $("body").stopTime(timerKey);
-										    $t.find("#content").removeClass("inaction"); 
-										    $t.find("#spinning_wheel").hide();		
+										    $("body").stopTime(timerKey);										    
 										    if (result.jobstatus == 1) {
 											    // Succeeded												   
-											    $t.find("#info_icon").removeClass("error").show();
-						                        $t.data("afterActionInfo", ("Adding succeeded.")); 
+											    afterAddingMidMenuItem($midmenuItem1, true);
 						                        if("virtualmachine" in result)	
 						                            vmToMidmenu(result.virtualmachine[0], $t);													   
 											    
 										    } else if (result.jobstatus == 2) {
 											    // Failed
-											    $t.find("#first_row").text("Adding failed");
-											    $t.find("#info_icon").addClass("error").show();
-						                        $t.data("afterActionInfo", ("Adding failed. Reason: " + fromdb(result.jobresult)));   	
-						                        $t.bind("click", function(event) {  
-                                                    $rightPanelContent.find("#after_action_info").text($(this).data("afterActionInfo"));
-                                                    $rightPanelContent.find("#after_action_info_container").addClass("errorbox");
-                                                    $rightPanelContent.find("#after_action_info_container").show();   
-                                                    vmClearRightPanel();
-                                                    return false;
-                                                });		
+											    afterAddingMidMenuItem($midmenuItem1, false);										    
+						                        $("#dialog_error").html("<p><b>Adding Instance failed</b></p><br/><p>"+fromdb(result.jobresult)+"</p>").dialog("open");
 										    }
 									    }
 								    },
 								    error: function(XMLHttpResponse) {
-									    $("body").stopTime(timerKey);
-									    $t.find("#info_icon").addClass("error").show();
-									    $t.find("#first_row").text("Adding failed");
+									    $("body").stopTime(timerKey);									    
+									    afterAddingMidMenuItem($midmenuItem1, false);									    						    
 									    handleError(XMLHttpResponse);
 								    }
 							    });
@@ -1250,9 +1233,8 @@ function clickInstanceGroupHeader($arrowIcon) {
 						    0
 					    );
 				    },
-				    error: function(XMLHttpResponse) {					    
-					    $t.find("#info_icon").addClass("error").show();		
-					    $t.find("#first_row").text("Adding failed");		    
+				    error: function(XMLHttpResponse) {					        				    
+					    afterAddingMidMenuItem($midmenuItem1, false);	
 				        handleError(XMLHttpResponse);
 				    }					
 			    });
@@ -1312,8 +1294,7 @@ function doCreateTemplateFromVmVolume($actionLink, listAPIMap, $subgridItem) {
     
 	$("#dialog_create_template")
 	.dialog('option', 'buttons', { 						
-		"Create": function() { 
-		    //debugger;
+		"Create": function() { 		
 		    var thisDialog = $(this);
 		    thisDialog.dialog("close"); 
 									

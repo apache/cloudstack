@@ -548,14 +548,34 @@ function hideMiddleMenu() {
     $("#middle_menu, #search_panel, #middle_menu_pagination").hide();
     $("#right_panel").removeClass("main_contentarea").addClass("main_contentarea_dashboard");
 }
-
 function showMiddleMenu() {
     $("#middle_menu, #search_panel, #middle_menu_pagination").show();
     $("#right_panel").removeClass("main_contentarea_dashboard").addClass("main_contentarea");
 }    
 
 
+// adding middle menu item ***
+function beforeAddingMidMenuItem() {
+    var $midmenuItem1 = $("#midmenu_item").clone();
+	$midmenuItem1.find("#first_row").text("Adding....");    			
+	$midmenuItem1.find("#content").addClass("inaction"); 
+	$midmenuItem1.find("#spinning_wheel").show();
+	$("#midmenu_container").append($midmenuItem1.show());
+	return $midmenuItem1;
+}
+function afterAddingMidMenuItem($midmenuItem1, isSuccessful) {
+    $midmenuItem1.find("#content").removeClass("inaction"); 
+	$midmenuItem1.find("#spinning_wheel").hide();	
 
+    if(isSuccessful == true) {
+        $midmenuItem1.find("#info_icon").removeClass("error").show();
+	    $midmenuItem1.data("afterActionInfo", ("Adding succeeded.")); 
+	}
+	else {	
+	    $midmenuItem1.find("#info_icon").addClass("error").show();			
+	    $midmenuItem1.find("#first_row").text("Adding failed");	
+	}
+}
 
 
 
