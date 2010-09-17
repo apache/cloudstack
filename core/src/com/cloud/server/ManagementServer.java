@@ -1198,7 +1198,7 @@ public interface ManagementServer {
      * @throws ResourceAllocationException
      * @throws InvalidParameterValueException
      */
-    Long createTemplate(long createdBy, long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) throws IllegalArgumentException, ResourceAllocationException, InvalidParameterValueException;
+    Long createTemplate(long createdBy, long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) throws IllegalArgumentException, ResourceAllocationException, InvalidParameterValueException;
     
     /**
      * Deletes a template from all secondary storage servers
@@ -1382,6 +1382,8 @@ public interface ManagementServer {
 	 * @return true if the volume is on a shared storage pool, false otherwise
 	 */
     boolean volumeIsOnSharedStorage(long volumeId) throws InvalidParameterValueException;
+    
+    HypervisorType getVolumeHyperType(long volumeId);
     
     /**
      * Finds a pod by the specified ID.

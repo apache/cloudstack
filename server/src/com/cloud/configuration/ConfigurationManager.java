@@ -57,7 +57,7 @@ public interface ConfigurationManager extends Manager {
 	 * @param useVirtualNetwork
 	 * @return ID
 	 */
-	ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean useVirtualNetwork, String tags, Hypervisor.Type hyperVisor);
+	ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean useVirtualNetwork, String tags);
 	
 	/**
 	 * Updates a service offering

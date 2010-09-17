@@ -20,6 +20,7 @@ package com.cloud.storage.dao;
 import java.util.List;
 
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.utils.Pair;
@@ -57,4 +58,5 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long> {
      * @return true if update happened, false if not.
      */
     boolean update(VolumeVO vol, Volume.Event event) throws ConcurrentOperationException;
+    HypervisorType getHypervisorType(long volumeId);
 }

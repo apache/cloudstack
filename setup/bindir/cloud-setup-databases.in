@@ -241,10 +241,6 @@ def setupconfigfile(fn,myipaddr,username,password,host,port):
 
 (options, args) = parser.parse_args()
 
-if len(args) != 2: e("Wrong number of arguments")
-if args[1] not in ["xenserver","kvm","vmware"]: e("You need to specify either xenserver or kvm or vmware after the database credentials")
-virttech = args[1]
-
 user,password,host,port= get_creds(parser,options,args)
 rootuser,rootpassword = [None,None]
 if options.rootcreds:
@@ -372,7 +368,7 @@ if rootuser:
                         try: run_mysql(text,rootuser,rootpassword,host,port,debug=options.debug)
 			except CalledProcessError: sys.exit(22)
 
-	for f in ["templates.%s"%virttech,"create-index-fk"]:
+	for f in ["templates","create-index-fk"]:
 		p = os.path.join(dbfilepath,"%s.sql"%f)
 		text = file(p).read()
 		print "Applying file %s to the database on server %s:%s"%(p,host,port)

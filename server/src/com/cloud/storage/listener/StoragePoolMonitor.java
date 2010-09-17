@@ -32,7 +32,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.Hypervisor.Type;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.dao.StoragePoolDao;
@@ -70,8 +70,8 @@ public class StoragePoolMonitor implements Listener {
     public boolean processConnect(HostVO host, StartupCommand cmd) {
     	if (cmd instanceof StartupRoutingCommand) {
     		StartupRoutingCommand scCmd = (StartupRoutingCommand)cmd;
-    		if (scCmd.getHypervisorType() == Hypervisor.Type.XenServer || scCmd.getHypervisorType() ==  Hypervisor.Type.KVM ||
-				scCmd.getHypervisorType() == Hypervisor.Type.VmWare) {
+    		if (scCmd.getHypervisorType() == HypervisorType.XenServer || scCmd.getHypervisorType() ==  HypervisorType.KVM ||
+				scCmd.getHypervisorType() == HypervisorType.VmWare) {
     			List<StoragePoolVO> pools = _poolDao.listBy(host.getDataCenterId(), host.getPodId(), host.getClusterId());
     			for (StoragePoolVO pool : pools) {
     				Long hostId = host.getId();

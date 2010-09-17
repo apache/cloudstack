@@ -151,7 +151,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
-import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.BroadcastDomainType;
 import com.cloud.network.Network.TrafficType;
 import com.cloud.resource.ServerResource;
@@ -4190,7 +4190,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             changes = sync();
         }
 
-        cmd.setHypervisorType(Hypervisor.Type.XenServer);
+        cmd.setHypervisorType(HypervisorType.XenServer);
         cmd.setChanges(changes);
         cmd.setCluster(_cluster);
 

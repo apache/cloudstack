@@ -28,29 +28,29 @@ public class Hypervisor {
     	VirtualBox,
     	Parralels,
     	Any; /*If you don't care about the hypervisor type*/
-    }
-    
-    public static HypervisorType getType(String hypervisor) {
-    	if (hypervisor == null) {
-    		return HypervisorType.None;
-    	}
-    	
-    	if (hypervisor.equalsIgnoreCase("Xen")) {
-    		return HypervisorType.Xen;
-    	} else if (hypervisor.equalsIgnoreCase("XenServer")) {
-    		return HypervisorType.XenServer;
-    	} else if (hypervisor.equalsIgnoreCase("KVM")) {
-    		return HypervisorType.KVM;
-    	} else if (hypervisor.equalsIgnoreCase("VmWare")) {
-    		return HypervisorType.VmWare;
-    	} else if (hypervisor.equalsIgnoreCase("VirtualBox")) {
-    		return HypervisorType.VirtualBox;
-    	} else if (hypervisor.equalsIgnoreCase("Parralels")) {
-    		return HypervisorType.Parralels;
-    	} else if (hypervisor.equalsIgnoreCase("Any")) {
-    		return HypervisorType.Any;
-    	} else {
-    		return HypervisorType.None;
+
+    	public static HypervisorType getType(String hypervisor) {
+    		if (hypervisor == null) {
+    			return HypervisorType.None;
+    		}
+
+    		if (hypervisor.equalsIgnoreCase("Xen")) {
+    			return HypervisorType.Xen;
+    		} else if (hypervisor.equalsIgnoreCase("XenServer")) {
+    			return HypervisorType.XenServer;
+    		} else if (hypervisor.equalsIgnoreCase("KVM")) {
+    			return HypervisorType.KVM;
+    		} else if (hypervisor.equalsIgnoreCase("VmWare")) {
+    			return HypervisorType.VmWare;
+    		} else if (hypervisor.equalsIgnoreCase("VirtualBox")) {
+    			return HypervisorType.VirtualBox;
+    		} else if (hypervisor.equalsIgnoreCase("Parralels")) {
+    			return HypervisorType.Parralels;
+    		} else if (hypervisor.equalsIgnoreCase("Any")) {
+    			return HypervisorType.Any;
+    		} else {
+    			return HypervisorType.None;
+    		}
     	}
     }
 }

@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.Hypervisor.Type;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkEnums.RouterPrivateIpStrategy;
 import com.cloud.vm.State;
 
@@ -32,7 +32,7 @@ public class StartupRoutingCommand extends StartupCommand {
     Map<String, State> vms;
     String caps;
     String pool;
-    Hypervisor.Type hypervisorType;
+    HypervisorType hypervisorType;
     Map<String, String> hostDetails; //stuff like host os, cpu capabilities
 
     public StartupRoutingCommand() {
@@ -47,7 +47,7 @@ public class StartupRoutingCommand extends StartupCommand {
                                    long memory,
                                    long dom0MinMemory,
                                    String caps,
-                                   Hypervisor.Type hypervisorType,
+                                   HypervisorType hypervisorType,
                                    RouterPrivateIpStrategy privIpStrategy,
                                    Map<String, State> vms) {
         this(cpus, speed, memory, dom0MinMemory, caps, hypervisorType, vms);
@@ -59,7 +59,7 @@ public class StartupRoutingCommand extends StartupCommand {
     		long memory,
     		long dom0MinMemory,
     		final String caps,
-    		final Hypervisor.Type hypervisorType,
+    		final HypervisorType hypervisorType,
     		
     		final Map<String, String> hostDetails,
     		Map<String, State> vms) {
@@ -75,7 +75,7 @@ public class StartupRoutingCommand extends StartupCommand {
     }
     
     public StartupRoutingCommand(int cpus2, long speed2, long memory2,
-			long dom0MinMemory2, String caps2, Hypervisor.Type hypervisorType2,
+			long dom0MinMemory2, String caps2, HypervisorType hypervisorType2,
 			Map<String, State> vms2) {
 		this(cpus2, speed2, memory2, dom0MinMemory2, caps2, hypervisorType2, new HashMap<String,String>(), vms2);
 	}
@@ -136,11 +136,11 @@ public class StartupRoutingCommand extends StartupCommand {
     	this.pool = pool;
     }
 
-	public Hypervisor.Type getHypervisorType() {
+	public HypervisorType getHypervisorType() {
 		return hypervisorType;
 	}
 
-	public void setHypervisorType(Hypervisor.Type hypervisorType) {
+	public void setHypervisorType(HypervisorType hypervisorType) {
 		this.hypervisorType = hypervisorType;
 	}
 

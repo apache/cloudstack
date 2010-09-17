@@ -76,7 +76,6 @@ public class CreateVolumeCmd extends BaseCmd {
     	Long diskOfferingId = (Long) params.get(BaseCmd.Properties.DISK_OFFERING_ID.getName());
         Long snapshotId = (Long)params.get(BaseCmd.Properties.SNAPSHOT_ID.getName());
         Long size = (Long)params.get(BaseCmd.Properties.SIZE.getName());
-        Hypervisor.Type hyperType = Hypervisor.getType((String)params.get(BaseCmd.Properties.HYPERVISOR_TYPE.getName()));
 
     	if (account == null) {
     		// Admin API call
@@ -187,7 +186,7 @@ public class CreateVolumeCmd extends BaseCmd {
     		if (useSnapshot) {
                 jobId = getManagementServer().createVolumeFromSnapshotAsync(userId, account.getId(), snapshotId, name);
     		} else {
-    		    jobId = getManagementServer().createVolumeAsync(userId, account.getId(), name, zoneId, diskOfferingId, size, hyperType);
+    		    jobId = getManagementServer().createVolumeAsync(userId, account.getId(), name, zoneId, diskOfferingId, size);
     		}
     		
     		if (jobId == 0) {

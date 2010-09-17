@@ -66,6 +66,4 @@ public interface ServiceOffering {
      * @return whether or not the service offering requires local storage
      */
     boolean getUseLocalStorage();
-
-    public String gethypervisorType();
 }

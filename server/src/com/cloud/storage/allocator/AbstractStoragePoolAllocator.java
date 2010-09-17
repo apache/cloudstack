@@ -146,20 +146,14 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 		}
 		
 		/*hypervisor type is correct*/
-		Long clusterId = pool.getClusterId();
-		ClusterVO cluster = _clusterDao.findById(clusterId);
-		if (!cluster.getHypervisorType().equalsIgnoreCase(offering.gethypervisorType())) {
-		return false;
-		}
-
-		/*hypervisor type is correct*/
 		// TODO : when creating a standalone volume, offering is passed as NULL, need to 
 		// refine the logic of checking hypervisorType based on offering info
 		Long clusterId = pool.getClusterId();
 		ClusterVO cluster = _clusterDao.findById(clusterId);
-		if (offering != null && !cluster.getHypervisorType().equalsIgnoreCase(offering.gethypervisorType())) {
+		if (!(cluster.getHypervisorType() == template.getHypervisorType())) {
 			return false;
 		}
+
 		// check the used size against the total size, skip this host if it's greater than the configured
 		// capacity check "storage.capacity.threshold"
 		if (sc != null) {

@@ -37,7 +37,7 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.Hypervisor.Type;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.user.Account;
@@ -213,7 +213,7 @@ public interface StorageManager extends Manager {
 	 * @param size
 	 * @return VolumeVO
 	 */
-	VolumeVO createVolume(long accountId, long userId, String name, DataCenterVO dc, DiskOfferingVO diskOffering, long startEventId, long size, Hypervisor.Type hyperType);
+	VolumeVO createVolume(long accountId, long userId, String name, DataCenterVO dc, DiskOfferingVO diskOffering, long startEventId, long size);
 	
 	/**
 	 * Marks the specified volume as destroyed in the management server database. The expunge thread will delete the volume from its storage pool.

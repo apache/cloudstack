@@ -727,7 +727,6 @@ public class DatabaseConfig {
         int ramSize = Integer.parseInt(_currentObjectParams.get("ramSize"));
         int speed = Integer.parseInt(_currentObjectParams.get("speed"));
         String useLocalStorageValue = _currentObjectParams.get("useLocalStorage");
-        String hypervisorType = _currentObjectParams.get("hypervisorType");
                 
 //        int nwRate = Integer.parseInt(_currentObjectParams.get("nwRate"));
 //        int mcRate = Integer.parseInt(_currentObjectParams.get("mcRate"));
@@ -754,7 +753,7 @@ public class DatabaseConfig {
         	useLocalStorage = false;
         }
         
-        ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, nwRate, mcRate, ha, displayText, type, useLocalStorage, false, null, hypervisorType);
+        ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, nwRate, mcRate, ha, displayText, type, useLocalStorage, false, null);
         ServiceOfferingDaoImpl dao = ComponentLocator.inject(ServiceOfferingDaoImpl.class);
         try {
             dao.persist(serviceOffering);

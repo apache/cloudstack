@@ -50,7 +50,7 @@ import com.cloud.host.HostInfo;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase;
 import com.cloud.hypervisor.xen.resource.XcpServerResource;
 import com.cloud.hypervisor.xen.resource.XenServerResource;
@@ -249,7 +249,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             
             /*set cluster hypervisor type to xenserver*/
             ClusterVO clu = _clusterDao.findById(clusterId);
-            clu.setHypervisorType(Hypervisor.Type.XenServer.toString());
+            clu.setHypervisorType(HypervisorType.XenServer.toString());
             _clusterDao.update(clusterId, clu);
             
         } catch (SessionAuthenticationFailed e) {

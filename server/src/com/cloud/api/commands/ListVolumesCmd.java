@@ -228,6 +228,8 @@ public class ListVolumesCmd extends BaseCmd{
             volumeData.add(new Pair<String, Object>(BaseCmd.Properties.SOURCE_ID.getName(),volume.getSourceId()));
             volumeData.add(new Pair<String, Object>(BaseCmd.Properties.SOURCE_TYPE.getName(),volume.getSourceType().toString()));
             
+            volumeData.add(new Pair<String, Object>(BaseCmd.Properties.HYPERVISOR_TYPE.getName(), getManagementServer().getVolumeHyperType(volume.getId())));
+            
             vTag[i++] = volumeData;
         }
         Pair<String, Object> volumeTag = new Pair<String, Object>("volume", vTag);

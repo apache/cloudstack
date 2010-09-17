@@ -31,6 +31,7 @@ import com.cloud.async.AsyncJobVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.host.HostVO;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -59,6 +60,8 @@ public class ListIsosCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
+        /*Filter out the guest OSes are not supported by the hypervisor*/
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HYPERVISOR_TYPE, Boolean.FALSE));
 
     }
 
@@ -84,7 +87,8 @@ public class ListIsosCmd extends BaseCmd {
         Boolean bootable = (Boolean)params.get(BaseCmd.Properties.BOOTABLE.getName());
         String keyword = (String)params.get(BaseCmd.Properties.KEYWORD.getName());
         Long zoneId = (Long)params.get(BaseCmd.Properties.ZONE_ID.getName());
-
+        HypervisorType hyperType = HypervisorType.getType((String)params.get(BaseCmd.Properties.HYPERVISOR_TYPE.getName()));
+        
     	boolean isAdmin = false;
 
     	TemplateFilter isoFilter;
@@ -143,7 +147,7 @@ public class ListIsosCmd extends BaseCmd {
         
         List<VMTemplateVO> isos = null;
         try {
-        	isos = getManagementServer().listTemplates(id, name, keyword, isoFilter, true, bootable, accountId, pageSize, startIndex, zoneId);
+        	isos = getManagementServer().listTemplates(id, name, keyword, isoFilter, true, bootable, accountId, pageSize, startIndex, zoneId, hyperType);
         } catch (Exception e) {
         	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
         }

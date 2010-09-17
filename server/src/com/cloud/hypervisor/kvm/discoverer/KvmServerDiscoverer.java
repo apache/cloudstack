@@ -28,9 +28,8 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
-import com.cloud.hypervisor.xen.resource.CitrixResourceBase;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ServerResource;
@@ -187,7 +186,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 		 Map<KvmDummyResourceBase, Map<String, String>> resources = new HashMap<KvmDummyResourceBase, Map<String, String>>();
 		 Map<String, String> details = new HashMap<String, String>();
 		if (!uri.getScheme().equals("http")) {
-            String msg = "urlString is not kvm so we're not taking care of the discovery for this: " + uri;
+            String msg = "urlString is not http so we're not taking care of the discovery for this: " + uri;
             s_logger.debug(msg);
             return null;
 		}
@@ -240,7 +239,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			
 			 /*set cluster hypervisor type to xenserver*/
             ClusterVO clu = _clusterDao.findById(clusterId);
-            clu.setHypervisorType(Hypervisor.Type.KVM.toString());
+            clu.setHypervisorType(HypervisorType.KVM.toString());
             _clusterDao.update(clusterId, clu);
 			return resources;
 		} catch (Exception e) {

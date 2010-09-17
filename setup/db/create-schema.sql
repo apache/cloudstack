@@ -872,7 +872,6 @@ CREATE TABLE  `cloud`.`service_offering` (
   `mc_rate` smallint unsigned default 10 COMMENT 'mcast rate throttle mbits/s',
   `ha_enabled` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Enable HA',
   `guest_ip_type` varchar(255) NOT NULL DEFAULT 'Virtualized' COMMENT 'Type of guest network -- direct or virtualized',
-  `hypervisor_type` varchar(255) NOT NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -983,6 +982,14 @@ CREATE TABLE `cloud`.`guest_os` (
   `category_id` bigint unsigned NOT NULL,
   `name` varchar(255) NOT NULL,
   `display_name` varchar(255) NOT NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`guest_os_hypervisor` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `hypervisor_type` varchar(255) NOT NULL,
+  `guest_os_name` varchar(255) NOT NULL,
+  `guest_os_id` bigint unsigned NOT NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 

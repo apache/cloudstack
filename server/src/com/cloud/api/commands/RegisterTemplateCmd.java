@@ -29,6 +29,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -88,6 +89,7 @@ public class RegisterTemplateCmd extends BaseCmd {
         String format = (String)params.get(BaseCmd.Properties.FORMAT.getName());
         Long guestOSId = (Long) params.get(BaseCmd.Properties.OS_TYPE_ID.getName());
         Long zoneId = (Long) params.get(BaseCmd.Properties.ZONE_ID.getName());
+        HypervisorType hyperType = (HypervisorType) params.get(BaseCmd.Properties.HYPERVISOR_TYPE.getName());
 
         //parameters verification
         if (bits == null) {
@@ -163,7 +165,7 @@ public class RegisterTemplateCmd extends BaseCmd {
 
         Long templateId;
         try {
-        	templateId = getManagementServer().createTemplate(userId, accountId, zoneId, name, displayText, isPublic, featured, format, "ext3", url, null, requiresHVM, bits, passwordEnabled, guestOSId, true);
+        	templateId = getManagementServer().createTemplate(userId, accountId, zoneId, name, displayText, isPublic, featured, format, "ext3", url, null, requiresHVM, bits, passwordEnabled, guestOSId, true, hyperType);
         } catch (InvalidParameterValueException ipve) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "Internal error registering template " + name + "; " + ipve.getMessage());
         } catch (IllegalArgumentException iae) {

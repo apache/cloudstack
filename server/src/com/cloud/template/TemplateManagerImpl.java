@@ -46,6 +46,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
@@ -117,7 +118,7 @@ public class TemplateManagerImpl implements TemplateManager {
     
 
     @Override
-    public Long create(long userId, long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) {
+    public Long create(long userId, long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
         Long id = _tmpltDao.getNextInSequence(Long.class, "id");
                 
         AccountVO account = _accountDao.findById(accountId);
@@ -125,7 +126,7 @@ public class TemplateManagerImpl implements TemplateManager {
         	throw new IllegalArgumentException("Only admins can create templates in all zones");
         }
         
-        VMTemplateVO template = new VMTemplateVO(id, name, format, isPublic, featured, fs, url.toString(), requiresHvm, bits, accountId, chksum, displayText, enablePassword, guestOSId, bootable);
+        VMTemplateVO template = new VMTemplateVO(id, name, format, isPublic, featured, fs, url.toString(), requiresHvm, bits, accountId, chksum, displayText, enablePassword, guestOSId, bootable, hyperType);
         if (zoneId == null) {
             List<DataCenterVO> dcs = _dcDao.listAllIncludingRemoved();
 
@@ -603,7 +604,7 @@ public class TemplateManagerImpl implements TemplateManager {
 		UserVO user = _userDao.findById(userId);
 		long accountId = user.getAccountId();
 
-		VMTemplateVO template = new VMTemplateVO(id, displayText, format, isPublic, featured, fs, url.toString(), requiresHvm, bits, accountId, chksum, displayText, enablePassword, guestOSId, bootable);
+		VMTemplateVO template = new VMTemplateVO(id, displayText, format, isPublic, featured, fs, url.toString(), requiresHvm, bits, accountId, chksum, displayText, enablePassword, guestOSId, bootable, null);
 
 		Long templateId = _tmpltDao.addTemplateToZone(template, zoneId);
 		UserAccount userAccount = _userAccountDao.findById(userId);

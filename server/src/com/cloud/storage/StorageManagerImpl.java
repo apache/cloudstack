@@ -97,7 +97,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
@@ -215,7 +215,7 @@ public class StorageManagerImpl implements StorageManager {
     private int _totalRetries;
     private int _pauseInterval;
     private final boolean _shouldBeSnapshotCapable = true;
-    private Hypervisor.Type _hypervisorType;
+    private HypervisorType _hypervisorType;
     
     @Override
     public boolean share(VMInstanceVO vm, List<VolumeVO> vols, HostVO host, boolean cancelPreviousShare) {
@@ -339,7 +339,7 @@ public class StorageManagerImpl implements StorageManager {
             } else {
                 offering = _offeringDao.findById(vol.getDiskOfferingId());
             }
-            VolumeVO created = createVolume(create, vm, template, dc, pod, host.getClusterId(), offering, diskOffering, new ArrayList<StoragePoolVO>(),0, Hypervisor.Type.Any);
+            VolumeVO created = createVolume(create, vm, template, dc, pod, host.getClusterId(), offering, diskOffering, new ArrayList<StoragePoolVO>(),0);
             if (created == null) {
                 break;
             }
@@ -720,9 +720,8 @@ public class StorageManagerImpl implements StorageManager {
     }
     
     @DB
-    @Override
 	public VolumeVO createVolume(VolumeVO volume, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, Long clusterId,
-                                    ServiceOfferingVO offering, DiskOfferingVO diskOffering, List<StoragePoolVO> avoids, long size, Hypervisor.Type hyperType) {
+                                    ServiceOfferingVO offering, DiskOfferingVO diskOffering, List<StoragePoolVO> avoids, long size) {
         StoragePoolVO pool = null;
         final HashSet<StoragePool> avoidPools = new HashSet<StoragePool>(avoids);
        
@@ -1072,12 +1071,6 @@ public class StorageManagerImpl implements StorageManager {
         _totalRetries = NumbersUtil.parseInt(configDao.getValue("total.retries"), 4);
         _pauseInterval = 2*NumbersUtil.parseInt(configDao.getValue("ping.interval"), 60);
         
-        String hypervisoType = configDao.getValue("hypervisor.type");
-        if (hypervisoType.equalsIgnoreCase("KVM")) {
-        	_hypervisorType = Hypervisor.Type.KVM;
-        } else if(hypervisoType.equalsIgnoreCase("vmware")) {
-        	_hypervisorType = Hypervisor.Type.VmWare;
-        }
         _agentMgr.registerForHostEvents(new StoragePoolMonitor(this, _hostDao, _storagePoolDao), true, false, true);
 
         String storageCleanupEnabled = configs.get("storage.cleanup.enabled");
@@ -1259,29 +1252,11 @@ public class StorageManagerImpl implements StorageManager {
             }
         }
         
-        Hypervisor.Type hypervisorType = null;
         List<HostVO> hosts = null;
         if (podId != null) {
             hosts = _hostDao.listByHostPod(podId);
         } else {
             hosts = _hostDao.listByDataCenter(zoneId);
-        }
-        
-        for (HostVO h : hosts) {
-            if (h.getType() == Type.Routing) {
-                hypervisorType = h.getHypervisorType();
-                break;
-            }
-        }
-        if (hypervisorType == null) {
-        	if (_hypervisorType == Hypervisor.Type.KVM) {
-        		hypervisorType = Hypervisor.Type.KVM;
-        	} else if(_hypervisorType == Hypervisor.Type.VmWare) {
-        		hypervisorType = Hypervisor.Type.VmWare;
-        	} else {
-        		s_logger.debug("Couldn't find a host to serve in the server pool");
-        		return null;
-        	}
         }
         
         String scheme = uri.getScheme();
@@ -1295,7 +1270,7 @@ public class StorageManagerImpl implements StorageManager {
                 port = 2049;
             }
             pool = new StoragePoolVO(StoragePoolType.NetworkFilesystem, storageHost, port, hostPath);
-            if (hypervisorType == Hypervisor.Type.XenServer && clusterId == null) {
+            if (clusterId == null) {
                 throw new IllegalArgumentException("NFS need to have clusters specified for XenServers");
             }
         } else if (scheme.equalsIgnoreCase("file")) {
@@ -1310,7 +1285,7 @@ public class StorageManagerImpl implements StorageManager {
                 port = 3260;
             }
             if (lun != -1) {
-                if (hypervisorType == Hypervisor.Type.XenServer && clusterId == null) {
+                if (clusterId == null) {
                     throw new IllegalArgumentException("IscsiLUN need to have clusters specified");
                 }
                 hostPath.replaceFirst("/", "");
@@ -1358,7 +1333,7 @@ public class StorageManagerImpl implements StorageManager {
         // perhaps do this on demand, or perhaps mount on a couple of hosts per
         // pod
         List<HostVO> allHosts = _hostDao.listBy(Host.Type.Routing, clusterId, podId, zoneId);
-        if (allHosts.isEmpty() && _hypervisorType != Hypervisor.Type.KVM) {
+        if (allHosts.isEmpty()) {
             throw new ResourceAllocationException("No host exists to associate a storage pool with");
         }
         long poolId = _storagePoolDao.getNextInSequence(Long.class, "id");
@@ -1380,7 +1355,7 @@ public class StorageManagerImpl implements StorageManager {
         pool.setClusterId(clusterId);
         pool.setStatus(Status.Up);
         pool = _storagePoolDao.persist(pool, details);
-        if (_hypervisorType == Hypervisor.Type.KVM && allHosts.isEmpty()) {
+        if (allHosts.isEmpty()) {
         	return pool;
         }
         s_logger.debug("In createPool Adding the pool to each of the hosts");
@@ -2271,7 +2246,7 @@ public class StorageManagerImpl implements StorageManager {
 	}
 	
 	private boolean sendToVmResidesOn(Command cmd) {
-    	if ((_hypervisorType == Hypervisor.Type.KVM) &&
+    	if ((_hypervisorType == HypervisorType.KVM) &&
     		((cmd instanceof ManageSnapshotCommand) ||
     		 (cmd instanceof BackupSnapshotCommand))) {
     		return true;

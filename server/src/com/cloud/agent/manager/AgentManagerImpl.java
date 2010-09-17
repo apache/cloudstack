@@ -99,7 +99,7 @@ import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
 import com.cloud.maid.StackMaid;
 import com.cloud.maint.UpgradeManager;
@@ -526,7 +526,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
                 s_logger.debug("Delete Host: " + hostId + " Guid:" + host.getGuid());
             }
 
-            if (host.getType() == Type.Routing && host.getHypervisorType() == Hypervisor.Type.XenServer ) {
+            if (host.getType() == Type.Routing && host.getHypervisorType() == HypervisorType.XenServer ) {
                 if (host.getClusterId() != null) {
                     List<HostVO> hosts = _hostDao.listBy(Type.Routing, host.getClusterId(), host.getPodId(), host.getDataCenterId());
                     for( HostVO thost: hosts ) {
@@ -1699,7 +1699,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
         if (type == Host.Type.Routing) {
             StartupRoutingCommand scc = (StartupRoutingCommand) startup;
-            Hypervisor.Type hypervisorType = scc.getHypervisorType();
+            HypervisorType hypervisorType = scc.getHypervisorType();
             boolean doCidrCheck = true;
 
             // If this command is from the agent simulator, don't do the CIDR
@@ -1709,7 +1709,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
             // If this command is from a KVM agent, or from an agent that has a
             // null hypervisor type, don't do the CIDR check
-            if (hypervisorType == null || hypervisorType == Hypervisor.Type.KVM || hypervisorType == Hypervisor.Type.VmWare)
+            if (hypervisorType == null || hypervisorType == HypervisorType.KVM || hypervisorType == HypervisorType.VmWare)
                 doCidrCheck = false;
 
             if (doCidrCheck)
@@ -1750,17 +1750,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             host.setCpus(scc.getCpus());
             host.setTotalMemory(scc.getMemory());
             host.setSpeed(scc.getSpeed());
-            Hypervisor.Type hyType = scc.getHypervisorType();
-            if (hyType == null) {
-                host.setHypervisorType(Hypervisor.Type.Xen);
-            } else {
-                host.setHypervisorType(hyType);
-            }
+            HypervisorType hyType = scc.getHypervisorType();
+            host.setHypervisorType(hyType);
+           
         } else if(startup instanceof StartupStorageCommand) {
             final StartupStorageCommand ssc = (StartupStorageCommand) startup;
             host.setParent(ssc.getParent());
             host.setTotalSize(ssc.getTotalSize());
-            host.setHypervisorType(Hypervisor.Type.None);
+            host.setHypervisorType(HypervisorType.None);
             if (ssc.getNfsShare() != null) {
                 host.setStorageUrl(ssc.getNfsShare());
             }

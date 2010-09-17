@@ -29,7 +29,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.host.HostVO;
-import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -85,7 +85,7 @@ public class ListTemplatesCmd extends BaseCmd {
         Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
         Integer pageSize = (Integer)params.get(BaseCmd.Properties.PAGESIZE.getName());
         Long zoneId = (Long)params.get(BaseCmd.Properties.ZONE_ID.getName());   
-        Hypervisor.Type hyperType = Hypervisor.getType((String)params.get(BaseCmd.Properties.HYPERVISOR_TYPE.getName()));
+        HypervisorType hyperType = HypervisorType.getType((String)params.get(BaseCmd.Properties.HYPERVISOR.getName()));
         
         boolean isAdmin = false;                                        
         Long accountId = null;

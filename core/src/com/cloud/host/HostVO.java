@@ -36,7 +36,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
-import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.db.GenericDao;
 
@@ -108,7 +108,7 @@ public class HostVO implements Host {
     
     @Column(name="hypervisor_type", updatable = true, nullable=false)
     @Enumerated(value=EnumType.STRING)
-    private Hypervisor.Type hypervisorType;
+    private HypervisorType hypervisorType;
     
     @Column(name="proxy_port")
     private Integer proxyPort;
@@ -617,12 +617,12 @@ public class HostVO implements Host {
     	return new StringBuilder(type.toString()).append("-").append(Long.toString(id)).append("-").append(name).toString();
     }
 
-	public void setHypervisorType(Hypervisor.Type hypervisorType) {
+	public void setHypervisorType(HypervisorType hypervisorType) {
 		this.hypervisorType = hypervisorType;
 	}
 
 	@Override
-	public Hypervisor.Type getHypervisorType() {
+	public HypervisorType getHypervisorType() {
 		return hypervisorType;
 	}
 }

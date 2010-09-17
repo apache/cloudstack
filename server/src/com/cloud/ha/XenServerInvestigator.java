@@ -31,7 +31,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.Hypervisor.Type;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.VMInstanceVO;
@@ -47,14 +47,14 @@ public class XenServerInvestigator extends AdapterBase implements Investigator {
     
     @Override
     public Status isAgentAlive(HostVO agent) {
-        if (agent.getHypervisorType() != Hypervisor.Type.XenServer) {
+        if (agent.getHypervisorType() != HypervisorType.XenServer) {
             return null;
         }
         
         CheckOnHostCommand cmd = new CheckOnHostCommand(agent);
         List<HostVO> neighbors = _hostDao.listByHostPod(agent.getPodId());
         for (HostVO neighbor : neighbors) {
-            if (neighbor.getId() == agent.getId() || neighbor.getHypervisorType() != Hypervisor.Type.XenServer) {
+            if (neighbor.getId() == agent.getId() || neighbor.getHypervisorType() != HypervisorType.XenServer) {
                 continue;
             }
             Answer answer = _agentMgr.easySend(neighbor.getId(), cmd);

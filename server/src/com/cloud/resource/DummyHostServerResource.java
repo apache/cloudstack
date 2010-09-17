@@ -31,6 +31,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.vm.State;
 
@@ -75,7 +76,7 @@ public class DummyHostServerResource extends ServerResourceBase {
         cmd.setGuid(_guid);
         cmd.setDataCenter(_zone);
         cmd.setPod(_pod);
-        cmd.setHypervisorType(Hypervisor.Type.None);
+        cmd.setHypervisorType(HypervisorType.None);
         cmd.setAgentTag("vmops-simulator");
         cmd.setName(_url);
         cmd.setPrivateIpAddress(this.getHostPrivateIp());

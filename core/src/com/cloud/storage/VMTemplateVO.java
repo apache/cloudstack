@@ -32,7 +32,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.cloud.async.AsyncInstanceCreateStatus;
-import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.FileSystem;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.db.GenericDao;
@@ -125,11 +125,11 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 	/**
 	 * Proper constructor for a new vm template.
 	 */
-    public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, FileSystem fs, String url, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, Hypervisor.Type hyperType) {
+    public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, FileSystem fs, String url, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
 	    this(id, generateUniqueName(id, accountId, name), name, format, isPublic, featured, fs, url, null, requiresHvm, bits, accountId, cksum, displayText, enablePassword, guestOSId, bootable, hyperType);
     }
 
-	public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, FileSystem fs, String url, Date created, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, Hypervisor.Type hyperType) {
+	public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, FileSystem fs, String url, Date created, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
 	    this.id = id;
 	    this.name = name;
 	    this.publicTemplate = isPublic;
@@ -296,11 +296,11 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 		return crossZones;
 	}
 	
-	public Hypervisor.Type getHypervisorType() {
-		return Hypervisor.getType(hypervisorType);
+	public HypervisorType getHypervisorType() {
+		return HypervisorType.getType(hypervisorType);
 	}
 	
-	public void setHypervisorType(Hypervisor.Type hyper) {
+	public void setHypervisorType(HypervisorType hyper) {
 		hypervisorType = hyper.toString();
 	}
 

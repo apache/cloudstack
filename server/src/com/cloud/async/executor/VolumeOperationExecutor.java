@@ -62,7 +62,7 @@ public class VolumeOperationExecutor extends BaseAsyncJobExecutor {
     			if (op == VolumeOp.Create) {
     			    eventType = EventTypes.EVENT_VOLUME_CREATE;
     			    failureDescription = "Failed to create volume";
-    				volume = asyncMgr.getExecutorContext().getManagementServer().createVolume(param.getUserId(), param.getAccountId(), param.getName(), param.getZoneId(), param.getDiskOfferingId(), param.getEventId(), param.getSize(), param.getHyperType());
+    				volume = asyncMgr.getExecutorContext().getManagementServer().createVolume(param.getUserId(), param.getAccountId(), param.getName(), param.getZoneId(), param.getDiskOfferingId(), param.getEventId(), param.getSize());
     				if (volume.getStatus() == AsyncInstanceCreateStatus.Corrupted) {
     					asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, "Failed to create volume.");
     				} else {

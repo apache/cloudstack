@@ -18,8 +18,6 @@
 
 package com.cloud.async.executor;
 
-import com.cloud.hypervisor.Hypervisor;
-
 public class VolumeOperationParam {
 	
 	public enum VolumeOp { Create, Attach, Detach;}
@@ -34,7 +32,6 @@ public class VolumeOperationParam {
 	private String name;
 	private long diskOfferingId;
     private long size;
-    Hypervisor.Type hypervisorType;
     
 	// Used for Attach and Detach
 	private long vmId;
@@ -134,13 +131,5 @@ public class VolumeOperationParam {
     
     public void setSize(long size){
     	this.size = size;
-    }
-    
-    public Hypervisor.Type getHyperType() {
-    	return hypervisorType;
-    }
-    
-    public void setHyperType(Hypervisor.Type hyperType) {
-    	hypervisorType = hyperType;
     }
 }

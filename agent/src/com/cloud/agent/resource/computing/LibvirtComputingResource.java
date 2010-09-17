@@ -156,12 +156,11 @@ import com.cloud.agent.resource.computing.LibvirtVMDef.interfaceDef.hostNicType;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
-import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkEnums.RouterPrivateIpStrategy;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Volume;
@@ -2557,7 +2556,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
  
         final List<Object> info = getHostInfo();
       
-        final StartupRoutingCommand cmd = new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3), Hypervisor.Type.KVM, RouterPrivateIpStrategy.HostLocal, changes);
+        final StartupRoutingCommand cmd = new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3), HypervisorType.KVM, RouterPrivateIpStrategy.HostLocal, changes);
         fillNetworkInformation(cmd);
         cmd.getHostDetails().putAll(getVersionStrings());
         cmd.setPool(_pool);

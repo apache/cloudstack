@@ -106,6 +106,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddrAllocator;
@@ -1512,7 +1513,7 @@ public class UserVmManagerImpl implements UserVmManager {
                 	throw rae;
                 }
 
-            	poolid = _storageMgr.createUserVM(account, vm, template, dc, pod.first(), offering, diskOffering, avoids,size);
+            	poolid = _storageMgr.createUserVM(account, vm, template, dc, pod.first(), offering, diskOffering, avoids, size);
                 if ( poolid != 0) {
                     break;
                 }
@@ -2109,7 +2110,7 @@ public class UserVmManagerImpl implements UserVmManager {
         HashSet<Host> avoid = new HashSet<Host>();
 
         HostVO fromHost = _hostDao.findById(vm.getHostId());
-        if (fromHost.getHypervisorType() != Hypervisor.Type.KVM && fromHost.getClusterId() == null) {
+        if (fromHost.getClusterId() == null) {
             s_logger.debug("The host is not in a cluster");
             return null;
         }
@@ -2370,6 +2371,7 @@ public class UserVmManagerImpl implements UserVmManager {
             throw new InvalidParameterValueException("Volume with ID: " + volumeId + " does not exist");
     	}
 
+    	HypervisorType hyperType = _volsDao.getHypervisorType(volumeId);
     	int bitsValue = ((bits == null) ? 64 : bits.intValue());
     	boolean requiresHvmValue = ((requiresHvm == null) ? true : requiresHvm.booleanValue());
     	boolean passwordEnabledValue = ((passwordEnabled == null) ? false : passwordEnabled.booleanValue());
@@ -2413,7 +2415,8 @@ public class UserVmManagerImpl implements UserVmManager {
                                            description,
                                            passwordEnabledValue,
                                            guestOS.getId(),
-                                           true);
+                                           true,
+                                           hyperType);
 
         return _templateDao.persist(privateTemplate);
     }
