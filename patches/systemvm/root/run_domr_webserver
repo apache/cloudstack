@@ -1,0 +1,17 @@
+#!/bin/bash
+# @VERSION@
+
+guestIp=$(ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}')
+
+while true
+do
+	/usr/bin/socat TCP4-LISTEN:8080,reuseaddr,crnl,bind=$guestIp SYSTEM:"/root/send_password_to_domu.sh \"\$SOCAT_PEERADDR\""
+
+	rc=$?
+	if [ $rc -ne 0 ]
+	then
+		logger "Socat failed with error code $rc. Restarting socat..."
+		sleep 3
+	fi
+
+done
