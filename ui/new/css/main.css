@@ -1731,6 +1731,13 @@ a:visited {
 	padding:0;
 }
 
+.main_contentarea_dashboard {
+	width:auto;
+	min-height:1000px;
+	height:auto;
+	margin:0 0 0 10px;
+	padding:0;
+}
 
 .main_title {
 	width:100%;
@@ -1765,7 +1772,7 @@ a:visited {
 	width:98%;
 	height:auto;
 	float:left;
-	margin:20px 0 0 10px;
+	margin:10px 0 0 10px;
 	display:inline;
 	padding:0;
 }
@@ -1814,7 +1821,7 @@ a:visited {
 	height:auto;
 	float:left;
 	border:1px solid #CCC;
-	margin:10px 0 0 0;
+	margin:7px 0 0 0;
 	padding:0;
 }
 
@@ -1922,6 +1929,29 @@ a:visited {
 	padding:0;
 }
 
+.row_celltitles.alert {
+	width:100%;
+	height:auto;
+	float:left;
+	color:#a90000;
+	text-align:left;
+	font-size:11px;
+	font-weight:bold;
+	margin:0;
+	padding:0;
+}
+
+.row_celltitles.alertdetails {
+	width:100%;
+	height:auto;
+	float:left;
+	color:#5c5c5c;
+	text-align:left;
+	font-size:11px;
+	font-weight:normal;
+	margin:6px 0 0 0;
+	padding:0;
+}
 
 
 .row_celltitles a{
@@ -2277,6 +2307,22 @@ a:visited {
 	padding:0;
 }
 
+.gridheader_morebutt {
+	width:41px;
+	height:17px;
+	float:left;
+	background:url(../images/more_button.png) no-repeat top left;
+	margin:1px 10px 0 0;
+	cursor:pointer;
+	cursor:hand;
+	display:inline;
+	padding:0;
+}
+
+.gridheader_morebutt:hover {
+	background:url(../images/more_button_hover.png) no-repeat top left;
+}
+
 .gridheader_message {
 	width:auto;
 	height:20px;
@@ -2457,7 +2503,7 @@ a:visited {
 }
 
 .dbgraph_title_usedbox {
-	width:170px;
+	width:187px;
 	height:16px;
 	float:left;
 	background:url(../images/db_usedbox.gif) no-repeat top left;
@@ -2479,4 +2525,36 @@ a:visited {
 
 .dbgraph_title_usedbox span {
 	font-weight:bold;
+}
+
+.db_barbox {
+	height:17px;
+	float:left;
+	margin:12px 0 0 0;
+	border:1px solid #666;
+	border-left:none;
+}
+
+.db_barbox.low {
+	background:url(../images/dbbar_low.gif) repeat-x top left;
+}
+
+.db_barbox.mid {
+	background:url(../images/dbbar_mid.gif) repeat-x top left;
+}
+
+.db_barbox.high {
+	background:url(../images/dbbar_high.gif) repeat-x top left;
+}
+
+.db_totaltitle {
+	width:auto;
+	height:auto;
+	float:right;
+	text-align:right;
+	color:#333;
+	font-size:16px;
+	font-weight:bold;
+	margin:14px 15px 0 0;
+	padding:0;
 }
