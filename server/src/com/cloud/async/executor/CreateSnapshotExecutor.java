@@ -45,6 +45,7 @@ public class CreateSnapshotExecutor extends BaseAsyncJobExecutor {
     	AsyncJobVO job = getJob();
     	Gson gson = GsonHelper.getBuilder().create();
     	
+    	/*
 		if (getSyncSource() == null) {
 	    	SnapshotOperationParam param = gson.fromJson(job.getCmdInfo(), SnapshotOperationParam.class);
 	    	asyncMgr.syncAsyncJobExecution(job.getId(), "Volume", param.getVolumeId());
@@ -95,12 +96,14 @@ public class CreateSnapshotExecutor extends BaseAsyncJobExecutor {
 	    	snapshotManager.postCreateSnapshot(userId, volumeId, snapshotId, policyIds, backedUp);
 	    	return true;
 		}
+		*/
+    	return true;
 	}
 	
 	private CreateSnapshotResultObject composeResultObject(Snapshot snapshot) {
 		CreateSnapshotResultObject resultObject = new CreateSnapshotResultObject();
 		ManagementServer managementServer = getAsyncJobMgr().getExecutorContext().getManagementServer();
-		VolumeVO volume = managementServer.findVolumeById(snapshot.getVolumeId());
+//		VolumeVO volume = managementServer.findVolumeById(snapshot.getVolumeId());
 		
 		resultObject.setId(snapshot.getId());
 		long domainId = -1;
@@ -113,15 +116,15 @@ public class CreateSnapshotExecutor extends BaseAsyncJobExecutor {
 			if(domainId != -1)
 			{
 				resultObject.setDomainId(domainId);
-				resultObject.setDomainName(getAsyncJobMgr().getExecutorContext().getManagementServer().findDomainIdById(domainId).getName());
+//				resultObject.setDomainName(getAsyncJobMgr().getExecutorContext().getManagementServer().findDomainIdById(domainId).getName());
 			}
 			
 		}
 		String snapshotTypeStr = SnapshotType.values()[snapshot.getSnapshotType()].name();
 		resultObject.setSnapshotType(snapshotTypeStr);
 		resultObject.setVolumeId(snapshot.getVolumeId());
-		resultObject.setVolumeName(volume.getName());
-		resultObject.setVolumeType(volume.getVolumeType());
+//		resultObject.setVolumeName(volume.getName());
+//		resultObject.setVolumeType(volume.getVolumeType());
 		resultObject.setCreated(snapshot.getCreated());
 		resultObject.setName(snapshot.getName());
 		return resultObject;

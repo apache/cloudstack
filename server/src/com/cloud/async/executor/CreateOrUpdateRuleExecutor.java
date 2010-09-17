@@ -43,7 +43,8 @@ public class CreateOrUpdateRuleExecutor extends BaseAsyncJobExecutor {
     	AsyncJobVO job = getJob();
     	ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
     	CreateOrUpdateRuleParam param = gson.fromJson(job.getCmdInfo(), CreateOrUpdateRuleParam.class);
-    	
+
+    	/*
     	try {
     		if(s_logger.isDebugEnabled())
     			s_logger.debug("Executing createOrUpdateRule, uid: " + job.getUserId() + ", pfservice id: " + param.getSecurityGroupId()
@@ -96,6 +97,7 @@ public class CreateOrUpdateRuleExecutor extends BaseAsyncJobExecutor {
 			asyncMgr.completeAsyncJob(getJob().getId(), 
 	    		AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, e.getMessage());
 		}
+		*/
 		return true;
 	}
 	

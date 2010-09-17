@@ -52,6 +52,7 @@ public class CreatePrivateTemplateExecutor extends VolumeOperationExecutor {
     	AsyncJobManager asyncMgr = getAsyncJobMgr();
     	AsyncJobVO job = getJob();
 
+    	/*
 		if(getSyncSource() == null) {
 		    CreatePrivateTemplateParam param = gson.fromJson(job.getCmdInfo(), CreatePrivateTemplateParam.class);
 	    	asyncMgr.syncAsyncJobExecution(job.getId(), "Volume", param.getVolumeId());
@@ -174,6 +175,8 @@ public class CreatePrivateTemplateExecutor extends VolumeOperationExecutor {
 	        asyncMgr.completeAsyncJob(jobId, jobStatus, resultCode, resultObject);
 	    	return true;
 		}
+		*/
+    	return true;
 	}
 	
 	private CreatePrivateTemplateResultObject composeResultObject(VMTemplateVO template, VMTemplateHostVO templateHostRef, Long dataCenterId) {
@@ -188,20 +191,20 @@ public class CreatePrivateTemplateExecutor extends VolumeOperationExecutor {
 		resultObject.setPasswordEnabled(template.getEnablePassword());
 		resultObject.setCrossZones(template.isCrossZones());
 		ManagementServer managerServer = getAsyncJobMgr().getExecutorContext().getManagementServer();
-		GuestOS os = managerServer.findGuestOSById(template.getGuestOSId());
-        if (os != null) {
-        	resultObject.setOsTypeId(os.getId());
-        	resultObject.setOsTypeName(os.getDisplayName());
-        } else {
-        	resultObject.setOsTypeId(-1L);
-        	resultObject.setOsTypeName("");
-        }
+//		GuestOS os = managerServer.findGuestOSById(template.getGuestOSId());
+//        if (os != null) {
+//        	resultObject.setOsTypeId(os.getId());
+//        	resultObject.setOsTypeName(os.getDisplayName());
+//        } else {
+//        	resultObject.setOsTypeId(-1L);
+//        	resultObject.setOsTypeName("");
+//        }
         
         Account owner = managerServer.findAccountById(template.getAccountId());
         if (owner != null) {
         	resultObject.setAccount(owner.getAccountName());
         	resultObject.setDomainId(owner.getDomainId());
-        	resultObject.setDomainName(managerServer.findDomainIdById(owner.getDomainId()).getName());
+//        	resultObject.setDomainName(managerServer.findDomainIdById(owner.getDomainId()).getName());
         }
 
         
