@@ -1218,8 +1218,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 											    
 										    } else if (result.jobstatus == 2) {
 											    // Failed
-											    afterAddingMidMenuItem($midmenuItem1, false);										    
-						                        $("#dialog_error").html("<p><b>Adding Instance failed</b></p><br/><p>"+fromdb(result.jobresult)+"</p>").dialog("open");
+											    afterAddingMidMenuItem($midmenuItem1, false, fromdb(result.jobresult));		
 										    }
 									    }
 								    },

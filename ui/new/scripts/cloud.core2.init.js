@@ -59,19 +59,8 @@ $(document).ready(function() {
 	                        for(var i=0; i<items.length;i++) { 
                                 var $midmenuItem1 = $midmenuItem.clone();  
                                 $midmenuItem1.data("toRightPanelFn", toRightPanel);                             
-                                toMidmenu(items[i], $midmenuItem1);                                  
-                                $midmenuItem1.bind("click", function(event){  
-                                    var thisMidmenuItem = $(this);
-                                    
-                                    if(selected_midmenu_id != null && selected_midmenu_id.length > 0)
-                                        $("#"+selected_midmenu_id).find("#content").removeClass("selected");
-                                    selected_midmenu_id = ("midmenuItem_"+thisMidmenuItem.data("jsonObj").id);
-                                
-                                    thisMidmenuItem.find("#content").addClass("selected");                                               
-                                    clearRightPanel();        
-                                    toRightPanel(thisMidmenuItem);	  
-                                    return false;
-                                });                                                              
+                                toMidmenu(items[i], $midmenuItem1);    
+                                bindClickToMidMenu($midmenuItem1, toRightPanel);             
                                 $("#midmenu_container").append($midmenuItem1.show());                            
                             }  
                         }  

@@ -563,7 +563,7 @@ function beforeAddingMidMenuItem() {
 	$("#midmenu_container").append($midmenuItem1.show());
 	return $midmenuItem1;
 }
-function afterAddingMidMenuItem($midmenuItem1, isSuccessful) {
+function afterAddingMidMenuItem($midmenuItem1, isSuccessful, extraMessage) {
     $midmenuItem1.find("#content").removeClass("inaction"); 
 	$midmenuItem1.find("#spinning_wheel").hide();	
 
@@ -574,8 +574,39 @@ function afterAddingMidMenuItem($midmenuItem1, isSuccessful) {
 	else {	
 	    $midmenuItem1.find("#info_icon").addClass("error").show();			
 	    $midmenuItem1.find("#first_row").text("Adding failed");	
+	    if(extraMessage != null)
+	        $midmenuItem1.find("#second_row").text(extraMessage);  
 	}
 }
+
+function bindClickToMidMenu($midmenuItem1, toRightPanel) {
+    $midmenuItem1.bind("click", function(event){  
+        var thisMidmenuItem = $(this);
+        
+        if(selected_midmenu_id != null && selected_midmenu_id.length > 0)
+            $("#"+selected_midmenu_id).find("#content").removeClass("selected");
+        selected_midmenu_id = ("midmenuItem_"+thisMidmenuItem.data("jsonObj").id);
+    
+        thisMidmenuItem.find("#content").addClass("selected");                                               
+        clearRightPanel();        
+        toRightPanel(thisMidmenuItem);	  
+        return false;
+    }); 
+}
+
+
+
+
+
+
+
+
+
+                                  
+                           
+
+
+
 
 
 

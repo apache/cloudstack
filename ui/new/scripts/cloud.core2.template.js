@@ -4,16 +4,27 @@ var g_zoneNames = [];
 function afterLoadTemplateJSP() {      
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     
-     //add button ***
+    //add button ***
+    var formatSelect = $("#dialog_add_template #add_template_format").empty();
+	if (getHypervisorType() == "kvm") 
+		formatSelect.append("<option value='QCOW2'>QCOW2</option>");
+	else if (getHypervisorType() == "xenserver") 
+		formatSelect.append("<option value='VHD'>VHD</option>");	    
+		
+	if(isAdmin())
+	    $("#dialog_add_template #add_template_featured_container, #dialog_edit_template #edit_template_featured_container").show();
+	else
+	    $("#dialog_add_template #add_template_featured_container, #dialog_edit_template #edit_template_featured_container").hide();		
+	
     $("#midmenu_add_link").show(); 
+    
     $("#midmenu_add_link").bind("click", function(event) {        
         $("#dialog_add_template")
 		.dialog('option', 'buttons', { 				
 			"Create": function() { 		
 			    var thisDialog = $(this);
 				thisDialog.dialog("close");
-				
-				debugger;		
+									
 				// validate values
 				var isValid = true;					
 				isValid &= validateString("Name", thisDialog.find("#add_template_name"), thisDialog.find("#add_template_name_errormsg"));
@@ -36,20 +47,28 @@ function afterLoadTemplateJSP() {
                     moreCriteria.push("&isfeatured="+isFeatured);
                 }					
 				
-				//middle menu spinning wheel....		
+				var $midmenuItem1 = beforeAddingMidMenuItem() ;
 												
 				$.ajax({
 				    data: createURL("command=registerTemplate&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&url="+encodeURIComponent(url)+"&zoneid="+zoneId+"&ispublic="+isPublic+moreCriteria.join("")+"&format="+format+"&passwordEnabled="+password+"&osTypeId="+osType+"&response=json"),
 					dataType: "json",
-					success: function(json) {						  
-						var result = json.registertemplateresponse;		
-						debugger;						
-						//spinning wheel disappear			                              			                  				
-					},			
-                    error: function(XMLHttpResponse) {		                   
-	                    debugger;
-	                    				    
-                    }							
+					success: function(json) {	
+						var result = json.registertemplateresponse;							
+						templateToMidmenu(result.template[0], $midmenuItem1);
+						bindClickToMidMenu($midmenuItem1, templateToRigntPanel);     
+						/*
+                        if(result.template.length > 1) {                               
+                            for(var i=1; i<result.template.length; i++) {         
+                                var template2 = $("#vm_template_template").clone(true);                                                               
+                                templateJSONToTemplate(result.template[i], template2);	
+                                submenuContent.find("#grid_content").prepend(template2.fadeIn("slow"));	 	
+                                changeGridRowsTotal(submenuContent.find("#grid_rows_total"), 1);  
+                            }                                     
+                        }
+						*/				
+							
+						afterAddingMidMenuItem($midmenuItem1, true);	                              			                  				
+					}						
 				});
 			},
 			"Cancel": function() { 
