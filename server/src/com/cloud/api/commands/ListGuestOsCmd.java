@@ -63,7 +63,7 @@ public class ListGuestOsCmd extends BaseCmd {
             Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
             
             Long startIndex = Long.valueOf(0);
-            int pageSizeNum = 50;
+            int pageSizeNum = 150;
         	if (pageSize != null) {
         		pageSizeNum = pageSize.intValue();
         	}
@@ -74,7 +74,7 @@ public class ListGuestOsCmd extends BaseCmd {
                 }
             }
             
-            Criteria c = new Criteria("id", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
+            Criteria c = new Criteria("displayName", Boolean.TRUE, startIndex, Long.valueOf(pageSizeNum));
             
             if (id != null) {
             	c.addCriteria(Criteria.ID, id);
