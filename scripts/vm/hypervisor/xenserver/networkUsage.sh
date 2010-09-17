@@ -25,8 +25,12 @@ create_usage_rules () {
    ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
      iptables -N NETWORK_STATS > /dev/null;
      iptables -I FORWARD -j NETWORK_STATS > /dev/null;
+     iptables -I INPUT -j NETWORK_STATS > /dev/null;
+     iptables -I OUTPUT -j NETWORK_STATS > /dev/null;
      iptables -A NETWORK_STATS -i eth0 -o eth2 > /dev/null;
      iptables -A NETWORK_STATS -i eth2 -o eth0 > /dev/null;
+     iptables -A NETWORK_STATS -o eth2 ! -i eth0 -p tcp > /dev/null;
+     iptables -A NETWORK_STATS -i eth2 ! -o eth0 -p tcp > /dev/null;
      "
      return 1
 }
@@ -37,6 +41,8 @@ add_public_interface () {
    ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
      iptables -A NETWORK_STATS -i eth0 -o $pubIf > /dev/null;
      iptables -A NETWORK_STATS -i $pubIf -o eth0 > /dev/null;
+     iptables -A NETWORK_STATS -o $pubIf ! -i eth0 -p tcp > /dev/null;
+     iptables -A NETWORK_STATS -i $pubIf ! -o eth0 -p tcp > /dev/null;
      "
      return 1
 }
