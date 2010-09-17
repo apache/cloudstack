@@ -61,7 +61,7 @@
                         IP:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles">
+                    <div class="row_celltitles" id="ipaddress">
                     </div>
                 </div>
             </div>
@@ -71,7 +71,7 @@
                         Zone:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles">
+                    <div class="row_celltitles" id="zonename">
                     </div>
                 </div>
             </div>
@@ -81,67 +81,57 @@
                         VLAN:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles">
+                    <div class="row_celltitles" id="vlanname">
                     </div>
                 </div>
-            </div>
+            </div>           
             <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Level")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="level">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
                         Source NAT:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles">
+                    <div class="row_celltitles" id="source_nat">
                     </div>
                 </div>
             </div>
-            <div class="grid_rows even">
+            <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
                         Network Type:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        Domain:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles">
+                    <div class="row_celltitles" id="network_type">
                     </div>
                 </div>
             </div>
             <div class="grid_rows even">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        Account:</div>
+                        Domain:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles">
+                    <div class="row_celltitles" id="domain">
                     </div>
                 </div>
             </div>
             <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
+                        Account:</div>
+                </div>
+                <div class="grid_row_cell" style="width: 79%;">
+                    <div class="row_celltitles" id="account">
+                    </div>
+                </div>
+            </div>
+            <div class="grid_rows even">
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles">
                         Allocated:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles">
+                    <div class="row_celltitles" id="allocated">
                     </div>
                 </div>
             </div>
