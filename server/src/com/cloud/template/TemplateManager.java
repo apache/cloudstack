@@ -20,6 +20,7 @@ package com.cloud.template;
 import java.net.URI;
 import java.util.List;
 
+import com.cloud.async.AsyncJobManager;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.StorageUnavailableException;
@@ -98,7 +99,34 @@ public interface TemplateManager extends Manager {
      * @param sourceZoneId
      * @param destZoneId
      * @return true if success
-     * @throws InternalErrorException
+     * @throws InternalErrorException        URI uri = new URI(url);
+        if ( (uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("ftp") )) {
+           throw new IllegalArgumentException("Unsupported scheme for url: " + url);
+        }
+        String host = uri.getHost();
+        
+        try {
+        	InetAddress hostAddr = InetAddress.getByName(host);
+        	if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress() ) {
+        		throw new IllegalArgumentException("Illegal host specified in url");
+        	}
+        	if (hostAddr instanceof Inet6Address) {
+        		throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
+        	}
+        } catch (UnknownHostException uhe) {
+        	throw new IllegalArgumentException("Unable to resolve " + host);
+        }
+        
+    	if (_dcDao.findById(zoneId) == null) {
+    		throw new IllegalArgumentException("Please specify a valid zone.");
+    	}
+        
+        VMTemplateVO template = findTemplateById(templateId);
+        
+        VMTemplateHostVO tmpltHostRef = findTemplateHostRef(templateId, zoneId);
+        if (tmpltHostRef != null && tmpltHostRef.getDownloadState() != com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED){
+        	throw new IllegalArgumentException("The template hasnt been downloaded ");
+        }
      * @throws StorageUnavailableException 
      * @throws InvalidParameterValueException 
      */
@@ -128,6 +156,6 @@ public interface TemplateManager extends Manager {
     
     boolean templateIsDeleteable(VMTemplateHostVO templateHostRef);
 
-	void extract(VMTemplateVO template, String url, VMTemplateHostVO tmpltHostRef, Long zoneId);
+	void extract(VMTemplateVO template, String url, VMTemplateHostVO tmpltHostRef, Long zoneId, long eventId, long asyncJobId, AsyncJobManager asyncMgr);
     
 }

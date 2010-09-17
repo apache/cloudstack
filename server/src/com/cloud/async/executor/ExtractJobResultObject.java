@@ -23,9 +23,6 @@ public class ExtractJobResultObject {
     
 	@Param(name="name")
 	private String name;
-
-    @Param(name="host_id")
-	private Long hostId;
 	
     @Param(name="uploadPercentage")
 	private int uploadPercent;
@@ -34,10 +31,7 @@ public class ExtractJobResultObject {
 	private String uploadStatus;
     
     @Param(name="accountid")
-    long accountId;
-
-    @Param(name="account")
-    private String accountName;
+    long accountId;    
  
     @Param(name="result_string")
     String result_string;    
@@ -125,14 +119,6 @@ public class ExtractJobResultObject {
 	public String getName() {
 		return name;
 	}
-
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
-    }
-
-    public String getAccountName() {
-        return accountName;
-    }
 
 	public void setSize(long size) {
 		this.size = size;

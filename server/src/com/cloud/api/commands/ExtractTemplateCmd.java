@@ -59,9 +59,9 @@ public class ExtractTemplateCmd extends BaseCmd {
     			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to extract template " + templateId + " to " + url + ", permission denied.");
     		}
     	}
-    	
+    	Long jobId;
         try {
-			managementServer.extractTemplate(url, templateId, zoneId);
+			jobId = managementServer.extractTemplateAsync(url, templateId, zoneId);
 		} catch (Exception e) {			
 			s_logger.error(e.getMessage(), e);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal Error Extracting the template " + e.getMessage());
@@ -74,7 +74,7 @@ public class ExtractTemplateCmd extends BaseCmd {
 		response.add(new Pair<String, Object>(BaseCmd.Properties.URL.getName(), url));
 		response.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_ID.getName(), zoneId));
 		response.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), zone.getName()));
-		response.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_STATUS.getName(), "Processing"));		
+		response.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), jobId));
 		return response;
 	}
 
@@ -82,6 +82,10 @@ public class ExtractTemplateCmd extends BaseCmd {
 	public String getName() {
 		return s_name;
 	}
+	
+    public static String getStaticName() {
+        return "ExtractTemplate";
+    }
 
 	@Override
 	public List<Pair<Enum, Boolean>> getProperties() {

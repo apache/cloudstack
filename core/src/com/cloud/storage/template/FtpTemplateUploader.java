@@ -73,9 +73,11 @@ public class FtpTemplateUploader implements TemplateUploader {
 		         {
 		            URL url = new URL( sb.toString() );
 		            URLConnection urlc = url.openConnection();
+		            File sourceFile = new File(sourcePath);
+		            templateSizeinBytes = sourceFile.length();
 
 		            outputStream = new BufferedOutputStream( urlc.getOutputStream() );
-		            inputStream = new BufferedInputStream( new FileInputStream( new File(sourcePath) ) );	            
+		            inputStream = new BufferedInputStream( new FileInputStream(sourceFile) );            
 
 		            status = TemplateUploader.Status.IN_PROGRESS;
 

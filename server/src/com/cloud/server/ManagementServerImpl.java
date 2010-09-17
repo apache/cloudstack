@@ -72,6 +72,7 @@ import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
+import com.cloud.api.commands.ExtractTemplateCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
@@ -96,6 +97,7 @@ import com.cloud.async.executor.DeleteRuleParam;
 import com.cloud.async.executor.DeleteTemplateParam;
 import com.cloud.async.executor.DeployVMParam;
 import com.cloud.async.executor.DisassociateIpAddressParam;
+import com.cloud.async.executor.ExtractTemplateParam;
 import com.cloud.async.executor.LoadBalancerParam;
 import com.cloud.async.executor.NetworkGroupIngressParam;
 import com.cloud.async.executor.ResetVMPasswordParam;
@@ -4845,8 +4847,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public void extractTemplate(String url, Long templateId, Long zoneId) throws URISyntaxException{
-    
+    public long extractTemplateAsync(String url, Long templateId, Long zoneId) throws URISyntaxException{
         URI uri = new URI(url);
         if ( (uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("ftp") )) {
            throw new IllegalArgumentException("Unsupported scheme for url: " + url);
@@ -4875,8 +4876,33 @@ public class ManagementServerImpl implements ManagementServer {
         if (tmpltHostRef != null && tmpltHostRef.getDownloadState() != com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED){
         	throw new IllegalArgumentException("The template hasnt been downloaded ");
         }
+        long userId = UserContext.current().getUserId();
+        long accountId = template.getAccountId();
+        String event = template.getFormat() == ImageFormat.ISO ? EventTypes.EVENT_ISO_UPLOAD : EventTypes.EVENT_TEMPLATE_UPLOAD;
+        long eventId = saveScheduledEvent(userId, accountId, event, "Extraction job");
         
-        _tmpltMgr.extract(template, url, tmpltHostRef, zoneId);
+ 		ExtractTemplateParam param = new ExtractTemplateParam(userId, templateId, zoneId, eventId , url);
+        Gson gson = GsonHelper.getBuilder().create();
+
+        AsyncJobVO job = new AsyncJobVO();
+    	job.setUserId(userId);
+    	job.setAccountId(accountId);
+        job.setCmd("ExtractTemplate");
+        job.setCmdInfo(gson.toJson(param));
+        job.setCmdOriginator(ExtractTemplateCmd.getStaticName());
+        
+        return _asyncMgr.submitAsyncJob(job);
+    	    	
+    }
+    
+    @Override
+    public void extractTemplate(String url, Long templateId, Long zoneId, long eventId, long asyncJobId) throws URISyntaxException{
+
+    	VMTemplateVO template = findTemplateById(templateId);        
+        VMTemplateHostVO tmpltHostRef = findTemplateHostRef(templateId, zoneId);
+        String event = template.getFormat() == ImageFormat.ISO ? EventTypes.EVENT_ISO_UPLOAD : EventTypes.EVENT_TEMPLATE_UPLOAD;
+        saveStartedEvent(template.getAccountId(), template.getAccountId(), event, "Starting upload of " +template.getName()+ " to " +url, eventId);
+        _tmpltMgr.extract(template, url, tmpltHostRef, zoneId, eventId, asyncJobId, _asyncMgr);
         
     }
     

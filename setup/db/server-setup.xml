@@ -12,14 +12,14 @@
   <zones>
     <zone>
       <id>1</id>
-      <name>ZONE1</name>
-      <dns1>72.52.126.11</dns1>
-      <dns2>72.52.126.12</dns2>
-      <internalDns1>192.168.10.253</internalDns1>
-      <internalDns2>192.168.10.254</internalDns2>
-      <gateway>172.16.0.1</gateway>
-      <netmask>255.255.0.0</netmask>
-      <ipAddressRange>172.16.1.1-172.16.255.253</ipAddressRange>
+      <name>NM</name>
+      <dns1>4.2.2.2</dns1>
+      <dns2>10.10.10.14</dns2>
+      <internalDns1>4.2.2.2</internalDns1>
+      <internalDns2>4.2.2.2</internalDns2>
+	  <gateway>10.91.28.1</gateway>
+	  <netmask>255.255.255.0</netmask>
+	  <vnet>560-579</vnet>      
       <guestNetworkCidr>10.1.1.0/24</guestNetworkCidr>
     </zone>
   </zones>
@@ -35,24 +35,46 @@
   <pods>
     <pod>
       <id>1</id>
-      <name>POD1</name>
+      <name>NM</name>
       <zoneId>1</zoneId> 
-      <gateway>192.168.2.1</gateway>
-      <cidr>192.168.2.0/24</cidr>
-      <ipAddressRange>192.168.2.20-192.168.2.170</ipAddressRange>
+      <gateway>10.91.28.1</gateway>
+      <cidr>10.91.28.0/24</cidr>
+      <ipAddressRange>10.91.28.160-10.91.28.179</ipAddressRange>
     </pod>
   </pods>
-
 <!--
+<storagePools>
+<storagePool>
+<zoneId>1</zoneId>
+<podId>1</podId>
+<name>idc-ss</name>
+<hostAddress>10.91.28.6</hostAddress>
+<hostPath>/export/home/nitin/primary</hostPath>
+</storagePool>
+</storagePools>
+-->
+
+<!--  
+<secondaryStorages>
+<secondaryStorage>
+<zoneId>1</zoneId>
+<podId>1</podId>
+<url>nfs://10.91.28.6/export/home/nitin/secondary</url>
+</secondaryStorage>
+</secondaryStorages>
+-->
+
   <vlans>
     <vlan>
       <zoneId>1</zoneId>
       <vlanId>30</vlanId>
       <vlanType>VirtualNetwork</vlanType>
-      <gateway>192.168.30.1</gateway>
+      <gateway>10.91.30.1</gateway>
       <netmask>255.255.255.0</netmask>
-      <ipAddressRange>192.168.30.10-192.168.30.19</ipAddressRange>
+      <ipAddressRange>10.91.30.160-10.91.30.179</ipAddressRange>
     </vlan>
+  </vlans>
+<!--    
     <vlan>
       <zoneId>1</zoneId>
       <vlanId>31</vlanId>
@@ -61,7 +83,6 @@
       <netmask>255.255.255.0</netmask>
       <ipAddressRange>192.168.31.10-192.168.31.19</ipAddressRange>
     </vlan>
-  </vlans>
   -->
   <!--
     * id is the unique id of the service offering

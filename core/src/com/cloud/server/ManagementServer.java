@@ -2194,7 +2194,7 @@ public interface ManagementServer {
 	 * @param template id - the id of the template
 	 *  
 	 */
-	void extractTemplate(String url, Long templateId, Long zoneId) throws URISyntaxException;
+	void extractTemplate(String url, Long templateId, Long zoneId, long eventId, long asyncJobId) throws URISyntaxException;
 
     Map<String, String> listCapabilities();
 	GuestOSVO getGuestOs(Long guestOsId);
@@ -2248,6 +2248,7 @@ public interface ManagementServer {
      */
     void extractVolume(String url, Long volumeId, Long zoneId) throws 
     URISyntaxException, InternalErrorException;
+	long extractTemplateAsync(String url, Long templateId, Long zoneId) throws URISyntaxException;
 
 
 }
