@@ -149,7 +149,7 @@ public class DisableUserExecutor extends BaseAsyncJobExecutor {
 			for(DomainRouterVO router : routers) {
 				if(s_logger.isInfoEnabled())
 					s_logger.info("Serialize DisableUser operation with previous activities on router " + router.getId());
-				asyncMgr.syncAsyncJobExecution(job.getId(), "Router", router.getId());
+				asyncMgr.syncAsyncJobExecution(job, "Router", router.getId());
 			}
 			
 			txn.commit();

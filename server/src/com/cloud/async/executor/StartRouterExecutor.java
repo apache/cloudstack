@@ -46,7 +46,7 @@ public class StartRouterExecutor extends VMOperationExecutor {
     	VMOperationParam param = gson.fromJson(job.getCmdInfo(), VMOperationParam.class);
     	
 		if(getSyncSource() == null) {
-	    	asyncMgr.syncAsyncJobExecution(job.getId(), "Router", param.getVmId());
+	    	asyncMgr.syncAsyncJobExecution(job, "Router", param.getVmId());
 			return true;
 		} else {
 		    boolean success = false;

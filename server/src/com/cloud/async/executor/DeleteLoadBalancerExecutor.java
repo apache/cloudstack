@@ -39,6 +39,7 @@ public class DeleteLoadBalancerExecutor extends BaseAsyncJobExecutor {
         AsyncJobVO job = getJob();
         LoadBalancerParam param = gson.fromJson(job.getCmdInfo(), LoadBalancerParam.class);
 
+        /*
         if (getSyncSource() == null) {
             asyncMgr.syncAsyncJobExecution(job.getId(), "Router", param.getDomainRouterId());
 
@@ -60,5 +61,7 @@ public class DeleteLoadBalancerExecutor extends BaseAsyncJobExecutor {
             }
             return true;
         }
+        */
+        return true;
     }
 }

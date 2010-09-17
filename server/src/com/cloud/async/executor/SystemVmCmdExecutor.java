@@ -44,6 +44,7 @@ public class SystemVmCmdExecutor extends VMOperationExecutor {
     	VMOperationParam param = gson.fromJson(job.getCmdInfo(), VMOperationParam.class);
     	VmOp oper = param.getOperation();
     	VMInstanceVO vm;
+    	/*
 		if(getSyncSource() == null) {
 	    	asyncMgr.syncAsyncJobExecution(job.getId(), "SystemVm", param.getVmId());
 			return true;
@@ -100,6 +101,8 @@ public class SystemVmCmdExecutor extends VMOperationExecutor {
 			}
 	    	return true;
 		}
+		*/
+    	return true;
 	}
 	
 	private Object composeResultObject(ManagementServer managementServer, VMInstanceVO vm) {

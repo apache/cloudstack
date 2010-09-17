@@ -22,6 +22,7 @@ package com.cloud.vm;
  *  to proxy VNC traffic
  */
 public interface ConsoleProxy extends SystemVm {
+    public int getActiveSession();
     public byte[] getSessionDetails();
 }
 

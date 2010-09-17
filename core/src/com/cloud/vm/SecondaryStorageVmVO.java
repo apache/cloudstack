@@ -249,9 +249,8 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
 	public int getRamSize() {
     	return this.ramSize;
     }
- 
-    
-    @Override
+
+   @Override
     public Date getLastUpdateTime() {
     	return this.lastUpdateTime;
     }
@@ -271,7 +270,4 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
 	public String getNfsShare() {
 		return nfsShare;
 	}
-    
-  
-
 }

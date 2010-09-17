@@ -51,6 +51,7 @@ public class CompleteMaintenanceExecutor extends BaseAsyncJobExecutor {
 		ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
 		Long param = gson.fromJson(job.getCmdInfo(), Long.class);
 
+		/*
 		try
 		{
 			boolean result = managementServer.maintenanceCompleted(param.longValue());
@@ -72,6 +73,7 @@ public class CompleteMaintenanceExecutor extends BaseAsyncJobExecutor {
 			asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR,
 				e.getMessage());
 		}
+		*/
 		return true;
 	}
 	
@@ -93,16 +95,16 @@ public class CompleteMaintenanceExecutor extends BaseAsyncJobExecutor {
                 hostRO.setType(hostVO.getType().toString());
             }
             
-            GuestOSCategoryVO guestOSCategory = managementServer.getHostGuestOSCategory(hostVO.getId());
-            if (guestOSCategory != null) {
-            	hostRO.setOsCategoryId(guestOSCategory.getId());
-            	hostRO.setOsCategoryName(guestOSCategory.getName());
-            }
+//            GuestOSCategoryVO guestOSCategory = managementServer.getHostGuestOSCategory(hostVO.getId());
+//            if (guestOSCategory != null) {
+//            	hostRO.setOsCategoryId(guestOSCategory.getId());
+//            	hostRO.setOsCategoryName(guestOSCategory.getName());
+//            }
 	    	
             
             hostRO.setIpAddress(hostVO.getPrivateIpAddress());
             hostRO.setZoneId(hostVO.getDataCenterId());
-            hostRO.setZoneName(managementServer.getDataCenterBy(hostVO.getDataCenterId()).getName());
+//            hostRO.setZoneName(managementServer.getDataCenterBy(hostVO.getDataCenterId()).getName());
 
             if (hostVO.getPodId() != null && managementServer.findHostPodById(hostVO.getPodId()) != null) {
             	hostRO.setPodId(hostVO.getPodId());
@@ -124,31 +126,31 @@ public class CompleteMaintenanceExecutor extends BaseAsyncJobExecutor {
                 int cpu = 0;
                 String cpuAlloc = null;
                 DecimalFormat decimalFormat = new DecimalFormat("#.##");
-                List<UserVmVO> instances = managementServer.listUserVMsByHostId(hostVO.getId());
-                for (UserVmVO vm : instances) {
-                    ServiceOffering so = managementServer.findServiceOfferingById(vm.getServiceOfferingId());
-                    cpu += so.getCpu() * so.getSpeed();
-                }
+//                List<UserVmVO> instances = managementServer.listUserVMsByHostId(hostVO.getId());
+//                for (UserVmVO vm : instances) {
+//                    ServiceOffering so = managementServer.findServiceOfferingById(vm.getServiceOfferingId());
+//                    cpu += so.getCpu() * so.getSpeed();
+//                }
                 cpuAlloc = decimalFormat.format(((float) cpu / (float) (hostVO.getCpus() * hostVO.getSpeed())) * 100f) + "%";
                 hostRO.setCpuAllocated(cpuAlloc);
 
                 // calculate cpu utilized
                 String cpuUsed = null;
-                HostStats hostStats = managementServer.getHostStatistics(hostVO.getId());
-                if (hostStats != null) {
-                    float cpuUtil = (float) hostStats.getCpuUtilization();
-                    cpuUsed = decimalFormat.format(cpuUtil) + "%";
-                    hostRO.setCpuUsed(cpuUsed);
-                    
-                    long avgLoad = (long)hostStats.getAverageLoad();
-                    hostRO.setAverageLoad(avgLoad);
-                    
-                    long networkKbsRead = (long)hostStats.getNetworkReadKBs();
-                    hostRO.setNetworkKbsRead(networkKbsRead);
-                    
-                    long networkKbsWrite = (long)hostStats.getNetworkWriteKBs();
-                    hostRO.setNetworkKbsWrite(networkKbsWrite);
-                }
+//                HostStats hostStats = managementServer.getHostStatistics(hostVO.getId());
+//                if (hostStats != null) {
+//                    float cpuUtil = (float) hostStats.getCpuUtilization();
+//                    cpuUsed = decimalFormat.format(cpuUtil) + "%";
+//                    hostRO.setCpuUsed(cpuUsed);
+//                    
+//                    long avgLoad = (long)hostStats.getAverageLoad();
+//                    hostRO.setAverageLoad(avgLoad);
+//                    
+//                    long networkKbsRead = (long)hostStats.getNetworkReadKBs();
+//                    hostRO.setNetworkKbsRead(networkKbsRead);
+//                    
+//                    long networkKbsWrite = (long)hostStats.getNetworkWriteKBs();
+//                    hostRO.setNetworkKbsWrite(networkKbsWrite);
+//                }
             }
 
             if ( hostVO.getType() == Host.Type.Routing ) {

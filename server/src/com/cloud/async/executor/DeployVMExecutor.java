@@ -56,6 +56,7 @@ public class DeployVMExecutor extends VMOperationExecutor {
     	AsyncJobVO job = getJob();
     	
     	DeployVMParam param = gson.fromJson(job.getCmdInfo(), DeployVMParam.class);
+    	/*
     	try {
 			UserVm vm = asyncMgr.getExecutorContext().getManagementServer().deployVirtualMachine(
 				param.getUserId(), param.getAccountId(), param.getDataCenterId(),
@@ -113,6 +114,7 @@ public class DeployVMExecutor extends VMOperationExecutor {
     		asyncMgr.completeAsyncJob(getJob().getId(),
             		AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, e.getMessage());
 		}
+		*/
     	return true;
 	}
     
@@ -167,7 +169,7 @@ public class DeployVMExecutor extends VMOperationExecutor {
         if (acct != null) {
         	resultObject.setAccount(acct.getAccountName());
         	resultObject.setDomainId(acct.getDomainId());
-        	resultObject.setDomain(managementServer.findDomainIdById(acct.getDomainId()).getName());
+//        	resultObject.setDomain(managementServer.findDomainIdById(acct.getDomainId()).getName());
         }
         
         User userExecutingCmd = managementServer.getUser(userId);
@@ -229,7 +231,7 @@ public class DeployVMExecutor extends VMOperationExecutor {
         resultObject.setCpuSpeed(String.valueOf(offering.getSpeed()));
         resultObject.setMemory(String.valueOf(offering.getRamSize()));
         
-        resultObject.setNetworkGroupList(managementServer.getNetworkGroupsNamesForVm(vm.getId()));
+//        resultObject.setNetworkGroupList(managementServer.getNetworkGroupsNamesForVm(vm.getId()));
 		return resultObject;
 	}
 }

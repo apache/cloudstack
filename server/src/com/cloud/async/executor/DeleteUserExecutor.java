@@ -38,7 +38,7 @@ public class DeleteUserExecutor extends BaseAsyncJobExecutor {
 		AsyncJobVO job = getJob();
 		ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
 		Long param = gson.fromJson(job.getCmdInfo(), Long.class);
-		
+		/*
 		try {
 			if(managementServer.deleteUser(param.longValue())) {
 				asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, 
@@ -52,6 +52,7 @@ public class DeleteUserExecutor extends BaseAsyncJobExecutor {
 			asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, 
 				e.getMessage());
 		}
+		*/
 		return true;
 	}
 }

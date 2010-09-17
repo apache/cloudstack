@@ -26,6 +26,7 @@ import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
@@ -44,6 +45,7 @@ public class RebootVMExecutor extends VMOperationExecutor {
     	UserVmVO vm = managementServer.findUserVMInstanceById(param.getVmId());
 		OperationResponse response;
 
+		/*
 		if(getSyncSource() == null) {
 	    	asyncMgr.syncAsyncJobExecution(job.getId(), "UserVM", param.getVmId());
 	    	
@@ -67,6 +69,8 @@ public class RebootVMExecutor extends VMOperationExecutor {
 	    	}
 	    	return false;
 		}
+		*/
+		return true;
 	}
 	
 	public void processAnswer(VMOperationListener listener, long agentId, long seq, Answer answer) {
@@ -85,14 +89,14 @@ public class RebootVMExecutor extends VMOperationExecutor {
 	    		asyncMgr.completeAsyncJob(getJob().getId(), 
 	        		AsyncJobResult.STATUS_SUCCEEDED, 0, VMExecutorHelper.composeResultObject(asyncMgr.getExecutorContext().getManagementServer(), vm, null));
 	    		jobStatusUpdated = true;	            
-	            managementServer.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_REBOOT,
+	            EventUtils.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_REBOOT,
 	            		"Successfully rebooted VM instance : " + vm.getName(), params, param.getEventId());
 	    	} else {
 	    		asyncMgr.completeAsyncJob(getJob().getId(), 
 	            		AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, "Agent is unable to execute the command");
 	    		
 	    		jobStatusUpdated = true;
-	            managementServer.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_REBOOT,
+	    		EventUtils.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_REBOOT,
 	            		"Failed to reboot VM instance : " + vm.getName(), params, param.getEventId());
 	            
 	    	}

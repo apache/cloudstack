@@ -31,6 +31,5 @@ public interface SystemVm extends VirtualMachine {
     public String getVlanId();
     public String getPrivateNetmask();
     public int getRamSize();
-    public int getActiveSession();
     public Date getLastUpdateTime();
 }

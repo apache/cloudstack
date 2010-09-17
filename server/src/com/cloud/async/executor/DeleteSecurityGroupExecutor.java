@@ -24,6 +24,7 @@ public class DeleteSecurityGroupExecutor extends BaseAsyncJobExecutor {
         ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
         SecurityGroupParam param = gson.fromJson(job.getCmdInfo(), SecurityGroupParam.class);
         
+        /*
         if(getSyncSource() == null) {
             SecurityGroupVO securityGroup = managementServer.findSecurityGroupById(param.getSecurityGroupId());
             if(securityGroup == null) {
@@ -46,6 +47,7 @@ public class DeleteSecurityGroupExecutor extends BaseAsyncJobExecutor {
                 asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.PARAM_ERROR, e.getMessage());
             }
         }
+        */
         return true;
     }
 }

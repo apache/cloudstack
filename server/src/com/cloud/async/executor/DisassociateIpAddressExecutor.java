@@ -43,7 +43,7 @@ public class DisassociateIpAddressExecutor extends BaseAsyncJobExecutor {
     	AsyncJobVO job = getJob();
     	ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
     	DisassociateIpAddressParam param = gson.fromJson(job.getCmdInfo(), DisassociateIpAddressParam.class);
-    	
+    	/*
 		if(getSyncSource() == null) {
 			DomainRouterVO router = getRouterSyncSource(param);
 	        if(router == null) {
@@ -82,6 +82,7 @@ public class DisassociateIpAddressExecutor extends BaseAsyncJobExecutor {
 				asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.PARAM_ERROR, e.getMessage());
 			}
 		}
+		*/
 		return true;
 	}
 	

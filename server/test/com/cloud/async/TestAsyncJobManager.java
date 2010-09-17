@@ -51,7 +51,8 @@ public class TestAsyncJobManager extends ComponentTestCase {
 	public void asyncCall() {
 		ManagementServer mgr = (ManagementServer)ComponentLocator.getComponent("management-server");
 
-		long jobId = mgr.rebootVirtualMachineAsync(1, 1);
+//		long jobId = mgr.rebootVirtualMachineAsync(1, 1);
+        long jobId = 0L;
 		s_logger.info("Async-call job id: " + jobId);
 		
 		while(true) {

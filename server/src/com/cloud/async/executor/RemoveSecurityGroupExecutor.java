@@ -52,7 +52,7 @@ public class RemoveSecurityGroupExecutor extends BaseAsyncJobExecutor {
 				asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, 
 					BaseCmd.NET_INVALID_PARAM_ERROR, "Unable to find router for user vm " + param.getInstanceId() + " when removing security group"); 
 	        } else {
-		    	asyncMgr.syncAsyncJobExecution(job.getId(), "Router", router.getId());
+		    	asyncMgr.syncAsyncJobExecution(job, "Router", router.getId());
 	        }
 			return true;
 		} else {

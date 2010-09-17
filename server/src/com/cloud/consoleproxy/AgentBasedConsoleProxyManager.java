@@ -35,6 +35,8 @@ import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.manager.AgentManager;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.DestroyConsoleProxyCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -280,6 +282,11 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     @Override
     public ConsoleProxyVO startProxy(long proxyVmId, long startEventId) {
         return null;
+    }
+
+    @Override
+    public boolean destroyConsoleProxy(DestroyConsoleProxyCmd cmd) throws ServerApiException {
+        return false;
     }
 
 	@Override

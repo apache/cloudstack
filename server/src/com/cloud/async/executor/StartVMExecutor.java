@@ -36,7 +36,7 @@ public class StartVMExecutor extends VMOperationExecutor {
 		
 		if(getSyncSource() == null) {
 	    	VMOperationParam param = gson.fromJson(job.getCmdInfo(), VMOperationParam.class);
-	    	asyncMgr.syncAsyncJobExecution(job.getId(), "UserVM", param.getVmId());
+	    	asyncMgr.syncAsyncJobExecution(job, "UserVM", param.getVmId());
 	    	
 	    	// always true if it does not have sync-source
 	    	return true;

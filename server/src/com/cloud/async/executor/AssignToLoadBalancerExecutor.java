@@ -35,6 +35,7 @@ public class AssignToLoadBalancerExecutor extends BaseAsyncJobExecutor {
 
     @Override
     public boolean execute() {
+        /*
         if (getSyncSource() == null) {
             Gson gson = GsonHelper.getBuilder().create();
             AsyncJobManager asyncMgr = getAsyncJobMgr();
@@ -59,5 +60,7 @@ public class AssignToLoadBalancerExecutor extends BaseAsyncJobExecutor {
 //            return asyncMgr.getExecutorContext().getNetworkMgr().executeAssignToLoadBalancer(this, param);
             return true;
         }
+        */
+        return true;
     }
 }

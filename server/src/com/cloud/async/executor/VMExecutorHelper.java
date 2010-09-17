@@ -58,7 +58,7 @@ public class VMExecutorHelper {
         if (acct != null) {
         	resultObject.setAccount(acct.getAccountName());
         	resultObject.setDomainId(acct.getDomainId());
-        	resultObject.setDomain(managementServer.findDomainIdById(acct.getDomainId()).getName());
+//        	resultObject.setDomain(managementServer.findDomainIdById(acct.getDomainId()).getName());
         }
         
         if ( BaseCmd.isAdmin(acct.getType()) && (vm.getHostId() != null)) {
@@ -109,7 +109,7 @@ public class VMExecutorHelper {
         resultObject.setMemory(String.valueOf(offering.getRamSize()));
         
         //Network groups
-        resultObject.setNetworkGroupList(managementServer.getNetworkGroupsNamesForVm(vm.getId()));
+//        resultObject.setNetworkGroupList(managementServer.getNetworkGroupsNamesForVm(vm.getId()));
         
 		return resultObject;
 	}
