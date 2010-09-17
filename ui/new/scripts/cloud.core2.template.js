@@ -54,21 +54,19 @@ function afterLoadTemplateJSP() {
 				    data: createURL("command=registerTemplate&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&url="+encodeURIComponent(url)+"&zoneid="+zoneId+"&ispublic="+isPublic+moreCriteria.join("")+"&format="+format+"&passwordEnabled="+password+"&osTypeId="+osType+"&response=json"),
 					dataType: "json",
 					success: function(json) {	
-						var items = json.registertemplateresponse.template;												
-						templateToMidmenu(items[0], $midmenuItem1);
-						bindClickToMidMenu($midmenuItem1, templateToRigntPanel);     
-						/*
+						var items = json.registertemplateresponse.template;				       
+				        templateToMidmenu(items[0], $midmenuItem1);
+						bindClickToMidMenu($midmenuItem1, templateToRigntPanel, templateGetMidmenuId);  
+						afterAddingMidMenuItem($midmenuItem1, true);
+						                        
                         if(items.length > 1) {                               
-                            for(var i=1; i<items.length; i++) {         
-                                var template2 = $("#vm_template_template").clone(true);                                                               
-                                templateJSONToTemplate(items[i], template2);	
-                                submenuContent.find("#grid_content").prepend(template2.fadeIn("slow"));	 	
-                                changeGridRowsTotal(submenuContent.find("#grid_rows_total"), 1);  
-                            }                                     
-                        }
-						*/				
-							
-						afterAddingMidMenuItem($midmenuItem1, true);	                              			                  				
+                            for(var i=1; i<items.length; i++) {   
+                                var $midmenuItem2 = $("#midmenu_item").clone();
+                                templateToMidmenu(items[i], $midmenuItem2);
+                                bindClickToMidMenu($midmenuItem2, templateToRigntPanel, templateGetMidmenuId); 
+                                $("#midmenu_container").append($midmenuItem2.show());
+                            }                                    
+                        }  	                  			                  				
 					}, 
 					error: function(XMLHttpResponse) {					    
 					    handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);					  
@@ -194,8 +192,13 @@ function afterLoadTemplateJSP() {
 	}));
 }
 
+function templateGetMidmenuId(jsonObj) {
+    return "midmenuItem_" + jsonObj.id + "_" + fromdb(jsonObj.zonename).replace(/\s/g, ""); //remove all spaces in zonename
+}
+
 function templateToMidmenu(jsonObj, $midmenuItem1) {    
-    $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));  
+    var id = templateGetMidmenuId(jsonObj);
+    $midmenuItem1.attr("id", id);  
     $midmenuItem1.data("jsonObj", jsonObj); 
        
     var $iconContainer = $midmenuItem1.find("#icon_container").show();
@@ -331,7 +334,7 @@ var templateActionMap = {
         asyncJobResponse: "deletetemplateresponse",
         inProcessText: "Deleting Template....",
         afterActionSeccessFn: function(jsonObj) {           
-            var $midmenuItem1 = $("#midmenuItem_"+jsonObj.id);
+            var $midmenuItem1 = $("#"+templateGetMidmenuId(jsonObj)); 
             $midmenuItem1.remove();
             clearRightPanel();
             templateClearRightPanel();
