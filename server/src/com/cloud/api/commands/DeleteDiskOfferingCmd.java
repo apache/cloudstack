@@ -26,7 +26,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
-import com.cloud.offering.DiskOffering;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
