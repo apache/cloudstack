@@ -20,11 +20,11 @@
         </p>
     </div>
     <div class="tabbox" style="margin-top: 15px;">
-        <div class="content_tabs on">
+        <div class="content_tabs on" id="tab_details">
             <%=t.t("Details")%></div>
-        <div class="content_tabs off">
+        <div class="content_tabs off" id="tab_port_forwarding">
             <%=t.t("Port Forwarding")%></div>
-        <div class="content_tabs off">
+        <div class="content_tabs off" id="tab_load_balancer">
             <%=t.t("Load Balancer")%></div>
     </div>  
     <div id="tab_content_details">
@@ -201,7 +201,7 @@
                     <div class="gridrow_loader">
                     </div>
                     <p>
-                        Creating &hellip;</p>
+                        Adding &hellip;</p>
                 </div>
             </div>
             <div class="grid_rows even">
@@ -221,11 +221,11 @@
                     <div class="row_celltitles">
                         Instance Name</div>
                 </div>
-                <div class="gridrow_loaderbox" style="display: none;">
+                <div class="gridrow_loaderbox" style="display: block;">
                     <div class="gridrow_loader">
                     </div>
                     <p>
-                        Creating &hellip;</p>
+                        Adding &hellip;</p>
                 </div>
             </div>
         </div>
@@ -301,8 +301,8 @@
                             </div>
                             <div class="grid_row_cell" style="width: 60%;">
                                 <select class="select" style="width: 90%;">
-                                    <option value="Source1">Source Name 1 </option>
-                                    <option value="Source2">Source Name 2 </option>
+                                    <option value="Source1">Source Name A </option>
+                                    <option value="Source2">Source Name B </option>
                                 </select>
                             </div>
                             <div class="grid_row_cell" style="width: 30%;">
@@ -358,11 +358,11 @@
                     <div class="row_celltitles">
                         Source</div>
                 </div>
-                <div class="gridrow_loaderbox" style="display: none;">
+                <div class="gridrow_loaderbox" style="display: block;">
                     <div class="gridrow_loader">
                     </div>
                     <p>
-                        Creating &hellip;</p>
+                        Adding &hellip;</p>
                 </div>
             </div>
         </div>

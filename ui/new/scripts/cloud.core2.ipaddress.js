@@ -1,5 +1,29 @@
 function afterLoadIpJSP() {
-
+    //***** switch to different tab (begin) ********************************************************************
+    $("#tab_details").bind("click", function(event){
+        $(this).removeClass("off").addClass("on");
+        $("#tab_port_forwarding, #tab_load_balancer").removeClass("on").addClass("off");  
+        $("#tab_content_details").show();     
+        $("#tab_content_port_forwarding, #tab_content_load_balancer").hide();   
+        return false;
+    });
+    
+    $("#tab_port_forwarding").bind("click", function(event){
+        $(this).removeClass("off").addClass("on");
+        $("#tab_details, #tab_load_balancer").removeClass("on").addClass("off");   
+        $("#tab_content_port_forwarding").show();    
+        $("#tab_content_details, #tab_content_load_balancer").hide();    
+        return false;
+    });
+    
+    $("#tab_load_balancer").bind("click", function(event){
+        $(this).removeClass("off").addClass("on");
+        $("#tab_details, #tab_port_forwarding").removeClass("on").addClass("off");  
+        $("#tab_content_load_balancer").show();   
+        $("#tab_content_details, #tab_content_port_forwarding").hide();      
+        return false;
+    });        
+    //***** switch to different tab (end) **********************************************************************
 }
 
 function ipGetMidmenuId(jsonObj) {   
