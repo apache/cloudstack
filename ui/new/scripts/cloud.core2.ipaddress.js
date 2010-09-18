@@ -36,7 +36,7 @@ function afterLoadIpJSP() {
 	    var $template = $("#port_forwarding_template").clone();
 	    $("#tab_content_port_forwarding #grid_container").append($template.show());		
 	    
-	    var $spinningWheel = $template.find("row_container").find("#spinning_wheel");	
+	    var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");	
 	    $spinningWheel.find("#description").text("Adding....");	
         $spinningWheel.show();   
 	    
@@ -161,7 +161,7 @@ function portForwardingJsonToTemplate(jsonObj, template) {
    
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     var ipObj = $detailsTab.data("jsonObj");  
-    var ipAddress = jsonObj.ipaddress;  
+    var ipAddress = ipObj.ipaddress;  
     var IpDomainid = ipObj.domainid;
     var IpAccount = ipObj.account;    
     	    
