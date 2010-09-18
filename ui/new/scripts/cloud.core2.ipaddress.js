@@ -36,7 +36,8 @@ function afterLoadIpJSP() {
 	    var $template = $("#port_forwarding_template").clone();
 	    $("#tab_content_port_forwarding #grid_container").append($template.show());		
 	    
-	    var $spinningWheel = $template.find("#spinning_wheel");		
+	    var $spinningWheel = $template.find("row_container").find("#spinning_wheel");	
+	    $spinningWheel.find("#description").text("Adding....");	
         $spinningWheel.show();   
 	    
 	    var $detailsTab = $("#right_panel_content #tab_content_details");   
@@ -147,13 +148,13 @@ function portForwardingJsonToTemplate(jsonObj, template) {
     template.attr("id", "portForwarding_" + jsonObj.id).data("portForwardingId", jsonObj.id);	
     		     
     template.find("#row_container #public_port").text(jsonObj.publicport);
-    template.find("#row_container_edit #public_port").val(jsonObj.publicport);
+    template.find("#row_container_edit #public_port").text(jsonObj.publicport);
     
     template.find("#row_container #private_port").text(jsonObj.privateport);
     template.find("#row_container_edit #private_port").val(jsonObj.privateport);
     
     template.find("#row_container #protocol").text(jsonObj.protocol);
-    template.find("#row_container_edit #protocol").val(jsonObj.protocol);
+    template.find("#row_container_edit #protocol").text(jsonObj.protocol);
     
     template.find("#row_container #vm_name").text(jsonObj.vmname);		    
     var virtualMachineId = jsonObj.virtualmachineid;
@@ -164,7 +165,7 @@ function portForwardingJsonToTemplate(jsonObj, template) {
     var IpAccount = jsonObj.account;
     	    
     $.ajax({
-	   data: createURL("command=listVirtualMachines&response=json&domainid="+IpDomainid+"&account="+IpAccount+maxPageSize),
+	   data: createURL("command=listVirtualMachines&domainid="+IpDomainid+"&account="+IpAccount+maxPageSize),
 	    dataType: "json",
 	    success: function(json) {			    
 		    var instances = json.listvirtualmachinesresponse.virtualmachine;			   
@@ -179,18 +180,16 @@ function portForwardingJsonToTemplate(jsonObj, template) {
 	    }
     });		    
    	
-   	/*	        	
-    var loadingImg = template.find(".adding_loading");		
-    var rowContainer = template.find("#row_container");      
-    var rowContainerEdit = template.find("#row_container_edit");    
+   	//???       	   
+    var $rowContainer = template.find("#row_container");      
+    var $rowContainerEdit = template.find("#row_container_edit");    
     		    
     template.find("#delete_link").unbind("click").bind("click", function(event){   		                    
-        loadingImg.find(".adding_text").text("Deleting....");	
-        loadingImg.show();  
-        rowContainer.hide();                
-              
+        var $spinningWheel = $rowContainer.find("#spinning_wheel");		
+        $spinningWheel.find("#description").text("Deleting....");	
+        $spinningWheel.show();   
         $.ajax({						
-	       data: createURL("command=deletePortForwardingRule&response=json&id="+json.id),
+	       data: createURL("command=deletePortForwardingRule&id="+jsonObj.id),
             dataType: "json",
             success: function(json) {             
                 template.slideUp("slow", function(){		                    
@@ -199,42 +198,39 @@ function portForwardingJsonToTemplate(jsonObj, template) {
             },
             error: function(XMLHttpResponse) {
                 handleError(XMLHttpResponse);
-                loadingImg.hide(); 	   
-                rowContainer.show();	
+                $spinningWheel.hide(); 
             }
         });	     
         return false;
     });
     
     template.find("#edit_link").unbind("click").bind("click", function(event){   		    
-        rowContainer.hide();
-        rowContainerEdit.show();
+        $rowContainer.hide();
+        $rowContainerEdit.show();
     });
     
     template.find("#cancel_link").unbind("click").bind("click", function(event){   		    
-        rowContainer.show();
-        rowContainerEdit.hide();
+        $rowContainer.show();
+        $rowContainerEdit.hide();
     });
     
     template.find("#save_link").unbind("click").bind("click", function(event){          		       
         // validate values		    
 	    var isValid = true;					    
-	    isValid &= validateNumber("Private Port", rowContainerEdit.find("#private_port"), rowContainerEdit.find("#private_port_errormsg"), 1, 65535);				
+	    isValid &= validateNumber("Private Port", $rowContainerEdit.find("#private_port"), $rowContainerEdit.find("#private_port_errormsg"), 1, 65535);				
 	    if (!isValid) return;		    		        
 	    
-        var loadingImg = template.find(".adding_loading");	                        
-        loadingImg.find(".adding_text").text("Saving....");	
-        loadingImg.show();  
-        rowContainerEdit.hide();      
+        var $spinningWheel = $rowContainerEdit.find("#spinning_wheel");	                     
+        $spinningWheel.find("#description").text("Saving....");	
+        $spinningWheel.show();  
 	    
-        var ipAddress = $("#submenu_content_network #ip_select").val();
-		if (!isUser()) {
-			ipAddress = ipPanel.data("ip_address");
-		}
-        var publicPort = rowContainerEdit.find("#public_port").text();
-        var privatePort = rowContainerEdit.find("#private_port").val();
-        var protocol = rowContainerEdit.find("#protocol").text();
-        var virtualMachineId = rowContainerEdit.find("#vm").val();		   
+	    var jsonObj = $("#right_panel_content #tab_content_details").data("jsonObj");          
+	    var ipAddress = jsonObj.ipaddress;
+        
+        var publicPort = $rowContainerEdit.find("#public_port").text();
+        var privatePort = $rowContainerEdit.find("#private_port").val();
+        var protocol = $rowContainerEdit.find("#protocol").text();
+        var virtualMachineId = $rowContainerEdit.find("#vm").val();		   
 	    		    
         var array1 = [];
         array1.push("&publicip="+ipAddress);    
@@ -244,7 +240,7 @@ function portForwardingJsonToTemplate(jsonObj, template) {
         array1.push("&virtualmachineid=" + virtualMachineId);
                       
         $.ajax({
-       data: createURL("command=updatePortForwardingRule&response=json"+array1.join("")),
+             data: createURL("command=updatePortForwardingRule"+array1.join("")),
 			 dataType: "json",
 			 success: function(json) {					    									 
 				var jobId = json.updateportforwardingruleresponse.jobid;					        
@@ -252,7 +248,7 @@ function portForwardingJsonToTemplate(jsonObj, template) {
 		        
                 $("body").everyTime(2000, timerKey, function() {
 				    $.ajax({
-					   data: createURL("command=queryAsyncJobResult&jobId="+jobId+"&response=json"),
+					   data: createURL("command=queryAsyncJobResult&jobId="+jobId),
 					    dataType: "json",
 					    success: function(json) {										       						   
 						    var result = json.queryasyncjobresultresponse;									    
@@ -263,32 +259,30 @@ function portForwardingJsonToTemplate(jsonObj, template) {
 							    if (result.jobstatus == 1) { // Succeeded										        								    
 								    var items = result.portforwardingrule;	            	
                                     portForwardingJsonToTemplate(items[0],template);
-                                    loadingImg.hide(); 	   
-                                    rowContainer.show();						                                                               
+                                    $spinningWheel.hide(); 	     
+                                    $rowContainerEdit.hide();
+                                    $rowContainer.show();                                                      
 							    } else if (result.jobstatus == 2) { //Fail
-							        loadingImg.hide(); 		
-						            rowContainer.show(); 
-								    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");											    					    
+							        $spinningWheel.hide(); 		
+						            $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");											    					    
 							    }
 						    }
 					    },
 					    error: function(XMLHttpResponse) {	
 					        handleError(XMLHttpResponse);								        
 						    $("body").stopTime(timerKey);
-						    loadingImg.hide(); 		
-						    rowContainer.show(); 									    								    
+						    $spinningWheel.hide(); 									    								    
 					    }
 				    });
 			    }, 0);							 
 			 },
 			 error: function(XMLHttpResponse) {
 			     handleError(XMLHttpResponse);		
-			     loadingImg.hide(); 		
-				 rowContainer.show(); 							 
+			     $spinningWheel.hide(); 						 
 			 }
 		 });                   
     });
-    */
+    //???
 }	  
     
 function listPortForwardingRules() {	
@@ -306,7 +300,7 @@ function listPortForwardingRules() {
             if (items != null && items.length > 0) {				        			        
                 for (var i = 0; i < items.length; i++) {
 	                var $template = $("#port_forwarding_template").clone(true);
-	                portForwardingJsonToTemplate(items[i], $template); //???
+	                portForwardingJsonToTemplate(items[i], $template); 
 	                $portForwardingGrid.append($template.show());						   
                 }			    
             } 	        	      		    						

@@ -142,43 +142,47 @@
     <div id="tab_content_port_forwarding" style="display:none">
         <div class="grid_container" id="grid_container">
             <div class="grid_header">
-                <div class="grid_header_cell" style="width: 20%">
+                <div class="grid_header_cell" style="width: 15%">
                     <div class="grid_header_title">
                         Public Port</div>
                 </div>
-                <div class="grid_header_cell" style="width: 20%">
+                <div class="grid_header_cell" style="width: 15%">
                     <div class="grid_header_title">
                         Private Port</div>
                 </div>
-                <div class="grid_header_cell" style="width: 29%">
+                <div class="grid_header_cell" style="width: 15%">
                     <div class="grid_header_title">
                         Protocol</div>
                 </div>
-                <div class="grid_header_cell" style="width: 30%; border: none;">
+                <div class="grid_header_cell" style="width: 39%; border: none;">
                     <div class="grid_header_title">
                         Instance</div>
                 </div>
+                <div class="grid_header_cell" style="width: 15%">
+                    <div class="grid_header_title">
+                        Action</div>
+                </div>
             </div>
             <div class="grid_rows even" id="create_port_forwarding_row">
-                <div class="grid_row_cell" style="width: 20%;">
+                <div class="grid_row_cell" style="width: 15%;">
                     <input id="public_port" class="text" style="width: 90%;" type="text" />
                     <div id="public_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
                 </div>
-                <div class="grid_row_cell" style="width: 20%;">
+                <div class="grid_row_cell" style="width: 15%;">
                     <input id="private_port" class="text" style="width: 90%;" type="text" />
                     <div id="private_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
                 </div>
-                <div class="grid_row_cell" style="width: 29%;">  
+                <div class="grid_row_cell" style="width: 15%;">  
                    <select class="select" id="protocol">
                        <option value="TCP">TCP</option>
                        <option value="UDP">UDP</option>
                    </select>
                 </div>
-                <div class="grid_row_cell" style="width: 20%;">                   
+                <div class="grid_row_cell" style="width: 39%;">                   
                     <select class="select" style="width: 104px;" id="vm">
                     </select>
                 </div>
-                <div class="grid_row_cell" style="width: 10%;">
+                <div class="grid_row_cell" style="width: 15%;">
                     <div class="row_celltitles">
                         <a id="add_link" href="#">Add</a></div>
                 </div>
@@ -350,55 +354,60 @@
 <div class="grid_rows odd" id="port_forwarding_template" style="display: none">
     
     <div id="row_container">
-        <div class="grid_row_cell" style="width: 20%;">
+        <div class="grid_row_cell" style="width: 15%;">
             <div class="row_celltitles" id="public_port"></div>
         </div>
-        <div class="grid_row_cell" style="width: 20%;">
+        <div class="grid_row_cell" style="width: 15%;">
             <div class="row_celltitles" id="private_port"></div>
         </div>
-        <div class="grid_row_cell" style="width: 29%;">
+        <div class="grid_row_cell" style="width: 15%;">
             <div class="row_celltitles" id="protocol"></div>
         </div>
-        <div class="grid_row_cell" style="width: 30%;">
+        <div class="grid_row_cell" style="width: 39%;">
             <div class="row_celltitles" id="vm_name"></div>
-        </div> 
+        </div>       
+        <div class="grid_row_cell" style="width: 15%;">
+            <div class="row_celltitles">
+                <a id="edit_link" href="#">Edit</a>
+                <a id="delete_link" href="#">Delete</a>
+            </div>
+        </div>
         <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
             <div class="gridrow_loader">
             </div>
-            <p>
-                Adding &hellip;</p>
+            <p id="description">
+                Waiting &hellip;
+            </p>
         </div>
     </div>
     <div id="row_container_edit" style="display:none">
-        <div class="grid_row_cell" style="width: 20%;">
-            <input id="public_port" class="text" style="width: 90%;" type="text" />
-            <div id="public_port_errormsg" class="errormsg" style="display: none;">
-                Error msg will appear here</div>
+        <div class="grid_row_cell" style="width: 15%;">
+            <div class="row_celltitles" id="public_port"></div>
         </div>
-        <div class="grid_row_cell" style="width: 20%;">
+        <div class="grid_row_cell" style="width: 15%;">
             <input id="private_port" class="text" style="width: 90%;" type="text" />
             <div id="private_port_errormsg" class="errormsg" style="display: none;">
                 Error msg will appear here</div>
         </div>
-        <div class="grid_row_cell" style="width: 29%;">
-            <select class="select" id="protocol">
-                <option value="TCP">TCP</option>
-                <option value="UDP">UDP</option>
-            </select>
+        <div class="grid_row_cell" style="width: 15%;">
+            <div class="row_celltitles" id="protocol"></div>
         </div>
-        <div class="grid_row_cell" style="width: 20%;">
+        <div class="grid_row_cell" style="width: 39%;">
             <select class="select" style="width: 104px;" id="vm">
             </select>
         </div>
-        <div class="grid_row_cell" style="width: 10%;">
+        <div class="grid_row_cell" style="width: 15%;">
             <div class="row_celltitles">
-                <a id="add_link" href="#">Add</a></div>
+                <a id="save_link" href="#">Save</a>
+                <a id="cancel_link" href="#">Cancel</a>
+            </div>
         </div>
         <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
             <div class="gridrow_loader">
             </div>
-            <p>
-                Saving &hellip;</p>
+            <p id="description">
+                Waiting &hellip;
+            </p>
         </div>
     </div>
 </div>
