@@ -160,9 +160,10 @@ function portForwardingJsonToTemplate(jsonObj, template) {
     var virtualMachineId = jsonObj.virtualmachineid;
    
     var $detailsTab = $("#right_panel_content #tab_content_details");   
-    var jsonObj = $detailsTab.data("jsonObj");    
-    var IpDomainid = jsonObj.domainid;
-    var IpAccount = jsonObj.account;
+    var ipObj = $detailsTab.data("jsonObj");  
+    var ipAddress = jsonObj.ipaddress;  
+    var IpDomainid = ipObj.domainid;
+    var IpAccount = ipObj.account;    
     	    
     $.ajax({
 	   data: createURL("command=listVirtualMachines&domainid="+IpDomainid+"&account="+IpAccount+maxPageSize),
@@ -179,8 +180,7 @@ function portForwardingJsonToTemplate(jsonObj, template) {
 		    } 
 	    }
     });		    
-   	
-   	//???       	   
+   	   	    	   
     var $rowContainer = template.find("#row_container");      
     var $rowContainerEdit = template.find("#row_container_edit");    
     		    
@@ -224,9 +224,6 @@ function portForwardingJsonToTemplate(jsonObj, template) {
         $spinningWheel.find("#description").text("Saving....");	
         $spinningWheel.show();  
 	    
-	    var jsonObj = $("#right_panel_content #tab_content_details").data("jsonObj");          
-	    var ipAddress = jsonObj.ipaddress;
-        
         var publicPort = $rowContainerEdit.find("#public_port").text();
         var privatePort = $rowContainerEdit.find("#private_port").val();
         var protocol = $rowContainerEdit.find("#protocol").text();
@@ -281,8 +278,7 @@ function portForwardingJsonToTemplate(jsonObj, template) {
 			     $spinningWheel.hide(); 						 
 			 }
 		 });                   
-    });
-    //???
+    });   
 }	  
     
 function listPortForwardingRules() {	
