@@ -1841,6 +1841,14 @@ a:visited {
 	background:#FFF repeat top left;
 }
 
+.grid_rows.success {
+	background:#fffbe6 url(../images/infomsg_bg.gif) repeat-x top left;
+}
+
+.grid_rows.error {
+	background:#ffe5e5 url(../images/errormsg_bg.gif) repeat-x top left;
+}
+
 .grid_rows.odd {
 	background:#f3f3f3 repeat top left;
 }
