@@ -28,11 +28,13 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.async.executor.DeployVMResultObject;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.serializer.SerializerHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
@@ -57,6 +59,7 @@ public class DeployVMCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NETWORK_GROUP_LIST, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SIZE, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HYPERVISOR, Boolean.FALSE));
     }
 
     @Override
@@ -88,6 +91,8 @@ public class DeployVMCmd extends BaseCmd {
         String userData = (String) params.get(BaseCmd.Properties.USER_DATA.getName());
         String networkGroupList = (String)params.get(BaseCmd.Properties.NETWORK_GROUP_LIST.getName());
         Long size = (Long)params.get(BaseCmd.Properties.SIZE.getName());
+        HypervisorType hyperType = HypervisorType.getType((String)params.get(BaseCmd.Properties.HYPERVISOR.getName()));
+        
         String password = null;
         Long accountId = null;
         
@@ -101,6 +106,11 @@ public class DeployVMCmd extends BaseCmd {
         VMTemplateVO template = getManagementServer().findTemplateById(templateId);
         if (template == null) {
             throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "Unable to find template with id " + templateId);
+        }
+        
+        if (template.getFormat().equals(ImageFormat.ISO)) {
+        	/*TODO:Hack here*/
+        	template.setHypervisorType(HypervisorType.VmWare);
         }
 
     	if (diskOfferingId != null) {

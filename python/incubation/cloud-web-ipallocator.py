@@ -101,6 +101,8 @@ class dhcp:
 			    save"""%(path)
 		augtool < script
 		
+		self.availIP.remove(ip)
+		
 		#reset dnsmasq
 		service("dnsmasq", "restart", stdout=None, stderr=None)
 

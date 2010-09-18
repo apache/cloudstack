@@ -50,7 +50,6 @@ public class CreateVolumeCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISK_OFFERING_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SNAPSHOT_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SIZE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HYPERVISOR_TYPE, Boolean.FALSE));
     }
 
     public String getName() {
