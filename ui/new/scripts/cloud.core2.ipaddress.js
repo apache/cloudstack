@@ -25,157 +25,7 @@ function afterLoadIpJSP() {
     
     
     //Port Fowording tab
-    var $createPortForwardingRow = $("#create_port_forwarding_row"); 
-    
-    //var portForwardingIndex = 0;	
-	function portForwardingJsonToTemplate(jsonObj, template) {				        
-	    //(portForwardingIndex++ % 2 == 0)? template.find("#row_container").addClass("smallrow_even"): template.find("#row_container").addClass("smallrow_odd");		    
-	    template.attr("id", "portForwarding_" + jsonObj.id).data("portForwardingId", jsonObj.id);	
-	    		     
-	    template.find("#row_container #public_port").text(jsonObj.publicport);
-	    template.find("#row_container_edit #public_port").val(jsonObj.publicport);
-	    
-	    template.find("#row_container #private_port").text(jsonObj.privateport);
-	    template.find("#row_container_edit #private_port").val(jsonObj.privateport);
-	    
-	    template.find("#row_container #protocol").text(jsonObj.protocol);
-	    template.find("#row_container_edit #protocol").val(jsonObj.protocol);
-	    
-	    template.find("#row_container #vm_name").text(jsonObj.vmname);		    
-	    var virtualMachineId = jsonObj.virtualmachineid;
-	   
-	    var $detailsTab = $("#right_panel_content #tab_content_details");   
-        var jsonObj = $detailsTab.data("jsonObj");    
-        var IpDomainid = jsonObj.domainid;
-        var IpAccount = jsonObj.account;
-	    	    
-	    $.ajax({
-		   data: createURL("command=listVirtualMachines&response=json&domainid="+IpDomainid+"&account="+IpAccount+maxPageSize),
-		    dataType: "json",
-		    success: function(json) {			    
-			    var instances = json.listvirtualmachinesresponse.virtualmachine;			   
-			    var vmSelect = template.find("#row_container_edit #vm").empty();							
-			    if (instances != null && instances.length > 0) {
-				    for (var i = 0; i < instances.length; i++) {								
-				        var html = $("<option value='" + instances[i].id + "'>" +  getVmName(instances[i].name, instances[i].displayname) + "</option>");							        
-			            vmSelect.append(html); 								
-				    }
-				    vmSelect.val(virtualMachineId);
-			    } 
-		    }
-	    });		    
-	   	
-	   	/*	        	
-	    var loadingImg = template.find(".adding_loading");		
-        var rowContainer = template.find("#row_container");      
-        var rowContainerEdit = template.find("#row_container_edit");    
-        		    
-	    template.find("#delete_link").unbind("click").bind("click", function(event){   		                    
-            loadingImg.find(".adding_text").text("Deleting....");	
-            loadingImg.show();  
-            rowContainer.hide();                
-	              
-	        $.ajax({						
-		       data: createURL("command=deletePortForwardingRule&response=json&id="+json.id),
-	            dataType: "json",
-	            success: function(json) {             
-	                template.slideUp("slow", function(){		                    
-	                    $(this).remove();
-	                });	   						
-	            },
-	            error: function(XMLHttpResponse) {
-	                handleError(XMLHttpResponse);
-	                loadingImg.hide(); 	   
-	                rowContainer.show();	
-	            }
-            });	     
-	        return false;
-	    });
-	    
-	    template.find("#edit_link").unbind("click").bind("click", function(event){   		    
-	        rowContainer.hide();
-	        rowContainerEdit.show();
-	    });
-	    
-	    template.find("#cancel_link").unbind("click").bind("click", function(event){   		    
-	        rowContainer.show();
-	        rowContainerEdit.hide();
-	    });
-	    
-	    template.find("#save_link").unbind("click").bind("click", function(event){          		       
-	        // validate values		    
-		    var isValid = true;					    
-		    isValid &= validateNumber("Private Port", rowContainerEdit.find("#private_port"), rowContainerEdit.find("#private_port_errormsg"), 1, 65535);				
-		    if (!isValid) return;		    		        
-		    
-	        var loadingImg = template.find(".adding_loading");	                        
-            loadingImg.find(".adding_text").text("Saving....");	
-            loadingImg.show();  
-            rowContainerEdit.hide();      
-		    
-	        var ipAddress = $("#submenu_content_network #ip_select").val();
-			if (!isUser()) {
-				ipAddress = ipPanel.data("ip_address");
-			}
-	        var publicPort = rowContainerEdit.find("#public_port").text();
-	        var privatePort = rowContainerEdit.find("#private_port").val();
-	        var protocol = rowContainerEdit.find("#protocol").text();
-	        var virtualMachineId = rowContainerEdit.find("#vm").val();		   
-		    		    
-	        var array1 = [];
-            array1.push("&publicip="+ipAddress);    
-            array1.push("&privateport="+privatePort);
-            array1.push("&publicport="+publicPort);
-            array1.push("&protocol="+protocol);
-            array1.push("&virtualmachineid=" + virtualMachineId);
-                          
-            $.ajax({
-	       data: createURL("command=updatePortForwardingRule&response=json"+array1.join("")),
-				 dataType: "json",
-				 success: function(json) {					    									 
-					var jobId = json.updateportforwardingruleresponse.jobid;					        
-			        var timerKey = "updateportforwardingruleJob"+jobId;
-			        
-                    $("body").everyTime(2000, timerKey, function() {
-					    $.ajax({
-						   data: createURL("command=queryAsyncJobResult&jobId="+jobId+"&response=json"),
-						    dataType: "json",
-						    success: function(json) {										       						   
-							    var result = json.queryasyncjobresultresponse;									    
-							    if (result.jobstatus == 0) {
-								    return; //Job has not completed
-							    } else {											    
-								    $("body").stopTime(timerKey);
-								    if (result.jobstatus == 1) { // Succeeded										        								    
-									    var items = result.portforwardingrule;	            	
-                                        portForwardingJsonToTemplate(items[0],template);
-                                        loadingImg.hide(); 	   
-                                        rowContainer.show();						                                                               
-								    } else if (result.jobstatus == 2) { //Fail
-								        loadingImg.hide(); 		
-							            rowContainer.show(); 
-									    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");											    					    
-								    }
-							    }
-						    },
-						    error: function(XMLHttpResponse) {	
-						        handleError(XMLHttpResponse);								        
-							    $("body").stopTime(timerKey);
-							    loadingImg.hide(); 		
-							    rowContainer.show(); 									    								    
-						    }
-					    });
-				    }, 0);							 
-				 },
-				 error: function(XMLHttpResponse) {
-				     handleError(XMLHttpResponse);		
-				     loadingImg.hide(); 		
-					 rowContainer.show(); 							 
-				 }
-			 });                   
-	    });
-	    */
-	}	  
+    var $createPortForwardingRow = $("#create_port_forwarding_row");     
     
     $createPortForwardingRow.find("#add_link").bind("click", function(event){	        
 		var isValid = true;				
@@ -249,6 +99,7 @@ function ipToRigntPanel($midmenuItem1) {
     ipJsonToDetailsTab(jsonObj);   
     
     //Port Forwarding tab
+    listPortForwardingRules();
     refreshCreatePortForwardingRow(); 
 }
 
@@ -289,6 +140,180 @@ function setNetworkTypeField(value, $field) {
 //***** Details tab (end) ******************************************************************************************************************
 
 //***** Port Forwarding tab (begin) ********************************************************************************************************
+
+//var portForwardingIndex = 0;	
+function portForwardingJsonToTemplate(jsonObj, template) {				        
+    //(portForwardingIndex++ % 2 == 0)? template.find("#row_container").addClass("smallrow_even"): template.find("#row_container").addClass("smallrow_odd");		    
+    template.attr("id", "portForwarding_" + jsonObj.id).data("portForwardingId", jsonObj.id);	
+    		     
+    template.find("#row_container #public_port").text(jsonObj.publicport);
+    template.find("#row_container_edit #public_port").val(jsonObj.publicport);
+    
+    template.find("#row_container #private_port").text(jsonObj.privateport);
+    template.find("#row_container_edit #private_port").val(jsonObj.privateport);
+    
+    template.find("#row_container #protocol").text(jsonObj.protocol);
+    template.find("#row_container_edit #protocol").val(jsonObj.protocol);
+    
+    template.find("#row_container #vm_name").text(jsonObj.vmname);		    
+    var virtualMachineId = jsonObj.virtualmachineid;
+   
+    var $detailsTab = $("#right_panel_content #tab_content_details");   
+    var jsonObj = $detailsTab.data("jsonObj");    
+    var IpDomainid = jsonObj.domainid;
+    var IpAccount = jsonObj.account;
+    	    
+    $.ajax({
+	   data: createURL("command=listVirtualMachines&response=json&domainid="+IpDomainid+"&account="+IpAccount+maxPageSize),
+	    dataType: "json",
+	    success: function(json) {			    
+		    var instances = json.listvirtualmachinesresponse.virtualmachine;			   
+		    var vmSelect = template.find("#row_container_edit #vm").empty();							
+		    if (instances != null && instances.length > 0) {
+			    for (var i = 0; i < instances.length; i++) {								
+			        var html = $("<option value='" + instances[i].id + "'>" +  getVmName(instances[i].name, instances[i].displayname) + "</option>");							        
+		            vmSelect.append(html); 								
+			    }
+			    vmSelect.val(virtualMachineId);
+		    } 
+	    }
+    });		    
+   	
+   	/*	        	
+    var loadingImg = template.find(".adding_loading");		
+    var rowContainer = template.find("#row_container");      
+    var rowContainerEdit = template.find("#row_container_edit");    
+    		    
+    template.find("#delete_link").unbind("click").bind("click", function(event){   		                    
+        loadingImg.find(".adding_text").text("Deleting....");	
+        loadingImg.show();  
+        rowContainer.hide();                
+              
+        $.ajax({						
+	       data: createURL("command=deletePortForwardingRule&response=json&id="+json.id),
+            dataType: "json",
+            success: function(json) {             
+                template.slideUp("slow", function(){		                    
+                    $(this).remove();
+                });	   						
+            },
+            error: function(XMLHttpResponse) {
+                handleError(XMLHttpResponse);
+                loadingImg.hide(); 	   
+                rowContainer.show();	
+            }
+        });	     
+        return false;
+    });
+    
+    template.find("#edit_link").unbind("click").bind("click", function(event){   		    
+        rowContainer.hide();
+        rowContainerEdit.show();
+    });
+    
+    template.find("#cancel_link").unbind("click").bind("click", function(event){   		    
+        rowContainer.show();
+        rowContainerEdit.hide();
+    });
+    
+    template.find("#save_link").unbind("click").bind("click", function(event){          		       
+        // validate values		    
+	    var isValid = true;					    
+	    isValid &= validateNumber("Private Port", rowContainerEdit.find("#private_port"), rowContainerEdit.find("#private_port_errormsg"), 1, 65535);				
+	    if (!isValid) return;		    		        
+	    
+        var loadingImg = template.find(".adding_loading");	                        
+        loadingImg.find(".adding_text").text("Saving....");	
+        loadingImg.show();  
+        rowContainerEdit.hide();      
+	    
+        var ipAddress = $("#submenu_content_network #ip_select").val();
+		if (!isUser()) {
+			ipAddress = ipPanel.data("ip_address");
+		}
+        var publicPort = rowContainerEdit.find("#public_port").text();
+        var privatePort = rowContainerEdit.find("#private_port").val();
+        var protocol = rowContainerEdit.find("#protocol").text();
+        var virtualMachineId = rowContainerEdit.find("#vm").val();		   
+	    		    
+        var array1 = [];
+        array1.push("&publicip="+ipAddress);    
+        array1.push("&privateport="+privatePort);
+        array1.push("&publicport="+publicPort);
+        array1.push("&protocol="+protocol);
+        array1.push("&virtualmachineid=" + virtualMachineId);
+                      
+        $.ajax({
+       data: createURL("command=updatePortForwardingRule&response=json"+array1.join("")),
+			 dataType: "json",
+			 success: function(json) {					    									 
+				var jobId = json.updateportforwardingruleresponse.jobid;					        
+		        var timerKey = "updateportforwardingruleJob"+jobId;
+		        
+                $("body").everyTime(2000, timerKey, function() {
+				    $.ajax({
+					   data: createURL("command=queryAsyncJobResult&jobId="+jobId+"&response=json"),
+					    dataType: "json",
+					    success: function(json) {										       						   
+						    var result = json.queryasyncjobresultresponse;									    
+						    if (result.jobstatus == 0) {
+							    return; //Job has not completed
+						    } else {											    
+							    $("body").stopTime(timerKey);
+							    if (result.jobstatus == 1) { // Succeeded										        								    
+								    var items = result.portforwardingrule;	            	
+                                    portForwardingJsonToTemplate(items[0],template);
+                                    loadingImg.hide(); 	   
+                                    rowContainer.show();						                                                               
+							    } else if (result.jobstatus == 2) { //Fail
+							        loadingImg.hide(); 		
+						            rowContainer.show(); 
+								    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");											    					    
+							    }
+						    }
+					    },
+					    error: function(XMLHttpResponse) {	
+					        handleError(XMLHttpResponse);								        
+						    $("body").stopTime(timerKey);
+						    loadingImg.hide(); 		
+						    rowContainer.show(); 									    								    
+					    }
+				    });
+			    }, 0);							 
+			 },
+			 error: function(XMLHttpResponse) {
+			     handleError(XMLHttpResponse);		
+			     loadingImg.hide(); 		
+				 rowContainer.show(); 							 
+			 }
+		 });                   
+    });
+    */
+}	  
+    
+function listPortForwardingRules() {	
+    var jsonObj = $("#right_panel_content #tab_content_details").data("jsonObj");          
+	var ipAddress = jsonObj.ipaddress;
+    if(ipAddress == null || ipAddress.length == 0)
+        return;           		
+    $.ajax({
+        data: createURL("command=listPortForwardingRules&ipaddress=" + ipAddress),
+        dataType: "json",
+        success: function(json) {	                                    
+            var items = json.listportforwardingrulesresponse.portforwardingrule;              
+            var $portForwardingGrid = $("#tab_content_port_forwarding #grid_container #grid_content");            
+            $portForwardingGrid.empty();                       		    		      	    		
+            if (items != null && items.length > 0) {				        			        
+                for (var i = 0; i < items.length; i++) {
+	                var $template = $("#port_forwarding_template").clone(true);
+	                portForwardingJsonToTemplate(items[i], $template); //???
+	                $portForwardingGrid.append($template.show());						   
+                }			    
+            } 	        	      		    						
+        }
+    });
+}   
+
 function refreshCreatePortForwardingRow() {      
     var $createPortForwardingRow = $("#create_port_forwarding_row");      
     $createPortForwardingRow.find("#public_port").val("");

@@ -182,7 +182,9 @@
                     <div class="row_celltitles">
                         <a id="add_link" href="#">Add</a></div>
                 </div>
-            </div>  
+            </div>              
+            <div id="grid_content">
+            </div>            
         </div>
     </div>
     <!-- Port Forwarding ends here-->
