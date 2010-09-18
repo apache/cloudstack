@@ -2443,6 +2443,7 @@ a:visited {
 	border-bottom:1px dashed #a2bcce;
 	background:#e3eaef repeat top left;
 	float:left;
+	position:relative;
 	margin:0;
 	padding:4px 0 4px 0;
 }

@@ -309,6 +309,12 @@
                                 <div class="row_celltitles">
                                     <a href="#">Add</a></div>
                             </div>
+                            <div class="gridrow_loaderbox" style="display: none;">
+                                <div class="gridrow_loader">
+                                </div>
+                                <p>
+                                    Adding &hellip;</p>
+                            </div>
                         </div>
                         <div class="grid_details_row">
                             <div class="grid_row_cell" style="width: 9%;">
@@ -323,6 +329,12 @@
                                 <div class="row_celltitles">
                                     <a href="#">Remove</a></div>
                             </div>
+                            <div class="gridrow_loaderbox" style="display: none;">
+                                <div class="gridrow_loader">
+                                </div>
+                                <p>
+                                    Deleting &hellip;</p>
+                            </div>
                         </div>
                         <div class="grid_details_row odd">
                             <div class="grid_row_cell" style="width: 9%;">
@@ -336,6 +348,12 @@
                             <div class="grid_row_cell" style="width: 30%;">
                                 <div class="row_celltitles">
                                     <a href="#">Remove</a></div>
+                            </div>
+                            <div class="gridrow_loaderbox" style="display: none;">
+                                <div class="gridrow_loader">
+                                </div>
+                                <p>
+                                    Adding &hellip;</p>
                             </div>
                         </div>
                     </div>
