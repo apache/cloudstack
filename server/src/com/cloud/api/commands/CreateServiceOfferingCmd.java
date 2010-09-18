@@ -24,8 +24,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.ServiceOfferingResponse;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.service.ServiceOfferingVO;
 
 @Implementation(method="createServiceOffering", manager=Manager.ConfigManager)
@@ -129,6 +129,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 	    response.setStorageType(offering.getUseLocalStorage() ? "local" : "shared");
 	    response.setTags(offering.getTags());
 
-	    return SerializerHelper.toSerializedString(response);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
 	}
 }

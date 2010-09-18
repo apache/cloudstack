@@ -25,9 +25,9 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.dc.VlanVO;
-import com.cloud.serializer.SerializerHelper;
 
 @Implementation(method="createVlanAndPublicIpRange", manager=Manager.ConfigManager)
 public class CreateVlanIpRangeCmd extends BaseCmd {
@@ -151,6 +151,7 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
             response.setPodName(ApiDBUtils.findPodById(podId).getName());
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

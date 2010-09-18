@@ -25,8 +25,9 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SnapshotScheduleResponse;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.SnapshotScheduleVO;
 
 @Implementation(method="findRecurringSnapshotSchedule", manager=Manager.SnapshotManager)
@@ -68,7 +69,8 @@ public class ListRecurringSnapshotScheduleCmd extends BaseListCmd {
     public String getResponse() {
         List<SnapshotScheduleVO> snapshotSchedules = (List<SnapshotScheduleVO>)getResponseObject();
 
-        List<SnapshotScheduleResponse> response = new ArrayList<SnapshotScheduleResponse>();
+        ListResponse response = new ListResponse();
+        List<SnapshotScheduleResponse> snapshotScheduleResponses = new ArrayList<SnapshotScheduleResponse>();
         for (SnapshotScheduleVO snapshotSchedule : snapshotSchedules) {
             SnapshotScheduleResponse snapSchedResponse = new SnapshotScheduleResponse();
             snapSchedResponse.setId(snapshotSchedule.getId());
@@ -76,9 +78,12 @@ public class ListRecurringSnapshotScheduleCmd extends BaseListCmd {
             snapSchedResponse.setSnapshotPolicyId(snapshotSchedule.getPolicyId());
             snapSchedResponse.setScheduled(snapshotSchedule.getScheduledTimestamp());
 
-            response.add(snapSchedResponse);
+            snapSchedResponse.setResponseName("snapshot");
+            snapshotScheduleResponses.add(snapSchedResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(snapshotScheduleResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

@@ -28,10 +28,11 @@ import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.VolumeResponse;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
@@ -127,7 +128,8 @@ public class ListVolumesCmd extends BaseListCmd {
     public String getResponse() {
         List<VolumeVO> volumes = (List<VolumeVO>)getResponseObject();
 
-        List<VolumeResponse> response = new ArrayList<VolumeResponse>();
+        ListResponse response = new ListResponse();
+        List<VolumeResponse> volResponses = new ArrayList<VolumeResponse>();
         for (VolumeVO volume : volumes) {
             VolumeResponse volResponse = new VolumeResponse();
             volResponse.setId(volume.getId());
@@ -197,9 +199,12 @@ public class ListVolumesCmd extends BaseListCmd {
             String poolName = (poolId == null) ? "none" : ApiDBUtils.findStoragePoolById(poolId).getName();
             volResponse.setStoragePoolName(poolName);
 
-            response.add(volResponse);
+            volResponse.setResponseName("volume");
+            volResponses.add(volResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(volResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

@@ -1,8 +1,9 @@
 package com.cloud.api;
 
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.AsyncJobResponse;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
-import com.cloud.serializer.SerializerHelper;
 
 /**
  * A base command for supporting asynchronous API calls.  When an API command is received, the command will be
@@ -17,7 +18,10 @@ public abstract class BaseAsyncCmd extends BaseCmd {
 
     public String getResponse(long jobId) {
         // FIXME:  We need a generic response object here, see BaseAsyncCreateCmd
-        return SerializerHelper.toSerializedString(Long.valueOf(jobId));
+        AsyncJobResponse response = new AsyncJobResponse();
+        response.setId(jobId);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 
     public void setAsyncJobManager(AsyncJobManager mgr) {

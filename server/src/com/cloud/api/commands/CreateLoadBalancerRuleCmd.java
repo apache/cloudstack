@@ -20,14 +20,14 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
-import com.cloud.api.ApiDBUtils;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.network.LoadBalancerVO;
-import com.cloud.serializer.SerializerHelper;
 
 @Implementation(method="createLoadBalancerRule", manager=Manager.NetworkManager)
 public class CreateLoadBalancerRuleCmd extends BaseCmd {
@@ -111,6 +111,7 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd {
         response.setDomainId(responseObj.getDomainId());
         response.setDomainName(ApiDBUtils.findDomainById(responseObj.getDomainId()).getName());
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

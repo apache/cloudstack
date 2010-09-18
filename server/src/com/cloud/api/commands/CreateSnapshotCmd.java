@@ -25,8 +25,8 @@ import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.SnapshotResponse;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
@@ -102,6 +102,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
         response.setCreated(snapshot.getCreated());
         response.setName(snapshot.getName());
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

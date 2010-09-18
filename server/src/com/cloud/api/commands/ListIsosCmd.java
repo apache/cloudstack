@@ -29,11 +29,12 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.host.HostVO;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -183,7 +184,8 @@ public class ListIsosCmd extends BaseListCmd {
             }
         }
 
-        List<TemplateResponse> response = new ArrayList<TemplateResponse>();
+        ListResponse response = new ListResponse();
+        List<TemplateResponse> isoResponses = new ArrayList<TemplateResponse>();
         for (VMTemplateVO iso : isos) {
             List<VMTemplateHostVO> isoHosts = isoHostsMap.get(iso.getId());
             for (VMTemplateHostVO isoHost : isoHosts) {
@@ -261,10 +263,13 @@ public class ListIsosCmd extends BaseListCmd {
                     isoResponse.setJobStatus(asyncJob.getStatus());
                 }
 
-                response.add(isoResponse);
+                isoResponse.setResponseName("iso");
+                isoResponses.add(isoResponse);
             }
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(isoResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

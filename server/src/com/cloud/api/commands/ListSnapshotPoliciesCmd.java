@@ -27,8 +27,9 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.SnapshotPolicyVO;
 
 @Implementation(method="listPoliciesforVolume", manager=Manager.SnapshotManager)
@@ -79,7 +80,8 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
     public String getResponse() {
         List<SnapshotPolicyVO> policies = (List<SnapshotPolicyVO>)getResponseObject();
 
-        List<SnapshotPolicyResponse> response = new ArrayList<SnapshotPolicyResponse>();
+        ListResponse response = new ListResponse();
+        List<SnapshotPolicyResponse> policyResponses = new ArrayList<SnapshotPolicyResponse>();
         for (SnapshotPolicyVO policy : policies) {
             SnapshotPolicyResponse policyResponse = new SnapshotPolicyResponse();
             policyResponse.setId(policy.getId());
@@ -89,9 +91,12 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
             policyResponse.setMaxSnaps(policy.getMaxSnaps());
             policyResponse.setTimezone(policy.getTimezone());
 
-            response.add(policyResponse);
+            policyResponse.setResponseName("snapshotpolicy");
+            policyResponses.add(policyResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(policyResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

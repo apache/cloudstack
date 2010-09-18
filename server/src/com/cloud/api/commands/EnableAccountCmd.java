@@ -22,11 +22,11 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
-import com.cloud.api.response.SuccessResponse;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.serializer.SerializerHelper;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="enableAccount", manager=Manager.ManagementServer)
 public class EnableAccountCmd extends BaseCmd {
@@ -76,6 +76,8 @@ public class EnableAccountCmd extends BaseCmd {
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to enable account");
         }
-        return SerializerHelper.toSerializedString(responseObject);
+
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

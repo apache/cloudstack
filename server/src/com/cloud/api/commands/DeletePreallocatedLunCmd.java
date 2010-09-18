@@ -20,8 +20,8 @@ package com.cloud.api.commands;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.DeletePreallocatedLunResponse;
-import com.cloud.serializer.SerializerHelper;
 
 @Implementation(method="unregisterPreallocatedLun")
 public class DeletePreallocatedLunCmd extends BaseCmd {
@@ -58,6 +58,7 @@ public class DeletePreallocatedLunCmd extends BaseCmd {
         DeletePreallocatedLunResponse response = new DeletePreallocatedLunResponse();
         response.setSuccess(result);
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

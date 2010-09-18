@@ -27,11 +27,12 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.host.HostVO;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -136,7 +137,8 @@ public class ListTemplatesCmd extends BaseListCmd {
 
         // get the response
         List<VMTemplateVO> templates = (List<VMTemplateVO>)getResponseObject();
-        List<TemplateResponse> response = new ArrayList<TemplateResponse>();
+        ListResponse response = new ListResponse();
+        List<TemplateResponse> templateResponses = new ArrayList<TemplateResponse>();
 
         for (VMTemplateVO template : templates) {
             if (!showDomr && template.getId() == TemplateConstants.DEFAULT_SYSTEM_VM_DB_ID) {
@@ -222,10 +224,13 @@ public class ListTemplatesCmd extends BaseListCmd {
                     templateResponse.setJobStatus(asyncJob.getStatus());
                 }
 
-                response.add(templateResponse);
+                templateResponse.setResponseName("template");
+                templateResponses.add(templateResponse);
             }
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(templateResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

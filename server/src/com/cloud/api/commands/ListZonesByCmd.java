@@ -26,9 +26,10 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -67,7 +68,8 @@ public class ListZonesByCmd extends BaseListCmd {
         List<DataCenterVO> dataCenters = (List<DataCenterVO>)getResponseObject();
         Account account = (Account)UserContext.current().getAccountObject();
 
-        List<ZoneResponse> response = new ArrayList<ZoneResponse>();
+        ListResponse response = new ListResponse();
+        List<ZoneResponse> zoneResponses = new ArrayList<ZoneResponse>();
         for (DataCenterVO dataCenter : dataCenters) {
             ZoneResponse zoneResponse = new ZoneResponse();
             zoneResponse.setId(dataCenter.getId());
@@ -86,9 +88,12 @@ public class ListZonesByCmd extends BaseListCmd {
                 zoneResponse.setGuestCidrAddress(dataCenter.getGuestNetworkCidr());
             }
 
-            response.add(zoneResponse);
+            zoneResponse.setResponseName("zone");
+            zoneResponses.add(zoneResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(zoneResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

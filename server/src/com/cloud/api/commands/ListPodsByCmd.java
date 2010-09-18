@@ -26,9 +26,10 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.PodResponse;
 import com.cloud.dc.HostPodVO;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.test.PodZoneConfig;
 
 @Implementation(method="searchForPods")
@@ -80,7 +81,8 @@ public class ListPodsByCmd extends BaseListCmd {
     public String getResponse() {
         List<HostPodVO> pods = (List<HostPodVO>)getResponseObject();
 
-        List<PodResponse> response = new ArrayList<PodResponse>();
+        ListResponse response = new ListResponse();
+        List<PodResponse> podResponses = new ArrayList<PodResponse>();
         for (HostPodVO pod : pods) {
             String[] ipRange = new String[2];
             if (pod.getDescription() != null && pod.getDescription().length() > 0) {
@@ -99,9 +101,12 @@ public class ListPodsByCmd extends BaseListCmd {
             podResponse.setEndIp(((ipRange.length > 1) && (ipRange[1] != null)) ? ipRange[1] : "");
             podResponse.setGateway(pod.getGateway());
 
-            response.add(podResponse);
+            podResponse.setResponseName("pod");
+            podResponses.add(podResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(podResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

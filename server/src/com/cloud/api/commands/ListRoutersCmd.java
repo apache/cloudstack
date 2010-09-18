@@ -27,9 +27,10 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.DomainRouterResponse;
+import com.cloud.api.response.ListResponse;
 import com.cloud.async.AsyncJobVO;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
 
@@ -109,7 +110,8 @@ public class ListRoutersCmd extends BaseListCmd {
     public String getResponse() {
         List<DomainRouterVO> routers = (List<DomainRouterVO>)getResponseObject();
 
-        List<DomainRouterResponse> response = new ArrayList<DomainRouterResponse>();
+        ListResponse response = new ListResponse();
+        List<DomainRouterResponse> routerResponses = new ArrayList<DomainRouterResponse>();
         for (DomainRouterVO router : routers) {
             DomainRouterResponse routerResponse = new DomainRouterResponse();
             routerResponse.setId(router.getId());
@@ -154,9 +156,12 @@ public class ListRoutersCmd extends BaseListCmd {
                 routerResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
             }
 
-            response.add(routerResponse);
+            routerResponse.setResponseName("router");
+            routerResponses.add(routerResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(routerResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

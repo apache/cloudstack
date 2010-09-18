@@ -33,9 +33,10 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.CapacityResponse;
+import com.cloud.api.response.ListResponse;
 import com.cloud.capacity.CapacityVO;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.server.Criteria;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePoolVO;
@@ -108,8 +109,9 @@ public class ListCapacityCmd extends BaseListCmd {
     public String getResponse() {
         List<CapacityVO> capacities = (List<CapacityVO>)getResponseObject();
 
+        ListResponse response = new ListResponse();
+        List<CapacityResponse> capacityResponses = new ArrayList<CapacityResponse>();
         List<CapacityVO> summedCapacities = sumCapacities(capacities);
-        List<CapacityResponse> response = new ArrayList<CapacityResponse>();
         for (CapacityVO summedCapacity : summedCapacities) {
             CapacityResponse capacityResponse = new CapacityResponse();
             capacityResponse.setCapacityTotal(summedCapacity.getTotalCapacity());
@@ -124,9 +126,14 @@ public class ListCapacityCmd extends BaseListCmd {
             } else {
                 capacityResponse.setPercentUsed(s_percentFormat.format(0L));
             }
+
+            capacityResponse.setResponseName("capacity");
+            capacityResponses.add(capacityResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(capacityResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 
     private List<CapacityVO> sumCapacities(List<CapacityVO> hostCapacities) {	        

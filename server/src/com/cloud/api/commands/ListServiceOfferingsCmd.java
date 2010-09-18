@@ -26,9 +26,10 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.offering.ServiceOffering.GuestIpType;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.service.ServiceOfferingVO;
 
 @Implementation(method="searchForServiceOfferings")
@@ -79,7 +80,8 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
     public String getResponse() {
         List<ServiceOfferingVO> offerings = (List<ServiceOfferingVO>)getResponseObject();
 
-        List<ServiceOfferingResponse> response = new ArrayList<ServiceOfferingResponse>();
+        ListResponse response = new ListResponse();
+        List<ServiceOfferingResponse> offeringResponses = new ArrayList<ServiceOfferingResponse>();
         for (ServiceOfferingVO offering : offerings) {
             ServiceOfferingResponse offeringResponse = new ServiceOfferingResponse();
             offeringResponse.setId(offering.getId());
@@ -94,9 +96,12 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
             offeringResponse.setUseVirtualNetwork(offering.getGuestIpType().equals(GuestIpType.Virtualized));
             offeringResponse.setTags(offering.getTags());
 
-            response.add(offeringResponse);
+            offeringResponse.setResponseName("serviceoffering");
+            offeringResponses.add(offeringResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(offeringResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

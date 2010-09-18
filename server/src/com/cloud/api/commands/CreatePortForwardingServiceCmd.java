@@ -24,9 +24,9 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.network.SecurityGroupVO;
-import com.cloud.serializer.SerializerHelper;
 
 @Implementation(method="createPortForwardingService")
 public class CreatePortForwardingServiceCmd extends BaseCmd {
@@ -93,6 +93,7 @@ public class CreatePortForwardingServiceCmd extends BaseCmd {
         response.setDomainId(group.getDomainId());
         response.setDomainName(ApiDBUtils.findDomainById(group.getDomainId()).getName());
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

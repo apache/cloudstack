@@ -28,9 +28,10 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.network.SecurityGroupVO;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.user.Account;
 
 @Implementation(method="searchForSecurityGroupsByVM")
@@ -89,7 +90,8 @@ public class ListPortForwardingServicesByVmCmd extends BaseListCmd {
     public String getResponse() {
         Map<String, List<SecurityGroupVO>> portForwardingServices = (Map<String, List<SecurityGroupVO>>)getResponseObject();
 
-        List<SecurityGroupResponse> response = new ArrayList<SecurityGroupResponse>();
+        ListResponse response = new ListResponse();
+        List<SecurityGroupResponse> pfResponses = new ArrayList<SecurityGroupResponse>();
         for (String addr : portForwardingServices.keySet()) {
             List<SecurityGroupVO> appliedGroup = portForwardingServices.get(addr);
             for (SecurityGroupVO group : appliedGroup) {
@@ -106,10 +108,13 @@ public class ListPortForwardingServicesByVmCmd extends BaseListCmd {
                     pfsData.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
                 }
 
-                response.add(pfsData);
+                pfsData.setResponseName("portforwardingservice");
+                pfResponses.add(pfsData);
             }
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(pfResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

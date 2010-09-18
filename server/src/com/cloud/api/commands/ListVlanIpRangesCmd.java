@@ -26,11 +26,12 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.user.Account;
 
 @Implementation(method="searchForVlans")
@@ -102,7 +103,8 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
     public String getResponse() {
         List<VlanVO> vlans = (List<VlanVO>)getResponseObject();
 
-        List<VlanIpRangeResponse> response = new ArrayList<VlanIpRangeResponse>();
+        ListResponse response = new ListResponse();
+        List<VlanIpRangeResponse> vlanResponses = new ArrayList<VlanIpRangeResponse>();
         for (VlanVO vlan : vlans) {
             Long accountId = ApiDBUtils.getAccountIdForVlan(vlan.getId());
             Long podId = ApiDBUtils.getPodIdForVlan(vlan.getId());
@@ -130,9 +132,12 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
             vlanResponse.setNetmask(vlan.getVlanNetmask());
             vlanResponse.setDescription(vlan.getIpRange());
 
-            response.add(vlanResponse);
+            vlanResponse.setResponseName("vlaniprange");
+            vlanResponses.add(vlanResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(vlanResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

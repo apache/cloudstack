@@ -20,14 +20,14 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
-import com.cloud.api.ApiDBUtils;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.PodResponse;
 import com.cloud.dc.HostPodVO;
-import com.cloud.serializer.SerializerHelper;
 
 @Implementation(method="createPod", manager=Manager.ConfigManager)
 public class CreatePodCmd extends BaseCmd {
@@ -109,6 +109,7 @@ public class CreatePodCmd extends BaseCmd {
         response.setName(pod.getName());
         response.setZoneId(pod.getDataCenterId());
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

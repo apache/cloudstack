@@ -23,14 +23,15 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.configuration.ResourceLimitVO;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.user.Account;
 
 @Implementation(method="searchForLimits", manager=Manager.AccountManager)
@@ -88,7 +89,8 @@ public class ListResourceLimitsCmd extends BaseListCmd {
     public String getResponse() {
         List<ResourceLimitVO> limits = (List<ResourceLimitVO>)getResponseObject();
 
-        List<ResourceLimitResponse> response = new ArrayList<ResourceLimitResponse>();
+        ListResponse response = new ListResponse();
+        List<ResourceLimitResponse> limitResponses = new ArrayList<ResourceLimitResponse>();
         for (ResourceLimitVO limit : limits) {
             ResourceLimitResponse resourceLimitResponse = new ResourceLimitResponse();
             if (limit.getDomainId() != null) {
@@ -108,9 +110,12 @@ public class ListResourceLimitsCmd extends BaseListCmd {
             resourceLimitResponse.setResourceType(limit.getType().ordinal());
             resourceLimitResponse.setMax(limit.getMax());
 
-            response.add(resourceLimitResponse);
+            resourceLimitResponse.setResponseName("resourcelimit");
+            limitResponses.add(resourceLimitResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(limitResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

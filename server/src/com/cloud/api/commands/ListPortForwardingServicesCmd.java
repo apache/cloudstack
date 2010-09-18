@@ -27,9 +27,10 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.network.SecurityGroupVO;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.user.Account;
 
 @Implementation(method="searchForSecurityGroups")
@@ -88,7 +89,8 @@ public class ListPortForwardingServicesCmd extends BaseListCmd {
     public String getResponse() {
         List<SecurityGroupVO> groups = (List<SecurityGroupVO>)getResponseObject();
 
-        List<SecurityGroupResponse> response = new ArrayList<SecurityGroupResponse>();
+        ListResponse response = new ListResponse();
+        List<SecurityGroupResponse> pfsResponses = new ArrayList<SecurityGroupResponse>();
         for (SecurityGroupVO group : groups) {
             SecurityGroupResponse pfsData = new SecurityGroupResponse();
             pfsData.setId(group.getId());
@@ -102,10 +104,13 @@ public class ListPortForwardingServicesCmd extends BaseListCmd {
                 pfsData.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
             }
 
-            response.add(pfsData);
+            pfsData.setResponseName("portforwardingservice");
+            pfsResponses.add(pfsData);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(pfsResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }
 

@@ -47,6 +47,12 @@ public class ZoneResponse extends BaseResponse {
     @Param(name="guestcidraddress")
     private String guestCidrAddress;
 
+    @Param(name="status")
+    private String status;
+
+    @Param(name="displaytext")
+    private String displayText;
+
     public Long getId() {
         return id;
     }
@@ -117,5 +123,21 @@ public class ZoneResponse extends BaseResponse {
 
     public void setGuestCidrAddress(String guestCidrAddress) {
         this.guestCidrAddress = guestCidrAddress;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getDisplayText() {
+        return displayText;
+    }
+
+    public void setDisplayText(String displayText) {
+        this.displayText = displayText;
     }
 }

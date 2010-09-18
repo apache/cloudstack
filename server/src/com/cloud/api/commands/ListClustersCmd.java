@@ -23,12 +23,16 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.ClusterResponse;
+import com.cloud.api.response.ListResponse;
 import com.cloud.dc.ClusterVO;
-import com.cloud.serializer.SerializerHelper;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
 
 @Implementation(method="searchForClusters")
 public class ListClustersCmd extends BaseListCmd {
@@ -86,20 +90,25 @@ public class ListClustersCmd extends BaseListCmd {
     public String getResponse() {
         List<ClusterVO> clusters = (List<ClusterVO>)getResponseObject();
 
-        List<ClusterResponse> response = new ArrayList<ClusterResponse>();
+        ListResponse response = new ListResponse();
+        List<ClusterResponse> clusterResponses = new ArrayList<ClusterResponse>();
         for (ClusterVO cluster : clusters) {
             ClusterResponse clusterResponse = new ClusterResponse();
             clusterResponse.setId(cluster.getId());
             clusterResponse.setName(cluster.getName());
             clusterResponse.setPodId(cluster.getPodId());
             clusterResponse.setZoneId(cluster.getDataCenterId());
-            // TODO: implement
-//          HostPodVO pod = getManagementServer().findHostPodById(cluster.getPodId());
-//          clusterResponse.setPodName(podName);
-//          DataCenterVO zone = getManagementServer().findDataCenterById(cluster.getDataCenterId());
-//          clusterResponse.setZoneName(zoneName);
+            HostPodVO pod = ApiDBUtils.findPodById(cluster.getPodId());
+            clusterResponse.setPodName(pod.getName());
+            DataCenterVO zone = ApiDBUtils.findZoneById(cluster.getDataCenterId());
+            clusterResponse.setZoneName(zone.getName());
+
+            clusterResponse.setResponseName("cluster");
+            clusterResponses.add(clusterResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(clusterResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

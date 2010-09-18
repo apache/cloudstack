@@ -23,12 +23,14 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.DomainResponse;
+import com.cloud.api.response.ListResponse;
 import com.cloud.domain.DomainVO;
-import com.cloud.serializer.SerializerHelper;
 
 @Implementation(method="searchForDomains")
 public class ListDomainsCmd extends BaseListCmd {
@@ -80,19 +82,24 @@ public class ListDomainsCmd extends BaseListCmd {
     public String getResponse() {
         List<DomainVO> domains = (List<DomainVO>)getResponseObject();
 
-        List<DomainResponse> response = new ArrayList<DomainResponse>();
+        ListResponse response = new ListResponse();
+        List<DomainResponse> domainResponses = new ArrayList<DomainResponse>();
         for (DomainVO domain : domains) {
             DomainResponse domainResponse = new DomainResponse();
             domainResponse.setDomainName(domain.getName());
             domainResponse.setId(domain.getId());
             domainResponse.setLevel(domain.getLevel());
             domainResponse.setParentDomainId(domain.getParent());
-            // TODO:  implement
-//            domainResponse.setParentDomainName(findDomainIdById(domain.getParent()).getName());
+            if (domain.getParent() != null) {
+                domainResponse.setParentDomainName(ApiDBUtils.findDomainById(domain.getParent()).getName());
+            }
 
-            response.add(domainResponse);
+            domainResponse.setResponseName("domain");
+            domainResponses.add(domainResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(domainResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

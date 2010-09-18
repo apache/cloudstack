@@ -22,11 +22,11 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
-import com.cloud.api.response.SuccessResponse;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.serializer.SerializerHelper;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="deleteDiskOffering", manager=Manager.ConfigManager)
 public class DeleteDiskOfferingCmd extends BaseCmd {
@@ -69,6 +69,8 @@ public class DeleteDiskOfferingCmd extends BaseCmd {
          } else {
              throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete disk offering");
          }
-         return SerializerHelper.toSerializedString(responseObject);
+
+         response.setResponseName(getName());
+         return ApiResponseSerializer.toSerializedString(response);
     }
 }

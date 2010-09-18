@@ -27,9 +27,10 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.dc.ClusterVO;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 
@@ -102,7 +103,8 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     public String getResponse() {
         List<? extends StoragePoolVO> pools = (List<? extends StoragePoolVO>)getResponseObject();
 
-        List<StoragePoolResponse> response = new ArrayList<StoragePoolResponse>();
+        ListResponse response = new ListResponse();
+        List<StoragePoolResponse> poolResponses = new ArrayList<StoragePoolResponse>();
         for (StoragePoolVO pool : pools) {
             StoragePoolResponse poolResponse = new StoragePoolResponse();
             poolResponse.setId(pool.getId());
@@ -143,9 +145,12 @@ public class ListStoragePoolsCmd extends BaseListCmd {
 
             poolResponse.setTags(ApiDBUtils.getStoragePoolTags(pool.getId()));
 
-            response.add(poolResponse);
+            poolResponse.setResponseName("storagepool");
+            poolResponses.add(poolResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(poolResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

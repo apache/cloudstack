@@ -8,8 +8,8 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.TemplatePermissionsResponse;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -81,7 +81,8 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseListCmd {
 
         response.setAccountNames(accountNames);
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
     
     protected boolean templateIsCorrectType(VMTemplateVO template) {

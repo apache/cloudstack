@@ -185,7 +185,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
     		
     		job.setProcessStatus(processStatus);
     		if(resultObject != null)
-    			job.setResult(SerializerHelper.toSerializedString(resultObject));
+    			job.setResult(SerializerHelper.toSerializedStringOld(resultObject));
     		job.setLastUpdated(DateUtil.currentGMTTime());
     		_jobDao.update(jobId, job);
     		txt.commit();

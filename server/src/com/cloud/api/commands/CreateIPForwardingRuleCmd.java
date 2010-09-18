@@ -25,9 +25,9 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.network.FirewallRuleVO;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.uservm.UserVm;
 
 @Implementation(method="createPortForwardingRule", manager=Manager.NetworkManager)
@@ -104,6 +104,7 @@ public class CreateIPForwardingRuleCmd extends BaseCmd {
         fwResponse.setVirtualMachineId(vm.getId());
         fwResponse.setVirtualMachineName(vm.getName());
 
-        return SerializerHelper.toSerializedString(fwResponse);
+        fwResponse.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(fwResponse);
     }
 }

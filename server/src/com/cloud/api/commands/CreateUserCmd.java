@@ -24,8 +24,8 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.UserResponse;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.user.UserAccount;
 
 @Implementation(method="createUser")
@@ -135,6 +135,7 @@ public class CreateUserCmd extends BaseCmd {
         response.setTimezone(user.getTimezone());
         response.setUsername(user.getUsername());
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

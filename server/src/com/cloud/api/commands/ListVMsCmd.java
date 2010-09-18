@@ -27,10 +27,11 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -120,7 +121,8 @@ public class ListVMsCmd extends BaseListCmd {
 	public String getResponse() {
         List<UserVmVO> userVms = (List<UserVmVO>)getResponseObject();
 
-        List<UserVmResponse> response = new ArrayList<UserVmResponse>();
+        ListResponse response = new ListResponse();
+        List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
         for (UserVmVO userVm : userVms) {
             UserVmResponse userVmResponse = new UserVmResponse();
             userVmResponse.setId(userVm.getId());
@@ -217,9 +219,12 @@ public class ListVMsCmd extends BaseListCmd {
             //network groups
             userVmResponse.setNetworkGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(userVm.getId()));
 
-            response.add(userVmResponse);
+            userVmResponse.setResponseName("virtualmachine");
+            vmResponses.add(userVmResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(vmResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

@@ -27,10 +27,11 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.PortForwardingServiceRuleResponse;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.network.NetworkRuleConfigVO;
-import com.cloud.serializer.SerializerHelper;
 
 @Implementation(method="searchForNetworkRules")
 public class ListPortForwardingServiceRulesCmd extends BaseListCmd {
@@ -88,7 +89,8 @@ public class ListPortForwardingServiceRulesCmd extends BaseListCmd {
     public String getResponse() {
         List<NetworkRuleConfigVO> portForwardingServiceRules = (List<NetworkRuleConfigVO>)getResponseObject();
 
-        List<PortForwardingServiceRuleResponse> response = new ArrayList<PortForwardingServiceRuleResponse>();
+        ListResponse response = new ListResponse();
+        List<PortForwardingServiceRuleResponse> ruleResponses = new ArrayList<PortForwardingServiceRuleResponse>();
         for (NetworkRuleConfigVO rule : portForwardingServiceRules) {
             PortForwardingServiceRuleResponse ruleResponse = new PortForwardingServiceRuleResponse();
             ruleResponse.setRuleId(rule.getId());
@@ -103,9 +105,12 @@ public class ListPortForwardingServiceRulesCmd extends BaseListCmd {
                 ruleResponse.setJobStatus(asyncJob.getStatus());
             }
 
-            response.add(ruleResponse);
+            ruleResponse.setResponseName("portforwardingservicerule");
+            ruleResponses.add(ruleResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(ruleResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

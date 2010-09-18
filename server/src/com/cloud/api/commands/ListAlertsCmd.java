@@ -28,7 +28,8 @@ import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.AlertResponse;
-import com.cloud.serializer.SerializerHelper;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 
 @Implementation(method="searchForALerts")
 public class ListAlertsCmd extends BaseListCmd {
@@ -67,6 +68,7 @@ public class ListAlertsCmd extends BaseListCmd {
     public String getResponse() {
         List<AlertVO> alertList = (List<AlertVO>)getResponseObject();
 
+        ListResponse response = new ListResponse();
         List<AlertResponse> alertResponseList = new ArrayList<AlertResponse>();
         for (AlertVO alert : alertList) {
             AlertResponse alertResponse = new AlertResponse();
@@ -74,9 +76,12 @@ public class ListAlertsCmd extends BaseListCmd {
             alertResponse.setDescription(alert.getSubject());
             alertResponse.setLastSent(alert.getLastSent());
 
+            alertResponse.setResponseName("alert");
             alertResponseList.add(alertResponse);
         }
 
-        return SerializerHelper.toSerializedString(alertResponseList);
+        response.setResponses(alertResponseList);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

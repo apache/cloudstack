@@ -24,9 +24,10 @@ import java.util.List;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.AsyncJobResponse;
+import com.cloud.api.response.ListResponse;
 import com.cloud.async.AsyncJobVO;
-import com.cloud.serializer.SerializerHelper;
 
 @Implementation(method="searchForAsyncJobs")
 public class ListAsyncJobsCmd extends BaseListCmd {
@@ -75,7 +76,8 @@ public class ListAsyncJobsCmd extends BaseListCmd {
     public String getResponse() {
         List<AsyncJobVO> jobs = (List<AsyncJobVO>)getResponseObject();
 
-        List<AsyncJobResponse> response = new ArrayList<AsyncJobResponse>();
+        ListResponse response = new ListResponse();
+        List<AsyncJobResponse> jobResponses = new ArrayList<AsyncJobResponse>();
         for (AsyncJobVO job : jobs) {
             AsyncJobResponse jobResponse = new AsyncJobResponse();
             jobResponse.setAccountId(job.getAccountId());
@@ -90,9 +92,12 @@ public class ListAsyncJobsCmd extends BaseListCmd {
             jobResponse.setJobStatus(job.getStatus());
             jobResponse.setUserId(job.getUserId());
 
-            response.add(jobResponse);
+            jobResponse.setResponseName("asyncjobs");
+            jobResponses.add(jobResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(jobResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

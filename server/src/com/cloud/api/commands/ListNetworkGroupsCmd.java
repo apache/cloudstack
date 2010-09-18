@@ -5,17 +5,18 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.IngressRuleResponse;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.NetworkGroupResponse;
 import com.cloud.async.executor.IngressRuleResultObject;
 import com.cloud.async.executor.NetworkGroupResultObject;
 import com.cloud.network.security.NetworkGroupRulesVO;
-import com.cloud.serializer.SerializerHelper;
 
 @Implementation(method="searchForNetworkGroupRules", manager=Manager.NetworkGroupManager)
 public class ListNetworkGroupsCmd extends BaseListCmd {
@@ -74,7 +75,8 @@ public class ListNetworkGroupsCmd extends BaseListCmd {
         List<NetworkGroupRulesVO> networkGroups = (List<NetworkGroupRulesVO>)getResponseObject();
         List<NetworkGroupResultObject> groupResultObjs = NetworkGroupResultObject.transposeNetworkGroups(networkGroups);
 
-        List<NetworkGroupResponse> response = new ArrayList<NetworkGroupResponse>();
+        ListResponse response = new ListResponse();
+        List<NetworkGroupResponse> netGrpResponses = new ArrayList<NetworkGroupResponse>();
         for (NetworkGroupResultObject networkGroup : groupResultObjs) {
             NetworkGroupResponse netGrpResponse = new NetworkGroupResponse();
             netGrpResponse.setId(networkGroup.getId());
@@ -108,13 +110,17 @@ public class ListNetworkGroupsCmd extends BaseListCmd {
                         ingressData.setCidr(ingressRule.getAllowedSourceIpCidr());
                     }
 
+                    ingressData.setResponseName("ingressrule");
                     ingressRulesResponse.add(ingressData);
                 }
                 netGrpResponse.setIngressRules(ingressRulesResponse);
             }
-            response.add(netGrpResponse);
+            netGrpResponse.setResponseName("networkgroup");
+            netGrpResponses.add(netGrpResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(netGrpResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

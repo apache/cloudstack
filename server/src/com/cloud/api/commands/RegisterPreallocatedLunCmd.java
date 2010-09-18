@@ -20,8 +20,8 @@ package com.cloud.api.commands;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.PreallocatedLunResponse;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 
 @Implementation(method="registerPreallocatedLun")
@@ -101,6 +101,7 @@ public class RegisterPreallocatedLunCmd extends BaseCmd {
         response.setTaken(preallocatedLun.getTaken());
         response.setTargetIqn(preallocatedLun.getTargetIqn());
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

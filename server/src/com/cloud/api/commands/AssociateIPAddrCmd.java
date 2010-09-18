@@ -25,11 +25,11 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.IPAddressResponse;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.network.IPAddressVO;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -82,10 +82,8 @@ public class AssociateIPAddrCmd extends BaseCmd {
     }
     
     public String getResponse() {
-    	IPAddressResponse response = new IPAddressResponse();
     	IPAddressVO ipAddress = (IPAddressVO)getResponseObject();
-    	
-    	
+
         VlanVO vlan  = ApiDBUtils.findVlanById(ipAddress.getVlanDbId());
         boolean forVirtualNetworks = vlan.getVlanType().equals(VlanType.VirtualNetwork);
 
@@ -115,6 +113,7 @@ public class AssociateIPAddrCmd extends BaseCmd {
             ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddress.getVlanDbId()).getVlanId());
         }
 
-        return SerializerHelper.toSerializedString(response);
+        ipResponse.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(ipResponse);
     }
 }

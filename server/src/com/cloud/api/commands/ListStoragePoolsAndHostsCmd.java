@@ -31,7 +31,10 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.HostResponse;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.dc.ClusterVO;
 import com.cloud.host.Host;
@@ -39,7 +42,6 @@ import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status.Event;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
@@ -121,18 +123,21 @@ public class ListStoragePoolsAndHostsCmd extends BaseListCmd {
     public String getResponse() {
         List<Object> poolsAndHosts = (List<Object>)getResponseObject();
 
-        List<Object> response = new ArrayList<Object>();
+        ListResponse response = new ListResponse();
+        List<ResponseObject> responses = new ArrayList<ResponseObject>();
         for (Object poolOrHost : poolsAndHosts) {
             if (poolOrHost instanceof StoragePoolVO) {
                 StoragePoolVO pool = (StoragePoolVO)poolOrHost;
-                response.add(constructStoragePoolResponse(pool));
+                responses.add(constructStoragePoolResponse(pool));
             } else if (poolOrHost instanceof HostVO) {
                 HostVO host = (HostVO)poolOrHost;
-                response.add(constructHostResponse(host));
+                responses.add(constructHostResponse(host));
             }
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(responses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 
     private StoragePoolResponse constructStoragePoolResponse(StoragePoolVO pool) {
@@ -174,6 +179,7 @@ public class ListStoragePoolsAndHostsCmd extends BaseListCmd {
         }           
 
         poolResponse.setTags(ApiDBUtils.getStoragePoolTags(pool.getId()));
+        poolResponse.setResponseName("storagepools");
 
         return poolResponse;
     }
@@ -264,6 +270,7 @@ public class ListStoragePoolsAndHostsCmd extends BaseListCmd {
             hostResponse.setEvents(events);
         }
 
+        hostResponse.setResponseName("host");
         return hostResponse;
     }
 }

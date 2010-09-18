@@ -26,8 +26,8 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.SuccessResponse;
-import com.cloud.serializer.SerializerHelper;
 
 
 @Implementation(method="stopRouter", manager=Manager.NetworkManager)
@@ -68,6 +68,8 @@ public class StopRouterCmd extends BaseAsyncCmd {
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to stop router");
         }
-        return SerializerHelper.toSerializedString(responseObject);
+
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

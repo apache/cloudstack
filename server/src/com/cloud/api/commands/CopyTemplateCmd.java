@@ -27,8 +27,8 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.TemplateResponse;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -157,7 +157,8 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
         	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to copy template");
         }
         
-        return SerializerHelper.toSerializedString(templateResponse);
+        templateResponse.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(templateResponse);
 	}
 }
 

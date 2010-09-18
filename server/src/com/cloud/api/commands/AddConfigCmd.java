@@ -26,9 +26,9 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.ConfigurationResponse;
 import com.cloud.configuration.ConfigurationVO;
-import com.cloud.serializer.SerializerHelper;
 
 @Implementation(method="addConfig", manager=Manager.ConfigManager)
 public class AddConfigCmd extends BaseCmd {
@@ -109,6 +109,8 @@ public class AddConfigCmd extends BaseCmd {
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add config");
         }
-        return SerializerHelper.toSerializedString(responseObject);
+
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

@@ -32,14 +32,15 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.HostResponse;
+import com.cloud.api.response.ListResponse;
 import com.cloud.dc.ClusterVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status.Event;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.vm.UserVmVO;
 
@@ -52,14 +53,17 @@ public class AddHostCmd extends AddHostOrStorageCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     
+    @Override
     public String getName() {
     	return s_name;
     }
-    
+
+    @Override @SuppressWarnings("unchecked")
     public String getResponse() {
     	List<HostVO> hosts = (List<HostVO>)getResponseObject();
-        List<HostResponse> response = new ArrayList<HostResponse>();
-        
+
+    	ListResponse response = new ListResponse();
+        List<HostResponse> hostResponses = new ArrayList<HostResponse>();
         if (hosts != null) {
             for (HostVO host : hosts) {
 	        	HostResponse hostResponse = new HostResponse();
@@ -146,12 +150,15 @@ public class AddHostCmd extends AddHostOrStorageCmd {
 	                }
 	                hostResponse.setEvents(events);
 	            }
-	            response.add(hostResponse);
+	            hostResponse.setResponseName("host");
+	            hostResponses.add(hostResponse);
             }
-        }else {
+        } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add host");
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(hostResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

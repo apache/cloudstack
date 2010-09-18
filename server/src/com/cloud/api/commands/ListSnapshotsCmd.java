@@ -27,9 +27,10 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.async.AsyncJobVO;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotVO;
@@ -112,7 +113,8 @@ public class ListSnapshotsCmd extends BaseListCmd {
     public String getResponse() {
         List<SnapshotVO> snapshots = (List<SnapshotVO>)getResponseObject();
 
-        List<SnapshotResponse> response = new ArrayList<SnapshotResponse>();
+        ListResponse response = new ListResponse();
+        List<SnapshotResponse> snapshotResponses = new ArrayList<SnapshotResponse>();
         for (Snapshot snapshot : snapshots) {
             SnapshotResponse snapshotResponse = new SnapshotResponse();
             snapshotResponse.setId(snapshot.getId());
@@ -140,9 +142,12 @@ public class ListSnapshotsCmd extends BaseListCmd {
             }
             snapshotResponse.setIntervalType(ApiDBUtils.getSnapshotIntervalTypes(snapshot.getId()));
 
-            response.add(snapshotResponse);
+            snapshotResponse.setResponseName("snapshot");
+            snapshotResponses.add(snapshotResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(snapshotResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

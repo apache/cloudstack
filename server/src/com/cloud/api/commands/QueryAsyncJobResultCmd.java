@@ -24,9 +24,9 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.AsyncJobResponse;
 import com.cloud.async.AsyncJobResult;
-import com.cloud.serializer.SerializerHelper;
 
 public class QueryAsyncJobResultCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(QueryAsyncJobResultCmd.class.getName());
@@ -102,7 +102,8 @@ public class QueryAsyncJobResultCmd extends BaseCmd {
         } 
         */
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 
     // For now network groups are the only objects with nested objects inside, so we special case serialization to handle this one case.

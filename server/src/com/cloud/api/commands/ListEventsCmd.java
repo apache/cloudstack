@@ -24,12 +24,15 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.EventResponse;
+import com.cloud.api.response.ListResponse;
 import com.cloud.event.EventVO;
-import com.cloud.serializer.SerializerHelper;
+import com.cloud.user.User;
 
 @Implementation(method="searchForEvents")
 public class ListEventsCmd extends BaseListCmd {
@@ -115,7 +118,8 @@ public class ListEventsCmd extends BaseListCmd {
     public String getResponse() {
         List<EventVO> events = (List<EventVO>)getResponseObject();
 
-        List<EventResponse> response = new ArrayList<EventResponse>();
+        ListResponse response = new ListResponse();
+        List<EventResponse> eventResponses = new ArrayList<EventResponse>();
         for (EventVO event : events) {
             EventResponse responseEvent = new EventResponse();
             responseEvent.setAccountName(event.getAccountName());
@@ -127,18 +131,18 @@ public class ListEventsCmd extends BaseListCmd {
             responseEvent.setLevel(event.getLevel());
             responseEvent.setParentId(event.getStartId());
             responseEvent.setState(event.getState());
-            // TODO: implement
-//            responseEvent.setDomainName(event.getDomainName());
-//            eventData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), getManagementServer().findDomainIdById(acct.getDomainId()).getName()));
-//            responseEvent.setUsername(event.getUserId());
-//            User user = getManagementServer().findUserById(event.getUserId());
-//            if (user != null) {
-//                eventData.add(new Pair<String, Object>(BaseCmd.Properties.USERNAME.getName(), user.getUsername() ));
-//            }
+            responseEvent.setDomainName(ApiDBUtils.findDomainById(event.getDomainId()).getName());
+            User user = ApiDBUtils.findUserById(event.getUserId());
+            if (user != null) {
+                responseEvent.setUsername(user.getUsername());
+            }
 
-            response.add(responseEvent);
+            responseEvent.setResponseName("event");
+            eventResponses.add(responseEvent);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(eventResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

@@ -30,10 +30,11 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.FirewallRuleResponse;
+import com.cloud.api.response.ListResponse;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.server.Criteria;
 import com.cloud.vm.UserVmVO;
 
@@ -74,7 +75,8 @@ public class ListPortForwardingRulesCmd extends BaseListCmd {
         Map<String, UserVmVO> userVmCache = new HashMap<String, UserVmVO>();
         IPAddressVO ipAddr = ApiDBUtils.findIpAddressById(ipAddress);
 
-        List<FirewallRuleResponse> response = new ArrayList<FirewallRuleResponse>();
+        ListResponse response = new ListResponse();
+        List<FirewallRuleResponse> fwResponses = new ArrayList<FirewallRuleResponse>();
         for (FirewallRuleVO fwRule : firewallRules) {
             FirewallRuleResponse ruleData = new FirewallRuleResponse();
 
@@ -102,9 +104,12 @@ public class ListPortForwardingRulesCmd extends BaseListCmd {
                 ruleData.setVirtualMachineName(userVM.getName());
             }
 
-            response.add(ruleData);
+            ruleData.setResponseName("portforwardingrule");
+            fwResponses.add(ruleData);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(fwResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

@@ -31,8 +31,9 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.AccountResponse;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.configuration.ResourceCount.ResourceType;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.server.Criteria;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
@@ -117,7 +118,9 @@ public class ListAccountsCmd extends BaseListCmd {
     public String getResponse() {
         List<AccountVO> accounts = (List<AccountVO>)getResponseObject();
 
-        List<AccountResponse> response = new ArrayList<AccountResponse>();
+        ListResponse response = new ListResponse();
+
+        List<AccountResponse> accountResponses = new ArrayList<AccountResponse>();
         for (AccountVO account : accounts) {
             boolean accountIsAdmin = (account.getType() == Account.ACCOUNT_TYPE_ADMIN);
 
@@ -220,9 +223,12 @@ public class ListAccountsCmd extends BaseListCmd {
                 acctResponse.setCleanupRequired(account.getNeedsCleanup());
             }
 
-            response.add(acctResponse);
+            acctResponse.setName("account");
+            accountResponses.add(acctResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(accountResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

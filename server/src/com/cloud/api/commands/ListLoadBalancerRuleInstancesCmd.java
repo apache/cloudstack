@@ -27,8 +27,9 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.UserVmResponse;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.user.Account;
 import com.cloud.vm.UserVmVO;
 
@@ -75,7 +76,8 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
     public String getResponse() {
         List<UserVmVO> instances = (List<UserVmVO>)getResponseObject();
 
-        List<UserVmResponse> response = new ArrayList<UserVmResponse>();
+        ListResponse response = new ListResponse();
+        List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
         for (UserVmVO instance : instances) {
             UserVmResponse userVmResponse = new UserVmResponse();
             userVmResponse.setId(instance.getId());
@@ -83,7 +85,6 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
             userVmResponse.setDisplayName(instance.getDisplayName());
             userVmResponse.setPrivateIp(instance.getPrivateIpAddress());
 
-            // TODO:  implement
             Account accountTemp = ApiDBUtils.findAccountById(instance.getAccountId());
             if (accountTemp != null) {
                 userVmResponse.setAccountName(accountTemp.getAccountName());
@@ -91,9 +92,12 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
                 userVmResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
             }
 
-            response.add(userVmResponse);
+            userVmResponse.setResponseName("loadbalancerruleinstance");
+            vmResponses.add(userVmResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(vmResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

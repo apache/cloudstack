@@ -26,8 +26,9 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.PreallocatedLunResponse;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 
 @Implementation(method="getPreAllocatedLuns")
@@ -71,7 +72,8 @@ public class ListPreallocatedLunsCmd extends BaseListCmd {
     public String getResponse() {
         List<PreallocatedLunVO> preallocatedLuns = (List<PreallocatedLunVO>)getResponseObject();
 
-        List<PreallocatedLunResponse> response = new ArrayList<PreallocatedLunResponse>();
+        ListResponse response = new ListResponse();
+        List<PreallocatedLunResponse> lunResponses = new ArrayList<PreallocatedLunResponse>();
         for (PreallocatedLunVO preallocatedLun : preallocatedLuns) {
             PreallocatedLunResponse preallocLunResponse = new PreallocatedLunResponse();
             preallocLunResponse.setId(preallocatedLun.getId());
@@ -83,9 +85,12 @@ public class ListPreallocatedLunsCmd extends BaseListCmd {
             preallocLunResponse.setTaken(preallocatedLun.getTaken());
             preallocLunResponse.setTargetIqn(preallocatedLun.getTargetIqn());
 
-            response.add(preallocLunResponse);
+            preallocLunResponse.setResponseName("preallocatedlun");
+            lunResponses.add(preallocLunResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(lunResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

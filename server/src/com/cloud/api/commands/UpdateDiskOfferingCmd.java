@@ -25,8 +25,8 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.DiskOfferingResponse;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.DiskOfferingVO;
 
 @Implementation(method="updateDiskOffering", manager=Manager.ConfigManager)
@@ -74,7 +74,6 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-    private DiskOfferingVO responseObject = null;
 
     @Override
     public String getName() {
@@ -83,6 +82,7 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
     
     public String getResponse() {
         DiskOfferingResponse response = new DiskOfferingResponse();
+        DiskOfferingVO responseObject = (DiskOfferingVO)getResponseObject();
         if (responseObject != null) {
             response.setId(responseObject.getId());
             response.setCreated(responseObject.getCreated());
@@ -96,7 +96,8 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update disk offering");
         }
-        return SerializerHelper.toSerializedString(responseObject);
-    }
 
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
+    }
 }

@@ -24,8 +24,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.TemplateResponse;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.VMTemplateVO;
 
 @Implementation(method="updateTemplate", manager=Manager.ManagementServer)
@@ -66,6 +66,8 @@ public class UpdateTemplateCmd extends UpdateTemplateOrIsoCmd {
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update template");
         }
-        return SerializerHelper.toSerializedString(responseObject);
+
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

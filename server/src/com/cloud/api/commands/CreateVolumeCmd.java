@@ -20,13 +20,13 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd.Manager;
-import com.cloud.api.ApiDBUtils;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.VolumeResponse;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VolumeVO;
 
@@ -135,6 +135,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
         response.setZoneId(volume.getDataCenterId());
         response.setZoneName(ApiDBUtils.findZoneById(volume.getDataCenterId()).getName());
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

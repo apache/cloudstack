@@ -45,7 +45,7 @@ public class StackMaidDaoImpl extends GenericDaoBase<StackMaidVO, Long> implemen
 		delegateItem.setThreadId(Thread.currentThread().getId());
 		delegateItem.setSeq(seq);
 		delegateItem.setDelegate(delegateClzName);
-		delegateItem.setContext(SerializerHelper.toSerializedString(context));
+		delegateItem.setContext(SerializerHelper.toSerializedStringOld(context));
 		delegateItem.setCreated(DateUtil.currentGMTTime());
 		
 		super.persist(delegateItem);

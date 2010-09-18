@@ -25,8 +25,8 @@ import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.DomainRouterResponse;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
 
@@ -104,6 +104,7 @@ public class StartRouterCmd extends BaseAsyncCmd {
             routerResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
         }
         
-        return SerializerHelper.toSerializedString(routerResponse);
+        routerResponse.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(routerResponse);
 	}
 }

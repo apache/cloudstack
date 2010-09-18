@@ -27,9 +27,10 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.network.LoadBalancerVO;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.user.Account;
 
 @Implementation(method="searchForLoadBalancers")
@@ -102,7 +103,8 @@ public class ListLoadBalancerRulesCmd extends BaseListCmd {
     public String getResponse() {
         List<LoadBalancerVO> loadBalancers = (List<LoadBalancerVO>)getResponseObject();
 
-        List<LoadBalancerResponse> response = new ArrayList<LoadBalancerResponse>();
+        ListResponse response = new ListResponse();
+        List<LoadBalancerResponse> lbResponses = new ArrayList<LoadBalancerResponse>();
         for (LoadBalancerVO loadBalancer : loadBalancers) {
             LoadBalancerResponse lbResponse = new LoadBalancerResponse();
             lbResponse.setId(loadBalancer.getId());
@@ -113,7 +115,6 @@ public class ListLoadBalancerRulesCmd extends BaseListCmd {
             lbResponse.setPrivatePort(loadBalancer.getPrivatePort());
             lbResponse.setAlgorithm(loadBalancer.getAlgorithm());
 
-            // TODO:  implement
             Account accountTemp = ApiDBUtils.findAccountById(loadBalancer.getAccountId());
             if (accountTemp != null) {
                 lbResponse.setAccountName(accountTemp.getAccountName());
@@ -121,9 +122,12 @@ public class ListLoadBalancerRulesCmd extends BaseListCmd {
                 lbResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
             }
 
-            response.add(lbResponse);
+            lbResponse.setResponseName("loadbalancerrule");
+            lbResponses.add(lbResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(lbResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

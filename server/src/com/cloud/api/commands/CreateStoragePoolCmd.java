@@ -27,8 +27,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.StoragePoolResponse;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 
@@ -130,6 +130,7 @@ public class CreateStoragePoolCmd extends BaseCmd {
         response.setDiskSizeTotal(pool.getCapacityBytes());
         response.setDiskSizeAllocated(used);
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

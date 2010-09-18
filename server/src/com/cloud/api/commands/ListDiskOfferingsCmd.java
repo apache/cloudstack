@@ -23,11 +23,14 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.DiskOfferingResponse;
-import com.cloud.serializer.SerializerHelper;
+import com.cloud.api.response.ListResponse;
+import com.cloud.domain.DomainVO;
 import com.cloud.storage.DiskOfferingVO;
 
 @Implementation(method="searchForDiskOfferings")
@@ -80,7 +83,8 @@ public class ListDiskOfferingsCmd extends BaseListCmd {
     public String getResponse() {
         List<DiskOfferingVO> offerings = (List<DiskOfferingVO>)getResponseObject();
 
-        List<DiskOfferingResponse> response = new ArrayList<DiskOfferingResponse>();
+        ListResponse response = new ListResponse();
+        List<DiskOfferingResponse> diskOfferingResponses = new ArrayList<DiskOfferingResponse>();
         for (DiskOfferingVO offering : offerings) {
             DiskOfferingResponse diskOffResp = new DiskOfferingResponse();
             diskOffResp.setCreated(offering.getCreated());
@@ -90,12 +94,15 @@ public class ListDiskOfferingsCmd extends BaseListCmd {
             diskOffResp.setId(offering.getId());
             diskOffResp.setName(offering.getName());
             diskOffResp.setTags(offering.getTags());
-            // TODO: implement
-//            getManagementServer().findDomainIdById(offering.getDomainId()).getName()
-//            diskOffResp.setDomain(domain);
+            DomainVO domain = ApiDBUtils.findDomainById(offering.getDomainId());
+            diskOffResp.setDomain(domain.getName());
 
+            diskOffResp.setResponseName("diskoffering");
+            diskOfferingResponses.add(diskOffResp);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(diskOfferingResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

@@ -23,8 +23,8 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.DeleteDomainResponse;
-import com.cloud.serializer.SerializerHelper;
 
 @Implementation(method="deleteDomain")
 public class DeleteDomainCmd extends BaseAsyncCmd {
@@ -71,6 +71,7 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
         DeleteDomainResponse response = new DeleteDomainResponse();
         response.setResult(deleteResult);
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

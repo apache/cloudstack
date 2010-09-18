@@ -27,8 +27,9 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.UserResponse;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.user.UserAccountVO;
 
 @Implementation(method="searchForUsers")
@@ -100,7 +101,8 @@ public class ListUsersCmd extends BaseListCmd {
     public String getResponse() {
         List<UserAccountVO> users = (List<UserAccountVO>)getResponseObject();
 
-        List<UserResponse> response = new ArrayList<UserResponse>();
+        ListResponse response = new ListResponse();
+        List<UserResponse> userResponses = new ArrayList<UserResponse>();
         for (UserAccountVO user : users) {
             UserResponse userResponse = new UserResponse();
             userResponse.setId(user.getId());
@@ -118,9 +120,12 @@ public class ListUsersCmd extends BaseListCmd {
             userResponse.setApiKey(user.getApiKey());
             userResponse.setSecretKey(user.getSecretKey());
 
-            response.add(userResponse);
+            userResponse.setResponseName("user");
+            userResponses.add(userResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(userResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

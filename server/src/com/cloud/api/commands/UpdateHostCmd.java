@@ -26,22 +26,20 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
-import com.cloud.api.response.ConfigurationResponse;
-import com.cloud.api.response.HostResponse;
-import com.cloud.api.ApiDBUtils;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.configuration.ConfigurationVO;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.HostResponse;
 import com.cloud.dc.ClusterVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status.Event;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.vm.UserVmVO;
 
@@ -177,6 +175,8 @@ public class UpdateHostCmd extends BaseCmd {
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update host");
         }
-        return SerializerHelper.toSerializedString(host);
+
+        hostResponse.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(hostResponse);
     }
 }

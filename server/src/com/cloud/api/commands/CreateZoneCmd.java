@@ -24,9 +24,9 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.serializer.SerializerHelper;
 
 @Implementation(method="createZone", manager=Manager.ConfigManager)
 public class CreateZoneCmd extends BaseCmd {
@@ -115,6 +115,7 @@ public class CreateZoneCmd extends BaseCmd {
         response.setVlan(zone.getVnet());
         response.setGuestCidrAddress(zone.getGuestNetworkCidr());
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

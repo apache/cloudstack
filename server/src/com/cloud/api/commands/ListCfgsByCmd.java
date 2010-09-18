@@ -26,9 +26,10 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.ConfigurationResponse;
+import com.cloud.api.response.ListResponse;
 import com.cloud.configuration.ConfigurationVO;
-import com.cloud.serializer.SerializerHelper;
 
 @Implementation(method="searchForConfigurations")
 public class ListCfgsByCmd extends BaseListCmd {
@@ -73,7 +74,8 @@ public class ListCfgsByCmd extends BaseListCmd {
     public String getResponse() {
         List<ConfigurationVO> configurations = (List<ConfigurationVO>)getResponseObject();
 
-        List<ConfigurationResponse> response = new ArrayList<ConfigurationResponse>();
+        ListResponse response = new ListResponse();
+        List<ConfigurationResponse> configResponses = new ArrayList<ConfigurationResponse>();
         for (ConfigurationVO cfg : configurations) {
             ConfigurationResponse cfgResponse = new ConfigurationResponse();
             cfgResponse.setCategory(cfg.getCategory());
@@ -81,9 +83,12 @@ public class ListCfgsByCmd extends BaseListCmd {
             cfgResponse.setName(cfg.getName());
             cfgResponse.setValue(cfg.getValue());
 
-            response.add(cfgResponse);
+            cfgResponse.setResponseName("configuration");
+            configResponses.add(cfgResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(configResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }

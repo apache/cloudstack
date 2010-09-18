@@ -26,9 +26,10 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SystemVmResponse;
 import com.cloud.async.AsyncJobVO;
-import com.cloud.serializer.SerializerHelper;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.SystemVm;
@@ -110,7 +111,8 @@ public class ListSystemVMsCmd extends BaseListCmd {
     public String getResponse() {
         List<? extends VMInstanceVO> systemVMs = (List<? extends VMInstanceVO>)getResponseObject();
 
-        List<SystemVmResponse> response = new ArrayList<SystemVmResponse>();
+        ListResponse response = new ListResponse();
+        List<SystemVmResponse> vmResponses = new ArrayList<SystemVmResponse>();
         for (VMInstanceVO systemVM : systemVMs) {
             SystemVmResponse vmResponse = new SystemVmResponse();
             if (systemVM instanceof SystemVm) {
@@ -162,9 +164,12 @@ public class ListSystemVMsCmd extends BaseListCmd {
                 vmResponse.setActiveViewerSessions(proxy.getActiveSession());
             }
 
-            response.add(vmResponse);
+            vmResponse.setResponseName("systemvm");
+            vmResponses.add(vmResponse);
         }
 
-        return SerializerHelper.toSerializedString(response);
+        response.setResponses(vmResponses);
+        response.setResponseName(getName());
+        return ApiResponseSerializer.toSerializedString(response);
     }
 }
