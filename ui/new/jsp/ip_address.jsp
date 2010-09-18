@@ -140,7 +140,7 @@
     <!-- Details ends here-->
     <!-- Port Forwarding start here-->
     <div id="tab_content_port_forwarding" style="display:none">
-        <div class="grid_container">
+        <div class="grid_container" id="grid_container">
             <div class="grid_header">
                 <div class="grid_header_cell" style="width: 20%">
                     <div class="grid_header_title">
@@ -159,75 +159,30 @@
                         Instance</div>
                 </div>
             </div>
-            <div class="grid_rows even">
+            <div class="grid_rows even" id="create_port_forwarding_row">
                 <div class="grid_row_cell" style="width: 20%;">
-                    <input class="text" style="width: 90%;" type="text" />
+                    <input id="public_port" class="text" style="width: 90%;" type="text" />
+                    <div id="public_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
                 </div>
                 <div class="grid_row_cell" style="width: 20%;">
-                    <input class="text" style="width: 90%;" type="text" />
+                    <input id="private_port" class="text" style="width: 90%;" type="text" />
+                    <div id="private_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
                 </div>
-                <div class="grid_row_cell" style="width: 29%;">
-                    <input class="text" style="width: 90%;" type="text" />
+                <div class="grid_row_cell" style="width: 29%;">  
+                   <select class="select" id="protocol">
+                       <option value="TCP">TCP</option>
+                       <option value="UDP">UDP</option>
+                   </select>
                 </div>
-                <div class="grid_row_cell" style="width: 20%;">
-                    <select class="select" style="width: 90%;">
-                        <option value="Instance1">Instance Name 1 </option>
-                        <option value="Instance2">Instance Name 2 </option>
+                <div class="grid_row_cell" style="width: 20%;">                   
+                    <select class="select" style="width: 104px;" id="vm">
                     </select>
                 </div>
                 <div class="grid_row_cell" style="width: 10%;">
                     <div class="row_celltitles">
-                        <a href="#">Add</a></div>
+                        <a id="add_link" href="#">Add</a></div>
                 </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        8080</div>
-                </div>
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        80</div>
-                </div>
-                <div class="grid_row_cell" style="width: 29%;">
-                    <div class="row_celltitles">
-                        8 GB</div>
-                </div>
-                <div class="grid_row_cell" style="width: 30%;">
-                    <div class="row_celltitles">
-                        Instance Name</div>
-                </div>
-                <div class="gridrow_loaderbox" style="display: none;">
-                    <div class="gridrow_loader">
-                    </div>
-                    <p>
-                        Adding &hellip;</p>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        8080</div>
-                </div>
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        80</div>
-                </div>
-                <div class="grid_row_cell" style="width: 29%;">
-                    <div class="row_celltitles">
-                        8 GB</div>
-                </div>
-                <div class="grid_row_cell" style="width: 30%;">
-                    <div class="row_celltitles">
-                        Instance Name</div>
-                </div>
-                <div class="gridrow_loaderbox" style="display: block;">
-                    <div class="gridrow_loader">
-                    </div>
-                    <p>
-                        Adding &hellip;</p>
-                </div>
-            </div>
+            </div>  
         </div>
     </div>
     <!-- Port Forwarding ends here-->
@@ -309,11 +264,11 @@
                                 <div class="row_celltitles">
                                     <a href="#">Add</a></div>
                             </div>
-                            <div class="gridrow_loaderbox" style="display: none;">
+                            <div class="gridrow_loaderbox" style="display: block;">
                                 <div class="gridrow_loader">
                                 </div>
                                 <p>
-                                    Adding &hellip;</p>
+                                    Adding instance to load balancer policy &hellip;</p>
                             </div>
                         </div>
                         <div class="grid_details_row">
@@ -333,7 +288,7 @@
                                 <div class="gridrow_loader">
                                 </div>
                                 <p>
-                                    Deleting &hellip;</p>
+                                    Removing instance from load balancer policy &hellip;</p>
                             </div>
                         </div>
                         <div class="grid_details_row odd">
@@ -349,11 +304,11 @@
                                 <div class="row_celltitles">
                                     <a href="#">Remove</a></div>
                             </div>
-                            <div class="gridrow_loaderbox" style="display: none;">
+                            <div class="gridrow_loaderbox" style="display: block;">
                                 <div class="gridrow_loader">
                                 </div>
                                 <p>
-                                    Adding &hellip;</p>
+                                    Removing instance from load balancer policy &hellip;</p>
                             </div>
                         </div>
                     </div>
@@ -380,7 +335,7 @@
                     <div class="gridrow_loader">
                     </div>
                     <p>
-                        Adding &hellip;</p>
+                        Adding load balancer policy &hellip;</p>
                 </div>
             </div>
         </div>
@@ -388,3 +343,61 @@
     <!-- Load Balancer ends here-->
 </div>
 <!-- IP Address detail panel (end) -->
+
+
+<div class="grid_rows odd" id="port_forwarding_template" style="display: none">
+    
+    <div id="row_container">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles" id="public_port"></div>
+        </div>
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles" id="private_port"></div>
+        </div>
+        <div class="grid_row_cell" style="width: 29%;">
+            <div class="row_celltitles" id="protocol"></div>
+        </div>
+        <div class="grid_row_cell" style="width: 30%;">
+            <div class="row_celltitles" id="vm_name"></div>
+        </div> 
+        <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
+            <div class="gridrow_loader">
+            </div>
+            <p>
+                Adding &hellip;</p>
+        </div>
+    </div>
+    <div id="row_container_edit" style="display:none">
+        <div class="grid_row_cell" style="width: 20%;">
+            <input id="public_port" class="text" style="width: 90%;" type="text" />
+            <div id="public_port_errormsg" class="errormsg" style="display: none;">
+                Error msg will appear here</div>
+        </div>
+        <div class="grid_row_cell" style="width: 20%;">
+            <input id="private_port" class="text" style="width: 90%;" type="text" />
+            <div id="private_port_errormsg" class="errormsg" style="display: none;">
+                Error msg will appear here</div>
+        </div>
+        <div class="grid_row_cell" style="width: 29%;">
+            <select class="select" id="protocol">
+                <option value="TCP">TCP</option>
+                <option value="UDP">UDP</option>
+            </select>
+        </div>
+        <div class="grid_row_cell" style="width: 20%;">
+            <select class="select" style="width: 104px;" id="vm">
+            </select>
+        </div>
+        <div class="grid_row_cell" style="width: 10%;">
+            <div class="row_celltitles">
+                <a id="add_link" href="#">Add</a></div>
+        </div>
+        <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
+            <div class="gridrow_loader">
+            </div>
+            <p>
+                Saving &hellip;</p>
+        </div>
+    </div>
+</div>
+
