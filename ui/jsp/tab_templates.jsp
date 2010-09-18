@@ -591,6 +591,14 @@ long milliseconds = new Date().getTime();
 					</select>
 				</li>
 				<li>
+					<label for="add_iso_hypervisor">Hypervisor:</label>
+					<select class="select" name="add_iso_hypervisor" id="add_iso_hypervisor">
+						<option value='VmWare'>VMware ESX</option>
+						<option value='XenServer'>Citrix XenServer</option>
+						<option value='KVM'>KVM</option>
+					</select>
+				</li>
+				<li>
 					<label for="add_iso_os_type">OS Type:</label>
 					<select class="select" name="add_iso_os_type" id="add_iso_os_type">
 					</select>

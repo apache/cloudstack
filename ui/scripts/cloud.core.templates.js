@@ -753,12 +753,13 @@ function showTemplatesTab() {
 				//var isPublic = thisDialog.find("#add_iso_public").val();
 				var isPublic = "false"; //default to private for now
 				var osType = thisDialog.find("#add_iso_os_type").val();
-				var bootable = thisDialog.find("#add_iso_bootable").val();			
+				var bootable = thisDialog.find("#add_iso_bootable").val();	
+				var hypervisor = thisDialog.find("#add_iso_hypervisor").val();				
 			    				    
 			    thisDialog.dialog("close");									    
 			    				
 				$.ajax({
-				        data: createURL("command=registerIso&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&url="+encodeURIComponent(url)+"&zoneId="+zoneId+"&isPublic="+isPublic+"&osTypeId="+osType+"&bootable="+bootable+"&response=json"),
+				        data: createURL("command=registerIso&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&url="+encodeURIComponent(url)+"&zoneId="+zoneId+"&isPublic="+isPublic+"&osTypeId="+osType+"&bootable="+bootable+"&hypervisor="+hypervisor+"&response=json"),
 					dataType: "json",
 					success: function(json) {					
 					    var result = json.registerisoresponse;					
