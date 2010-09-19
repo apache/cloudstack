@@ -1028,7 +1028,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
             VirtualMachineProfile vmProfile = _vmMgr.allocate(proxy, _template, _serviceOffering, profiles, plan, _accountMgr.getSystemAccount());
         } catch (InsufficientCapacityException e) {
             s_logger.warn("InsufficientCapacity", e);
-            throw new CloudRuntimeException("Insufficient capcity exception", e);
+            throw new CloudRuntimeException("Insufficient capacity exception", e);
         } catch (StorageUnavailableException e) {
             s_logger.warn("Unable to contact storage", e);
             throw new CloudRuntimeException("Unable to contact storage", e);
