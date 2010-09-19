@@ -314,6 +314,13 @@
                 <a id="cancel_link" href="#">Cancel</a>
             </div>
         </div>
+        <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
+            <div class="gridrow_loader">
+            </div>
+            <p id="description">
+                Waiting &hellip;
+            </p>
+        </div>
     </div>  
     <div class="grid_detailspanel" id="management_area" style="display: none;">
         <div class="grid_details_pointer">

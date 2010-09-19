@@ -458,15 +458,14 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
         return false;
     });
    
-    //??? 
-    var loadingContainer = $template.find("#loading_container");		
-    var rowContainer = $template.find("#row_container");      
-    var rowContainerEdit = $template.find("#row_container_edit");  
+    //???     
+    var $rowContainer = $template.find("#row_container");      
+    var $rowContainerEdit = $template.find("#row_container_edit");  
     		    
     $template.find("#delete_link").unbind("click").bind("click", function(event){                            
         loadingContainer.find(".adding_text").text("Deleting....");	
         loadingContainer.show();  
-        rowContainer.hide();                    
+        $rowContainer.hide();                    
 		$.ajax({
 		       data: createURL("command=deleteLoadBalancerRule&id="+loadBalancerId),
 			dataType: "json",
@@ -492,7 +491,7 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 										});
 									} else if (result.jobstatus == 2) { // Failed
 										loadingContainer.hide(); 	   
-                                        rowContainer.show();	
+                                        $rowContainer.show();	
 									}
 								}
 							},
@@ -500,7 +499,7 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 								handleError(XMLHttpResponse);
 								$("body").stopTime(timerKey);
 								loadingContainer.hide(); 	   
-                                rowContainer.show();	
+                                $rowContainer.show();	
 							}
 						});
 					},
@@ -512,30 +511,29 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
     });		
     		    
     $template.find("#edit_link").unbind("click").bind("click", function(event){   		    
-        rowContainer.hide();
-        rowContainerEdit.show();
+        $rowContainer.hide();
+        $rowContainerEdit.show();
     });
     
     $template.find("#cancel_link").unbind("click").bind("click", function(event){   		    
-        rowContainer.show();
-        rowContainerEdit.hide();
+        $rowContainer.show();
+        $rowContainerEdit.hide();
     });
     
-    $template.find("#save_link").unbind("click").bind("click", function(event){          		       
-        // validate values			       
+    $template.find("#save_link").unbind("click").bind("click", function(event){   
 	    var isValid = true;		
-	    isValid &= validateString("Name", rowContainerEdit.find("#name"), rowContainerEdit.find("#name_errormsg"));					    
-	    isValid &= validateNumber("Private Port", rowContainerEdit.find("#private_port"), rowContainerEdit.find("#private_port_errormsg"), 1, 65535);				
-	    if (!isValid) return;		    		        
+	    isValid &= validateString("Name", $rowContainerEdit.find("#name"), $rowContainerEdit.find("#name_errormsg"));					    
+	    isValid &= validateNumber("Private Port", $rowContainerEdit.find("#private_port"), $rowContainerEdit.find("#private_port_errormsg"), 1, 65535);				
+	    if (!isValid) 
+	        return;		    		        
 	    
-        var loadingContainer = $template.find(".adding_loading");	                        
-        loadingContainer.find(".adding_text").text("Saving....");	
-        loadingContainer.show();  
-        rowContainerEdit.hide();      
+	    var $spinningWheel = $template.find("#row_container_edit").find("#spinning_wheel");	
+	    $spinningWheel.find("#description").text("Saving load balancer rule....");	
+        $spinningWheel.show();     
 	        		    	       
-        var name = rowContainerEdit.find("#name").val();  		        
-        var privatePort = rowContainerEdit.find("#private_port").val();
-        var algorithm = rowContainerEdit.find("#algorithm_select").val();  
+        var name = $rowContainerEdit.find("#name").val();  		        
+        var privatePort = $rowContainerEdit.find("#private_port").val();
+        var algorithm = $rowContainerEdit.find("#algorithm_select").val();  
 	    		    
         var array1 = [];
         array1.push("&id=" + loadBalancerId);                
@@ -547,7 +545,7 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
             data: createURL("command=updateLoadBalancerRule"+array1.join("")),
 			dataType: "json",
 			success: function(json) {					    		   	    									 
-				var jobId = jsonObj.updateloadbalancerruleresponse.jobid;					        
+				var jobId = json.updateloadbalancerruleresponse.jobid;					        
 		        var timerKey = "updateloadbalancerruleJob"+jobId;
 		        
                 $("body").everyTime(2000, timerKey, function() {
@@ -555,36 +553,40 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 					   data: createURL("command=queryAsyncJobResult&jobId="+jobId),
 					    dataType: "json",
 					    success: function(json) {										       						   
-						    var result = jsonObj.queryasyncjobresultresponse;									    
+						    var result = json.queryasyncjobresultresponse;									    
 						    if (result.jobstatus == 0) {
 							    return; //Job has not completed
 						    } else {											    
 							    $("body").stopTime(timerKey);
 							    if (result.jobstatus == 1) { // Succeeded										        								        						        								    
 								    var items = result.loadbalancer;											         	
-                                    loadBalancerJsonToTemplate(items[0],$template);
-                                    loadingContainer.hide(); 	   
-                                    rowContainer.show();						                                                               
+                                    loadBalancerJsonToTemplate(items[0],$template); 
+                                    $spinningWheel.hide();                                   
+                                    $rowContainerEdit.hide();  
+                                    $rowContainer.show();                                                  
 							    } else if (result.jobstatus == 2) { //Fail
-							        loadingContainer.hide(); 		
-						            rowContainer.show(); 
+							        $spinningWheel.hide();                                   
+                                    $rowContainerEdit.hide();  
+                                    $rowContainer.show(); 
 								    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");											    					    
 							    }
 						    }
 					    },
-					    error: function(XMLHttpResponse) {	
-					        handleError(XMLHttpResponse);								        
+					    error: function(XMLHttpResponse) {	   
 						    $("body").stopTime(timerKey);
-						    loadingContainer.hide(); 		
-						    rowContainer.show(); 									    								    
+						    $spinningWheel.hide();                                   
+                            $rowContainerEdit.hide();  
+                            $rowContainer.show(); 	
+                            handleError(XMLHttpResponse);									    								    
 					    }
 				    });
 			    }, 0);							 
 			 },
 			 error: function(XMLHttpResponse) {
 			     handleError(XMLHttpResponse);		
-			     loadingContainer.hide(); 		
-				 rowContainer.show(); 							 
+			     $spinningWheel.hide();                                   
+                 $rowContainerEdit.hide();  
+                 $rowContainer.show(); 					 
 			 }
 		 });                   
     });	  		    
