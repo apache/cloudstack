@@ -219,16 +219,19 @@
             </div>
             <div class="grid_rows even" id="create_load_balancer_row">
                 <div class="grid_row_cell" style="width: 25%;">
-                    <input class="text" style="width: 90%;" type="text" />
+                    <input id="name" class="text" style="width: 90%;" type="text" />
+                    <div id="name_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
                 </div>
                 <div class="grid_row_cell" style="width: 15%;">
-                    <input class="text" style="width: 90%;" type="text" />
+                    <input id="public_port" class="text" style="width: 90%;" type="text" />
+                    <div id="public_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
                 </div>
                 <div class="grid_row_cell" style="width: 15%;">
-                    <input class="text" style="width: 90%;" type="text" />
+                    <input id="private_port" class="text" style="width: 90%;" type="text" />
+                    <div id="private_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
                 </div>
                 <div class="grid_row_cell" style="width: 15%;">
-                    <select class="select" style="width: 90%;">                       
+                    <select id="algorithm_select" class="select" style="width: 90%;">                       
 						<option value="roundrobin">roundrobin</option>
                         <option value="leastconn">leastconn</option>
                         <option value="source">source</option>
@@ -236,7 +239,7 @@
                 </div>
                 <div class="grid_row_cell" style="width: 29%;">
                     <div class="row_celltitles">
-                        <a href="#">Add</a></div>
+                        <a id="add_link" href="#">Add</a></div>
                 </div>
             </div>
             <div id="grid_content">
@@ -276,6 +279,17 @@
             <div class="row_celltitles">
                 <a id="edit_link" href="#">Edit</a></div>
         </div>
+        
+        
+        <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
+            <div class="gridrow_loader">
+            </div>
+            <p id="description">
+                Waiting &hellip;
+            </p>
+        </div>
+        
+        
     </div>
     <div class="grid_detailspanel" id="vm_subgrid" style="display: none;">
         <div class="grid_details_pointer">

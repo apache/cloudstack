@@ -25,7 +25,7 @@ function afterLoadIpJSP() {
     
     
     //Port Fowording tab
-    var $createPortForwardingRow = $("#create_port_forwarding_row");     
+    var $createPortForwardingRow = $("#tab_content_port_forwarding #create_port_forwarding_row");     
     
     $createPortForwardingRow.find("#add_link").bind("click", function(event){	        
 		var isValid = true;				
@@ -40,9 +40,9 @@ function afterLoadIpJSP() {
 	    $spinningWheel.find("#description").text("Adding....");	
         $spinningWheel.show();   
 	    
-	    var $detailsTab = $("#right_panel_content #tab_content_details");   
-        var jsonObj = $detailsTab.data("jsonObj");          
-		var ipAddress = jsonObj.ipaddress;		
+	    var ipObj = $("#right_panel_content #tab_content_details").data("jsonObj");  
+		var ipAddress = ipObj.ipaddress;
+				
 	    var publicPort = $createPortForwardingRow.find("#public_port").val();
 	    var privatePort = $createPortForwardingRow.find("#private_port").val();
 	    var protocol = $createPortForwardingRow.find("#protocol").val();
@@ -74,7 +74,60 @@ function afterLoadIpJSP() {
 	    return false;
 	});
     
+    //Load Balancer tab
+    var createLoadBalancerRow = $("#tab_content_load_balancer #create_load_balancer_row");
     
+    createLoadBalancerRow.find("#add_link").bind("click", function(event){		
+	    // validate values		    
+		var isValid = true;					
+		isValid &= validateString("Name", createLoadBalancerRow.find("#name"), createLoadBalancerRow.find("#name_errormsg"));
+		isValid &= validateNumber("Public Port", createLoadBalancerRow.find("#public_port"), createLoadBalancerRow.find("#public_port_errormsg"), 1, 65535);
+		isValid &= validateNumber("Private Port", createLoadBalancerRow.find("#private_port"), createLoadBalancerRow.find("#private_port_errormsg"), 1, 65535);				
+		if (!isValid) return;
+		 
+		var $template = $("#load_balancer_template").clone();	
+		$("#tab_content_load_balancer #grid_content").append($template.show());		
+		
+		var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");	
+	    $spinningWheel.find("#description").text("Adding....");	
+        $spinningWheel.show();            			 
+		 		 
+		var ipObj = $("#right_panel_content #tab_content_details").data("jsonObj");  
+		var ipAddress = ipObj.ipaddress;
+		 	 
+	    var name = createLoadBalancerRow.find("#name").val();  
+	    var publicPort = createLoadBalancerRow.find("#public_port").val();
+	    var privatePort = createLoadBalancerRow.find("#private_port").val();
+	    var algorithm = createLoadBalancerRow.find("#algorithm_select").val();  
+	    		   
+	    var array1 = [];
+        array1.push("&publicip="+ipAddress);    
+        array1.push("&name="+name);              
+        array1.push("&publicport="+publicPort);
+        array1.push("&privateport="+privatePort);
+        array1.push("&algorithm="+algorithm);
+       
+        $.ajax({
+	        data: createURL("command=createLoadBalancerRule"+array1.join("")),
+			dataType: "json",
+			success: function(json) {					    	    
+				var items = json.createloadbalancerruleresponse.loadbalancerrule;						
+	            loadBalancerJsonToTemplate(items[0],$template);
+	            $spinningWheel.hide();   
+	            refreshCreateLoadBalancerRow();	            	
+			},
+		    error: function(XMLHttpResponse) {				    
+			    handleError(XMLHttpResponse);
+			    $template.slideUp("slow", function() {
+					$(this).remove();
+				});
+		    }			
+		});  
+	    
+	    return false;
+	});
+	
+	
 }
 
 function ipGetMidmenuId(jsonObj) {   
@@ -384,7 +437,7 @@ function loadBalancerJsonToTemplate(jsonObj, template) {
             vmSubgrid.empty();         
             $.ajax({
 			    cache: false,
-		       data: createURL("command=listLoadBalancerRuleInstances&id="+loadBalancerId+"&response=json"),
+		       data: createURL("command=listLoadBalancerRuleInstances&id="+loadBalancerId),
 			    dataType: "json",
 			    success: function(json) {					        
 				    var instances = jsonObj.listloadbalancerruleinstancesresponse.loadbalancerruleinstance;						
@@ -419,7 +472,7 @@ function loadBalancerJsonToTemplate(jsonObj, template) {
         loadingContainer.show();  
         rowContainer.hide();                    
 		$.ajax({
-		       data: createURL("command=deleteLoadBalancerRule&id="+loadBalancerId+"&response=json"),
+		       data: createURL("command=deleteLoadBalancerRule&id="+loadBalancerId),
 			dataType: "json",
 			success: function(json) {
 				var lbJSON = jsonObj.deleteloadbalancerruleresponse;
@@ -429,7 +482,7 @@ function loadBalancerJsonToTemplate(jsonObj, template) {
 					timerKey,
 					function() {
 						$.ajax({
-						       data: createURL("command=queryAsyncJobResult&jobId="+lbjsonObj.jobid+"&response=json"),
+						       data: createURL("command=queryAsyncJobResult&jobId="+lbjsonObj.jobid),
 							dataType: "json",
 							success: function(json) {
 								var result = jsonObj.queryasyncjobresultresponse;
@@ -495,7 +548,7 @@ function loadBalancerJsonToTemplate(jsonObj, template) {
         array1.push("&algorithm=" + algorithm);
                                                       
         $.ajax({
-       data: createURL("command=updateLoadBalancerRule&response=json"+array1.join("")),
+       data: createURL("command=updateLoadBalancerRule"+array1.join("")),
 			dataType: "json",
 			success: function(json) {					    		   	    									 
 				var jobId = jsonObj.updateloadbalancerruleresponse.jobid;					        
@@ -503,7 +556,7 @@ function loadBalancerJsonToTemplate(jsonObj, template) {
 		        
                 $("body").everyTime(2000, timerKey, function() {
 				    $.ajax({
-					   data: createURL("command=queryAsyncJobResult&jobId="+jobId+"&response=json"),
+					   data: createURL("command=queryAsyncJobResult&jobId="+jobId),
 					    dataType: "json",
 					    success: function(json) {										       						   
 						    var result = jsonObj.queryasyncjobresultresponse;									    
@@ -553,7 +606,7 @@ function loadBalancerJsonToTemplate(jsonObj, template) {
 		var rowContainer =  template.find("#adding_row_container").hide();
 		    	
 		$.ajax({
-		       data: createURL("command=assignToLoadBalancerRule&id="+loadBalancerId+"&virtualmachineid="+vmId+"&response=json"),
+		       data: createURL("command=assignToLoadBalancerRule&id="+loadBalancerId+"&virtualmachineid="+vmId),
 			dataType: "json",
 			success: function(json) {
 				var lbInstanceJSON = jsonObj.assigntoloadbalancerruleresponse;
@@ -563,7 +616,7 @@ function loadBalancerJsonToTemplate(jsonObj, template) {
 					timerKey,
 					function() {
 						$.ajax({
-						       data: createURL("command=queryAsyncJobResult&jobId="+lbInstancejsonObj.jobid+"&response=json"),
+						       data: createURL("command=queryAsyncJobResult&jobId="+lbInstancejsonObj.jobid),
 							dataType: "json",
 							success: function(json) {
 								var result = jsonObj.queryasyncjobresultresponse;
@@ -607,4 +660,14 @@ function loadBalancerJsonToTemplate(jsonObj, template) {
     });  
     */
 }	
+
+function refreshCreateLoadBalancerRow() {
+    var createLoadBalancerRow = $("#tab_content_load_balancer #create_load_balancer_row");
+    createLoadBalancerRow.find("#name").val("");  
+    createLoadBalancerRow.find("#public_port").val("");
+    createLoadBalancerRow.find("#private_port").val("");
+    createLoadBalancerRow.find("#algorithm_select").val("roundrobin");  
+}
+    
+
 //***** Load Balancer tab (end) ************************************************************************************************************
