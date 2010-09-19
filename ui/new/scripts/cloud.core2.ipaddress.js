@@ -232,8 +232,9 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
     
     $template.find("#row_container #protocol").text(jsonObj.protocol);
     $template.find("#row_container_edit #protocol").text(jsonObj.protocol);
-    
-    $template.find("#row_container #vm_name").text(jsonObj.vmname);		    
+       
+    var vmName = getVmName(jsonObj.vmname, jsonObj.vmdisplayname); //jsonObj doesn't include vmdisplayname property(incorrect). Waiting for Bug 6241 to be fixed....
+    $template.find("#row_container #vm_name").text(vmName);		    
     var virtualMachineId = jsonObj.virtualmachineid;
    
     var $detailsTab = $("#right_panel_content #tab_content_details");   
@@ -674,11 +675,11 @@ function refreshCreateLoadBalancerRow() {
 
 function lbVmObjToTemplate(obj, $template) {
     $template.find("#vm_name").text(obj.vmName);
-	$template.find("#vm_private_ip").text(obj.vmPrivateIp);			
+	$template.find("#vm_private_ip").text(obj.vmPrivateIp);		
+		
 	$template.find("#remove_link").bind("click", function(event){	
 	    var $spinningWheel = $template.find("#spinning_wheel");		    
-        $spinningWheel.show();   
-	   			    		
+        $spinningWheel.show();   	   			    		
         $.ajax({
 	       data: createURL("command=removeFromLoadBalancerRule&id="+obj.loadBalancerId+"&virtualmachineid="+obj.vmId),
 			dataType: "json",
@@ -691,7 +692,7 @@ function lbVmObjToTemplate(obj, $template) {
 					timerKey,
 					function() {
 						$.ajax({
-						       data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+						    data: createURL("command=queryAsyncJobResult&jobId="+jobId),
 							dataType: "json",
 							success: function(json) {
 								var result = json.queryasyncjobresultresponse;
