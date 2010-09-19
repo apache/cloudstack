@@ -278,9 +278,7 @@
                 <a id="delete_link" href="#">Delete</a></div>
             <div class="row_celltitles">
                 <a id="edit_link" href="#">Edit</a></div>
-        </div>
-        
-        
+        </div>       
         <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
             <div class="gridrow_loader">
             </div>
@@ -288,10 +286,36 @@
                 Waiting &hellip;
             </p>
         </div>
-        
-        
-    </div>
-    <div class="grid_detailspanel" id="vm_subgrid" style="display: none;">
+    </div> 
+    <div class="grid_rows odd" id="row_container_edit" style="display:none">
+        <div class="grid_row_cell" style="width: 25%;">
+            <input id="name" class="text" style="width: 90%;" type="text" />
+            <div id="name_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+        </div>
+        <div class="grid_row_cell" style="width: 15%;">
+            <div class="row_celltitles" id="public_port">8080</div>
+        </div>
+        <div class="grid_row_cell" style="width: 15%;">
+            <input id="private_port" class="text" style="width: 90%;" type="text" />
+            <div id="private_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+        </div>
+        <div class="grid_row_cell" style="width: 15%;">
+            <select id="algorithm_select" class="select" style="width: 90%;">                       
+				<option value="roundrobin">roundrobin</option>
+                <option value="leastconn">leastconn</option>
+                <option value="source">source</option>
+            </select>
+        </div>
+        <div class="grid_row_cell" style="width: 29%;">
+            <div class="row_celltitles">
+                <a id="save_link" href="#">Save</a>
+            </div>
+            <div class="row_celltitles">
+                <a id="cancel_link" href="#">Cancel</a>
+            </div>
+        </div>
+    </div>  
+    <div class="grid_detailspanel" id="management_area" style="display: none;">
         <div class="grid_details_pointer">
         </div>
         <div class="grid_detailsbox">
@@ -317,7 +341,7 @@
                         Assigning instance to load balancer policy &hellip;</p>
                 </div>
             </div>
-            <div id="vm_subgrid" class="ip_description_managearea" style="display: none;">
+            <div id="grid_content" class="ip_description_managearea">
             </div>
         </div>
     </div>
@@ -325,14 +349,16 @@
 <!-- Load Balancer Template (end) -->
 
 <!-- Load Balancer's VM subgrid template (begin) -->
-<div class="grid_details_row odd" style="display:none">
+<div id="load_balancer_vm_template" class="grid_details_row odd" style="display:none">
     <div class="grid_row_cell" style="width: 9%;">
         <div class="row_celltitles">
             <img src="images/network_managevmicon.gif" /></div>
     </div>
-    <div class="grid_row_cell" style="width: 60%;">
-        <div class="row_celltitles">
-            1-2-2-TEST</div>
+    <div class="grid_row_cell" style="width: 50%;">
+        <div class="row_celltitles" id="vm_name"></div>
+    </div>
+    <div class="grid_row_cell" style="width: 10%;">
+        <div class="row_celltitles" id="vm_private_ip"></div>
     </div>
     <div class="grid_row_cell" style="width: 30%;">
         <div class="row_celltitles">

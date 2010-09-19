@@ -122,8 +122,7 @@ function afterLoadIpJSP() {
 					$(this).remove();
 				});
 		    }			
-		});  
-	    
+		});  	    
 	    return false;
 	});
 	
@@ -429,40 +428,37 @@ function loadBalancerJsonToTemplate(jsonObj, template) {
     
     template.find("#row_container #algorithm").text(jsonObj.algorithm);	
     template.find("#row_container_edit #algorithm").val(jsonObj.algorithm);			    	    
-    
-    /*
-    template.find("#manage_link").unbind("click").bind("click", function(event){		        
-        var vmSubgrid = template.find("#vm_subgrid");
-        if(vmSubgrid.css("display") == "none") {
+        
+    template.find("#manage_link").unbind("click").bind("click", function(event){	
+        var managementArea = template.find("#management_area");
+        var vmSubgrid = managementArea.find("#grid_content");
+        if(managementArea.css("display") == "none") {
             vmSubgrid.empty();         
             $.ajax({
 			    cache: false,
-		       data: createURL("command=listLoadBalancerRuleInstances&id="+loadBalancerId),
+		        data: createURL("command=listLoadBalancerRuleInstances&id="+loadBalancerId),
 			    dataType: "json",
 			    success: function(json) {					        
-				    var instances = jsonObj.listloadbalancerruleinstancesresponse.loadbalancerruleinstance;						
+				    var instances = json.listloadbalancerruleinstancesresponse.loadbalancerruleinstance;						
 				    if (instances != null && instances.length > 0) {							
 					    for (var i = 0; i < instances.length; i++) {                                  
                             var lbVmTemplate = $("#load_balancer_vm_template").clone();	                                    									    											    											    
 						    var obj = {"loadBalancerId": loadBalancerId, "vmId": instances[i].id, "vmName": getVmName(instances[i].name, instances[i].displayname), "vmPrivateIp": instances[i].privateip};	
 						    lbVmObjToTemplate(obj, lbVmTemplate);		
-						    template.find("#vm_subgrid").append(lbVmTemplate.show());	                                   
+						    vmSubgrid.append(lbVmTemplate.show());	                                   
 					    }
 				    } 
 			    }
 		    });        
-            vmSubgrid.show();		           
+            managementArea.show();		           
         }
         else {
-            vmSubgrid.hide();
-        }	
-            
-        var addVmToLbRow = template.find("#add_vm_to_lb_row");
-        (addVmToLbRow.css("display") == "none")?addVmToLbRow.show():addVmToLbRow.hide();	
-            	        
+            managementArea.hide();
+        }		        
         return false;
     });
-    
+   
+    //??? 
     var loadingContainer = template.find("#loading_container");		
     var rowContainer = template.find("#row_container");      
     var rowContainerEdit = template.find("#row_container_edit");  
@@ -548,7 +544,7 @@ function loadBalancerJsonToTemplate(jsonObj, template) {
         array1.push("&algorithm=" + algorithm);
                                                       
         $.ajax({
-       data: createURL("command=updateLoadBalancerRule"+array1.join("")),
+            data: createURL("command=updateLoadBalancerRule"+array1.join("")),
 			dataType: "json",
 			success: function(json) {					    		   	    									 
 				var jobId = jsonObj.updateloadbalancerruleresponse.jobid;					        
@@ -606,7 +602,7 @@ function loadBalancerJsonToTemplate(jsonObj, template) {
 		var rowContainer =  template.find("#adding_row_container").hide();
 		    	
 		$.ajax({
-		       data: createURL("command=assignToLoadBalancerRule&id="+loadBalancerId+"&virtualmachineid="+vmId),
+		   data: createURL("command=assignToLoadBalancerRule&id="+loadBalancerId+"&virtualmachineid="+vmId),
 			dataType: "json",
 			success: function(json) {
 				var lbInstanceJSON = jsonObj.assigntoloadbalancerruleresponse;
@@ -628,7 +624,7 @@ function loadBalancerJsonToTemplate(jsonObj, template) {
 									    var lbVmTemplate = $("#load_balancer_vm_template").clone();											    											    											    
 									    var obj = {"loadBalancerId": loadBalancerId, "vmId": vmId, "vmName": vmName, "vmPrivateIp": vmPrivateIp};	
 									    lbVmObjToTemplate(obj, lbVmTemplate);		
-									    template.find("#vm_subgrid").append(lbVmTemplate.show());	
+									    template.find("#management_area #grid_content").append(lbVmTemplate.show());	
 									    refreshLbVmSelect(template, loadBalancerId);											    
 		                                loading.hide();  
 		                                rowContainer.show(); 
@@ -658,7 +654,7 @@ function loadBalancerJsonToTemplate(jsonObj, template) {
 		});	        
         return false;
     });  
-    */
+    //???
 }	
 
 function refreshCreateLoadBalancerRow() {
@@ -669,5 +665,88 @@ function refreshCreateLoadBalancerRow() {
     createLoadBalancerRow.find("#algorithm_select").val("roundrobin");  
 }
     
+
+function lbVmObjToTemplate(obj, template) {
+    template.find("#vm_name").text(obj.vmName);
+	template.find("#vm_private_ip").text(obj.vmPrivateIp);			
+	template.find("#remove_link").bind("click", function(event){			    
+	    var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");		    
+        $spinningWheel.show();   
+	    
+	    //var loading = template.find("#deleting_loading").show();
+	    //var rowContainer = template.find("#deleting_row_container").hide();
+	    						    		
+        $.ajax({
+	       data: createURL("command=removeFromLoadBalancerRule&id="+obj.loadBalancerId+"&virtualmachineid="+obj.vmId),
+			dataType: "json",
+			success: function(json) {
+				var lbJSON = json.removefromloadbalancerruleresponse;
+				var timerKey = "removeVmFromLb"+obj.vmId;
+				$("body").everyTime(
+					5000,
+					timerKey,
+					function() {
+						$.ajax({
+						       data: createURL("command=queryAsyncJobResult&jobId="+lbJSON.jobid),
+							dataType: "json",
+							success: function(json) {
+								var result = json.queryasyncjobresultresponse;
+								if (result.jobstatus == 0) {
+									return; //Job has not completed
+								} else {
+									$("body").stopTime(timerKey);
+									if (result.jobstatus == 1) { // Succeeded											    
+									    refreshLbVmSelect($("#loadBalancer_" + obj.loadBalancerId), obj.loadBalancerId);
+										template.fadeOut("slow", function(event) {
+											$(this).remove();
+										});
+									} else if (result.jobstatus == 2) { // Failed													
+										$("#dialog_error").html("<p style='color:red'>We were unable to remove the Virtual Instance: "+vmName + " from your load balancer policy.  Please try again.").dialog("open");
+										$spinningWheel.hide();   										
+									}
+								}
+							},
+							error: function(XMLHttpResponse) {
+								$("body").stopTime(timerKey);
+								handleError(XMLHttpResponse);
+								$spinningWheel.hide(); 
+							}
+						});
+					},
+					0
+				);
+			},
+			error: function(XMLHttpResponse) {
+			    handleError(XMLHttpResponse);
+			    $spinningWheel.hide(); 
+			}
+		});		
+	    return false;
+	});						
+}		
+
+function refreshLbVmSelect(template, loadBalancerId) {		
+    var vmSelect = template.find("#add_vm_to_lb_row #vm_select");		    	    
+    // Load the select box with the VMs that haven't been applied a LB rule to.	        
+    $.ajax({
+	    cache: false,
+	    data: createURL("command=listLoadBalancerRuleInstances&id="+loadBalancerId+"&applied=false"),
+	    dataType: "json",
+	    success: function(json) {				        			        
+		    var instances = json.listloadbalancerruleinstancesresponse.loadbalancerruleinstance;
+		    vmSelect.empty();
+		    if (instances != null && instances.length > 0) {
+			    for (var i = 0; i < instances.length; i++) {
+			        var vmName = getVmName(instances[i].name, instances[i].displayname);
+				    html = $("<option value='" + instances[i].id + "'>" + vmName + "</option>")
+				    html.data("vmPrivateIp", instances[i].privateip).data("vmName", vmName);
+				    vmSelect.append(html); 
+			    }
+		    } else {
+			    vmSelect.append("<option value=''>None Available</option>");
+		    }
+	    }
+    });			
+}
 
 //***** Load Balancer tab (end) ************************************************************************************************************
