@@ -179,7 +179,7 @@
                    </select>
                 </div>
                 <div class="grid_row_cell" style="width: 39%;">                   
-                    <select class="select" style="width: 104px;" id="vm">
+                    <select class="select" id="vm">
                     </select>
                 </div>
                 <div class="grid_row_cell" style="width: 15%;">
@@ -196,153 +196,50 @@
     <div id="tab_content_load_balancer" style="display:none">
         <div class="grid_container">
             <div class="grid_header">
-                <div class="grid_header_cell" style="width: 29%">
+                <div class="grid_header_cell" style="width: 25%">
                     <div class="grid_header_title">
                         Name</div>
                 </div>
-                <div class="grid_header_cell" style="width: 20%">
+                <div class="grid_header_cell" style="width: 15%">
                     <div class="grid_header_title">
                         Public Port</div>
                 </div>
-                <div class="grid_header_cell" style="width: 20%">
+                <div class="grid_header_cell" style="width: 15%">
                     <div class="grid_header_title">
                         Private Port</div>
                 </div>
-                <div class="grid_header_cell" style="width: 30%; border: none;">
+                <div class="grid_header_cell" style="width: 15%; border: none;">
                     <div class="grid_header_title">
                         Algorithm</div>
                 </div>
+                <div class="grid_header_cell" style="width: 29%">
+                    <div class="grid_header_title">
+                        Action</div>
+                </div>
             </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 29%;">
+            <div class="grid_rows even" id="create_load_balancer_row">
+                <div class="grid_row_cell" style="width: 25%;">
                     <input class="text" style="width: 90%;" type="text" />
                 </div>
-                <div class="grid_row_cell" style="width: 20%;">
+                <div class="grid_row_cell" style="width: 15%;">
                     <input class="text" style="width: 90%;" type="text" />
                 </div>
-                <div class="grid_row_cell" style="width: 20%;">
+                <div class="grid_row_cell" style="width: 15%;">
                     <input class="text" style="width: 90%;" type="text" />
                 </div>
-                <div class="grid_row_cell" style="width: 20%;">
-                    <select class="select" style="width: 90%;">
-                        <option value="Source1">Source Name 1 </option>
-                        <option value="Source2">Source Name 2 </option>
+                <div class="grid_row_cell" style="width: 15%;">
+                    <select class="select" style="width: 90%;">                       
+						<option value="roundrobin">roundrobin</option>
+                        <option value="leastconn">leastconn</option>
+                        <option value="source">source</option>
                     </select>
                 </div>
-                <div class="grid_row_cell" style="width: 10%;">
+                <div class="grid_row_cell" style="width: 29%;">
                     <div class="row_celltitles">
                         <a href="#">Add</a></div>
                 </div>
             </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 29%;">
-                    <div class="row_celltitles">
-                        LB#1</div>
-                </div>
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        8080</div>
-                </div>
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        80</div>
-                </div>
-                <div class="grid_row_cell" style="width: 30%;">
-                    <div class="row_celltitles">
-                        Source</div>
-                </div>
-                <div class="grid_detailspanel" style="display: block;">
-                    <div class="grid_details_pointer">
-                    </div>
-                    <div class="grid_detailsbox">
-                        <div class="grid_details_row odd">
-                            <div class="grid_row_cell" style="width: 9%;">
-                                <div class="row_celltitles">
-                                    <img src="images/network_managevmicon.gif" /></div>
-                            </div>
-                            <div class="grid_row_cell" style="width: 60%;">
-                                <select class="select" style="width: 90%;">
-                                    <option value="Source1">Source Name A </option>
-                                    <option value="Source2">Source Name B </option>
-                                </select>
-                            </div>
-                            <div class="grid_row_cell" style="width: 30%;">
-                                <div class="row_celltitles">
-                                    <a href="#">Add</a></div>
-                            </div>
-                            <div class="gridrow_loaderbox" style="display: block;">
-                                <div class="gridrow_loader">
-                                </div>
-                                <p>
-                                    Adding instance to load balancer policy &hellip;</p>
-                            </div>
-                        </div>
-                        <div class="grid_details_row">
-                            <div class="grid_row_cell" style="width: 9%;">
-                                <div class="row_celltitles">
-                                    <img src="images/network_managevmicon.gif" /></div>
-                            </div>
-                            <div class="grid_row_cell" style="width: 60%;">
-                                <div class="row_celltitles">
-                                    1-2-2-TEST</div>
-                            </div>
-                            <div class="grid_row_cell" style="width: 30%;">
-                                <div class="row_celltitles">
-                                    <a href="#">Remove</a></div>
-                            </div>
-                            <div class="gridrow_loaderbox" style="display: none;">
-                                <div class="gridrow_loader">
-                                </div>
-                                <p>
-                                    Removing instance from load balancer policy &hellip;</p>
-                            </div>
-                        </div>
-                        <div class="grid_details_row odd">
-                            <div class="grid_row_cell" style="width: 9%;">
-                                <div class="row_celltitles">
-                                    <img src="images/network_managevmicon.gif" /></div>
-                            </div>
-                            <div class="grid_row_cell" style="width: 60%;">
-                                <div class="row_celltitles">
-                                    1-2-2-TEST</div>
-                            </div>
-                            <div class="grid_row_cell" style="width: 30%;">
-                                <div class="row_celltitles">
-                                    <a href="#">Remove</a></div>
-                            </div>
-                            <div class="gridrow_loaderbox" style="display: block;">
-                                <div class="gridrow_loader">
-                                </div>
-                                <p>
-                                    Removing instance from load balancer policy &hellip;</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 29%;">
-                    <div class="row_celltitles">
-                        LB#1</div>
-                </div>
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        8080</div>
-                </div>
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        80</div>
-                </div>
-                <div class="grid_row_cell" style="width: 30%;">
-                    <div class="row_celltitles">
-                        Source</div>
-                </div>
-                <div class="gridrow_loaderbox" style="display: block;">
-                    <div class="gridrow_loader">
-                    </div>
-                    <p>
-                        Adding load balancer policy &hellip;</p>
-                </div>
+            <div id="grid_content">
             </div>
         </div>
     </div>
@@ -351,8 +248,93 @@
 <!-- IP Address detail panel (end) -->
 
 
-<div class="grid_rows odd" id="port_forwarding_template" style="display: none">
-    
+
+<!-- Load Balancer Template (begin) -->
+<div class="grid_rows odd" id="load_balancer_template" style="display:none">
+    <div id="row_container">
+        <div class="grid_row_cell" style="width: 25%;">
+            <div class="row_celltitles" id="name">
+                LB#1</div>
+        </div>
+        <div class="grid_row_cell" style="width: 15%;">
+            <div class="row_celltitles" id="public_port">
+                8080</div>
+        </div>
+        <div class="grid_row_cell" style="width: 15%;">
+            <div class="row_celltitles" id="private_port">
+                80</div>
+        </div>
+        <div class="grid_row_cell" style="width: 15%;">
+            <div class="row_celltitles" id="algorithm">
+                (algorithm)</div>
+        </div>
+        <div class="grid_row_cell" style="width: 29%;">
+            <div class="row_celltitles">
+                <a id="manage_link" href="#">Manage</a></div>
+            <div class="row_celltitles">
+                <a id="delete_link" href="#">Delete</a></div>
+            <div class="row_celltitles">
+                <a id="edit_link" href="#">Edit</a></div>
+        </div>
+    </div>
+    <div class="grid_detailspanel" id="vm_subgrid" style="display: none;">
+        <div class="grid_details_pointer">
+        </div>
+        <div class="grid_detailsbox">
+            <div class="grid_details_row odd" id="add_vm_to_lb_row">
+                <div class="grid_row_cell" style="width: 9%;">
+                    <div class="row_celltitles">
+                        <img src="images/network_managevmicon.gif" /></div>
+                </div>
+                <div class="grid_row_cell" style="width: 60%;">
+                    <select class="select" style="width: 90%;">
+                        <option>Instance A </option>
+                        <option>Instance B </option>
+                    </select>
+                </div>
+                <div class="grid_row_cell" style="width: 30%;">
+                    <div class="row_celltitles">
+                        <a id="assign_link" href="#">Assign</a></div>
+                </div>
+                <div id="spinning_wheel" class="gridrow_loaderbox" style="display: none;">
+                    <div class="gridrow_loader">
+                    </div>
+                    <p>
+                        Assigning instance to load balancer policy &hellip;</p>
+                </div>
+            </div>
+            <div id="vm_subgrid" class="ip_description_managearea" style="display: none;">
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Load Balancer Template (end) -->
+
+<!-- Load Balancer's VM subgrid template (begin) -->
+<div class="grid_details_row odd" style="display:none">
+    <div class="grid_row_cell" style="width: 9%;">
+        <div class="row_celltitles">
+            <img src="images/network_managevmicon.gif" /></div>
+    </div>
+    <div class="grid_row_cell" style="width: 60%;">
+        <div class="row_celltitles">
+            1-2-2-TEST</div>
+    </div>
+    <div class="grid_row_cell" style="width: 30%;">
+        <div class="row_celltitles">
+            <a id="remove_link" href="#">Remove</a></div>
+    </div>
+    <div id="spinning_wheel" class="gridrow_loaderbox" style="display: none;">
+        <div class="gridrow_loader">
+        </div>
+        <p>
+            Removing instance from load balancer policy &hellip;</p>
+    </div>
+</div>
+<!-- Load Balancer's VM subgrid template (end) -->
+
+<!-- Port Forwarding template (begin) -->
+<div class="grid_rows odd" id="port_forwarding_template" style="display: none">    
     <div id="row_container">
         <div class="grid_row_cell" style="width: 15%;">
             <div class="row_celltitles" id="public_port"></div>
@@ -369,6 +351,8 @@
         <div class="grid_row_cell" style="width: 15%;">
             <div class="row_celltitles">
                 <a id="edit_link" href="#">Edit</a>
+            </div>
+            <div class="row_celltitles">
                 <a id="delete_link" href="#">Delete</a>
             </div>
         </div>
@@ -399,6 +383,8 @@
         <div class="grid_row_cell" style="width: 15%;">
             <div class="row_celltitles">
                 <a id="save_link" href="#">Save</a>
+            </div>
+            <div class="row_celltitles">
                 <a id="cancel_link" href="#">Cancel</a>
             </div>
         </div>
@@ -411,4 +397,4 @@
         </div>
     </div>
 </div>
-
+<!-- Port Forwarding template (end) -->

@@ -94,14 +94,17 @@ function ipToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function ipToRigntPanel($midmenuItem1) {       
-    var jsonObj = $midmenuItem1.data("jsonObj");
+    var ipObj = $midmenuItem1.data("jsonObj");
     
     //Details tab
-    ipJsonToDetailsTab(jsonObj);   
+    ipJsonToDetailsTab(ipObj);   
     
     //Port Forwarding tab
-    listPortForwardingRules();
+    listPortForwardingRules(ipObj);
     refreshCreatePortForwardingRow(); 
+    
+    //Load Balancer tab
+    listLoadBalancerRules(ipObj);
 }
 
 function ipJsonToDetailsTab(jsonObj) {   
@@ -141,6 +144,28 @@ function setNetworkTypeField(value, $field) {
 //***** Details tab (end) ******************************************************************************************************************
 
 //***** Port Forwarding tab (begin) ********************************************************************************************************
+    
+function listPortForwardingRules(ipObj) {	    
+	var ipAddress = ipObj.ipaddress;
+    if(ipAddress == null || ipAddress.length == 0)
+        return;           		
+    $.ajax({
+        data: createURL("command=listPortForwardingRules&ipaddress=" + ipAddress),
+        dataType: "json",
+        success: function(json) {	                                    
+            var items = json.listportforwardingrulesresponse.portforwardingrule;              
+            var $portForwardingGrid = $("#tab_content_port_forwarding #grid_container #grid_content");            
+            $portForwardingGrid.empty();                       		    		      	    		
+            if (items != null && items.length > 0) {				        			        
+                for (var i = 0; i < items.length; i++) {
+	                var $template = $("#port_forwarding_template").clone(true);
+	                portForwardingJsonToTemplate(items[i], $template); 
+	                $portForwardingGrid.append($template.show());						   
+                }			    
+            } 	        	      		    						
+        }
+    });
+}   
 
 //var portForwardingIndex = 0;	
 function portForwardingJsonToTemplate(jsonObj, template) {				        
@@ -280,29 +305,6 @@ function portForwardingJsonToTemplate(jsonObj, template) {
 		 });                   
     });   
 }	  
-    
-function listPortForwardingRules() {	
-    var jsonObj = $("#right_panel_content #tab_content_details").data("jsonObj");          
-	var ipAddress = jsonObj.ipaddress;
-    if(ipAddress == null || ipAddress.length == 0)
-        return;           		
-    $.ajax({
-        data: createURL("command=listPortForwardingRules&ipaddress=" + ipAddress),
-        dataType: "json",
-        success: function(json) {	                                    
-            var items = json.listportforwardingrulesresponse.portforwardingrule;              
-            var $portForwardingGrid = $("#tab_content_port_forwarding #grid_container #grid_content");            
-            $portForwardingGrid.empty();                       		    		      	    		
-            if (items != null && items.length > 0) {				        			        
-                for (var i = 0; i < items.length; i++) {
-	                var $template = $("#port_forwarding_template").clone(true);
-	                portForwardingJsonToTemplate(items[i], $template); 
-	                $portForwardingGrid.append($template.show());						   
-                }			    
-            } 	        	      		    						
-        }
-    });
-}   
 
 function refreshCreatePortForwardingRow() {      
     var $createPortForwardingRow = $("#create_port_forwarding_row");      
@@ -332,3 +334,277 @@ function refreshCreatePortForwardingRow() {
 }	
     
 //***** Port Forwarding tab (end) **********************************************************************************************************
+
+
+//***** Load Balancer tab (begin) **********************************************************************************************************
+function listLoadBalancerRules(ipObj) {  
+    var ipAddress = ipObj.ipaddress;
+    if(ipAddress == null || ipAddress.length == 0)
+        return;  
+    $.ajax({
+        data: createURL("command=listLoadBalancerRules&publicip="+ipAddress),
+        dataType: "json",
+        success: function(json) {		                    
+            var items = json.listloadbalancerrulesresponse.loadbalancerrule;  
+            var loadBalancerGrid = $("#tab_content_load_balancer #grid_content");      
+            loadBalancerGrid.empty();                         		    		      	    		
+            if (items != null && items.length > 0) {				        			        
+                for (var i = 0; i < items.length; i++) {
+	                var template = $("#load_balancer_template").clone(true);
+	                loadBalancerJsonToTemplate(items[i], template); 
+	                loadBalancerGrid.append(template.show());						   
+                }			    
+            } 	        	      		    						
+        }
+    });
+}  
+
+function loadBalancerJsonToTemplate(jsonObj, template) {	
+    //(loadBalancerIndex++ % 2 == 0)? template.find("#row_container").addClass("smallrow_even"): template.find("#row_container").addClass("smallrow_odd");		
+
+    var loadBalancerId = jsonObj.id;	    
+    template.attr("id", "loadBalancer_" + loadBalancerId).data("loadBalancerId", loadBalancerId);		    
+    
+    template.find("#row_container #name").text(jsonObj.name);
+    template.find("#row_container_edit #name").val(jsonObj.name);
+    
+    template.find("#row_container #public_port").text(jsonObj.publicport);
+    template.find("#row_container_edit #public_port").text(jsonObj.publicport);
+    
+    template.find("#row_container #private_port").text(jsonObj.privateport);
+    template.find("#row_container_edit #private_port").val(jsonObj.privateport);
+    
+    template.find("#row_container #algorithm").text(jsonObj.algorithm);	
+    template.find("#row_container_edit #algorithm").val(jsonObj.algorithm);			    	    
+    
+    /*
+    template.find("#manage_link").unbind("click").bind("click", function(event){		        
+        var vmSubgrid = template.find("#vm_subgrid");
+        if(vmSubgrid.css("display") == "none") {
+            vmSubgrid.empty();         
+            $.ajax({
+			    cache: false,
+		       data: createURL("command=listLoadBalancerRuleInstances&id="+loadBalancerId+"&response=json"),
+			    dataType: "json",
+			    success: function(json) {					        
+				    var instances = jsonObj.listloadbalancerruleinstancesresponse.loadbalancerruleinstance;						
+				    if (instances != null && instances.length > 0) {							
+					    for (var i = 0; i < instances.length; i++) {                                  
+                            var lbVmTemplate = $("#load_balancer_vm_template").clone();	                                    									    											    											    
+						    var obj = {"loadBalancerId": loadBalancerId, "vmId": instances[i].id, "vmName": getVmName(instances[i].name, instances[i].displayname), "vmPrivateIp": instances[i].privateip};	
+						    lbVmObjToTemplate(obj, lbVmTemplate);		
+						    template.find("#vm_subgrid").append(lbVmTemplate.show());	                                   
+					    }
+				    } 
+			    }
+		    });        
+            vmSubgrid.show();		           
+        }
+        else {
+            vmSubgrid.hide();
+        }	
+            
+        var addVmToLbRow = template.find("#add_vm_to_lb_row");
+        (addVmToLbRow.css("display") == "none")?addVmToLbRow.show():addVmToLbRow.hide();	
+            	        
+        return false;
+    });
+    
+    var loadingContainer = template.find("#loading_container");		
+    var rowContainer = template.find("#row_container");      
+    var rowContainerEdit = template.find("#row_container_edit");  
+    		    
+    template.find("#delete_link").unbind("click").bind("click", function(event){                            
+        loadingContainer.find(".adding_text").text("Deleting....");	
+        loadingContainer.show();  
+        rowContainer.hide();                    
+		$.ajax({
+		       data: createURL("command=deleteLoadBalancerRule&id="+loadBalancerId+"&response=json"),
+			dataType: "json",
+			success: function(json) {
+				var lbJSON = jsonObj.deleteloadbalancerruleresponse;
+				var timerKey = "deleteLoadBalancerRuleJob_"+lbjsonObj.jobid;
+				$("body").everyTime(
+					5000,
+					timerKey,
+					function() {
+						$.ajax({
+						       data: createURL("command=queryAsyncJobResult&jobId="+lbjsonObj.jobid+"&response=json"),
+							dataType: "json",
+							success: function(json) {
+								var result = jsonObj.queryasyncjobresultresponse;
+								if (result.jobstatus == 0) {
+									return; //Job has not completed
+								} else {
+									$("body").stopTime(timerKey);
+									if (result.jobstatus == 1) { // Succeeded												
+										template.slideUp("slow", function() {
+											$(this).remove();													
+										});
+									} else if (result.jobstatus == 2) { // Failed
+										loadingContainer.hide(); 	   
+                                        rowContainer.show();	
+									}
+								}
+							},
+							error: function(XMLHttpResponse) {										
+								handleError(XMLHttpResponse);
+								$("body").stopTime(timerKey);
+								loadingContainer.hide(); 	   
+                                rowContainer.show();	
+							}
+						});
+					},
+					0
+				);
+			}
+		});	     
+        return false;
+    });		
+    		    
+    template.find("#edit_link").unbind("click").bind("click", function(event){   		    
+        rowContainer.hide();
+        rowContainerEdit.show();
+    });
+    
+    template.find("#cancel_link").unbind("click").bind("click", function(event){   		    
+        rowContainer.show();
+        rowContainerEdit.hide();
+    });
+    
+    template.find("#save_link").unbind("click").bind("click", function(event){          		       
+        // validate values			       
+	    var isValid = true;		
+	    isValid &= validateString("Name", rowContainerEdit.find("#name"), rowContainerEdit.find("#name_errormsg"));					    
+	    isValid &= validateNumber("Private Port", rowContainerEdit.find("#private_port"), rowContainerEdit.find("#private_port_errormsg"), 1, 65535);				
+	    if (!isValid) return;		    		        
+	    
+        var loadingContainer = template.find(".adding_loading");	                        
+        loadingContainer.find(".adding_text").text("Saving....");	
+        loadingContainer.show();  
+        rowContainerEdit.hide();      
+	        		    	       
+        var name = rowContainerEdit.find("#name").val();  		        
+        var privatePort = rowContainerEdit.find("#private_port").val();
+        var algorithm = rowContainerEdit.find("#algorithm_select").val();  
+	    		    
+        var array1 = [];
+        array1.push("&id=" + loadBalancerId);                
+        array1.push("&name=" + name);                  
+        array1.push("&privateport=" + privatePort);
+        array1.push("&algorithm=" + algorithm);
+                                                      
+        $.ajax({
+       data: createURL("command=updateLoadBalancerRule&response=json"+array1.join("")),
+			dataType: "json",
+			success: function(json) {					    		   	    									 
+				var jobId = jsonObj.updateloadbalancerruleresponse.jobid;					        
+		        var timerKey = "updateloadbalancerruleJob"+jobId;
+		        
+                $("body").everyTime(2000, timerKey, function() {
+				    $.ajax({
+					   data: createURL("command=queryAsyncJobResult&jobId="+jobId+"&response=json"),
+					    dataType: "json",
+					    success: function(json) {										       						   
+						    var result = jsonObj.queryasyncjobresultresponse;									    
+						    if (result.jobstatus == 0) {
+							    return; //Job has not completed
+						    } else {											    
+							    $("body").stopTime(timerKey);
+							    if (result.jobstatus == 1) { // Succeeded										        								        						        								    
+								    var items = result.loadbalancer;											         	
+                                    loadBalancerJsonToTemplate(items[0],template);
+                                    loadingContainer.hide(); 	   
+                                    rowContainer.show();						                                                               
+							    } else if (result.jobstatus == 2) { //Fail
+							        loadingContainer.hide(); 		
+						            rowContainer.show(); 
+								    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");											    					    
+							    }
+						    }
+					    },
+					    error: function(XMLHttpResponse) {	
+					        handleError(XMLHttpResponse);								        
+						    $("body").stopTime(timerKey);
+						    loadingContainer.hide(); 		
+						    rowContainer.show(); 									    								    
+					    }
+				    });
+			    }, 0);							 
+			 },
+			 error: function(XMLHttpResponse) {
+			     handleError(XMLHttpResponse);		
+			     loadingContainer.hide(); 		
+				 rowContainer.show(); 							 
+			 }
+		 });                   
+    });	  		    
+    
+    refreshLbVmSelect(template, jsonObj.id);     
+    		   
+    template.find("#add_vm_to_lb_row #add_link").unbind("click").bind("click", function(event){		        
+        var vmOption =  template.find("#add_vm_to_lb_row #vm_select option:selected");
+        var vmId = vmOption.val();  		        
+        var vmName = vmOption.data("vmName");
+        var vmPrivateIp = vmOption.data("vmPrivateIp"); 
+		if(vmId	== null || vmId.length == 0)
+		    return;						    				
+		var loading = template.find("#adding_loading").show();  
+		var rowContainer =  template.find("#adding_row_container").hide();
+		    	
+		$.ajax({
+		       data: createURL("command=assignToLoadBalancerRule&id="+loadBalancerId+"&virtualmachineid="+vmId+"&response=json"),
+			dataType: "json",
+			success: function(json) {
+				var lbInstanceJSON = jsonObj.assigntoloadbalancerruleresponse;
+				var timerKey = "lbInstanceNew"+lbInstancejsonObj.jobid;						
+				$("body").everyTime(
+					5000,
+					timerKey,
+					function() {
+						$.ajax({
+						       data: createURL("command=queryAsyncJobResult&jobId="+lbInstancejsonObj.jobid+"&response=json"),
+							dataType: "json",
+							success: function(json) {
+								var result = jsonObj.queryasyncjobresultresponse;
+								if (result.jobstatus == 0) {
+									return; //Job has not completed
+								} else {
+									$("body").stopTime(timerKey);
+									if (result.jobstatus == 1) { // Succeeded											    
+									    var lbVmTemplate = $("#load_balancer_vm_template").clone();											    											    											    
+									    var obj = {"loadBalancerId": loadBalancerId, "vmId": vmId, "vmName": vmName, "vmPrivateIp": vmPrivateIp};	
+									    lbVmObjToTemplate(obj, lbVmTemplate);		
+									    template.find("#vm_subgrid").append(lbVmTemplate.show());	
+									    refreshLbVmSelect(template, loadBalancerId);											    
+		                                loading.hide();  
+		                                rowContainer.show(); 
+									} else if (result.jobstatus == 2) { // Failed
+										$("#dialog_error").html("<p style='color:red'><b>Operation error:</b></p><br/><p style='color:red'>"+ sanitizeXSS(result.jobresult)+"</p>").dialog("open");
+										loading.hide();  
+										rowContainer.show();  
+									}
+								}
+							},
+							error: function(XMLHttpResponse) {										
+								handleError(XMLHttpResponse);
+								$("body").stopTime(timerKey);
+								loading.hide();   
+								rowContainer.show(); 
+							}
+						});
+					},
+					0
+				);
+			},
+			error: function(XMLHttpResponse) {
+		        handleError(XMLHttpResponse);
+		        loading.hide();  
+		        rowContainer.show();  
+			}
+		});	        
+        return false;
+    });  
+    */
+}	
+//***** Load Balancer tab (end) ************************************************************************************************************
