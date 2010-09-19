@@ -366,7 +366,7 @@
         <div class="gridrow_loader">
         </div>
         <p>
-            Removing instance from load balancer policy &hellip;</p>
+            Removing instance from load balancer rule &hellip;</p>
     </div>
 </div>
 <!-- Load Balancer's VM subgrid template (end) -->

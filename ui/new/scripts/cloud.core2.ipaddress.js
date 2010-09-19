@@ -667,25 +667,23 @@ function refreshCreateLoadBalancerRow() {
 function lbVmObjToTemplate(obj, $template) {
     $template.find("#vm_name").text(obj.vmName);
 	$template.find("#vm_private_ip").text(obj.vmPrivateIp);			
-	$template.find("#remove_link").bind("click", function(event){			    
-	    var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");		    
+	$template.find("#remove_link").bind("click", function(event){	
+	    var $spinningWheel = $template.find("#spinning_wheel");		    
         $spinningWheel.show();   
-	    
-	    //var loading = $template.find("#deleting_loading").show();
-	    //var rowContainer = $template.find("#deleting_row_container").hide();
-	    						    		
+	   			    		
         $.ajax({
 	       data: createURL("command=removeFromLoadBalancerRule&id="+obj.loadBalancerId+"&virtualmachineid="+obj.vmId),
 			dataType: "json",
 			success: function(json) {
 				var lbJSON = json.removefromloadbalancerruleresponse;
-				var timerKey = "removeVmFromLb"+obj.vmId;
+				var jobId = lbJSON.jobid;
+				var timerKey = "removeFromLoadBalancerRuleJob_"+jobId;
 				$("body").everyTime(
 					5000,
 					timerKey,
 					function() {
 						$.ajax({
-						       data: createURL("command=queryAsyncJobResult&jobId="+lbJSON.jobid),
+						       data: createURL("command=queryAsyncJobResult&jobId="+jobId),
 							dataType: "json",
 							success: function(json) {
 								var result = json.queryasyncjobresultresponse;
