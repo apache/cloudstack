@@ -112,7 +112,7 @@ function afterLoadIpJSP() {
 			dataType: "json",
 			success: function(json) {					    	    
 				var items = json.createloadbalancerruleresponse.loadbalancerrule;						
-	            loadBalancerJsonToTemplate(items[0],$template);
+	            loadBalancerJsonToTemplate(items[0], $template);
 	            $spinningWheel.hide();   
 	            refreshCreateLoadBalancerRow();	            	
 			},
@@ -431,7 +431,7 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
         
     $template.find("#manage_link").unbind("click").bind("click", function(event){	
         var $managementArea = $template.find("#management_area");
-        var $vmSubgrid = $managementArea.find("#grid_content");
+        var $vmSubgrid = $managementArea.find("#subgrid_content");
         if($managementArea.css("display") == "none") {
             $vmSubgrid.empty();         
             $.ajax({
@@ -631,7 +631,7 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 									    var $lbVmTemplate = $("#load_balancer_vm_template").clone();											    											    											    
 									    var obj = {"loadBalancerId": loadBalancerId, "vmId": vmId, "vmName": vmName, "vmPrivateIp": vmPrivateIp};	
 									    lbVmObjToTemplate(obj, $lbVmTemplate);		
-									    $template.find("#management_area #grid_content").append($lbVmTemplate.show());	
+									    $template.find("#management_area #subgrid_content").append($lbVmTemplate.show());	
 									    refreshLbVmSelect($template, loadBalancerId);											    
 		                                $spinningWheel.hide();   
 									} else if (result.jobstatus == 2) { // Failed

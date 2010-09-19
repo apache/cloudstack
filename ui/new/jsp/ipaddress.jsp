@@ -346,7 +346,7 @@
                         Assigning instance to load balancer rule &hellip;</p>
                 </div>
             </div>
-            <div id="grid_content" class="ip_description_managearea">
+            <div id="subgrid_content" class="ip_description_managearea">
             </div>
         </div>
     </div>
