@@ -462,6 +462,10 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
     var $rowContainerEdit = $template.find("#row_container_edit");  
     		    
     $template.find("#delete_link").unbind("click").bind("click", function(event){    
+        var $managementArea = $template.find("#management_area");
+        if($managementArea.css("display") != "none")
+            $managementArea.hide();
+        
         var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");	
 	    $spinningWheel.find("#description").text("Deleting load balancer rule....");	
         $spinningWheel.show();           
