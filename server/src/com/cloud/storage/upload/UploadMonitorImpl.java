@@ -95,22 +95,20 @@ public class UploadMonitorImpl implements UploadMonitor {
 	
 	@Override
 	public void cancelAllUploads(Long templateId) {
-		// TODO Auto-generated method stub
+		// TODO
 
 	}	
 	
-	private boolean isTypeUploadInProgress(Long typeId, Type type) {
+	@Override
+	public boolean isTypeUploadInProgress(Long typeId, Type type) {
 		List<UploadVO> uploadsInProgress =
 			_uploadDao.listByTypeUploadStatus(typeId, type, UploadVO.Status.UPLOAD_IN_PROGRESS);
 		return (uploadsInProgress.size() != 0);
 		
 	}
 	
-	public void extractVolume(VolumeVO volume, String url, Long dataCenterId, String installPath){
-		
-		if ( isTypeUploadInProgress(volume.getId(), Type.VOLUME) ){
-			return;
-		}
+	@Override
+	public void extractVolume(VolumeVO volume, String url, Long dataCenterId, String installPath, long eventId, long asyncJobId, AsyncJobManager asyncMgr){				
 		
 		List<HostVO> storageServers = _serverDao.listByTypeDataCenter(Host.Type.SecondaryStorage, dataCenterId);
 		HostVO sserver = storageServers.get(0);			
@@ -118,13 +116,11 @@ public class UploadMonitorImpl implements UploadMonitor {
 		UploadVO uploadVolumeObj = new UploadVO(sserver.getId(), volume.getId(), new Date(), 
 													Upload.Status.NOT_UPLOADED, 0, Type.VOLUME, 
 													null, "jobid0000", url);
-		_uploadDao.persist(uploadVolumeObj);
-        
-		//_vmTemplateHostDao.updateUploadStatus(sserver.getId(), template.getId(), 0, VMTemplateStorageResourceAssoc.Status.NOT_UPLOADED, "jobid0000", url);                
+		_uploadDao.persist(uploadVolumeObj);        		               
         				
 	    start();		
 		UploadCommand ucmd = new UploadCommand(url, volume.getId(), volume.getSize(), installPath, Type.VOLUME);
-		UploadListener ul = new UploadListener(sserver, _timer, _uploadDao, uploadVolumeObj.getId(), this, ucmd, volume.getAccountId(), volume.getName(), Type.VOLUME, dataCenterId, dataCenterId, null);
+		UploadListener ul = new UploadListener(sserver, _timer, _uploadDao, uploadVolumeObj.getId(), this, ucmd, volume.getAccountId(), volume.getName(), Type.VOLUME, eventId, asyncJobId, asyncMgr);
 		_listenerMap.put(uploadVolumeObj, ul);
 
 		long result = send(sserver.getId(), ucmd, ul);	
@@ -141,11 +137,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 			VMTemplateHostVO vmTemplateHost,Long dataCenterId, long eventId, long asyncJobId, AsyncJobManager asyncMgr){
 
 		Type type = (template.getFormat() == ImageFormat.ISO) ? Type.ISO : Type.TEMPLATE ;
-		
-		if (isTypeUploadInProgress(template.getId(), type) ){
-			return; // TO DO raise an exception.
-		}		
-		
+				
 		List<HostVO> storageServers = _serverDao.listByTypeDataCenter(Host.Type.SecondaryStorage, dataCenterId);
 		HostVO sserver = storageServers.get(0);			
 		

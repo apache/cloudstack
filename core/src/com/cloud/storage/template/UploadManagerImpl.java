@@ -53,9 +53,9 @@ public class UploadManagerImpl implements UploadManager {
     }
    
    private static class UploadJob {
-       private final TemplateUploader td;
+       private final TemplateUploader tu;
        private final String jobId;
-       private final String tmpltName;
+       private final String name;
        private final ImageFormat format;
        private String tmpltPath;
        private String description;
@@ -65,11 +65,11 @@ public class UploadManagerImpl implements UploadManager {
        private long templatesize;
        private long id;
 
-       public UploadJob(TemplateUploader td, String jobId, long id, String tmpltName, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix) {
+       public UploadJob(TemplateUploader tu, String jobId, long id, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum, String installPathPrefix) {
            super();
-           this.td = td;
+           this.tu = tu;
            this.jobId = jobId;
-           this.tmpltName = tmpltName;
+           this.name = name;
            this.format = format;
            this.accountId = accountId;
            this.description = descr;
@@ -80,7 +80,7 @@ public class UploadManagerImpl implements UploadManager {
        }
 
        public TemplateUploader getTd() {
-           return td;
+           return tu;
        }
 
        public String getDescription() {
@@ -92,14 +92,14 @@ public class UploadManagerImpl implements UploadManager {
        }
 
        public UploadJob(TemplateUploader td, String jobId, UploadCommand cmd) {
-           this.td = td;
+           this.tu = td;
            this.jobId = jobId;
-           this.tmpltName = cmd.getName();
+           this.name = cmd.getName();
            this.format = cmd.getFormat();           
        }
 
        public TemplateUploader getTemplateUploader() {
-           return td;
+           return tu;
        }
 
        public String getJobId() {
@@ -107,7 +107,7 @@ public class UploadManagerImpl implements UploadManager {
        }
 
        public String getTmpltName() {
-           return tmpltName;
+           return name;
        }
 
        public ImageFormat getFormat() {
@@ -135,6 +135,13 @@ public class UploadManagerImpl implements UploadManager {
        }
 
        public void cleanup() {
+           if (tu != null) {
+               String upldPath = tu.getUploadLocalPath();
+               if (upldPath != null) {
+                   File f = new File(upldPath);
+                   f.delete();
+               }
+           }
        }
 
        public void setTemplatesize(long templatesize) {

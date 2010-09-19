@@ -2242,14 +2242,16 @@ public interface ManagementServer {
      * Extracts the volume to a particular location.
      * @param url - the url  where the volume needs to be extracted to
      * @param zoneId - zone id of the volume
+     * @param asyncJobId 
+     * @param eventId 
      * @param volume id - the id of the volume
      * @throws URISyntaxException
      * @throws InternalErrorException
      *
      */
-    void extractVolume(String url, Long volumeId, Long zoneId) throws 
+    void extractVolume(String url, Long volumeId, Long zoneId, long eventId, Long asyncJobId) throws 
     URISyntaxException, InternalErrorException;
 	long extractTemplateAsync(String url, Long templateId, Long zoneId) throws URISyntaxException;
-
+	long extractVolumeAsync(String url, Long volumeId, Long zoneId) throws URISyntaxException;
 
 }

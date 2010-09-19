@@ -27,6 +27,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.domain.DomainVO;
+import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.user.User;
@@ -76,6 +77,8 @@ public class CreateDiskOfferingCmd extends BaseCmd {
         	diskOffering = getManagementServer().createDiskOffering(userId, DomainVO.ROOT_DOMAIN, name, displayText, numGB.intValue(),tags);
         } catch (InvalidParameterValueException ex) {
         	throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, ex.getMessage());
+        } catch (InternalErrorException ex) {
+            throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, ex.getMessage());            
         }
         
         if (diskOffering == null) {

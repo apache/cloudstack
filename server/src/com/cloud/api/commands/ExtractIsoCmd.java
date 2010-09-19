@@ -89,4 +89,8 @@ public class ExtractIsoCmd extends BaseCmd {
 	public List<Pair<Enum, Boolean>> getProperties() {
 		return s_properties;
 	}
+
+    public static String getStaticName() {
+        return "ExtractIso";
+    }
 }

@@ -23,10 +23,8 @@ public class ExtractTemplateExecutor extends BaseAsyncJobExecutor {
     	ExtractTemplateParam param = gson.fromJson(job.getCmdInfo(), ExtractTemplateParam.class);   	
     	ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
  
-		try {
-			s_logger.warn("nitin extract template");
-				managementServer.extractTemplate(param.getUrl(), param.getTemplateId(), param.getZoneId(), param.getEventId(), getJob().getId());			
-				//asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, null);			
+		try {		
+				managementServer.extractTemplate(param.getUrl(), param.getTemplateId(), param.getZoneId(), param.getEventId(), getJob().getId());						
 		
 		} catch (Exception e) {
 			s_logger.warn("Unable to extract template: " + e.getMessage(), e);

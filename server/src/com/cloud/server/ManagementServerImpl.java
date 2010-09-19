@@ -51,6 +51,8 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
+import sun.nio.cs.ext.TIS_620;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
@@ -72,7 +74,9 @@ import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
+import com.cloud.api.commands.ExtractIsoCmd;
 import com.cloud.api.commands.ExtractTemplateCmd;
+import com.cloud.api.commands.ExtractVolumeCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
@@ -208,6 +212,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.Storage.FileSystem;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Upload.Type;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.DiskTemplateDao;
@@ -227,6 +232,7 @@ import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.snapshot.SnapshotScheduler;
+import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -354,6 +360,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final PreallocatedLunDao _lunDao;
     private final InstanceGroupDao _vmGroupDao;
     private final InstanceGroupVMMapDao _groupVMMapDao;
+    private final UploadMonitor _uploadMonitor;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -444,6 +451,7 @@ public class ManagementServerImpl implements ManagementServer {
         _snapMgr = locator.getManager(SnapshotManager.class);
         _snapshotScheduler = locator.getManager(SnapshotScheduler.class);
         _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
+        _uploadMonitor = locator.getManager(UploadMonitor.class);
         
         _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
         if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
@@ -4805,9 +4813,9 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public void extractVolume(String url, Long volumeId, Long zoneId) throws URISyntaxException, InternalErrorException{
-    
-        URI uri = new URI(url);
+    public long extractVolumeAsync(String url, Long volumeId, Long zoneId) throws URISyntaxException{
+    	
+    	URI uri = new URI(url);
         if ( (uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("ftp") )) {
            throw new IllegalArgumentException("Unsupported scheme for url: " + url);
         }
@@ -4829,6 +4837,31 @@ public class ManagementServerImpl implements ManagementServer {
     		throw new IllegalArgumentException("Please specify a valid zone.");
     	}
         
+        VolumeVO volume = findVolumeById(volumeId); 
+        if ( _uploadMonitor.isTypeUploadInProgress(volumeId, Type.VOLUME) ){
+            throw new IllegalArgumentException(volume.getName() + " upload is in progress. Please wait for some time to schedule another upload for the same");
+        }
+        
+        long userId = UserContext.current().getUserId();
+        long accountId = volume.getAccountId();        
+        long eventId = saveScheduledEvent(userId, accountId, EventTypes.EVENT_VOLUME_UPLOAD, "Extraction job");
+        
+ 		ExtractTemplateParam param = new ExtractTemplateParam(userId, volumeId, zoneId, eventId , url);
+        Gson gson = GsonHelper.getBuilder().create();
+
+        AsyncJobVO job = new AsyncJobVO();
+    	job.setUserId(userId);
+    	job.setAccountId(accountId);
+        job.setCmd("ExtractVolume");
+        job.setCmdInfo(gson.toJson(param));
+        job.setCmdOriginator(ExtractVolumeCmd.getStaticName());        
+        return _asyncMgr.submitAsyncJob(job);
+    	
+    }
+    
+    @Override
+    public void extractVolume(String url, Long volumeId, Long zoneId, long eventId, Long asyncJobId) throws URISyntaxException, InternalErrorException{
+          
         VolumeVO volume = findVolumeById(volumeId);        
         String secondaryStorageURL = _storageMgr.getSecondaryStorageURL(zoneId); 
         StoragePoolVO srcPool = _poolDao.findById(volume.getPoolId());
@@ -4839,10 +4872,10 @@ public class ManagementServerImpl implements ManagementServer {
         CopyVolumeAnswer cvAnswer = (CopyVolumeAnswer) _agentMgr.easySend(sourceHostId, cvCmd);
 
         if (cvAnswer == null || !cvAnswer.getResult()) {
-            throw new InternalErrorException("Failed to copy the volume from the source primary storage pool to secondary storage.");
+            throw new InternalErrorException("Failed to copy the volume from the source primary storage pool to secondary storage.");            
         }
-        
-        
+
+        _uploadMonitor.extractVolume(volume, url, zoneId, "volumes/"+volume.getId()+"/"+cvAnswer.getVolumePath()+".vhd", eventId, asyncJobId, _asyncMgr);
         
     }
     
@@ -4876,9 +4909,15 @@ public class ManagementServerImpl implements ManagementServer {
         if (tmpltHostRef != null && tmpltHostRef.getDownloadState() != com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED){
         	throw new IllegalArgumentException("The template hasnt been downloaded ");
         }
+        
+        boolean isISO = template.getFormat() == ImageFormat.ISO;
+        if ( _uploadMonitor.isTypeUploadInProgress(templateId, isISO ? Type.ISO : Type.TEMPLATE) ){
+            throw new IllegalArgumentException(template.getName() + " upload is in progress. Please wait for some time to schedule another upload for the same"); 
+        }
+        
         long userId = UserContext.current().getUserId();
         long accountId = template.getAccountId();
-        String event = template.getFormat() == ImageFormat.ISO ? EventTypes.EVENT_ISO_UPLOAD : EventTypes.EVENT_TEMPLATE_UPLOAD;
+        String event = isISO ? EventTypes.EVENT_ISO_UPLOAD : EventTypes.EVENT_TEMPLATE_UPLOAD;
         long eventId = saveScheduledEvent(userId, accountId, event, "Extraction job");
         
  		ExtractTemplateParam param = new ExtractTemplateParam(userId, templateId, zoneId, eventId , url);
@@ -4889,7 +4928,7 @@ public class ManagementServerImpl implements ManagementServer {
     	job.setAccountId(accountId);
         job.setCmd("ExtractTemplate");
         job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(ExtractTemplateCmd.getStaticName());
+        job.setCmdOriginator(isISO ? ExtractIsoCmd.getStaticName() : ExtractTemplateCmd.getStaticName());
         
         return _asyncMgr.submitAsyncJob(job);
     	    	

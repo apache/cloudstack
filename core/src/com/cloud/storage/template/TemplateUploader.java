@@ -69,9 +69,6 @@ public interface TemplateUploader extends Runnable{
 
 	public void setUploadError(String string);
 
-	public void setResume(boolean resume);
-	
-	public boolean isInited();	
-	
+	public void setResume(boolean resume);	
 
 }
