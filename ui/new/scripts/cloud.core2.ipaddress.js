@@ -457,30 +457,30 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
         }		        
         return false;
     });
-   
-    //???     
+          
     var $rowContainer = $template.find("#row_container");      
     var $rowContainerEdit = $template.find("#row_container_edit");  
     		    
-    $template.find("#delete_link").unbind("click").bind("click", function(event){                            
-        loadingContainer.find(".adding_text").text("Deleting....");	
-        loadingContainer.show();  
-        $rowContainer.hide();                    
+    $template.find("#delete_link").unbind("click").bind("click", function(event){    
+        var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");	
+	    $spinningWheel.find("#description").text("Deleting load balancer rule....");	
+        $spinningWheel.show();           
+                    
 		$.ajax({
-		       data: createURL("command=deleteLoadBalancerRule&id="+loadBalancerId),
+		    data: createURL("command=deleteLoadBalancerRule&id="+loadBalancerId),
 			dataType: "json",
-			success: function(json) {
-				var lbJSON = jsonObj.deleteloadbalancerruleresponse;
-				var timerKey = "deleteLoadBalancerRuleJob_"+lbjsonObj.jobid;
+			success: function(json) {				
+				var jobId = json.deleteloadbalancerruleresponse.jobid;
+				var timerKey = "deleteLoadBalancerRuleJob_"+jobId;
 				$("body").everyTime(
 					5000,
 					timerKey,
 					function() {
 						$.ajax({
-						       data: createURL("command=queryAsyncJobResult&jobId="+lbjsonObj.jobid),
+						    data: createURL("command=queryAsyncJobResult&jobId="+jobId),
 							dataType: "json",
 							success: function(json) {
-								var result = jsonObj.queryasyncjobresultresponse;
+								var result = json.queryasyncjobresultresponse;
 								if (result.jobstatus == 0) {
 									return; //Job has not completed
 								} else {
@@ -490,21 +490,24 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 											$(this).remove();													
 										});
 									} else if (result.jobstatus == 2) { // Failed
-										loadingContainer.hide(); 	   
-                                        $rowContainer.show();	
+										$spinningWheel.hide();   
 									}
 								}
 							},
-							error: function(XMLHttpResponse) {										
-								handleError(XMLHttpResponse);
+							error: function(XMLHttpResponse) {	
 								$("body").stopTime(timerKey);
-								loadingContainer.hide(); 	   
-                                $rowContainer.show();	
+								$spinningWheel.hide();   
+								handleError(XMLHttpResponse);
 							}
 						});
 					},
 					0
 				);
+			}
+			,
+			error: function(XMLHttpResponse) {
+			    $spinningWheel.hide();   
+				handleError(XMLHttpResponse);
 			}
 		});	     
         return false;
@@ -653,8 +656,7 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 			}
 		});	        
         return false;
-    });  
-    //???
+    });       
 }	
 
 function refreshCreateLoadBalancerRow() {
