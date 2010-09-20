@@ -111,6 +111,7 @@ public class ControlNetworkGuru extends AdapterBase implements NetworkGuru, Netw
         String ip = _dcDao.allocateLinkLocalPrivateIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), vm.getId());
         nic.setIp4Address(ip);
         nic.setMacAddress("FE:FF:FF:FF:FF:FF");
+        nic.setNetmask("255.255.0.0");
         return Long.toString(nic.getId());
     }
 

@@ -2477,7 +2477,17 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                 NetworkConcierge concierge = _networkConcierges.get(nic.getReserver());
                 nic.setState(Resource.State.Reserving);
                 _nicDao.update(nic.getId(), nic);
-                concierge.reserve(null, toNicProfile(nic), dest);
+                NicProfile profile = toNicProfile(nic);
+                String reservationId = concierge.reserve(null, profile, dest);
+                nic.setIp4Address(profile.getIp4Address());
+                nic.setIp6Address(profile.getIp6Address());
+                nic.setMacAddress(profile.getMacAddress());
+                nic.setIsolationUri(profile.getIsolationUri());
+                nic.setBroadcastUri(profile.getBroadCastUri());
+                nic.setReservationId(reservationId);
+                nic.setReserver(concierge.getUniqueName());
+                nic.setState(Resource.State.Reserved);
+                _nicDao.update(nic.getId(), nic);
             } else {
                 
             }

@@ -29,4 +29,6 @@ public interface NetworkElement extends Adapter {
      * @return
      */
     boolean prepare(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm, NetworkOffering offering);
+    
+    boolean shutdown(NetworkConfiguration config, NetworkOffering offering);
 }

@@ -7,6 +7,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
@@ -23,6 +24,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NetworkConcierge;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -79,10 +81,18 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru, Net
     @Override
     public String reserve(VirtualMachine vm, NicProfile nic, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
+        DataCenter dc = dest.getDataCenter();
         Pod pod = dest.getPod();
+        
         String ip = _dcDao.allocatePrivateIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), nic.getId());
+        String[] macs = _dcDao.getNextAvailableMacAddressPair(dc.getId());
+        
         nic.setIp4Address(ip);
         nic.setCidr(pod.getCidrAddress() + "/" + pod.getCidrSize());
+        nic.setGateway(pod.getGateway());
+        nic.setMacAddress(macs[0]);
+        String netmask = NetUtils.getCidrSubNet(pod.getCidrAddress(), pod.getCidrSize());
+        nic.setNetmask(netmask);
         
         return Long.toString(nic.getId());
     }
@@ -95,8 +105,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru, Net
 
     @Override
     public NetworkConfiguration implement(NetworkConfiguration config, NetworkOffering offering, DeployDestination destination) {
-        // TODO Auto-generated method stub
-        return null;
+        return config;
     }
 
 }

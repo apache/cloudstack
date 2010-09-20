@@ -3,6 +3,9 @@
  */
 package com.cloud.network.configuration;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
@@ -13,7 +16,6 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
-import com.cloud.domain.DomainVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.Network.BroadcastDomainType;
@@ -82,25 +84,26 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru, Netwo
         long podId = dest.getPod().getId();
 
         Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(dcId, vm.getAccountId(), vm.getDomainId(), VlanType.VirtualNetwork, true);
-
         if (ipAndVlan == null) {
-            s_logger.debug("Unable to get public ip address (type=Virtual) for console proxy vm for data center  : " + dcId);
-            ipAndVlan = _vlanDao.assignPodDirectAttachIpAddress(dcId, podId, Account.ACCOUNT_ID_SYSTEM, DomainVO.ROOT_DOMAIN);
-            if (ipAndVlan == null)
-                s_logger.debug("Unable to get public ip address (type=DirectAttach) for console proxy vm for data center  : " + dcId);
+            throw new InsufficientVirtualNetworkCapcityException("Unable to get public ip address in " + dcId);
         }
-        if (ipAndVlan != null) {
-            VlanVO vlan = ipAndVlan.second();
-            return null;
-//            networkInfo net = new networkInfo(ipAndVlan.first(), vlan.getVlanNetmask(), vlan.getVlanGateway(), vlan.getId(), vlan.getVlanId());
-  //          return net;
+        VlanVO vlan = ipAndVlan.second();
+        ch.setIp4Address(ipAndVlan.first());
+        ch.setGateway(vlan.getVlanGateway());
+        ch.setNetmask(vlan.getVlanNetmask());
+        try {
+            ch.setIsolationUril(new URI("vlan://" + vlan.getVlanId()));
+        } catch (URISyntaxException e) {
+            throw new CloudRuntimeException("URI Syntax: " + "vlan://" + vlan.getVlanId(), e);
         }
-            return null;
+        ch.setBroadcastType(BroadcastDomainType.Vlan);
+        
+        return Long.toString(vlan.getId());
     }
 
     @Override
     public boolean release(String uniqueName, String uniqueId) {
-        return false;
+        return _vlanDao.release(Long.parseLong(uniqueId));
     }
 
     @Override

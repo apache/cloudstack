@@ -17,6 +17,7 @@
  */
 package com.cloud.vm;
 
+import java.net.URI;
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -46,6 +47,18 @@ public class NicVO implements Nic {
     
     @Column(name="ip4_address")
     String ip4Address;
+    
+    @Column(name="ip6_address")
+    String ip6Address;
+    
+    @Column(name="netmask")
+    String netmask;
+    
+    @Column(name="isolation_uri")
+    URI isolationUri;
+    
+    @Column(name="broadcast_uri")
+    URI broadcastUri;
     
     @Column(name="mac_address")
     String macAddress;
@@ -103,6 +116,50 @@ public class NicVO implements Nic {
         return state;
     }
     
+    public String getIp6Address() {
+        return ip6Address;
+    }
+
+    public void setIp6Address(String ip6Address) {
+        this.ip6Address = ip6Address;
+    }
+
+    public String getNetmask() {
+        return netmask;
+    }
+
+    public void setNetmask(String netmask) {
+        this.netmask = netmask;
+    }
+
+    public URI getIsolationUri() {
+        return isolationUri;
+    }
+
+    public void setIsolationUri(URI isolationUri) {
+        this.isolationUri = isolationUri;
+    }
+
+    public URI getBroadcastUri() {
+        return broadcastUri;
+    }
+
+    public void setBroadcastUri(URI broadcastUri) {
+        this.broadcastUri = broadcastUri;
+    }
+
+    public void setInstanceId(long instanceId) {
+        this.instanceId = instanceId;
+    }
+
+    public void setNetworkConfigurationId(long networkConfigurationId) {
+        this.networkConfigurationId = networkConfigurationId;
+    }
+
+    public void setUpdateTime(Date updateTime) {
+        this.updateTime = updateTime;
+    }
+
     public void setState(State state) {
         this.state = state;
     }

@@ -21,6 +21,10 @@ import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -439,14 +443,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             final Class<?> type = field.getType();
             if (type == String.class) {
                 field.set(entity, rs.getString(index));
-            } else if (type == int.class) {
-                field.set(entity, rs.getInt(index));
-            } else if (type == Integer.class) {
-                if (rs.getObject(index) == null) {
-                    field.set(entity, null);
-                } else {
-                    field.set(entity, rs.getInt(index));
-                }
             } else if (type == long.class) {
                 field.setLong(entity, rs.getLong(index));
             } else if (type == Long.class) {
@@ -455,6 +451,26 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                 } else {
                     field.set(entity, rs.getLong(index));
                 }
+            } else if (type.isEnum()) {
+                final Enumerated enumerated = field.getAnnotation(Enumerated.class);
+                final EnumType enumType = (enumerated == null) ? EnumType.STRING : enumerated.value();
+
+                final Enum<?>[] enums =  (Enum<?>[])field.getType().getEnumConstants();
+                for (final Enum<?> e : enums) {
+                    if ((enumType == EnumType.STRING && e.name().equalsIgnoreCase(rs.getString(index))) ||
+                        (enumType == EnumType.ORDINAL && e.ordinal() == rs.getInt(index))) {
+                        field.set(entity, e);
+                        return;
+                    }
+                }
+            } else if (type == int.class) {
+                field.set(entity, rs.getInt(index));
+            } else if (type == Integer.class) {
+                if (rs.getObject(index) == null) {
+                    field.set(entity, null);
+                } else {
+                    field.set(entity, rs.getInt(index));
+                }
             } else if (type == Date.class) {
                 final Object data = rs.getDate(index);
                 if (data == null) {
@@ -462,14 +478,15 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                     return;
                 }
                 field.set(entity, DateUtil.parseDateString(s_gmtTimeZone, rs.getString(index)));
-            } else if (type == short.class) {
-                field.setShort(entity, rs.getShort(index));
-            } else if (type == Short.class) {
-                if (rs.getObject(index) == null) {
+            } else if (type == Calendar.class) {
+                final Object data = rs.getDate(index);
+                if (data == null) {
                     field.set(entity, null);
-                } else {
-                    field.set(entity, rs.getShort(index));
+                    return;
                 }
+                final Calendar cal = Calendar.getInstance();
+                cal.setTime(DateUtil.parseDateString(s_gmtTimeZone, rs.getString(index)));
+                field.set(entity, cal);
             } else if (type == boolean.class) {
                 field.setBoolean(entity, rs.getBoolean(index));
             } else if (type == Boolean.class) {
@@ -477,6 +494,29 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                     field.set(entity, null);
                 } else {
                     field.set(entity, rs.getBoolean(index));
+                }
+            } else if (type == URI.class) {
+                try {
+                    URI uri = new URI(rs.getString(index));
+                    field.set(entity, uri);
+                } catch (URISyntaxException e) {
+                    throw new CloudRuntimeException("Invalid URI: " + rs.getString(index), e);
+                }
+            } else if (type == URL.class) {
+                URL url;
+                try {
+                    url = new URL(rs.getString(index));
+                } catch (MalformedURLException e) {
+                    throw new CloudRuntimeException("Invalid URL: " + rs.getString(index), e);
+                }
+                field.set(entity, url);
+            } else if (type == short.class) {
+                field.setShort(entity, rs.getShort(index));
+            } else if (type == Short.class) {
+                if (rs.getObject(index) == null) {
+                    field.set(entity, null);
+                } else {
+                    field.set(entity, rs.getShort(index));
                 }
             } else if (type == float.class) {
                 field.setFloat(entity, rs.getFloat(index));
@@ -501,27 +541,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                     field.set(entity, null);
                 } else {
                     field.set(entity, rs.getByte(index));
-                }
-            } else if (type == Calendar.class) {
-                final Object data = rs.getDate(index);
-                if (data == null) {
-                    field.set(entity, null);
-                    return;
-                }
-                final Calendar cal = Calendar.getInstance();
-                cal.setTime(DateUtil.parseDateString(s_gmtTimeZone, rs.getString(index)));
-                field.set(entity, cal);
-            } else if (type.isEnum()) {
-                final Enumerated enumerated = field.getAnnotation(Enumerated.class);
-                final EnumType enumType = (enumerated == null) ? EnumType.STRING : enumerated.value();
-
-                final Enum<?>[] enums =  (Enum<?>[])field.getType().getEnumConstants();
-                for (final Enum<?> e : enums) {
-                    if ((enumType == EnumType.STRING && e.name().equalsIgnoreCase(rs.getString(index))) ||
-                        (enumType == EnumType.ORDINAL && e.ordinal() == rs.getInt(index))) {
-                        field.set(entity, e);
-                        return;
-                    }
                 }
             } else if (type == byte[].class) {
                 field.set(entity, rs.getBytes(index));
@@ -1189,6 +1208,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             } else if (type == EnumType.ORDINAL) {
                 pstmt.setInt(j, value == null ? null : ((Enum<?>)value).ordinal());
             }
+        } else if (attr.field.getType() == URI.class) {
+            pstmt.setString(j, value == null ? null : value.toString());
+        } else if (attr.field.getType() == URL.class) {
+            pstmt.setURL(j, (URL)value);
         } else if (attr.field.getType() == byte[].class) {
             pstmt.setBytes(j, (byte[])value);
         } else {

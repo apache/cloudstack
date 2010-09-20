@@ -96,7 +96,7 @@ CREATE TABLE `cloud`.`network_configurations` (
   `traffic_type` varchar(32) NOT NULL COMMENT 'type of traffic going through this network',
   `broadcast_domain_type` varchar(32) NOT NULL COMMENT 'type of broadcast domain used',
   `gateway` varchar(15) COMMENT 'gateway for this network configuration',
-  `cidr` varchar(18) COMMENT 'network cidr',
+  `cidr` varchar(18) COMMENT 'network cidr', 
   `mode` varchar(32) COMMENT 'How to retrieve ip address in this network',
   `vlan_id` bigint unsigned NULL COMMENT 'vlan id if the broadcast_domain_type is the vlan',
   `network_offering_id` bigint unsigned NOT NULL COMMENT 'network offering id that this configuration is created from',
@@ -116,8 +116,12 @@ CREATE TABLE `cloud`.`account_network_ref` (
 CREATE TABLE `cloud`.`nics` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance id',
-  `ip4_address` varchar(15) COMMENT 'ip4 address',
   `mac_address` varchar(17) COMMENT 'mac address',
+  `ip4_address` varchar(15) COMMENT 'ip4 address',
+  `netmask` varchar(15) COMMENT 'netmask for ip4 address',
+  `gateway` varchar(15) COMMENT 'gateway',
+  `ip_type` varchar(32) COMMENT 'type of ip',
+  `broadcast_uri` varchar(255) COMMENT 'broadcast uri',
   `network_configuration_id` bigint unsigned NOT NULL COMMENT 'network configuration id',
   `mode` varchar(32) COMMENT 'mode of getting ip address',  
   `state` varchar(32) NOT NULL COMMENT 'state of the creation',
@@ -125,6 +129,8 @@ CREATE TABLE `cloud`.`nics` (
   `reservation_id` varchar(64) COMMENT 'id for the reservation',
   `device_id` int(10) COMMENT 'device id for the network when plugged into the virtual machine',
   `update_time` timestamp NOT NULL COMMENT 'time the state was changed',
+  `isolation_uri` varchar(255) COMMENT 'id for isolation',
+  `ip6_address` varchar(32) COMMENT 'ip6 address', 
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

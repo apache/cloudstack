@@ -3,6 +3,8 @@
  */
 package com.cloud.vm;
 
+import java.net.URI;
+
 import com.cloud.network.Network.AddressFormat;
 import com.cloud.network.Network.BroadcastDomainType;
 import com.cloud.network.Network.Mode;
@@ -22,6 +24,33 @@ public class NicProfile {
     String ip4Address;
     String ip6Address;
     String macAddress;
+    URI isolationUri;
+    String netmask;
+    URI broadcastUri;
+    
+    public String getNetmask() {
+        return netmask;
+    }
+    
+    public void setNetmask(String netmask) {
+        this.netmask = netmask;
+    }
+    
+    public void setBroadcastUri(URI broadcastUri) {
+        this.broadcastUri = broadcastUri;
+    }
+    
+    public URI getBroadCastUri() {
+        return broadcastUri;
+    }
+    
+    public void setIsolationUril(URI isolationUri) {
+        this.isolationUri = isolationUri;
+    }
+    
+    public URI getIsolationUri() {
+        return isolationUri;
+    }
     
     public BroadcastDomainType getType() {
         return broadcastType;

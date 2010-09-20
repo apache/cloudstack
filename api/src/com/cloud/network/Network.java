@@ -59,4 +59,12 @@ public class Network {
         Vpn,
         Management
     };
+    
+    public enum IsolationType {
+        None,
+        Ec2,
+        Vlan,
+        Vswitch,
+        Vnet;
+    }
 }
