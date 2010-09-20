@@ -72,7 +72,9 @@ import com.cloud.agent.transport.UpgradeResponse;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.commands.AddHostOrStorageCmd;
+import com.cloud.api.commands.AddSecondaryStorageCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
 import com.cloud.api.commands.DeleteHostCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
@@ -479,6 +481,16 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         AgentAttache attache = createAttache(id, server, resource);
         notifyMonitorsOfConnection(attache, startup);
         return attache;
+    }
+
+    @Override
+    public List<HostVO> discoverHosts(AddHostCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+        return discoverHosts((AddHostOrStorageCmd)cmd);
+    }
+
+    @Override
+    public List<HostVO> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+        return discoverHosts((AddHostOrStorageCmd)cmd);
     }
 
     @Override

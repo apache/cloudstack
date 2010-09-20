@@ -2843,7 +2843,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<HostPodVO> searchForPods(ListPodsByCmd cmd) {
-        Filter searchFilter = new Filter(HostPodVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(HostPodVO.class, "dataCenterId", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<HostPodVO> sc = _hostPodDao.createSearchCriteria();
 
         String podName = cmd.getPodName();

@@ -117,9 +117,13 @@ public class ListCapacityCmd extends BaseListCmd {
             capacityResponse.setCapacityTotal(summedCapacity.getTotalCapacity());
             capacityResponse.setCapacityType(summedCapacity.getCapacityType());
             capacityResponse.setCapacityUsed(summedCapacity.getUsedCapacity());
-            capacityResponse.setPodId(summedCapacity.getPodId());
+            if (summedCapacity.getPodId() != null) {
+                capacityResponse.setPodId(summedCapacity.getPodId());
+                if (summedCapacity.getPodId() > 0) {
+                    capacityResponse.setPodName(ApiDBUtils.findPodById(summedCapacity.getPodId()).getName());
+                }
+            }
             capacityResponse.setZoneId(summedCapacity.getDataCenterId());
-            capacityResponse.setPodName(ApiDBUtils.findPodById(summedCapacity.getPodId()).getName());
             capacityResponse.setZoneName(ApiDBUtils.findZoneById(summedCapacity.getDataCenterId()).getName());
             if (summedCapacity.getTotalCapacity() != 0) {
                 capacityResponse.setPercentUsed(s_percentFormat.format(summedCapacity.getUsedCapacity() / summedCapacity.getTotalCapacity()));

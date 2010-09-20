@@ -29,13 +29,17 @@ import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.manager.AgentManager;
 import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.template.TemplateManager;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -47,12 +51,16 @@ import com.cloud.vm.UserVmManager;
 public class ApiDispatcher {
     private static final Logger s_logger = Logger.getLogger(ApiDispatcher.class.getName());
 
+    private AccountManager _accountMgr;
+    private AgentManager _agentMgr;
     private ConfigurationManager _configMgr;
+    private ConsoleProxyManager _consoleProxyMgr;
     private ManagementServer _mgmtServer;
     private NetworkGroupManager _networkGroupMgr;
     private NetworkManager _networkMgr;
     private SnapshotManager _snapshotMgr;
     private StorageManager _storageMgr;
+    private TemplateManager _templateMgr;
     private UserVmManager _userVmMgr;
 
     // singleton class
@@ -65,11 +73,15 @@ public class ApiDispatcher {
     private ApiDispatcher() {
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
         _mgmtServer = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
+        _accountMgr = locator.getManager(AccountManager.class);
+        _agentMgr = locator.getManager(AgentManager.class);
         _configMgr = locator.getManager(ConfigurationManager.class);
+        _consoleProxyMgr = locator.getManager(ConsoleProxyManager.class);
         _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
         _networkMgr = locator.getManager(NetworkManager.class);
         _snapshotMgr = locator.getManager(SnapshotManager.class);
         _storageMgr = locator.getManager(StorageManager.class);
+        _templateMgr = locator.getManager(TemplateManager.class);
         _userVmMgr = locator.getManager(UserVmManager.class);
     }
 
@@ -80,8 +92,17 @@ public class ApiDispatcher {
         String methodName = impl.createMethod();
         Object mgr = _mgmtServer;
         switch (impl.manager()) {
+        case AccountManager:
+            mgr = _accountMgr;
+            break;
+        case AgentManager:
+            mgr = _agentMgr;
+            break;
         case ConfigManager:
             mgr = _configMgr;
+            break;
+        case ConsoleProxyManager:
+            mgr = _consoleProxyMgr;
             break;
         case NetworkGroupManager:
             mgr = _networkGroupMgr;
@@ -94,6 +115,9 @@ public class ApiDispatcher {
             break;
         case StorageManager:
             mgr = _storageMgr;
+            break;
+        case TemplateManager:
+            mgr = _templateMgr;
             break;
         case UserVmManager:
             mgr = _userVmMgr;
@@ -130,8 +154,17 @@ public class ApiDispatcher {
         String methodName = impl.method();
         Object mgr = _mgmtServer;
         switch (impl.manager()) {
+        case AccountManager:
+            mgr = _accountMgr;
+            break;
+        case AgentManager:
+            mgr = _agentMgr;
+            break;
         case ConfigManager:
             mgr = _configMgr;
+            break;
+        case ConsoleProxyManager:
+            mgr = _consoleProxyMgr;
             break;
         case NetworkGroupManager:
             mgr = _networkGroupMgr;
@@ -144,6 +177,9 @@ public class ApiDispatcher {
             break;
         case StorageManager:
             mgr = _storageMgr;
+            break;
+        case TemplateManager:
+            mgr = _templateMgr;
             break;
         case UserVmManager:
             mgr = _userVmMgr;
@@ -172,6 +208,18 @@ public class ApiDispatcher {
     private void setupParameters(BaseCmd cmd, Map<String, String> params) {
         Map<String, Object> unpackedParams = cmd.unpackParams(params);
         Field[] fields = cmd.getClass().getDeclaredFields();
+        Class<?> superClass = cmd.getClass().getSuperclass();
+        while (BaseCmd.class.isAssignableFrom(superClass)) {
+            Field[] superClassFields = superClass.getDeclaredFields();
+            if (superClassFields != null) {
+                Field[] tmpFields = new Field[fields.length + superClassFields.length];
+                System.arraycopy(fields, 0, tmpFields, 0, fields.length);
+                System.arraycopy(superClassFields, 0, tmpFields, fields.length, superClassFields.length);
+                fields = tmpFields;
+            }
+            superClass = superClass.getSuperclass();
+        }
+
         for (Field field : fields) {
             Parameter parameterAnnotation = field.getAnnotation(Parameter.class);
             if ((parameterAnnotation == null) || !parameterAnnotation.expose()) {

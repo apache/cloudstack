@@ -31,7 +31,7 @@ import com.cloud.api.response.AlertResponse;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.ListResponse;
 
-@Implementation(method="searchForALerts")
+@Implementation(method="searchForAlerts")
 public class ListAlertsCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListAlertsCmd.class.getName());
