@@ -125,8 +125,6 @@ function afterLoadIpJSP() {
 		});  	    
 	    return false;
 	});
-	
-	
 }
 
 function ipGetMidmenuId(jsonObj) {   
@@ -145,18 +143,31 @@ function ipToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(fromdb(jsonObj.account).substring(0,25));    
 }
 
+function isIpManageable(domainid, account) {             
+    if((g_domainid == domainid && g_account == account) || (isAdmin() && account!="system")) 
+        return true;
+    else
+        return false;
+}    
+
 function ipToRigntPanel($midmenuItem1) {       
     var ipObj = $midmenuItem1.data("jsonObj");
     
     //Details tab
     ipJsonToDetailsTab(ipObj);   
+    $("#tab_details").click();
     
-    //Port Forwarding tab
-    listPortForwardingRules(ipObj);
-    refreshCreatePortForwardingRow(); 
-    
-    //Load Balancer tab
-    listLoadBalancerRules(ipObj);
+    //Port Forwarding tab, Load Balancer tab
+    if(isIpManageable(ipObj.domainid, ipObj.account) == true) {     
+	    $("#tab_port_forwarding, #tab_load_balancer").show();	
+        listPortForwardingRules(ipObj);
+        refreshCreatePortForwardingRow(); 
+        listLoadBalancerRules(ipObj);
+        refreshCreateLoadBalancerRow();
+    } 
+    else { 
+	    $("#tab_port_forwarding, #tab_load_balancer").hide();
+    }
 }
 
 function ipJsonToDetailsTab(jsonObj) {   
