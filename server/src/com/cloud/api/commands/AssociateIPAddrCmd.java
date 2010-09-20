@@ -72,6 +72,10 @@ public class AssociateIPAddrCmd extends BaseCmd {
         String accountName = (String)params.get(BaseCmd.Properties.ACCOUNT.getName());
         Long domainId = (Long)params.get(BaseCmd.Properties.DOMAIN_ID.getName());
         Long vmId = (Long)params.get(BaseCmd.Properties.VIRTUAL_MACHINE_ID.getName());
+        
+        //todo REMOVE
+        //vmId = new Long(3);
+        
         String newIpAddr = null;
         String errorDesc = null;
         Long accountId = null;

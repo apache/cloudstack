@@ -62,6 +62,8 @@ add_one_to_one_nat_entry() {
   iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
   iptables -A FORWARD -i $eth2 -o $eth1 -d $guestIp -m state --state NEW -j ACCEPT
   iptables -A FORWARD -i $eth1 -o $eth2 -s $guestIp -m state --state NEW -j ACCEPT
+  "
+  return $?
 }
 
 #Add the NAT entries into iptables in the routing domain
@@ -173,13 +175,21 @@ do
   		correctVif="$OPTARG"
   		;;
   G)    Gflag=1
-        guestIp = "$OPTARG"
+        guestIp="$OPTARG"
         ;;
   ?)	usage
 		exit 2
 		;;
   esac
 done
+
+#1:1 NAT
+if [ "$Gflag" == "1" ] && [ "$fflag" == "1" ] && [ "$Aflag" == "1" ]
+then
+  add_nat_entry $domRIp $publicIp 
+  add_one_to_one_nat_entry $guestIp $publicIp $domRIp
+  exit $?
+fi
 
 #Either the A flag or the D flag but not both
 if [ "$Aflag$Dflag" != "1" ]
@@ -198,13 +208,6 @@ if ! check_gw "$domRIp"
 then
    printf "Unable to ping the routing domain, exiting\n" >&2
    exit 3
-fi
-
-#1:1 NAT
-if [ "$Gflag" == "1" ]
-then
-  add_one_to_one_nat_entry $guestIp $publicIp $domRIp
-  exit $?
 fi
 
 if [ "$fflag" == "1" ] && [ "$Aflag" == "1" ]
@@ -232,4 +235,3 @@ then
 fi
 
 exit 0
-

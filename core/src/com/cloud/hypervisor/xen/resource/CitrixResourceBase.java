@@ -1330,33 +1330,26 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
             String args = null;
             
-            if(guestIp!=null)
-            {
-	            args += " -G ";
-	            args += guestIp;
-	            args += " -l ";
-	            args += publicIpAddress;
-	            args += " -i ";
-	            args += privateIpAddress;
+            if (add) {
+                args = "-A";
+            } else {
+                args = "-D";
             }
-            else
-            {
-	            if (add) {
-	                args = "-A";
-	            } else {
-	                args = "-D";
-	            }
-	            if (sourceNat) {
-	                args += " -f";
-	            }
-	            args += " -i ";
-	            args += privateIpAddress;
-	            args += " -l ";
-	            args += publicIpAddress;
-	            args += " -c ";
-	            args += "eth" + correctVif.getDevice(conn);
-	            args += " -g ";
-	            args += vlanGateway;
+            if (sourceNat) {
+                args += " -f";
+            }
+            args += " -i ";
+            args += privateIpAddress;
+            args += " -l ";
+            args += publicIpAddress;
+            args += " -c ";
+            args += "eth" + correctVif.getDevice(conn);
+            args += " -g ";
+            args += vlanGateway;
+
+            if(guestIp!=null){
+            	args += " -G ";
+            	args += guestIp;
             }
             
             String result = callHostPlugin("vmops", "ipassoc", "args", args);
