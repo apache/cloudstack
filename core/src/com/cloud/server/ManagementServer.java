@@ -2253,5 +2253,10 @@ public interface ManagementServer {
     URISyntaxException, InternalErrorException;
 	long extractTemplateAsync(String url, Long templateId, Long zoneId) throws URISyntaxException;
 	long extractVolumeAsync(String url, Long volumeId, Long zoneId) throws URISyntaxException;
+	
+	/* 
+	 * Fetches the version of cloud stack 
+	 */
+    String getVersion();
 
 }

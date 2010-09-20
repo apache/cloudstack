@@ -8899,15 +8899,8 @@ public class ManagementServerImpl implements ManagementServer {
         if(networkGroupsEnabled == null) 
             networkGroupsEnabled = "false";             
 
-        capabilities.put("networkGroupsEnabled", networkGroupsEnabled);
-        
-        final Class<?> c = this.getClass();
-        String fullVersion = c.getPackage().getImplementationVersion();
-        String version = "unknown"; 
-        if(fullVersion.length() > 0){
-            version = fullVersion.substring(0,fullVersion.lastIndexOf("."));
-        }
-        capabilities.put("cloudStackVersion", version);
+        capabilities.put("networkGroupsEnabled", networkGroupsEnabled);        
+        capabilities.put("cloudStackVersion", getVersion());
         return capabilities;
     }
 
@@ -9048,6 +9041,17 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public List<VlanVO> searchForZoneWideVlans(long dcId, String vlanType, String vlanId){
     	return _vlanDao.searchForZoneWideVlans(dcId, vlanType, vlanId);
+    }
+    
+    @Override
+    public String getVersion(){
+        final Class<?> c = this.getClass();
+        String fullVersion = c.getPackage().getImplementationVersion();
+        String version = "unknown"; 
+        if(fullVersion.length() > 0){
+            version = fullVersion.substring(0,fullVersion.lastIndexOf("."));
+        }
+        return version;
     }
 
 }
