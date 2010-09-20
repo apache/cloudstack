@@ -1674,8 +1674,15 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         try {
             doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(statsSource);
         } catch (Exception e) {
+        	s_logger.warn("Exception caught whilst processing the document via document factory:"+e);
+        	return null;
         }
 
+        if(doc==null){
+        	s_logger.warn("Null document found after tryinh to parse the stats source");
+        	return null;
+        }
+        
         NodeList firstLevelChildren = doc.getChildNodes();
         NodeList secondLevelChildren = (firstLevelChildren.item(0)).getChildNodes();
         Node metaNode = secondLevelChildren.item(0);
