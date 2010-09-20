@@ -60,6 +60,9 @@ public class NicVO implements Nic {
     @Column(name="broadcast_uri")
     URI broadcastUri;
     
+    @Column(name="gateway")
+    String gateway;
+    
     @Column(name="mac_address")
     String macAddress;
     
@@ -126,6 +129,14 @@ public class NicVO implements Nic {
 
     public String getNetmask() {
         return netmask;
+    }
+    
+    public String getGateway() {
+        return gateway;
+    }
+    
+    public void setGateway(String gateway) {
+        this.gateway = gateway;
     }
 
     public void setNetmask(String netmask) {

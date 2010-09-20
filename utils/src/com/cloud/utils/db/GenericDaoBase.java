@@ -497,19 +497,18 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                 }
             } else if (type == URI.class) {
                 try {
-                    URI uri = new URI(rs.getString(index));
-                    field.set(entity, uri);
+                    String str = rs.getString(index);
+                    field.set(entity, str == null ? null : new URI(str));
                 } catch (URISyntaxException e) {
                     throw new CloudRuntimeException("Invalid URI: " + rs.getString(index), e);
                 }
             } else if (type == URL.class) {
-                URL url;
                 try {
-                    url = new URL(rs.getString(index));
+                    String str = rs.getString(index);
+                    field.set(entity, str != null ? new URL(str) : null);
                 } catch (MalformedURLException e) {
                     throw new CloudRuntimeException("Invalid URL: " + rs.getString(index), e);
                 }
-                field.set(entity, url);
             } else if (type == short.class) {
                 field.setShort(entity, rs.getShort(index));
             } else if (type == Short.class) {

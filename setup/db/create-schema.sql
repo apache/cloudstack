@@ -95,13 +95,13 @@ CREATE TABLE `cloud`.`network_configurations` (
   `name` varchar(255) COMMENT 'name for this network',
   `traffic_type` varchar(32) NOT NULL COMMENT 'type of traffic going through this network',
   `broadcast_domain_type` varchar(32) NOT NULL COMMENT 'type of broadcast domain used',
+  `broadcast_uri` varchar(255) COMMENT 'broadcast domain specifier',
   `gateway` varchar(15) COMMENT 'gateway for this network configuration',
   `cidr` varchar(18) COMMENT 'network cidr', 
   `mode` varchar(32) COMMENT 'How to retrieve ip address in this network',
-  `vlan_id` bigint unsigned NULL COMMENT 'vlan id if the broadcast_domain_type is the vlan',
   `network_offering_id` bigint unsigned NOT NULL COMMENT 'network offering id that this configuration is created from',
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id that this configuration is used in',
-  `handler_name` varchar(255) NOT NULL COMMENT 'who is responsible for this type of network configuration',
+  `guru_name` varchar(255) NOT NULL COMMENT 'who is responsible for this type of network configuration',
   `state` varchar(32) NOT NULL COMMENT 'what state is this configuration in', 
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

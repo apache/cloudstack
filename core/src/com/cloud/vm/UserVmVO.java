@@ -34,9 +34,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     @Column(name="domain_router_id", updatable=true, nullable=true)
     Long domainRouterId;
 
-    @Column(name="service_offering_id", updatable=true, nullable=false)
-    long serviceOfferingId;
-    
     @Column(name="vnet", length=10, updatable=true, nullable=true)
     String vnet;
 

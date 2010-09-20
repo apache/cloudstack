@@ -121,13 +121,13 @@ ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__template_id` F
 ALTER TABLE `cloud`.`vm_instance` ADD INDEX `i_vm_instance__template_id`(`vm_template_id`);
 ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__account_id` FOREIGN KEY `fk_vm_instance__account_id` (`account_id`) REFERENCES `account` (`id`);
 ALTER TABLE `cloud`.`vm_instance` ADD INDEX `i_vm_instance__account_id`(`account_id`);
+ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__service_offering_id` FOREIGN KEY `fk_vm_instance__service_offering_id` (`service_offering_id`) REFERENCES `service_offering` (`id`);
+ALTER TABLE `cloud`.`vm_instance` ADD INDEX `i_vm_instance__service_offering_id`(`service_offering_id`);
 
 ALTER TABLE `cloud`.`service_offering` ADD CONSTRAINT `fk_service_offering__id` FOREIGN KEY `fk_service_offering__id`(`id`) REFERENCES `disk_offering`(`id`) ON DELETE CASCADE;
 
 ALTER TABLE `cloud`.`user_vm` ADD CONSTRAINT `fk_user_vm__domain_router_id` FOREIGN KEY `fk_user_vm__domain_router_id` (`domain_router_id`) REFERENCES `domain_router` (`id`);
 ALTER TABLE `cloud`.`user_vm` ADD INDEX `i_user_vm__domain_router_id`(`domain_router_id`);
-ALTER TABLE `cloud`.`user_vm` ADD CONSTRAINT `fk_user_vm__service_offering_id` FOREIGN KEY `fk_user_vm__service_offering_id` (`service_offering_id`) REFERENCES `service_offering` (`id`);
-ALTER TABLE `cloud`.`user_vm` ADD INDEX `i_user_vm__service_offering_id`(`service_offering_id`);
 ALTER TABLE `cloud`.`user_vm` ADD CONSTRAINT `fk_user_vm__id` FOREIGN KEY `fk_user_vm__id` (`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`user_vm` ADD CONSTRAINT `fk_user_vm__external_ip_address` FOREIGN KEY `fk_user_vm__external_ip_address` (`external_ip_address`) REFERENCES `user_ip_address` (`public_ip_address`);
 ALTER TABLE `cloud`.`user_vm` ADD INDEX `i_user_vm__external_ip_address`(`external_ip_address`);

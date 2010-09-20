@@ -55,8 +55,8 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     @Enumerated(value=EnumType.STRING)
     TrafficType trafficType;
     
-    @Column(name="vlan_id")
-    Long vlanId; 
+    @Column(name="broadcast_uri")
+    String broadcastUri; 
     
     @Column(name="gateway")
     String gateway;
@@ -70,8 +70,8 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     @Column(name="data_center_id")
     long dataCenterId;
     
-    @Column(name="handler_name")
-    String handlerName;
+    @Column(name="guru_name")
+    String guruName;
     
     @Column(name="state")
     @Enumerated(value=EnumType.STRING)
@@ -80,9 +80,9 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     public NetworkConfigurationVO() {
     }
     
-    public NetworkConfigurationVO(NetworkConfiguration that, long offeringId, long dataCenterId, String handlerName) {
+    public NetworkConfigurationVO(NetworkConfiguration that, long offeringId, long dataCenterId, String guruName) {
         this(that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId);
-        this.handlerName = handlerName;
+        this.guruName = guruName;
         this.state = that.getState();
     }
     
@@ -128,12 +128,12 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
         return broadcastDomainType;
     }
     
-    public String getHandlerName() {
-        return handlerName;
+    public String getGuruName() {
+        return guruName;
     }
     
-    public void setHandlerName(String handlerName) {
-        this.handlerName = handlerName;
+    public void setGuruName(String guruName) {
+        this.guruName = guruName;
     }
 
     public void setBroadcastDomainType(BroadcastDomainType broadcastDomainType) {
@@ -167,12 +167,12 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
         this.cidr = cidr;
     }
     
-    public Long getVlanId() {
-        return vlanId;
+    public String getBroadcastUri() {
+        return broadcastUri;
     }
 
-    public void setVlanId(Long vlanId) {
-        this.vlanId = vlanId;
+    public void setBroadcastUri(String broadcastUri) {
+        this.broadcastUri = broadcastUri;
     }
     
     @Override
@@ -192,14 +192,6 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
         }
         NetworkConfigurationVO that = (NetworkConfigurationVO)obj;
         if (this.trafficType != that.trafficType) {
-            return false;
-        }
-        
-        if (this.vlanId != null && that.vlanId != null && this.vlanId.longValue() != that.vlanId.longValue()) {
-            return false;
-        }
-        
-        if (this.vlanId != that.vlanId) {
             return false;
         }
         

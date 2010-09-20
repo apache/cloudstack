@@ -111,6 +111,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkConfigurationDao;
 import com.cloud.network.dao.SecurityGroupVMMapDao;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -216,6 +217,8 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     Adapters<NetworkGuru> _networkGurus;
     @Inject(adapter=NetworkConcierge.class)
     Adapters<NetworkConcierge> _networkConcierges;
+    @Inject(adapter=NetworkElement.class)
+    Adapters<NetworkElement> _networkElements;
 
     long _routerTemplateId = -1;
     int _routerRamSize;
@@ -2380,20 +2383,20 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         }
         
         for (NetworkGuru guru : _networkGurus) {
-            NetworkConfiguration profile = guru.design(offering, plan, predefined, owner);
-            if (profile == null) {
+            NetworkConfiguration config = guru.design(offering, plan, predefined, owner);
+            if (config == null) {
                 continue;
             }
             
-            if (profile.getId() != null) {
-                if (profile instanceof NetworkConfigurationVO) {
-                    return (NetworkConfigurationVO)profile;
+            if (config.getId() != null) {
+                if (config instanceof NetworkConfigurationVO) {
+                    return (NetworkConfigurationVO)config;
                 } else {
-                    return _networkProfileDao.findById(profile.getId());
+                    return _networkProfileDao.findById(config.getId());
                 }
             } 
             
-            NetworkConfigurationVO vo = new NetworkConfigurationVO(profile, offering.getId(), plan.getDataCenterId(), guru.getName());
+            NetworkConfigurationVO vo = new NetworkConfigurationVO(config, offering.getId(), plan.getDataCenterId(), guru.getName());
             return _networkProfileDao.persist(vo, owner.getId());
         }
 
@@ -2467,9 +2470,22 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         return nicProfiles;
     }
     
+    protected NicTO toNicTO(NicVO nic, NetworkConfigurationVO config) {
+        NicTO to = new NicTO();
+        to.setDeviceId(nic.getDeviceId());
+        to.setBroadcastType(config.getBroadcastDomainType());
+        to.setType(config.getTrafficType());
+        to.setIp(nic.getIp4Address());
+        to.setNetmask(nic.getNetmask());
+        to.setMac(nic.getMacAddress());
+        
+        return to;
+    }
+    
     @Override
     public List<NicTO> prepare(VirtualMachineProfile vmProfile, DeployDestination dest) throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException {
         List<NicVO> nics = _nicDao.listBy(vmProfile.getId());
+        List<NicTO> nicTos = new ArrayList<NicTO>(nics.size());
         for (NicVO nic : nics) {
             NetworkConfigurationVO config = _networkProfileDao.findById(nic.getNetworkConfigurationId());
             
@@ -2488,17 +2504,39 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                 nic.setReserver(concierge.getUniqueName());
                 nic.setState(Resource.State.Reserved);
                 _nicDao.update(nic.getId(), nic);
-            } else {
-                
+                for (NetworkElement element : _networkElements) {
+                    if (!element.prepare(config, profile, vmProfile, null)) {
+                        s_logger.warn("Unable to prepare " + nic + " for element " + element.getName());
+                        return null;
+                    }
+                }
             }
+            
+            nicTos.add(toNicTO(nic, config));
+            
         }
-        return null;
+        return nicTos;
     }
     
     NicProfile toNicProfile(NicVO nic) {
         NetworkConfiguration config = _networkProfileDao.findById(nic.getNetworkConfigurationId());
         NicProfile profile = new NicProfile(nic, config);
         return profile;
+    }
+    
+    public void release(long vmId) {
+        List<NicVO> nics = _nicDao.listBy(vmId);
+        
+        for (NicVO nic : nics) {
+            nic.setState(Resource.State.Releasing);
+            _nicDao.update(nic.getId(), nic);
+            NetworkConcierge concierge = _networkConcierges.get(nic.getReserver());
+            if (!concierge.release(nic.getReserver(), nic.getReservationId())) {
+                s_logger.warn("Unable to release " + nic + " using " + concierge.getName());
+            }
+            nic.setState(Resource.State.Allocated);
+            _nicDao.update(nic.getId(), nic);
+        }
     }
     
     @Override

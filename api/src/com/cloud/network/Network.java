@@ -17,6 +17,11 @@
  */
 package com.cloud.network;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
+import com.cloud.utils.exception.CloudRuntimeException;
+
 /**
  * Network includes all of the enums used within networking.
  *
@@ -34,18 +39,50 @@ public class Network {
     
     public enum AddressFormat {
         Ip4,
-        Ip6
+        Ip6,
+        Mixed
     }
 
     /**
      * Different types of broadcast domains. 
      */
     public enum BroadcastDomainType {
-        Native,
-        Vlan,
-        Vswitch,
-        LinkLocal,
-        Vnet;
+        Native(null, null),
+        Vlan("vlan", Integer.class),
+        Vswitch("vs", String.class),
+        LinkLocal(null, null),
+        Vnet("vnet", Long.class),
+        UnDecided(null, null);
+        
+        private String scheme;
+        private Class<?> type;
+        
+        private BroadcastDomainType(String scheme, Class<?> type) {
+            this.scheme = scheme;
+            this.type = type;
+        }
+        
+        /**
+         * @return scheme to be used in broadcast uri.  Null indicates that this type does not have broadcast tags.
+         */
+        public String scheme() {
+            return scheme;
+        }
+        
+        /**
+         * @return type of the value in the broadcast uri. Null indicates that this type does not have broadcast tags.
+         */
+        public Class<?> type() {
+            return type;
+        }
+        
+        public <T> URI toUri(T value) {
+            try {
+                return new URI(scheme + "://" + value);
+            } catch (URISyntaxException e) {
+                throw new CloudRuntimeException("Unable to convert to broadcast URI: " + value);
+            }
+        }
     };
     
     /**
@@ -61,10 +98,51 @@ public class Network {
     };
     
     public enum IsolationType {
-        None,
-        Ec2,
-        Vlan,
-        Vswitch,
-        Vnet;
+        None(null, null),
+        Ec2("ec2", String.class),
+        Vlan("vlan", Integer.class),
+        Vswitch("vs", String.class),
+        Undecided(null, null),
+        Vnet("vnet", Long.class);
+        
+        private final String scheme;
+        private final Class<?> type;
+        
+        private IsolationType(String scheme, Class<?> type) {
+            this.scheme = scheme;
+            this.type = type;
+        }
+        
+        public String scheme() {
+            return scheme;
+        }
+        
+        public Class<?> type() {
+            return type;
+        }
+        
+        public <T> URI toUri(T value) {
+            try {
+                return new URI(scheme + "://" + value.toString());
+            } catch (URISyntaxException e) {
+                throw new CloudRuntimeException("Unable to convert to isolation type URI: " + value);
+            }
+        }
+    }
+    
+    public enum BroadcastScheme {
+        Vlan("vlan"),
+        VSwitch("vswitch");
+        
+        private String scheme;
+        
+        private BroadcastScheme(String scheme) {
+            this.scheme = scheme;
+        }
+        
+        @Override
+        public String toString() {
+            return scheme;
+        }
     }
 }
