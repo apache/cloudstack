@@ -1288,7 +1288,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
 
     protected void assignPublicIpAddress(final String vmName, final String privateIpAddress, final String publicIpAddress, final boolean add, final boolean firstIP,
-            final boolean sourceNat, final String vlanId, final String vlanGateway, final String vlanNetmask, final String vifMacAddress) throws InternalErrorException {
+            final boolean sourceNat, final String vlanId, final String vlanGateway, final String vlanNetmask, final String vifMacAddress, String guestIp) throws InternalErrorException {
 
         try {
             Connection conn = getConnection();
@@ -1328,24 +1328,37 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
             }
 
-            String args;
-            if (add) {
-                args = "-A";
-            } else {
-                args = "-D";
+            String args = null;
+            
+            if(guestIp!=null)
+            {
+	            args += " -G ";
+	            args += guestIp;
+	            args += " -l ";
+	            args += publicIpAddress;
+	            args += " -i ";
+	            args += privateIpAddress;
             }
-            if (sourceNat) {
-                args += " -f";
+            else
+            {
+	            if (add) {
+	                args = "-A";
+	            } else {
+	                args = "-D";
+	            }
+	            if (sourceNat) {
+	                args += " -f";
+	            }
+	            args += " -i ";
+	            args += privateIpAddress;
+	            args += " -l ";
+	            args += publicIpAddress;
+	            args += " -c ";
+	            args += "eth" + correctVif.getDevice(conn);
+	            args += " -g ";
+	            args += vlanGateway;
             }
-            args += " -i ";
-            args += privateIpAddress;
-            args += " -l ";
-            args += publicIpAddress;
-            args += " -c ";
-            args += "eth" + correctVif.getDevice(conn);
-            args += " -g ";
-            args += vlanGateway;
-
+            
             String result = callHostPlugin("vmops", "ipassoc", "args", args);
             if (result == null || result.isEmpty()) {
                 throw new InternalErrorException("Xen plugin \"ipassoc\" failed.");
@@ -1388,7 +1401,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     protected Answer execute(final IPAssocCommand cmd) {
         try {
             assignPublicIpAddress(cmd.getRouterName(), cmd.getRouterIp(), cmd.getPublicIp(), cmd.isAdd(), cmd.isFirstIP(), cmd.isSourceNat(), cmd.getVlanId(),
-                    cmd.getVlanGateway(), cmd.getVlanNetmask(), cmd.getVifMacAddress());
+                    cmd.getVlanGateway(), cmd.getVlanNetmask(), cmd.getVifMacAddress(), cmd.getGuestIp());
         } catch (InternalErrorException e) {
             return new Answer(cmd, false, e.getMessage());
         }

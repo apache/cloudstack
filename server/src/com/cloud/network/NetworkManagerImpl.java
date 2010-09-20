@@ -1118,7 +1118,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 				ipAddrList.add(ipVO.getAddress());
 			}
 			if (!ipAddrList.isEmpty()) {
-				final boolean success = associateIP(router, ipAddrList, true);
+				final boolean success = associateIP(router, ipAddrList, true, 0);
 				if (!success) {
 					return false;
 				}
@@ -1353,7 +1353,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     }
 
     @Override
-    public boolean associateIP(final DomainRouterVO router, final List<String> ipAddrList, final boolean add) {
+    public boolean associateIP(final DomainRouterVO router, final List<String> ipAddrList, final boolean add, long vmId) {
         final Command [] cmds = new Command[ipAddrList.size()];
         int i=0;
         boolean sourceNat = false;
@@ -1374,7 +1374,12 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             	vifMacAddress = macAddresses[1];
 			}
 
-            cmds[i++] = new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ipAddress, add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress);
+			String vmGuestAddress = null;
+			if(vmId!=0){
+				vmGuestAddress = _vmDao.findById(vmId).getGuestIpAddress();
+			}
+			
+            cmds[i++] = new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ipAddress, add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress);
             
             sourceNat = false;
         }
@@ -1717,7 +1722,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                     s_logger.debug("Disassociate ip " + router.getName());
                 }
 
-                if (associateIP(router, ipAddrs, false)) {
+                if (associateIP(router, ipAddrs, false, 0)) {
                     _ipAddressDao.unassignIpAddress(ipAddress);
                 } else {
                 	if (s_logger.isDebugEnabled()) {

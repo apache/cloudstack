@@ -1488,7 +1488,7 @@ public class ManagementServerImpl implements ManagementServer {
 		     	boolean success = true;
 		     	String params = "\nsourceNat=" + false + "\ndcId=" + zoneId;
 		     	ArrayList<String> dummyipAddrList = new ArrayList<String>();
-		     	success = _networkMgr.associateIP(router,ipAddrsList, true);
+		     	success = _networkMgr.associateIP(router,ipAddrsList, true, 0);
 		     	String errorMsg = "Unable to assign public IP address pool";
             	if (!success) {
             		s_logger.debug(errorMsg);
@@ -1519,7 +1519,7 @@ public class ManagementServerImpl implements ManagementServer {
     
     @Override
     @DB
-    public String associateIpAddress(long userId, long accountId, long domainId, long zoneId) throws ResourceAllocationException, InsufficientAddressCapacityException,
+    public String associateIpAddress(long userId, long accountId, long domainId, long zoneId, long vmId) throws ResourceAllocationException, InsufficientAddressCapacityException,
             InvalidParameterValueException, InternalErrorException {
         Transaction txn = Transaction.currentTxn();
         AccountVO account = null;
@@ -1571,7 +1571,7 @@ public class ManagementServerImpl implements ManagementServer {
             ipAddrs.add(ipAddress);
 
             if (router.getState() == State.Running) {
-                success = _networkMgr.associateIP(router, ipAddrs, true);
+                success = _networkMgr.associateIP(router, ipAddrs, true, vmId);
                 if (!success) {
                     errorMsg = "Unable to assign public IP address.";
                 }
