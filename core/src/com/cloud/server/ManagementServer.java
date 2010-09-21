@@ -409,12 +409,13 @@ public interface ManagementServer {
      * @param accountId
      * @param domainId
      * @param zoneId
+     * @param vmId
      * @return allocated IP address in the zone specified
      * @throws InsufficientAddressCapacityException if no more addresses are available
      * @throws InvalidParameterValueException if no router for that user exists in the zone specified
      * @throws InternalErrorException  if the new address could not be sent down to the router
      */
-    String associateIpAddress(long userId, long accountId, long domainId, long zoneId) throws ResourceAllocationException, InsufficientAddressCapacityException, InvalidParameterValueException, InternalErrorException;
+    String associateIpAddress(long userId, long accountId, long domainId, long zoneId, long vmId) throws ResourceAllocationException, InsufficientAddressCapacityException, InvalidParameterValueException, InternalErrorException;
     long associateIpAddressAsync(long userId, long accountId, long domainId, long zoneId);
    
     
@@ -1836,8 +1837,9 @@ public interface ManagementServer {
      * @param mirrored boolean value of whether or not the offering provides disk mirroring
      * @param tags Comma separated string to indicate special tags for the disk offering.
      * @return the created disk offering, null if failed to create
+     * @throws InternalErrorException 
      */
-    DiskOfferingVO createDiskOffering(long userId, long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException;
+    DiskOfferingVO createDiskOffering(long userId, long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException, InternalErrorException;
 
     /**
      * Delete a disk offering
@@ -2194,7 +2196,7 @@ public interface ManagementServer {
 	 * @param template id - the id of the template
 	 *  
 	 */
-	void extractTemplate(String url, Long templateId, Long zoneId) throws URISyntaxException;
+	void extractTemplate(String url, Long templateId, Long zoneId, long eventId, long asyncJobId) throws URISyntaxException;
 
     Map<String, String> listCapabilities();
 	GuestOSVO getGuestOs(Long guestOsId);
@@ -2241,13 +2243,21 @@ public interface ManagementServer {
      * Extracts the volume to a particular location.
      * @param url - the url  where the volume needs to be extracted to
      * @param zoneId - zone id of the volume
+     * @param asyncJobId 
+     * @param eventId 
      * @param volume id - the id of the volume
      * @throws URISyntaxException
      * @throws InternalErrorException
      *
      */
-    void extractVolume(String url, Long volumeId, Long zoneId) throws 
+    void extractVolume(String url, Long volumeId, Long zoneId, long eventId, Long asyncJobId) throws 
     URISyntaxException, InternalErrorException;
-
+	long extractTemplateAsync(String url, Long templateId, Long zoneId) throws URISyntaxException;
+	long extractVolumeAsync(String url, Long volumeId, Long zoneId) throws URISyntaxException;
+	
+	/* 
+	 * Fetches the version of cloud stack 
+	 */
+    String getVersion();
 
 }

@@ -40,7 +40,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     public SnapshotVO findNextSnapshot(long snapshotId) {
         SearchCriteria<SnapshotVO> sc = ParentIdSearch.create();
         sc.setParameters("prevSnapshotId", snapshotId);
-        return findOneBy(sc);
+        return findOneIncludingRemovedBy(sc);
     }
 
     @Override
@@ -52,7 +52,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     public List<SnapshotVO> listByVolumeId(Filter filter, long volumeId ) {
         SearchCriteria<SnapshotVO> sc = VolumeIdSearch.create();
         sc.setParameters("volumeId", volumeId);
-        return listActiveBy(sc, filter);
+        return listBy(sc, filter);
     }
 
     protected SnapshotDaoImpl() {

@@ -29,7 +29,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         
         sc.setParameters("name", name);
         
-        return findOneActiveBy(sc);
+        return findOneBy(sc);
         
     }
     

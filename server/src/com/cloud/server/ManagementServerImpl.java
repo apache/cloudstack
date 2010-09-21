@@ -51,6 +51,8 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
+import sun.nio.cs.ext.TIS_620;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
@@ -72,6 +74,9 @@ import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
+import com.cloud.api.commands.ExtractIsoCmd;
+import com.cloud.api.commands.ExtractTemplateCmd;
+import com.cloud.api.commands.ExtractVolumeCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
@@ -96,6 +101,7 @@ import com.cloud.async.executor.DeleteRuleParam;
 import com.cloud.async.executor.DeleteTemplateParam;
 import com.cloud.async.executor.DeployVMParam;
 import com.cloud.async.executor.DisassociateIpAddressParam;
+import com.cloud.async.executor.ExtractTemplateParam;
 import com.cloud.async.executor.LoadBalancerParam;
 import com.cloud.async.executor.NetworkGroupIngressParam;
 import com.cloud.async.executor.ResetVMPasswordParam;
@@ -206,6 +212,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.Storage.FileSystem;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Upload.Type;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.DiskTemplateDao;
@@ -225,6 +232,7 @@ import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.snapshot.SnapshotScheduler;
+import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -352,6 +360,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final PreallocatedLunDao _lunDao;
     private final InstanceGroupDao _vmGroupDao;
     private final InstanceGroupVMMapDao _groupVMMapDao;
+    private final UploadMonitor _uploadMonitor;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -366,7 +375,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final int _proxyRamSize;
     private final int _ssRamSize;
 
-    private final int _maxVolumeSizeInGb;
+    private final long _maxVolumeSizeInGb;
     private final Map<String, Boolean> _availableIdsMap;
 
 	private boolean _networkGroupsEnabled = false;
@@ -442,6 +451,7 @@ public class ManagementServerImpl implements ManagementServer {
         _snapMgr = locator.getManager(SnapshotManager.class);
         _snapshotScheduler = locator.getManager(SnapshotScheduler.class);
         _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
+        _uploadMonitor = locator.getManager(UploadMonitor.class);
         
         _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
         if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
@@ -462,10 +472,10 @@ public class ManagementServerImpl implements ManagementServer {
         // Parse the max number of UserVMs and public IPs from server-setup.xml,
         // and set them in the right places
 
-        String maxVolumeSizeInGbString = _configs.get("max.volume.size.gb");
-        int maxVolumeSizeGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2097152000);
+        String maxVolumeSizeInTbString = _configs.get("max.volume.size.gb");
+        long maxVolumeSizeBytes = NumbersUtil.parseLong(maxVolumeSizeInTbString, new Long("2093049000000"));
 
-        _maxVolumeSizeInGb = maxVolumeSizeGb;
+        _maxVolumeSizeInGb = maxVolumeSizeBytes/1000000000;
 
         _routerRamSize = NumbersUtil.parseInt(_configs.get("router.ram.size"),NetworkManager.DEFAULT_ROUTER_VM_RAMSIZE);
         _proxyRamSize = NumbersUtil.parseInt(_configs.get("consoleproxy.ram.size"), ConsoleProxyManager.DEFAULT_PROXY_VM_RAMSIZE);
@@ -1478,7 +1488,7 @@ public class ManagementServerImpl implements ManagementServer {
 		     	boolean success = true;
 		     	String params = "\nsourceNat=" + false + "\ndcId=" + zoneId;
 		     	ArrayList<String> dummyipAddrList = new ArrayList<String>();
-		     	success = _networkMgr.associateIP(router,ipAddrsList, true);
+		     	success = _networkMgr.associateIP(router,ipAddrsList, true, 0);
 		     	String errorMsg = "Unable to assign public IP address pool";
             	if (!success) {
             		s_logger.debug(errorMsg);
@@ -1509,7 +1519,7 @@ public class ManagementServerImpl implements ManagementServer {
     
     @Override
     @DB
-    public String associateIpAddress(long userId, long accountId, long domainId, long zoneId) throws ResourceAllocationException, InsufficientAddressCapacityException,
+    public String associateIpAddress(long userId, long accountId, long domainId, long zoneId, long vmId) throws ResourceAllocationException, InsufficientAddressCapacityException,
             InvalidParameterValueException, InternalErrorException {
         Transaction txn = Transaction.currentTxn();
         AccountVO account = null;
@@ -1561,7 +1571,7 @@ public class ManagementServerImpl implements ManagementServer {
             ipAddrs.add(ipAddress);
 
             if (router.getState() == State.Running) {
-                success = _networkMgr.associateIP(router, ipAddrs, true);
+                success = _networkMgr.associateIP(router, ipAddrs, true, vmId);
                 if (!success) {
                     errorMsg = "Unable to assign public IP address.";
                 }
@@ -4803,9 +4813,9 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public void extractVolume(String url, Long volumeId, Long zoneId) throws URISyntaxException, InternalErrorException{
-    
-        URI uri = new URI(url);
+    public long extractVolumeAsync(String url, Long volumeId, Long zoneId) throws URISyntaxException{
+    	
+    	URI uri = new URI(url);
         if ( (uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("ftp") )) {
            throw new IllegalArgumentException("Unsupported scheme for url: " + url);
         }
@@ -4827,6 +4837,31 @@ public class ManagementServerImpl implements ManagementServer {
     		throw new IllegalArgumentException("Please specify a valid zone.");
     	}
         
+        VolumeVO volume = findVolumeById(volumeId); 
+        if ( _uploadMonitor.isTypeUploadInProgress(volumeId, Type.VOLUME) ){
+            throw new IllegalArgumentException(volume.getName() + " upload is in progress. Please wait for some time to schedule another upload for the same");
+        }
+        
+        long userId = UserContext.current().getUserId();
+        long accountId = volume.getAccountId();        
+        long eventId = saveScheduledEvent(userId, accountId, EventTypes.EVENT_VOLUME_UPLOAD, "Extraction job");
+        
+ 		ExtractTemplateParam param = new ExtractTemplateParam(userId, volumeId, zoneId, eventId , url);
+        Gson gson = GsonHelper.getBuilder().create();
+
+        AsyncJobVO job = new AsyncJobVO();
+    	job.setUserId(userId);
+    	job.setAccountId(accountId);
+        job.setCmd("ExtractVolume");
+        job.setCmdInfo(gson.toJson(param));
+        job.setCmdOriginator(ExtractVolumeCmd.getStaticName());        
+        return _asyncMgr.submitAsyncJob(job);
+    	
+    }
+    
+    @Override
+    public void extractVolume(String url, Long volumeId, Long zoneId, long eventId, Long asyncJobId) throws URISyntaxException, InternalErrorException{
+          
         VolumeVO volume = findVolumeById(volumeId);        
         String secondaryStorageURL = _storageMgr.getSecondaryStorageURL(zoneId); 
         StoragePoolVO srcPool = _poolDao.findById(volume.getPoolId());
@@ -4837,16 +4872,15 @@ public class ManagementServerImpl implements ManagementServer {
         CopyVolumeAnswer cvAnswer = (CopyVolumeAnswer) _agentMgr.easySend(sourceHostId, cvCmd);
 
         if (cvAnswer == null || !cvAnswer.getResult()) {
-            throw new InternalErrorException("Failed to copy the volume from the source primary storage pool to secondary storage.");
+            throw new InternalErrorException("Failed to copy the volume from the source primary storage pool to secondary storage.");            
         }
-        
-        
+
+        _uploadMonitor.extractVolume(volume, url, zoneId, "volumes/"+volume.getId()+"/"+cvAnswer.getVolumePath()+".vhd", eventId, asyncJobId, _asyncMgr);
         
     }
     
     @Override
-    public void extractTemplate(String url, Long templateId, Long zoneId) throws URISyntaxException{
-    
+    public long extractTemplateAsync(String url, Long templateId, Long zoneId) throws URISyntaxException{
         URI uri = new URI(url);
         if ( (uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("ftp") )) {
            throw new IllegalArgumentException("Unsupported scheme for url: " + url);
@@ -4876,7 +4910,38 @@ public class ManagementServerImpl implements ManagementServer {
         	throw new IllegalArgumentException("The template hasnt been downloaded ");
         }
         
-        _tmpltMgr.extract(template, url, tmpltHostRef, zoneId);
+        boolean isISO = template.getFormat() == ImageFormat.ISO;
+        if ( _uploadMonitor.isTypeUploadInProgress(templateId, isISO ? Type.ISO : Type.TEMPLATE) ){
+            throw new IllegalArgumentException(template.getName() + " upload is in progress. Please wait for some time to schedule another upload for the same"); 
+        }
+        
+        long userId = UserContext.current().getUserId();
+        long accountId = template.getAccountId();
+        String event = isISO ? EventTypes.EVENT_ISO_UPLOAD : EventTypes.EVENT_TEMPLATE_UPLOAD;
+        long eventId = saveScheduledEvent(userId, accountId, event, "Extraction job");
+        
+ 		ExtractTemplateParam param = new ExtractTemplateParam(userId, templateId, zoneId, eventId , url);
+        Gson gson = GsonHelper.getBuilder().create();
+
+        AsyncJobVO job = new AsyncJobVO();
+    	job.setUserId(userId);
+    	job.setAccountId(accountId);
+        job.setCmd("ExtractTemplate");
+        job.setCmdInfo(gson.toJson(param));
+        job.setCmdOriginator(isISO ? ExtractIsoCmd.getStaticName() : ExtractTemplateCmd.getStaticName());
+        
+        return _asyncMgr.submitAsyncJob(job);
+    	    	
+    }
+    
+    @Override
+    public void extractTemplate(String url, Long templateId, Long zoneId, long eventId, long asyncJobId) throws URISyntaxException{
+
+    	VMTemplateVO template = findTemplateById(templateId);        
+        VMTemplateHostVO tmpltHostRef = findTemplateHostRef(templateId, zoneId);
+        String event = template.getFormat() == ImageFormat.ISO ? EventTypes.EVENT_ISO_UPLOAD : EventTypes.EVENT_TEMPLATE_UPLOAD;
+        saveStartedEvent(template.getAccountId(), template.getAccountId(), event, "Starting upload of " +template.getName()+ " to " +url, eventId);
+        _tmpltMgr.extract(template, url, tmpltHostRef, zoneId, eventId, asyncJobId, _asyncMgr);
         
     }
     
@@ -7065,13 +7130,16 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public DiskOfferingVO createDiskOffering(long userId, long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException {
-        if (numGibibytes!=0 && numGibibytes < 1) {
-            throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
-        } else if (numGibibytes > _maxVolumeSizeInGb) {
-        	throw new InvalidParameterValueException("The maximum size for a disk is " + _maxVolumeSizeInGb + " Gb.");
+    public DiskOfferingVO createDiskOffering(long userId, long domainId, String name, String description, int numGibibytes, String tags) throws InvalidParameterValueException, InternalErrorException {
+    	
+    	if(numGibibytes!=0 && numGibibytes<1){
+    		throw new InvalidParameterValueException("The minimum disk offering size is 1 GB");
+    	}
+    		
+    	if (numGibibytes > _maxVolumeSizeInGb) {
+        	throw new InvalidParameterValueException("The maximum allowed size for a disk is " + _maxVolumeSizeInGb + " Gb.");
         }
-
+   
         return _configMgr.createDiskOffering(userId, domainId, name, description, numGibibytes, tags);
     }
 
@@ -8792,10 +8860,10 @@ public class ManagementServerImpl implements ManagementServer {
 
 	@Override
 	public boolean validateCustomVolumeSizeRange(long size) throws InvalidParameterValueException {
-        if (size<0 || (size>0 && size < 1)) {
-            throw new InvalidParameterValueException("Please specify a size of at least 1 Gb.");
-        } else if (size > _maxVolumeSizeInGb) {
-        	throw new InvalidParameterValueException("The maximum size allowed is " + _maxVolumeSizeInGb + " Gb.");
+        if (size<0 || (size>0 && size < 2097152)) {
+            throw new InvalidParameterValueException("Please specify a size (in bytes) of at least 2 MB or above.");
+        } else if (size > (_maxVolumeSizeInGb*1000000000)) {
+        	throw new InvalidParameterValueException("The maximum size allowed is 2 TB");
         }
 
 		return true;
@@ -8831,15 +8899,8 @@ public class ManagementServerImpl implements ManagementServer {
         if(networkGroupsEnabled == null) 
             networkGroupsEnabled = "false";             
 
-        capabilities.put("networkGroupsEnabled", networkGroupsEnabled);
-        
-        final Class<?> c = this.getClass();
-        String fullVersion = c.getPackage().getImplementationVersion();
-        String version = "unknown"; 
-        if(fullVersion.length() > 0){
-            version = fullVersion.substring(0,fullVersion.lastIndexOf("."));
-        }
-        capabilities.put("cloudStackVersion", version);
+        capabilities.put("networkGroupsEnabled", networkGroupsEnabled);        
+        capabilities.put("cloudStackVersion", getVersion());
         return capabilities;
     }
 
@@ -8980,6 +9041,17 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public List<VlanVO> searchForZoneWideVlans(long dcId, String vlanType, String vlanId){
     	return _vlanDao.searchForZoneWideVlans(dcId, vlanType, vlanId);
+    }
+    
+    @Override
+    public String getVersion(){
+        final Class<?> c = this.getClass();
+        String fullVersion = c.getPackage().getImplementationVersion();
+        String version = "unknown"; 
+        if(fullVersion.length() > 0){
+            version = fullVersion.substring(0,fullVersion.lastIndexOf("."));
+        }
+        return version;
     }
 
 }

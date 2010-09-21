@@ -39,31 +39,10 @@ import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.exception.ExecutionException;
+import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 
 public interface StorageManager extends Manager {
-    /**
-     * Convenience method for creating a VM with a data disk based on a template.
-     * @param vm VM to create disks for.
-     * @param template Template to based the root disk on.
-     * @param rootOffering Disk offering for the root disk.
-     * @param dataOffering Disk offering for the data disk.
-     * @param size size of the data disk if the data disk offering has variable size.
-     * @param dc data center to deploy in.
-     * @param account owner.
-     * @return List<VolumeVO> where the first disk is the root disk.
-     */
-    List<VolumeVO> allocateTemplatedVm(VMInstanceVO vm, VMTemplateVO template, DiskOfferingVO rootOffering, DiskOfferingVO dataOffering, Long size, DataCenterVO dc, AccountVO account);
-    
-    /**
-     * Convenience method for allocating system VMs in the database.
-     * @param vm VM to create disks for.
-     * @param template template the root disk should be based on.
-     * @param rootOffering Disk offering for the root disk.
-     * @param dc data center to deploy in.
-     * @return VolumeVO volume allocated.
-     */
-    VolumeVO allocateSystemVm(VMInstanceVO vm, VMTemplateVO template, DiskOfferingVO rootOffering, DataCenterVO dc);
     
     
     VolumeVO allocateIsoInstalledVm(VMInstanceVO vm, VMTemplateVO template, DiskOfferingVO rootOffering, Long size, DataCenterVO dc, AccountVO account);
@@ -328,7 +307,8 @@ public interface StorageManager extends Manager {
      * @param account
      * @return VolumeVO a persisted volume.
      */
-    <T extends VMInstanceVO> VolumeVO allocate(VolumeType type, DiskOfferingVO offering, String name, Long size, VMTemplateVO template, T vm, AccountVO account);
+    <T extends VMInstanceVO> DiskProfile allocateRawVolume(VolumeType type, String name, DiskOfferingVO offering, Long size, T vm, AccountVO owner);
+    <T extends VMInstanceVO> DiskProfile allocateTemplatedVolume(VolumeType type, String name, DiskOfferingVO offering, VMTemplateVO template, T vm, AccountVO owner);
     
     <T extends VMInstanceVO> void create(T vm);
     Long findHostIdForStoragePool(StoragePoolVO pool);

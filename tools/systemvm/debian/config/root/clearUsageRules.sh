@@ -16,6 +16,8 @@ then
             # remove rules
             iptables -D NETWORK_STATS -i eth0 -o $i > /dev/null;
             iptables -D NETWORK_STATS -i $i -o eth0 > /dev/null;
+            iptables -D NETWORK_STATS -o $pubIf ! -i eth0 -p tcp > /dev/null;
+            iptables -D NETWORK_STATS -i $pubIf ! -o eth0 -p tcp > /dev/null;
         fi
     done
 rm /root/removedVifs

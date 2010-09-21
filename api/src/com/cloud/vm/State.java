@@ -19,10 +19,13 @@
 package com.cloud.vm;
 
 import java.util.List;
+import java.util.Set;
 
+import com.cloud.utils.fsm.FiniteState;
 import com.cloud.utils.fsm.StateMachine;
+import com.cloud.vm.VirtualMachine.Event;
 
-public enum State {
+public enum State implements FiniteState<State, Event> {
     Creating(true),
     Starting(true),
     Running(false),
@@ -44,22 +47,24 @@ public enum State {
     	return _transitional;
     }
     
-    public static String[] toStrings(State... states) {
-        String[] strs = new String[states.length];
-        for (int i = 0; i < states.length; i++) {
-            strs[i] = states[i].toString();
-        }
-        
-        return strs;
-    }
-    
+    @Override
     public State getNextState(VirtualMachine.Event e) {
         return s_fsm.getNextState(this, e);
     }
 
-    public State[] getFromStates(VirtualMachine.Event e) {
-        List<State> from = s_fsm.getFromStates(this, e);
-        return from.toArray(new State[from.size()]);
+    @Override
+    public List<State> getFromStates(VirtualMachine.Event e) {
+        return s_fsm.getFromStates(this, e);
+    }
+    
+    @Override
+    public Set<Event> getPossibleEvents() {
+        return s_fsm.getPossibleEvents(this);
+    }
+    
+    @Override
+    public StateMachine<State, Event> getStateMachine() {
+        return s_fsm;
     }
     
     protected static final StateMachine<State, VirtualMachine.Event> s_fsm = new StateMachine<State, VirtualMachine.Event>();

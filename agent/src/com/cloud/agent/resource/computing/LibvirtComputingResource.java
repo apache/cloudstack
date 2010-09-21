@@ -183,7 +183,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.ConsoleProxyVO;
-import com.cloud.vm.DiskCharacteristics;
+import com.cloud.vm.DiskProfile;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.State;
 import com.cloud.vm.VirtualMachineName;
@@ -1174,7 +1174,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected Answer execute(CreateCommand cmd) {
     	  StoragePoolTO pool = cmd.getPool();
-          DiskCharacteristics dskch = cmd.getDiskCharacteristics();
+          DiskProfile dskch = cmd.getDiskCharacteristics();
           StorageVol tmplVol = null;
           StoragePool primaryPool = null;
           StorageVol vol = null;

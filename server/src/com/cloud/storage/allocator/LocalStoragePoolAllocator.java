@@ -49,12 +49,12 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
-import com.cloud.vm.DiskCharacteristics;
+import com.cloud.vm.DiskProfile;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VmCharacteristics;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -84,12 +84,12 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     
     
     @Override
-    public boolean allocatorIsCorrectType(DiskCharacteristics dskCh, VMInstanceVO vm, ServiceOffering offering) {
+    public boolean allocatorIsCorrectType(DiskProfile dskCh, VMInstanceVO vm, ServiceOffering offering) {
     	return localStorageAllocationNeeded(dskCh, vm, offering);
     }
     
     @Override
-    public StoragePool allocateToPool(DiskCharacteristics dskCh,
+    public StoragePool allocateToPool(DiskProfile dskCh,
                                       ServiceOffering offering,
                                       DataCenterVO dc,
                                       HostPodVO pod,
@@ -104,7 +104,7 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
         }
 
         Set<StoragePool> myAvoids = new HashSet<StoragePool>(avoid);
-        VmCharacteristics vmc = new VmCharacteristics(vm.getType());
+        VirtualMachineProfile vmc = new VirtualMachineProfile(vm.getType());
         StoragePool pool = null;
         while ((pool = super.allocateToPool(dskCh, offering, dc, pod, clusterId, vm, template, myAvoids)) != null) {
             myAvoids.add(pool);

@@ -20,13 +20,16 @@ package com.cloud.storage.upload;
 
 import java.util.Map;
 
+import com.cloud.async.AsyncJobManager;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Upload.Type;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.component.Manager;
 
 /**
- * Monitor upload progress of all templates.
+ * Monitor upload progress of all entities.
  * @author nitin
  *
  */
@@ -35,9 +38,15 @@ public interface UploadMonitor extends Manager{
 	public void cancelAllUploads(Long templateId);
 
 	public void extractTemplate(VMTemplateVO template, String url,
-			VMTemplateHostVO tmpltHostRef,Long dataCenterId);
+			VMTemplateHostVO tmpltHostRef,Long dataCenterId, long eventId, long asyncJobId, AsyncJobManager asyncMgr);
 
 	void handleUploadTemplateSync(long sserverId,
 			Map<String, TemplateInfo> templateInfo);
+
+	void extractVolume(VolumeVO volume, String url, Long dataCenterId,
+			String installPath, long eventId, long asyncJobId,
+			AsyncJobManager asyncMgr);
+
+    boolean isTypeUploadInProgress(Long typeId, Type type);
 
 }

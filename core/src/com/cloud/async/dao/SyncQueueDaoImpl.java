@@ -66,7 +66,7 @@ public class SyncQueueDaoImpl extends GenericDaoBase<SyncQueueVO, Long> implemen
     	SearchCriteria<SyncQueueVO> sc = TypeIdSearch.create();
     	sc.setParameters("syncObjType", syncObjType);
     	sc.setParameters("syncObjId", syncObjId);
-        return findOneActiveBy(sc);
+        return findOneBy(sc);
 	}
 	
 	protected SyncQueueDaoImpl() {

@@ -61,7 +61,7 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
             SearchCriteria<ConfigurationVO> sc = InstanceSearch.create();
             sc.setParameters("instance", "DEFAULT");
 
-            List<ConfigurationVO> configurations = listBy(sc);
+            List<ConfigurationVO> configurations = listIncludingRemovedBy(sc);
 
             for (ConfigurationVO config : configurations) {
             	if (config.getValue() != null)
@@ -71,7 +71,7 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
             sc = InstanceSearch.create();
             sc.setParameters("instance", instance);
 
-            configurations = listBy(sc);
+            configurations = listIncludingRemovedBy(sc);
 
             for (ConfigurationVO config : configurations) {
             	if (config.getValue() != null)
@@ -126,7 +126,7 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     public String getValue(String name) {
     	SearchCriteria<ConfigurationVO> sc = NameSearch.create();
         sc.setParameters("name", name);
-        List<ConfigurationVO> configurations = listBy(sc);
+        List<ConfigurationVO> configurations = listIncludingRemovedBy(sc);
         
         if (configurations.size() == 0) {
         	return null;

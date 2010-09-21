@@ -15,5 +15,9 @@ public interface Pod extends Grouping {
      */
     long getId();
     
+    String getCidrAddress();
+    int getCidrSize();
+    public String getGateway();
+    
     //String getUniqueName();
 }

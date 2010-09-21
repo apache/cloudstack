@@ -61,7 +61,7 @@ public class StoragePoolDetailsDaoImpl extends GenericDaoBase<StoragePoolDetailV
     	SearchCriteria<StoragePoolDetailVO> sc = PoolSearch.create();
     	sc.setParameters("pool", poolId);
     	
-    	List<StoragePoolDetailVO> details = listActiveBy(sc);
+    	List<StoragePoolDetailVO> details = listBy(sc);
     	Map<String, String> detailsMap = new HashMap<String, String>();
     	for (StoragePoolDetailVO detail : details) {
     		detailsMap.put(detail.getName(), detail.getValue());

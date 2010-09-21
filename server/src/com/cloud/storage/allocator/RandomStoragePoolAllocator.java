@@ -32,7 +32,7 @@ import com.cloud.server.StatsCollector;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.vm.DiskCharacteristics;
+import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 
 @Local(value=StoragePoolAllocator.class)
@@ -40,12 +40,12 @@ public class RandomStoragePoolAllocator extends AbstractStoragePoolAllocator {
     private static final Logger s_logger = Logger.getLogger(RandomStoragePoolAllocator.class);
     
     @Override
-    public boolean allocatorIsCorrectType(DiskCharacteristics dskCh, VMInstanceVO vm, ServiceOffering offering) {
+    public boolean allocatorIsCorrectType(DiskProfile dskCh, VMInstanceVO vm, ServiceOffering offering) {
     	return true;
     }
     
     @Override
-    public StoragePool allocateToPool(DiskCharacteristics dskCh, ServiceOffering offering,
+    public StoragePool allocateToPool(DiskProfile dskCh, ServiceOffering offering,
 			 DataCenterVO dc, HostPodVO pod, Long clusterId, VMInstanceVO vm,
 			VMTemplateVO template, Set<? extends StoragePool> avoid) {
     	

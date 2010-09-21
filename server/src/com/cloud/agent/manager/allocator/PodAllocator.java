@@ -27,10 +27,10 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapter;
-import com.cloud.vm.VmCharacteristics;
+import com.cloud.vm.VirtualMachineProfile;
 
 public interface PodAllocator extends Adapter {
     Pair<HostPodVO, Long> allocateTo(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc, long userId, Set<Long> avoids);
     
-    Pod allocateTo(VmCharacteristics vm, DataCenter dc, Set<? extends Pod> avoids);
+    Pod allocateTo(VirtualMachineProfile vm, DataCenter dc, Set<? extends Pod> avoids);
 }

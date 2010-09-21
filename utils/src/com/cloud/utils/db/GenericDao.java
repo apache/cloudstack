@@ -101,7 +101,7 @@ public interface GenericDao<T, ID extends Serializable> {
      * @return object if acquired; null if not.  If null, you need to call findById to see if it is actually not found.
      */
     T acquire(ID id);
-   
+    
     /**
      * Acquires a database wide lock on the id of the entity.  This ensures
      * that only one is being used.  The timeout is the configured default.
@@ -184,7 +184,15 @@ public interface GenericDao<T, ID extends Serializable> {
     boolean remove(ID id);
     
     /**
-     * remove the entity bean.
+     * Remove based on the search criteria.  This will delete if the VO object
+     * does not have a REMOVED column. 
+     * @param sc search criteria to match
+     * @return rows removed.
+     */
+    int remove(SearchCriteria<T> sc);
+    
+    /**
+     * Expunge actually delete the row even if it's REMOVED.
      * @param id
      * @return true if removed.
      */
@@ -212,5 +220,4 @@ public interface GenericDao<T, ID extends Serializable> {
      */
     boolean configure(String name, Map<String, Object> params) throws ConfigurationException;
     
-    int remove(SearchCriteria<T> sc);
 }

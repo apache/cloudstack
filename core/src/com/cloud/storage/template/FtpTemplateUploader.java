@@ -19,7 +19,7 @@ public class FtpTemplateUploader implements TemplateUploader {
 	public TemplateUploader.Status status = TemplateUploader.Status.NOT_STARTED;
 	public String errorString = "";
 	public long totalBytes = 0;
-	public long templateSizeinBytes;
+	public long entitySizeinBytes;
 	private String sourcePath;
 	private String ftpUrl;	
 	private UploadCompleteCallback completionCallback;
@@ -28,12 +28,12 @@ public class FtpTemplateUploader implements TemplateUploader {
     private BufferedOutputStream outputStream = null;
 	private static final int CHUNK_SIZE = 1024*1024; //1M
 	
-	public FtpTemplateUploader(String sourcePath, String url, UploadCompleteCallback callback, long templateSizeinBytes){
+	public FtpTemplateUploader(String sourcePath, String url, UploadCompleteCallback callback, long entitySizeinBytes){
 		
 		this.sourcePath = sourcePath;
 		this.ftpUrl = url;
 		this.completionCallback = callback;
-		this.templateSizeinBytes = templateSizeinBytes;
+		this.entitySizeinBytes = entitySizeinBytes;
 		
 	}
 	
@@ -51,7 +51,7 @@ public class FtpTemplateUploader implements TemplateUploader {
 				
 	             Date start = new Date();
 				 
-		         StringBuffer sb = new StringBuffer();
+		         StringBuffer sb = new StringBuffer(ftpUrl);
 		         // check for authentication else assume its anonymous access.
 		        /* if (user != null && password != null)
 		         {
@@ -59,11 +59,8 @@ public class FtpTemplateUploader implements TemplateUploader {
 		            sb.append( ':' );
 		            sb.append( password );
 		            sb.append( '@' );
-		         }*/
-		         sb.append( ftpUrl );
-		         /*sb.append( '/' );
-		         sb.append( fileName ); filename where u want to dld it */
-		         /*ftp://10.91.18.14/
+		         }*/		         
+		         /*
 		          * type ==> a=ASCII mode, i=image (binary) mode, d= file directory
 		          * listing
 		          */
@@ -73,9 +70,11 @@ public class FtpTemplateUploader implements TemplateUploader {
 		         {
 		            URL url = new URL( sb.toString() );
 		            URLConnection urlc = url.openConnection();
+		            File sourceFile = new File(sourcePath);
+		            entitySizeinBytes = sourceFile.length();
 
 		            outputStream = new BufferedOutputStream( urlc.getOutputStream() );
-		            inputStream = new BufferedInputStream( new FileInputStream( new File(sourcePath) ) );	            
+		            inputStream = new BufferedInputStream( new FileInputStream(sourceFile) );            
 
 		            status = TemplateUploader.Status.IN_PROGRESS;
 
@@ -146,31 +145,26 @@ public class FtpTemplateUploader implements TemplateUploader {
 
 	@Override
 	public String getUploadLocalPath() {
-		return null;
+		return sourcePath;
 	}
 
 	@Override
 	public int getUploadPercent() {
-		if (templateSizeinBytes == 0) {
+		if (entitySizeinBytes == 0) {
 			return 0;
 		}		
-		return (int)(100.0*totalBytes/templateSizeinBytes);
+		return (int)(100.0*totalBytes/entitySizeinBytes);
 	}
 
 	@Override
 	public long getUploadTime() {
-		// TODO Auto-generated method stub
+		// TODO
 		return 0;
 	}
 
 	@Override
 	public long getUploadedBytes() {
 		return totalBytes;
-	}
-
-	@Override
-	public boolean isInited() {
-		return false;
 	}
 
 	@Override
@@ -217,7 +211,6 @@ public class FtpTemplateUploader implements TemplateUploader {
 		default:
 			return true;
 		}
-	}
-	
+	}	
 
 }

@@ -83,22 +83,67 @@ long milliseconds = new Date().getTime();
                 <div id="contentwrapper">
                     <!-- Action Panel starts here-->
                     <div class="actionpanel">
-                        <div class="searchpanel">
+                        <div class="searchpanel" id="search_panel">
                             <form method="post" action="#">
                             <ol>
                                 <li>
                                     <div class="search_textbg">
                                         <input class="text" type="text" name="search_input" />
-                                        <div class="search_closebutton" style="display:none;"></div>
+                                        <div class="search_closebutton" style="display:block;"></div>
                                     </div>
                                 </li>
                             </ol>
                             </form>
                             <a href="#">Advanced</a>
+                            <div class="adv_searchpopup" id="action_menu" style="display: none;">
+                                <div class="adv_searchformbox">
+                                    <h3>
+                                        Advance Search</h3>
+                                    <a id="advanced_search_close" href="#">Close </a>
+                                    <form action="#"method="post">
+                                        <ol style="margin-top:8px;">
+                                            <li>
+                                                <label for="filter">
+                                                    Name:</label>
+                                                <input class="text" type="text" name="adv_search_name" id="adv_search_name" />
+                                            </li>
+                                            <li>
+                                                <label for="filter">
+                                                    Status:</label>
+                                                <select class="select" id="adv_search_state">
+                                                    <option value=""></option>
+                                                    <option value="Creating">Creating</option>
+                                                    <option value="Starting">Starting</option>
+                                                    <option value="Running">Running</option>
+                                                    <option value="Stopping">Stopping</option>
+                                                    <option value="Stopped">Stopped</option>
+                                                    <option value="Destroyed">Destroyed</option>
+                                                    <option value="Expunging">Expunging</option>
+                                                    <option value="Migrating">Migrating</option>
+                                                    <option value="Error">Error</option>
+                                                    <option value="Unknown">Unknown</option>
+                                                </select>
+                                            </li>
+                                            <li>
+                                                <label for="filter">
+                                                    Zone:</label>
+                                                <select class="select" id="adv_search_zone">
+                                                </select>
+                                            </li>
+                                           
+                                        </ol>
+                                    </form>
+                                    <div class="adv_search_actionbox">
+                                        <div class="adv_searchpopup_button" id="adv_search_button">
+                                        </div>
+                                    </div>
+                                </div>
+                        	</div>
                         </div>
+                        
                         <div class="actionpanel_button_wrapper" id="midmenu_action_link" style="position: relative;
                             display: none">
-                            <div class="actionpanel_button">
+                          <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
                                     <img src="images/actions_actionicon.png" alt="Add" /></div>
                                 <div class="actionpanel_button_links">
@@ -108,6 +153,7 @@ long milliseconds = new Date().getTime();
                             </div>
                             <div class="actionsdropdown_box" id="action_menu" style="display: none;">
                                 <ul class="actionsdropdown_boxlist" id="action_list">
+                                	
                                 </ul>
                             </div>
                         </div>
@@ -252,7 +298,7 @@ long milliseconds = new Date().getTime();
                         </div>
                         -->
                     </div>
-                    <div class="midmenu_navigationbox">
+                    <div class="midmenu_navigationbox" id="middle_menu_pagination">
                         <div class="midmenu_prevbutton">
                         </div>
                         <div class="midmenu_nextbutton">
@@ -261,7 +307,7 @@ long milliseconds = new Date().getTime();
                     <!-- Right Panel ends here-->
                 </div>
                 <!-- Mid Menu starts here-->
-                <div class="midmenu_panel">
+                <div class="midmenu_panel" id="middle_menu">
                     <div class="midmenu_box" id="midmenu_container">
                     	
                         <!--  

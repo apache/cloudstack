@@ -27,6 +27,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.domain.DomainVO;
+import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.user.User;
@@ -42,7 +43,6 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     	s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NAME, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISPLAY_TEXT, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DISK_SIZE, Boolean.TRUE));
-//        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_MIRRORED, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
@@ -61,31 +61,24 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Override
     public List<Pair<String, Object>> execute(Map<String, Object> params) {
         // FIXME: add domain-private disk offerings
-//        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
+
         Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-        Long domainId = (Long)params.get(BaseCmd.Properties.DOMAIN_ID.getName());
         String name = (String)params.get(BaseCmd.Properties.NAME.getName());
         String displayText = (String)params.get(BaseCmd.Properties.DISPLAY_TEXT.getName());
         Long numGB = (Long) params.get(BaseCmd.Properties.DISK_SIZE.getName());
-//        Boolean isMirrored = (Boolean)params.get(BaseCmd.Properties.IS_MIRRORED.getName());
         String tags = (String)params.get(BaseCmd.Properties.TAGS.getName());
-
-//        if (isMirrored == null) {
-//            isMirrored = Boolean.FALSE;
-//        }
-        if (domainId == null) {
-            domainId = DomainVO.ROOT_DOMAIN;
-        }
-        
+       
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
         }
 
         DiskOfferingVO diskOffering = null;
         try {
-        	diskOffering = getManagementServer().createDiskOffering(userId, domainId.longValue(), name, displayText, numGB.intValue(),tags);
+        	diskOffering = getManagementServer().createDiskOffering(userId, DomainVO.ROOT_DOMAIN, name, displayText, numGB.intValue(),tags);
         } catch (InvalidParameterValueException ex) {
         	throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, ex.getMessage());
+        } catch (InternalErrorException ex) {
+            throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, ex.getMessage());            
         }
         
         if (diskOffering == null) {
@@ -99,7 +92,6 @@ public class CreateDiskOfferingCmd extends BaseCmd {
         returnValues.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), diskOffering.getName()));
         returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_TEXT.getName(), diskOffering.getDisplayText()));
         returnValues.add(new Pair<String, Object>(BaseCmd.Properties.DISK_SIZE.getName(), diskOffering.getDiskSizeInBytes()));
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.IS_MIRRORED.getName(), diskOffering.isMirrored()));
         returnValues.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), diskOffering.getCreated()));
         returnValues.add(new Pair<String, Object>(BaseCmd.Properties.TAGS.getName(), diskOffering.getTags()));
         return returnValues;

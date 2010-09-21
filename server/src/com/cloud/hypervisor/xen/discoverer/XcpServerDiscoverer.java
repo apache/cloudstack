@@ -137,9 +137,11 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             }
             Set<Pool> pools = Pool.getAll(conn);
             Pool pool = pools.iterator().next();
-            String poolUuid = pool.getUuid(conn);
+            Pool.Record pr = pool.getRecord(conn);
+            String poolUuid = pr.uuid;
             Map<Host, Host.Record> hosts = Host.getAllRecords(conn);
-            
+            Host master = pr.master;
+           
             if (_checkHvm) {
                 for (Map.Entry<Host, Host.Record> entry : hosts.entrySet()) {
                     Host.Record record = entry.getValue();
@@ -150,7 +152,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                            support_hvm = true;
                            break;
                         }
-                    }
+                    } 
                     if( !support_hvm ) {
                         String msg = "Unable to add host " + record.address + " because it doesn't support hvm";
                         _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
@@ -159,8 +161,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                     }
                 }
             }
+
             for (Map.Entry<Host, Host.Record> entry : hosts.entrySet()) {
-                Host host = entry.getKey();
                 Host.Record record = entry.getValue();
                 String hostAddr = record.address;
                 

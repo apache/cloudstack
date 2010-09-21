@@ -17,24 +17,35 @@ $(document).ready(function() {
     $("#accordion_menu").show();
        
     var $midmenuItem = $("#midmenu_item");
-    function listMidMenuItems(leftmenuId, commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSP, toMidmenu, toRightPanel) { 
+    function listMidMenuItems(leftmenuId, commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSP, toMidmenu, toRightPanel, getMidmenuId) { 
         $("#"+leftmenuId).bind("click", function(event) {
             if(selected_leftmenu_id != null && selected_leftmenu_id.length > 0)
                 $("#"+selected_leftmenu_id).removeClass("selected");
             selected_leftmenu_id = leftmenuId;
             $(this).addClass("selected");
             
-            $("#midmenu_container").selectable("destroy" ); //midmenu doesn't need multiple selection
+            showMiddleMenu();
+            $("#midmenu_container").selectable("destroy" ); //Most pages don't need multiple selection in middle menu.
             
             clearLeftMenu();
-            clearMidMenu();
+            clearMiddleMenu();
             
-            $("#right_panel").load(rightPanelJSP, function(){   
-                
+            $("#right_panel").load(rightPanelJSP, function(){                   
                 $("#right_panel_content #tab_content_details #action_message_box #close_button").bind("click", function(event){    
                     $(this).parent().hide();
                     return false;
-                });                
+                });  
+                                     
+                var $actionLink = $("#right_panel_content #tab_content_details #action_link");
+	            $actionLink.bind("mouseover", function(event) {	    
+                    $(this).find("#action_menu").show();    
+                    return false;
+                });
+                $actionLink.bind("mouseout", function(event) {       
+                    $(this).find("#action_menu").hide();    
+                    return false;
+                });	   
+                              
                 afterLoadRightPanelJSP();    
                             
                 $.ajax({
@@ -48,19 +59,8 @@ $(document).ready(function() {
 	                        for(var i=0; i<items.length;i++) { 
                                 var $midmenuItem1 = $midmenuItem.clone();  
                                 $midmenuItem1.data("toRightPanelFn", toRightPanel);                             
-                                toMidmenu(items[i], $midmenuItem1);                                  
-                                $midmenuItem1.bind("click", function(event){  
-                                    var thisMidmenuItem = $(this);
-                                    
-                                    if(selected_midmenu_id != null && selected_midmenu_id.length > 0)
-                                        $("#"+selected_midmenu_id).find("#content").removeClass("selected");
-                                    selected_midmenu_id = ("midmenuItem_"+thisMidmenuItem.data("jsonObj").id);
-                                
-                                    thisMidmenuItem.find("#content").addClass("selected");                                               
-                                    clearRightPanel();        
-                                    toRightPanel(thisMidmenuItem);	  
-                                    return false;
-                                });                                                              
+                                toMidmenu(items[i], $midmenuItem1);    
+                                bindClickToMidMenu($midmenuItem1, toRightPanel, getMidmenuId);             
                                 $("#midmenu_container").append($midmenuItem1.show());                            
                             }  
                         }  
@@ -75,25 +75,30 @@ $(document).ready(function() {
     listMidMenuItems("leftmenu_account", "listAccounts", "listaccountsresponse", "account", "jsp/account.jsp", afterLoadAccountJSP, accountToMidmenu, accountToRigntPanel);
     listMidMenuItems("leftmenu_volume", "listVolumes", "listvolumesresponse", "volume", "jsp/volume.jsp", afterLoadVolumeJSP, volumeToMidmenu, volumeToRigntPanel);
     listMidMenuItems("leftmenu_snapshot", "listSnapshots", "listsnapshotsresponse", "snapshot", "jsp/snapshot.jsp", afterLoadSnapshotJSP, snapshotToMidmenu, snapshotToRigntPanel);
-    listMidMenuItems("leftmenu_ip", "listPublicIpAddresses", "listpublicipaddressesresponse", "publicipaddress", "jsp/ip_address.jsp", afterLoadIpJSP, ipToMidmenu, ipToRigntPanel);
+    listMidMenuItems("leftmenu_ip", "listPublicIpAddresses", "listpublicipaddressesresponse", "publicipaddress", "jsp/ipaddress.jsp", afterLoadIpJSP, ipToMidmenu, ipToRigntPanel, ipGetMidmenuId);
     listMidMenuItems("leftmenu_router", "listRouters", "listroutersresponse", "router", "jsp/router.jsp", afterLoadRouterJSP, routerToMidmenu, routerToRigntPanel);
       
-    listMidMenuItems("leftmenu_submenu_my_template", "listTemplates&templatefilter=self", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRigntPanel);
-    listMidMenuItems("leftmenu_submenu_featured_template", "listTemplates&templatefilter=featured", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRigntPanel);
-    listMidMenuItems("leftmenu_submenu_community_template", "listTemplates&templatefilter=community", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRigntPanel);
+    listMidMenuItems("leftmenu_submenu_my_template", "listTemplates&templatefilter=self", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRigntPanel, templateGetMidmenuId);
+    listMidMenuItems("leftmenu_submenu_featured_template", "listTemplates&templatefilter=featured", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRigntPanel, templateGetMidmenuId);
+    listMidMenuItems("leftmenu_submenu_community_template", "listTemplates&templatefilter=community", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRigntPanel, templateGetMidmenuId);
     
-    listMidMenuItems("leftmenu_submenu_my_iso", "listIsos&isofilter=self", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRigntPanel);
-    listMidMenuItems("leftmenu_submenu_featured_iso", "listIsos&isofilter=featured", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRigntPanel);
-    listMidMenuItems("leftmenu_submenu_community_iso", "listIsos&isofilter=community", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRigntPanel);
+    listMidMenuItems("leftmenu_submenu_my_iso", "listIsos&isofilter=self", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRigntPanel, isoGetMidmenuId);
+    listMidMenuItems("leftmenu_submenu_featured_iso", "listIsos&isofilter=featured", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRigntPanel, isoGetMidmenuId);
+    listMidMenuItems("leftmenu_submenu_community_iso", "listIsos&isofilter=community", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRigntPanel, isoGetMidmenuId);
         
     $("#leftmenu_instance_group_header").bind("click", function(event) {  
-        clearMidMenu(); 
+        showMiddleMenu();
+        clearMiddleMenu(); 
         var $arrowIcon = $(this).find("#arrow_icon");        
         clickInstanceGroupHeader($arrowIcon);
         return false;
     });
     
-   
+    $("#leftmenu_dashboard").bind("click", function(event) {      
+        hideMiddleMenu();
+        $("#right_panel").load("jsp/dashboard.jsp", function(){});
+        return false;
+    });
     
     
     

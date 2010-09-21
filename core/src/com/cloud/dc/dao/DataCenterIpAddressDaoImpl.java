@@ -136,6 +136,16 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
         update(vo, sc);
     }
     
+    public void releaseIpAddress(long nicId) {
+        SearchCriteria<DataCenterIpAddressVO> sc = IpDcSearch.create();
+        sc.setParameters("instance", nicId);
+        
+        DataCenterIpAddressVO vo = createForUpdate();
+        vo.setTakenAt(null);
+        vo.setInstanceId(null);
+        update(vo, sc);
+    }
+    
     protected DataCenterIpAddressDaoImpl() {
     	super();
         FreeIpSearch = createSearchBuilder();
@@ -173,7 +183,7 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
 		SearchCriteria<DataCenterIpAddressVO> sc = PodDcSearch.create();
 		sc.setParameters("podId", podId);
 		sc.setParameters("dataCenterId", dcId);
-		return listBy(sc);
+		return listIncludingRemovedBy(sc);
 	}
     
     public List<DataCenterIpAddressVO> listByPodIdDcIdIpAddress(long podId, long dcId, String ipAddress) {
@@ -181,7 +191,7 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
     	sc.setParameters("dcId", dcId);
 		sc.setParameters("podId", podId);
 		sc.setParameters("ipAddress", ipAddress);
-		return listBy(sc);
+		return listIncludingRemovedBy(sc);
     }
     
     public int countIPs(long podId, long dcId, boolean onlyCountAllocated) {

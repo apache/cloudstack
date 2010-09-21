@@ -100,7 +100,7 @@ public class LaunchPermissionDaoImpl extends GenericDaoBase<LaunchPermissionVO, 
         SearchCriteria<LaunchPermissionVO> sc = TemplateAndAccountSearch.create();
         sc.setParameters("templateId", templateId);
         sc.setParameters("accountId", accountId);
-        return findOneActiveBy(sc);
+        return findOneBy(sc);
     }
 
     @Override
@@ -153,6 +153,6 @@ public class LaunchPermissionDaoImpl extends GenericDaoBase<LaunchPermissionVO, 
     public List<LaunchPermissionVO> findByTemplate(long templateId) {
         SearchCriteria<LaunchPermissionVO> sc = TemplateIdSearch.create();
         sc.setParameters("templateId", templateId);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 }

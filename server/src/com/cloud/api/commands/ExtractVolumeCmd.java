@@ -55,9 +55,9 @@ public class ExtractVolumeCmd extends BaseCmd {
     			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to extract volume " + volumeId + " to " + url + ", permission denied.");
     		}
     	}
-    	
+    	long jobId;
         try {
-			managementServer.extractVolume(url, volumeId, zoneId);
+			jobId = managementServer.extractVolumeAsync(url, volumeId, zoneId);
 		} catch (Exception e) {			
 			s_logger.error(e.getMessage(), e);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal Error Extracting the volume " + e.getMessage());
@@ -69,7 +69,7 @@ public class ExtractVolumeCmd extends BaseCmd {
 		response.add(new Pair<String, Object>(BaseCmd.Properties.URL.getName(), url));
 		response.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_ID.getName(), zoneId));
 		response.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), zone.getName()));
-		response.add(new Pair<String, Object>(BaseCmd.Properties.STATUS.getName(), "Processing"));
+		response.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), jobId));
 		return response;
 	}
 
@@ -81,6 +81,10 @@ public class ExtractVolumeCmd extends BaseCmd {
 	@Override
 	public List<Pair<Enum, Boolean>> getProperties() {
 		return s_properties;
+	}
+
+	public static String getStaticName() {
+		return "ExtractVolume";
 	}
 
 }

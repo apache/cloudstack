@@ -62,7 +62,7 @@ public class NetworkGroupDaoImpl extends GenericDaoBase<NetworkGroupVO, Long> im
     public List<NetworkGroupVO> listByAccountId(long accountId) {
         SearchCriteria<NetworkGroupVO> sc = AccountIdSearch.create();
         sc.setParameters("accountId", accountId);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
@@ -76,7 +76,7 @@ public class NetworkGroupDaoImpl extends GenericDaoBase<NetworkGroupVO, Long> im
             sc.addAnd("accountId", SearchCriteria.Op.NULL);
         }
 
-        List<NetworkGroupVO> securityGroups = listActiveBy(sc);
+        List<NetworkGroupVO> securityGroups = listBy(sc);
         return ((securityGroups != null) && !securityGroups.isEmpty());
     }
 
@@ -87,7 +87,7 @@ public class NetworkGroupDaoImpl extends GenericDaoBase<NetworkGroupVO, Long> im
             if (accountId != null) {
                 SearchCriteria<NetworkGroupVO> sc = createSearchCriteria();
                 sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-                List<NetworkGroupVO> accountGroups = listActiveBy(sc);
+                List<NetworkGroupVO> accountGroups = listBy(sc);
                 availableGroups.addAll(accountGroups);
             } else if (domainId != null) {
                 while (domainId != null) {
@@ -96,7 +96,7 @@ public class NetworkGroupDaoImpl extends GenericDaoBase<NetworkGroupVO, Long> im
                     if (accountId != null) {
                         sc.addAnd("accountId", SearchCriteria.Op.NEQ, accountId); // we added the account specific ones above
                     }
-                    List<NetworkGroupVO> domainGroups = listActiveBy(sc);
+                    List<NetworkGroupVO> domainGroups = listBy(sc);
                     availableGroups.addAll(domainGroups);
 
                     // get the parent domain, repeat the loop
@@ -114,7 +114,7 @@ public class NetworkGroupDaoImpl extends GenericDaoBase<NetworkGroupVO, Long> im
 		sc.setParameters("accountId", accountId);
 		sc.setParameters("groupName", name);
 
-		return findOneBy(sc);
+		return findOneIncludingRemovedBy(sc);
 	}
 
 	@Override
@@ -124,6 +124,6 @@ public class NetworkGroupDaoImpl extends GenericDaoBase<NetworkGroupVO, Long> im
 
 		sc.setParameters("groupNames", (Object [])names);
 
-		return listActiveBy(sc);
+		return listBy(sc);
 	}
 }

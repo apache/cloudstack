@@ -123,7 +123,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     public DomainRouterVO findByPublicIpAddress(String ipAddress) {
         SearchCriteria<DomainRouterVO> sc = IpSearch.create();
         sc.setParameters("ip", ipAddress);
-        return findOneActiveBy(sc);
+        return findOneBy(sc);
     }
 
     @Override
@@ -196,7 +196,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     public List<DomainRouterVO> listByDataCenter(long dcId) {
         SearchCriteria<DomainRouterVO> sc = DcSearch.create();
         sc.setParameters("dc", dcId);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
@@ -205,7 +205,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         sc.setParameters("account", accountId);
         sc.setParameters("dc", dcId);
         sc.setParameters("role", Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
-        return findOneActiveBy(sc);
+        return findOneBy(sc);
     }
     
     @Override
@@ -214,21 +214,21 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         sc.setParameters("account", accountId);
         sc.setParameters("dc", dcId);
         sc.setParameters("role", role);
-        return findOneActiveBy(sc);
+        return findOneBy(sc);
     }
 
     @Override
     public List<DomainRouterVO> listBy(long accountId) {
         SearchCriteria<DomainRouterVO> sc = AccountSearch.create();
         sc.setParameters("account", accountId);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
     public List<DomainRouterVO> listByHostId(Long hostId) {
         SearchCriteria<DomainRouterVO> sc = HostSearch.create();
         sc.setParameters("host", hostId);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
     
     @Override
@@ -238,7 +238,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
             sc.setParameters("host", hostId);
         }
         sc.setParameters("states", new Object[] {State.Destroyed, State.Stopped, State.Expunging});
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
@@ -287,13 +287,13 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     public List<DomainRouterVO> listByDomain(Long domainId) {
         SearchCriteria<DomainRouterVO> sc = DomainIdSearch.create();
         sc.setParameters("domainId", domainId);
-        return listBy(sc);
+        return listIncludingRemovedBy(sc);
     }
 
     @Override
     public List<DomainRouterVO> listByVlanDbId(Long vlanDbId) {
         SearchCriteria<DomainRouterVO> sc = VlanDbIdSearch.create();
         sc.setParameters("vlanDbId", vlanDbId);
-        return listBy(sc);
+        return listIncludingRemovedBy(sc);
     }
 }

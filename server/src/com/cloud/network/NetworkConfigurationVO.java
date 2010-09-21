@@ -29,7 +29,8 @@ import javax.persistence.Table;
 import com.cloud.network.Network.BroadcastDomainType;
 import com.cloud.network.Network.Mode;
 import com.cloud.network.Network.TrafficType;
-import com.cloud.vm.NetworkCharacteristics;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.net.NetUtils;
 
 /**
  * NetworkProfileVO contains information about a specific network.
@@ -69,18 +70,38 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     @Column(name="data_center_id")
     long dataCenterId;
     
+    @Column(name="handler_name")
+    String handlerName;
+    
+    @Column(name="state")
+    @Enumerated(value=EnumType.STRING)
+    State state;
+    
     public NetworkConfigurationVO() {
     }
     
-    public NetworkConfigurationVO(NetworkConfiguration that, long accountId, long offeringId) {
-        this(that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId);
+    public NetworkConfigurationVO(NetworkConfiguration that, long offeringId, long dataCenterId, String handlerName) {
+        this(that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId);
+        this.handlerName = handlerName;
+        this.state = that.getState();
     }
     
-    public NetworkConfigurationVO(TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId) {
+    public NetworkConfigurationVO(TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId) {
         this.trafficType = trafficType;
         this.mode = mode;
         this.broadcastDomainType = broadcastDomainType;
         this.networkOfferingId = networkOfferingId;
+        this.dataCenterId = dataCenterId;
+        this.state = State.Allocated;
+    }
+    
+    @Override
+    public State getState() {
+        return state;
+    }
+    
+    public void setState(State state) {
+        this.state = state;
     }
 
     @Override
@@ -105,6 +126,14 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     @Override
     public BroadcastDomainType getBroadcastDomainType() {
         return broadcastDomainType;
+    }
+    
+    public String getHandlerName() {
+        return handlerName;
+    }
+    
+    public void setHandlerName(String handlerName) {
+        this.handlerName = handlerName;
     }
 
     public void setBroadcastDomainType(BroadcastDomainType broadcastDomainType) {
@@ -134,7 +163,6 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
         return cidr;
     }
 
-    @Override
     public void setCidr(String cidr) {
         this.cidr = cidr;
     }
@@ -147,7 +175,42 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
         this.vlanId = vlanId;
     }
     
-    public NetworkCharacteristics toCharacteristics() {
-        return new NetworkCharacteristics(id, broadcastDomainType, cidr, mode, 0);
+    @Override
+    public int hashCode() {
+        return NumbersUtil.hash(id);
+    }
+    
+    @Override
+    public long getDataCenterId() {
+        return dataCenterId;
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof NetworkConfigurationVO)) {
+            return false;
+        }
+        NetworkConfigurationVO that = (NetworkConfigurationVO)obj;
+        if (this.trafficType != that.trafficType) {
+            return false;
+        }
+        
+        if (this.vlanId != null && that.vlanId != null && this.vlanId.longValue() != that.vlanId.longValue()) {
+            return false;
+        }
+        
+        if (this.vlanId != that.vlanId) {
+            return false;
+        }
+        
+        if ((this.cidr == null && that.cidr != null) || (this.cidr != null && that.cidr == null)) {
+            return false;
+        }
+        
+        if (this.cidr == null && that.cidr == null) {
+            return true;
+        }
+        
+        return NetUtils.isNetworkAWithinNetworkB(this.cidr, that.cidr);
     }
 }

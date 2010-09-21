@@ -51,7 +51,7 @@ public class DetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implements De
         sc.setParameters("hostId", hostId);
         sc.setParameters("name", name);
         
-        return findOneBy(sc);
+        return findOneIncludingRemovedBy(sc);
     }
 
     @Override

@@ -377,7 +377,12 @@ function clickInstanceGroupHeader($arrowIcon) {
     }
     
     function vmToRightPanel($midmenuItem) {
-        //details tab 
+        var jsonObj = $midmenuItem.data("jsonObj");          
+        
+        var vmName = getVmName(jsonObj.name, jsonObj.displayname);        
+        $("right_panel_header").find("#vm_name").text(fromdb(vmName));	
+        
+        var $rightPanelContent = $("#right_panel_content");        
         if($midmenuItem.find("#info_icon").css("display") != "none") {                
             $rightPanelContent.find("#after_action_info").text($midmenuItem.data("afterActionInfo"));
             if($midmenuItem.find("#info_icon").hasClass("error"))
@@ -391,22 +396,27 @@ function clickInstanceGroupHeader($arrowIcon) {
             $rightPanelContent.find("#after_action_info_container").hide();                
         }
         
-        var jsonObj = $midmenuItem.data("jsonObj");     
-        var vmName = getVmName(jsonObj.name, jsonObj.displayname);        
-        $rightPanelHeader.find("#vm_name").text(fromdb(vmName));	
+        vmJsonToDetailsTab(jsonObj, $midmenuItem);   
+    }
+     
+    function vmJsonToDetailsTab(jsonObj, $midmenuItem){
+        var $detailsTab = $("#right_panel_content #tab_content_details");  
+        $detailsTab.data("jsonObj", jsonObj);  
+    
+        //details tab         
         updateVirtualMachineStateInRightPanel(jsonObj.state);	
-        $rightPanelContent.find("#ipAddress").text(jsonObj.ipaddress);
-        $rightPanelContent.find("#zoneName").text(fromdb(jsonObj.zonename));
-        $rightPanelContent.find("#templateName").text(fromdb(jsonObj.templatename));
-        $rightPanelContent.find("#serviceOfferingName").text(fromdb(jsonObj.serviceofferingname));		
-        $rightPanelContent.find("#created").text(jsonObj.created);
-        $rightPanelContent.find("#account").text(fromdb(jsonObj.account));
-        $rightPanelContent.find("#domain").text(fromdb(jsonObj.domain));
-        $rightPanelContent.find("#hostName").text(fromdb(jsonObj.hostname));
-        $rightPanelContent.find("#group").text(fromdb(jsonObj.group));	
+        $detailsTab.find("#ipAddress").text(jsonObj.ipaddress);
+        $detailsTab.find("#zoneName").text(fromdb(jsonObj.zonename));
+        $detailsTab.find("#templateName").text(fromdb(jsonObj.templatename));
+        $detailsTab.find("#serviceOfferingName").text(fromdb(jsonObj.serviceofferingname));		
+        $detailsTab.find("#created").text(jsonObj.created);
+        $detailsTab.find("#account").text(fromdb(jsonObj.account));
+        $detailsTab.find("#domain").text(fromdb(jsonObj.domain));
+        $detailsTab.find("#hostName").text(fromdb(jsonObj.hostname));
+        $detailsTab.find("#group").text(fromdb(jsonObj.group));	
         
-        setBooleanField(jsonObj.haenable, $rightPanelContent.find("#ha"));	
-        setBooleanField((jsonObj.isoid != null && jsonObj.isoid.length > 0), $rightPanelContent.find("#iso"));	
+        setBooleanField(jsonObj.haenable, $detailsTab.find("#haenable"));	
+        setBooleanField((jsonObj.isoid != null && jsonObj.isoid.length > 0), $detailsTab.find("#iso"));	
             
         //volume tab
         //if (getHypervisorType() == "kvm") 
@@ -418,7 +428,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 			success: function(json) {			    
 				var items = json.listvolumesresponse.volume;
 				if (items != null && items.length > 0) {
-					var container = $rightPanelContent.find("#tab_content_volume").empty();
+					var container = $detailsTab.find("#tab_content_volume").empty();
 					var template = $("#volume_tab_template");				
 					for (var i = 0; i < items.length; i++) {
 						var newTemplate = template.clone(true);
@@ -561,13 +571,15 @@ function clickInstanceGroupHeader($arrowIcon) {
 	                            data: createURL("command=listVirtualMachines&group="+group1+"&pagesize="+midmenuItemCount),
 	                            dataType: "json",
 	                            success: function(json) {		                                                             
-	                                var instances = json.listvirtualmachinesresponse.virtualmachine;                               
-                                    for(var i=0; i<instances.length;i++) {  
-                                        var $midmenuItem1 = $midmenuItem.clone();
-                                        $midmenuItem1.data("toRightPanelFn", vmToRightPanel);                                                                                                                               
-                                        vmToMidmenu(instances[i], $midmenuItem1);  
-                                        $("#midmenu_container").append($midmenuItem1.show());
-                                    }    
+	                                var instances = json.listvirtualmachinesresponse.virtualmachine;    
+	                                if (instances != null && instances.length > 0) {	                           
+                                        for(var i=0; i<instances.length;i++) {  
+                                            var $midmenuItem1 = $midmenuItem.clone();
+                                            $midmenuItem1.data("toRightPanelFn", vmToRightPanel);                                                                                                                               
+                                            vmToMidmenu(instances[i], $midmenuItem1);  
+                                            $("#midmenu_container").append($midmenuItem1.show());
+                                        }  
+                                    }  
 	                            }
 	                        });                            
                             return false;
@@ -1174,19 +1186,14 @@ function clickInstanceGroupHeader($arrowIcon) {
 				    moreCriteria.push("&group="+todb(group));		
     						
 			    vmWizardClose();
-    			
-    			var $t = $("#midmenu_item").clone();
-    			$t.find("#first_row").text("Adding....");    			
-    			$t.find("#content").addClass("inaction"); 
-    			$t.find("#spinning_wheel").show();
-    			$("#midmenu_container").append($t.show());
-    			
+    			    		
+    			var $midmenuItem1 = beforeAddingMidMenuItem() ;
+    			    			
 			    $.ajax({
 				    data: createURL("command=deployVirtualMachine"+moreCriteria.join("")),
 				    dataType: "json",
 				    success: function(json) {
-					    var jobId = json.deployvirtualmachineresponse.jobid;
-					    $t.attr("id","vmNew"+jobId).data("jobId", jobId);
+					    var jobId = json.deployvirtualmachineresponse.jobid;					   
 					    var timerKey = "vmNew"+jobId;
     					
 					    // Process the async job
@@ -1202,35 +1209,22 @@ function clickInstanceGroupHeader($arrowIcon) {
 									    if (result.jobstatus == 0) {
 										    return; //Job has not completed
 									    } else {
-										    $("body").stopTime(timerKey);
-										    $t.find("#content").removeClass("inaction"); 
-										    $t.find("#spinning_wheel").hide();		
+										    $("body").stopTime(timerKey);										    
 										    if (result.jobstatus == 1) {
 											    // Succeeded												   
-											    $t.find("#info_icon").removeClass("error").show();
-						                        $t.data("afterActionInfo", ("Adding succeeded.")); 
+											    afterAddingMidMenuItem($midmenuItem1, true);
 						                        if("virtualmachine" in result)	
 						                            vmToMidmenu(result.virtualmachine[0], $t);													   
 											    
 										    } else if (result.jobstatus == 2) {
 											    // Failed
-											    $t.find("#first_row").text("Adding failed");
-											    $t.find("#info_icon").addClass("error").show();
-						                        $t.data("afterActionInfo", ("Adding failed. Reason: " + fromdb(result.jobresult)));   	
-						                        $t.bind("click", function(event) {  
-                                                    $rightPanelContent.find("#after_action_info").text($(this).data("afterActionInfo"));
-                                                    $rightPanelContent.find("#after_action_info_container").addClass("errorbox");
-                                                    $rightPanelContent.find("#after_action_info_container").show();   
-                                                    vmClearRightPanel();
-                                                    return false;
-                                                });		
+											    afterAddingMidMenuItem($midmenuItem1, false, fromdb(result.jobresult));		
 										    }
 									    }
 								    },
 								    error: function(XMLHttpResponse) {
-									    $("body").stopTime(timerKey);
-									    $t.find("#info_icon").addClass("error").show();
-									    $t.find("#first_row").text("Adding failed");
+									    $("body").stopTime(timerKey);									    
+									    afterAddingMidMenuItem($midmenuItem1, false);									    						    
 									    handleError(XMLHttpResponse);
 								    }
 							    });
@@ -1238,9 +1232,8 @@ function clickInstanceGroupHeader($arrowIcon) {
 						    0
 					    );
 				    },
-				    error: function(XMLHttpResponse) {					    
-					    $t.find("#info_icon").addClass("error").show();		
-					    $t.find("#first_row").text("Adding failed");		    
+				    error: function(XMLHttpResponse) {					        				    
+					    afterAddingMidMenuItem($midmenuItem1, false);	
 				        handleError(XMLHttpResponse);
 				    }					
 			    });
@@ -1300,8 +1293,7 @@ function doCreateTemplateFromVmVolume($actionLink, listAPIMap, $subgridItem) {
     
 	$("#dialog_create_template")
 	.dialog('option', 'buttons', { 						
-		"Create": function() { 
-		    //debugger;
+		"Create": function() { 		
 		    var thisDialog = $(this);
 		    thisDialog.dialog("close"); 
 									

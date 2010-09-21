@@ -79,6 +79,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -88,7 +89,9 @@ import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -102,6 +105,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network.TrafficType;
+import com.cloud.network.configuration.NetworkGuru;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -111,6 +115,8 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.resource.Resource;
+import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
@@ -148,7 +154,7 @@ import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouter.Role;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NetworkConcierge;
-import com.cloud.vm.Nic;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
@@ -157,6 +163,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -205,7 +212,9 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     @Inject NetworkConfigurationDao _networkProfileDao = null;
     @Inject NicDao _nicDao;
     
-    Adapters<NetworkProfiler> _networkProfilers;
+    @Inject(adapter=NetworkGuru.class)
+    Adapters<NetworkGuru> _networkGurus;
+    @Inject(adapter=NetworkConcierge.class)
     Adapters<NetworkConcierge> _networkConcierges;
 
     long _routerTemplateId = -1;
@@ -1109,7 +1118,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 				ipAddrList.add(ipVO.getAddress());
 			}
 			if (!ipAddrList.isEmpty()) {
-				final boolean success = associateIP(router, ipAddrList, true);
+				final boolean success = associateIP(router, ipAddrList, true, 0);
 				if (!success) {
 					return false;
 				}
@@ -1344,7 +1353,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     }
 
     @Override
-    public boolean associateIP(final DomainRouterVO router, final List<String> ipAddrList, final boolean add) {
+    public boolean associateIP(final DomainRouterVO router, final List<String> ipAddrList, final boolean add, long vmId) {
         final Command [] cmds = new Command[ipAddrList.size()];
         int i=0;
         boolean sourceNat = false;
@@ -1365,7 +1374,12 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             	vifMacAddress = macAddresses[1];
 			}
 
-            cmds[i++] = new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ipAddress, add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress);
+			String vmGuestAddress = null;
+			if(vmId!=0){
+				vmGuestAddress = _vmDao.findById(vmId).getGuestIpAddress();
+			}
+			
+            cmds[i++] = new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ipAddress, add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress);
             
             sourceNat = false;
         }
@@ -1708,7 +1722,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                     s_logger.debug("Disassociate ip " + router.getName());
                 }
 
-                if (associateIP(router, ipAddrs, false)) {
+                if (associateIP(router, ipAddrs, false, 0)) {
                     _ipAddressDao.unassignIpAddress(ipAddress);
                 } else {
                 	if (s_logger.isDebugEnabled()) {
@@ -1792,7 +1806,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterMonitor"));
 
         final ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        _networkProfilers = locator.getAdapters(NetworkProfiler.class);
+        _networkGurus = locator.getAdapters(NetworkGuru.class);
         _networkConcierges = locator.getAdapters(NetworkConcierge.class);
         
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
@@ -2342,14 +2356,22 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     }
     
     @Override
-    public NetworkConfigurationVO setupNetworkProfile(AccountVO owner, NetworkOfferingVO offering) {
-        return setupNetworkProfile(owner, offering, new HashMap<String, String>());
+    public NetworkConfigurationVO setupNetworkConfiguration(AccountVO owner, NetworkOfferingVO offering, DeploymentPlan plan) {
+        return setupNetworkConfiguration(owner, offering, null, plan);
     }
     
     @Override
-    public NetworkConfigurationVO setupNetworkProfile(AccountVO owner, NetworkOfferingVO offering, Map<String, String> params) {
-        for (NetworkProfiler profiler : _networkProfilers) {
-            NetworkConfiguration profile = profiler.convert(offering, null, params, owner);
+    public NetworkConfigurationVO setupNetworkConfiguration(AccountVO owner, NetworkOfferingVO offering, NetworkConfiguration predefined, DeploymentPlan plan) {
+        List<NetworkConfigurationVO> configs = _networkProfileDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
+        if (configs.size() > 0) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Found existing network configuration for offering " + offering + ": " + configs.get(0));
+            }
+            return configs.get(0);
+        }
+        
+        for (NetworkGuru guru : _networkGurus) {
+            NetworkConfiguration profile = guru.design(offering, plan, predefined, owner);
             if (profile == null) {
                 continue;
             }
@@ -2362,18 +2384,18 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                 }
             } 
             
-            NetworkConfigurationVO vo = new NetworkConfigurationVO(profile, owner.getId(), offering.getId());
-            return _networkProfileDao.persist(vo);
+            NetworkConfigurationVO vo = new NetworkConfigurationVO(profile, offering.getId(), plan.getDataCenterId(), guru.getName());
+            return _networkProfileDao.persist(vo, owner.getId());
         }
 
         throw new CloudRuntimeException("Unable to convert network offering to network profile: " + offering.getId());
     }
 
     @Override
-    public List<NetworkConfigurationVO> setupNetworkProfiles(AccountVO owner, List<NetworkOfferingVO> offerings) {
+    public List<NetworkConfigurationVO> setupNetworkConfigurations(AccountVO owner, List<NetworkOfferingVO> offerings, DeploymentPlan plan) {
         List<NetworkConfigurationVO> profiles = new ArrayList<NetworkConfigurationVO>(offerings.size());
         for (NetworkOfferingVO offering : offerings) {
-            profiles.add(setupNetworkProfile(owner, offering));
+            profiles.add(setupNetworkConfiguration(owner, offering, plan));
         }
         return profiles;
     }
@@ -2397,49 +2419,78 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 
 
     @Override @DB
-    public <K extends VMInstanceVO> List<NicVO> allocate(K vm, List<Pair<NetworkConfigurationVO, NicVO>> networks) throws InsufficientCapacityException {
-        List<NicVO> nics = new ArrayList<NicVO>(networks.size());
+    public <K extends VMInstanceVO> List<NicProfile> allocate(K vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException {
+        List<NicProfile> nicProfiles = new ArrayList<NicProfile>(networks.size());
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
-        for (Pair<NetworkConfigurationVO, NicVO> network : networks) {
+        int deviceId = 0;
+        
+        for (Pair<NetworkConfigurationVO, NicProfile> network : networks) {
             for (NetworkConcierge concierge : _networkConcierges) {
-                Nic nic = concierge.allocate(vm, network.first(), network.second());
-                if (nic == null) {
+                NicProfile profile = concierge.allocate(vm, network.first(), network.second());
+                if (profile == null) {
                     continue;
                 }
                 NicVO vo = new NicVO(concierge.getUniqueName(), vm.getId(), network.first().getId());
-                
-                if (nic.getIp4Address() != null) {
-                    vo.setIp4Address(nic.getIp4Address());
-                    vo.setState(NicVO.State.IpAcquired);
+                vo.setDeviceId(deviceId++);
+                vo.setMode(network.first().getMode());
+                if (profile.getIp4Address() != null) {
+                    vo.setIp4Address(profile.getIp4Address());
+                    vo.setState(NicVO.State.Reserved);
                 }
                 
-                if (nic.getMacAddress() != null) {
-                    vo.setMacAddress(nic.getMacAddress());
+                if (profile.getMacAddress() != null) {
+                    vo.setMacAddress(profile.getMacAddress());
                 }
                 
-                if (nic.getMode() != null) {
-                    vo.setMode(nic.getMode());
+                if (profile.getMode() != null) {
+                    vo.setMode(profile.getMode());
                 }
         
                 vo = _nicDao.persist(vo);
-                nics.add(vo);
+                nicProfiles.add(new NicProfile(vo, network.first()));
             }
         }
         txn.commit();
         
-        return nics;
+        return nicProfiles;
     }
     
     @Override
-    public <K extends VMInstanceVO> List<NicTO> prepare(K vm) {
+    public List<NicTO> prepare(VirtualMachineProfile vmProfile, DeployDestination dest) throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException {
+        List<NicVO> nics = _nicDao.listBy(vmProfile.getId());
+        for (NicVO nic : nics) {
+            NetworkConfigurationVO config = _networkProfileDao.findById(nic.getNetworkConfigurationId());
+            
+            if (nic.getReservationStrategy() == ReservationStrategy.Start) {
+                NetworkConcierge concierge = _networkConcierges.get(nic.getReserver());
+                nic.setState(Resource.State.Reserving);
+                _nicDao.update(nic.getId(), nic);
+                concierge.reserve(vmProfile.getId(), toNicProfile(nic), dest);
+            } else {
+                
+            }
+        }
         return null;
+    }
+    
+    NicProfile toNicProfile(NicVO nic) {
+        NetworkConfiguration config = _networkProfileDao.findById(nic.getNetworkConfigurationId());
+        NicProfile profile = new NicProfile(nic, config);
+        return profile;
     }
     
     @Override
     public <K extends VMInstanceVO> void create(K vm) {
+        for (NetworkConcierge concierge : _networkConcierges) {
+        }
+    }
+    
+    @Override
+    public <K extends VMInstanceVO> List<NicVO> getNics(K vm) {
+        return _nicDao.listBy(vm.getId());
     }
     
     protected class NetworkUsageTask implements Runnable {

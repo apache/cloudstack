@@ -159,10 +159,11 @@ public class XenServerConnectionPool {
     }
 
     protected synchronized void cleanup(String poolUuid) {
+    	if( poolUuid == null ) {
+    		return;
+        }
         ConnectionInfo info = _infos.remove(poolUuid);
         if (info == null) {
-            s_logger.debug("Unable to find any information for pool "
-                    + poolUuid);
             return;
         }
 
@@ -189,8 +190,10 @@ public class XenServerConnectionPool {
 
     protected synchronized void cleanup(String poolUuid, ConnectionInfo info) {
         ConnectionInfo info2 = _infos.get(poolUuid);
-        s_logger
-                .debug("Cleanup for Session " + info.conn.getSessionReference());
+        if( info2 == null ) {
+        	return;
+        }
+        s_logger.debug("Cleanup for Session " + info.conn.getSessionReference());
         if (info != info2) {
             s_logger.debug("Session " + info.conn.getSessionReference()
                     + " is already logged out.");
@@ -573,6 +576,22 @@ public class XenServerConnectionPool {
                     masterConn = null;
                     masterIp = null;
                 }
+            } else {
+            	try {
+                    Pool.Record pr = getPoolRecord(slaveConn);
+                    masterIp = pr.master.getAddress(slaveConn);
+                    masterUrl = new URL("http://" + masterIp);;
+                    masterConn = new XenServerConnection(masterUrl, username,
+                            password, _retries, _interval, wait);
+                    Session.loginWithPassword(masterConn, username, password,
+                            APIVersion.latest().toString());
+                    create_new_session = false;
+            		
+            	} catch (Exception e) {
+                    cleanup(poolUuid);
+                    masterConn = null;
+                    masterIp = null;
+            	}
             }
             if (create_new_session) {
                 try{ 
@@ -782,18 +801,20 @@ public class XenServerConnectionPool {
                     try {
                         return super.dispatch(method_call, method_params);
                     } catch (Types.SessionInvalid e) {
+                        s_logger.debug("Session is invalid for method: " + method_call + " due to " + e.getMessage() + ".  Reconnecting...retry="
+                                + retries);
                         if (retries >= _retries) {
                             if (_poolUuid != null) {
                                 cleanup(_poolUuid, _info);
                             }
                             throw e;
                         }
-                        s_logger.debug("Session is invalid.  Reconnecting...retry="
-                                + retries);
                         Session.loginWithPassword(this, _username,
                                 _password, APIVersion.latest().toString());
                         method_params[0] = getSessionReference();
                     } catch (XmlRpcException e) {
+                        s_logger.debug("XmlRpcException for method: " + method_call + " due to " + e.getMessage() + ".  Reconnecting...retry="
+                                + retries);
                         if (retries >= _retries) {
                             if (_poolUuid != null) {
                                 cleanup(_poolUuid, _info);
@@ -807,9 +828,9 @@ public class XenServerConnectionPool {
                             }
                             throw e;
                         }
-                        s_logger.debug("Connection couldn't be made for method " + method_call 
-                                + " Reconnecting....retry=" + retries);
                     } catch (Types.HostIsSlave e) {
+                        s_logger.debug("HostIsSlave Exception for method: " + method_call + " due to " + e.getMessage() + ".  Reconnecting...retry="
+                                + retries);
                         if (_poolUuid != null) {
                             cleanup(_poolUuid, _info);
                         }

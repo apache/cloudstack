@@ -2,11 +2,6 @@ function afterLoadRouterJSP() {
     
 }
 
-function routerAfterDetailsTabAction(jsonObj) {
-    $("#midmenuItem_"+jsonObj.id).data("jsonObj", jsonObj);   
-    routerJsonToDetailsTab(jsonObj);   
-}
-
 function routerToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));  
     $midmenuItem1.data("jsonObj", jsonObj); 
@@ -18,6 +13,11 @@ function routerToMidmenu(jsonObj, $midmenuItem1) {
     
     $midmenuItem1.find("#first_row").text(jsonObj.name.substring(0,25)); 
     $midmenuItem1.find("#second_row").text(jsonObj.publicip.substring(0,25));     
+}
+
+function routerAfterDetailsTabAction(jsonObj) {
+    $("#midmenuItem_"+jsonObj.id).data("jsonObj", jsonObj);   
+    routerJsonToDetailsTab(jsonObj);   
 }
 
 function routerToRigntPanel($midmenuItem) {      
@@ -37,19 +37,9 @@ function routerJsonToDetailsTab(jsonObj) {
     $detailsTab.find("#hostname").text(fromdb(jsonObj.hostname));
     $detailsTab.find("#networkdomain").text(fromdb(jsonObj.networkdomain));
     $detailsTab.find("#account").text(fromdb(jsonObj.account));  
-    setDateField(jsonObj.created, $detailsTab.find("#created"));	  
+    setDateField(jsonObj.created, $detailsTab.find("#created"));	 
     
-    var $actionLink = $detailsTab.find("#action_link");
-	$actionLink.bind("mouseover", function(event) {	    
-        $(this).find("#action_menu").show();    
-        return false;
-    });
-    $actionLink.bind("mouseout", function(event) {       
-        $(this).find("#action_menu").hide();    
-        return false;
-    });			
-        
-    var $actionMenu = $actionLink.find("#action_menu");
+    var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
     
     if (jsonObj.state == 'Running') {

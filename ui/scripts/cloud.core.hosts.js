@@ -605,6 +605,18 @@ function showHostsTab() {
 				
 			    var password = trim(dialogBox.find("#host_password").val());
 			    array1.push("&password="+encodeURIComponent(password));
+											
+				if(clusterRadio == "new_cluster_radio") {
+			        var newClusterName = trim(dialogBox.find("#new_cluster_name").val());
+			        array1.push("&clustername="+encodeURIComponent(newClusterName));				    
+			    }
+			    else if(clusterRadio == "existing_cluster_radio") {
+			        var clusterId = dialogBox.find("#cluster_select").val();
+					// We will default to no cluster if someone selects Join Cluster with no cluster available.
+					if (clusterId != '-1') {
+						array1.push("&clusterid="+clusterId);
+					}
+			    }				
 				
 			    var hostname = trim(dialogBox.find("#host_hostname").val());
 			    var url;					

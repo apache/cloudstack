@@ -17,6 +17,7 @@
  */
 package com.cloud.vm;
 
+import com.cloud.offering.DiskOffering;
 import com.cloud.storage.Volume;
 
 /**
@@ -25,7 +26,7 @@ import com.cloud.storage.Volume;
  * and resources to allocate and create disks.  There object is immutable once
  * it has been created.
  */
-public class DiskCharacteristics {
+public class DiskProfile {
     private long size;
     private String[] tags;
     private Volume.VolumeType type;
@@ -35,11 +36,13 @@ public class DiskCharacteristics {
     private long diskOfferingId;
     private Long templateId;
     private long volumeId;
+    private Volume vol;
+    private DiskOffering offering;
     
-    protected DiskCharacteristics() {
+    protected DiskProfile() {
     }
     
-    public DiskCharacteristics(long volumeId, Volume.VolumeType type, String name, long diskOfferingId, long size, String[] tags, boolean useLocalStorage, boolean recreatable, Long templateId) {
+    public DiskProfile(long volumeId, Volume.VolumeType type, String name, long diskOfferingId, long size, String[] tags, boolean useLocalStorage, boolean recreatable, Long templateId) {
         this.type = type;
         this.name = name;
         this.size = size;
@@ -50,7 +53,13 @@ public class DiskCharacteristics {
         this.templateId = templateId;
         this.volumeId = volumeId;
     }
-
+    
+    public DiskProfile(Volume vol, DiskOffering offering) {
+        this(vol.getId(), vol.getVolumeType(), vol.getName(), offering.getId(), vol.getSize(), offering.getTagsArray(), offering.getUseLocalStorage(), offering.getUseLocalStorage(), vol.getSize());
+        this.vol = vol;
+        this.offering = offering;
+    }
+    
     /**
      * @return size of the disk requested in bytes.
      */

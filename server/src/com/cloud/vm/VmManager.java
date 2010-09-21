@@ -19,7 +19,7 @@ package com.cloud.vm;
 
 import java.util.List;
 
-import com.cloud.dc.DataCenterVO;
+import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -37,38 +37,34 @@ import com.cloud.utils.component.Manager;
  */
 public interface VmManager extends Manager {
     
-    <T extends VMInstanceVO> T allocate(T vm,
+    <T extends VMInstanceVO> VirtualMachineProfile allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
             Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
             List<Pair<DiskOfferingVO, Long>> dataDiskOfferings,
-            List<Pair<NetworkConfigurationVO, NicVO>> networks, 
-            DataCenterVO dc,
-            AccountVO owner) throws InsufficientCapacityException;
+            List<Pair<NetworkConfigurationVO, NicProfile>> networks, 
+            DeploymentPlan plan,
+            AccountVO owner) throws InsufficientCapacityException, StorageUnavailableException;
     
-    <T extends VMInstanceVO> T allocate(T vm,
+    <T extends VMInstanceVO> VirtualMachineProfile allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
             Long rootSize,
             Pair<DiskOfferingVO, Long> dataDiskOffering,
-            List<Pair<NetworkConfigurationVO, NicVO>> networks,
-            DataCenterVO dc,
-            AccountVO owner) throws InsufficientCapacityException;
+            List<Pair<NetworkConfigurationVO, NicProfile>> networks,
+            DeploymentPlan plan,
+            AccountVO owner) throws InsufficientCapacityException, StorageUnavailableException;
     
-    <T extends VMInstanceVO> T allocate(T vm,
+    <T extends VMInstanceVO> VirtualMachineProfile allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
             List<NetworkConfigurationVO> networkProfiles,
-            DataCenterVO dc,
-            AccountVO owner) throws InsufficientCapacityException;
+            DeploymentPlan plan,
+            AccountVO owner) throws InsufficientCapacityException, StorageUnavailableException;
     
-    <T extends VMInstanceVO> T create(T vm) throws InsufficientCapacityException, StorageUnavailableException;
-    
-    <T extends VMInstanceVO> T start(T vm) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException;
+    <T extends VMInstanceVO> T start(VirtualMachineProfile p, DeploymentPlan plan) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException;
     
     <T extends VMInstanceVO> T stop(T vm) throws AgentUnavailableException, ConcurrentOperationException;
-    
-    void create(VmCharacteristics vm, List<DiskCharacteristics> disks, List<NetworkCharacteristics> networks);
     
     void destroy();
     

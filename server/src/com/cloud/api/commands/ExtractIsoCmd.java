@@ -60,9 +60,9 @@ public class ExtractIsoCmd extends BaseCmd {
     			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to extract ISO " + templateId + " to " + url + ", permission denied.");
     		}
     	}
-    	
+    	Long jobId;
         try {
-			managementServer.extractTemplate(url, templateId, zoneId);
+        	jobId = managementServer.extractTemplateAsync(url, templateId, zoneId);
 		} catch (Exception e) {			
 			s_logger.error(e.getMessage(), e);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal Error Extracting the ISO " + e.getMessage());
@@ -75,7 +75,7 @@ public class ExtractIsoCmd extends BaseCmd {
 		response.add(new Pair<String, Object>(BaseCmd.Properties.URL.getName(), url));
 		response.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_ID.getName(), zoneId));
 		response.add(new Pair<String, Object>(BaseCmd.Properties.ZONE_NAME.getName(), zone.getName()));
-		response.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_STATUS.getName(), "Processing"));		
+		response.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), jobId));
 		return response;
 
 	}
@@ -89,4 +89,8 @@ public class ExtractIsoCmd extends BaseCmd {
 	public List<Pair<Enum, Boolean>> getProperties() {
 		return s_properties;
 	}
+
+    public static String getStaticName() {
+        return "ExtractIso";
+    }
 }

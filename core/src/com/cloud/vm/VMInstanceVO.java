@@ -36,12 +36,14 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.StateMachine;
+import com.cloud.utils.fsm.FiniteStateObject;
 
 @Entity
 @Table(name="vm_instance")
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="type", discriminatorType=DiscriminatorType.STRING, length=32)
-public class VMInstanceVO implements VirtualMachine {
+public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, VirtualMachine.Event> {
     @Id
     @TableGenerator(name="vm_instance_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="vm_instance_seq", allocationSize=1)
     @Column(name="id", updatable=false, nullable = false)
@@ -66,6 +68,7 @@ public class VMInstanceVO implements VirtualMachine {
      * else could be updating it as well.
      */
     @Enumerated(value=EnumType.STRING)
+    @StateMachine(state=State.class, event=Event.class)
     @Column(name="state", updatable=true, nullable=false, length=32)
     private State state = null;
 
@@ -128,6 +131,7 @@ public class VMInstanceVO implements VirtualMachine {
                         Type type,
                         Long vmTemplateId,
                         long guestOSId,
+                        
                         boolean haEnabled) {
         this.id = id;
         this.name = name;
@@ -138,6 +142,9 @@ public class VMInstanceVO implements VirtualMachine {
         this.type = type;
         this.guestOSId = guestOSId;
         this.haEnabled = haEnabled;
+        this.mirroredVols = false;
+        this.vncPassword = Long.toHexString(new Random().nextLong());
+        this.state = State.Creating;
     }
                        
 	
@@ -193,11 +200,13 @@ public class VMInstanceVO implements VirtualMachine {
     	return updated;
     }
     
-	public long getId() {
+	@Override
+    public long getId() {
 		return id;
 	}
 	
-	public Date getCreated() {
+	@Override
+    public Date getCreated() {
 		return created;
 	}
 	
@@ -205,7 +214,8 @@ public class VMInstanceVO implements VirtualMachine {
 		return updateTime;
 	}
 	
-	public long getDataCenterId() {
+	@Override
+    public long getDataCenterId() {
 	    return dataCenterId;
 	}
 	
@@ -242,7 +252,8 @@ public class VMInstanceVO implements VirtualMachine {
 	}
 	
 	// don't use this directly, use VM state machine instead, this method is added for migration tool only
-	public void setState(State state) {
+	@Override
+    public void setState(State state) {
 		this.state = state;
 	}
 	
@@ -292,7 +303,8 @@ public class VMInstanceVO implements VirtualMachine {
 		this.templateId = templateId;
 	}
 
-	public long getGuestOSId() {
+	@Override
+    public long getGuestOSId() {
 		return guestOSId;
 	}
 	

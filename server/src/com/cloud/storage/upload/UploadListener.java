@@ -17,24 +17,21 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupStorageCommand;
-import com.cloud.agent.api.storage.DownloadCommand;
-import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.UploadAnswer;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.storage.UploadProgressCommand;
 import com.cloud.agent.api.storage.UploadProgressCommand.RequestType;
+import com.cloud.async.AsyncJobManager;
+import com.cloud.async.AsyncJobResult;
+import com.cloud.async.executor.ExtractJobResultObject;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.host.HostVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.UploadVO;
-import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.UploadDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.Upload.Status;
 import com.cloud.storage.Upload.Type;
-import com.cloud.storage.download.DownloadState.DownloadEvent;
 import com.cloud.storage.upload.UploadMonitorImpl;
 import com.cloud.storage.upload.UploadState.UploadEvent;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -103,13 +100,41 @@ public class UploadListener implements Listener {
 	private Long accountId;
 	private String typeName;
 	private Type type;
+	private long asyncJobId;
+	private long eventId;
+	private AsyncJobManager asyncMgr;
+	private ExtractJobResultObject resultObj;
 	
+	public AsyncJobManager getAsyncMgr() {
+		return asyncMgr;
+	}
+
+	public void setAsyncMgr(AsyncJobManager asyncMgr) {
+		this.asyncMgr = asyncMgr;
+	}
+
+	public long getAsyncJobId() {
+		return asyncJobId;
+	}
+
+	public void setAsyncJobId(long asyncJobId) {
+		this.asyncJobId = asyncJobId;
+	}
+
+	public long getEventId() {
+		return eventId;
+	}
+
+	public void setEventId(long eventId) {
+		this.eventId = eventId;
+	}
+
 	private final Map<String,  UploadState> stateMap = new HashMap<String, UploadState>();
 	private Long uploadId;	
 	
 	public UploadListener(HostVO host, Timer _timer, UploadDao uploadDao,
 			Long uploadId, UploadMonitorImpl uploadMonitor, UploadCommand cmd,
-			Long accountId, String typeName, Type type) {
+			Long accountId, String typeName, Type type, long eventId, long asyncJobId, AsyncJobManager asyncMgr) {
 		this.sserver = host;				
 		this.uploadDao = uploadDao;
 		this.uploadMonitor = uploadMonitor;
@@ -123,6 +148,10 @@ public class UploadListener implements Listener {
 		this.timer = _timer;
 		this.timeoutTask = new TimeoutTask(this);
 		this.timer.schedule(timeoutTask, 3*STATUS_POLL_INTERVAL);
+		this.eventId = eventId;
+		this.asyncJobId = asyncJobId;
+		this.asyncMgr = asyncMgr;
+		this.resultObj = new ExtractJobResultObject(accountId, typeName, currState, 0, uploadId);
 		updateDatabase(Status.NOT_UPLOADED, cmd.getUrl(),"");
 	}
 	
@@ -212,19 +241,12 @@ public class UploadListener implements Listener {
 	
 	public void setUploadInactive(Status reason) {
 		uploadActive=false;
-		uploadMonitor.handleUploadEvent(sserver, accountId, typeName, type, uploadId, reason);
+		uploadMonitor.handleUploadEvent(sserver, accountId, typeName, type, uploadId, reason, eventId);
 	}
 	
 	public void logUploadStart() {
-		String event;
-		if (type == Type.TEMPLATE){
-			event = EventTypes.EVENT_TEMPLATE_UPLOAD_START;
-		}else if (type == Type.ISO){
-			event = EventTypes.EVENT_ISO_UPLOAD_START;
-		}else{
-			event = EventTypes.EVENT_VOLUME_UPLOAD_START;
-		}
-		uploadMonitor.logEvent(accountId, event, "Storage server " + sserver.getName() + " started upload of " +type.toString() + " " + typeName, EventVO.LEVEL_INFO);
+		String event = uploadMonitor.getEvent(type);
+		uploadMonitor.logEvent(accountId, event, "Storage server " + sserver.getName() + " started upload of " +type.toString() + " " + typeName, EventVO.LEVEL_INFO,eventId);
 	}
 	
 	public void cancelTimeoutTask() {
@@ -310,6 +332,10 @@ public class UploadListener implements Listener {
 	}
 	
 	public void updateDatabase(Status state, String uploadErrorString) {
+		resultObj.setResult_string(uploadErrorString);
+		resultObj.setState(state.toString());
+		asyncMgr.updateAsyncJobAttachment(asyncJobId, type.toString(), 1L);
+		asyncMgr.updateAsyncJobStatus(asyncJobId, AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
 		
 		UploadVO vo = uploadDao.createForUpdate();
 		vo.setUploadState(state);
@@ -319,6 +345,11 @@ public class UploadListener implements Listener {
 	}
 	
 	public void updateDatabase(Status state, String uploadUrl,String uploadErrorString) {
+		resultObj.setResult_string(uploadErrorString);
+		resultObj.setState(state.toString());
+		asyncMgr.updateAsyncJobAttachment(asyncJobId, type.toString(), 1L);
+		asyncMgr.updateAsyncJobStatus(asyncJobId, AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
+		
 		
 		UploadVO vo = uploadDao.createForUpdate();
 		vo.setUploadState(state);
@@ -341,6 +372,18 @@ public class UploadListener implements Listener {
 
 	public synchronized void updateDatabase(UploadAnswer answer) {		
 		
+		resultObj.setResult_string(answer.getErrorString());
+		resultObj.setState(answer.getUploadStatus().toString());
+		resultObj.setUploadPercent(answer.getUploadPct());
+		
+		if (answer.getUploadStatus() == Status.UPLOAD_IN_PROGRESS){
+			asyncMgr.updateAsyncJobAttachment(asyncJobId, type.toString(), 1L);
+			asyncMgr.updateAsyncJobStatus(asyncJobId, AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
+		}else if(answer.getUploadStatus() == Status.UPLOADED){
+			asyncMgr.completeAsyncJob(asyncJobId, AsyncJobResult.STATUS_SUCCEEDED, 0, resultObj);
+		}else{
+			asyncMgr.completeAsyncJob(asyncJobId, AsyncJobResult.STATUS_FAILED, 0, resultObj);
+		}
         UploadVO updateBuilder = uploadDao.createForUpdate();
 		updateBuilder.setUploadPercent(answer.getUploadPct());
 		updateBuilder.setUploadState(answer.getUploadStatus());
@@ -371,14 +414,8 @@ public class UploadListener implements Listener {
 	public void logDisconnect() {
 		s_logger.warn("Unable to monitor upload progress of " + typeName + " at host " + sserver.getName());
 		String event;
-		if (type == Type.TEMPLATE){
-			event = EventTypes.EVENT_TEMPLATE_UPLOAD_FAILED;
-		}else if (type == Type.ISO){
-			event = EventTypes.EVENT_ISO_UPLOAD_FAILED;
-		}else{
-			event = EventTypes.EVENT_VOLUME_UPLOAD_FAILED;
-		}
-		uploadMonitor.logEvent(accountId, event, "Storage server " + sserver.getName() + " disconnected during upload of " + typeName, EventVO.LEVEL_WARN);
+		event = uploadMonitor.getEvent(type);
+		uploadMonitor.logEvent(accountId, event, "Storage server " + sserver.getName() + " disconnected during upload of " + typeName, EventVO.LEVEL_WARN, eventId);
 	}
 	
 	public void scheduleImmediateStatusCheck(RequestType request) {

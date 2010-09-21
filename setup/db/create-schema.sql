@@ -95,12 +95,14 @@ CREATE TABLE `cloud`.`network_configurations` (
   `name` varchar(255) COMMENT 'name for this network',
   `traffic_type` varchar(32) NOT NULL COMMENT 'type of traffic going through this network',
   `broadcast_domain_type` varchar(32) NOT NULL COMMENT 'type of broadcast domain used',
-  `gateway` varchar(15) NOT NULL COMMENT 'gateway for this network configuration',
-  `cidr` varchar(32) NOT NULL COMMENT 'network cidr',
-  `mode` varchar(32) NOT NULL COMMENT 'How to retrieve ip address in this network',
+  `gateway` varchar(15) COMMENT 'gateway for this network configuration',
+  `cidr` varchar(18) COMMENT 'network cidr',
+  `mode` varchar(32) COMMENT 'How to retrieve ip address in this network',
   `vlan_id` bigint unsigned NULL COMMENT 'vlan id if the broadcast_domain_type is the vlan',
   `network_offering_id` bigint unsigned NOT NULL COMMENT 'network offering id that this configuration is created from',
-  `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id that this configuration is used in', 
+  `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id that this configuration is used in',
+  `handler_name` varchar(255) NOT NULL COMMENT 'who is responsible for this type of network configuration',
+  `state` varchar(32) NOT NULL COMMENT 'what state is this configuration in', 
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -116,12 +118,13 @@ CREATE TABLE `cloud`.`nics` (
   `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance id',
   `ip4_address` varchar(15) COMMENT 'ip4 address',
   `mac_address` varchar(17) COMMENT 'mac address',
-  `network_configuration_id` bigint unsigned NOT NULL COMMENT 'network configuration id',  
-  `vlan` varchar(64) COMMENT 'Virtualized network identifier',
+  `network_configuration_id` bigint unsigned NOT NULL COMMENT 'network configuration id',
+  `mode` varchar(32) COMMENT 'mode of getting ip address',  
   `state` varchar(32) NOT NULL COMMENT 'state of the creation',
-  `name` varchar(64) COMMENT 'Name of the component that reserved the ip address',
+  `reserver_name` varchar(255) COMMENT 'Name of the component that reserved the ip address',
   `reservation_id` varchar(64) COMMENT 'id for the reservation',
   `device_id` int(10) COMMENT 'device id for the network when plugged into the virtual machine',
+  `update_time` timestamp NOT NULL COMMENT 'time the state was changed',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -679,10 +682,10 @@ CREATE TABLE  `cloud`.`console_proxy` (
   `dns1` varchar(15) COMMENT 'dns1',
   `dns2` varchar(15) COMMENT 'dns2',
   `domain` varchar(255) COMMENT 'domain',
-  `public_mac_address` varchar(17) NOT NULL unique COMMENT 'mac address of the public facing network card',
+  `public_mac_address` varchar(17) unique COMMENT 'mac address of the public facing network card',
   `public_ip_address` varchar(15) UNIQUE COMMENT 'public ip address for the console proxy',
   `public_netmask` varchar(15)  COMMENT 'public netmask used for the console proxy',
-  `guest_mac_address` varchar(17) NOT NULL unique COMMENT 'mac address of the guest facing network card',
+  `guest_mac_address` varchar(17) unique COMMENT 'mac address of the guest facing network card',
   `guest_ip_address`  varchar(15) UNIQUE COMMENT 'guest ip address for the console proxy',
   `guest_netmask` varchar(15)  COMMENT 'guest netmask used for the console proxy',
   `vlan_db_id` bigint unsigned COMMENT 'Foreign key into vlan id table',

@@ -53,7 +53,7 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
     	sc.setParameters("queueId", queueId);
     	
     	Filter filter = new Filter(SyncQueueItemVO.class, "created", true, 0L, 1L);
-        List<SyncQueueItemVO> l = listActiveBy(sc, filter);
+        List<SyncQueueItemVO> l = listBy(sc, filter);
         if(l != null && l.size() > 0)
         	return l.get(0);
     	
@@ -105,6 +105,6 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
     	sc.setParameters("lastProcessMsid", msid);
     	
     	Filter filter = new Filter(SyncQueueItemVO.class, "created", true, 0L, 1L);
-        return listActiveBy(sc, filter);
+        return listBy(sc, filter);
 	}
 }

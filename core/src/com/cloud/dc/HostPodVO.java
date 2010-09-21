@@ -47,12 +47,12 @@ public class HostPodVO implements Pod {
 	private String cidrAddress;
 
 	@Column(name = "cidr_size")
-	private long cidrSize;
+	private int cidrSize;
 
 	@Column(name = "description")
 	private String description;
 
-	public HostPodVO(String name, long dcId, String gateway, String cidrAddress, long cidrSize, String description) {
+	public HostPodVO(String name, long dcId, String gateway, String cidrAddress, int cidrSize, String description) {
 		this.name = name;
 		this.dataCenterId = dcId;
 		this.gateway = gateway;
@@ -88,7 +88,8 @@ public class HostPodVO implements Pod {
 		this.name = name;
 	}
 
-	public String getCidrAddress() {
+	@Override
+    public String getCidrAddress() {
 		return cidrAddress;
 	}
 
@@ -96,15 +97,17 @@ public class HostPodVO implements Pod {
 		this.cidrAddress = cidrAddress;
 	}
 
-	public long getCidrSize() {
+	@Override
+    public int getCidrSize() {
 		return cidrSize;
 	}
 
-	public void setCidrSize(long cidrSize) {
+	public void setCidrSize(int cidrSize) {
 		this.cidrSize = cidrSize;
 	}
 	
-	public String getGateway() {
+	@Override
+    public String getGateway() {
 		return gateway;
 	}
 	

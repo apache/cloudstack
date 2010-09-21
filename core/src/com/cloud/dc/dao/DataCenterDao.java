@@ -39,7 +39,10 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
     
     void releaseVnet(String vnet, long dcId, long accountId);
     void releasePrivateIpAddress(String ipAddress, long dcId, Long instanceId);
+    void releasePrivateIpAddress(long nicId);
     void releaseLinkLocalPrivateIpAddress(String ipAddress, long dcId, Long instanceId);
+    void releaseLinkLocalPrivateIpAddress(long nicId);
+    
     boolean deletePrivateIpAddressByPod(long podId);
     boolean deleteLinkLocalPrivateIpAddressByPod(long podId);
     

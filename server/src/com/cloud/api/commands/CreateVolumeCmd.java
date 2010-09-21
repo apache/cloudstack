@@ -117,6 +117,14 @@ public class CreateVolumeCmd extends BaseCmd {
         	size = Long.valueOf(0);
         }
         
+        if(diskOfferingId != null){
+        	DiskOfferingVO dOffering = getManagementServer().findDiskOfferingById(diskOfferingId.longValue());
+        	
+        	if(dOffering == null){
+        		throw new ServerApiException(BaseCmd.PARAM_ERROR,"Diskoffering id:"+diskOfferingId+" is invalid");
+        	}
+        }
+        
         boolean useSnapshot = false;
         if (snapshotId == null) 
         {
@@ -147,7 +155,7 @@ public class CreateVolumeCmd extends BaseCmd {
             	
             	//this is the case of creating var size vol with private disk offering
             	List<DiskOfferingVO> privateTemplateList = getManagementServer().findPrivateDiskOffering();
-            	diskOfferingId = privateTemplateList.get(0).getId(); //we use this id for creating volume
+            	diskOfferingId = privateTemplateList.get(0).getId(); //we use this id for creating volume, randomly tagging it to a pool with an offering
             }
         } 
         else 

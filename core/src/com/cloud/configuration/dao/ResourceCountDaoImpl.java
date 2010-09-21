@@ -52,7 +52,7 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
 		sc.setParameters("accountId", accountId);
 		sc.setParameters("type", type);
 
-		return findOneBy(sc);
+		return findOneIncludingRemovedBy(sc);
 	}
 
 	private ResourceCountVO findByDomainIdAndType(long domainId, ResourceType type) {
@@ -64,7 +64,7 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
 		sc.setParameters("domainId", domainId);
 		sc.setParameters("type", type);
 
-		return findOneBy(sc);
+		return findOneIncludingRemovedBy(sc);
 	}
 
 	@Override

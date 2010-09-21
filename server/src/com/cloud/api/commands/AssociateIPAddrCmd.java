@@ -49,7 +49,7 @@ public class AssociateIPAddrCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.TRUE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ONE_TO_ONE_NAT, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.VIRTUAL_MACHINE_ID, Boolean.FALSE));
     }
 
     public String getName() {
@@ -71,6 +71,11 @@ public class AssociateIPAddrCmd extends BaseCmd {
         Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
         String accountName = (String)params.get(BaseCmd.Properties.ACCOUNT.getName());
         Long domainId = (Long)params.get(BaseCmd.Properties.DOMAIN_ID.getName());
+        Long vmId = (Long)params.get(BaseCmd.Properties.VIRTUAL_MACHINE_ID.getName());
+        
+        //todo REMOVE
+        //vmId = new Long(3);
+        
         String newIpAddr = null;
         String errorDesc = null;
         Long accountId = null;
@@ -106,8 +111,14 @@ public class AssociateIPAddrCmd extends BaseCmd {
             userId = Long.valueOf(1);
         }
 
+        //vmId == 0 => general flow
+        //vmId != 0 => 1:1 NAT
+        if(vmId == null){
+        	vmId = Long.valueOf(0);
+        }
+        
         try {
-            newIpAddr = getManagementServer().associateIpAddress(userId.longValue(), accountId.longValue(), domainId.longValue(), zoneId.longValue());
+            newIpAddr = getManagementServer().associateIpAddress(userId.longValue(), accountId.longValue(), domainId.longValue(), zoneId.longValue(), vmId.longValue());
         } catch (ResourceAllocationException rae) {
         	if (rae.getResourceType().equals("vm")) throw new ServerApiException (BaseCmd.VM_ALLOCATION_ERROR, rae.getMessage());
         	else if (rae.getResourceType().equals("ip")) throw new ServerApiException (BaseCmd.IP_ALLOCATION_ERROR, rae.getMessage());

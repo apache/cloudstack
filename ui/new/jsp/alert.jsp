@@ -8,11 +8,11 @@
 
 <!-- alert detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
-    <!--  
+    
     <div class="main_titleicon">
-        <img src="images/instancetitle_icons.gif" alt="Instance" /></div>
-    -->
-    <h1>Alert
+        <img src="images/title_alerticon.gif" alt="Alerts" /></div>
+
+    <h1>Alerts
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">

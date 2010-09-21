@@ -1,7 +1,7 @@
 /**
  *  Copyright (C) 2010 Cloud.com, Inc.  All rights reserved.
  * 
- * This software is licensed under the GNU General Public License v3 or later.  
+ * This software is licensed under the GNU General Public License v3 or later.
  * 
  * It is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,7 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.utils.db;
+package com.cloud.utils.fsm;
 
-public interface DaoSearch<T, K> {
+public interface FiniteStateObject<S, E> {
+    /**
+     * @return finite state.
+     */
+    FiniteState<S, E> getState();
+    
+    void setState(S state);
 }

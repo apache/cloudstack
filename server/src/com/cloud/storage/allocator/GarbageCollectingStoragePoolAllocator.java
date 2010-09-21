@@ -34,7 +34,7 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.vm.DiskCharacteristics;
+import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 
 @Local(value=StoragePoolAllocator.class)
@@ -48,7 +48,7 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
     boolean _storagePoolCleanupEnabled;
     
     @Override
-    public boolean allocatorIsCorrectType(DiskCharacteristics dskCh, VMInstanceVO vm, ServiceOffering offering) {
+    public boolean allocatorIsCorrectType(DiskProfile dskCh, VMInstanceVO vm, ServiceOffering offering) {
     	return true;
     }
     
@@ -61,7 +61,7 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
     }
     
     @Override
-    public StoragePool allocateToPool(DiskCharacteristics dskCh,
+    public StoragePool allocateToPool(DiskProfile dskCh,
                                       ServiceOffering offering,
                                       DataCenterVO dc,
                                       HostPodVO pod,

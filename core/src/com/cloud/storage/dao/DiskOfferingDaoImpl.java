@@ -58,14 +58,14 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         SearchCriteria<DiskOfferingVO> sc = DomainIdSearch.create();
         sc.setParameters("domainId", domainId);
         // FIXME:  this should not be exact match, but instead should find all available disk offerings from parent domains
-        return listActiveBy(sc);
+        return listBy(sc);
     }
     
     @Override
     public List<DiskOfferingVO> findPrivateDiskOffering() {
         SearchCriteria<DiskOfferingVO> sc = PrivateDiskOfferingSearch.create();
         sc.setParameters("diskSize", 0);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
     
     @Override

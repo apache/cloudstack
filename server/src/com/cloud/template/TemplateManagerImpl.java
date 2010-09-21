@@ -32,6 +32,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
+import com.cloud.async.AsyncJobManager;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
@@ -148,8 +149,8 @@ public class TemplateManagerImpl implements TemplateManager {
     }
     
     @Override
-    public void extract(VMTemplateVO template, String url, VMTemplateHostVO tmpltHostRef, Long zoneId){
-    	_uploadMonitor.extractTemplate(template, url, tmpltHostRef, zoneId);
+    public void extract(VMTemplateVO template, String url, VMTemplateHostVO tmpltHostRef, Long zoneId, long eventId, long asyncJobId, AsyncJobManager asyncMgr){
+    	_uploadMonitor.extractTemplate(template, url, tmpltHostRef, zoneId, eventId, asyncJobId, asyncMgr);
     }
     
     @Override @DB

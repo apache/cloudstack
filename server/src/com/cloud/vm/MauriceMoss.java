@@ -18,8 +18,10 @@
 package com.cloud.vm;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -27,28 +29,34 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.DataCenterVO;
+import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentDispatcher;
+import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkConfigurationVO;
+import com.cloud.network.NetworkManager;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume.VolumeType;
-import com.cloud.storage.VolumeVO;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value=VmManager.class)
@@ -60,70 +68,129 @@ public class MauriceMoss implements VmManager {
     @Inject private NetworkManager _networkMgr;
     @Inject private AgentManager _agentMgr;
     @Inject private VMInstanceDao _vmDao;
+    @Inject private ServiceOfferingDao _offeringDao;
+    
+    @Inject(adapter=DeploymentDispatcher.class)
+    private Adapters<DeploymentDispatcher> _dispatchers;
+    
     private int _retry;
 
     @Override @DB
-    public <T extends VMInstanceVO> T allocate(T vm,
+    public <T extends VMInstanceVO> VirtualMachineProfile allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
             Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
             List<Pair<DiskOfferingVO, Long>> dataDiskOfferings,
-            List<Pair<NetworkConfigurationVO, NicVO>> networks, 
-            DataCenterVO dc,
+            List<Pair<NetworkConfigurationVO, NicProfile>> networks, 
+            DeploymentPlan plan,
             AccountVO owner) throws InsufficientCapacityException {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Allocating entries for VM: " + vm);
         }
+        //VMInstanceVO vm = _vmDao.findById(vm.getId());
+        VirtualMachineProfile vmProfile = new VirtualMachineProfile(vm, serviceOffering);
+        
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        List<NicVO> nics = _networkMgr.allocate(vm, networks);
+        vm.setDataCenterId(plan.getDataCenterId());
+        _vmDao.update(vm.getId(), vm);
         
-        VolumeVO volume = _storageMgr.allocate(VolumeType.ROOT, rootDiskOffering.first(), "ROOT-" + vm.getId(), rootDiskOffering.second(), template.getFormat() != ImageFormat.ISO ? template : null, vm, owner);
-        for (Pair<DiskOfferingVO, Long> offering : dataDiskOfferings) {
-            volume = _storageMgr.allocate(VolumeType.DATADISK, offering.first(), "DATA-" + vm.getId(), offering.second(), null, vm, owner);
+        List<NicProfile> nics = _networkMgr.allocate(vm, networks);
+        vmProfile.setNics(nics);
+
+        if (dataDiskOfferings == null) {
+            dataDiskOfferings = new ArrayList<Pair<DiskOfferingVO, Long>>(0);
         }
         
+        List<DiskProfile> disks = new ArrayList<DiskProfile>(dataDiskOfferings.size() + 1);
+        if (template.getFormat() == ImageFormat.ISO) {
+            disks.add(_storageMgr.allocateRawVolume(VolumeType.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), rootDiskOffering.second(), vm, owner));
+        } else {
+            disks.add(_storageMgr.allocateTemplatedVolume(VolumeType.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), template, vm, owner));
+        }
+        for (Pair<DiskOfferingVO, Long> offering : dataDiskOfferings) {
+            disks.add(_storageMgr.allocateRawVolume(VolumeType.DATADISK, "DATA-" + vm.getId(), offering.first(), offering.second(), vm, owner));
+        }
+        vmProfile.setDisks(disks);
+
+        _vmDao.updateIf(vm, Event.OperationSucceeded, null);
         txn.commit();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Allocation completed for VM: " + vm);
         }
-        return vm;
+        
+        return vmProfile;
     }
-
+    
     @Override
-    public <T extends VMInstanceVO> T allocate(T vm,
+    public <T extends VMInstanceVO> VirtualMachineProfile allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
             Long rootSize,
             Pair<DiskOfferingVO, Long> dataDiskOffering,
-            List<Pair<NetworkConfigurationVO, NicVO>> networks,
-            DataCenterVO dc,
+            List<Pair<NetworkConfigurationVO, NicProfile>> networks,
+            DeploymentPlan plan,
             AccountVO owner) throws InsufficientCapacityException {
         List<Pair<DiskOfferingVO, Long>> diskOfferings = new ArrayList<Pair<DiskOfferingVO, Long>>(1);
         if (dataDiskOffering != null) {
             diskOfferings.add(dataDiskOffering);
         }
-        return allocate(vm, template, serviceOffering, new Pair<DiskOfferingVO, Long>(serviceOffering, rootSize), diskOfferings, networks, dc, owner);
+        return allocate(vm, template, serviceOffering, new Pair<DiskOfferingVO, Long>(serviceOffering, rootSize), diskOfferings, networks, plan, owner);
     }
     
     @Override
-    public <T extends VMInstanceVO> T allocate(T vm,
+    public <T extends VMInstanceVO> VirtualMachineProfile allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
             List<NetworkConfigurationVO> networkProfiles,
-            DataCenterVO dc, AccountVO owner) throws InsufficientCapacityException {
-        List<Pair<NetworkConfigurationVO, NicVO>> networks = new ArrayList<Pair<NetworkConfigurationVO, NicVO>>(networkProfiles.size());
+            DeploymentPlan plan, 
+            AccountVO owner) throws InsufficientCapacityException {
+        List<Pair<NetworkConfigurationVO, NicProfile>> networks = new ArrayList<Pair<NetworkConfigurationVO, NicProfile>>(networkProfiles.size());
         for (NetworkConfigurationVO profile : networkProfiles) {
-            networks.add(new Pair<NetworkConfigurationVO, NicVO>(profile, null));
+            networks.add(new Pair<NetworkConfigurationVO, NicProfile>(profile, null));
         }
-        return allocate(vm, template, serviceOffering, new Pair<DiskOfferingVO, Long>(serviceOffering, null), null, networks, dc, owner);
+        return allocate(vm, template, serviceOffering, new Pair<DiskOfferingVO, Long>(serviceOffering, null), null, networks, plan, owner);
     }
     
-    
-    @Override
-    public void create(VmCharacteristics vm, List<DiskCharacteristics> disks, List<NetworkCharacteristics> networks) {
-        // TODO Auto-generated method stub
+    protected VirtualMachineProfile create(VirtualMachineProfile vmProfile, DeploymentPlan plan) throws InsufficientCapacityException {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Creating actual resources for VM " + vmProfile);
+        }
+        
+        Journal journal = new Journal.LogJournal("Creating " + vmProfile, s_logger);
 
+        Set<DeployDestination> avoids = new HashSet<DeployDestination>();
+        int retry = _retry;
+        while (_retry-- > 0) {
+            DeployDestination context = null;
+            for (DeploymentDispatcher dispatcher : _dispatchers) {
+                context = dispatcher.plan(vmProfile, plan, avoids);
+                if (context != null) {
+                    journal.record("Deployment found ", vmProfile, context);
+                    break;
+                }
+            }
+            
+            if (context == null) {
+                throw new CloudRuntimeException("Unable to create a deployment for " + vmProfile);
+            }
+            
+            VMInstanceVO vm = _vmDao.findById(vmProfile.getId());
+
+            vm.setDataCenterId(context.getDataCenter().getId());
+            vm.setPodId(context.getPod().getId());
+            vm.setHostId(context.getHost().getId());
+            _vmDao.update(vm.getId(), vm);
+            
+            _networkMgr.create(vm);
+            _storageMgr.create(vm);
+        }
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Creation complete for VM " + vmProfile);
+        }
+        
+        return vmProfile;
     }
 
     @Override
@@ -150,6 +217,8 @@ public class MauriceMoss implements VmManager {
         ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
         Map<String, String> params = configDao.getConfiguration(xmlParams);
         
+        _dispatchers = locator.getAdapters(DeploymentDispatcher.class);
+        
         _retry = NumbersUtil.parseInt(params.get(Config.StartRetry.key()), 2);
         return true;
     }
@@ -163,30 +232,45 @@ public class MauriceMoss implements VmManager {
     }
 
     @Override
-    public <T extends VMInstanceVO> T create(T v) {
+    public <T extends VMInstanceVO> T start(VirtualMachineProfile vmProfile, DeploymentPlan plan) throws InsufficientCapacityException {
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating actual resources for VM " + v);
+            s_logger.debug("Creating actual resources for VM " + vmProfile);
         }
-        Journal journal = new Journal.LogJournal("Creating " + v, s_logger);
         
-        VMInstanceVO vm = _vmDao.findById(v.getId());
+        Journal journal = new Journal.LogJournal("Creating " + vmProfile, s_logger);
 
+        Set<DeployDestination> avoids = new HashSet<DeployDestination>();
         int retry = _retry;
         while (_retry-- > 0) {
-//            Pod pod = _agentMgr.findPod(f);
+            DeployDestination context = null;
+            for (DeploymentDispatcher dispatcher : _dispatchers) {
+                context = dispatcher.plan(vmProfile, plan, avoids);
+                if (context != null) {
+                    avoids.add(context);
+                    journal.record("Deployment found ", vmProfile, context);
+                    break;
+                }
+            }
+            
+            if (context == null) {
+                throw new CloudRuntimeException("Unable to create a deployment for " + vmProfile);
+            }
+            
+            VMInstanceVO vm = _vmDao.findById(vmProfile.getId());
+
+            vm.setDataCenterId(context.getDataCenter().getId());
+            vm.setPodId(context.getPod().getId());
+            _vmDao.updateIf(vm, Event.StartRequested, context.getHost().getId());
+            
+            VirtualMachineTO vmTO = new VirtualMachineTO();
+//            _networkMgr.prepare(vmProfile);
+//            _storageMgr.prepare(vm);
         }
-        _networkMgr.create(vm);
-        _storageMgr.create(vm);
         
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creation complete for VM " + vm);
+            s_logger.debug("Creation complete for VM " + vmProfile);
         }
-        return null;
-    }
-
-    @Override
-    public <T extends VMInstanceVO> T start(T vm) {
-        // TODO Auto-generated method stub
+        
         return null;
     }
 

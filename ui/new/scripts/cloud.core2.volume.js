@@ -63,18 +63,9 @@ function volumeJsonToDetailsTab(jsonObj){
 		$detailsTab.find("#vm_name").text(getVmName(jsonObj.vmname, jsonObj.vmdisplayname) + " (" + jsonObj.vmstate + ")");
 		
     setDateField(jsonObj.created, $detailsTab.find("#created"));	
-    
-    var $actionLink = $detailsTab.find("#action_link");
-	$actionLink.bind("mouseover", function(event) {	    
-        $(this).find("#action_menu").show();    
-        return false;
-    });
-    $actionLink.bind("mouseout", function(event) {       
-        $(this).find("#action_menu").hide();    
-        return false;
-    });			
-        
-    var $actionMenu = $actionLink.find("#action_menu");
+       
+    //actions ***    
+    var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
     if(jsonObj.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
 		if (jsonObj.vmstate == "Stopped") 
@@ -84,13 +75,7 @@ function volumeJsonToDetailsTab(jsonObj){
 		buildActionLinkForDetailsTab("Detach Disk", volumeActionMap, $actionMenu, volumeListAPIMap);				
 	}	
 } 
-       
-var volumeListAPIMap = {
-    listAPI: "listVolumes",
-    listAPIResponse: "listvolumesresponse",
-    listAPIResponseObj: "volume"
-};           
-  
+   
 var volumeActionMap = {  
     "Detach Disk": {
         api: "detachVolume",            
@@ -108,14 +93,19 @@ var volumeActionMap = {
     }  
 }   
 
+var volumeListAPIMap = {
+    listAPI: "listVolumes",
+    listAPIResponse: "listvolumesresponse",
+    listAPIResponseObj: "volume"
+}; 
+
 function doCreateTemplateFromVolume($actionLink, listAPIMap, $detailsTab) {       
     var jsonObj = $detailsTab.data("jsonObj");
     $("#dialog_create_template").find("#volume_name").text(jsonObj.name);
     
 	$("#dialog_create_template")
 	.dialog('option', 'buttons', { 						
-		"Create": function() { 
-		    //debugger;
+		"Create": function() { 		   
 		    var thisDialog = $(this);
 		    thisDialog.dialog("close"); 
 									
