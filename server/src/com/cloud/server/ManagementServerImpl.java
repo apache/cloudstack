@@ -1569,6 +1569,14 @@ public class ManagementServerImpl implements ManagementServer {
             	_accountMgr.incrementResourceCount(accountId, ResourceType.public_ip);
             }
 
+            if(vmId!=0){
+            	VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+            	
+            	if(vm == null){
+            		throw new InvalidParameterValueException("Invalid vm instance id:"+vmId+" specified");
+            	}
+            }
+            
             boolean success = true;
             String errorMsg = "";
 
