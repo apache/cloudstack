@@ -136,24 +136,28 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap) {
 	        dataType: "json",
 	        async: false,
 	        success: function(json) {	            
-	            $spinningWheel.hide();      
-														              
-	            //RecoverVirtualMachine API doesn't return an embedded object on success (Bug 6037)
-	            //Before Bug 6037 get fixed, use the temporary solution below.							            
-	            $.ajax({
-                    cache: false,
-                    data: createURL("command="+listAPI+"&id="+id),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-			            $detailsTab.find("#action_message_box #description").text(label + " action succeeded.");
-			            $detailsTab.find("#action_message_box").removeClass("error").show();
-			                                                                                              
-                        afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	                           
-                    }
-                });										
-				//After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
-				//afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	   
+	            $spinningWheel.hide(); 	            
+	            $detailsTab.find("#action_message_box #description").text(label + " action succeeded.");
+			    $detailsTab.find("#action_message_box").removeClass("error").show();         
+								
+				if(apiCommand.indexOf("command=delete")!=0) { 									              
+	                //RecoverVirtualMachine API doesn't return an embedded object on success (Bug 6037)
+	                //Before Bug 6037 get fixed, use the temporary solution below.							            
+	                $.ajax({
+                        cache: false,
+                        data: createURL("command="+listAPI+"&id="+id),
+                        dataType: "json",
+                        async: false,
+                        success: function(json) {			                			                                                                                              
+                            afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	                           
+                        }
+                    });										
+				    //After Bug 6037 is fixed, remove temporary solution above and uncomment the line below				     
+				    //afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	   
+				}
+				else { //apiCommand is deleteXXXXXXX	
+				    afterActionSeccessFn(id);
+				}
 	        },
             error: function(XMLHttpResponse) {	                
 		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label);    
@@ -539,7 +543,8 @@ function clearMiddleMenu() {
 }
 
 function clearRightPanel() {
-    $("#right_panel_content #action_message_box").hide();     
+    $("#right_panel_content #action_message_box").hide(); 
+    $("#right_panel_content #tab_content_details #action_link #action_menu #action_list").empty();    
 }
     
 var selected_leftmenu_id = null; 

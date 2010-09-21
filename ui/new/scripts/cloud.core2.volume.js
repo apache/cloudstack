@@ -98,6 +98,21 @@ function volumeJsonToDetailsTab(jsonObj){
         template.find("#grid_links_container").show(); //show actions panel
     */
 } 
+ 
+function volumeClearRightPanel() {       
+    var $detailsTab = $("#right_panel_content #tab_content_details");  
+    $detailsTab.find("#id").text("");
+    $detailsTab.find("#name").text("");    
+    $detailsTab.find("#zonename").text("");    
+    $detailsTab.find("#device_id").text("");   
+    $detailsTab.find("#state").text("");    
+    $detailsTab.find("#storage").text("");
+    $detailsTab.find("#account").text(""); 
+    $detailsTab.find("#type").text("");
+    $detailsTab.find("#size").text("");		
+    $detailsTab.find("#vm_name").text("");
+    $detailsTab.find("#created").text("");
+} 
    
 var volumeActionMap = {  
     "Detach Disk": {
@@ -118,7 +133,12 @@ var volumeActionMap = {
         api: "deleteVolume",            
         isAsyncJob: false,        
         inProcessText: "Deleting volume....",
-        afterActionSeccessFn: function(){}   
+        afterActionSeccessFn: function(id) {     
+            var $midmenuItem1 = $("#midmenuItem_"+id); 
+            $midmenuItem1.remove();
+            clearRightPanel();
+            volumeClearRightPanel();
+        }
     }    
 }   
 
