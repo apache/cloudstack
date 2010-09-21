@@ -197,6 +197,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	private SecondaryStorageListener _listener;
 	
     private ServiceOfferingVO _serviceOffering;
+    private int _networkRate;
+    private int _multicastRate;
     private VMTemplateVO _template;
     @Inject private ConfigurationDao _configDao;
     @Inject private EventDao _eventDao;
@@ -366,8 +368,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		            
 					// carry the secondary storage vm port info over so that we don't
 					// need to configure agent on this
-					StartSecStorageVmCommand cmdStart = new StartSecStorageVmCommand(
-							_secStorageVmCmdPort, secStorageVm, secStorageVm.getName(), "",
+					StartSecStorageVmCommand cmdStart = new StartSecStorageVmCommand(_networkRate, 
+                                               _multicastRate, _secStorageVmCmdPort, secStorageVm, secStorageVm.getName(), "",
 							vols, _mgmt_host, _mgmt_port, _useSSlCopy);
 
 					if (s_logger.isDebugEnabled())
@@ -1354,6 +1356,11 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		}
 		
 		boolean useLocalStorage = Boolean.parseBoolean((String)params.get(Config.SystemVMUseLocalStorage.key()));
+        String networkRateStr = _configDao.getValue("network.throttling.rate");
+        String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
+        _networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
+        _multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
+
 		_serviceOffering = new ServiceOfferingVO("Fake Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, useLocalStorage, true, null);
 		_serviceOffering.setUniqueName("Cloud.com-SecondaryStorage");
 		_serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);

@@ -28,6 +28,8 @@ import com.cloud.vm.SecondaryStorageVmVO;
 public class StartSecStorageVmCommand extends AbstractStartCommand {
 
     private SecondaryStorageVmVO secStorageVm;
+    int networkRateMbps;
+    int networkRateMulticastMbps;
     private int proxyCmdPort;
     private String mgmt_host;
     private int mgmt_port;
@@ -36,9 +38,12 @@ public class StartSecStorageVmCommand extends AbstractStartCommand {
 	protected StartSecStorageVmCommand() {
 	}
 	
-    public StartSecStorageVmCommand(int proxyCmdPort, SecondaryStorageVmVO secStorageVm, String vmName, String storageHost,
+    public StartSecStorageVmCommand(int networkRateMbps, int networkRateMulticastMbps, int proxyCmdPort, 
+            SecondaryStorageVmVO secStorageVm, String vmName, String storageHost,
     		List<VolumeVO> vols, String mgmtHost, int mgmtPort, boolean sslCopy) {
     	super(vmName, storageHost, vols);
+        this.networkRateMbps = networkRateMbps;
+        this.networkRateMulticastMbps = networkRateMulticastMbps;
     	this.proxyCmdPort = proxyCmdPort;
     	this.secStorageVm = secStorageVm;
 
@@ -57,7 +62,15 @@ public class StartSecStorageVmCommand extends AbstractStartCommand {
 		return secStorageVm;
 	}
 	
-	public int getProxyCmdPort() {
+	public int getNetworkRateMbps() {
+        return networkRateMbps;
+    }
+
+    public int getNetworkRateMulticastMbps() {
+        return networkRateMulticastMbps;
+    }
+
+    public int getProxyCmdPort() {
 		return proxyCmdPort;
 	}
 	

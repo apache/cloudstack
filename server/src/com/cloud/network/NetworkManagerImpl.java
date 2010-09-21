@@ -193,6 +193,8 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     String _instance;
     int _routerCleanupInterval = 3600;
     private ServiceOfferingVO _offering;
+    private int _networkRate;
+    private int _multicastRate;
     private VMTemplateVO _template;
     
     ScheduledExecutorService _executor;
@@ -910,7 +912,8 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 
 	                try {
 	                    String[] storageIps = new String[2];
-	                    final StartRouterCommand cmdStartRouter = new StartRouterCommand(router, name, storageIps, vols, mirroredVols);
+	                    final StartRouterCommand cmdStartRouter = new StartRouterCommand(router, _networkRate,
+                                   _multicastRate, name, storageIps, vols, mirroredVols);
 	                    answer = _agentMgr.send(routingHost.getId(), cmdStartRouter);
 	                    if (answer != null && answer.getResult()) {
 	                        if (answer instanceof StartRouterAnswer){
@@ -1922,6 +1925,10 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 		}
 		
         boolean useLocalStorage = Boolean.parseBoolean((String)params.get(Config.SystemVMUseLocalStorage.key()));
+        String networkRateStr = _configDao.getValue("network.throttling.rate");
+        String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
+        _networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
+        _multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
         _offering = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, useLocalStorage, true, null);
         _offering.setUniqueName("Cloud.Com-SoftwareRouter");
         _offering = _serviceOfferingDao.persistSystemServiceOffering(_offering);

@@ -211,8 +211,10 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager,
 	private StorageManager _storageMgr;
 	private HighAvailabilityManager _haMgr;
 	private EventDao _eventDao;
-	@Inject
-	ServiceOfferingDao _offeringDao;
+        @Inject ConfigurationDao _configDao;
+	@Inject ServiceOfferingDao _offeringDao;
+        private int _networkRate;
+        private int _multicastRate;
 	private IpAddrAllocator _IpAllocator;
 
 	private ConsoleProxyListener _listener;
@@ -642,7 +644,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager,
 
 					// carry the console proxy port info over so that we don't
 					// need to configure agent on this
-					StartConsoleProxyCommand cmdStart = new StartConsoleProxyCommand(
+					StartConsoleProxyCommand cmdStart = new StartConsoleProxyCommand(_networkRate, _multicastRate,
 							_proxyCmdPort, proxy, proxy.getName(), "", vols,
 							Integer.toString(_consoleProxyPort), 
 							Integer.toString(_consoleProxyUrlPort),
@@ -2007,6 +2009,11 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager,
 
 		boolean useLocalStorage = Boolean.parseBoolean((String) params
 				.get(Config.SystemVMUseLocalStorage.key()));
+        String networkRateStr = _configDao.getValue("network.throttling.rate");
+        String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
+        _networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
+        _multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
+
 		_serviceOffering = new ServiceOfferingVO("Fake Offering For DomP", 1,
 				_proxyRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized,
 				useLocalStorage, true, null);

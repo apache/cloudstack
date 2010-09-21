@@ -26,6 +26,8 @@ import com.cloud.vm.ConsoleProxyVO;
 public class StartConsoleProxyCommand extends AbstractStartCommand {
 
     private ConsoleProxyVO proxy;
+    int networkRateMbps;
+    int networkRateMulticastMbps;
     private int proxyCmdPort;
     private String vncPort;
     private String urlPort;
@@ -36,9 +38,12 @@ public class StartConsoleProxyCommand extends AbstractStartCommand {
 	protected StartConsoleProxyCommand() {
 	}
 	
-    public StartConsoleProxyCommand(int proxyCmdPort, ConsoleProxyVO proxy, String vmName, String storageHost, 
+    public StartConsoleProxyCommand(int networkRateMbps, int networkRateMulticastMbps, int proxyCmdPort, 
+            ConsoleProxyVO proxy, String vmName, String storageHost, 
     		List<VolumeVO> vols, String vncPort, String urlPort, String mgmtHost, int mgmtPort, boolean sslEnabled) {
     	super(vmName, storageHost, vols);
+    	this.networkRateMbps = networkRateMbps;
+    	this.networkRateMulticastMbps = networkRateMulticastMbps;
     	this.proxyCmdPort = proxyCmdPort;
     	this.proxy = proxy;
     	this.vncPort = vncPort;
@@ -58,7 +63,15 @@ public class StartConsoleProxyCommand extends AbstractStartCommand {
 		return proxy;
 	}
 	
-	public int getProxyCmdPort() {
+	public int getNetworkRateMbps() {
+        return networkRateMbps;
+    }
+
+    public int getNetworkRateMulticastMbps() {
+        return networkRateMulticastMbps;
+    }
+
+    public int getProxyCmdPort() {
 		return proxyCmdPort;
 	}
 	

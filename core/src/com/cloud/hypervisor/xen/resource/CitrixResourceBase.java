@@ -780,7 +780,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             bootArgs += " pod=" + _pod;
             bootArgs += " localgw=" + _localGateway;
             String result = startSystemVM(vmName, storage.getVlanId(), network, cmd.getVolumes(), bootArgs, storage.getGuestMacAddress(), storage.getGuestIpAddress(), storage
-                    .getPrivateMacAddress(), storage.getPublicMacAddress(), cmd.getProxyCmdPort(), storage.getRamSize());
+                    .getPrivateMacAddress(), storage.getPublicMacAddress(), cmd.getProxyCmdPort(), storage.getRamSize(), storage.getGuestOSId(), cmd.getNetworkRateMbps());
             if (result == null) {
                 return new StartSecStorageVmAnswer(cmd);
             }
@@ -2542,7 +2542,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         if ( rate == 0 ) rate = 200;
         vifr.qosAlgorithmType = "ratelimit";
         vifr.qosAlgorithmParams = new HashMap<String, String>();
-        vifr.qosAlgorithmParams.put("kbps", Integer.toString(rate * 1000));
+        // convert mbs to kilobyte per second 
+        vifr.qosAlgorithmParams.put("kbps", Integer.toString(rate * 128));
         return VIF.create(conn, vifr);
     }
 
@@ -2782,7 +2783,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             String bootArgs = cmd.getBootArgs();
 
             String result = startSystemVM(vmName, router.getVlanId(), network, cmd.getVolumes(), bootArgs, router.getGuestMacAddress(), router.getPrivateIpAddress(), router
-                    .getPrivateMacAddress(), router.getPublicMacAddress(), 3922, router.getRamSize());
+                    .getPrivateMacAddress(), router.getPublicMacAddress(), 3922, router.getRamSize(), router.getGuestOSId(), cmd.getNetworkRateMbps());
             if (result == null) {
                 networkUsage(router.getPrivateIpAddress(), "create", null);
                 _domrIPMap.put(cmd.getVmName(), router.getPrivateIpAddress());
@@ -2798,7 +2799,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
 
     protected String startSystemVM(String vmName, String vlanId, Network nw0, List<VolumeVO> vols, String bootArgs, String guestMacAddr, String privateIp, String privateMacAddr,
-            String publicMacAddr, int cmdPort, long ramSize) {
+            String publicMacAddr, int cmdPort, long ramSize, long guestOsId, int networkRateMbps) {
 
         VM vm = null;
         List<Ternary<SR, VDI, VolumeVO>> mounts = null;
@@ -2869,7 +2870,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             } else {
             	network = nw0;
             }
-            createVIF(conn, vm, guestMacAddr, 0, "0", network);
+            createVIF(conn, vm, guestMacAddr, networkRateMbps, "0", network);
 
             /* create VIF1 */
             /* For routing vm, set its network as link local bridge */
@@ -2878,7 +2879,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             } else {
                 network = Network.getByUuid(conn, _host.privateNetwork);
             }
-            createVIF(conn, vm, privateMacAddr,  0, "1", network);
+            createVIF(conn, vm, privateMacAddr,  networkRateMbps, "1", network);
 
             /* create VIF2 */            
             if( !publicMacAddr.equalsIgnoreCase("FE:FF:FF:FF:FF:FF") ) {
@@ -2891,7 +2892,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                         throw new InternalErrorException("Failed to enable VLAN network with tag: " + vlanId);
                     }   
                 }
-                createVIF(conn, vm, publicMacAddr, 0, "2", network);
+                createVIF(conn, vm, publicMacAddr, networkRateMbps, "2", network);
             }
             /* set up PV dom argument */
             String pvargs = vm.getPVArgs(conn);
@@ -2971,7 +2972,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             bootArgs += " localgw=" + _localGateway;
 
             String result = startSystemVM(vmName, proxy.getVlanId(), network, cmd.getVolumes(), bootArgs, proxy.getGuestMacAddress(), proxy.getGuestIpAddress(), proxy
-                    .getPrivateMacAddress(), proxy.getPublicMacAddress(), cmd.getProxyCmdPort(), proxy.getRamSize());
+                    .getPrivateMacAddress(), proxy.getPublicMacAddress(), cmd.getProxyCmdPort(), proxy.getRamSize(), proxy.getGuestOSId(), cmd.getNetworkRateMbps());
             if (result == null) {
                 return new StartConsoleProxyAnswer(cmd);
             }

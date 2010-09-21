@@ -28,6 +28,8 @@ import com.cloud.vm.DomainRouter.Role;
 public class StartRouterCommand extends AbstractStartCommand {
 
     DomainRouterVO router;
+    int networkRateMbps;
+    int networkRateMulticastMbps;
 
     protected StartRouterCommand() {
     	super();
@@ -39,16 +41,27 @@ public class StartRouterCommand extends AbstractStartCommand {
         return false;
     }
     
-    public StartRouterCommand(DomainRouterVO router, String routerName, String[] storageIps, List<VolumeVO> vols, boolean mirroredVols) {
+    public StartRouterCommand(DomainRouterVO router, int networkRateMbps, int networkRateMulticastMbps, 
+            String routerName, String[] storageIps, List<VolumeVO> vols, boolean mirroredVols) {
         super(routerName, storageIps, vols, mirroredVols);
         this.router = router;
+        this.networkRateMbps = networkRateMbps;
+        this.networkRateMulticastMbps = networkRateMulticastMbps;
 	}
 
 	public DomainRouter getRouter() {
         return router;
     }
 	
-	public String getBootArgs() {
+	public int getNetworkRateMbps() {
+        return networkRateMbps;
+    }
+
+    public int getNetworkRateMulticastMbps() {
+        return networkRateMulticastMbps;
+    }
+
+    public String getBootArgs() {
 		String eth2Ip = router.getPublicIpAddress()==null?"0.0.0.0":router.getPublicIpAddress();
 		String basic = " eth0ip=" + router.getGuestIpAddress() + " eth0mask=" + router.getGuestNetmask() + " eth1ip="
         + router.getPrivateIpAddress() + " eth1mask=" + router.getPrivateNetmask() + " gateway=" + router.getGateway()
