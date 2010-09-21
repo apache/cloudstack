@@ -118,6 +118,10 @@ public class ListVMsCmd extends BaseCmd {
             domainId = account.getDomainId();
         }
 
+        if(account!=null && domainId==null){
+        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Please specify the domain id for this account:"+account.getId());
+        }
+        
         Long[] accountIds = null;
         if (accountId != null) {
             accountIds = new Long[1];
