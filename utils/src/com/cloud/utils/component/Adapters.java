@@ -17,6 +17,7 @@
  */
 package com.cloud.utils.component;
 
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -35,7 +36,6 @@ import com.cloud.utils.EnumerationImpl;
  **/
 public class Adapters<T extends Adapter> implements Iterable<T> {
     private Map<String, T> _map; 
-    private List<T> _adapters;
     protected String      _name;
 
     public Adapters(String name, List<T> adapters) {
@@ -53,16 +53,16 @@ public class Adapters<T extends Adapter> implements Iterable<T> {
     }
 
     public Enumeration<T> enumeration() {
-        return new EnumerationImpl<T>(_adapters.iterator());
+        return new EnumerationImpl<T>(_map.values().iterator());
     }
     
     @Override
     public Iterator<T> iterator() {
-        return new EnumerationImpl<T>(_adapters.iterator());
+        return new EnumerationImpl<T>(_map.values().iterator());
     }
 
-    protected List<T> get() {
-        return _adapters;
+    protected Collection<T> get() {
+        return _map.values();
     }
     
     protected void set(List<T> adapters) {
@@ -71,7 +71,6 @@ public class Adapters<T extends Adapter> implements Iterable<T> {
             map.put(adapter.getName(), adapter);
         }
         this._map = map;
-        this._adapters = adapters;
     }
     
     public T get(String name) {
@@ -79,6 +78,6 @@ public class Adapters<T extends Adapter> implements Iterable<T> {
     }
 
     public boolean isSet() {
-        return _adapters.size() != 0;
+        return _map.size() != 0;
     }
 }

@@ -29,13 +29,11 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.NetworkConcierge;
-import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value={NetworkGuru.class, NetworkConcierge.class})
-public class PublicNetworkGuru extends AdapterBase implements NetworkGuru, NetworkConcierge {
+@Local(value={NetworkGuru.class})
+public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     private static final Logger s_logger = Logger.getLogger(PublicNetworkGuru.class);
     
     @Inject DataCenterDao _dcDao;
@@ -55,12 +53,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru, Netwo
     }
 
     @Override
-    public String getUniqueName() {
-        return getName();
-    }
-
-    @Override
-    public NicProfile allocate(VirtualMachine vm, NetworkConfiguration config, NicProfile nic) throws InsufficientVirtualNetworkCapcityException,
+    public NicProfile allocate(NetworkConfiguration config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         if (config.getTrafficType() != TrafficType.Public) {
             return null;
@@ -74,16 +67,15 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru, Netwo
     }
 
     @Override
-    public boolean create(Nic nic) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+    public boolean create(NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         return true;
     }
 
     @Override
-    public String reserve(VirtualMachine vm, NicProfile ch, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+    public String reserve(NicProfile ch,  VirtualMachineProfile vm, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         long dcId = dest.getDataCenter().getId();
-        long podId = dest.getPod().getId();
 
-        Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(dcId, vm.getAccountId(), vm.getDomainId(), VlanType.VirtualNetwork, true);
+        Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(dcId, vm.getVm().getAccountId(), vm.getVm().getDomainId(), VlanType.VirtualNetwork, true);
         if (ipAndVlan == null) {
             throw new InsufficientVirtualNetworkCapcityException("Unable to get public ip address in " + dcId);
         }
@@ -102,12 +94,16 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru, Netwo
     }
 
     @Override
-    public boolean release(String uniqueName, String uniqueId) {
+    public boolean release(String uniqueId) {
         return _vlanDao.release(Long.parseLong(uniqueId));
     }
 
     @Override
     public NetworkConfiguration implement(NetworkConfiguration config, NetworkOffering offering, DeployDestination destination) {
         return config;
+    }
+    
+    @Override
+    public void destroy(NetworkConfiguration config, NetworkOffering offering) {
     }
 }

@@ -73,6 +73,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
@@ -511,11 +512,11 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
             return false;
         }
     }
-
+    
     @Override
     public ConsoleProxyVO startProxy(long proxyVmId, long startEventId) {
         try {
-            return start(proxyVmId, startEventId);
+            return start2(proxyVmId, startEventId);
         } catch (StorageUnavailableException e) {
             s_logger.warn("Exception while trying to start console proxy", e);
             return null;
@@ -526,6 +527,12 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
             s_logger.warn("Exception while trying to start console proxy", e);
             return null;
         }
+    }
+
+    public ConsoleProxyVO start2(long proxyVmId, long startEventId) throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
+        ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
+        DeploymentPlan plan = new DataCenterDeployment(proxy.getDataCenterId(), 1);
+        return _vmMgr.start(proxy, plan);
     }
 
     @Override
@@ -859,7 +866,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
             return null;
         }
 
-        ConsoleProxyVO proxy = allocProxyStorage(dataCenterId, proxyVmId);
+        ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId); 
+            //allocProxyStorage(dataCenterId, proxyVmId);
         if (proxy != null) {
             SubscriptionMgr.getInstance().notifySubscribers(ConsoleProxyManager.ALERT_SUBJECT, this,
                     new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_CREATED, dataCenterId, proxy.getId(), proxy, null));
@@ -898,7 +906,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
             return null;
         }
 
-        ConsoleProxyVO proxy = allocProxyStorage(dataCenterId, proxyVmId);
+        ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId); 
+            //allocProxyStorage(dataCenterId, proxyVmId);
         if (proxy != null) {
             SubscriptionMgr.getInstance().notifySubscribers(ConsoleProxyManager.ALERT_SUBJECT, this,
                     new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_CREATED, dataCenterId, proxy.getId(), proxy, null));
@@ -1408,7 +1417,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
                                 try {
                                     if (proxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
                                         try {
-                                            readyProxy = start(readyProxy.getId(), 0);
+                                            readyProxy = start2(readyProxy.getId(), 0);
                                         } finally {
                                             proxyLock.unlock();
                                         }

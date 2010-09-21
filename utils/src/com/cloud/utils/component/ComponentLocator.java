@@ -443,7 +443,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         Set<Map.Entry<String, List<Info<Adapter>>>> entries = map.entrySet();
         for (Map.Entry<String, List<Info<Adapter>>> entry : entries) {
             Adapters<Adapter> adapters = (Adapters<Adapter>)_adapterMap.get(entry.getKey());
-            List<Adapter> lst = adapters.get();
+            List<Adapter> lst = new ArrayList<Adapter>();
             for (Info<Adapter> info : entry.getValue()) {
                 s_logger.info("Instantiating Adapter: " + info.name);
                 info.instance = (Adapter)createInstance(info.clazz, true);
@@ -462,6 +462,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
                 lst.add(info.instance);
                 s_logger.info("Instantiated Adapter: " + info.name);
             }
+            adapters.set(lst);
         }
     }
 

@@ -226,7 +226,7 @@ public interface NetworkManager extends Manager {
     
     List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames);
     
-    <K extends VMInstanceVO> List<NicProfile> allocate(K vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException;
+    List<NicProfile> allocate(VirtualMachineProfile vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException;
 
     List<NicTO> prepare(VirtualMachineProfile profile, DeployDestination dest) throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException;
     

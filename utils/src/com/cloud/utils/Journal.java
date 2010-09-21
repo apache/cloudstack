@@ -34,7 +34,7 @@ public class Journal {
     }
     
     public void record(Logger logger, Level p, String msg, Object... params) {
-        if (logger.getLevel().isGreaterOrEqual(p)) {
+        if (logger.isEnabledFor(p)) {
             StringBuilder buf = new StringBuilder();
             toString(buf, msg, params);
             String entry = buf.toString();

@@ -39,6 +39,13 @@ public class DeployDestination {
     public Map<Volume, StoragePool> getStorageForDisks() {
         return _storage;
     }
+
+    public DeployDestination(DataCenter dc, Pod pod, Cluster cluster, Host host) {
+        _dc = dc;
+        _pod = pod;
+        _cluster = cluster;
+        _host = host;
+    }
     
     public DeployDestination() {
     }

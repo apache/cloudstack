@@ -8,6 +8,6 @@ import java.util.Set;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.VirtualMachineProfile;
 
-public interface DeploymentDispatcher extends Adapter {
+public interface DeploymentPlanner extends Adapter {
     DeployDestination plan(VirtualMachineProfile vm, DeploymentPlan plan, Set<DeployDestination> avoid);
 }

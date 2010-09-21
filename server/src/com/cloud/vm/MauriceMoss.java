@@ -33,12 +33,13 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.deploy.DeploymentDispatcher;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.network.NetworkManager;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -70,8 +71,8 @@ public class MauriceMoss implements VmManager {
     @Inject private VMInstanceDao _vmDao;
     @Inject private ServiceOfferingDao _offeringDao;
     
-    @Inject(adapter=DeploymentDispatcher.class)
-    private Adapters<DeploymentDispatcher> _dispatchers;
+    @Inject(adapter=DeploymentPlanner.class)
+    private Adapters<DeploymentPlanner> _planners;
     
     private int _retry;
 
@@ -95,7 +96,7 @@ public class MauriceMoss implements VmManager {
         vm.setDataCenterId(plan.getDataCenterId());
         _vmDao.update(vm.getId(), vm);
         
-        List<NicProfile> nics = _networkMgr.allocate(vm, networks);
+        List<NicProfile> nics = _networkMgr.allocate(vmProfile, networks);
         vmProfile.setNics(nics);
 
         if (dataDiskOfferings == null) {
@@ -163,7 +164,7 @@ public class MauriceMoss implements VmManager {
         int retry = _retry;
         while (_retry-- > 0) {
             DeployDestination context = null;
-            for (DeploymentDispatcher dispatcher : _dispatchers) {
+            for (DeploymentPlanner dispatcher : _planners) {
                 context = dispatcher.plan(vmProfile, plan, avoids);
                 if (context != null) {
                     journal.record("Deployment found ", vmProfile, context);
@@ -217,7 +218,7 @@ public class MauriceMoss implements VmManager {
         ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
         Map<String, String> params = configDao.getConfiguration(xmlParams);
         
-        _dispatchers = locator.getAdapters(DeploymentDispatcher.class);
+        _planners = locator.getAdapters(DeploymentPlanner.class);
         
         _retry = NumbersUtil.parseInt(params.get(Config.StartRetry.key()), 2);
         return true;
@@ -232,39 +233,41 @@ public class MauriceMoss implements VmManager {
     }
 
     @Override
-    public <T extends VMInstanceVO> T start(VirtualMachineProfile vmProfile, DeploymentPlan plan) throws InsufficientCapacityException {
+    public <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan) throws InsufficientCapacityException {
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating actual resources for VM " + vmProfile);
+            s_logger.debug("Creating actual resources for VM " + vm);
         }
         
-        Journal journal = new Journal.LogJournal("Creating " + vmProfile, s_logger);
+        Journal journal = new Journal.LogJournal("Creating " + vm, s_logger);
+        
+        ServiceOffering offering = _offeringDao.findById(vm.getServiceOfferingId());
+        
+        VirtualMachineProfile vmProfile = new VirtualMachineProfile(vm, offering);
 
         Set<DeployDestination> avoids = new HashSet<DeployDestination>();
         int retry = _retry;
-        while (_retry-- > 0) {
-            DeployDestination context = null;
-            for (DeploymentDispatcher dispatcher : _dispatchers) {
-                context = dispatcher.plan(vmProfile, plan, avoids);
-                if (context != null) {
-                    avoids.add(context);
-                    journal.record("Deployment found ", vmProfile, context);
+        while (retry-- > 0) {
+            DeployDestination dest = null;
+            for (DeploymentPlanner dispatcher : _planners) {
+                dest = dispatcher.plan(vmProfile, plan, avoids);
+                if (dest != null) {
+                    avoids.add(dest);
+                    journal.record("Deployment found ", vmProfile, dest);
                     break;
                 }
             }
             
-            if (context == null) {
+            if (dest == null) {
                 throw new CloudRuntimeException("Unable to create a deployment for " + vmProfile);
             }
             
-            VMInstanceVO vm = _vmDao.findById(vmProfile.getId());
-
-            vm.setDataCenterId(context.getDataCenter().getId());
-            vm.setPodId(context.getPod().getId());
-            _vmDao.updateIf(vm, Event.StartRequested, context.getHost().getId());
+            vm.setDataCenterId(dest.getDataCenter().getId());
+            vm.setPodId(dest.getPod().getId());
+            _vmDao.updateIf(vm, Event.StartRequested, dest.getHost().getId());
             
             VirtualMachineTO vmTO = new VirtualMachineTO();
-//            _networkMgr.prepare(vmProfile);
-//            _storageMgr.prepare(vm);
+            _networkMgr.prepare(vmProfile, dest);
+//            _storageMgr.prepare(vm, dest);
         }
         
         if (s_logger.isDebugEnabled()) {

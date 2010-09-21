@@ -154,7 +154,6 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouter.Role;
 import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.NetworkConcierge;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.State;
@@ -215,8 +214,6 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     
     @Inject(adapter=NetworkGuru.class)
     Adapters<NetworkGuru> _networkGurus;
-    @Inject(adapter=NetworkConcierge.class)
-    Adapters<NetworkConcierge> _networkConcierges;
     @Inject(adapter=NetworkElement.class)
     Adapters<NetworkElement> _networkElements;
 
@@ -1814,8 +1811,6 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("RouterMonitor"));
 
         final ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        _networkGurus = locator.getAdapters(NetworkGuru.class);
-        _networkConcierges = locator.getAdapters(NetworkConcierge.class);
         
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 
@@ -2431,7 +2426,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 
 
     @Override @DB
-    public <K extends VMInstanceVO> List<NicProfile> allocate(K vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException {
+    public List<NicProfile> allocate(VirtualMachineProfile vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException {
         List<NicProfile> nicProfiles = new ArrayList<NicProfile>(networks.size());
         
         Transaction txn = Transaction.currentTxn();
@@ -2440,30 +2435,29 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         int deviceId = 0;
         
         for (Pair<NetworkConfigurationVO, NicProfile> network : networks) {
-            for (NetworkConcierge concierge : _networkConcierges) {
-                NicProfile profile = concierge.allocate(vm, network.first(), network.second());
-                if (profile == null) {
-                    continue;
-                }
-                NicVO vo = new NicVO(concierge.getUniqueName(), vm.getId(), network.first().getId());
-                vo.setDeviceId(deviceId++);
-                vo.setMode(network.first().getMode());
-                if (profile.getIp4Address() != null) {
-                    vo.setIp4Address(profile.getIp4Address());
-                    vo.setState(NicVO.State.Reserved);
-                }
-                
-                if (profile.getMacAddress() != null) {
-                    vo.setMacAddress(profile.getMacAddress());
-                }
-                
-                if (profile.getMode() != null) {
-                    vo.setMode(profile.getMode());
-                }
-        
-                vo = _nicDao.persist(vo);
-                nicProfiles.add(new NicProfile(vo, network.first()));
+            NetworkGuru concierge = _networkGurus.get(network.first().getGuruName());
+            NicProfile profile = concierge.allocate(network.first(), network.second(), vm);
+            if (profile == null) {
+                continue;
             }
+            NicVO vo = new NicVO(concierge.getName(), vm.getId(), network.first().getId());
+            vo.setDeviceId(deviceId++);
+            vo.setMode(network.first().getMode());
+            if (profile.getIp4Address() != null) {
+                vo.setIp4Address(profile.getIp4Address());
+                vo.setState(NicVO.State.Reserved);
+            }
+            
+            if (profile.getMacAddress() != null) {
+                vo.setMacAddress(profile.getMacAddress());
+            }
+            
+            if (profile.getMode() != null) {
+                vo.setMode(profile.getMode());
+            }
+    
+            vo = _nicDao.persist(vo);
+            nicProfiles.add(new NicProfile(vo, network.first()));
         }
         txn.commit();
         
@@ -2490,18 +2484,18 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             NetworkConfigurationVO config = _networkProfileDao.findById(nic.getNetworkConfigurationId());
             
             if (nic.getReservationStrategy() == ReservationStrategy.Start) {
-                NetworkConcierge concierge = _networkConcierges.get(nic.getReserver());
+                NetworkGuru concierge = _networkGurus.get(config.getGuruName());
                 nic.setState(Resource.State.Reserving);
                 _nicDao.update(nic.getId(), nic);
                 NicProfile profile = toNicProfile(nic);
-                String reservationId = concierge.reserve(null, profile, dest);
+                String reservationId = concierge.reserve(profile, vmProfile, dest);
                 nic.setIp4Address(profile.getIp4Address());
                 nic.setIp6Address(profile.getIp6Address());
                 nic.setMacAddress(profile.getMacAddress());
                 nic.setIsolationUri(profile.getIsolationUri());
                 nic.setBroadcastUri(profile.getBroadCastUri());
                 nic.setReservationId(reservationId);
-                nic.setReserver(concierge.getUniqueName());
+                nic.setReserver(concierge.getName());
                 nic.setState(Resource.State.Reserved);
                 _nicDao.update(nic.getId(), nic);
                 for (NetworkElement element : _networkElements) {
@@ -2530,8 +2524,8 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         for (NicVO nic : nics) {
             nic.setState(Resource.State.Releasing);
             _nicDao.update(nic.getId(), nic);
-            NetworkConcierge concierge = _networkConcierges.get(nic.getReserver());
-            if (!concierge.release(nic.getReserver(), nic.getReservationId())) {
+            NetworkGuru concierge = _networkGurus.get(nic.getReserver());
+            if (!concierge.release(nic.getReservationId())) {
                 s_logger.warn("Unable to release " + nic + " using " + concierge.getName());
             }
             nic.setState(Resource.State.Allocated);
@@ -2541,8 +2535,6 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     
     @Override
     public <K extends VMInstanceVO> void create(K vm) {
-        for (NetworkConcierge concierge : _networkConcierges) {
-        }
     }
     
     @Override
