@@ -595,28 +595,29 @@ function showStorageTab(domainId, targetTab) {
 	        }
 	    }); 
 	    
-			$("#volume_action_snapshot_grid, #volume_action_take_snapshot_container, #volume_action_recurring_snapshot_container").show();
-			$("#submenu_snapshot").show().bind("click", function(event) {			        
-				event.preventDefault();
-			  
-				currentSubMenu.addClass("submenu_links_off").removeClass("submenu_links_on");  	
-				$(this).addClass("submenu_links_on").removeClass("submenu_links_off");			    		    
-				currentSubMenu = $(this);
-				
-				$("#submenu_content_snapshot").show();
-				$("#submenu_content_pool").hide();
-				$("#submenu_content_storage").hide();  
-				$("#submenu_content_volume").hide(); 
-				
-				var submenuContent = $("#submenu_content_snapshot");			
-				if (isAdmin)
-				    submenuContent.find("#adv_search_domain_li, #adv_search_account_li").show();  
-				else  //There are no fields in Advanced Search Dialog Box for non-admin user. So, hide Advanced Search Link.
-				    submenuContent.find("#advanced_search_link").hide(); 
-							 
-				currentPage = 1;  			
-				listSnapshots();
-			});  
+		$("#volume_action_snapshot_grid, #volume_action_take_snapshot_container, #volume_action_recurring_snapshot_container").show();
+		$("#submenu_snapshot").show().bind("click", function(event) {			        
+			event.preventDefault();
+		  
+			currentSubMenu.addClass("submenu_links_off").removeClass("submenu_links_on");  	
+			$(this).addClass("submenu_links_on").removeClass("submenu_links_off");			    		    
+			currentSubMenu = $(this);
+			
+			$("#submenu_content_snapshot").show();
+			$("#submenu_content_pool").hide();
+			$("#submenu_content_storage").hide();  
+			$("#submenu_content_volume").hide(); 
+			
+			var submenuContent = $("#submenu_content_snapshot");			
+			if (isAdmin)
+			    submenuContent.find("#adv_search_domain_li, #adv_search_account_li").show();  
+			else  //There are no fields in Advanced Search Dialog Box for non-admin user. So, hide Advanced Search Link.
+			    submenuContent.find("#advanced_search_link").hide(); 
+						 
+			currentPage = 1;  			
+			listSnapshots();
+		});  
+		
 		if (getHypervisorType() == "kvm") {
 		    $("#dialog_add_pool #pool_cluster_container").hide();
 		}
@@ -982,7 +983,7 @@ function showStorageTab(domainId, targetTab) {
 				            rowContainer.hide(); 
 				                					            					        
 						    $.ajax({
-							        data: createURL("command=deleteVolume&id="+volumeId+"&response=json"),
+							    data: createURL("command=deleteVolume&id="+volumeId+"&response=json"),
 								dataType: "json",
 								success: function(json) {							                    					                    				                				                
 									volumeTemplate.slideUp("slow", function(){

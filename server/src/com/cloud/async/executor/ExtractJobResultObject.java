@@ -9,10 +9,12 @@ import com.cloud.storage.upload.UploadState;
 
 public class ExtractJobResultObject {
 	
-	public ExtractJobResultObject(Long accountId, String typeName, UploadState currState, int i, Long uploadId){
+	public ExtractJobResultObject(Long accountId, String typeName, String currState, int i, Long uploadId){
 		this.accountId = accountId;
 		this.name = typeName;
-		this.state = currState.toString();
+		this.state = currState;
+		this.id = uploadId;
+		this.uploadPercent = i;
 	}
 
 	public ExtractJobResultObject(){		

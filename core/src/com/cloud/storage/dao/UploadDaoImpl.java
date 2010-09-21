@@ -1,27 +1,20 @@
 package com.cloud.storage.dao;
-
-import java.sql.PreparedStatement;
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-
 import javax.ejb.Local;
-import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.storage.UploadVO;
-import com.cloud.utils.DateUtil;
+import com.cloud.storage.Upload.Status;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 
 @Local(value={UploadDao.class})
 public class UploadDaoImpl extends GenericDaoBase<UploadVO, Long> implements UploadDao {
 	public static final Logger s_logger = Logger.getLogger(UploadDaoImpl.class.getName());
 	protected final SearchBuilder<UploadVO> typeUploadStatusSearch;
+	protected final SearchBuilder<UploadVO> typeHostAndUploadStatusSearch;
 	
 	protected static final String UPDATE_UPLOAD_INFO =
 		"UPDATE upload SET upload_state = ?, upload_pct= ?, last_updated = ? "
@@ -39,6 +32,11 @@ public class UploadDaoImpl extends GenericDaoBase<UploadVO, Long> implements Upl
 		typeUploadStatusSearch.and("upload_state", typeUploadStatusSearch.entity().getUploadState(), SearchCriteria.Op.EQ);
 		typeUploadStatusSearch.and("type", typeUploadStatusSearch.entity().getType(), SearchCriteria.Op.EQ);
 		typeUploadStatusSearch.done();
+		
+		typeHostAndUploadStatusSearch = createSearchBuilder();
+		typeHostAndUploadStatusSearch.and("host_id", typeHostAndUploadStatusSearch.entity().getHostId(), SearchCriteria.Op.EQ);
+		typeHostAndUploadStatusSearch.and("upload_state", typeHostAndUploadStatusSearch.entity().getUploadState(), SearchCriteria.Op.EQ);
+		typeHostAndUploadStatusSearch.done();
 	}
 	
 	@Override
@@ -49,26 +47,12 @@ public class UploadDaoImpl extends GenericDaoBase<UploadVO, Long> implements Upl
 		sc.setParameters("upload_state", uploadState.toString());
 		return listBy(sc);
 	}
-	/*
-	public void updateUploadStatus(long hostId, long typeId, int uploadPercent, UploadVO.Status uploadState,
-			String uploadJobId, String uploadUrl ) {
-        Transaction txn = Transaction.currentTxn();
-		PreparedStatement pstmt = null;
-		try {
-			Date now = new Date();
-			String sql = UPDATE_UPLOAD_INFO;
-			pstmt = txn.prepareAutoCloseStatement(sql);
-			pstmt.setString(1, uploadState.toString());
-			pstmt.setInt(2, uploadPercent);
-			pstmt.setString(3, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), now));
-			pstmt.setString(4, uploadJobId);
-			pstmt.setLong(5, hostId);
-			pstmt.setLong(6, typeId);
-			
-			pstmt.setString(7, uploadUrl);
-			pstmt.executeUpdate();
-		} catch (Exception e) {
-			s_logger.warn("Exception: ", e);
-		}
-	}*/
+	
+	@Override
+    public List<UploadVO> listByHostAndUploadStatus(long sserverId, Status uploadState){	    
+        SearchCriteria<UploadVO> sc = typeHostAndUploadStatusSearch.create();
+        sc.setParameters("host_id", sserverId);
+        sc.setParameters("upload_state", uploadState.toString());
+        return listBy(sc);
+	}
 }

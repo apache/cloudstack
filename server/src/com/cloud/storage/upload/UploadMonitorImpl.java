@@ -1,5 +1,6 @@
 package com.cloud.storage.upload;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -20,6 +21,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.agent.api.storage.UploadProgressCommand;
 import com.cloud.agent.api.storage.UploadProgressCommand.RequestType;
+import com.cloud.api.commands.CreateNetworkGroupCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -65,10 +67,6 @@ public class UploadMonitorImpl implements UploadMonitor {
     @Inject 
     UploadDao _uploadDao;
     @Inject
-	VMTemplatePoolDao _vmTemplatePoolDao;
-    @Inject
-    StoragePoolHostDao _poolHostDao;
-    @Inject
     SecondaryStorageVmDao _secStorageVmDao;
 
     
@@ -103,21 +101,35 @@ public class UploadMonitorImpl implements UploadMonitor {
 	public boolean isTypeUploadInProgress(Long typeId, Type type) {
 		List<UploadVO> uploadsInProgress =
 			_uploadDao.listByTypeUploadStatus(typeId, type, UploadVO.Status.UPLOAD_IN_PROGRESS);
-		return (uploadsInProgress.size() != 0);
+		
+		if(uploadsInProgress.size() > 0)
+		    return true;
+		else if (type == Type.VOLUME && _uploadDao.listByTypeUploadStatus(typeId, type, UploadVO.Status.COPY_IN_PROGRESS).size() > 0){
+		    return true;
+		}
+		return false;
 		
 	}
 	
 	@Override
-	public void extractVolume(VolumeVO volume, String url, Long dataCenterId, String installPath, long eventId, long asyncJobId, AsyncJobManager asyncMgr){				
-		
-		List<HostVO> storageServers = _serverDao.listByTypeDataCenter(Host.Type.SecondaryStorage, dataCenterId);
-		HostVO sserver = storageServers.get(0);			
-		
-		UploadVO uploadVolumeObj = new UploadVO(sserver.getId(), volume.getId(), new Date(), 
-													Upload.Status.NOT_UPLOADED, 0, Type.VOLUME, 
-													null, "jobid0000", url);
-		_uploadDao.persist(uploadVolumeObj);        		               
-        				
+	public UploadVO createNewUploadEntry(Long hostId, Long typeId, UploadVO.Status  uploadState,
+	                                        int uploadPercent, Type  type, 
+	                                        String  errorString, String  jobId, String  uploadUrl){
+	       
+        UploadVO uploadObj = new UploadVO(hostId, typeId, new Date(), 
+                            uploadState, 0, type, null, "jobid0000", uploadUrl);
+        _uploadDao.persist(uploadObj);
+        
+        return uploadObj;
+	    
+	}
+	
+	@Override
+	public void extractVolume(UploadVO uploadVolumeObj, HostVO sserver, VolumeVO volume, String url, Long dataCenterId, String installPath, long eventId, long asyncJobId, AsyncJobManager asyncMgr){				
+						
+		uploadVolumeObj.setUploadState(Upload.Status.NOT_UPLOADED);
+		_uploadDao.update(uploadVolumeObj.getId(), uploadVolumeObj);
+				
 	    start();		
 		UploadCommand ucmd = new UploadCommand(url, volume.getId(), volume.getSize(), installPath, Type.VOLUME);
 		UploadListener ul = new UploadListener(sserver, _timer, _uploadDao, uploadVolumeObj.getId(), this, ucmd, volume.getAccountId(), volume.getName(), Type.VOLUME, eventId, asyncJobId, asyncMgr);
@@ -189,7 +201,6 @@ public class UploadMonitorImpl implements UploadMonitor {
 
 	@Override
 	public String getName() {
-		// TODO Auto-generated method stub
 		return _name;
 	}
 
@@ -230,65 +241,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 		}
 		if (reason == Upload.Status.ABANDONED) {
 			logEvent(accountId, getEvent(type), typeName + " :aborted upload from storage server " + host.getName(), EventVO.LEVEL_WARN, eventId);
-		}
-		
-		/*VMTemplateHostVO vmTemplateHost = _vmTemplateHostDao.findByHostTemplate(host.getId(), template.getId());
-		
-        if (upldStatus == Status.UPLOADED) {
-            long size = -1;
-            if(vmTemplateHost!=null){
-            	size = vmTemplateHost.getSize();
-            }
-            else{
-            	s_logger.warn("Failed to get size for template" + template.getName());
-            }
-			String eventParams = "id=" + template.getId() + "\ndcId="+host.getDataCenterId()+"\nsize="+size;
-            EventVO event = new EventVO();
-            event.setUserId(1L);
-            event.setAccountId(template.getAccountId());
-            if((template.getFormat()).equals(ImageFormat.ISO)){
-            	event.setType(EventTypes.EVENT_ISO_CREATE);
-            	event.setDescription("Successfully uploaded ISO " + template.getName());
-            }
-            else{
-            	event.setType(EventTypes.EVENT_TEMPLATE_);
-            	event.setDescription("Successfully uploaded template " + template.getName());
-            }
-            event.setParameters(eventParams);
-            event.setLevel(EventVO.LEVEL_INFO);
-            _eventDao.persist(event);
-        } 
-        
-		if (vmTemplateHost != null) {
-			Long poolId = vmTemplateHost.getPoolId();
-			if (poolId != null) {
-				VMTemplateStoragePoolVO vmTemplatePool = _vmTemplatePoolDao.findByPoolTemplate(poolId, template.getId());
-				StoragePoolHostVO poolHost = _poolHostDao.findByPoolHost(poolId, host.getId());
-				if (vmTemplatePool != null && poolHost != null) {
-					vmTemplatePool.setDownloadPercent(vmTemplateHost.getUploadPercent());
-					vmTemplatePool.setDownloadState(vmTemplateHost.getUploadState());
-					vmTemplatePool.setErrorString(vmTemplateHost.getUpload_errorString());
-					String localPath = poolHost.getLocalPath();
-					String installPath = vmTemplateHost.getInstallPath();
-					if (installPath != null) {
-						if (!installPath.startsWith("/")) {
-							installPath = "/" + installPath;
-						}
-						if (!(localPath == null) && !installPath.startsWith(localPath)) {
-							localPath = localPath.replaceAll("/\\p{Alnum}+/*$", ""); //remove instance if necessary
-						}
-						if (!(localPath == null) && installPath.startsWith(localPath)) {
-							installPath = installPath.substring(localPath.length());
-						}
-					}
-					vmTemplatePool.setInstallPath(installPath);
-					vmTemplatePool.setLastUpdated(vmTemplateHost.getLastUpdated());
-					vmTemplatePool.setJobId(vmTemplateHost.getJobId());
-					vmTemplatePool.setLocalDownloadPath(vmTemplateHost.getLocalDownloadPath());
-					_vmTemplatePoolDao.update(vmTemplatePool.getId(),vmTemplatePool);
-				}
-			}
-		}*/
+		}			
 
 	}
 	
@@ -305,55 +258,28 @@ public class UploadMonitorImpl implements UploadMonitor {
 	}
 
 	@Override
-	public void handleUploadTemplateSync(long sserverId, Map<String, TemplateInfo> templateInfo) {
-		/*HostVO storageHost = _serverDao.findById(sserverId);
-		if (storageHost == null) {
-			s_logger.warn("Huh? Agent id " + sserverId + " does not correspond to a row in hosts table?");
-			return;
-		}		
-		
-		List<VMTemplateVO> allTemplates = _templateDao.listAllInZone(storageHost.getDataCenterId());
-		VMTemplateVO rtngTmplt = _templateDao.findRoutingTemplate();
-		VMTemplateVO defaultBuiltin = _templateDao.findDefaultBuiltinTemplate();
+	public void handleUploadSync(long sserverId) {
+	    
+	    HostVO storageHost = _serverDao.findById(sserverId);
+        if (storageHost == null) {
+            s_logger.warn("Huh? Agent id " + sserverId + " does not correspond to a row in hosts table?");
+            return;
+        }
+        s_logger.debug("Handling upload sserverId " +sserverId);
+        List<UploadVO> uploadsInProgress = new ArrayList<UploadVO>();
+        uploadsInProgress.addAll(_uploadDao.listByHostAndUploadStatus(sserverId, UploadVO.Status.UPLOAD_IN_PROGRESS));
+        uploadsInProgress.addAll(_uploadDao.listByHostAndUploadStatus(sserverId, UploadVO.Status.COPY_IN_PROGRESS));
+        if (uploadsInProgress.size() > 0){
+            for (UploadVO uploadJob : uploadsInProgress){
+                uploadJob.setUploadState(UploadVO.Status.UPLOAD_ERROR);
+                uploadJob.setErrorString("Could not complete the upload.");
+                uploadJob.setLastUpdated(new Date());
+                _uploadDao.update(uploadJob.getId(), uploadJob);
+            }
+            
+        }
+	        
 
-		if (rtngTmplt != null && !allTemplates.contains(rtngTmplt))
-			allTemplates.add(rtngTmplt);
-
-		if (defaultBuiltin != null && !allTemplates.contains(defaultBuiltin)) {
-			allTemplates.add(defaultBuiltin);
-		}			
-		        
-        
-		for (VMTemplateVO tmplt: allTemplates) {
-			String uniqueName = tmplt.getUniqueName();
-			VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(sserverId, tmplt.getId());
-			if (templateInfo.containsKey(uniqueName)) {		
-				if (tmpltHost != null) {
-					s_logger.info("Template Sync found " + uniqueName + " already in the template host table");
-                    if (tmpltHost.getUploadState() != Status.UPLOADED) {
-                    	tmpltHost.setUpload_errorString("");
-                    }
-                    tmpltHost.setUploadPercent(100);
-                    tmpltHost.setUploadState(Status.UPLOADED);                    
-                    tmpltHost.setLastUpdated(new Date());
-					_vmTemplateHostDao.update(tmpltHost.getId(), tmpltHost);
-				} else {
-					VMTemplateHostVO templtHost = new VMTemplateHostVO(sserverId, tmplt.getId(), new Date(), 100, Status.UPLOADED, null, null, null, templateInfo.get(uniqueName).getInstallPath(), tmplt.getUrl());
-					templtHost.setSize(templateInfo.get(uniqueName).getSize());
-					_vmTemplateHostDao.persist(templtHost);
-				}
-				templateInfo.remove(uniqueName);
-				continue;
-			}
-			if (tmpltHost != null && tmpltHost.getUploadState() != Status.UPLOADED) {
-				s_logger.info("Template Sync did not find " + uniqueName + " ready on server " + sserverId + ", will request upload to start/resume shortly");
-
-			} else if (tmpltHost == null) {
-				s_logger.info("Template Sync did not find " + uniqueName + " on the server " + sserverId + ", will request upload shortly");
-				VMTemplateHostVO templtHost = new VMTemplateHostVO(sserverId, tmplt.getId(), new Date(), 0, Status.NOT_UPLOADED, null, null, null, null, tmplt.getUrl());
-				_vmTemplateHostDao.persist(templtHost);
-			}*/
-
-		}				
+	}				
 		
 }

@@ -12,4 +12,6 @@ public interface UploadDao extends GenericDao<UploadVO, Long> {
 	List<UploadVO> listByTypeUploadStatus(long typeId, Type type,
 			Status uploadState);
 
+	List<UploadVO> listByHostAndUploadStatus(long sserverId, Status uploadInProgress);
+
 }

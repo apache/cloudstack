@@ -101,6 +101,7 @@ import com.cloud.async.executor.DeleteRuleParam;
 import com.cloud.async.executor.DeleteTemplateParam;
 import com.cloud.async.executor.DeployVMParam;
 import com.cloud.async.executor.DisassociateIpAddressParam;
+import com.cloud.async.executor.ExtractJobResultObject;
 import com.cloud.async.executor.ExtractTemplateParam;
 import com.cloud.async.executor.LoadBalancerParam;
 import com.cloud.async.executor.NetworkGroupIngressParam;
@@ -188,6 +189,7 @@ import com.cloud.serializer.GsonHelper;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.UploadVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.DiskTemplateVO;
 import com.cloud.storage.GuestOS;
@@ -223,6 +225,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -361,6 +364,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final InstanceGroupDao _vmGroupDao;
     private final InstanceGroupVMMapDao _groupVMMapDao;
     private final UploadMonitor _uploadMonitor;
+    private final UploadDao _uploadDao;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -439,6 +443,7 @@ public class ManagementServerImpl implements ManagementServer {
         _vmDao = locator.getDao(UserVmDao.class);
         _vmGroupDao = locator.getDao(InstanceGroupDao.class);
         _groupVMMapDao = locator.getDao(InstanceGroupVMMapDao.class);
+        _uploadDao = locator.getDao(UploadDao.class);
 
         _configs = _configDao.getConfiguration();
         _userStatsDao = locator.getDao(UserStatisticsDao.class);
@@ -451,7 +456,7 @@ public class ManagementServerImpl implements ManagementServer {
         _snapMgr = locator.getManager(SnapshotManager.class);
         _snapshotScheduler = locator.getManager(SnapshotScheduler.class);
         _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
-        _uploadMonitor = locator.getManager(UploadMonitor.class);
+        _uploadMonitor = locator.getManager(UploadMonitor.class);                
         
         _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
         if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
@@ -4866,16 +4871,45 @@ public class ManagementServerImpl implements ManagementServer {
         String secondaryStorageURL = _storageMgr.getSecondaryStorageURL(zoneId); 
         StoragePoolVO srcPool = _poolDao.findById(volume.getPoolId());
         Long sourceHostId = _storageMgr.findHostIdForStoragePool(srcPool);
+        List<HostVO> storageServers = _hostDao.listByTypeDataCenter(Host.Type.SecondaryStorage, zoneId);
+        HostVO sserver = storageServers.get(0);
+        
+        saveStartedEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_UPLOAD, "Starting upload of " +volume.getName()+ " to " +url, eventId);        
+        UploadVO uploadJob = _uploadMonitor.createNewUploadEntry(sserver.getId(), volumeId, UploadVO.Status.COPY_IN_PROGRESS, 0, Type.VOLUME, null, null, url);
+        uploadJob = _uploadDao.createForUpdate(uploadJob.getId());
+        
+        // Update the async Job
+        ExtractJobResultObject resultObj = new ExtractJobResultObject(volume.getAccountId(), volume.getName(), UploadVO.Status.COPY_IN_PROGRESS.toString(), 0, uploadJob.getId());
+        _asyncMgr.updateAsyncJobAttachment(asyncJobId, Type.VOLUME.toString(), volumeId);
+        _asyncMgr.updateAsyncJobStatus(asyncJobId, AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
+        
         
      // Copy the volume from the source storage pool to secondary storage
         CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(), volume.getPath(), srcPool, secondaryStorageURL, true);
         CopyVolumeAnswer cvAnswer = (CopyVolumeAnswer) _agentMgr.easySend(sourceHostId, cvCmd);
-
+                
         if (cvAnswer == null || !cvAnswer.getResult()) {
-            throw new InternalErrorException("Failed to copy the volume from the source primary storage pool to secondary storage.");            
+            
+            String errorString = "Failed to copy the volume from the source primary storage pool to secondary storage.";
+            
+            resultObj.setResult_string(errorString);
+            resultObj.setUploadStatus(UploadVO.Status.COPY_ERROR.toString());
+            _asyncMgr.completeAsyncJob(asyncJobId, AsyncJobResult.STATUS_FAILED, 0, resultObj);
+            
+            uploadJob.setUploadState(UploadVO.Status.COPY_ERROR);            
+            uploadJob.setErrorString(errorString);
+            uploadJob.setLastUpdated(new Date());
+            _uploadDao.update(uploadJob.getId(), uploadJob);
+            
+            saveEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_UPLOAD, errorString);
+            
+            throw new InternalErrorException(errorString);            
         }
 
-        _uploadMonitor.extractVolume(volume, url, zoneId, "volumes/"+volume.getId()+"/"+cvAnswer.getVolumePath()+".vhd", eventId, asyncJobId, _asyncMgr);
+        uploadJob.setUploadState(UploadVO.Status.COPY_COMPLETE);        
+        uploadJob.setLastUpdated(new Date());
+        _uploadDao.update(uploadJob.getId(), uploadJob);
+        _uploadMonitor.extractVolume(uploadJob, sserver, volume, url, zoneId, "volumes/"+volume.getId()+"/"+cvAnswer.getVolumePath()+".vhd", eventId, asyncJobId, _asyncMgr);
         
     }
     
