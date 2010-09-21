@@ -33,7 +33,8 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap)
     $link.data("isAsyncJob", apiInfo.isAsyncJob);
     $link.data("asyncJobResponse", apiInfo.asyncJobResponse);		     
     $link.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);
-    $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);      
+    $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);     
+    $link.data("customActionFn", apiInfo.customActionFn);   
     
     var $detailsTab = $("#right_panel_content #tab_content_details");  
     var id = $detailsTab.data("jsonObj").id;
@@ -41,6 +42,13 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap)
     $link.bind("click", function(event) {   
         $actionMenu.hide();    	 
         var $actionLink = $(this);   
+        
+        var customActionFn = $actionLink.data("customActionFn"); 
+        if(customActionFn != null) {
+            customActionFn();
+            return false;
+        }
+        
         var dialogBeforeActionFn = $actionLink.data("dialogBeforeActionFn"); 
         if(dialogBeforeActionFn == null) {	 
             var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
@@ -48,7 +56,7 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap)
         }
         else {
             dialogBeforeActionFn($actionLink, listAPIMap, $detailsTab);	
-        }                        
+        }               
         return false;
     });  
 } 

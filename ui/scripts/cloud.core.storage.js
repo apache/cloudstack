@@ -23,7 +23,7 @@ function showStorageTab(domainId, targetTab) {
        		
     var populateZoneField = function(isAdmin) {         
         $.ajax({
-	            data: createURL("command=listZones&available=true&response=json"+maxPageSize),
+	        data: createURL("command=listZones&available=true&response=json"+maxPageSize),
 		    dataType: "json",
 		    success: function(json) {
 			    var zones = json.listzonesresponse.zone;					    
@@ -50,7 +50,7 @@ function showStorageTab(domainId, targetTab) {
     
     var populateDiskOfferingField = function() {        
         $.ajax({
-	            data: createURL("command=listDiskOfferings&response=json"),
+	        data: createURL("command=listDiskOfferings&response=json"),
 		    dataType: "json",
 		    success: function(json) {			    
 		        var offerings = json.listdiskofferingsresponse.diskoffering;								
