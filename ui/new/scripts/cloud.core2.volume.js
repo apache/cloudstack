@@ -5,7 +5,11 @@ function afterLoadVolumeJSP() {
         modal: true,
         zIndex: 2000
     }));
-    
+    activateDialog($("#dialog_create_snapshot").dialog({ 
+	    autoOpen: false,
+	    modal: true,
+	    zIndex: 2000
+    }));
     
     $.ajax({
         data: createURL("command=listOsTypes&response=json"),
@@ -68,7 +72,7 @@ function volumeJsonToDetailsTab(jsonObj){
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
     
-    //buildActionLinkForDetailsTab("Take Snapshot", volumeActionMap, $actionMenu, volumeListAPIMap);	//show take snapshot
+    buildActionLinkForDetailsTab("Take Snapshot", volumeActionMap, $actionMenu, volumeListAPIMap);	//show take snapshot
     //buildActionLinkForDetailsTab("Recurring Snapshot", volumeActionMap, $actionMenu, volumeListAPIMap);	//show Recurring Snapshot
     
     if(jsonObj.state != "Creating" && jsonObj.state != "Corrupted" && jsonObj.name != "attaching") {
@@ -134,7 +138,14 @@ var volumeActionMap = {
             clearRightPanel();
             volumeClearRightPanel();
         }
-    }    
+    },
+    "Take Snapshot": {
+        isAsyncJob: true,
+        asyncJobResponse: "createsnapshotresponse",            
+        dialogBeforeActionFn : doTakeSnapshot,
+        inProcessText: "Taking Snapshot....",
+        afterActionSeccessFn: function(){}   
+    }  
 }   
 
 var volumeListAPIMap = {
@@ -174,3 +185,19 @@ function doCreateTemplateFromVolume($actionLink, listAPIMap, $detailsTab) {
 		} 
 	}).dialog("open");
 }   
+
+function doTakeSnapshot($actionLink, listAPIMap, $detailsTab) {   
+    $("#dialog_create_snapshot")					
+    .dialog('option', 'buttons', { 					    
+	    "Confirm": function() { 	
+	        $(this).dialog("close");	
+	    	
+            var id = $detailsTab.data("jsonObj").id;	
+			var apiCommand = "command=createSnapshot&volumeid="+id;
+	    	doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);	
+	    },
+	    "Cancel": function() { 					        
+		    $(this).dialog("close"); 
+	    } 
+    }).dialog("open");	  
+}		

@@ -218,3 +218,9 @@
     </div>
 </div>
 
+<!-- Create Snapshot Dialog (begin) -->
+<div id="dialog_create_snapshot" title="Create Snapshot" style="display: none">
+    <p>
+        Please confirm you want to create snapshot for this volume.</p>
+</div>
+<!-- Create Snapshot Dialog (end) -->
