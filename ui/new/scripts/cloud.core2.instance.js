@@ -428,7 +428,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 			success: function(json) {			    
 				var items = json.listvolumesresponse.volume;
 				if (items != null && items.length > 0) {
-					var container = $detailsTab.find("#tab_content_volume").empty();
+					var container = $("#right_panel_content #tab_content_volume").empty();
 					var template = $("#volume_tab_template");				
 					for (var i = 0; i < items.length; i++) {
 						var newTemplate = template.clone(true);
