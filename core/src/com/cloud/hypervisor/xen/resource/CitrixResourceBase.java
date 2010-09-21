@@ -1288,7 +1288,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
 
     protected void assignPublicIpAddress(final String vmName, final String privateIpAddress, final String publicIpAddress, final boolean add, final boolean firstIP,
-            final boolean sourceNat, final String vlanId, final String vlanGateway, final String vlanNetmask, final String vifMacAddress) throws InternalErrorException {
+            final boolean sourceNat, final String vlanId, final String vlanGateway, final String vlanNetmask, final String vifMacAddress, String guestIp) throws InternalErrorException {
 
         try {
             Connection conn = getConnection();
@@ -1328,7 +1328,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
             }
 
-            String args;
+            String args = null;
+            
             if (add) {
                 args = "-A";
             } else {
@@ -1346,6 +1347,11 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             args += " -g ";
             args += vlanGateway;
 
+            if(guestIp!=null){
+            	args += " -G ";
+            	args += guestIp;
+            }
+            
             String result = callHostPlugin("vmops", "ipassoc", "args", args);
             if (result == null || result.isEmpty()) {
                 throw new InternalErrorException("Xen plugin \"ipassoc\" failed.");
@@ -1388,7 +1394,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     protected Answer execute(final IPAssocCommand cmd) {
         try {
             assignPublicIpAddress(cmd.getRouterName(), cmd.getRouterIp(), cmd.getPublicIp(), cmd.isAdd(), cmd.isFirstIP(), cmd.isSourceNat(), cmd.getVlanId(),
-                    cmd.getVlanGateway(), cmd.getVlanNetmask(), cmd.getVifMacAddress());
+                    cmd.getVlanGateway(), cmd.getVlanNetmask(), cmd.getVifMacAddress(), cmd.getGuestIp());
         } catch (InternalErrorException e) {
             return new Answer(cmd, false, e.getMessage());
         }
@@ -1668,8 +1674,15 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         try {
             doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(statsSource);
         } catch (Exception e) {
+        	s_logger.warn("Exception caught whilst processing the document via document factory:"+e);
+        	return null;
         }
 
+        if(doc==null){
+        	s_logger.warn("Null document found after tryinh to parse the stats source");
+        	return null;
+        }
+        
         NodeList firstLevelChildren = doc.getChildNodes();
         NodeList secondLevelChildren = (firstLevelChildren.item(0)).getChildNodes();
         Node metaNode = secondLevelChildren.item(0);

@@ -409,12 +409,13 @@ public interface ManagementServer {
      * @param accountId
      * @param domainId
      * @param zoneId
+     * @param vmId
      * @return allocated IP address in the zone specified
      * @throws InsufficientAddressCapacityException if no more addresses are available
      * @throws InvalidParameterValueException if no router for that user exists in the zone specified
      * @throws InternalErrorException  if the new address could not be sent down to the router
      */
-    String associateIpAddress(long userId, long accountId, long domainId, long zoneId) throws ResourceAllocationException, InsufficientAddressCapacityException, InvalidParameterValueException, InternalErrorException;
+    String associateIpAddress(long userId, long accountId, long domainId, long zoneId, long vmId) throws ResourceAllocationException, InsufficientAddressCapacityException, InvalidParameterValueException, InternalErrorException;
     long associateIpAddressAsync(long userId, long accountId, long domainId, long zoneId);
    
     
@@ -2253,5 +2254,10 @@ public interface ManagementServer {
     URISyntaxException, InternalErrorException;
 	long extractTemplateAsync(String url, Long templateId, Long zoneId) throws URISyntaxException;
 	long extractVolumeAsync(String url, Long volumeId, Long zoneId) throws URISyntaxException;
+	
+	/* 
+	 * Fetches the version of cloud stack 
+	 */
+    String getVersion();
 
 }

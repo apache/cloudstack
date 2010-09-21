@@ -892,6 +892,7 @@ def prompt_for_hostpods(zonespods):
 		for n,(z,p) in enumerate(zonespods):
 			print "%3d) %s, %s"%(n,z,p)
 		print "================"
+		print "> ",
 		zoneandpod = raw_input().strip()
 		
 		if not zoneandpod:
@@ -930,6 +931,7 @@ def setup_agent_config(configfile, host, zone, pod, cluster, guid):
 		try: host = confopts["host"]
 		except KeyError: host = "localhost"
 		stderr("Please enter the host name of the management server that this agent will connect to: (just hit ENTER to go with %s)",host)
+		print "> ",
 		newhost = raw_input().strip()
 		if newhost: host = newhost
 
@@ -977,6 +979,7 @@ def setup_consoleproxy_config(configfile, host, zone, pod):
 		try: host = confopts["host"]
 		except KeyError: host = "localhost"
 		stderr("Please enter the host name of the management server that this console-proxy will connect to: (just hit ENTER to go with %s)",host)
+		print "> ",
 		newhost = raw_input().strip()
 		if newhost: host = newhost
 	confopts["host"] = host

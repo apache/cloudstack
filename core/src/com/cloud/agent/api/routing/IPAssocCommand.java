@@ -35,11 +35,12 @@ public class IPAssocCommand extends RoutingCommand {
 	private String vlanGateway;
 	private String vlanNetmask;
 	private String vifMacAddress;
+	private String guestIp;
 
 	protected IPAssocCommand() {
 	}
 	
-	public IPAssocCommand(String routerName, String privateIpAddress, String ipAddress, boolean add, boolean firstIP, boolean sourceNat, String vlanId, String vlanGateway, String vlanNetmask, String vifMacAddress) {
+	public IPAssocCommand(String routerName, String privateIpAddress, String ipAddress, boolean add, boolean firstIP, boolean sourceNat, String vlanId, String vlanGateway, String vlanNetmask, String vifMacAddress, String guestIp) {
 		this.setRouterName(routerName);
 		this.routerIp = privateIpAddress;
 		this.publicIp = ipAddress;
@@ -50,8 +51,13 @@ public class IPAssocCommand extends RoutingCommand {
 		this.vlanGateway = vlanGateway;
 		this.vlanNetmask = vlanNetmask;
 		this.vifMacAddress = vifMacAddress;
+		this.guestIp = guestIp;
 	}
 
+	public String getGuestIp(){
+		return guestIp;
+	}
+	
 	public String getRouterIp() {
 		return routerIp;
 	}

@@ -1386,6 +1386,7 @@ a:visited {
 	width:223px;
 	height:27px;
 	float:left;
+	position:relative;
 	margin:0;
 	padding:0;
 	background:url(../images/actionpanel_border.gif) no-repeat top right;
@@ -1458,6 +1459,174 @@ a:visited {
 	background:url(../images/serach_textbox.gif) no-repeat top left;
 	margin:0;
 	padding:0;
+}
+
+.adv_searchpopup {
+	width:156px;
+	height:auto;
+	float:left;
+	position:absolute;
+	background:#fefae7 repeat top left;
+	border:1px solid #999;
+	top:5px;
+	left:8px;
+	margin:0;
+	padding:0;
+	z-index:1005;
+}
+
+.adv_searchformbox {
+	width:140px;
+	height:auto;
+	float:left;
+	margin:0 0 10px 10px;
+	display:inline;
+	padding:0;
+}
+
+.adv_searchformbox a:link {
+	width:auto;
+	height:auto;
+	float:right;
+	text-align:left;
+	text-decoration:underline;
+	font-size:10px;
+	font-weight:normal;
+	color: #2c8bbc;
+	margin: 7px 5px 0 0;
+	padding:0;
+}
+
+.adv_searchformbox a:visited {
+	width:auto;
+	height:auto;
+	float:right;
+	text-align:left;
+	text-decoration:underline;
+	font-size:10px;
+	font-weight:normal;
+	color: #2c8bbc;
+	margin: 7px 5px 0 0;
+	padding:0;
+}
+.adv_searchformbox a:hover {
+	width:auto;
+	height:auto;
+	float:right;
+	text-align:left;
+	text-decoration:none;
+	font-size:10px;
+	font-weight:normal;
+	color: #2c8bbc;
+	margin: 7px 5px 0 0;
+	padding:0;
+}
+
+.adv_searchformbox h3 {
+	width:auto;
+	height:auto;
+	color:#2d6487;
+	font-size:11px;
+	font-weight:bold;
+	float:left;
+	margin:8px 0 7px 0;
+	padding:0;
+}
+
+.adv_searchformbox ol {
+	width: auto;
+	color:#333;
+	float:left;
+	font-family:Arial, Helvetica, sans-serif;
+	font-size:11px;
+	list-style:none;
+}
+
+.adv_searchformbox li {
+	width:140px;
+	float:left;
+	clear:left; 
+	font-family:Arial, Helvetica, sans-serif;
+	color:#333;
+	font-weight:normal;
+	margin:0 0 7px 0;
+}
+
+.adv_searchformbox label {
+	width:45px;
+	float:left;
+	clear:left; 
+	font-family:Arial, Helvetica, sans-serif;
+	color:#333;
+	font-size:10px;
+	font-weight:normal;
+	margin:2px 5px 0 0;
+}
+
+.adv_searchformbox .text {
+	background-color: #FFF;
+	font: normal 11px Arial, Helvetica, sans-serif;
+	float:left;
+	border: 1px solid #CCC;
+	height: 13px;
+	width: 80px;
+	color:#666;
+	margin:0;
+	padding:1px 0 0 2px; 
+	font-weight:normal;
+}
+
+.adv_searchformbox .select {
+	background-color: #FFF; 
+	font: normal 11px Arial, Helvetica, sans-serif; 
+	float:left; 
+	border: 1px solid #CCC; 
+	height: 17px; 
+	width: 83px;
+	margin:0; 
+	padding:1px 0 0 2px; 
+	color:#666;
+}
+
+
+.adv_search_actionbox {
+	width:140px;
+	height:20px;
+	float:left;
+	margin:5px 0 0 0;
+	padding:0;
+}
+.adv_searchpopup_button {
+	width:49px;
+	height:16px;
+	float:left;
+	background:url(../images/adv_searchbutton.gif) no-repeat top left;
+	margin:0 5px 0 0;
+	display:inline;
+	padding:0;
+	cursor:pointer;
+	cursor:hand;
+}
+
+.adv_searchpopup_button:hover {
+	background:url(../images/adv_searchbutton_hover.gif) no-repeat top left;
+}
+
+a.search_button {
+	width:26px;
+	height:25px;
+	float:left;
+	margin-left:10px;
+	display:inline;
+	text-decoration:none;
+	background:url(../images/searchicon_button.jpg) no-repeat top left;
+	padding:0;
+}
+
+
+
+a:hover.search_button {
+	background:url(../images/searchicon_button_hover.jpg) no-repeat top left;
 }
 
 .actionpanel_button_wrapper{

@@ -318,8 +318,9 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 			if (routingHost == null) {
 				if (s_logger.isDebugEnabled()) {
-					s_logger.debug("Unable to find a routing host for " + secStorageVm.toString());
-					continue;
+                    String msg = "Unable to find a routing host for " + secStorageVm.toString() + " in pod " + pod.getId();
+                    s_logger.debug(msg);
+                    throw new CloudRuntimeException(msg);
 				}
 			}
 			// to ensure atomic state transition to Starting state
@@ -350,9 +351,9 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 							secStorageVm.getDataCenterId(), routingHost.getPodId(),
 							secStorageVm.getId(), secStorageVm.getPrivateMacAddress());
 					if (privateIpAddress == null && (_IpAllocator != null && !_IpAllocator.exteralIpAddressAllocatorEnabled())) {
-						s_logger.debug("Not enough ip addresses in " + routingHost.getPodId());
-						avoid.add(routingHost);
-						continue;
+                        String msg = "Unable to allocate private ip addresses for  " + secStorageVm.getName() + " in pod " + pod.getId();
+                        s_logger.debug(msg);
+                        throw new CloudRuntimeException(msg);
 					}
 
 					secStorageVm.setPrivateIpAddress(privateIpAddress);
@@ -363,9 +364,9 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 					List<VolumeVO> vols = _storageMgr.prepare(secStorageVm, routingHost);
 					if (vols == null || vols.size() == 0) {
-                        s_logger.warn("Can not share " + secStorageVm.getName());
-                        avoid.add(routingHost);
-                        continue;
+                        String msg = "Unable to prepare storage for " + secStorageVm.getName() + " in pod " + pod.getId();
+                        s_logger.debug(msg);
+                        throw new CloudRuntimeException(msg);
 					}
 		            VolumeVO vol = vols.get(0);
 		            
@@ -716,10 +717,9 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			}
 			
 			if (pod == null || publicIpAndVlan == null) {
-				s_logger.warn("Unable to allocate pod for secondary storage vm in data center : " + dataCenterId);
-
-				context.put("secStorageVmId", (long) 0);
-				return context;
+                String msg = "Unable to allocate pod for secondary storage vm in data center : " + dataCenterId;
+                s_logger.warn(msg);
+                throw new CloudRuntimeException(msg);
 			}
 			
 			long id = _secStorageVmDao.getNextInSequence(Long.class, "id");

@@ -594,8 +594,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
 
             if (routingHost == null) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Unable to find a routing host for " + proxy.toString());
-                    continue;
+                    String msg = "Unable to find a routing host for " + proxy.toString() + " in pod " + pod.getId();
+                    s_logger.debug(msg);
+                    throw new CloudRuntimeException(msg);
                 }
             }
             // to ensure atomic state transition to Starting state
@@ -622,9 +623,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
                     String privateIpAddress = allocPrivateIpAddress(proxy.getDataCenterId(), routingHost.getPodId(), proxy.getId(),
                             proxy.getPrivateMacAddress());
                     if (privateIpAddress == null && (_IpAllocator != null && !_IpAllocator.exteralIpAddressAllocatorEnabled())) {
-                        s_logger.debug("Not enough ip addresses in " + routingHost.getPodId());
-                        avoid.add(routingHost);
-                        continue;
+                        String msg = "Unable to allocate private ip addresses for  " + proxy.getName() + " in pod " + pod.getId();
+                        s_logger.debug(msg);
+                        throw new CloudRuntimeException(msg);
                     }
 
                     proxy.setPrivateIpAddress(privateIpAddress);
@@ -635,10 +636,10 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
                     proxy = _consoleProxyDao.findById(proxy.getId());
 
                     List<VolumeVO> vols = _storageMgr.prepare(proxy, routingHost);
-                    if (vols == null) {
-                        s_logger.debug("Unable to prepare storage for " + routingHost);
-                        avoid.add(routingHost);
-                        continue;
+                    if (vols == null || vols.size() == 0) {
+                        String msg = "Unable to prepare storage for " + proxy.getName() + " in pod " + pod.getId();
+                        s_logger.debug(msg);
+                        throw new CloudRuntimeException(msg);
                     }
 
                     // _storageMgr.share(proxy, vols, null, true);
@@ -955,10 +956,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
             }
 
             if (pod == null || publicIpAndVlan == null) {
-                s_logger.warn("Unable to allocate pod for console proxy vm in data center : " + dataCenterId);
-
-                context.put("proxyVmId", (long) 0);
-                return context;
+                String msg = "Unable to allocate pod for console proxy vm in data center : " + dataCenterId;
+                s_logger.warn(msg);
+                throw new CloudRuntimeException(msg);
             }
 
             long id = _consoleProxyDao.getNextInSequence(Long.class, "id");

@@ -314,6 +314,13 @@
                 <a id="cancel_link" href="#">Cancel</a>
             </div>
         </div>
+        <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
+            <div class="gridrow_loader">
+            </div>
+            <p id="description">
+                Waiting &hellip;
+            </p>
+        </div>
     </div>  
     <div class="grid_detailspanel" id="management_area" style="display: none;">
         <div class="grid_details_pointer">
@@ -325,9 +332,7 @@
                         <img src="images/network_managevmicon.gif" /></div>
                 </div>
                 <div class="grid_row_cell" style="width: 60%;">
-                    <select class="select" style="width: 90%;">
-                        <option>Instance A </option>
-                        <option>Instance B </option>
+                    <select id="vm_select" class="select" style="width: 90%;">                      
                     </select>
                 </div>
                 <div class="grid_row_cell" style="width: 30%;">
@@ -338,10 +343,10 @@
                     <div class="gridrow_loader">
                     </div>
                     <p>
-                        Assigning instance to load balancer policy &hellip;</p>
+                        Assigning instance to load balancer rule &hellip;</p>
                 </div>
             </div>
-            <div id="grid_content" class="ip_description_managearea">
+            <div id="subgrid_content" class="ip_description_managearea">
             </div>
         </div>
     </div>
@@ -354,10 +359,10 @@
         <div class="row_celltitles">
             <img src="images/network_managevmicon.gif" /></div>
     </div>
-    <div class="grid_row_cell" style="width: 50%;">
+    <div class="grid_row_cell" style="width: 30%;">
         <div class="row_celltitles" id="vm_name"></div>
     </div>
-    <div class="grid_row_cell" style="width: 10%;">
+    <div class="grid_row_cell" style="width: 30%;">
         <div class="row_celltitles" id="vm_private_ip"></div>
     </div>
     <div class="grid_row_cell" style="width: 30%;">
@@ -368,7 +373,7 @@
         <div class="gridrow_loader">
         </div>
         <p>
-            Removing instance from load balancer policy &hellip;</p>
+            Removing instance from load balancer rule &hellip;</p>
     </div>
 </div>
 <!-- Load Balancer's VM subgrid template (end) -->

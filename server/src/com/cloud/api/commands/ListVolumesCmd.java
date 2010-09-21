@@ -132,8 +132,8 @@ public class ListVolumesCmd extends BaseCmd{
             c.addCriteria(Criteria.ID, id);
             c.addCriteria(Criteria.INSTANCEID, vmId);
             c.addCriteria(Criteria.NAME, name);
-            if (isAdmin) {
-                c.addCriteria(Criteria.VTYPE, type);
+            c.addCriteria(Criteria.VTYPE, type);
+            if (isAdmin) {                
                 c.addCriteria(Criteria.DATACENTERID, zoneId);
                 c.addCriteria(Criteria.PODID, podId);
                 c.addCriteria(Criteria.HOSTID, hostId);
