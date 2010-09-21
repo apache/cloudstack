@@ -491,7 +491,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 Long id;
                 if (tmplt == null) {
                     id = _tmpltDao.getNextInSequence(Long.class, "id");
-                    VMTemplateVO template = new VMTemplateVO(id, xenPVISO.getTemplateName(), xenPVISO.getTemplateName(), ImageFormat.ISO , true, true, FileSystem.cdfs, "/opt/xensource/packages/iso/xs-tools-5.5.0.iso", null, true, 64, Account.ACCOUNT_ID_SYSTEM, null, "xen-pv-drv-iso", false, 1, false, null);
+                    VMTemplateVO template = new VMTemplateVO(id, xenPVISO.getTemplateName(), xenPVISO.getTemplateName(), ImageFormat.ISO , true, true, FileSystem.cdfs, "/opt/xensource/packages/iso/xs-tools-5.5.0.iso", null, true, 64, Account.ACCOUNT_ID_SYSTEM, null, "xen-pv-drv-iso", false, 1, false, HypervisorType.None);
                     _tmpltDao.persist(template);
                 } else {
                     id = _tmpltDao.findByName(xenPVISO.getTemplateName()).getId();

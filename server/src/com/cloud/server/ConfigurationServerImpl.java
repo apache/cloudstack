@@ -143,6 +143,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 			_configMgr.createDiskOffering(User.UID_SYSTEM, DomainVO.ROOT_DOMAIN, "Large", "Large Disk, 100 GB", 100, null);
 			//_configMgr.createDiskOffering(User.UID_SYSTEM, DomainVO.ROOT_DOMAIN, "Private", "Private Disk", 0, null);
 			
+			_configDao.update("xen.guest.network.device", "cloud-guest");
+			
 			   //Add default manual snapshot policy
             SnapshotPolicyVO snapPolicy = new SnapshotPolicyVO(0L, "00", "GMT", (short)4, 0);
             _snapPolicyDao.persist(snapPolicy);
