@@ -104,6 +104,13 @@ public class UpdateIsoCmd extends BaseCmd {
             isoData.add(new Pair<String, Object>(BaseCmd.Properties.FORMAT.getName(), updatedIso.getFormat()));
             isoData.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_ID.getName(), updatedIso.getGuestOSId()));
             isoData.add(new Pair<String, Object>(BaseCmd.Properties.BOOTABLE.getName(), updatedIso.isBootable()));
+            // add account ID and name
+            Account owner = getManagementServer().findAccountById(updatedIso.getAccountId());
+            if (owner != null) {
+                isoData.add(new Pair<String, Object>(BaseCmd.Properties.ACCOUNT.getName(), owner.getAccountName()));
+                isoData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN_ID.getName(), owner.getDomainId()));
+                isoData.add(new Pair<String, Object>(BaseCmd.Properties.DOMAIN.getName(), getManagementServer().findDomainIdById(owner.getDomainId()).getName()));
+            }
             return isoData;
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "internal error updating ISO");
