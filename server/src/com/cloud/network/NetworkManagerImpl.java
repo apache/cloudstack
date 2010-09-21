@@ -226,6 +226,8 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     int _routerCleanupInterval = 3600;
     int _routerStatsInterval = 300;
     private ServiceOfferingVO _offering;
+    private int _networkRate;
+    private int _multicastRate;
     private HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
     
     private VMTemplateVO _template;
@@ -979,7 +981,8 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 
 	                try {
 	                    String[] storageIps = new String[2];
-	                    final StartRouterCommand cmdStartRouter = new StartRouterCommand(router, name, storageIps, vols, mirroredVols);
+	                    final StartRouterCommand cmdStartRouter = new StartRouterCommand(router, _networkRate,
+	                            _multicastRate, name, storageIps, vols, mirroredVols);
 	                    answer = _agentMgr.send(routingHost.getId(), cmdStartRouter);
 	                    if (answer != null && answer.getResult()) {
 	                        if (answer instanceof StartRouterAnswer){
@@ -1849,6 +1852,10 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         _haMgr.registerHandler(VirtualMachine.Type.DomainRouter, this);
 
         boolean useLocalStorage = Boolean.parseBoolean((String)params.get(Config.SystemVMUseLocalStorage.key()));
+        String networkRateStr = _configDao.getValue("network.throttling.rate");
+        String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
+        _networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
+        _multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
         _offering = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, useLocalStorage, true, null);
         _offering.setUniqueName("Cloud.Com-SoftwareRouter");
         _offering = _serviceOfferingDao.persistSystemServiceOffering(_offering);

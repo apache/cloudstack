@@ -240,6 +240,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     private ConsoleProxyListener _listener;
 
     private ServiceOfferingVO _serviceOffering;
+    private int _networkRate;
+    private int _multicastRate;
     private VMTemplateVO _template;
     
     NetworkOfferingVO _publicNetworkOffering;
@@ -646,9 +648,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
 
                     // carry the console proxy port info over so that we don't
                     // need to configure agent on this
-                    StartConsoleProxyCommand cmdStart = new StartConsoleProxyCommand(_proxyCmdPort, proxy, proxy.getName(), "", vols,
-                            Integer.toString(_consoleProxyPort), Integer.toString(_consoleProxyUrlPort), _mgmt_host, _mgmt_port, _sslEnabled);
-
+                    StartConsoleProxyCommand cmdStart = new StartConsoleProxyCommand(_networkRate, _multicastRate,
+                            _proxyCmdPort, proxy, proxy.getName(), "", vols, Integer.toString(_consoleProxyPort),
+                            Integer.toString(_consoleProxyUrlPort), _mgmt_host, _mgmt_port, _sslEnabled);
                     if (s_logger.isDebugEnabled())
                         s_logger.debug("Sending start command for console proxy " + proxy.getName() + " to " + routingHost.getName());
                     try {
@@ -2279,6 +2281,10 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         }
 
         boolean useLocalStorage = Boolean.parseBoolean((String) params.get(Config.SystemVMUseLocalStorage.key()));
+        String networkRateStr = _configDao.getValue("network.throttling.rate");
+        String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
+        _networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
+        _multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
         _serviceOffering = new ServiceOfferingVO("Fake Offering For DomP", 1, _proxyRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized,
                 useLocalStorage, true, null);
         _serviceOffering.setUniqueName("Cloud.com-ConsoleProxy");
