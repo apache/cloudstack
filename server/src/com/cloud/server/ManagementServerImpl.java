@@ -2765,7 +2765,7 @@ public class ManagementServerImpl implements ManagementServer {
         SearchCriteria<ClusterVO> sc = _clusterDao.createSearchCriteria();
 
         Object id = cmd.getId();
-        Object name = cmd.getName();
+        Object name = cmd.getClusterName();
         Object podId = cmd.getPodId();
         Object zoneId = cmd.getZoneId();
 

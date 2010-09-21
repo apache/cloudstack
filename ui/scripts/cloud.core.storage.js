@@ -1940,7 +1940,7 @@ function showStorageTab(domainId, targetTab) {
 					    dataType: "json",
 					    success: function(json) {
 						    var json = json.createstoragepoolresponse;							    
-						    poolJSONToTemplate(json.storagepool[0], template);							    							    
+						    poolJSONToTemplate(json, template);							    							    
 						    changeGridRowsTotal(submenuContent.find("#grid_rows_total"), 1);
 						    loadingImg.hide();  
                             rowContainer.show();    

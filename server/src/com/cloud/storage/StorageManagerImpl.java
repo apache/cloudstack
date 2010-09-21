@@ -1299,7 +1299,7 @@ public class StorageManagerImpl implements StorageManager {
             throw new ResourceAllocationException("No host exists to associate a storage pool with");
         }
         long poolId = _storagePoolDao.getNextInSequence(Long.class, "id");
-        String uuid = UUID.nameUUIDFromBytes(new String(storageHost + hostPath).getBytes()).toString();
+        String uuid = UUID.nameUUIDFromBytes(new String(storageHost + hostPath + System.currentTimeMillis()).getBytes()).toString();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("In createPool Setting poolId - " +poolId+ " uuid - " +uuid+ " zoneId - " +zoneId+ " podId - " +podId+ " poolName - " +cmd.getStoragePoolName());
         }

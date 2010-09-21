@@ -29,27 +29,23 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
-import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePoolDetailVO;
 import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value={StoragePoolDao.class}) @DB(txn=false)
 public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  implements StoragePoolDao {
-    private static final Logger s_logger = Logger.getLogger(StoragePoolDaoImpl.class);
     protected final SearchBuilder<StoragePoolVO> NameSearch;
 	protected final SearchBuilder<StoragePoolVO> UUIDSearch;
 	protected final SearchBuilder<StoragePoolVO> DatacenterSearch;
@@ -210,7 +206,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
         sc.setParameters("hostAddress", host);
         sc.setParameters("path", path);
         
-        return listBy(sc);
+        return listActiveBy(sc);
 	}
 	
 	public StoragePoolVO listById(Integer id)
