@@ -41,7 +41,7 @@ public class ExtractIsoCmd extends BaseCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to find ISO with id " + templateId);
         }
         if (template.getName().startsWith("xs-tools") ){
-        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to extract the ISO " + template.getName() + " It is not supported yet");
+        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to extract the ISO " + template.getName() + " It is not allowed");
         }
         if (template.getFormat() != ImageFormat.ISO ){
         	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unsupported format, could not extract the ISO");

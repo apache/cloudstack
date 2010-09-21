@@ -38,8 +38,11 @@ public class UploadAnswer extends Answer {
 	protected UploadAnswer() {
 		
 	}
-	
-	public String getJobId() {
+		
+	public void setErrorString(String errorString) {
+        this.errorString = errorString;
+    }
+    public String getJobId() {
 		return jobId;
 	}
 	public void setJobId(String jobId) {

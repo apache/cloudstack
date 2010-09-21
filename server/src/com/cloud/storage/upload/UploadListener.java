@@ -151,7 +151,7 @@ public class UploadListener implements Listener {
 		this.eventId = eventId;
 		this.asyncJobId = asyncJobId;
 		this.asyncMgr = asyncMgr;
-		this.resultObj = new ExtractJobResultObject(accountId, typeName, currState, 0, uploadId);
+		this.resultObj = new ExtractJobResultObject(accountId, typeName, Status.NOT_UPLOADED.toString(), 0, uploadId);
 		updateDatabase(Status.NOT_UPLOADED, cmd.getUrl(),"");
 	}
 	
@@ -214,21 +214,14 @@ public class UploadListener implements Listener {
 		if (!(cmd instanceof StartupStorageCommand)) {
 	        return true;
 	    }
-	   /* if (cmd.getGuid().startsWith("iso:")) {
-	        //FIXME: do not download template for ISO secondary
-	        return true;
-	    }*/
-	    
+	   
 	    long agentId = agent.getId();
 	    
 	    StartupStorageCommand storage = (StartupStorageCommand)cmd;
 	    if (storage.getResourceType() == Storage.StorageResourceType.STORAGE_HOST ||
 	    storage.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE )
 	    {
-	    	uploadMonitor.handleUploadTemplateSync(agentId, storage.getTemplateInfo());
-	    } else {
-	    	//downloadMonitor.handlePoolTemplateSync(storage.getPoolInfo(), storage.getTemplateInfo());
-	    	//no need to do anything. The storagepoolmonitor will initiate template sync.
+	    	uploadMonitor.handleUploadSync(agentId);
 	    }
 		return true;
 	}
@@ -246,7 +239,7 @@ public class UploadListener implements Listener {
 	
 	public void logUploadStart() {
 		String event = uploadMonitor.getEvent(type);
-		uploadMonitor.logEvent(accountId, event, "Storage server " + sserver.getName() + " started upload of " +type.toString() + " " + typeName, EventVO.LEVEL_INFO,eventId);
+		//uploadMonitor.logEvent(accountId, event, "Storage server " + sserver.getName() + " started upload of " +type.toString() + " " + typeName, EventVO.LEVEL_INFO, eventId);
 	}
 	
 	public void cancelTimeoutTask() {
@@ -363,15 +356,14 @@ public class UploadListener implements Listener {
 	}
 	
 	private Long getUploadId() {
-		/*if (uploadId == null){
-			VMTemplateHostVO templHost = vmTemplateHostDao.findByHostTemplate(sserver.getId(), template.getId());
-			uploadId = templHost.getId();
-		}*/ //TO DO
 		return uploadId;
 	}
 
 	public synchronized void updateDatabase(UploadAnswer answer) {		
 		
+	    if(answer.getErrorString().startsWith("553")){
+	        answer.setErrorString(answer.getErrorString().concat(". Please check if the file name already exists."));
+	    }
 		resultObj.setResult_string(answer.getErrorString());
 		resultObj.setState(answer.getUploadStatus().toString());
 		resultObj.setUploadPercent(answer.getUploadPct());

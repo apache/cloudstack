@@ -45,6 +45,9 @@ public class ExtractTemplateCmd extends BaseCmd {
         if (template.getFormat() == ImageFormat.ISO ){
         	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unsupported format, could not extract the template");
         }
+        if (template.getName().startsWith("SystemVM Template") ){
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to extract " + template.getName() + ". It is not allowed.");
+        }
 		
         if(url.toLowerCase().contains("file://")){
         	throw new ServerApiException(BaseCmd.PARAM_ERROR, "file:// type urls are currently unsupported");

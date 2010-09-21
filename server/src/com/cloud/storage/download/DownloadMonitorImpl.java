@@ -487,6 +487,8 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			TemplateInfo tInfo = templateInfo.get(uniqueName);
 			DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(tInfo.getInstallPath());
 			long result = send(sserverId, dtCommand, null);
+			String description = "Deleted template " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " since it isn't in the database, result=" + result;
+			logEvent(1L, EventTypes.EVENT_TEMPLATE_DELETE, description, EventVO.LEVEL_INFO);
 			s_logger.info("Deleted template " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " since it isn't in the database, result=" + result);
 
 		}
