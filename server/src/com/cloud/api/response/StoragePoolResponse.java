@@ -19,52 +19,52 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class StoragePoolResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="zoneid")
+    @SerializedName("zoneid")
     private Long zoneId;
 
-    @Param(name="zonename")
+    @SerializedName("zonename")
     private String zoneName;
 
-    @Param(name="podid")
+    @SerializedName("podid")
     private Long podId;
 
-    @Param(name="podname")
+    @SerializedName("podname")
     private String podName;
 
-    @Param(name="name")
+    @SerializedName("name")
     private String name;
 
-    @Param(name="ipaddress")
+    @SerializedName("ipaddress")
     private String ipAddress;
 
-    @Param(name="path")
+    @SerializedName("path")
     private String path;
 
-    @Param(name="created")
+    @SerializedName("created")
     private Date created;
 
-    @Param(name="type")
+    @SerializedName("type")
     private String type;
 
-    @Param(name="clusterid")
+    @SerializedName("clusterid")
     private Long clusterId;
 
-    @Param(name="clustername")
+    @SerializedName("clustername")
     private String clusterName;
 
-    @Param(name="disksizetotal")
+    @SerializedName("disksizetotal")
     private Long diskSizeTotal;
 
-    @Param(name="disksizeallocated")
+    @SerializedName("disksizeallocated")
     private Long diskSizeAllocated;
 
-    @Param(name="tags")
+    @SerializedName("tags")
     private String tags;
 
     public Long getId() {

@@ -19,43 +19,43 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class AsyncJobResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="accountid")
+    @SerializedName("accountid")
     private Long accountId;
 
-    @Param(name="userid")
+    @SerializedName("userid")
     private Long userId;
 
-    @Param(name="cmd")
+    @SerializedName("cmd")
     private String cmd;
 
-    @Param(name="jobstatus")
+    @SerializedName("jobstatus")
     private Integer jobStatus;
 
-    @Param(name="jobprocstatus")
+    @SerializedName("jobprocstatus")
     private Integer jobProcStatus;
 
-    @Param(name="jobresultcode")
+    @SerializedName("jobresultcode")
     private Integer jobResultCode;
 
-    @Param(name="jobresulttype")
+    @SerializedName("jobresulttype")
     private String jobResultType;
 
-    @Param(name="jobresult")
+    @SerializedName("jobresult")
     private String jobResult;
 
-    @Param(name="jobinstancetype")
+    @SerializedName("jobinstancetype")
     private String jobInstanceType;
 
-    @Param(name="jobinstanceid")
+    @SerializedName("jobinstanceid")
     private Long jobInstanceId;
 
-    @Param(name="created")
+    @SerializedName("created")
     private Date created;
 
     public Long getId() {

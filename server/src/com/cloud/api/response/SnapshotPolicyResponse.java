@@ -17,25 +17,25 @@
  */
 package com.cloud.api.response;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class SnapshotPolicyResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="volumeid")
+    @SerializedName("volumeid")
     private Long volumeId;
 
-    @Param(name="schedule")
+    @SerializedName("schedule")
     private String schedule;
 
-    @Param(name="intervaltype")
+    @SerializedName("intervaltype")
     private short intervalType;
 
-    @Param(name="maxsnaps")
+    @SerializedName("maxsnaps")
     private int maxSnaps;
 
-    @Param(name="timezone")
+    @SerializedName("timezone")
     private String timezone;
 
     public Long getId() {

@@ -17,31 +17,31 @@
  */
 package com.cloud.api.response;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class PodResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="name")
+    @SerializedName("name")
     private String name;
 
-    @Param(name="zoneid")
+    @SerializedName("zoneid")
     private Long zoneId;
 
-    @Param(name="zonename")
+    @SerializedName("zonename")
     private String zoneName;
 
-    @Param(name="gateway")
+    @SerializedName("gateway")
     private String gateway;
 
-    @Param(name="cidr")
+    @SerializedName("cidr")
     private String cidr;
 
-    @Param(name="startip")
+    @SerializedName("startip")
     private String startIp;
 
-    @Param(name="endIp")
+    @SerializedName("endIp")
     private String endIp;
 
     public Long getId() {

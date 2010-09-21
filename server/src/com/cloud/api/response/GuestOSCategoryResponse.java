@@ -17,13 +17,13 @@
  */
 package com.cloud.api.response;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class GuestOSCategoryResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="name")
+    @SerializedName("name")
     private String name;
 
     public Long getId() {

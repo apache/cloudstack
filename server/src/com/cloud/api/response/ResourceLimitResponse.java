@@ -17,22 +17,22 @@
  */
 package com.cloud.api.response;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class ResourceLimitResponse extends BaseResponse {
-    @Param(name="account")
+    @SerializedName("account")
     private String accountName;
 
-    @Param(name="domainid")
+    @SerializedName("domainid")
     private Long domainId;
 
-    @Param(name="domain")
+    @SerializedName("domain")
     private String domainName;
 
-    @Param(name="resourcetype")
+    @SerializedName("resourcetype")
     private Integer resourceType;
 
-    @Param(name="max")
+    @SerializedName("max")
     private Long max;
 
     public String getAccountName() {

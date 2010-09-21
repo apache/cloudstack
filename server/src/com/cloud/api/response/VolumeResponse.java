@@ -19,76 +19,76 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class VolumeResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="jobid")
+    @SerializedName("jobid")
     private Long jobId;
 
-    @Param(name="jobstatus")
+    @SerializedName("jobstatus")
     private Integer jobStatus;
 
-    @Param(name="name")
+    @SerializedName("name")
     private String name;
 
-    @Param(name="zoneid")
+    @SerializedName("zoneid")
     private Long zoneId;
 
-    @Param(name="zonename")
+    @SerializedName("zonename")
     private String zoneName;
 
-    @Param(name="type")
+    @SerializedName("type")
     private String volumeType;
 
-    @Param(name="deviceid")
+    @SerializedName("deviceid")
     private Long deviceId;
 
-    @Param(name="virtualmachineid")
+    @SerializedName("virtualmachineid")
     private Long virtualMachineId;
 
-    @Param(name="virtualmachinename")
+    @SerializedName("virtualmachinename")
     private String virtualMachineName;
 
-    @Param(name="virtualmachinedisplayname")
+    @SerializedName("virtualmachinedisplayname")
     private String virtualMachineDisplayName;
 
-    @Param(name="virtualmachinestate")
+    @SerializedName("virtualmachinestate")
     private String virtualMachineState;
 
-    @Param(name="size")
+    @SerializedName("size")
     private Long size;
 
-    @Param(name="created")
+    @SerializedName("created")
     private Date created;
 
-    @Param(name="state")
+    @SerializedName("state")
     private String state;
 
-    @Param(name="account")
+    @SerializedName("account")
     private String accountName;
 
-    @Param(name="domainid")
+    @SerializedName("domainid")
     private Long domainId;
 
-    @Param(name="domain")
+    @SerializedName("domain")
     private String domainName;
 
-    @Param(name="storagetype")
+    @SerializedName("storagetype")
     private String storageType;
 
-    @Param(name="diskofferingid")
+    @SerializedName("diskofferingid")
     private Long diskOfferingId;
 
-    @Param(name="diskofferingname")
+    @SerializedName("diskofferingname")
     private String diskOfferingName;
 
-    @Param(name="diskofferingdisplaytext")
+    @SerializedName("diskofferingdisplaytext")
     private String diskOfferingDisplayText;
 
-    @Param(name="storage")
+    @SerializedName("storage")
     private String storagePoolName;
 
     public Long getId() {

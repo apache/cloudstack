@@ -19,112 +19,112 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class UserVmResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="name")
+    @SerializedName("name")
     private String name;
 
-    @Param(name="displayname")
+    @SerializedName("displayname")
     private String displayName;
 
-    @Param(name="privateip")
+    @SerializedName("privateip")
     private String privateIp;
 
-    @Param(name="account")
+    @SerializedName("account")
     private String accountName;
 
-    @Param(name="domainid")
+    @SerializedName("domainid")
     private Long domainId;
 
-    @Param(name="domain")
+    @SerializedName("domain")
     private String domainName;
 
-    @Param(name="created")
+    @SerializedName("created")
     private Date created;
 
-    @Param(name="state")
+    @SerializedName("state")
     private String state;
 
-    @Param(name="haenable")
+    @SerializedName("haenable")
     private Boolean haEnable;
 
-    @Param(name="group")
+    @SerializedName("group")
     private String group;
 
-    @Param(name="zoneid")
+    @SerializedName("zoneid")
     private Long zoneId;
 
-    @Param(name="zonename")
+    @SerializedName("zonename")
     private String zoneName;
 
-    @Param(name="hostid")
+    @SerializedName("hostid")
     private Long hostId;
 
-    @Param(name="hostname")
+    @SerializedName("hostname")
     private String hostName;
 
-    @Param(name="templateid")
+    @SerializedName("templateid")
     private Long templateId;
 
-    @Param(name="templatename")
+    @SerializedName("templatename")
     private String templateName;
 
-    @Param(name="templatedisplaytext")
+    @SerializedName("templatedisplaytext")
     private String templateDisplayText;
 
-    @Param(name="passwordenabled")
+    @SerializedName("passwordenabled")
     private Boolean passwordEnabled;
 
-    @Param(name="isoid")
+    @SerializedName("isoid")
     private Long isoId;
 
-    @Param(name="isoname")
+    @SerializedName("isoname")
     private String isoName;
 
-    @Param(name="isodisplaytext")
+    @SerializedName("isodisplaytext")
     private String isoDisplayText;
 
-    @Param(name="serviceofferingid")
+    @SerializedName("serviceofferingid")
     private Long serviceOfferingId;
 
-    @Param(name="serviceofferingname")
+    @SerializedName("serviceofferingname")
     private String serviceOfferingName;
 
-    @Param(name="cpunumber")
+    @SerializedName("cpunumber")
     private Integer cpuNumber;
 
-    @Param(name="cpuspeed")
+    @SerializedName("cpuspeed")
     private Integer cpuSpeed;
 
-    @Param(name="memory")
+    @SerializedName("memory")
     private Integer memory;
 
-    @Param(name="cpuused")
+    @SerializedName("cpuused")
     private String cpuUsed;
 
-    @Param(name="networkkbsread")
+    @SerializedName("networkkbsread")
     private Long networkKbsRead;
 
-    @Param(name="networkkbswrite")
+    @SerializedName("networkkbswrite")
     private Long networkKbsWrite;
 
-    @Param(name="ostypeid")
+    @SerializedName("ostypeid")
     private Long osTypeId;
 
-    @Param(name="networkgrouplist")
+    @SerializedName("networkgrouplist")
     private String networkGroupList;
 
-    @Param(name="password")
+    @SerializedName("password")
     private String password;
 
-    @Param(name="jobid")
+    @SerializedName("jobid")
     private Long jobId;
 
-    @Param(name="jobstatus")
+    @SerializedName("jobstatus")
     private Integer jobStatus;
 
     public Long getId() {

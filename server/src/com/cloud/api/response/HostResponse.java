@@ -22,112 +22,112 @@ import java.util.Date;
 import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class HostResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="name")
+    @SerializedName("name")
     private String name;
 
-    @Param(name="state")
+    @SerializedName("state")
     private Status state;
 
-    @Param(name="disconnected")
+    @SerializedName("disconnected")
     private Date disconnectedOn;
 
-    @Param(name="type")
+    @SerializedName("type")
     private Host.Type hostType;
 
-    @Param(name="oscategoryid")
+    @SerializedName("oscategoryid")
     private Long osCategoryId;
 
-    @Param(name="oscategoryname")
+    @SerializedName("oscategoryname")
     private String osCategoryName;
 
-    @Param(name="ipaddress")
+    @SerializedName("ipaddress")
     private String ipAddress;
 
-    @Param(name="zoneid")
+    @SerializedName("zoneid")
     private Long zoneId;
 
-    @Param(name="zonename")
+    @SerializedName("zonename")
     private String zoneName;
 
-    @Param(name="podid")
+    @SerializedName("podid")
     private Long podId;
 
-    @Param(name="podname")
+    @SerializedName("podname")
     private String podName;
 
-    @Param(name="version")
+    @SerializedName("version")
     private String version;
 
-    @Param(name="hypervisor")
+    @SerializedName("hypervisor")
     private Hypervisor.Type hypervisor;
 
-    @Param(name="cpunumber")
+    @SerializedName("cpunumber")
     private Integer cpuNumber;
 
-    @Param(name="cpuspeed")
+    @SerializedName("cpuspeed")
     private Long cpuSpeed;
 
-    @Param(name="cpuallocated")
+    @SerializedName("cpuallocated")
     private String cpuAllocated;
 
-    @Param(name="cpuused")
+    @SerializedName("cpuused")
     private String cpuUsed;
 
-    @Param(name="averageload")
+    @SerializedName("averageload")
     private Long averageLoad;
 
-    @Param(name="networkkbsread")
+    @SerializedName("networkkbsread")
     private Long networkKbsRead;
 
-    @Param(name="networkkbswrite")
+    @SerializedName("networkkbswrite")
     private Long networkKbsWrite;
 
-    @Param(name="memorytotal")
+    @SerializedName("memorytotal")
     private Long memoryTotal;
 
-    @Param(name="memoryallocated")
+    @SerializedName("memoryallocated")
     private Long memoryAllocated;
 
-    @Param(name="memoryused")
+    @SerializedName("memoryused")
     private Long memoryUsed;
 
-    @Param(name="disksizetotal")
+    @SerializedName("disksizetotal")
     private Long diskSizeTotal;
 
-    @Param(name="disksizeallocated")
+    @SerializedName("disksizeallocated")
     private Long diskSizeAllocated;
 
-    @Param(name="capabilities")
+    @SerializedName("capabilities")
     private String capabilities;
 
-    @Param(name="lastpinged")
+    @SerializedName("lastpinged")
     private Date lastPinged;
 
-    @Param(name="managementserverid")
+    @SerializedName("managementserverid")
     private Long managementServerId;
 
-    @Param(name="custerid")
+    @SerializedName("custerid")
     private Long clusterId;
 
-    @Param(name="clustername")
+    @SerializedName("clustername")
     private String clusterName;
 
-    @Param(name="islocalstorageactive")
+    @SerializedName("islocalstorageactive")
     private Boolean localStorageActive;
 
-    @Param(name="created")
+    @SerializedName("created")
     private Date created;
 
-    @Param(name="removed")
+    @SerializedName("removed")
     private Date removed;
 
-    @Param(name="events")
+    @SerializedName("events")
     private String events;
 
     public Long getId() {

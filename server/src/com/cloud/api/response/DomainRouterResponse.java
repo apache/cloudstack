@@ -19,92 +19,92 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
-import com.cloud.serializer.Param;
 import com.cloud.vm.State;
+import com.google.gson.annotations.SerializedName;
 
 public class DomainRouterResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="jobid")
+    @SerializedName("jobid")
     private Long jobId;
 
-    @Param(name="jobstatus")
+    @SerializedName("jobstatus")
     private Integer jobStatus;
 
-    @Param(name="zoneid")
+    @SerializedName("zoneid")
     private Long zoneId;
 
-    @Param(name="zonename")
+    @SerializedName("zonename")
     private String zoneName;
 
-    @Param(name="dns1")
+    @SerializedName("dns1")
     private String dns1;
 
-    @Param(name="dns2")
+    @SerializedName("dns2")
     private String dns2;
 
-    @Param(name="networkdomain")
+    @SerializedName("networkdomain")
     private String networkDomain;
 
-    @Param(name="gateway")
+    @SerializedName("gateway")
     private String gateway;
 
-    @Param(name="name")
+    @SerializedName("name")
     private String name;
 
-    @Param(name="podid")
+    @SerializedName("podid")
     private Long podId;
 
-    @Param(name="hostid")
+    @SerializedName("hostid")
     private Long hostId;
 
-    @Param(name="hostname")
+    @SerializedName("hostname")
     private String hostName;
 
-    @Param(name="privateip")
+    @SerializedName("privateip")
     private String privateIp;
 
-    @Param(name="privatemacaddress")
+    @SerializedName("privatemacaddress")
     private String privateMacAddress;
 
-    @Param(name="privatenetmask")
+    @SerializedName("privatenetmask")
     private String privateNetmask;
 
-    @Param(name="publicip")
+    @SerializedName("publicip")
     private String publicIp;
 
-    @Param(name="publicmacaddress")
+    @SerializedName("publicmacaddress")
     private String publicMacAddress;
 
-    @Param(name="publicnetmask")
+    @SerializedName("publicnetmask")
     private String publicNetmask;
 
-    @Param(name="guestipaddress")
+    @SerializedName("guestipaddress")
     private String guestIpAddress;
 
-    @Param(name="guestMacAddress")
+    @SerializedName("guestMacAddress")
     private String guestMacAddress;
 
-    @Param(name="guestNetmask")
+    @SerializedName("guestNetmask")
     private String guestNetmask;
 
-    @Param(name="templateid")
+    @SerializedName("templateid")
     private Long templateId;
 
-    @Param(name="created")
+    @SerializedName("created")
     private Date created;
 
-    @Param(name="state")
+    @SerializedName("state")
     private State state;
 
-    @Param(name="account")
+    @SerializedName("account")
     private String accountName;
 
-    @Param(name="domainid")
+    @SerializedName("domainid")
     private Long domainId;
 
-    @Param(name="domain")
+    @SerializedName("domain")
     private String domainName;
 
     public Long getId() {

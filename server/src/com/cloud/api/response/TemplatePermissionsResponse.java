@@ -19,19 +19,19 @@ package com.cloud.api.response;
 
 import java.util.List;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class TemplatePermissionsResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="ispublic")
+    @SerializedName("ispublic")
     private Boolean publicTemplate;
 
-    @Param(name="domainid")
+    @SerializedName("domainid")
     private Long domainId;
 
-    @Param(name="account")
+    @SerializedName("account")
     private List<String> accountNames;
 
     public Long getId() {

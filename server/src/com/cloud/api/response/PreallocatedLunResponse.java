@@ -19,31 +19,31 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class PreallocatedLunResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="volumeid")
+    @SerializedName("volumeid")
     private Long volumeId;
 
-    @Param(name="zoneid")
+    @SerializedName("zoneid")
     private Long zoneId;
 
-    @Param(name="lun")
+    @SerializedName("lun")
     private Integer lun;
 
-    @Param(name="portal")
+    @SerializedName("portal")
     private String portal;
 
-    @Param(name="size")
+    @SerializedName("size")
     private Long size;
 
-    @Param(name="taken")
+    @SerializedName("taken")
     private Date taken;
 
-    @Param(name="targetiqn")
+    @SerializedName("targetiqn")
     private String targetIqn;
 
     public Long getId() {

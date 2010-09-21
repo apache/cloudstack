@@ -18,84 +18,85 @@
 package com.cloud.api.response;
 
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class AccountResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="name")
+    @SerializedName("name")
     private String name;
 
-    @Param(name="accounttype")
+    @SerializedName("accounttype")
     private Short accountType;
 
-    @Param(name="domainid")
+    @SerializedName("domainid")
     private Long domainId;
 
-    @Param(name="domain")
+    @SerializedName("domain")
     private String domainName;
 
-    @Param(name="receivedbytes")
+    @SerializedName("receivedbytes")
     private Long bytesReceived;
 
-    @Param(name="sentbytes")
+    @SerializedName("sentbytes")
     private Long bytesSent;
 
-    @Param(name="vmlimit")
+    @SerializedName("vmlimit")
     private String vmLimit;
 
-    @Param(name="vmtotal")
+    @SerializedName("vmtotal")
     private Long vmTotal;
 
-    @Param(name="vmavailable")
+    @SerializedName("vmavailable")
     private String vmAvailable;
 
-    @Param(name="iplimit")
+    @SerializedName("iplimit")
     private String ipLimit;
 
-    @Param(name="iptotal")
+    @SerializedName("iptotal")
     private Long ipTotal;
 
-    @Param(name="ipavailable")
+    @SerializedName("ipavailable")
     private String ipAvailable;
 
-    @Param(name="volumelimit")
+    @SerializedName("volumelimit")
     private String volumeLimit;
 
-    @Param(name="volumetotal")
+    @SerializedName("volumetotal")
     private Long volumeTotal;
 
-    @Param(name="volumeavailable")
+    @SerializedName("volumeavailable")
     private String volumeAvailable;
 
-    @Param(name="snapshotlimit")
+    @SerializedName("snapshotlimit")
     private String snapshotLimit;
 
-    @Param(name="snapshottotal")
+    @SerializedName("snapshottotal")
     private Long snapshotTotal;
 
-    @Param(name="snapshotavailable")
+    @SerializedName("snapshotavailable")
     private String snapshotAvailable;
 
-    @Param(name="templatelimit")
+    @SerializedName("templatelimit")
     private String templateLimit;
 
-    @Param(name="templatetotal")
+    @SerializedName("templatetotal")
     private Long templateTotal;
 
-    @Param(name="templateavailable")
+    @SerializedName("templateavailable")
     private String templateAvailable;
 
-    @Param(name="vmstopped")
+    @SerializedName("vmstopped")
     private Integer vmStopped;
 
-    @Param(name="vmrunning")
+    @SerializedName("vmrunning")
     private Integer vmRunning;
 
-    @Param(name="state")
+    @SerializedName("state")
     private String state;
 
-    @Param(name="iscleanuprequired")
+    @SerializedName("iscleanuprequired")
     private Boolean cleanupRequired;
 
     public Long getId() {

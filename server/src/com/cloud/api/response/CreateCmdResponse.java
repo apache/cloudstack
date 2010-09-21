@@ -1,12 +1,12 @@
 package com.cloud.api.response;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class CreateCmdResponse extends BaseResponse {
-    @Param(name="jobid")
+    @SerializedName("jobid")
     private Long jobId;
 
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
     public Long getJobId() {

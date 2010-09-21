@@ -17,37 +17,37 @@
  */
 package com.cloud.api.response;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class LoadBalancerResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="name")
+    @SerializedName("name")
     private String name;
 
-    @Param(name="description")
+    @SerializedName("description")
     private String description;
 
-    @Param(name="publicip")
+    @SerializedName("publicip")
     private String publicIp;
 
-    @Param(name="publicport")
+    @SerializedName("publicport")
     private String publicPort;
 
-    @Param(name="privateport")
+    @SerializedName("privateport")
     private String privatePort;
 
-    @Param(name="algorithm")
+    @SerializedName("algorithm")
     private String algorithm;
 
-    @Param(name="account")
+    @SerializedName("account")
     private String accountName;
 
-    @Param(name="domainid")
+    @SerializedName("domainid")
     private Long domainId;
 
-    @Param(name="domain")
+    @SerializedName("domain")
     private String domainName;
 
     public Long getId() {

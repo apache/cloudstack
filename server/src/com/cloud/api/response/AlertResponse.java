@@ -19,16 +19,16 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class AlertResponse extends BaseResponse {
-    @Param(name="type")
+    @SerializedName("type")
     private Short alertType;
 
-    @Param(name="description")
+    @SerializedName("description")
     private String description;
 
-    @Param(name="sent")
+    @SerializedName("sent")
     private Date lastSent;
 
     public Short getAlertType() {

@@ -17,28 +17,28 @@
  */
 package com.cloud.api.response;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class PortForwardingServiceRuleResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private long ruleId;
 
-    @Param(name="publicport")
+    @SerializedName("publicport")
     private String publicPort;
 
-    @Param(name="privateport")
+    @SerializedName("privateport")
     private String privatePort;
 
-    @Param(name="protocol")
+    @SerializedName("protocol")
     private String protocol;
 
-    @Param(name="portforwardingserviceid")
+    @SerializedName("portforwardingserviceid")
     private Long portForwardingServiceId;
 
-    @Param(name="jobid")
+    @SerializedName("jobid")
     private Long jobId;
 
-    @Param(name="jobstatus")
+    @SerializedName("jobstatus")
     private Integer jobStatus;
 
     public Long getPortForwardingServiceId() {

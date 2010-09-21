@@ -17,19 +17,19 @@
  */
 package com.cloud.api.response;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class ConfigurationResponse extends BaseResponse {
-    @Param(name="category")
+    @SerializedName("category")
     private String category;
 
-    @Param(name="name")
+    @SerializedName("name")
     private String name;
 
-    @Param(name="value")
+    @SerializedName("value")
     private String value;
 
-    @Param(name="description")
+    @SerializedName("description")
     private String description;
 
     public String getCategory() {

@@ -17,40 +17,40 @@
  */
 package com.cloud.api.response;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class ZoneResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="name")
+    @SerializedName("name")
     private String name;
 
-    @Param(name="description")
+    @SerializedName("description")
     private String description;
 
-    @Param(name="dns1")
+    @SerializedName("dns1")
     private String dns1;
 
-    @Param(name="dns2")
+    @SerializedName("dns2")
     private String dns2;
 
-    @Param(name="internaldns1")
+    @SerializedName("internaldns1")
     private String internalDns1;
 
-    @Param(name="internaldns2")
+    @SerializedName("internaldns2")
     private String internalDns2;
 
-    @Param(name="vlan")
+    @SerializedName("vlan")
     private String vlan;
 
-    @Param(name="guestcidraddress")
+    @SerializedName("guestcidraddress")
     private String guestCidrAddress;
 
-    @Param(name="status")
+    @SerializedName("status")
     private String status;
 
-    @Param(name="displaytext")
+    @SerializedName("displaytext")
     private String displayText;
 
     public Long getId() {

@@ -17,25 +17,25 @@
  */
 package com.cloud.api.response;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class FirewallRuleResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="privateport")
+    @SerializedName("privateport")
     private String privatePort;
 
-    @Param(name="protocol")
+    @SerializedName("protocol")
     private String protocol;
 
-    @Param(name="publicport")
+    @SerializedName("publicport")
     private String publicPort;
 
-    @Param(name="virtualmachineid")
+    @SerializedName("virtualmachineid")
     private Long virtualMachineId;
 
-    @Param(name="virtualmachinename")
+    @SerializedName("virtualmachinename")
     private String virtualMachineName;
 
     public Long getId() {

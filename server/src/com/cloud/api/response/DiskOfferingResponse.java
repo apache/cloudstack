@@ -19,31 +19,31 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class DiskOfferingResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="domainid")
+    @SerializedName("domainid")
     private Long domainId;
 
-    @Param(name="domain")
+    @SerializedName("domain")
     private String domain;
 
-    @Param(name="name")
+    @SerializedName("name")
     private String name;
 
-    @Param(name="displaytext")
+    @SerializedName("displaytext")
     private String displayText;
 
-    @Param(name="disksize")
+    @SerializedName("disksize")
     private Long diskSize;
 
-    @Param(name="created")
+    @SerializedName("created")
     private Date created;
 
-    @Param(name="tags")
+    @SerializedName("tags")
     private String tags;
 
     public Long getId() {

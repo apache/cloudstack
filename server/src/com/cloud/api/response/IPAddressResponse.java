@@ -19,40 +19,40 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class IPAddressResponse extends BaseResponse {
-    @Param(name="ipaddress")
+    @SerializedName("ipaddress")
     private String ipAddress;
 
-    @Param(name="allocated")
+    @SerializedName("allocated")
     private Date allocated;
 
-    @Param(name="zoneid")
+    @SerializedName("zoneid")
     private Long zoneId;
 
-    @Param(name="zonename")
+    @SerializedName("zonename")
     private String zoneName;
 
-    @Param(name="issourcenat")
+    @SerializedName("issourcenat")
     private Boolean sourceNat;
 
-    @Param(name="account")
+    @SerializedName("account")
     private String accountName;
 
-    @Param(name="domainid")
+    @SerializedName("domainid")
     private Long domainId;
 
-    @Param(name="domain")
+    @SerializedName("domain")
     private String domainName;
 
-    @Param(name="forvirtualnetwork")
+    @SerializedName("forvirtualnetwork")
     private Boolean forVirtualNetwork;
 
-    @Param(name="vlanid")
+    @SerializedName("vlanid")
     private Long vlanId;
 
-    @Param(name="vlanname")
+    @SerializedName("vlanname")
     private String vlanName;
 
     public String getIpAddress() {

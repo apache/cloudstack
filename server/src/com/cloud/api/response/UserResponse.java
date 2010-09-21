@@ -19,49 +19,49 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class UserResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="username")
+    @SerializedName("username")
     private String username;
 
-    @Param(name="firstname")
+    @SerializedName("firstname")
     private String firstname;
 
-    @Param(name="lastname")
+    @SerializedName("lastname")
     private String lastname;
 
-    @Param(name="email")
+    @SerializedName("email")
     private String email;
 
-    @Param(name="created")
+    @SerializedName("created")
     private Date created;
 
-    @Param(name="state")
+    @SerializedName("state")
     private String state;
 
-    @Param(name="account")
+    @SerializedName("account")
     private String accountName;
 
-    @Param(name="accounttype")
+    @SerializedName("accounttype")
     private Short accountType;
 
-    @Param(name="domainid")
+    @SerializedName("domainid")
     private Long domainId;
 
-    @Param(name="domain")
+    @SerializedName("domain")
     private String domainName;
 
-    @Param(name="timezone")
+    @SerializedName("timezone")
     private String timezone;
 
-    @Param(name="apikey")
+    @SerializedName("apikey")
     private String apiKey;
 
-    @Param(name="secretkey")
+    @SerializedName("secretkey")
     private String secretKey;
 
     public Long getId() {

@@ -1,16 +1,16 @@
 package com.cloud.api.response;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class CloudIdentifierResponse extends BaseResponse {
 	
-    @Param(name="userid")
+    @SerializedName("userid")
     private Long userId;
     
-    @Param(name="cloudidentifier")
+    @SerializedName("cloudidentifier")
     private String cloudIdentifier;
     
-    @Param(name="signature")
+    @SerializedName("signature")
     private String signature;
     
     public Long getUserId() {

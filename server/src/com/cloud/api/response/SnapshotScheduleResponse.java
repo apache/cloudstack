@@ -19,19 +19,19 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class SnapshotScheduleResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="volumeid")
+    @SerializedName("volumeid")
     private Long volumeId;
 
-    @Param(name="snapshotpolicyid")
+    @SerializedName("snapshotpolicyid")
     private Long snapshotPolicyId;
 
-    @Param(name="scheduled")
+    @SerializedName("scheduled")
     private Date scheduled;
 
     public Long getId() {

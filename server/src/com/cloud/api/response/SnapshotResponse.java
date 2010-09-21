@@ -19,46 +19,46 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class SnapshotResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="account")
+    @SerializedName("account")
     private String accountName;
 
-    @Param(name="domainid")
+    @SerializedName("domainid")
     private Long domainId;
 
-    @Param(name="domain")
+    @SerializedName("domain")
     private String domainName;
 
-    @Param(name="snapshottype")
+    @SerializedName("snapshottype")
     private String snapshotType;
 
-    @Param(name="volumeid")
+    @SerializedName("volumeid")
     private Long volumeId;
 
-    @Param(name="volumename")
+    @SerializedName("volumename")
     private String volumeName;
 
-    @Param(name="volumetype")
+    @SerializedName("volumetype")
     private String volumeType;
 
-    @Param(name="created")
+    @SerializedName("created")
     private Date created;
 
-    @Param(name="name")
+    @SerializedName("name")
     private String name;
 
-    @Param(name="jobid")
+    @SerializedName("jobid")
     private Long jobId;
 
-    @Param(name="jobstatus")
+    @SerializedName("jobstatus")
     private Integer jobStatus;
 
-    @Param(name="intervaltype")
+    @SerializedName("intervaltype")
     private String intervalType;
 
     public Long getId() {

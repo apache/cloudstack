@@ -17,22 +17,22 @@
  */
 package com.cloud.api.response;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class DomainResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="name")
+    @SerializedName("name")
     private String domainName;
 
-    @Param(name="level")
+    @SerializedName("level")
     private Integer level;
 
-    @Param(name="parentdomainid")
+    @SerializedName("parentdomainid")
     private Long parentDomainId;
 
-    @Param(name="parentdomainname")
+    @SerializedName("parentdomainname")
     private String parentDomainName;
 
     public Long getId() {

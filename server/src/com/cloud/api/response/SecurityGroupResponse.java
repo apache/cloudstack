@@ -17,28 +17,28 @@
  */
 package com.cloud.api.response;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class SecurityGroupResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
     
-    @Param(name="name")
+    @SerializedName("name")
     private String name;
     
-    @Param(name="description")
+    @SerializedName("description")
     private String description;
     
-    @Param(name="account")
+    @SerializedName("account")
     private String accountName;
     
-    @Param(name="domainid")
+    @SerializedName("domainid")
     private Long domainId;
     
-    @Param(name="domain")
+    @SerializedName("domain")
     private String domainName;
 
-    @Param(name="ipaddress")
+    @SerializedName("ipaddress")
     private String ipAddress;
 
     public Long getId() {

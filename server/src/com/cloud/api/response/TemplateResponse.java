@@ -19,80 +19,80 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
-import com.cloud.serializer.Param;
 import com.cloud.storage.Storage.ImageFormat;
+import com.google.gson.annotations.SerializedName;
 
 public class TemplateResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private long id;
 
-    @Param(name="name")
+    @SerializedName("name")
     private String name;
 
-    @Param(name="displaytext")
+    @SerializedName("displaytext")
     private String displayText;
 
-    @Param(name="ispublic", propName="public")
+    @SerializedName("ispublic") // propName="public"  (FIXME:  this used to be part of Param annotation, do we need it?)
     private boolean isPublic;
 
-    @Param(name="created")
+    @SerializedName("created")
     private Date created;
 
-    @Param(name="removed")
+    @SerializedName("removed")
     private Date removed;
 
-    @Param(name="isready", propName="ready")
+    @SerializedName("isready") // propName="ready"  (FIXME:  this used to be part of Param annotation, do we need it?)
     private boolean isReady;
 
-    @Param(name="passwordenabled")
+    @SerializedName("passwordenabled")
     private boolean passwordEnabled;
 
-    @Param(name="format")
+    @SerializedName("format")
     private ImageFormat format;
 
-    @Param(name="bootable")
+    @SerializedName("bootable")
     private boolean bootable;
 
-    @Param(name="isfeatured")
+    @SerializedName("isfeatured")
     private boolean featured;
 
-    @Param(name="crossZones")
+    @SerializedName("crossZones")
     private boolean crossZones;
 
-    @Param(name="ostypeid")
+    @SerializedName("ostypeid")
     private Long osTypeId;
 
-    @Param(name="ostypename")
+    @SerializedName("ostypename")
     private String osTypeName;
 
-    @Param(name="accountid")
+    @SerializedName("accountid")
     private Long accountId;
 
-    @Param(name="account")
+    @SerializedName("account")
     private String account;
 
-    @Param(name="zoneid")
+    @SerializedName("zoneid")
     private Long zoneId;
 
-    @Param(name="zonename")
+    @SerializedName("zonename")
     private String zoneName;
 
-    @Param(name="status")
+    @SerializedName("status")
     private String status;
 
-    @Param(name="size")
+    @SerializedName("size")
     private Long size;
 
-    @Param(name="jobid")
+    @SerializedName("jobid")
     private Long jobId;
 
-    @Param(name="jobstatus")
+    @SerializedName("jobstatus")
     private Integer jobStatus;
 
-    @Param(name="domain")
+    @SerializedName("domain")
     private String domainName;  
 
-    @Param(name="domainid")
+    @SerializedName("domainid")
     private long domainId;
 
     public Long getZoneId() {

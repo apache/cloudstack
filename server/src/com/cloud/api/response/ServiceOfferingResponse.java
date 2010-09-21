@@ -19,40 +19,40 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class ServiceOfferingResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="name")
+    @SerializedName("name")
     private String name;
 
-    @Param(name="displaytext")
+    @SerializedName("displaytext")
     private String displayText;
 
-    @Param(name="cpunumber")
+    @SerializedName("cpunumber")
     private int cpuNumber;
 
-    @Param(name="cpuspeed")
+    @SerializedName("cpuspeed")
     private int cpuSpeed;
 
-    @Param(name="memory")
+    @SerializedName("memory")
     private int memory;
 
-    @Param(name="created")
+    @SerializedName("created")
     private Date created;
 
-    @Param(name="storagetype")
+    @SerializedName("storagetype")
     private String storageType;
 
-    @Param(name="offerha")
+    @SerializedName("offerha")
     private Boolean offerHa;
 
-    @Param(name="usevirtualnetwork")
+    @SerializedName("usevirtualnetwork")
     private Boolean useVirtualNetwork;
 
-    @Param(name="tags")
+    @SerializedName("tags")
     private String tags;
 
     public Long getId() {

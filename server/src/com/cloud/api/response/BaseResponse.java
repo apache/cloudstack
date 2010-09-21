@@ -1,12 +1,9 @@
 package com.cloud.api.response;
 
-import javax.persistence.Transient;
-
 import com.cloud.api.ResponseObject;
 
 public class BaseResponse implements ResponseObject {
-    @Transient
-    private String responseName;
+    private transient String responseName;
 
     @Override
     public String getResponseName() {

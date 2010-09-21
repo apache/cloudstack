@@ -17,49 +17,49 @@
  */
 package com.cloud.api.response;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class VlanIpRangeResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="forvirtualnetwork")
+    @SerializedName("forvirtualnetwork")
     private Boolean forVirtualNetwork;
 
-    @Param(name="zoneid")
+    @SerializedName("zoneid")
     private Long zoneId;
 
-    @Param(name="vlan")
+    @SerializedName("vlan")
     private String vlan;
 
-    @Param(name="account")
+    @SerializedName("account")
     private String accountName;
 
-    @Param(name="domainid")
+    @SerializedName("domainid")
     private Long domainId;
 
-    @Param(name="domain")
+    @SerializedName("domain")
     private String domainName;
 
-    @Param(name="podid")
+    @SerializedName("podid")
     private Long podId;
 
-    @Param(name="podname")
+    @SerializedName("podname")
     private String podName;
 
-    @Param(name="gateway")
+    @SerializedName("gateway")
     private String gateway;
 
-    @Param(name="netmask")
+    @SerializedName("netmask")
     private String netmask;
 
-    @Param(name="description")
+    @SerializedName("description")
     private String description;
 
-    @Param(name="startip")
+    @SerializedName("startip")
     private String startIp;
 
-    @Param(name="endip")
+    @SerializedName("endip")
     private String endIp;
 
     public Long getId() {

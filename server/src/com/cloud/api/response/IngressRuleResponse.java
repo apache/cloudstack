@@ -17,34 +17,34 @@
  */
 package com.cloud.api.response;
 
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class IngressRuleResponse extends BaseResponse {
-    @Param(name="ruleid")
+    @SerializedName("ruleid")
     private Long ruleId;
 
-    @Param(name="protocol")
+    @SerializedName("protocol")
     private String protocol;
 
-    @Param(name="icmptype")
+    @SerializedName("icmptype")
     private Integer icmpType;
 
-    @Param(name="icmpcode")
+    @SerializedName("icmpcode")
     private Integer icmpCode;
 
-    @Param(name="startport")
+    @SerializedName("startport")
     private Integer startPort;
 
-    @Param(name="endport")
+    @SerializedName("endport")
     private Integer endPort;
 
-    @Param(name="networkgroupname")
+    @SerializedName("networkgroupname")
     private String networkGroupName;
 
-    @Param(name="account")
+    @SerializedName("account")
     private String accountName;
 
-    @Param(name="cidr")
+    @SerializedName("cidr")
     private String cidr;
 
     public Long getRuleId() {

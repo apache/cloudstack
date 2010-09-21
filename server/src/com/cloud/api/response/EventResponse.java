@@ -20,40 +20,40 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.event.EventState;
-import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class EventResponse extends BaseResponse {
-    @Param(name="id")
+    @SerializedName("id")
     private Long id;
 
-    @Param(name="username")
+    @SerializedName("username")
     private String username;
 
-    @Param(name="type")
+    @SerializedName("type")
     private String eventType;
 
-    @Param(name="level")
+    @SerializedName("level")
     private String level;
 
-    @Param(name="description")
+    @SerializedName("description")
     private String description;
 
-    @Param(name="account")
+    @SerializedName("account")
     private String accountName;
 
-    @Param(name="domainid")
+    @SerializedName("domainid")
     private Long domainId;
 
-    @Param(name="domain")
+    @SerializedName("domain")
     private String domainName;
 
-    @Param(name="created")
+    @SerializedName("created")
     private Date created;
 
-    @Param(name="state")
+    @SerializedName("state")
     private EventState state;
 
-    @Param(name="parentid")
+    @SerializedName("parentid")
     private Long parentId;
 
     public Long getId() {
