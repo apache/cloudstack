@@ -533,3 +533,38 @@
     </div>
 </div>
 <!-- Take Snapshots Dialog (end) -->
+
+<!-- Add Volume Dialog (begin) -->
+<div id="dialog_add_volume" title="Add Volume" style="display: none">
+    <p>
+        Please fill in the following data to add a new volume.</p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form2">
+        <ol>
+            <li>
+                <label for="add_volume_name">
+                    Name:</label>
+                <input class="text" type="text" name="add_volume_name" id="add_volume_name" />
+                <div id="add_volume_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label for="volume_zone">
+                    Availability Zone:</label>
+                <select class="select" name="volume_zone" id="volume_zone">
+                    <option value="default">Please wait...</option>
+                </select>
+            </li>
+            <li>
+                <label for="volume_diskoffering">
+                    Disk Offering:</label>
+                <select class="select" name="volume_diskoffering" id="volume_diskoffering">
+                    <option value="default">Please wait...</option>
+                </select>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+<!-- Add Volume Dialog (end) -->
+

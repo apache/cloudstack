@@ -349,8 +349,20 @@ function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1) {
     if(errorMsg.length > 0) 
         $midmenuItem1.find("#second_row").text(fromdb(errorMsg));   
     else
-        $midmenuItem1.find("#second_row").text("");     
-}       	                
+        $midmenuItem1.find("#second_row").html("&nbsp;");     
+}  
+
+function handleAsyncJobFailInMidMenu(errorMsg, $midmenuItem1) { 
+    $midmenuItem1.find("#content").removeClass("inaction");
+	$midmenuItem1.find("#spinning_wheel").hide();	
+	$midmenuItem1.find("#info_icon").addClass("error").show();		
+	$midmenuItem1.find("#first_row").text("Adding failed");			                       
+    
+    if(errorMsg.length > 0) 
+        $midmenuItem1.find("#second_row").text(fromdb(errorMsg));   
+    else
+        $midmenuItem1.find("#second_row").html("&nbsp;");   
+}       	     	                
 //***** actions for middle menu (end) **************************************************************************
 
 

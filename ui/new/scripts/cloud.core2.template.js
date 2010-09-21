@@ -16,8 +16,8 @@ function afterLoadTemplateJSP() {
 	else
 	    $("#dialog_add_template #add_template_featured_container, #dialog_edit_template #edit_template_featured_container").hide();		
 	
-    $("#midmenu_add_link").show(); 
-    
+	//add button ***
+    $("#midmenu_add_link").show();     
     $("#midmenu_add_link").unbind("click").bind("click", function(event) {        
         $("#dialog_add_template")
 		.dialog('option', 'buttons', { 				

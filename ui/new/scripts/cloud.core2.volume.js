@@ -16,7 +16,12 @@ function afterLoadVolumeJSP() {
 	    modal: true,
 	    zIndex: 2000
     }));
-	    
+	activateDialog($("#dialog_add_volume").dialog({ 
+	    autoOpen: false,
+	    modal: true,
+	    zIndex: 2000
+    }));	
+	        
     $.ajax({
         data: createURL("command=listOsTypes"),
 	    dataType: "json",
@@ -30,6 +35,103 @@ function afterLoadVolumeJSP() {
 		    }	
 	    }
     });   
+     
+    $.ajax({
+        data: createURL("command=listZones&available=true"+maxPageSize),
+	    dataType: "json",
+	    success: function(json) {
+		    var zones = json.listzonesresponse.zone;
+		    var volumeZoneSelect = $("#dialog_add_volume").find("#volume_zone").empty();			
+		    if (zones != null && zones.length > 0) {
+		        for (var i = 0; i < zones.length; i++) {
+			        volumeZoneSelect.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 
+		        }
+		    }				
+	    }
+	});	
+	
+	$.ajax({
+        data: createURL("command=listDiskOfferings"),
+	    dataType: "json",
+	    success: function(json) {			    
+	        var offerings = json.listdiskofferingsresponse.diskoffering;								
+		    var volumeDiskOfferingSelect = $("#dialog_add_volume").find("#volume_diskoffering").empty();	
+		    if (offerings != null && offerings.length > 0) {								
+		        if (offerings != null && offerings.length > 0) {
+		            for (var i = 0; i < offerings.length; i++) 				
+			            volumeDiskOfferingSelect.append("<option value='" + offerings[i].id + "'>" + sanitizeXSS(offerings[i].displaytext) + "</option>"); 		
+			    }	
+			}	
+	    }
+    });	     
+      
+    //add button ***
+    $("#midmenu_add_link").show();     
+    $("#midmenu_add_link").unbind("click").bind("click", function(event) {   
+        $("#dialog_add_volume")
+	    .dialog('option', 'buttons', { 			    
+		    "Add": function() { 
+		        var thisDialog = $(this);
+		    			            										
+		        // validate values							
+			    var isValid = true;									
+			    isValid &= validateString("Name", thisDialog.find("#add_volume_name"), thisDialog.find("#add_volume_name_errormsg"));					
+			    if (!isValid) return;
+			    
+			    thisDialog.dialog("close");		
+				
+				var name = trim(thisDialog.find("#add_volume_name").val());					
+			    var zoneId = thisDialog.find("#volume_zone").val();					    				
+			    var diskofferingId = thisDialog.find("#volume_diskoffering").val();	
+				
+				var $midmenuItem1 = beforeAddingMidMenuItem() ;
+				    					
+			    $.ajax({
+				    data: createURL("command=createVolume&zoneId="+zoneId+"&name="+encodeURIComponent(name)+"&diskOfferingId="+diskofferingId+"&accountId="+"1"), 
+				    dataType: "json",
+				    success: function(json) {						        
+				        var jobId = json.createvolumeresponse.jobid;				        
+				        var timerKey = "createVolumeJob_"+jobId;
+							    
+				        $("body").everyTime(2000, timerKey, function() {
+						    $.ajax({
+							    data: createURL("command=queryAsyncJobResult&jobId="+json.createvolumeresponse.jobid),
+							    dataType: "json",
+							    success: function(json) {										       						   
+								    var result = json.queryasyncjobresultresponse;
+								    if (result.jobstatus == 0) {
+									    return; //Job has not completed
+								    } else {											    
+									    $("body").stopTime(timerKey);
+									    if (result.jobstatus == 1) {
+										    // Succeeded										   
+										    volumeToMidmenu(result.volume[0], $midmenuItem1);
+						                    bindClickToMidMenu($midmenuItem1, volumeToRigntPanel);  
+						                    afterAddingMidMenuItem($midmenuItem1, true);	         
+									    } else if (result.jobstatus == 2) {
+									        handleAsyncJobFailInMidMenu(result.jobresult, $midmenuItem1);											   				    
+									    }
+								    }
+							    },
+							    error: function(XMLHttpResponse) {
+								    $("body").stopTime(timerKey);
+								    handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);	
+							    }
+						    });
+					    }, 0);						    					
+				    },
+				    error: function(XMLHttpResponse) {							    
+						handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);	
+				    }
+			    });
+		    }, 
+		    "Cancel": function() { 				        				        
+			    $(this).dialog("close"); 
+		    } 
+	    }).dialog("open");
+	    
+        return false;
+    });  
        
     // *** recurring snapshot dialog - event binding (begin) ******************************		
 	$("#dialog_recurring_snapshot").bind("click", function(event) {		
