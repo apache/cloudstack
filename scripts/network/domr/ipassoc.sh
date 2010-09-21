@@ -124,7 +124,7 @@ remove_an_ip () {
   fi
 }
 
-#set -x
+set -x
 
 rflag=
 iflag=
@@ -184,10 +184,10 @@ do
 done
 
 #1:1 NAT
-if [ "$Gflag" == "1" ] && [ "$fflag" == "1" ] && [ "$Aflag" == "1" ]
+if [ "$Gflag" == "1" ]
 then
   add_nat_entry $domRIp $publicIp 
-  if [ $? -gt 0 ]
+  if [ $? -eq 0 ]
   then
     add_one_to_one_nat_entry $guestIp $publicIp $domRIp
   fi
