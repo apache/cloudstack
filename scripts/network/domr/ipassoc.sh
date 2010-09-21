@@ -57,11 +57,11 @@ add_one_to_one_nat_entry() {
   local dIp=$3
   ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dIp "\
   iptables -t nat -A PREROUTING -i eth2 -d $publicIp -j DNAT --to-destination $guestIp
-  iptables -t nat -A POSTROUTING -o $eth2 -s $guestIp -j SNAT --to-source $publicIp
+  iptables -t nat -A POSTROUTING -o eth2 -s $guestIp -j SNAT --to-source $publicIp
   iptables -P FORWARD DROP
   iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
-  iptables -A FORWARD -i $eth2 -o $eth1 -d $guestIp -m state --state NEW -j ACCEPT
-  iptables -A FORWARD -i $eth1 -o $eth2 -s $guestIp -m state --state NEW -j ACCEPT
+  iptables -A FORWARD -i eth2 -o eth0 -d $guestIp -m state --state NEW -j ACCEPT
+  iptables -A FORWARD -i eth0 -o eth2 -s $guestIp -m state --state NEW -j ACCEPT
   "
   return $?
 }
@@ -187,7 +187,10 @@ done
 if [ "$Gflag" == "1" ] && [ "$fflag" == "1" ] && [ "$Aflag" == "1" ]
 then
   add_nat_entry $domRIp $publicIp 
-  add_one_to_one_nat_entry $guestIp $publicIp $domRIp
+  if [ $? -gt 0 ]
+  then
+    add_one_to_one_nat_entry $guestIp $publicIp $domRIp
+  fi
   exit $?
 fi
 
