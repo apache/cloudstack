@@ -322,7 +322,7 @@ $(document).ready(function() {
 							dataType: "json",
 							async: false,
 							success: function(json) {								    					
-								userJSONToTemplate(json.createuserresponse.user[0], template);	
+								userJSONToTemplate(json.createuserresponse, template);	
 								loadingImg.hide();  
                                 rowContainer.show();    				
 							},			

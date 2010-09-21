@@ -24,7 +24,6 @@ import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.api.commands.AddHostCmd;
-import com.cloud.api.commands.AddHostOrStorageCmd;
 import com.cloud.api.commands.AddSecondaryStorageCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
 import com.cloud.api.commands.DeleteHostCmd;
@@ -231,7 +230,7 @@ public interface AgentManager extends Manager {
     public boolean reconnect(final long hostId) throws AgentUnavailableException;
     public boolean reconnectHost(ReconnectHostCmd cmd) throws AgentUnavailableException;
     
-    public List<HostVO> discoverHosts(AddHostOrStorageCmd cmd) throws DiscoveryException, InvalidParameterValueException;
+    public List<HostVO> discoverHosts(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password) throws DiscoveryException, InvalidParameterValueException;
     public List<HostVO> discoverHosts(AddHostCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
     public List<HostVO> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
 }

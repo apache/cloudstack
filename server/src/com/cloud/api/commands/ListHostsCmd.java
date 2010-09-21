@@ -149,19 +149,25 @@ public class ListHostsCmd extends BaseListCmd {
                 hostResponse.setOsCategoryName(guestOSCategory.getName());
             }
             hostResponse.setZoneName(ApiDBUtils.findZoneById(host.getDataCenterId()).getName());
-            hostResponse.setPodName(ApiDBUtils.findPodById(host.getPodId()).getName());
+
+            if (host.getPodId() != null) {
+                hostResponse.setPodName(ApiDBUtils.findPodById(host.getPodId()).getName());
+            }
+
+            DecimalFormat decimalFormat = new DecimalFormat("#.##");
 
             // calculate cpu allocated by vm
-            int cpu = 0;
-            String cpuAlloc = null;
-            DecimalFormat decimalFormat = new DecimalFormat("#.##");
-            List<UserVmVO> instances = ApiDBUtils.listUserVMsByHostId(host.getId());
-            for (UserVmVO vm : instances) {
-                ServiceOffering so = ApiDBUtils.findServiceOfferingById(vm.getServiceOfferingId());
-                cpu += so.getCpu() * so.getSpeed();
+            if ((host.getCpus() != null) && (host.getSpeed() != null)) {
+                int cpu = 0;
+                String cpuAlloc = null;
+                List<UserVmVO> instances = ApiDBUtils.listUserVMsByHostId(host.getId());
+                for (UserVmVO vm : instances) {
+                    ServiceOffering so = ApiDBUtils.findServiceOfferingById(vm.getServiceOfferingId());
+                    cpu += so.getCpu() * so.getSpeed();
+                }
+                cpuAlloc = decimalFormat.format(((float) cpu / (float) (host.getCpus() * host.getSpeed())) * 100f) + "%";
+                hostResponse.setCpuAllocated(cpuAlloc);
             }
-            cpuAlloc = decimalFormat.format(((float) cpu / (float) (host.getCpus() * host.getSpeed())) * 100f) + "%";
-            hostResponse.setCpuAllocated(cpuAlloc);
 
             // calculate cpu utilized
             String cpuUsed = null;

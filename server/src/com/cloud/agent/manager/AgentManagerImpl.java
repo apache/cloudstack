@@ -73,7 +73,6 @@ import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AddHostCmd;
-import com.cloud.api.commands.AddHostOrStorageCmd;
 import com.cloud.api.commands.AddSecondaryStorageCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
 import com.cloud.api.commands.DeleteHostCmd;
@@ -485,23 +484,25 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
     @Override
     public List<HostVO> discoverHosts(AddHostCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
-        return discoverHosts((AddHostOrStorageCmd)cmd);
+        Long dcId = cmd.getZoneId();
+        Long podId = cmd.getPodId();
+        Long clusterId = cmd.getClusterId();
+        String clusterName = cmd.getClusterName();
+        String url = cmd.getUrl();
+        String username = cmd.getUsername();
+        String password = cmd.getPassword();
+        return discoverHosts(dcId, podId, clusterId, clusterName, url, username, password);
     }
 
     @Override
     public List<HostVO> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
-        return discoverHosts((AddHostOrStorageCmd)cmd);
+        Long dcId = cmd.getZoneId();
+        String url = cmd.getUrl();
+        return discoverHosts(dcId, null, null, null, url, null, null);
     }
 
     @Override
-    public List<HostVO> discoverHosts(AddHostOrStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
-    	Long dcId = cmd.getZoneId();
-    	Long podId = cmd.getPodId();
-    	Long clusterId = cmd.getClusterId();
-    	String clusterName = cmd.getName();
-    	String url = cmd.getUrl();
-    	String username = cmd.getUsername();
-    	String password = cmd.getPassword();
+    public List<HostVO> discoverHosts(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
     	URI uri = null;
     	
         //Check if the zone exists in the system

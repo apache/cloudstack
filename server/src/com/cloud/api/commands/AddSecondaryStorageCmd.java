@@ -30,6 +30,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.HostResponse;
@@ -40,36 +41,32 @@ import com.cloud.host.Status.Event;
 import com.cloud.storage.GuestOSCategoryVO;
 
 @Implementation(method="discoverHosts", manager=Manager.AgentManager)
-public class AddSecondaryStorageCmd extends AddHostOrStorageCmd {
+public class AddSecondaryStorageCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddSecondaryStorageCmd.class.getName());
     private static final String s_name = "addsecondarystorageresponse";
      
-   
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
-    public Long getClusterId() {
-        return null;
-    }
-    
-    public String getClusterName() {
-        return null;
+
+    @Parameter(name="url", type=CommandType.STRING, required=true)
+    private String url;
+
+    @Parameter(name="zoneid", type=CommandType.LONG)
+    private Long zoneId;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getUrl() {
+        return url;
     }
 
-    public String getPassword() {
-        return null;
+    public Long getZoneId() {
+        return zoneId;
     }
 
-    public Long getPodId() {
-        return null;
-    }
-
-    public String getUsername() {
-        return null;
-    }
-    
-    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -106,16 +103,18 @@ public class AddSecondaryStorageCmd extends AddHostOrStorageCmd {
 	            hostResponse.setState(host.getStatus());
 	            hostResponse.setIpAddress(host.getPrivateIpAddress());
 	            hostResponse.setVersion(host.getVersion());
-	
+
 	            GuestOSCategoryVO guestOSCategory = ApiDBUtils.getHostGuestOSCategory(host.getId());
 	            if (guestOSCategory != null) {
 	                hostResponse.setOsCategoryId(guestOSCategory.getId());
 	                hostResponse.setOsCategoryName(guestOSCategory.getName());
 	            }
 	            hostResponse.setZoneName(ApiDBUtils.findZoneById(host.getDataCenterId()).getName());
-	            hostResponse.setPodName(ApiDBUtils.findPodById(host.getPodId()).getName());
-	
-	          
+
+	            if (host.getPodId() != null) {
+	                hostResponse.setPodName(ApiDBUtils.findPodById(host.getPodId()).getName());
+	            }
+
 	            if (host.getType().toString().equals("Storage")) {
 	                hostResponse.setDiskSizeTotal(host.getTotalSize());
 	                hostResponse.setDiskSizeAllocated(0L);

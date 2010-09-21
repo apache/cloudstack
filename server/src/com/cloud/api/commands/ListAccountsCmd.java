@@ -223,7 +223,7 @@ public class ListAccountsCmd extends BaseListCmd {
                 acctResponse.setCleanupRequired(account.getNeedsCleanup());
             }
 
-            acctResponse.setName("account");
+            acctResponse.setResponseName("account");
             accountResponses.add(acctResponse);
         }
 
