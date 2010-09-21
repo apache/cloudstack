@@ -124,7 +124,7 @@ remove_an_ip () {
   fi
 }
 
-set -x
+#set -x
 
 rflag=
 iflag=
