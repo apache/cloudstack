@@ -70,33 +70,28 @@ function volumeJsonToDetailsTab(jsonObj){
     
     //buildActionLinkForDetailsTab("Take Snapshot", volumeActionMap, $actionMenu, volumeListAPIMap);	//show take snapshot
     //buildActionLinkForDetailsTab("Recurring Snapshot", volumeActionMap, $actionMenu, volumeListAPIMap);	//show Recurring Snapshot
-
-    if(jsonObj.type=="ROOT") {
-        if (jsonObj.vmstate == "Stopped")  
-            buildActionLinkForDetailsTab("Create Template", volumeActionMap, $actionMenu, volumeListAPIMap);	//show create template
-    } 
-    else { 
-	    if (jsonObj.virtualmachineid != null) {
-		    if (jsonObj.storagetype == "shared" && (jsonObj.vmstate == "Running" || jsonObj.vmstate == "Stopped")) {
-			    buildActionLinkForDetailsTab("Detach Disk", volumeActionMap, $actionMenu, volumeListAPIMap); //show detach disk
-		    }
-	    } else {
-		    // Disk not attached
-		    if (jsonObj.storagetype == "shared") {
-			    buildActionLinkForDetailsTab("Detach Disk", volumeActionMap, $actionMenu, volumeListAPIMap);   //show attach disk
-			    			  		    
-			    if(jsonObj.vmname == null || jsonObj.vmname == "none")
-			        buildActionLinkForDetailsTab("Delete Volume", volumeActionMap, $actionMenu, volumeListAPIMap); //show delete volume
-		    }
-	    }
+    
+    if(jsonObj.state != "Creating" && jsonObj.state != "Corrupted" && jsonObj.name != "attaching") {
+        if(jsonObj.type=="ROOT") {
+            if (jsonObj.vmstate == "Stopped")  
+                buildActionLinkForDetailsTab("Create Template", volumeActionMap, $actionMenu, volumeListAPIMap);	//show create template
+        } 
+        else { 
+	        if (jsonObj.virtualmachineid != null) {
+		        if (jsonObj.storagetype == "shared" && (jsonObj.vmstate == "Running" || jsonObj.vmstate == "Stopped")) {
+			        buildActionLinkForDetailsTab("Detach Disk", volumeActionMap, $actionMenu, volumeListAPIMap); //show detach disk
+		        }
+	        } else {
+		        // Disk not attached
+		        if (jsonObj.storagetype == "shared") {
+			        buildActionLinkForDetailsTab("Detach Disk", volumeActionMap, $actionMenu, volumeListAPIMap);   //show attach disk
+    			    			  		    
+			        if(jsonObj.vmname == null || jsonObj.vmname == "none")
+			            buildActionLinkForDetailsTab("Delete Volume", volumeActionMap, $actionMenu, volumeListAPIMap); //show delete volume
+		        }
+	        }
+        }
     }
-
-    /*
-    if(jsonObj.state == "Creating" || jsonObj.state == "Corrupted" || jsonObj.name == "attaching") 
-        template.find("#grid_links_container").hide(); //hide actions panel
-    else
-        template.find("#grid_links_container").show(); //show actions panel
-    */
 } 
  
 function volumeClearRightPanel() {       
