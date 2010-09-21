@@ -818,11 +818,16 @@ public class StorageManagerImpl implements StorageManager {
         }
         
         for (VolumeVO v : volumes) {
+        	        	      	
+            long templateId = -1;
+        	if(v.getVolumeType() == VolumeType.ROOT && Storage.ImageFormat.ISO != template.getFormat()){
+        	        templateId = template.getId();
+        	}
+        	
         	long volumeId = v.getId();
         	// Create an event
-        	long sizeMB = v.getSize() / (1024 * 1024);
-        	String diskOfferingIdentifier = (diskOffering != null) ? String.valueOf(diskOffering.getId()) : "-1";
-        	String eventParams = "id=" + volumeId + "\ndoId=" + diskOfferingIdentifier + "\ntId=" + template.getId() + "\ndcId=" + dc.getId() + "\nsize=" + sizeMB;
+            long sizeMB = v.getSize() / (1024 * 1024);
+        	String eventParams = "id=" + volumeId + "\ndoId=" + v.getDiskOfferingId() + "\ntId=" + templateId + "\ndcId=" + dc.getId() + "\nsize=" + sizeMB;
         	EventVO event = new EventVO();
         	event.setAccountId(account.getId());
         	event.setUserId(1L);
