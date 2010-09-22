@@ -2448,6 +2448,7 @@ public class UserVmManagerImpl implements UserVmManager {
             VlanVO guestVlan = null;
             List<VlanVO> vlansForAccount = _vlanDao.listVlansForAccountByType(dc.getId(), account.getId(), VlanType.DirectAttached);
             List<VlanVO> vlansForPod = null;
+            List<VlanVO> zoneWideVlans = null;
 
             boolean forAccount = false;
             if (vlansForAccount.size() > 0) {
@@ -2461,7 +2462,7 @@ public class UserVmManagerImpl implements UserVmManager {
 	          	//set forZone = true
 	          	
 	          	//note the dao method below does a NEQ on vlan id, hence passing untagged
-	          	List<VlanVO> zoneWideVlans = _vlanDao.searchForZoneWideVlans(dc.getId(),VlanType.DirectAttached.toString(),"untagged");
+	        	zoneWideVlans = _vlanDao.searchForZoneWideVlans(dc.getId(),VlanType.DirectAttached.toString(),"untagged");
 	          	
 	          	if(zoneWideVlans!=null && zoneWideVlans.size()>0){
 	          		forZone = true;
@@ -2526,7 +2527,12 @@ public class UserVmManagerImpl implements UserVmManager {
                 else
                 {
                 	//for zone
-                	guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId().longValue(), guestVlan.getId(), false);
+                	for(VlanVO vlanForZone : zoneWideVlans)
+                	{
+                		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId().longValue(), vlanForZone.getId(), false);
+                		if(guestIp!=null)
+                			break;//found an ip
+                	}
                 }
                 
                 if (guestIp == null) {
