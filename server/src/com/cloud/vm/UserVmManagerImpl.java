@@ -2655,6 +2655,7 @@ public class UserVmManagerImpl implements UserVmManager {
             VlanVO guestVlan = null;
             List<VlanVO> vlansForAccount = _vlanDao.listVlansForAccountByType(dc.getId(), account.getId(), VlanType.DirectAttached);
             List<VlanVO> vlansForPod = null;
+            List<VlanVO> zoneWideVlans = null;
             
             boolean forAccount = false;
             boolean forZone = false;
@@ -2662,20 +2663,21 @@ public class UserVmManagerImpl implements UserVmManager {
             	forAccount = true;
             	guestVlan = vlansForAccount.get(0);//FIXME: iterate over all vlans
             }
-//            else //TODO PLEASE DO NOT REMOVE THIS COMMENTED PART
-//            {
-//            	//list zone wide vlans that are direct attached and tagged
-//            	//if exists pick random one
-//            	//set forZone = true
-//            	
-//            	//note the dao method below does a NEQ on vlan id, hence passing untagged
-//            	List<VlanVO> zoneWideVlans = _vlanDao.searchForZoneWideVlans(dc.getId(),VlanType.DirectAttached.toString(),"untagged");
-//            	
-//            	if(zoneWideVlans!=null && zoneWideVlans.size()>0){
-//            		forZone = true;
-//            		guestVlan = zoneWideVlans.get(0);//FIXME: iterate over all vlans
-//            	}
-//            }
+            else 
+            {
+            	//list zone wide vlans that are direct attached and tagged
+            	//if exists pick random one
+            	//set forZone = true
+            	
+            	//note the dao method below does a NEQ on vlan id, hence passing untagged
+            	zoneWideVlans = _vlanDao.searchForZoneWideVlans(dc.getId(),VlanType.DirectAttached.toString(),"untagged");
+            	
+            	if(zoneWideVlans!=null && zoneWideVlans.size()>0){
+            		forZone = true;
+            		guestVlan = zoneWideVlans.get(0);//FIXME: iterate over all vlans
+            	}
+            }
+            
             while ((pod = _agentMgr.findPod(template, offering, dc, account.getId(), avoids)) != null) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Attempting to create direct attached vm in pod " + pod.first().getName());
@@ -2727,6 +2729,16 @@ public class UserVmManagerImpl implements UserVmManager {
                 		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForPod.getId(), false);
                 		if(guestIp!=null)
                 			break;//got an ip
+                	}
+                }
+                else
+                {
+                	//for zone
+                	for(VlanVO vlanForZone : zoneWideVlans)
+                	{
+                		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForZone.getId(), false);
+                		if(guestIp!=null)
+                			break;//found an ip
                 	}
                 }
                 
