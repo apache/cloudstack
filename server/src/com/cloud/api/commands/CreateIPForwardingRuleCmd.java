@@ -126,7 +126,7 @@ public class CreateIPForwardingRuleCmd extends BaseCmd {
         ruleData.add(new Pair<String, Object>(BaseCmd.Properties.PROTOCOL.getName(), firewallRule.getProtocol()));
         ruleData.add(new Pair<String, Object>(BaseCmd.Properties.VIRTUAL_MACHINE_NAME.getName(), userVM.getName()));
         ruleData.add(new Pair<String, Object>(BaseCmd.Properties.VIRTUAL_MACHINE_DISPLAYNAME.getName(), userVM.getDisplayName()));
-        ruleData.add(new Pair<String, Object>(BaseCmd.Properties.VIRTUAL_MACHINE_ID.getName(), Long.toString(userVM.getId())));
+        ruleData.add(new Pair<String, Object>(BaseCmd.Properties.VIRTUAL_MACHINE_ID.getName(), userVM.getId().toString()));
 
         forwardingTag[0] = ruleData;
 
