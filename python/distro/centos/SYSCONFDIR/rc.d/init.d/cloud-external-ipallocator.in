@@ -14,8 +14,8 @@ whatami=cloud-external-ipallocator
 SHORTNAME="$whatami"
 PIDFILE=@PIDDIR@/"$whatami".pid
 LOCKFILE=@LOCKDIR@/"$SHORTNAME"
-LOGFILE=@AGENTLOG@
-PROGNAME="Cloud Agent"
+LOGFILE=@IPALOCATORLOG@
+PROGNAME="External IPAllocator"
 
 unset OPTIONS
 [ -r @SYSCONFDIR@/sysconfig/"$SHORTNAME" ] && source @SYSCONFDIR@/sysconfig/"$SHORTNAME"

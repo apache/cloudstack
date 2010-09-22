@@ -298,6 +298,7 @@ else:
 		("${AGENTLOGDIR}",0770,x),
 		("${USAGELOGDIR}",0770,x),
 		("${CPLOGDIR}",0770,x),
+		("${IPALLOCATORLOGDIR}",0770,x),
 		("${LOCALSTATEDIR}/cache/${MSPATH}",0770,x),
 		("${LOCALSTATEDIR}/cache/${MSPATH}/temp",0770,x),
 		("${LOCALSTATEDIR}/cache/${MSPATH}/work",0770,x),
