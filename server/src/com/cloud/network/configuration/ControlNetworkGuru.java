@@ -17,12 +17,14 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.network.Network.AddressFormat;
 import com.cloud.network.Network.BroadcastDomainType;
 import com.cloud.network.Network.Mode;
 import com.cloud.network.Network.TrafficType;
 import com.cloud.network.NetworkConfiguration;
 import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentLocator;
@@ -90,21 +92,18 @@ public class ControlNetworkGuru extends AdapterBase implements NetworkGuru {
             throw new CloudRuntimeException("Does not support nic specification at this time: " + nic);
         }
         
-        return new NicProfile(null, null, null);
+        return new NicProfile(ReservationStrategy.Start, null, null, null, null);
     }
 
     @Override
-    public boolean create(NicProfile nic, VirtualMachineProfile profile) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
-        return true;
-    }
-
-    @Override
-    public String reserve(NicProfile nic, VirtualMachineProfile vm, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException,
+    public String reserve(NicProfile nic, NetworkConfiguration config, VirtualMachineProfile vm, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         String ip = _dcDao.allocateLinkLocalPrivateIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), vm.getId());
         nic.setIp4Address(ip);
         nic.setMacAddress("FE:FF:FF:FF:FF:FF");
         nic.setNetmask("255.255.0.0");
+        nic.setFormat(AddressFormat.Ip4);
+        
         return Long.toString(nic.getId());
     }
 

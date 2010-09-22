@@ -14,12 +14,14 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.network.Network.AddressFormat;
 import com.cloud.network.Network.BroadcastDomainType;
 import com.cloud.network.Network.Mode;
 import com.cloud.network.Network.TrafficType;
 import com.cloud.network.NetworkConfiguration;
 import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
@@ -62,17 +64,12 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
             throw new CloudRuntimeException("Does not support nic configuration");
         }
         
-        NicProfile profile = new NicProfile(null, null, null);
+        NicProfile profile = new NicProfile(ReservationStrategy.Start, null, null, null, null);
         return profile;
     }
 
     @Override
-    public boolean create(NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
-        return true;
-    }
-
-    @Override
-    public String reserve(NicProfile nic, VirtualMachineProfile vm, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException,
+    public String reserve(NicProfile nic, NetworkConfiguration config, VirtualMachineProfile vm, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         DataCenter dc = dest.getDataCenter();
         Pod pod = dest.getPod();
@@ -81,9 +78,9 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         String[] macs = _dcDao.getNextAvailableMacAddressPair(dc.getId());
         
         nic.setIp4Address(ip);
-        nic.setCidr(pod.getCidrAddress() + "/" + pod.getCidrSize());
         nic.setGateway(pod.getGateway());
         nic.setMacAddress(macs[0]);
+        nic.setFormat(AddressFormat.Ip4);
         String netmask = NetUtils.getCidrSubNet(pod.getCidrAddress(), pod.getCidrSize());
         nic.setNetmask(netmask);
         

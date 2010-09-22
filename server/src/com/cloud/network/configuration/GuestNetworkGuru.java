@@ -73,14 +73,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public boolean create(NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public String reserve(NicProfile nic, VirtualMachineProfile vm, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException,
+    public String reserve(NicProfile nic, NetworkConfiguration config, VirtualMachineProfile vm, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         // TODO Auto-generated method stub
         return null;

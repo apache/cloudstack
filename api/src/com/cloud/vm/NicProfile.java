@@ -10,15 +10,15 @@ import com.cloud.network.Network.BroadcastDomainType;
 import com.cloud.network.Network.Mode;
 import com.cloud.network.Network.TrafficType;
 import com.cloud.network.NetworkConfiguration;
+import com.cloud.resource.Resource;
+import com.cloud.resource.Resource.ReservationStrategy;
 
 public class NicProfile {
     long id;
     BroadcastDomainType broadcastType;
-    String cidr;
     Mode mode;
     long vmId;
     String gateway;
-    int deviceId;
     AddressFormat format;
     TrafficType trafficType;
     String ip4Address;
@@ -27,6 +27,8 @@ public class NicProfile {
     URI isolationUri;
     String netmask;
     URI broadcastUri;
+    ReservationStrategy strategy;
+    String reservationId;
     
     public String getNetmask() {
         return netmask;
@@ -44,7 +46,7 @@ public class NicProfile {
         return broadcastUri;
     }
     
-    public void setIsolationUril(URI isolationUri) {
+    public void setIsolationUri(URI isolationUri) {
         this.isolationUri = isolationUri;
     }
     
@@ -60,10 +62,6 @@ public class NicProfile {
         this.broadcastType = broadcastType;
     }
 
-    public void setCidr(String cidr) {
-        this.cidr = cidr;
-    }
-
     public void setMode(Mode mode) {
         this.mode = mode;
     }
@@ -74,10 +72,6 @@ public class NicProfile {
 
     public void setGateway(String gateway) {
         this.gateway = gateway;
-    }
-
-    public void setDeviceId(int deviceId) {
-        this.deviceId = deviceId;
     }
 
     public void setFormat(AddressFormat format) {
@@ -112,10 +106,6 @@ public class NicProfile {
         return broadcastType;
     }
 
-    public String getCidr() {
-        return cidr;
-    }
-    
     public void setMacAddress(String macAddress) {
         this.macAddress = macAddress;
     }
@@ -126,10 +116,6 @@ public class NicProfile {
 
     public String getGateway() {
         return gateway;
-    }
-
-    public int getDeviceId() {
-        return deviceId;
     }
 
     public AddressFormat getFormat() {
@@ -158,8 +144,6 @@ public class NicProfile {
 
     public NicProfile(Nic nic, NetworkConfiguration network) {
         this.id = nic.getId();
-        this.deviceId = nic.getDeviceId();
-        this.cidr = network.getCidr();
         this.gateway = network.getGateway();
         this.mode = network.getMode();
         this.format = null;
@@ -168,19 +152,35 @@ public class NicProfile {
         this.ip4Address = nic.getIp4Address();
         this.ip6Address = null;
         this.macAddress = nic.getMacAddress();
+        this.reservationId = nic.getReservationId();
+        this.strategy = nic.getReservationStrategy();
     }
 
-    public NicProfile(long id, BroadcastDomainType type, String cidr, Mode mode, long vmId) {
+    public NicProfile(long id, BroadcastDomainType type, Mode mode, long vmId) {
         this.id = id;
         this.broadcastType = type;
-        this.cidr = cidr;
         this.mode = mode;
         this.vmId = vmId;
     }
     
-    public NicProfile(String ip4Address, String macAddress, String gateway) {
+    public NicProfile(Resource.ReservationStrategy strategy, String ip4Address, String macAddress, String gateway, String netmask) {
+        this.format = AddressFormat.Ip4;
         this.ip4Address = ip4Address;
         this.macAddress = macAddress;
         this.gateway = gateway;
+        this.netmask = netmask;
+        this.strategy = strategy;
+    }
+
+    public ReservationStrategy getReservationStrategy() {
+        return strategy;
+    }
+    
+    public String getReservationId() {
+        return reservationId;
+    }
+    
+    public void setReservationId(String reservationId) {
+        this.reservationId = reservationId;
     }
 }

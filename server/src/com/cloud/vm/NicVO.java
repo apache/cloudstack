@@ -29,6 +29,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.network.Network.AddressFormat;
 import com.cloud.network.Network.Mode;
 
 @Entity
@@ -56,6 +57,9 @@ public class NicVO implements Nic {
     
     @Column(name="isolation_uri")
     URI isolationUri;
+    
+    @Column(name="ip_type")
+    AddressFormat addressFormat;
     
     @Column(name="broadcast_uri")
     URI broadcastUri;
@@ -137,6 +141,14 @@ public class NicVO implements Nic {
     
     public void setGateway(String gateway) {
         this.gateway = gateway;
+    }
+    
+    public AddressFormat getAddressFormat() {
+        return addressFormat;
+    }
+    
+    public void setAddressFormat(AddressFormat format) {
+        this.addressFormat = format;
     }
 
     public void setNetmask(String netmask) {

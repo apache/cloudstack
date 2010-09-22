@@ -2488,7 +2488,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                 nic.setState(Resource.State.Reserving);
                 _nicDao.update(nic.getId(), nic);
                 NicProfile profile = toNicProfile(nic);
-                String reservationId = concierge.reserve(profile, vmProfile, dest);
+                String reservationId = concierge.reserve(profile, config, vmProfile, dest);
                 nic.setIp4Address(profile.getIp4Address());
                 nic.setIp6Address(profile.getIp6Address());
                 nic.setMacAddress(profile.getMacAddress());
@@ -2497,6 +2497,9 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                 nic.setReservationId(reservationId);
                 nic.setReserver(concierge.getName());
                 nic.setState(Resource.State.Reserved);
+                nic.setNetmask(profile.getNetmask());
+                nic.setGateway(profile.getGateway());
+                nic.setAddressFormat(profile.getFormat());
                 _nicDao.update(nic.getId(), nic);
                 for (NetworkElement element : _networkElements) {
                     if (!element.prepare(config, profile, vmProfile, null)) {

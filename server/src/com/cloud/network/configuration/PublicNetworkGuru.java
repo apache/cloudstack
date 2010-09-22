@@ -3,9 +3,6 @@
  */
 package com.cloud.network.configuration;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
@@ -18,12 +15,15 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.network.Network.AddressFormat;
 import com.cloud.network.Network.BroadcastDomainType;
+import com.cloud.network.Network.IsolationType;
 import com.cloud.network.Network.Mode;
 import com.cloud.network.Network.TrafficType;
 import com.cloud.network.NetworkConfiguration;
 import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
@@ -62,18 +62,19 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         if (nic != null) {
             throw new CloudRuntimeException("Unsupported nic settings");
         }
-        
-        return new NicProfile(null, null, null);
+
+        return new NicProfile(ReservationStrategy.Create, null, null, null, null);
     }
 
     @Override
-    public boolean create(NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
-        return true;
-    }
-
-    @Override
-    public String reserve(NicProfile ch,  VirtualMachineProfile vm, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+    public String reserve(NicProfile ch, NetworkConfiguration configuration, VirtualMachineProfile vm, DeployDestination dest) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+        if (ch.getReservationId() != null) {
+            return ch.getReservationId();
+        }
+            
         long dcId = dest.getDataCenter().getId();
+        
+        String[] macs = _dcDao.getNextAvailableMacAddressPair(dcId);
 
         Pair<String, VlanVO> ipAndVlan = _vlanDao.assignIpAddress(dcId, vm.getVm().getAccountId(), vm.getVm().getDomainId(), VlanType.VirtualNetwork, true);
         if (ipAndVlan == null) {
@@ -83,12 +84,12 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         ch.setIp4Address(ipAndVlan.first());
         ch.setGateway(vlan.getVlanGateway());
         ch.setNetmask(vlan.getVlanNetmask());
-        try {
-            ch.setIsolationUril(new URI("vlan://" + vlan.getVlanId()));
-        } catch (URISyntaxException e) {
-            throw new CloudRuntimeException("URI Syntax: " + "vlan://" + vlan.getVlanId(), e);
-        }
+        ch.setIsolationUri(IsolationType.Vlan.toUri(vlan.getVlanId()));
         ch.setBroadcastType(BroadcastDomainType.Vlan);
+        ch.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlan.getVlanId()));
+        ch.setMacAddress(macs[1]);
+        ch.setFormat(AddressFormat.Ip4);
+        ch.setReservationId(Long.toString(vlan.getId()));
         
         return Long.toString(vlan.getId());
     }

@@ -57,7 +57,28 @@ public class DeployDestination {
     
     @Override
     public boolean equals(Object obj) {
-        assert false : "Not implemented correctly yet.";
-        return false;
+        DeployDestination that = (DeployDestination)obj;
+        if (this._dc == null || that._dc == null) {
+            return false;
+        }
+        if (this._dc.getId() != that._dc.getId()) {
+            return false;
+        }
+        if (this._pod == null || that._pod == null) {
+            return false;
+        }
+        if (this._pod.getId() != that._pod.getId()) {
+            return false;
+        }
+        if (this._cluster == null || that._cluster == null) {
+            return false;
+        }
+        if (this._cluster.getId() != that._cluster.getId()) {
+            return false;
+        }
+        if (this._host == null || that._host == null) {
+            return false;
+        }
+        return this._host.getId() == that._host.getId();
     }
 }
