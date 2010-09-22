@@ -138,9 +138,6 @@ ALTER TABLE `cloud`.`domain_router` ADD CONSTRAINT `fk_domain_router__public_ip_
 ALTER TABLE `cloud`.`domain_router` ADD INDEX `i_domain_router__public_ip_address`(`public_ip_address`);
 ALTER TABLE `cloud`.`domain_router` ADD CONSTRAINT `fk_domain_router__id` FOREIGN KEY `fk_domain_router__id` (`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE;
 
-ALTER TABLE `cloud`.`domain_router` ADD CONSTRAINT `fk_domain_router__account_id` FOREIGN KEY `fk_domain_router__account_id` (`account_id`) REFERENCES `account` (`id`);
-ALTER TABLE `cloud`.`domain_router` ADD INDEX `i_domain_router__account_id`(`account_id`);
-
 ALTER TABLE `cloud`.`domain_router` ADD CONSTRAINT `fk_domain_router__vlan_id` FOREIGN KEY `fk_domain_router__vlan_id` (`vlan_db_id`) REFERENCES `vlan` (`id`);
 ALTER TABLE `cloud`.`domain_router` ADD INDEX `i_domain_router__vlan_id`(`vlan_db_id`);
 

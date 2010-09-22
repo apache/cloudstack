@@ -610,8 +610,6 @@ CREATE TABLE `cloud`.`domain_router` (
   `dc_vlan` varchar(18) COMMENT 'vnet',
   `vlan_db_id` bigint unsigned COMMENT 'Foreign key into vlan id table',
   `vlan_id` varchar(255) COMMENT 'optional VLAN ID for DomainRouter that can be used in rundomr.sh',
-  `account_id` bigint unsigned NOT NULL COMMENT 'account id of owner',
-  `domain_id` bigint unsigned NOT NULL,
   `dhcp_ip_address` bigint unsigned NOT NULL DEFAULT 2 COMMENT 'next ip address for dhcp for this domR',
   `role` varchar(64) NOT NULL COMMENT 'type of role played by this router',
   PRIMARY KEY (`id`)
