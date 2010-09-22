@@ -402,7 +402,7 @@ function showInstancesTab(p_domainId, p_account) {
 				break;
 			case "vm_action_destroy" :
 				$("#dialog_confirmation")
-				.html("<p>Please confirm you want to destroy your virtual machine: <b>"+vmName+"</b>.  Destroying your virtual machine would include deleting the ROOT volume and all attached data disk volumes.</p>")
+				.html("<p>Please confirm you want to destroy your virtual machine: <b>"+vmName+"</b>.  Destroying your virtual machine will also delete the ROOT volume, but not attached data disk volumes.</p>")
 				.dialog('option', 'buttons', { 						
 					"Confirm": function() { 
 						$(this).dialog("close");

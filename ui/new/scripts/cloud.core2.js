@@ -33,7 +33,8 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap)
     $link.data("isAsyncJob", apiInfo.isAsyncJob);
     $link.data("asyncJobResponse", apiInfo.asyncJobResponse);		     
     $link.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);
-    $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);      
+    $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);     
+    $link.data("customActionFn", apiInfo.customActionFn);   
     
     var $detailsTab = $("#right_panel_content #tab_content_details");  
     var id = $detailsTab.data("jsonObj").id;
@@ -41,6 +42,13 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap)
     $link.bind("click", function(event) {   
         $actionMenu.hide();    	 
         var $actionLink = $(this);   
+        
+        var customActionFn = $actionLink.data("customActionFn"); 
+        if(customActionFn != null) {
+            customActionFn();
+            return false;
+        }
+        
         var dialogBeforeActionFn = $actionLink.data("dialogBeforeActionFn"); 
         if(dialogBeforeActionFn == null) {	 
             var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
@@ -48,7 +56,7 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap)
         }
         else {
             dialogBeforeActionFn($actionLink, listAPIMap, $detailsTab);	
-        }                        
+        }               
         return false;
     });  
 } 
@@ -136,24 +144,28 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap) {
 	        dataType: "json",
 	        async: false,
 	        success: function(json) {	            
-	            $spinningWheel.hide();      
-														              
-	            //RecoverVirtualMachine API doesn't return an embedded object on success (Bug 6037)
-	            //Before Bug 6037 get fixed, use the temporary solution below.							            
-	            $.ajax({
-                    cache: false,
-                    data: createURL("command="+listAPI+"&id="+id),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-			            $detailsTab.find("#action_message_box #description").text(label + " action succeeded.");
-			            $detailsTab.find("#action_message_box").removeClass("error").show();
-			                                                                                              
-                        afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	                           
-                    }
-                });										
-				//After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
-				//afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	   
+	            $spinningWheel.hide(); 	            
+	            $detailsTab.find("#action_message_box #description").text(label + " action succeeded.");
+			    $detailsTab.find("#action_message_box").removeClass("error").show();         
+								
+				if(apiCommand.indexOf("command=delete")!=0) { 									              
+	                //RecoverVirtualMachine API doesn't return an embedded object on success (Bug 6037)
+	                //Before Bug 6037 get fixed, use the temporary solution below.							            
+	                $.ajax({
+                        cache: false,
+                        data: createURL("command="+listAPI+"&id="+id),
+                        dataType: "json",
+                        async: false,
+                        success: function(json) {			                			                                                                                              
+                            afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	                           
+                        }
+                    });										
+				    //After Bug 6037 is fixed, remove temporary solution above and uncomment the line below				     
+				    //afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	   
+				}
+				else { //apiCommand is deleteXXXXXXX	
+				    afterActionSeccessFn(id);
+				}
 	        },
             error: function(XMLHttpResponse) {	                
 		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label);    
@@ -337,8 +349,20 @@ function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1) {
     if(errorMsg.length > 0) 
         $midmenuItem1.find("#second_row").text(fromdb(errorMsg));   
     else
-        $midmenuItem1.find("#second_row").text("");     
-}       	                
+        $midmenuItem1.find("#second_row").html("&nbsp;");     
+}  
+
+function handleAsyncJobFailInMidMenu(errorMsg, $midmenuItem1) { 
+    $midmenuItem1.find("#content").removeClass("inaction");
+	$midmenuItem1.find("#spinning_wheel").hide();	
+	$midmenuItem1.find("#info_icon").addClass("error").show();		
+	$midmenuItem1.find("#first_row").text("Adding failed");			                       
+    
+    if(errorMsg.length > 0) 
+        $midmenuItem1.find("#second_row").text(fromdb(errorMsg));   
+    else
+        $midmenuItem1.find("#second_row").html("&nbsp;");   
+}       	     	                
 //***** actions for middle menu (end) **************************************************************************
 
 
@@ -539,7 +563,8 @@ function clearMiddleMenu() {
 }
 
 function clearRightPanel() {
-    $("#right_panel_content #action_message_box").hide();     
+    $("#right_panel_content #action_message_box").hide(); 
+    $("#right_panel_content #tab_content_details #action_link #action_menu #action_list").empty();    
 }
     
 var selected_leftmenu_id = null; 
@@ -1225,7 +1250,7 @@ function noNull(val) {
 // Prevent cross-site-script(XSS) attack. 
 // used right before adding user input to the DOM tree. e.g. DOM_element.html(sanitizeXSS(user_input));  
 function sanitizeXSS(val) {     
-    if(val == null)
+    if(val == null || typeof(val) != "string")
         return val; 
     val = val.replace(/</g, "&lt;");  //replace < whose unicode is \u003c     
     val = val.replace(/>/g, "&gt;");  //replace > whose unicode is \u003e  

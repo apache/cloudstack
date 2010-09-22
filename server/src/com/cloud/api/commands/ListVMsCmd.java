@@ -118,6 +118,10 @@ public class ListVMsCmd extends BaseCmd {
             domainId = account.getDomainId();
         }
 
+        if(account!=null && domainId==null){
+        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Please specify the domain id for this account:"+account.getId());
+        }
+        
         Long[] accountIds = null;
         if (accountId != null) {
             accountIds = new Long[1];
@@ -290,10 +294,13 @@ public class ListVMsCmd extends BaseCmd {
             
             //root device related
             VolumeVO rootVolume = getManagementServer().findRootVolume(vmInstance.getId());
-            vmData.add(new Pair<String, Object>(BaseCmd.Properties.ROOT_DEVICE_ID.getName(), rootVolume.getDeviceId()));
+            if(rootVolume!=null)
+            {
+            	vmData.add(new Pair<String, Object>(BaseCmd.Properties.ROOT_DEVICE_ID.getName(), rootVolume.getDeviceId()));
             
-            StoragePoolVO storagePool = getManagementServer().findPoolById(rootVolume.getPoolId());
-            vmData.add(new Pair<String, Object>(BaseCmd.Properties.ROOT_DEVICE_TYPE.getName(), storagePool.getPoolType().toString()));
+            	StoragePoolVO storagePool = getManagementServer().findPoolById(rootVolume.getPoolId());
+            	vmData.add(new Pair<String, Object>(BaseCmd.Properties.ROOT_DEVICE_TYPE.getName(), storagePool.getPoolType().toString()));
+            }
             
             vmTag[i++] = vmData;
         }

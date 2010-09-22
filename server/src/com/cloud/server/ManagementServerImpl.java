@@ -478,9 +478,9 @@ public class ManagementServerImpl implements ManagementServer {
         // and set them in the right places
 
         String maxVolumeSizeInTbString = _configs.get("max.volume.size.gb");
-        long maxVolumeSizeBytes = NumbersUtil.parseLong(maxVolumeSizeInTbString, new Long("2093049000000"));
+        long maxVolumeSizeGBytes = NumbersUtil.parseLong(maxVolumeSizeInTbString, new Long("2000"));
 
-        _maxVolumeSizeInGb = maxVolumeSizeBytes/1000000000;
+        _maxVolumeSizeInGb = maxVolumeSizeGBytes;
 
         _routerRamSize = NumbersUtil.parseInt(_configs.get("router.ram.size"),NetworkManager.DEFAULT_ROUTER_VM_RAMSIZE);
         _proxyRamSize = NumbersUtil.parseInt(_configs.get("consoleproxy.ram.size"), ConsoleProxyManager.DEFAULT_PROXY_VM_RAMSIZE);
@@ -1569,6 +1569,14 @@ public class ManagementServerImpl implements ManagementServer {
             	_accountMgr.incrementResourceCount(accountId, ResourceType.public_ip);
             }
 
+            if(vmId!=0){
+            	VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+            	
+            	if(vm == null){
+            		throw new InvalidParameterValueException("Invalid vm instance id:"+vmId+" specified");
+            	}
+            }
+            
             boolean success = true;
             String errorMsg = "";
 
