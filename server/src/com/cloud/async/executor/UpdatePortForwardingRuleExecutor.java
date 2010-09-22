@@ -1,3 +1,4 @@
+
 package com.cloud.async.executor;
 
 import java.util.List;
@@ -74,6 +75,7 @@ public class UpdatePortForwardingRuleExecutor extends BaseAsyncJobExecutor {
             UserVmVO userVM = userVMs.get(0);
             resultObject.setVirtualMachineId(userVM.getId());
             resultObject.setVirtualMachineName(userVM.getName());
+            resultObject.setVirtualMachineDisplayName(userVM.getDisplayName());
         }
 
         resultObject.setId(firewallRule.getId());
