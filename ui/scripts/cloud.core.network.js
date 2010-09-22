@@ -409,7 +409,8 @@ function showNetworkingTab(p_domainId, p_account) {
 	    template.find("#row_container #protocol").text(json.protocol);
 	    template.find("#row_container_edit #protocol").text(json.protocol);
 	    
-	    template.find("#row_container #vm_name").text(json.vmname);		    
+	    var vmName = getVmName(json.vmname, json.vmdisplayname); //json doesn't include vmdisplayname property(incorrect). Waiting for Bug 6241 to be fixed....
+	    template.find("#row_container #vm_name").text(vmName);		    
 	    var virtualMachineId = json.virtualmachineid;
 	    		    
 	    $.ajax({
