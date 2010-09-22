@@ -75,7 +75,7 @@ function showStorageTab(domainId, targetTab) {
 			    var volumeVmSelect = $("#dialog_attach_volume").find("#volume_vm").empty();					
 			    if (instances != null && instances.length > 0) {
 				    for (var i = 0; i < instances.length; i++) {
-					    volumeVmSelect.append("<option value='" + instances[i].id + "'>" + getVmName(instances[i].name, instances[i].displayname)+ "</option>"); 
+					    volumeVmSelect.append("<option value='" + instances[i].id + "'>" + getVmName(instances[i].name, instances[i].displayname) + "</option>"); 
 				    }				    
 			    }
 				$.ajax({
@@ -86,7 +86,7 @@ function showStorageTab(domainId, targetTab) {
 						var instances = json.listvirtualmachinesresponse.virtualmachine;								
 						if (instances != null && instances.length > 0) {
 							for (var i = 0; i < instances.length; i++) {
-								volumeVmSelect.append("<option value='" + instances[i].id + "'>" + sanitizeXSS(instances[i].name) + "</option>");
+								volumeVmSelect.append("<option value='" + instances[i].id + "'>" + getVmName(instances[i].name, instances[i].displayname) + "</option>");
 							}				    
 						}
 					}
