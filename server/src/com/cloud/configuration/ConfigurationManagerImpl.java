@@ -988,13 +988,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 	        		}
 	        		
 	        		// Make sure the specified account isn't already assigned to a VLAN in this zone
-	        		List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAccountVlanMapsByAccount(accountId);
-	        		for (AccountVlanMapVO accountVlanMap : accountVlanMaps) {
-	        			VlanVO vlan = _vlanDao.findById(accountVlanMap.getVlanDbId());
-	        			if (vlan.getDataCenterId() == zone.getId().longValue()) {
-	        				throw new InvalidParameterValueException("The account " + account.getAccountName() + " is already assigned to the VLAN with ID " + vlan.getVlanId() + " in zone " + zone.getName() + ".");
-	        			}
-	        		}
+//	        		List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAccountVlanMapsByAccount(accountId);
+//	        		for (AccountVlanMapVO accountVlanMap : accountVlanMaps) {
+//	        			VlanVO vlan = _vlanDao.findById(accountVlanMap.getVlanDbId());
+//	        			if (vlan.getDataCenterId() == zone.getId().longValue()) {
+//	        				throw new InvalidParameterValueException("The account " + account.getAccountName() + " is already assigned to the VLAN with ID " + vlan.getVlanId() + " in zone " + zone.getName() + ".");
+//	        			}
+//	        		}
         		}
     		} 
     	} 
