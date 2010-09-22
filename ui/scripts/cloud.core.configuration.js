@@ -564,8 +564,12 @@ function showConfigurationTab() {
                     array1.push("&cidr="+encodeURIComponent(newCidr));
                 if(newStartip != oldStartip)
                     array1.push("&startIp="+encodeURIComponent(newStartip));    
-                if(newEndip != oldEndip && newEndip != null && newEndip.length > 0)  
+                if(newEndip != oldEndip && newEndip != null && newEndip.length > 0) { 
+                    if(newStartip == oldStartip) {
+                        array1.push("&startIp="+encodeURIComponent(newStartip));  //startIp needs to be passed to updatePod API when endIp is passed to updatePod API.
+                    }
 					array1.push("&endIp="+encodeURIComponent(newEndip));	
+			    }
 				if(newGateway != oldGateway && newGateway != null && newGateway.length > 0)				             
 				    array1.push("&gateway="+encodeURIComponent(newGateway)); 
 				
