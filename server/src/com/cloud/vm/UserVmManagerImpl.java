@@ -2654,7 +2654,8 @@ public class UserVmManagerImpl implements UserVmManager {
             Set<Long> avoids = new HashSet<Long>();
             VlanVO guestVlan = null;
             List<VlanVO> vlansForAccount = _vlanDao.listVlansForAccountByType(dc.getId(), account.getId(), VlanType.DirectAttached);
-           
+            List<VlanVO> vlansForPod = null;
+            
             boolean forAccount = false;
             boolean forZone = false;
             if (vlansForAccount.size() > 0) {
@@ -2680,7 +2681,7 @@ public class UserVmManagerImpl implements UserVmManager {
                     s_logger.debug("Attempting to create direct attached vm in pod " + pod.first().getName());
                 }
                 if (!forAccount && !forZone) {
-                	List<VlanVO> vlansForPod = _vlanDao.listVlansForPodByType(pod.first().getId(), VlanType.DirectAttached);
+                	vlansForPod = _vlanDao.listVlansForPodByType(pod.first().getId(), VlanType.DirectAttached);
                 	if (vlansForPod.size() < 1) {
                 		avoids.add(pod.first().getId());
                 		if (s_logger.isDebugEnabled()) {
@@ -2707,7 +2708,28 @@ public class UserVmManagerImpl implements UserVmManager {
                 	}
                 	routerId = router.getId();
                 }
-                String guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), guestVlan.getId(), false);
+                String guestIp = null;
+                
+                if(forAccount)
+                {
+                	for(VlanVO vlanForAcc : vlansForAccount)
+                	{
+                		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForAcc.getId(), false);
+                		if(guestIp!=null)
+                			break; //got an ip
+                	}
+                }
+                else if(!forAccount && !forZone)
+                {
+                	//i.e. for pod
+                	for(VlanVO vlanForPod : vlansForPod)
+                	{
+                		guestIp = _ipAddressDao.assignIpAddress(accountId, account.getDomainId(), vlanForPod.getId(), false);
+                		if(guestIp!=null)
+                			break;//got an ip
+                	}
+                }
+                
                 if (guestIp == null) {
                 	s_logger.debug("No guest IP available in pod id=" + pod.first().getId());
                 	avoids.add(pod.first().getId());

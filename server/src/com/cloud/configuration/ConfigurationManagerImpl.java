@@ -1056,13 +1056,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         		}
         		
         		// Make sure the specified account isn't already assigned to a VLAN in this zone
-        		List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAccountVlanMapsByAccount(accountId);
-        		for (AccountVlanMapVO accountVlanMap : accountVlanMaps) {
-        			VlanVO vlan = _vlanDao.findById(accountVlanMap.getVlanDbId());
-        			if (vlan.getDataCenterId() == zone.getId()) {
-        				throw new InvalidParameterValueException("The account " + account.getAccountName() + " is already assigned to an IP range in zone " + zone.getName() + ".");
-        			}
-        		}
+//        		List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAccountVlanMapsByAccount(accountId);
+//        		for (AccountVlanMapVO accountVlanMap : accountVlanMaps) {
+//        			VlanVO vlan = _vlanDao.findById(accountVlanMap.getVlanDbId());
+//        			if (vlan.getDataCenterId() == zone.getId()) {
+//        				throw new InvalidParameterValueException("The account " + account.getAccountName() + " is already assigned to an IP range in zone " + zone.getName() + ".");
+//        			}
+//        		}
     		} else if (podId != null) {
     			// Pod-wide VLANs must be untagged
         		if (!vlanId.equals(Vlan.UNTAGGED)) {
