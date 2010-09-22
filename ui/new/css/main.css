@@ -1701,7 +1701,7 @@ a:hover.search_button {
 }
 
 .actionsdropdown_boxlist {
-	width:96px;
+	width:197px;
 	height:auto;
 	float:left;
 	margin:0 0 5px 6px;
@@ -1710,7 +1710,7 @@ a:hover.search_button {
 }
 
 .actionsdropdown_boxlist li{
-	width:94px;
+	width:194px;
 	height:auto;
 	float:left;
 	text-align:left;
@@ -2622,7 +2622,7 @@ a:hover.search_button {
 }
 
 .grid_actionsdropdown_box {
-	width:109px;
+	width:209px;
 	height:auto;
 	float:left;
 	position:absolute;
