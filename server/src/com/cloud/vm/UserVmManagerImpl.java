@@ -1340,16 +1340,11 @@ public class UserVmManagerImpl implements UserVmManager {
             
     }
 
-	private Long accountAndUserValidation(Long virtualMachineId,Account account, Long userId, UserVmVO vmInstance) throws ServerApiException
-	{
-		if (account != null) 
-        {
-            if (!isAdmin(account.getType()) && (account.getId().longValue() != vmInstance.getAccountId())) 
-            {
+	private Long accountAndUserValidation(Long virtualMachineId,Account account, Long userId, UserVmVO vmInstance) throws ServerApiException {
+		if (account != null) {
+            if (!isAdmin(account.getType()) && (account.getId().longValue() != vmInstance.getAccountId())) {
                 throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + virtualMachineId + " for this account");
-            } 
-            else if (_domainDao.isChildDomain(account.getDomainId(),vmInstance.getDomainId())) 
-            {
+            } else if (!_domainDao.isChildDomain(account.getDomainId(),vmInstance.getDomainId())) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid virtual machine id (" + virtualMachineId + ") given, unable to upgrade virtual machine.");
             }
         }
