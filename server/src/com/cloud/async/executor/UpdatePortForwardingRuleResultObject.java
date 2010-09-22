@@ -27,6 +27,17 @@ public class UpdatePortForwardingRuleResultObject {
     @Param(name="vmname")
     private String virtualMachineName;
 
+    @Param(name="vmdisplayname")
+    private String virtualMachineDisplayName;
+    
+    public String getVirtualMachineDisplayName(){
+    	return this.virtualMachineDisplayName;
+    }
+    
+    public void setVirtualMachineDisplayName(String name){
+    	this.virtualMachineDisplayName = name;
+    }
+    
     public long getId() {
         return id;
     }
