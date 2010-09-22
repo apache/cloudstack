@@ -568,3 +568,24 @@
 </div>
 <!-- Add Volume Dialog (end) -->
 
+<!-- Attach Volume Dialog (begin) -->
+<div id="dialog_attach_volume" title="Attach Volume" style="display: none">
+    <p>
+        Please fill in the following data to attach a new volume. If you are attaching a
+        disk volume to a Windows based virtual machine, you will need to reboot the instance
+        to see the attached disk.</p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form3">
+        <ol>
+            <li>
+                <label for="volume_vm">
+                    Virtual Machine:</label>
+                <select class="select" name="volume_vm" id="volume_vm">
+                    <option value="default">Please wait...</option>
+                </select>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+<!-- Attach Volume Dialog (end) -->

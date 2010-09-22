@@ -21,6 +21,12 @@ function afterLoadVolumeJSP() {
 	    modal: true,
 	    zIndex: 2000
     }));	
+	activateDialog($("#dialog_attach_volume").dialog({ 
+	    autoOpen: false,
+	    modal: true,
+	    zIndex: 2000
+    }));	
+	     
 	        
     $.ajax({
         data: createURL("command=listOsTypes"),
@@ -63,7 +69,7 @@ function afterLoadVolumeJSP() {
 			    }	
 			}	
 	    }
-    });	     
+    });	   
       
     //add button ***
     $("#midmenu_add_link").show();     
@@ -409,7 +415,7 @@ function volumeJsonToDetailsTab(jsonObj){
 	        } else {
 		        // Disk not attached
 		        if (jsonObj.storagetype == "shared") {
-			        buildActionLinkForDetailsTab("Detach Disk", volumeActionMap, $actionMenu, volumeListAPIMap);   //show attach disk
+			        buildActionLinkForDetailsTab("Attach Disk", volumeActionMap, $actionMenu, volumeListAPIMap);   //show attach disk
     			    			  		    
 			        if(jsonObj.vmname == null || jsonObj.vmname == "none")
 			            buildActionLinkForDetailsTab("Delete Volume", volumeActionMap, $actionMenu, volumeListAPIMap); //show delete volume
@@ -435,6 +441,13 @@ function volumeClearRightPanel() {
 } 
    
 var volumeActionMap = {  
+    "Attach Disk": {
+        isAsyncJob: true,
+        asyncJobResponse: "attachvolumeresponse",            
+        dialogBeforeActionFn : doAttachDisk,
+        inProcessText: "Attaching disk....",
+        afterActionSeccessFn: volumeAfterDetailsTabAction 
+    },
     "Detach Disk": {
         api: "detachVolume",            
         isAsyncJob: true,
@@ -690,4 +703,60 @@ function doRecurringSnapshot() {
 			$(this).dialog("close"); 
 		}
 	}).dialog("open").data("volumeId", volumeId);
-}				
+}	
+
+function populateVirtualMachineField(domainId, account, zoneId) {        
+    $.ajax({
+	    cache: false,
+	    data: createURL("command=listVirtualMachines&state=Running&zoneid="+zoneId+"&domainid="+domainId+"&account="+account+"&response=json"+maxPageSize),
+	    dataType: "json",
+	    success: function(json) {			    
+		    var instances = json.listvirtualmachinesresponse.virtualmachine;				
+		    var volumeVmSelect = $("#dialog_attach_volume").find("#volume_vm").empty();					
+		    if (instances != null && instances.length > 0) {
+			    for (var i = 0; i < instances.length; i++) {
+				    volumeVmSelect.append("<option value='" + instances[i].id + "'>" + getVmName(instances[i].name, instances[i].displayname) + "</option>"); 
+			    }				    
+		    }
+			$.ajax({
+				cache: false,
+				data: createURL("command=listVirtualMachines&state=Stopped&zoneid="+zoneId+"&domainid="+domainId+"&account="+account+"&response=json"+maxPageSize),
+				dataType: "json",
+				success: function(json) {			    
+					var instances = json.listvirtualmachinesresponse.virtualmachine;								
+					if (instances != null && instances.length > 0) {
+						for (var i = 0; i < instances.length; i++) {
+							volumeVmSelect.append("<option value='" + instances[i].id + "'>" + getVmName(instances[i].name, instances[i].displayname) + "</option>");
+						}				    
+					}
+				}
+			});
+	    }
+    });
+}		
+
+function doAttachDisk($actionLink, listAPIMap, $detailsTab) {       
+    var jsonObj = $detailsTab.data("jsonObj");    
+    populateVirtualMachineField(jsonObj.domainid, jsonObj.account, jsonObj.zoneid);
+	    
+    $("#dialog_attach_volume")					
+    .dialog('option', 'buttons', { 					    
+	    "Confirm": function() { 	       
+	        var thisDialog = $(this);
+	        thisDialog.dialog("close"); 	
+	        
+	        var virtualMachineId = thisDialog.find("#volume_vm").val();		
+	        if(virtualMachineId == null)  {	           
+	            $("#dialog_alert").html("<p>Please attach volume to a valid virtual machine</p>").dialog("open");
+	            return;					            
+	        }	
+	    	
+	    	var id = jsonObj.id;			
+			var apiCommand = "command=attachVolume&id="+id+'&virtualMachineId='+virtualMachineId;
+	    	doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);		
+	    }, 
+	    "Cancel": function() { 					        
+		    $(this).dialog("close"); 
+	    } 
+    }).dialog("open");
+}	
