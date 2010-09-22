@@ -2354,9 +2354,8 @@ public class StorageManagerImpl implements StorageManager {
 	
 	@Override
 	public boolean deleteVolume(DeleteVolumeCmd cmd) throws InvalidParameterValueException {
-		
     	Account account = (Account) UserContext.current().getAccountObject();
-    	Long volumeId = (Long) cmd.getId();
+    	Long volumeId = cmd.getId();
     	
     	boolean isAdmin;
     	if (account == null) {

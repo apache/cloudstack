@@ -1704,7 +1704,8 @@ public class ManagementServerImpl implements ManagementServer {
         String group = cmd.getGroup();
         String userData = cmd.getUserData();
         String[] networkGroups = null;
-        Long size = cmd.getSize();
+        Long sizeObj = cmd.getSize();
+        long size = (sizeObj == null) ? 0 : sizeObj;
 
         if ((ctxAccount == null) || isAdmin(ctxAccount.getType())) {
             if (domainId != null) {
@@ -2700,7 +2701,7 @@ public class ManagementServerImpl implements ManagementServer {
                 sc.setParameters("domainId", domainId);
             }
         } else if (domainId != null) {
-            DomainVO domainVO = _domainDao.findById((Long)domainId);
+            DomainVO domainVO = _domainDao.findById(domainId);
             sc.setJoinParameters("domainSearch", "path", domainVO.getPath() + "%");
         }
 
@@ -3281,7 +3282,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (accountId != null) {
             sc.setParameters("id", accountId);
         } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById((Long)domainId);
+            DomainVO domain = _domainDao.findById(domainId);
 
             // I want to join on user_vm.domain_id = domain.id where domain.path like 'foo%'
             sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
@@ -3927,7 +3928,7 @@ public class ManagementServerImpl implements ManagementServer {
                 sc.setParameters("accountName", "%" + accountName + "%");
                 sc.addAnd("removed", SearchCriteria.Op.NULL);
             } else if (isAdmin) {
-                DomainVO domain = _domainDao.findById((Long)domainId);
+                DomainVO domain = _domainDao.findById(domainId);
                 sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
             }
         }
@@ -4027,7 +4028,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (accountId != null) {
             sc.setParameters("accountId", accountId);
         } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById((Long)domainId);
+            DomainVO domain = _domainDao.findById(domainId);
             sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
         }
 
@@ -4194,7 +4195,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (accountId != null) {
             sc.setParameters("accountIdEQ", accountId);
         } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById((Long)domainId);
+            DomainVO domain = _domainDao.findById(domainId);
             sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
         }
         if (type != null) {
@@ -4292,7 +4293,7 @@ public class ManagementServerImpl implements ManagementServer {
         	sb.join("vlanSearch", vlanSearch, sb.entity().getVlanDbId(), vlanSearch.entity().getId());
         }
 
-        if ((isAllocated != null) && ((Boolean) isAllocated == true)) {
+        if ((isAllocated != null) && (isAllocated == true)) {
             sb.and("allocated", sb.entity().getAllocated(), SearchCriteria.Op.NNULL);
         }
 
@@ -4300,7 +4301,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (accountId != null) {
             sc.setParameters("accountIdEQ", accountId);
         } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById((Long)domainId);
+            DomainVO domain = _domainDao.findById(domainId);
             sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
         }
         
@@ -5135,7 +5136,7 @@ public class ManagementServerImpl implements ManagementServer {
             if(intervalType == null) {
                 throw new InvalidParameterValueException("Unsupported interval type " + intervalType);
             }
-            SnapshotPolicyVO snapPolicy = _snapMgr.getPolicyForVolumeByInterval((Long)volumeId, (short)intervalType.ordinal());
+            SnapshotPolicyVO snapPolicy = _snapMgr.getPolicyForVolumeByInterval(volumeId, (short)intervalType.ordinal());
             if (snapPolicy == null) {
                 s_logger.warn("Policy with interval "+ intervalType +" not assigned to volume: "+volumeId);
                 return new ArrayList<SnapshotVO>();

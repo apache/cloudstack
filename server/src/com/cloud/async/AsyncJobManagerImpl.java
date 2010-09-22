@@ -438,7 +438,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
 
                     // whenever we deserialize, the UserContext needs to be updated
                     String userIdStr = params.get("ctxUserId");
-                    String acctIdStr = params.get("ctxAccoutId");
+                    String acctIdStr = params.get("ctxAccountId");
                     Long userId = null;
                     Account accountObject = null;
 

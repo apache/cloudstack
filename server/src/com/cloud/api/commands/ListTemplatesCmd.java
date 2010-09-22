@@ -58,7 +58,7 @@ public class ListTemplatesCmd extends BaseListCmd {
     @Parameter(name="domainid", type=CommandType.LONG)
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG)
     private Long id;
 
     @Parameter(name="name", type=CommandType.STRING)

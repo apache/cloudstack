@@ -22,7 +22,7 @@ import java.util.Date;
 import com.google.gson.annotations.SerializedName;
 
 public class AsyncJobResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("jobid")
     private Long id;
 
     @SerializedName("accountid")

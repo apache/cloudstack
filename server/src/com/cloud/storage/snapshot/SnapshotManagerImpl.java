@@ -1520,8 +1520,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
 
 	@Override
 	public boolean deleteSnapshotPolicies(DeleteSnapshotPoliciesCmd cmd) throws InvalidParameterValueException {
-
-    	Long policyId = (Long)cmd.getId();
+    	Long policyId = cmd.getId();
         List<Long> policyIds = cmd.getIds();
         Long userId = UserContext.current().getUserId();
 

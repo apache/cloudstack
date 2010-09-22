@@ -1106,12 +1106,11 @@ public class TemplateManagerImpl implements TemplateManager {
 	}
 	
 	@Override
-    public boolean deleteTemplate(DeleteTemplateCmd cmd) throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException{
-		
+    public boolean deleteTemplate(DeleteTemplateCmd cmd) throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException {
         Long templateId = cmd.getId();
         Long userId = UserContext.current().getUserId();
         Account account = (Account)UserContext.current().getAccountObject();
-        Long zoneId = (Long)cmd.getZoneId();
+        Long zoneId = cmd.getZoneId();
         
         VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
         if (template == null) {
@@ -1140,12 +1139,11 @@ public class TemplateManagerImpl implements TemplateManager {
 	}
 	
 	@Override
-    public boolean deleteIso(DeleteIsoCmd cmd) throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException{
-		
+    public boolean deleteIso(DeleteIsoCmd cmd) throws InvalidParameterValueException, InternalErrorException, PermissionDeniedException {
         Long templateId = cmd.getId();
         Long userId = UserContext.current().getUserId();
         Account account = (Account)UserContext.current().getAccountObject();
-        Long zoneId = (Long)cmd.getZoneId();
+        Long zoneId = cmd.getZoneId();
         
         VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
         if (template == null) {

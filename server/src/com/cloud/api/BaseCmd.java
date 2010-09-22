@@ -284,7 +284,7 @@ public abstract class BaseCmd {
                 }
 
                 // we are ready to store the value for a particular field into the map for this object
-                mapValue.put(fieldName, (String)params.get(key));
+                mapValue.put(fieldName, params.get(key));
 
                 lowercaseParams.put(paramName, mapArray);
             } else {

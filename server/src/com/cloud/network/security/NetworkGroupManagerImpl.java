@@ -1271,10 +1271,10 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
                 sc.addAnd("name", SearchCriteria.Op.SC, ssc);
             }
         } else if (instanceId != null) {
-            return listNetworkGroupRulesByVM(((Long)instanceId).longValue());
+            return listNetworkGroupRulesByVM(instanceId.longValue());
         } else if (domainId != null) {
             if (Boolean.TRUE.equals(recursive)) {
-                DomainVO domain = _domainDao.findById((Long)domainId);
+                DomainVO domain = _domainDao.findById(domainId);
                 sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
             } else {
                 sc.setParameters("domainId", domainId);
