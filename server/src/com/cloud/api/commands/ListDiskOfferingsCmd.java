@@ -98,7 +98,7 @@ public class ListDiskOfferingsCmd extends BaseCmd {
             offeringData.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), offering.getName()));
             offeringData.add(new Pair<String, Object>(BaseCmd.Properties.DISPLAY_TEXT.getName(), offering.getDisplayText()));
             offeringData.add(new Pair<String, Object>(BaseCmd.Properties.DISK_SIZE.getName(), offering.getDiskSizeInBytes()));
-            offeringData.add(new Pair<String, Object>(BaseCmd.Properties.IS_MIRRORED.getName(), offering.isMirrored()));
+            offeringData.add(new Pair<String, Object>(BaseCmd.Properties.CREATED.getName(), offering.getCreated()));
             offeringData.add(new Pair<String, Object>(BaseCmd.Properties.TAGS.getName(), offering.getTags()));
             diskOffTag[i++] = offeringData;
         }
