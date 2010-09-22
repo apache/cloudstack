@@ -151,6 +151,10 @@ public class ApiDispatcher {
         setupParameters(cmd, params);
 
         Implementation impl = cmd.getClass().getAnnotation(Implementation.class);
+        if (impl == null) {
+            throw new CloudRuntimeException("Unable to execute command " + cmd.getClass().getName() + ", no implementation specified.");
+        }
+
         String methodName = impl.method();
         Object mgr = _mgmtServer;
         switch (impl.manager()) {
