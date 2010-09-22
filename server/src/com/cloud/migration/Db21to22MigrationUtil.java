@@ -67,8 +67,7 @@ public class Db21to22MigrationUtil {
     }
 
     private void setupComponents() {
-        ComponentLocator.getLocator("migration", "migration-components.xml", "log4j-cloud.xml");
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
+    	ComponentLocator locator = ComponentLocator.getLocator("migration", "migration-components.xml", "log4j-cloud.xml");
 
         _accountDao = locator.getDao(AccountDao.class);
         _domainDao = locator.getDao(DomainDao.class);
@@ -81,33 +80,36 @@ public class Db21to22MigrationUtil {
     	System.out.println("setting up vm instance groups");
     	
     	//Search for all the vms that have not null groups
-    	long vmId = 0;
-    	long accountId = 0;
+    	Long vmId = 0L;
+    	Long accountId = 0L;
     	String groupName;
     	Transaction txn = Transaction.open(Transaction.CLOUD_DB);
     	txn.start();
 		try {
 	    	String request = "SELECT vm.id, uservm.account_id, vm.group from vm_instance vm, user_vm uservm where vm.group is not null and vm.removed is null and vm.id=uservm.id order by id";
-	    	PreparedStatement statement = txn.prepareAutoCloseStatement(request);
+	    	System.out.println(request);
+	    	PreparedStatement statement = txn.prepareStatement(request);
 	    	ResultSet result = statement.executeQuery();
 	    	while (result.next()) {
 	    		vmId = result.getLong(1);
 	    		accountId = result.getLong(2);
 	    		groupName = result.getString(3);
-		        InstanceGroupVO group = _vmGroupDao.findByAccountAndName(vmId, groupName);
+		        InstanceGroupVO group = _vmGroupDao.findByAccountAndName(accountId, groupName);
 		    	//Create vm group if the group doesn't exist for this account
 		        if (group == null) {
 					group = new InstanceGroupVO(groupName, accountId);
 					group =  _vmGroupDao.persist(group);
+					System.out.println("Created new isntance group with name " + groupName + " for account id=" + accountId);
 		        }
 				
 				if (group != null) {
 					InstanceGroupVMMapVO groupVmMapVO = new InstanceGroupVMMapVO(group.getId(), vmId);
 					_groupVMMapDao.persist(groupVmMapVO);
+					System.out.println("Assigned vm id=" + vmId + " to group with name " + groupName + " for account id=" + accountId);
 				}
 	    	}
-	    	statement.close();
 			txn.commit();
+			statement.close();
 		} catch (Exception e) {
 			System.out.println("Unhandled exception: " + e);
 		} finally {

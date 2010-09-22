@@ -100,7 +100,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
     }
 
     @Override
-    public synchronized void run() {
+	public synchronized void run() {
         Iterator<Adapters<? extends Adapter>> itAdapters = _adapterMap.values().iterator();
         while (itAdapters.hasNext()) {
             Adapters adapters = itAdapters.next();
