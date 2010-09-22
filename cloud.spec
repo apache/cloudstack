@@ -542,6 +542,7 @@ fi
 %{_datadir}/%{name}/setup/schema-level.sql
 %{_datadir}/%{name}/setup/schema-21to22.sql
 %{_datadir}/%{name}/setup/data-21to22.sql
+%{_datadir}/%{name}/setup/index-21to22.sql
 
 %files client
 %defattr(0644,root,root,0755)
