@@ -470,7 +470,7 @@ function trim(val) {
 // Prevent cross-site-script(XSS) attack. 
 // used right before adding user input to the DOM tree. e.g. DOM_element.html(sanitizeXSS(user_input));  
 function sanitizeXSS(val) {     
-    if(val == null)
+    if(val == null|| typeof(val) != "string")
         return val; 
     val = val.replace(/</g, "&lt;");  //replace < whose unicode is \u003c     
     val = val.replace(/>/g, "&gt;");  //replace > whose unicode is \u003e  
