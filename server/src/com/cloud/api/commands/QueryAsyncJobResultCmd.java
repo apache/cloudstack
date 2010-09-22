@@ -23,11 +23,13 @@ import java.util.Date;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.AsyncJobResponse;
 import com.cloud.async.AsyncJobResult;
 
+@Implementation(method="queryAsyncJobResult")
 public class QueryAsyncJobResultCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(QueryAsyncJobResultCmd.class.getName());
 
@@ -37,7 +39,7 @@ public class QueryAsyncJobResultCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="jobid", type=CommandType.LONG, required=true)
     private Long id;
 
     /////////////////////////////////////////////////////
