@@ -195,6 +195,7 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Volume;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
@@ -1770,14 +1771,14 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public VolumeVO createVolume(long userId, long accountId, String name, long zoneId, long diskOfferingId, long startEventId, long size) throws InternalErrorException {
+    public VolumeVO allocVolume(long userId, long accountId, String name, long zoneId, long diskOfferingId, long startEventId, long size) throws InternalErrorException {
         saveStartedEvent(userId, accountId, EventTypes.EVENT_VOLUME_CREATE, "Creating volume", startEventId);
         DataCenterVO zone = _dcDao.findById(zoneId);
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
-        VolumeVO createdVolume = _storageMgr.createVolume(accountId, userId, name, zone, diskOffering, startEventId,size);
+        VolumeVO allocatedVolume = _storageMgr.allocVolume(accountId, userId, name, zone, diskOffering, startEventId,size);
 
-        if (createdVolume != null)
-            return createdVolume;
+        if (allocatedVolume != null)
+            return allocatedVolume;
         else
             throw new InternalErrorException("Failed to create volume.");
     }
@@ -1898,7 +1899,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         // Check that the volume is stored on shared storage
-        if (!_storageMgr.volumeOnSharedStoragePool(volume)) {
+        if (volume.getState() != Volume.State.Allocated && !_storageMgr.volumeOnSharedStoragePool(volume)) {
             throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
         }
 
@@ -1981,7 +1982,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         // Check that the volume is stored on shared storage
-        if (!_storageMgr.volumeOnSharedStoragePool(volume)) {
+        if (!volume.getState().equals(Volume.State.Allocated) && !_storageMgr.volumeOnSharedStoragePool(volume)) {
             throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
         }
 
@@ -6846,6 +6847,9 @@ public class ManagementServerImpl implements ManagementServer {
         if (volume.getStatus() != AsyncInstanceCreateStatus.Created) {
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in Created state but " + volume.getStatus() + ". Cannot take snapshot.");
         }
+        if (volume.getState() == Volume.State.Allocated) {
+        	throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not Created, need to attach it to vm at first, then you can take snapshot.");
+        }
         StoragePoolVO storagePoolVO = findPoolById(volume.getPoolId());
         if (storagePoolVO == null) {
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " does not have a valid storage pool. Is it destroyed?");
@@ -8338,6 +8342,10 @@ public class ManagementServerImpl implements ManagementServer {
     	int intervalMaxSnaps = type.getMax();
     	if(maxSnaps > intervalMaxSnaps){
     		throw new InvalidParameterValueException("maxSnaps exceeds limit: "+ intervalMaxSnaps +" for interval type: " + intervalType);
+    	}
+    	
+    	if(_volumeDao.findById(volumeId).getState() == Volume.State.Allocated) {
+    		throw new InvalidParameterValueException("Cant create snapshot policy on this volume, pls attach it to a VM at first");
     	}
     	
     	return _snapMgr.createPolicy(userId, accountId, volumeId, schedule, (short)type.ordinal() , maxSnaps, timezoneId);

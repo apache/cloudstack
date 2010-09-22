@@ -30,6 +30,7 @@ import com.cloud.async.AsyncJobVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.Criteria;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
@@ -208,7 +209,12 @@ public class ListVolumesCmd extends BaseCmd{
             String storageType;
             try {
                 if(volume.getPoolId() == null){
-                    storageType = "unknown";
+                	if (volume.getState() == Volume.State.Allocated) {
+                		/*set it as shared, so the UI can attach it to VM*/
+                		storageType = "shared";
+                	} else {
+                		storageType = "unknown";
+                	}
                 } else {
                     storageType = getManagementServer().volumeIsOnSharedStorage(volume.getId()) ? "shared" : "local";
                 }
@@ -228,7 +234,7 @@ public class ListVolumesCmd extends BaseCmd{
             volumeData.add(new Pair<String, Object>(BaseCmd.Properties.SOURCE_ID.getName(),volume.getSourceId()));
             volumeData.add(new Pair<String, Object>(BaseCmd.Properties.SOURCE_TYPE.getName(),volume.getSourceType().toString()));
             
-            volumeData.add(new Pair<String, Object>(BaseCmd.Properties.HYPERVISOR_TYPE.getName(), getManagementServer().getVolumeHyperType(volume.getId())));
+            volumeData.add(new Pair<String, Object>(BaseCmd.Properties.HYPERVISOR.getName(), getManagementServer().getVolumeHyperType(volume.getId())));
             
             vTag[i++] = volumeData;
         }

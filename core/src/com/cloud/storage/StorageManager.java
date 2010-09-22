@@ -213,7 +213,9 @@ public interface StorageManager extends Manager {
 	 * @param size
 	 * @return VolumeVO
 	 */
-	VolumeVO createVolume(long accountId, long userId, String name, DataCenterVO dc, DiskOfferingVO diskOffering, long startEventId, long size);
+	VolumeVO createVolume(long volumeId, HypervisorType hyperType);
+	
+	VolumeVO allocVolume(long accountId, long userId, String name, DataCenterVO dc, DiskOfferingVO diskOffering, long startEventId, long size);
 	
 	/**
 	 * Marks the specified volume as destroyed in the management server database. The expunge thread will delete the volume from its storage pool.

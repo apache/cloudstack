@@ -33,6 +33,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.serializer.SerializerHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.utils.Pair;
 

@@ -150,7 +150,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 		// refine the logic of checking hypervisorType based on offering info
 		Long clusterId = pool.getClusterId();
 		ClusterVO cluster = _clusterDao.findById(clusterId);
-		if (!(cluster.getHypervisorType() == template.getHypervisorType())) {
+		if (!(cluster.getHypervisorType() == dskCh.getHypersorType())) {
 			return false;
 		}
 

@@ -339,7 +339,7 @@ public class StorageManagerImpl implements StorageManager {
             } else {
                 offering = _offeringDao.findById(vol.getDiskOfferingId());
             }
-            VolumeVO created = createVolume(create, vm, template, dc, pod, host.getClusterId(), offering, diskOffering, new ArrayList<StoragePoolVO>(),0);
+            VolumeVO created = createVolume(create, vm, template, dc, pod, host.getClusterId(), offering, diskOffering, new ArrayList<StoragePoolVO>(),0, template.getHypervisorType());
             if (created == null) {
                 break;
             }
@@ -721,7 +721,7 @@ public class StorageManagerImpl implements StorageManager {
     
     @DB
 	public VolumeVO createVolume(VolumeVO volume, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, Long clusterId,
-                                    ServiceOfferingVO offering, DiskOfferingVO diskOffering, List<StoragePoolVO> avoids, long size) {
+                                    ServiceOfferingVO offering, DiskOfferingVO diskOffering, List<StoragePoolVO> avoids, long size, HypervisorType hyperType) {
         StoragePoolVO pool = null;
         final HashSet<StoragePool> avoidPools = new HashSet<StoragePool>(avoids);
        
@@ -731,6 +731,7 @@ public class StorageManagerImpl implements StorageManager {
         } else {
             dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
         }
+        dskCh.setHyperType(hyperType);
         
         Transaction txn = Transaction.currentTxn();
         
@@ -810,6 +811,7 @@ public class StorageManagerImpl implements StorageManager {
         volume.setSize(created.getSize());
         volume.setPoolType(pool.getPoolType());
         volume.setPodId(pod.getId());
+        volume.setState(Volume.State.Created);
         _volsDao.persist(volume);
         return volume;
     }
@@ -867,7 +869,7 @@ public class StorageManagerImpl implements StorageManager {
         VolumeVO dataCreated = null;
         VolumeVO rootCreated = null;
         try {
-            rootCreated = createVolume(rootVol, vm, template, dc, pod, null, offering, diskOffering, avoids,size);
+            rootCreated = createVolume(rootVol, vm, template, dc, pod, null, offering, diskOffering, avoids,size, template.getHypervisorType());
             if (rootCreated == null) {
                 throw new CloudRuntimeException("Unable to create " + rootVol);
             }
@@ -876,7 +878,7 @@ public class StorageManagerImpl implements StorageManager {
             
             if (dataVol != null) {
                 StoragePoolVO pool = _storagePoolDao.findById(rootCreated.getPoolId());
-                dataCreated = createVolume(dataVol, vm, null, dc, pod, pool.getClusterId(), offering, diskOffering, avoids,size);
+                dataCreated = createVolume(dataVol, vm, null, dc, pod, pool.getClusterId(), offering, diskOffering, avoids,size, template.getHypervisorType());
                 if (dataCreated == null) {
                     throw new CloudRuntimeException("Unable to create " + dataVol);
                 }
@@ -1576,7 +1578,7 @@ public class StorageManagerImpl implements StorageManager {
 
     @Override
     @DB
-    public VolumeVO createVolume(long accountId, long userId, String userSpecifiedName, DataCenterVO dc, DiskOfferingVO diskOffering, long startEventId, long size) 
+    public VolumeVO createVolume(long volumeId, HypervisorType hyperType) 
     {
     	String volumeName = "";
         VolumeVO createdVolume = null;
@@ -1619,9 +1621,12 @@ public class StorageManagerImpl implements StorageManager {
 	        List<StoragePoolVO> poolsToAvoid = new ArrayList<StoragePoolVO>();
 	        Set<Long> podsToAvoid = new HashSet<Long>();
 	        Pair<HostPodVO, Long> pod = null;
-	
-	        while ((pod = _agentMgr.findPod(null, null, dc, account.getId(), podsToAvoid)) != null) {
-	            if ((createdVolume = createVolume(volume, null, null, dc, pod.first(), null, null, diskOffering, poolsToAvoid, size)) != null) {
+	        DataCenterVO dc = _dcDao.findById(volume.getDataCenterId());
+	        DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+	        long accountId = volume.getAccountId();
+	       
+	        while ((pod = _agentMgr.findPod(null, null, dc, volume.getAccountId(), podsToAvoid)) != null) {
+	            if ((createdVolume = createVolume(volume, null, null, dc, pod.first(), null, null, diskOffering, poolsToAvoid, volume.getSize(), hyperType)) != null) {
 	            	break;
 	            } else {
 	                podsToAvoid.add(pod.first().getId());
@@ -1631,9 +1636,7 @@ public class StorageManagerImpl implements StorageManager {
 	        // Create an event
 	        EventVO event = new EventVO();
 	        event.setAccountId(accountId);
-	        event.setUserId(userId);
-	        event.setType(EventTypes.EVENT_VOLUME_CREATE);
-	        event.setStartId(startEventId);
+	        event.setType(EventTypes.EVENT_VOLUME_CREATE);	      
 	
 	        Transaction txn = Transaction.currentTxn();
 
@@ -1659,6 +1662,56 @@ public class StorageManagerImpl implements StorageManager {
             }            
 
             txn.commit();
+        } catch (Exception e) {
+            s_logger.error("Unhandled exception while saving volume " + volumeName, e);
+        }
+        
+        return createdVolume;
+    }
+    
+    @Override
+    @DB
+    public VolumeVO allocVolume(long accountId, long userId, String userSpecifiedName, DataCenterVO dc, DiskOfferingVO diskOffering, long startEventId, long size) {
+
+    	String volumeName = "";
+        VolumeVO createdVolume = null;
+        
+        try 
+        {
+	        // Determine the volume's name
+	        volumeName = getRandomVolumeName();
+	
+	        // Create the Volume object and save it so that we can return it to the user
+	        Account account = _accountDao.findById(accountId);
+	        VolumeVO volume = new VolumeVO(userSpecifiedName, -1, -1, -1, -1, new Long(-1), null, null, 0, Volume.VolumeType.DATADISK);
+	        volume.setPoolId(null);
+	        volume.setDataCenterId(dc.getId());
+	        volume.setPodId(null);
+	        volume.setAccountId(accountId);
+	        volume.setDomainId(account.getDomainId());
+	        volume.setMirrorState(MirrorState.NOT_MIRRORED);
+	        volume.setDiskOfferingId(diskOffering.getId());
+	        volume.setStorageResourceType(Storage.StorageResourceType.STORAGE_POOL);
+	        volume.setInstanceId(null);
+	        volume.setUpdated(new Date());
+	        volume.setStatus(AsyncInstanceCreateStatus.Created);
+	        volume.setDomainId(account.getDomainId());
+	        volume.setSourceId(diskOffering.getId());
+	        volume.setSourceType(SourceType.DiskOffering);
+	        volume.setState(Volume.State.Allocated);
+	        volume = _volsDao.persist(volume);
+	
+	        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
+	        if (asyncExecutor != null) {
+	            AsyncJobVO job = asyncExecutor.getJob();
+	
+	            if (s_logger.isInfoEnabled())
+	                s_logger.info("CreateVolume created a new instance " + volume.getId() + ", update async job-" + job.getId() + " progress status");
+	
+	            _asyncMgr.updateAsyncJobAttachment(job.getId(), "volume", volume.getId());
+	            _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, volume.getId());
+	        }
+	        createdVolume = volume;
         } catch (Exception e) {
             s_logger.error("Unhandled exception while saving volume " + volumeName, e);
         }

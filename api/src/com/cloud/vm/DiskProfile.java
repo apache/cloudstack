@@ -18,6 +18,7 @@
 package com.cloud.vm;
 
 import com.cloud.offering.DiskOffering;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Volume;
 
 /**
@@ -38,6 +39,7 @@ public class DiskProfile {
     private long volumeId;
     private Volume vol;
     private DiskOffering offering;
+    private HypervisorType hyperType;
     
     protected DiskProfile() {
     }
@@ -127,5 +129,13 @@ public class DiskProfile {
     @Override
     public String toString() {
         return new StringBuilder("DskChr[").append(type).append("|").append(size).append("|").append("]").toString();
+    }
+    
+    public void setHyperType(HypervisorType hyperType) {
+    	this.hyperType = hyperType;
+    }
+    
+    public HypervisorType getHypersorType() {
+    	return this.hyperType;
     }
 }

@@ -311,6 +311,13 @@ public class UserVmManagerImpl implements UserVmManager {
         } else {
         	rootVolumeOfVm = rootVolumesOfVm.get(0);
         }
+        
+        if (volume.getState().equals(Volume.State.Allocated)) {
+    		/*Need to create the volume*/
+        	
+        	volume = _storageMgr.createVolume(volumeId, _volsDao.getHypervisorType(rootVolumeOfVm.getId()));
+        	
+    	}
         List<VolumeVO> vols = _volsDao.findByInstance(vmId);
         if( deviceId != null ) {
             if( deviceId.longValue() > 15 || deviceId.longValue() == 0 || deviceId.longValue() == 3) {

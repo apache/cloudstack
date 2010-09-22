@@ -471,6 +471,10 @@ public class VolumeVO implements Volume {
     public State getState() {
 	    return state;
 	}
+	
+	public void setState(State st) {
+		this.state = st;
+	}
 
     public void setUpdated(Date updated) {
         this.updated = updated;

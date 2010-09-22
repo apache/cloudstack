@@ -489,7 +489,8 @@ public interface ManagementServer {
      * @param hyperType - hypervisor type
      * @return true if success, false if not
      */
-    VolumeVO createVolume(long accountId, long userId, String name, long zoneId, long diskOfferingId, long startEventId, long size) throws InternalErrorException;
+   
+    VolumeVO allocVolume(long accountId, long userId, String name, long zoneId, long diskOfferingId, long startEventId, long size) throws InternalErrorException;
               
     long createVolumeAsync(long userId, long accountId, String name, long zoneId, long diskOfferingId, long size) throws InvalidParameterValueException, InternalErrorException, ResourceAllocationException;
     /**
