@@ -31,7 +31,6 @@ import com.cloud.host.HostVO;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -65,9 +64,13 @@ public class ConsoleProxyServlet extends HttpServlet {
             }
 
             // FIXME:  are these set up correctly from ApiServer?
-            Long userId = UserContext.current().getUserId();
-            String account = UserContext.current().getAccountName();
-            Account accountObj = (Account)UserContext.current().getAccountObject();
+            String userIdStr = (String)session.getAttribute("userid");
+            String account = (String)session.getAttribute("account");
+            Object accountObj = session.getAttribute("accountobj");
+            Long userId = null;
+            if (userIdStr != null) {
+                userId = Long.parseLong(userIdStr);
+            }
 
             // Do a sanity check here to make sure the user hasn't already been deleted
             if ((userId == null) || (account == null) || (accountObj == null) || !verifyUser(userId)) {
