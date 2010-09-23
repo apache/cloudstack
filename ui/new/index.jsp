@@ -358,7 +358,7 @@ long milliseconds = new Date().getTime();
                             <div class="leftmenu_arrows close" id="arrowIcon">
                             </div>
                             <div class="leftmenu_list_icons">
-                                <img src="images/db_leftmenuicon.png" alt="Dashboard" /></div>
+                                <img src="images/leftmenu_dashboardicon.png" alt="Dashboard" /></div>
                             Dashboard
                         </div>
                     </div>
@@ -367,7 +367,7 @@ long milliseconds = new Date().getTime();
                     <div class="leftmenu_content" id="leftmenu_dashboard">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
-                                <img src="images/db_leftmenuicon.png" alt="Dashboard" /></div>
+                                <img src="images/leftmenu_dashboardicon.png" alt="Dashboard" /></div>
                             Dashboard
                         </div>
                     </div>
@@ -418,7 +418,7 @@ long milliseconds = new Date().getTime();
                             <div class="leftmenu_arrows close" id="arrowIcon">
                             </div>
                             <div class="leftmenu_list_icons">
-                                <img src="images/hosts_leftmenuicon.png" alt="Host" /></div>
+                                <img src="images/leftmenu_hosticon.png" alt="Host" /></div>
                             Hosts
                         </div>
                     </div>
@@ -427,7 +427,7 @@ long milliseconds = new Date().getTime();
                     <div class="leftmenu_content" id="leftmenu_host">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
-                                <img src="images/hosts_leftmenuicon.png" alt="Host" /></div>
+                                <img src="images/leftmenu_hosticon.png" alt="Host" /></div>
                             Hosts
                         </div>
                     </div>
