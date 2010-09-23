@@ -88,8 +88,8 @@ public class VMExecutorHelper {
         resultObject.setPasswordEnabled(templatePasswordEnabled);
         if(templatePasswordEnabled)
         	resultObject.setPassword(vmPassword);
-        else
-        	resultObject.setPassword("");
+//        else
+//        	resultObject.setPassword("");
         
         String isoName = null;
         if (vm.getIsoId() != null) {
