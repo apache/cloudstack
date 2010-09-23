@@ -8,7 +8,7 @@ public class VmResultObject
 {
 	
 	@Param(name="id")
-	private long id;
+	private Long id;
 	
 	public String getName() {
 		return name;
@@ -98,11 +98,11 @@ public class VmResultObject
 		this.zoneName = zoneName;
 	}
 
-	public long getHostId() {
+	public Long getHostId() {
 		return hostId;
 	}
 
-	public void setHostId(long hostId) {
+	public void setHostId(Long hostId) {
 		this.hostId = hostId;
 	}
 
@@ -202,9 +202,13 @@ public class VmResultObject
 		this.networkKbsWrite = networkKbsWrite;
 	}
 
-	public long isId()
+	public Long getId()
 	{
 		return id;
+	}
+	
+	public void setId(Long id){
+		this.id = id;
 	}
 	
 	@Param(name="name")
@@ -241,7 +245,7 @@ public class VmResultObject
 	private String zoneName;
 	
 	@Param(name="hostid")
-	private long hostId;
+	private Long hostId;
 
 	@Param(name="hostname")
 	private String hostName;

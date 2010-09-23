@@ -127,6 +127,7 @@ public class UpgradeVMExecutor extends BaseAsyncJobExecutor {
 		resultObj.setTemplateDisplayText(template.getDisplayText());
 		resultObj.setTemplateId(template.getId());
 		resultObj.setTemplateName(template.getName());
+		resultObj.setId(vm.getId());
 		
 		return resultObj;
 	}
