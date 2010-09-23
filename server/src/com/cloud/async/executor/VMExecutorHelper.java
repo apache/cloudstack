@@ -114,6 +114,9 @@ public class VMExecutorHelper {
         //Network groups
         resultObject.setNetworkGroupList(managementServer.getNetworkGroupsNamesForVm(vm.getId()));
         
+        resultObject.setHostid(vm.getHostId());
+        resultObject.setHostname(managementServer.getHostBy(vm.getHostId()).getName());
+        
 		return resultObject;
 	}
 }
