@@ -116,9 +116,16 @@ public class VMExecutorHelper {
         //Network groups
         resultObject.setNetworkGroupList(managementServer.getNetworkGroupsNamesForVm(vm.getId()));
         
-        resultObject.setHostid(vm.getHostId());
-        resultObject.setHostname(managementServer.getHostBy(vm.getHostId()).getName());
-        
+        if(vm.getHostId()!=null)
+        {
+        	resultObject.setHostid(vm.getHostId());
+        	if(managementServer.getHostBy(vm.getHostId())!=null)
+        	{
+                resultObject.setHostname(managementServer.getHostBy(vm.getHostId()).getName());
+        	}
+               
+        }
+         
         //root device related
         VolumeVO rootVolume = managementServer.findRootVolume(vm.getId());
         if(rootVolume!=null)
