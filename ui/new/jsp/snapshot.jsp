@@ -125,3 +125,19 @@
     </div>        
 </div>
 <!-- snapshot detail panel (end) -->
+
+<!-- Add Volume Dialog from Snapshot (begin) -->
+<div id="dialog_add_volume_from_snapshot" title="Add Volume from Snapshot" style="display: none">   
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form5">
+        <ol>
+            <li>
+                <label>Name:</label>
+                <input class="text" type="text" id="name" />
+                <div id="name_errormsg" class="dialog_formcontent_errormsg" style="display: none;"></div>
+            </li>           
+        </ol>
+        </form>
+    </div>
+</div>
+<!-- Add Volume Dialog from Snapshot (end) -->
