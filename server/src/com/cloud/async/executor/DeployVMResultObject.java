@@ -125,6 +125,28 @@ public class DeployVMResultObject {
 	@Param(name="networkgrouplist")
 	private String networkGroupList;
 	
+	@Param(name="rootdeviceid")
+	private Long rootDeviceId;
+	
+	@Param(name="rootdevicetype")
+	private String rootDeviceType;
+	
+	public Long getRootDeviceId(){
+		return this.rootDeviceId;
+	}
+	
+	public void setRootDeviceId(Long rootDeviceId){
+		this.rootDeviceId = rootDeviceId;
+	}
+	
+	public String getRootDeviceType(){
+		return this.rootDeviceType;
+	}
+	
+	public void setRootDeviceType(String deviceType){
+		this.rootDeviceType = deviceType;
+	}
+	
 	public String getNetworkGroupList(){
 		return this.networkGroupList;
 	}

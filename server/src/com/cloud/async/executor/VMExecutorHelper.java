@@ -21,7 +21,9 @@ package com.cloud.async.executor;
 import com.cloud.api.BaseCmd;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.InstanceGroupVO;
@@ -116,6 +118,15 @@ public class VMExecutorHelper {
         
         resultObject.setHostid(vm.getHostId());
         resultObject.setHostname(managementServer.getHostBy(vm.getHostId()).getName());
+        
+        //root device related
+        VolumeVO rootVolume = managementServer.findRootVolume(vm.getId());
+        if(rootVolume!=null)
+        {
+        	resultObject.setRootDeviceId(rootVolume.getDeviceId());
+        	StoragePoolVO storagePool = managementServer.findPoolById(rootVolume.getPoolId());
+        	resultObject.setRootDeviceType(storagePool.getPoolType().toString());
+        }
         
 		return resultObject;
 	}

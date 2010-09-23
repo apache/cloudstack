@@ -37,10 +37,13 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.vm.InstanceGroupVO;
 import com.google.gson.Gson;
@@ -234,6 +237,15 @@ public class DeployVMExecutor extends VMOperationExecutor {
         resultObject.setCpuNumber(String.valueOf(offering.getCpu()));
         resultObject.setCpuSpeed(String.valueOf(offering.getSpeed()));
         resultObject.setMemory(String.valueOf(offering.getRamSize()));
+        
+        //root device related
+        VolumeVO rootVolume = managementServer.findRootVolume(vm.getId());
+        if(rootVolume!=null)
+        {
+        	resultObject.setRootDeviceId(rootVolume.getDeviceId());
+        	StoragePoolVO storagePool = managementServer.findPoolById(rootVolume.getPoolId());
+        	resultObject.setRootDeviceType(storagePool.getPoolType().toString());
+        }
         
         resultObject.setNetworkGroupList(managementServer.getNetworkGroupsNamesForVm(vm.getId()));
 		return resultObject;
