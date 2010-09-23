@@ -97,7 +97,18 @@ public class RouterOperationResultObject {
 	
 	@Param(name="hostname")
 	private String hostname;
-
+	
+	@Param(name="guestnetmask")
+	private String guestNetmask;
+	
+	public String getGuestNetmask(){
+		return this.guestNetmask;
+	}
+	
+	public void setGuestNetmask(String guestNetmask){
+		this.guestNetmask = guestNetmask;
+	}
+	
 	public long getId() {
 		return id;
 	}
