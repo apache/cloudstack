@@ -21,7 +21,7 @@ PROGNAME="Cloud Agent"
 unset OPTIONS
 [ -r @SYSCONFDIR@/default/"$SHORTNAME" ] && source @SYSCONFDIR@/default/"$SHORTNAME"
 DAEMONIZE=@BINDIR@/@PACKAGE@-daemonize
-PROG=@BINDIR@/@PACKAGE@-external-ipallocator
+PROG=@BINDIR@/@PACKAGE@-external-ipallocator.py
 OPTIONS=8083
 
 start() {
