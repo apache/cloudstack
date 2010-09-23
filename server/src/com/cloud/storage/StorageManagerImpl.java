@@ -941,12 +941,13 @@ public class StorageManagerImpl implements StorageManager {
         
         _discoverers = locator.getAdapters(StoragePoolDiscoverer.class);
 
-        String overProvisioningFactorStr = (String) params.get("storage.overprovisioning.factor");
+        Map<String, String> configs = configDao.getConfiguration("management-server", params);
+        
+
+        String overProvisioningFactorStr = configs.get("storage.overprovisioning.factor");
         if (overProvisioningFactorStr != null) {
             _overProvisioningFactor = Integer.parseInt(overProvisioningFactorStr);
         }
-
-        Map<String, String> configs = configDao.getConfiguration("management-server", params);
 
         _retry = NumbersUtil.parseInt(configs.get(Config.StartRetry.key()), 2);
         _pingInterval = NumbersUtil.parseInt(configs.get("ping.interval"), 60);
@@ -1572,9 +1573,14 @@ public class StorageManagerImpl implements StorageManager {
                 
         txn.commit();
     }
-
+    
     @Override
     public void createCapacityEntry(StoragePoolVO storagePool) {
+    	createCapacityEntry(storagePool, 0);
+    }
+
+    @Override
+    public void createCapacityEntry(StoragePoolVO storagePool, long allocated) {
         SearchCriteria capacitySC = _capacityDao.createSearchCriteria();
         capacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, storagePool.getId());
         capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ, storagePool.getDataCenterId());
@@ -1583,15 +1589,14 @@ public class StorageManagerImpl implements StorageManager {
         List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
 
         if (capacities.size() == 0) {
-            CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), 0L, storagePool.getCapacityBytes(),
+            CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), storagePool.getAvailableBytes(), storagePool.getCapacityBytes(),
                     CapacityVO.CAPACITY_TYPE_STORAGE);
             _capacityDao.persist(capacity);
         } else {
             CapacityVO capacity = capacities.get(0);
-            if (capacity.getTotalCapacity() != storagePool.getCapacityBytes()) {
-                capacity.setTotalCapacity(storagePool.getCapacityBytes());
-                _capacityDao.update(capacity.getId(), capacity);
-            }
+            capacity.setTotalCapacity(storagePool.getCapacityBytes());
+            capacity.setUsedCapacity(storagePool.getAvailableBytes());
+            _capacityDao.update(capacity.getId(), capacity);
         }
         s_logger.debug("Successfully set Capacity - " +storagePool.getCapacityBytes()+ " for CAPACITY_TYPE_STORAGE, DataCenterId - " +storagePool.getDataCenterId()+ ", HostOrPoolId - " +storagePool.getId()+ ", PodId " +storagePool.getPodId());
         capacitySC = _capacityDao.createSearchCriteria();
@@ -1601,21 +1606,28 @@ public class StorageManagerImpl implements StorageManager {
 
         capacities = _capacityDao.search(capacitySC, null);
 
+        int provFactor = 1;
+        if( storagePool.getPoolType() == StoragePoolType.NetworkFilesystem ) {
+            provFactor = _overProvisioningFactor;
+        }
         if (capacities.size() == 0) {
-            int provFactor = 1;
-            if( storagePool.getPoolType() == StoragePoolType.NetworkFilesystem ) {
-                provFactor = _overProvisioningFactor;
-            }
-
-            CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), 0L, storagePool.getCapacityBytes()
+            CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), allocated, storagePool.getCapacityBytes()
                     * provFactor, CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED);
             _capacityDao.persist(capacity);
         } else {
             CapacityVO capacity = capacities.get(0);
-            long currCapacity = _overProvisioningFactor * storagePool.getCapacityBytes();
+            long currCapacity = provFactor * storagePool.getCapacityBytes();
+        	boolean update = false;
             if (capacity.getTotalCapacity() != currCapacity) {
                 capacity.setTotalCapacity(currCapacity);
-                _capacityDao.update(capacity.getId(), capacity);
+                update = true;
+            }
+            if ( allocated != 0 ) {
+                capacity.setUsedCapacity(allocated);
+                update = true;
+            }
+            if ( update ) {
+            	_capacityDao.update(capacity.getId(), capacity);
             }
         }
         s_logger.debug("Successfully set Capacity - " +storagePool.getCapacityBytes()* _overProvisioningFactor+ " for CAPACITY_TYPE_STORAGE_ALLOCATED, DataCenterId - " +storagePool.getDataCenterId()+ ", HostOrPoolId - " +storagePool.getId()+ ", PodId " +storagePool.getPodId());

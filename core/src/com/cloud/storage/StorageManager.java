@@ -272,4 +272,6 @@ public interface StorageManager extends Manager {
      */
     VolumeVO createVolumeFromSnapshot(long userId, long accountId, long snapshotId, String volumeName, long startEventId);
 
+	void createCapacityEntry(StoragePoolVO storagePool, long allocated);
+
 }

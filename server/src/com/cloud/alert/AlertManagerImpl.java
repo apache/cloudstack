@@ -60,12 +60,14 @@ import com.cloud.service.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
@@ -96,6 +98,7 @@ public class AlertManagerImpl implements AlertManager {
     private EmailAlert _emailAlert;
     private AlertDao _alertDao;
     private HostDao _hostDao;
+    @Inject protected StorageManager _storageMgr;
     private ServiceOfferingDao _offeringsDao;
     private CapacityDao _capacityDao;
     private VMInstanceDao _vmDao;
@@ -111,7 +114,6 @@ public class AlertManagerImpl implements AlertManager {
     private StoragePoolDao _storagePoolDao;
     
     private Timer _timer = null;
-    private int _overProvisioningFactor = 1;
     private float _cpuOverProvisioningFactor = 1;
     private long _capacityCheckPeriod = 60L * 60L * 1000L; // one hour by default
     private double _memoryCapacityThreshold = 0.75;
@@ -263,11 +265,6 @@ public class AlertManagerImpl implements AlertManager {
         if (capacityCheckPeriodStr != null) {
             _capacityCheckPeriod = Long.parseLong(capacityCheckPeriodStr);
         }
-
-        String overProvisioningFactorStr = configs.get("storage.overprovisioning.factor");
-        if (overProvisioningFactorStr != null) {
-            _overProvisioningFactor = Integer.parseInt(overProvisioningFactorStr);
-        }
         
         String cpuOverProvisioningFactorStr = configs.get("cpu.overprovisioning.factor");
         if (cpuOverProvisioningFactorStr != null) {
@@ -409,15 +406,7 @@ public class AlertManagerImpl implements AlertManager {
             long disk = 0l;
             Pair<Long, Long> sizes = _volumeDao.getCountAndTotalByPool(pool.getId());
             disk = sizes.second();
-            int provFactor = 1;
-            if( pool.getPoolType() == StoragePoolType.NetworkFilesystem ) {
-                provFactor = _overProvisioningFactor;
-            }
-            CapacityVO newStorageCapacity = new CapacityVO(pool.getId(), pool.getDataCenterId(), pool.getPodId(), disk, pool.getCapacityBytes() * provFactor, CapacityVO.CAPACITY_TYPE_STORAGE_ALLOCATED);
-            newCapacities.add(newStorageCapacity);
-//            _capacityDao.persist(newStorageCapacity);
-
-            continue;
+            _storageMgr.createCapacityEntry(pool, disk);
         }
 
         // Calculate new Public IP capacity

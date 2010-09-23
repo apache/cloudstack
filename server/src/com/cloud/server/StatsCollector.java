@@ -335,9 +335,7 @@ public class StatsCollector {
                     pool.setAvailableBytes(available);
                     _storagePoolDao.update(pool.getId(), pool);                         
                     
-                    CapacityVO capacity = new CapacityVO(poolId, pool.getDataCenterId(), pool.getPodId(), stats.getByteUsed(), stats.getCapacityBytes(), CapacityVO.CAPACITY_TYPE_STORAGE);
-                    newCapacities.add(capacity);
-//                    _capacityDao.persist(capacity);
+                    _storageManager.createCapacityEntry(pool, 0L);
                 }
                 
                 Transaction txn = Transaction.open(Transaction.CLOUD_DB);
@@ -346,8 +344,6 @@ public class StatsCollector {
 		                s_logger.trace("recalculating system storage capacity");
 		            }
                 	txn.start();
-                	 _capacityDao.clearStorageCapacities();
-
 	                for (CapacityVO newCapacity : newCapacities) {
 	                	s_logger.trace("Executing capacity update");
 	                    _capacityDao.persist(newCapacity);

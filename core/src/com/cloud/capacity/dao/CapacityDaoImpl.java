@@ -34,9 +34,8 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
     private static final String ADD_ALLOCATED_SQL = "UPDATE `cloud`.`op_host_capacity` SET used_capacity = used_capacity + ? WHERE host_id = ? AND capacity_type = ?";
     private static final String SUBTRACT_ALLOCATED_SQL = "UPDATE `cloud`.`op_host_capacity` SET used_capacity = used_capacity - ? WHERE host_id = ? AND capacity_type = ?";
-    private static final String SET_USED_STORAGE_SQL = "UPDATE `cloud`.`op_host_capacity` SET used_capacity = ? WHERE host_id = ? AND capacity_type = 2";
-    private static final String CLEAR_STORAGE_CAPACITIES = "DELETE FROM `cloud`.`op_host_capacity` WHERE capacity_type=2 OR capacity_type=6"; //clear storage and secondary_storage capacities
-    private static final String CLEAR_NON_STORAGE_CAPACITIES = "DELETE FROM `cloud`.`op_host_capacity` WHERE capacity_type<>2 AND capacity_type <>6"; //clear non-storage and non-secondary_storage capacities
+    private static final String CLEAR_STORAGE_CAPACITIES = "DELETE FROM `cloud`.`op_host_capacity` WHERE capacity_type=2 OR capacity_type=3 OR capacity_type=6"; //clear storage and secondary_storage capacities
+    private static final String CLEAR_NON_STORAGE_CAPACITIES = "DELETE FROM `cloud`.`op_host_capacity` WHERE capacity_type<>2 AND capacity_type<>3 AND capacity_type<>6"; //clear non-storage and non-secondary_storage capacities
 
     public void updateAllocated(Long hostId, long allocatedAmount, short capacityType, boolean add) {
         Transaction txn = Transaction.currentTxn();
@@ -61,22 +60,6 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
         }
     }
 
-    public void setUsedStorage(Long hostId, long totalUsed) {
-        Transaction txn = Transaction.currentTxn();
-        PreparedStatement pstmt = null;
-        try {
-            txn.start();
-            String sql = SET_USED_STORAGE_SQL;
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setLong(1, totalUsed);
-            pstmt.setLong(2, hostId);
-            pstmt.executeUpdate(); // TODO:  Make sure exactly 1 row was updated?
-            txn.commit();
-        } catch (Exception e) {
-            txn.rollback();
-            s_logger.warn("Exception setting used storage for host: " + hostId, e);
-        }
-    }
 
     @Override
     public void clearNonStorageCapacities() {
