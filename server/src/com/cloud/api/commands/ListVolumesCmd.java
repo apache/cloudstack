@@ -175,9 +175,9 @@ public class ListVolumesCmd extends BaseCmd{
             volumeData.add(new Pair<String, Object>(BaseCmd.Properties.TYPE.getName(), volume.getVolumeType()));
             //volumeData.add(new Pair<String, Object>(BaseCmd.Properties.HOST_NAME.getName(), getManagementServer().getHostBy(volume.getHostId()).getName()));
 
-            //volume.getDeviceId() might be null	
-            if(volume.getDeviceId() != null)
-                volumeData.add(new Pair<String, Object>(BaseCmd.Properties.DEVICE_ID.getName(), Long.valueOf(volume.getDeviceId()).toString()));
+//            //volume.getDeviceId() might be null	
+//            if(volume.getDeviceId() != null)
+//                volumeData.add(new Pair<String, Object>(BaseCmd.Properties.DEVICE_ID.getName(), Long.valueOf(volume.getDeviceId()).toString()));
             
             Long instanceId = volume.getInstanceId();
             if (instanceId != null) {
