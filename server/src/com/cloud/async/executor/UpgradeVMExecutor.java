@@ -92,10 +92,10 @@ public class UpgradeVMExecutor extends BaseAsyncJobExecutor {
 		ServiceOfferingVO offering = ms.findServiceOfferingById(vm.getServiceOfferingId());
 		resultObj.setCpuSpeed(offering.getSpeed());
 		resultObj.setMemory(offering.getRamSize());
-		if(offering.getDisplayText()!=null)
-			resultObj.setServiceOfferingName(offering.getDisplayText());
-		else
+		if(offering.getName()!=null)
 			resultObj.setServiceOfferingName(offering.getName());
+		else
+			resultObj.setServiceOfferingName(offering.getDisplayText());
 		resultObj.setServiceOfferingId(vm.getServiceOfferingId());
 		
 		VmStats vmStats = ms.getVmStatistics(vm.getId());
