@@ -21,7 +21,6 @@ package com.cloud.api.commands;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -34,9 +33,7 @@ import com.cloud.domain.DomainVO;
 import com.cloud.host.HostVO;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
