@@ -5756,7 +5756,6 @@ public class ManagementServerImpl implements ManagementServer {
         SearchCriteria<DomainRouterVO> sc = sb.create();
         if (keyword != null) {
             SearchCriteria<DomainRouterVO> ssc = _routerDao.createSearchCriteria();
-            ssc.addOr("displayName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
