@@ -312,4 +312,6 @@ public interface StorageManager extends Manager {
     
     <T extends VMInstanceVO> void create(T vm);
     Long findHostIdForStoragePool(StoragePoolVO pool);
+	void createCapacityEntry(StoragePoolVO storagePool, long allocated);
+
 }
