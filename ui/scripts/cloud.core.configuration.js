@@ -701,10 +701,7 @@ function showConfigurationTab() {
 					isTagged = thisDialog.find("#add_publicip_vlan_tagged").val() == "tagged";
 				}
 				
-				if (isDirect && isTagged) 
-					isValid &= validateString("Account", thisDialog.find("#add_publicip_vlan_account"), thisDialog.find("#add_publicip_vlan_account_errormsg"), false); //required
-				else
-				    isValid &= validateString("Account", thisDialog.find("#add_publicip_vlan_account"), thisDialog.find("#add_publicip_vlan_account_errormsg"), true); //optional
+				isValid &= validateString("Account", thisDialog.find("#add_publicip_vlan_account"), thisDialog.find("#add_publicip_vlan_account_errormsg"), true); //optional
 				
 				if (isTagged) {
 					isValid &= validateNumber("VLAN", thisDialog.find("#add_publicip_vlan_vlan"), thisDialog.find("#add_publicip_vlan_vlan_errormsg"), 2, 4095);
@@ -721,15 +718,11 @@ function showConfigurationTab() {
 				} else {
 					vlan = "&vlan=untagged";
 				}
-				var directParams = "";
-				if (isDirect && isTagged) {
-					directParams = "&domainId="+trim(thisDialog.find("#add_publicip_vlan_domain").val())+"&account="+trim(thisDialog.find("#add_publicip_vlan_account").val());
-				} else if (isDirect && !isTagged) {
-					directParams = "&podId="+trim(thisDialog.find("#add_publicip_vlan_pod").val());
-				} else if (!isDirect && (dialogAddVlanForZone.find("#add_publicip_vlan_scope").val()=="account-specific")) {  //public VLAN, account-specific
-				    directParams = "&domainId="+trim(thisDialog.find("#add_publicip_vlan_domain").val())+"&account="+trim(thisDialog.find("#add_publicip_vlan_account").val());
-				}					
-				
+								
+				var scopeParams = "";
+				if(dialogAddVlanForZone.find("#add_publicip_vlan_scope").val()=="account-specific")
+				    scopeParams = "&domainId="+trim(thisDialog.find("#add_publicip_vlan_domain").val())+"&account="+trim(thisDialog.find("#add_publicip_vlan_account").val());    
+								
 				var type = "true";
 				if (getNetworkType() == "vlan") type = trim(thisDialog.find("#add_publicip_vlan_type").val());
 				var gateway = trim(thisDialog.find("#add_publicip_vlan_gateway").val());
@@ -751,7 +744,7 @@ function showConfigurationTab() {
 		        template.fadeIn("slow");					
 				
 				$.ajax({
-				  data: createURL("command=createVlanIpRange&forVirtualNetwork="+type+"&zoneId="+id+vlan+directParams+"&gateway="+encodeURIComponent(gateway)+"&netmask="+encodeURIComponent(netmask)+"&startip="+encodeURIComponent(startip)+"&endip="+encodeURIComponent(endip)+"&response=json"),
+				  data: createURL("command=createVlanIpRange&forVirtualNetwork="+type+"&zoneId="+id+vlan+scopeParams+"&gateway="+encodeURIComponent(gateway)+"&netmask="+encodeURIComponent(netmask)+"&startip="+encodeURIComponent(startip)+"&endip="+encodeURIComponent(endip)+"&response=json"),
 					dataType: "json",
 					success: function(json) {
 						var vlan = json.createvlaniprangeresponse;
@@ -1045,21 +1038,16 @@ function showConfigurationTab() {
 	dialogAddVlanForZone.find("#add_publicip_vlan_type").change(function(event) {
 	    var addPublicipVlanTagged = dialogAddVlanForZone.find("#add_publicip_vlan_tagged").empty();
 	   	
-		if ($(this).val() == "false") { //direct VLAN (only tagged option)				
-			dialogAddVlanForZone.find("#add_publicip_vlan_scope_container").hide();		
+		// default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 
+		dialogAddVlanForZone.find("#add_publicip_vlan_scope").change(); 
+		
+		if ($(this).val() == "false") { //direct VLAN (only tagged option)		
 			addPublicipVlanTagged.append('<option value="tagged">tagged</option>');
 							
-			dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container").show();
-			dialogAddVlanForZone.find("#add_publicip_vlan_domain_container").show();
-			dialogAddVlanForZone.find("#add_publicip_vlan_account_container").show();
+			dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container").show();			
 			dialogAddVlanForZone.find("#add_publicip_vlan_pod_container").hide();
 			
-		} else { //public VLAN				
-			dialogAddVlanForZone.find("#add_publicip_vlan_scope_container").show();
-			
-			// default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 
-			dialogAddVlanForZone.find("#add_publicip_vlan_scope").change(); 					
-							
+		} else { //public VLAN	
 			addPublicipVlanTagged.append('<option value="untagged">untagged</option>').append('<option value="tagged">tagged</option>');	
 			
 			if (dialogAddVlanForZone.find("#add_publicip_vlan_tagged") == "tagged") {
@@ -1074,20 +1062,14 @@ function showConfigurationTab() {
 	});
 			
 	if (getNetworkType() != "vnet") {
-		dialogAddVlanForZone.find("#add_publicip_vlan_tagged").change(function(event) {
-			if (dialogAddVlanForZone.find("#add_publicip_vlan_type").val() == "false") { //direct VLAN (only tagged option)						
-				dialogAddVlanForZone.find("#add_publicip_vlan_scope_container").hide();					
-				dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container").show();
-				dialogAddVlanForZone.find("#add_publicip_vlan_domain_container").show();
-				dialogAddVlanForZone.find("#add_publicip_vlan_account_container").show();
-				dialogAddVlanForZone.find("#add_publicip_vlan_pod_container").hide();					
+		dialogAddVlanForZone.find("#add_publicip_vlan_tagged").change(function(event) {			
+			// default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 
+			dialogAddVlanForZone.find("#add_publicip_vlan_scope").change(); 	
 			
+			if (dialogAddVlanForZone.find("#add_publicip_vlan_type").val() == "false") { //direct VLAN (only tagged option)						
+				dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container").show();				
+				dialogAddVlanForZone.find("#add_publicip_vlan_pod_container").hide();	
 			} else { //public VLAN		
-			    dialogAddVlanForZone.find("#add_publicip_vlan_scope_container").show();
-			    
-			    // default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 
-			    dialogAddVlanForZone.find("#add_publicip_vlan_scope").change(); 				
-			    
 				if ($(this).val() == "tagged") {
 					dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container").show();
 					dialogAddVlanForZone.find("#add_publicip_vlan_pod_container").hide();
@@ -1102,7 +1084,7 @@ function showConfigurationTab() {
 		dialogAddVlanForZone.find("#add_publicip_vlan_container").hide();
 	}
 	
-	dialogAddVlanForZone.find("#add_publicip_vlan_scope").change(function(event) {
+	dialogAddVlanForZone.find("#add_publicip_vlan_scope").change(function(event) {	   
 	    if($(this).val() == "zone-wide") {
 	        dialogAddVlanForZone.find("#add_publicip_vlan_domain_container").hide();
 			dialogAddVlanForZone.find("#add_publicip_vlan_account_container").hide();    

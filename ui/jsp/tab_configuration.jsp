@@ -2,7 +2,6 @@
 <%
 long milliseconds = new Date().getTime();
 %>
-<script type="text/javascript" src="scripts/cloud.core.configuration.js?t=<%=milliseconds%>"></script>
 	
 <!-- Content Panel -->
 <!-- Submenu -->
@@ -434,7 +433,7 @@ long milliseconds = new Date().getTime();
 					<input class="text" type="text" name="add_publicip_vlan_vlan" id="add_publicip_vlan_vlan"/>
 					<div id="add_publicip_vlan_vlan_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>
-				<li style="display:none" id="add_publicip_vlan_scope_container">
+				<li id="add_publicip_vlan_scope_container">
 					<label for="add_publicip_vlan_scope">Scope:</label>
 					<select class="select" name="add_publicip_vlan_scope" id="add_publicip_vlan_scope">
 					    <option value="zone-wide">zone-wide</option>

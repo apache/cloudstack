@@ -49,6 +49,15 @@ long milliseconds = new Date().getTime();
 	<script type="text/javascript" src="scripts/cloud.logger.js?t=<%=milliseconds%>"></script>
 	<script type="text/javascript" src="scripts/cloud.core.js?t=<%=milliseconds%>"></script>
 	<script type="text/javascript" src="scripts/cloud.core.init.js?t=<%=milliseconds%>"></script>
+	<script type="text/javascript" src="scripts/cloud.core.configuration.js?t=<%=milliseconds%>"></script>
+	<script type="text/javascript" src="scripts/cloud.core.templates.js?t=<%=milliseconds%>"></script>
+	<script type="text/javascript" src="scripts/cloud.core.storage.js?t=<%=milliseconds%>"></script>
+	<script type="text/javascript" src="scripts/cloud.core.network.js?t=<%=milliseconds%>"></script>
+	<script type="text/javascript" src="scripts/cloud.core.hosts.js?t=<%=milliseconds%>"></script>
+	<script type="text/javascript" src="scripts/cloud.core.instances.js?t=<%=milliseconds%>"></script>
+	<script type="text/javascript" src="scripts/cloud.core.domains.js?t=<%=milliseconds%>"></script>
+	<script type="text/javascript" src="scripts/cloud.core.events.js?t=<%=milliseconds%>"></script>
+	<script type="text/javascript" src="scripts/cloud.core.accounts.js?t=<%=milliseconds%>"></script>
 		
 	<!-- Favicon -->
 	<link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
