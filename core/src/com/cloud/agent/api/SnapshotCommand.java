@@ -97,7 +97,7 @@ public class SnapshotCommand extends Command {
      */
     @Override
     public boolean executeInSequence() {
-        return false;
+        return true;
     }
 
 }
