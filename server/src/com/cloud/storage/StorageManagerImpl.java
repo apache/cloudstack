@@ -1595,7 +1595,11 @@ public class StorageManagerImpl implements StorageManager {
         } else {
             CapacityVO capacity = capacities.get(0);
             capacity.setTotalCapacity(storagePool.getCapacityBytes());
-            capacity.setUsedCapacity(storagePool.getAvailableBytes());
+            long used = storagePool.getCapacityBytes() - storagePool.getAvailableBytes();
+            if( used <= 0 ) {
+            	used = 0;
+            }
+            capacity.setUsedCapacity(used);
             _capacityDao.update(capacity.getId(), capacity);
         }
         s_logger.debug("Successfully set Capacity - " +storagePool.getCapacityBytes()+ " for CAPACITY_TYPE_STORAGE, DataCenterId - " +storagePool.getDataCenterId()+ ", HostOrPoolId - " +storagePool.getId()+ ", PodId " +storagePool.getPodId());
