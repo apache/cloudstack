@@ -29,6 +29,7 @@ import com.cloud.network.NetworkAccountVO;
 import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -56,7 +57,7 @@ public class NetworkConfigurationDaoImpl extends GenericDaoBase<NetworkConfigura
         AccountSearch.and("offering", AccountSearch.entity().getNetworkOfferingId(), SearchCriteria.Op.EQ);
         SearchBuilder<NetworkAccountVO> join = _accountsDao.createSearchBuilder();
         join.and("account", join.entity().getAccountId(), SearchCriteria.Op.EQ);
-        AccountSearch.join("accounts", join, AccountSearch.entity().getId(), join.entity().getNetworkConfigurationId());
+        AccountSearch.join("accounts", join, AccountSearch.entity().getId(), join.entity().getNetworkConfigurationId(), JoinBuilder.JoinType.INNER);
         AccountSearch.and("datacenter", AccountSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         AccountSearch.done();
     

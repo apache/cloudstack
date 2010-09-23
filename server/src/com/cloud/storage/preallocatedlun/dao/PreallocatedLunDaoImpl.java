@@ -36,6 +36,7 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -73,7 +74,7 @@ public class PreallocatedLunDaoImpl extends GenericDaoBase<PreallocatedLunVO, Lo
         DetailsSearch = _detailsDao.createSearchBuilder(String.class);
         SearchBuilder<PreallocatedLunVO> targetSearch = createSearchBuilder();
         targetSearch.and("targetiqn", targetSearch.entity().getTargetIqn(), SearchCriteria.Op.EQ);
-        DetailsSearch.join("target", targetSearch, targetSearch.entity().getId(), DetailsSearch.entity().getLunId());
+        DetailsSearch.join("target", targetSearch, targetSearch.entity().getId(), DetailsSearch.entity().getLunId(), JoinBuilder.JoinType.INNER);
         DetailsSearch.select(null, Func.DISTINCT, DetailsSearch.entity().getTag());
         DetailsSearch.done();
         targetSearch.done();

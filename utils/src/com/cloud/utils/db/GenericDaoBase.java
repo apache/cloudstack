@@ -312,7 +312,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             str.append(clause);
         }
 
-        Collection<Ternary<SearchCriteria<?>, Attribute, Attribute>> joins = null;
+        Collection<JoinBuilder<SearchCriteria<?>>> joins = null;
         if (sc != null) {
             joins = sc.getJoins();
             if (joins != null) {
@@ -341,9 +341,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
 	            	prepareAttribute(++i, pstmt, value.first(), value.second());
 	            }
             }
+
             if (joins != null) {
-                for (Ternary<SearchCriteria<?>, Attribute, Attribute> join : joins) {
-                    for (final Pair<Attribute, Object> value : join.first().getValues()) {
+                for (JoinBuilder<SearchCriteria<?>> join : joins) {
+                    for (final Pair<Attribute, Object> value : join.getT().getValues()) {
                         prepareAttribute(++i, pstmt, value.first(), value.second());
                     }
                 }
@@ -378,7 +379,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             str.append(clause);
         }
 
-        Collection<Ternary<SearchCriteria<?>, Attribute, Attribute>> joins = null;
+        Collection<JoinBuilder<SearchCriteria<?>>> joins = null;
         if (sc != null) {
             joins = sc.getJoins();
             if (joins != null) {
@@ -401,9 +402,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                     prepareAttribute(++i, pstmt, value.first(), value.second());
                 }
             }
+
             if (joins != null) {
-                for (Ternary<SearchCriteria<?>, Attribute, Attribute> join : joins) {
-                    for (final Pair<Attribute, Object> value : join.first().getValues()) {
+                for (JoinBuilder<SearchCriteria<?>> join : joins) {
+                    for (final Pair<Attribute, Object> value : join.getT().getValues()) {
                         prepareAttribute(++i, pstmt, value.first(), value.second());
                     }
                 }
@@ -411,6 +413,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                     s_logger.trace("join search statement is " + pstmt.toString());
                 }
             }
+            
             ResultSet rs = pstmt.executeQuery();
             SelectType st = sc.getSelectType();
             ArrayList<M> results = new ArrayList<M>();
@@ -1013,25 +1016,28 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
     
     @DB(txn=false)
-    protected void addJoins(StringBuilder str, Collection<Ternary<SearchCriteria<?>, Attribute, Attribute>> joins) {
-        int fromIndex = str.lastIndexOf("FROM") + 5;
-        if (str.lastIndexOf("WHERE") == -1) {
+    protected void addJoins(StringBuilder str, Collection<JoinBuilder<SearchCriteria<?>>> joins) {
+        int fromIndex = str.lastIndexOf("WHERE");
+        if (fromIndex == -1) {
+        	fromIndex = str.length();
             str.append(" WHERE ");
         } else {
             str.append(" AND ");
         }
-        
-        for (Ternary<SearchCriteria<?>, Attribute, Attribute> join : joins) {
-            str.insert(fromIndex, join.third().table + ", ");
-            str.append(join.second().table).append(".").append(join.second().columnName).append("=").append(join.third().table).append(".").append(join.third().columnName);
-            str.append(" AND (").append(join.first().getWhereClause()).append(") AND ");
+
+      for (JoinBuilder<SearchCriteria<?>> join : joins) {
+    	StringBuilder onClause =  new StringBuilder();
+    	onClause.append(" ").append(join.getType().getName()).append(" ").append(join.getSecondAttribute().table).append(" ON ").append(join.getFirstAttribute().table).append(".").append(join.getFirstAttribute().columnName).append("=").append(join.getSecondAttribute().table).append(".").append(join.getSecondAttribute().columnName).append(" ");
+        str.insert(fromIndex, onClause);
+        str.append(" (").append(join.getT().getWhereClause()).append(") AND ");
+        fromIndex+=onClause.length();
+    }
+    
+    for (JoinBuilder<SearchCriteria<?>> join : joins) {
+        if (join.getT().getJoins() != null) {
+            addJoins(str, join.getT().getJoins());
         }
-        
-        for (Ternary<SearchCriteria<?>, Attribute, Attribute> join : joins) {
-            if (join.first().getJoins() != null) {
-                addJoins(str, join.first().getJoins());
-            }
-        }
+    }
 
         str.delete(str.length() - 4, str.length());
     }

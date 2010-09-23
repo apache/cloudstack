@@ -30,6 +30,7 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.UpdateBuilder;
@@ -273,7 +274,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             AccountDataCenterVirtualSearch = createSearchBuilder();
             AccountDataCenterVirtualSearch.and("account", AccountDataCenterVirtualSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
             AccountDataCenterVirtualSearch.and("dc", AccountDataCenterVirtualSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-            AccountDataCenterVirtualSearch.join("offeringSearch", offeringSearch, AccountDataCenterVirtualSearch.entity().getServiceOfferingId(), offeringSearch.entity().getId());
+            AccountDataCenterVirtualSearch.join("offeringSearch", offeringSearch, AccountDataCenterVirtualSearch.entity().getServiceOfferingId(), offeringSearch.entity().getId(), JoinBuilder.JoinType.INNER);
             AccountDataCenterVirtualSearch.done();
         }
 

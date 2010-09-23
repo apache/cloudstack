@@ -27,7 +27,6 @@ import net.sf.cglib.proxy.Factory;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
-import com.cloud.utils.Ternary;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria.SelectType;
@@ -47,7 +46,7 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
     final protected Map<String, Attribute> _attrs;
     
     protected ArrayList<Condition> _conditions;
-    protected HashMap<String, Ternary<GenericSearchBuilder<?, ?>, Attribute, Attribute>> _joins;
+    protected HashMap<String, JoinBuilder<GenericSearchBuilder<?, ?>>> _joins;
     protected ArrayList<Select> _selects;
     protected ArrayList<Attribute> _groupBys;
     protected Class<T> _entityBeanType;
@@ -219,16 +218,16 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
         return this;
     }
     
-    public GenericSearchBuilder<T, K> join(String name, GenericSearchBuilder<?, ?> builder, Object useless, Object useless2) {
+    public GenericSearchBuilder<T, K> join(String name, GenericSearchBuilder<?, ?> builder, Object useless, Object useless2, JoinBuilder.JoinType joinType) {
         assert _entity != null : "SearchBuilder cannot be modified once it has been setup";
         assert _specifiedAttrs.size() == 1 : "You didn't select the attribute.";
         assert builder._entity != null : "SearchBuilder cannot be modified once it has been setup";
         assert builder._specifiedAttrs.size() == 1 : "You didn't select the attribute.";
         assert builder != this : "You can't add yourself, can you?  Really think about it!";
         
-        Ternary<GenericSearchBuilder<?, ?>, Attribute, Attribute> t = new Ternary<GenericSearchBuilder<?, ?>, Attribute, Attribute>(builder, _specifiedAttrs.get(0), builder._specifiedAttrs.get(0));
+        JoinBuilder<GenericSearchBuilder<?, ?>> t = new JoinBuilder<GenericSearchBuilder<?, ?>>(builder, _specifiedAttrs.get(0), builder._specifiedAttrs.get(0), joinType);
         if (_joins == null) {
-            _joins = new HashMap<String, Ternary<GenericSearchBuilder<?, ?>, Attribute, Attribute>>();
+        	_joins = new HashMap<String, JoinBuilder<GenericSearchBuilder<?, ?>>>();
         }
         _joins.put(name, t);
         
@@ -294,8 +293,8 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
         }
         
         if (_joins != null) {
-            for (Ternary<GenericSearchBuilder<?, ?>, Attribute, Attribute> join : _joins.values()) {
-                join.first().done();
+        	for (JoinBuilder<GenericSearchBuilder<?, ?>> join : _joins.values()) {
+        		join.getT().done();
             }
         }
         

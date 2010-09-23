@@ -46,6 +46,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
@@ -288,7 +289,7 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
         SearchBuilder<VolumeVO> sbVolume = _volumeDao.createSearchBuilder();
         sbVolume.and("poolId", sbVolume.entity().getPoolId(), SearchCriteria.Op.EQ);
         
-        VmsOnPoolSearch.join("volumeJoin", sbVolume, VmsOnPoolSearch.entity().getId(), sbVolume.entity().getInstanceId());
+        VmsOnPoolSearch.join("volumeJoin", sbVolume, VmsOnPoolSearch.entity().getId(), sbVolume.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
         
         sbVolume.done();
         VmsOnPoolSearch.done();

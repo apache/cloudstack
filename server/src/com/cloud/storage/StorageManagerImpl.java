@@ -133,6 +133,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -361,7 +362,7 @@ public class StorageManagerImpl implements StorageManager {
     			
     			SearchBuilder<VMInstanceVO> activeVmSB = _vmInstanceDao.createSearchBuilder();
 	        	activeVmSB.and("state", activeVmSB.entity().getState(), SearchCriteria.Op.IN);
-	        	volumeSB.join("activeVmSB", activeVmSB, volumeSB.entity().getInstanceId(), activeVmSB.entity().getId());
+	        	volumeSB.join("activeVmSB", activeVmSB, volumeSB.entity().getInstanceId(), activeVmSB.entity().getId(), JoinBuilder.JoinType.INNER);
     			
 	        	SearchCriteria<VolumeVO> volumeSC = volumeSB.create();
 	        	volumeSC.setParameters("poolId", storagePool.getId());
@@ -1104,7 +1105,7 @@ public class StorageManagerImpl implements StorageManager {
         
         PoolsUsedByVmSearch = _storagePoolDao.createSearchBuilder();
         SearchBuilder<VolumeVO> volSearch = _volsDao.createSearchBuilder();
-        PoolsUsedByVmSearch.join("volumes", volSearch, volSearch.entity().getPoolId(), PoolsUsedByVmSearch.entity().getId());
+        PoolsUsedByVmSearch.join("volumes", volSearch, volSearch.entity().getPoolId(), PoolsUsedByVmSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         volSearch.and("vm", volSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
         volSearch.done();
         PoolsUsedByVmSearch.done();
@@ -1116,7 +1117,7 @@ public class StorageManagerImpl implements StorageManager {
         SearchBuilder<HostVO> HostSearch = _hostDao.createSearchBuilder();
         HostSearch.and("dcId", HostSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         
-        HostTemplateStatesSearch.join("host", HostSearch, HostSearch.entity().getId(), HostTemplateStatesSearch.entity().getHostId());
+        HostTemplateStatesSearch.join("host", HostSearch, HostSearch.entity().getId(), HostTemplateStatesSearch.entity().getHostId(), JoinBuilder.JoinType.INNER);
         HostSearch.done();
         HostTemplateStatesSearch.done();
         

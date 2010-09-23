@@ -94,6 +94,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -1313,7 +1314,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         policySearch.and("policyId", policySearch.entity().getPolicyId(), SearchCriteria.Op.EQ);
         
         PolicySnapshotSearch = _snapshotDao.createSearchBuilder();
-        PolicySnapshotSearch.join("policy", policySearch, policySearch.entity().getSnapshotId(), PolicySnapshotSearch.entity().getId());
+        PolicySnapshotSearch.join("policy", policySearch, policySearch.entity().getSnapshotId(), PolicySnapshotSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         policySearch.done();
         PolicySnapshotSearch.done();
         
@@ -1322,7 +1323,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         SearchBuilder<SnapshotPolicyRefVO> policyRefSearch = _snapPolicyRefDao.createSearchBuilder();
         policyRefSearch.and("snapshotId", policyRefSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
         
-        PoliciesForSnapSearch.join("policyRef", policyRefSearch, policyRefSearch.entity().getPolicyId(), PoliciesForSnapSearch.entity().getId());
+        PoliciesForSnapSearch.join("policyRef", policyRefSearch, policyRefSearch.entity().getPolicyId(), PoliciesForSnapSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         policyRefSearch.done();
         PoliciesForSnapSearch.done();
         s_logger.info("Snapshot Manager is configured.");

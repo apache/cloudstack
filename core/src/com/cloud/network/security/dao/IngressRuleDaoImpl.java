@@ -28,6 +28,7 @@ import com.cloud.network.security.IngressRuleVO;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
@@ -121,7 +122,7 @@ public class IngressRuleDaoImpl extends GenericDaoBase<IngressRuleVO, Long> impl
         protoPortsAndNetworkGroupNameSearch.and("endPort", protoPortsAndNetworkGroupNameSearch.entity().getEndPort(), SearchCriteria.Op.EQ);
         SearchBuilder<NetworkGroupVO> ngSb = _networkGroupDao.createSearchBuilder();
         ngSb.and("groupName", ngSb.entity().getName(), SearchCriteria.Op.EQ);
-        protoPortsAndNetworkGroupNameSearch.join("groupName", ngSb, protoPortsAndNetworkGroupNameSearch.entity().getAllowedNetworkId(), ngSb.entity().getId());
+        protoPortsAndNetworkGroupNameSearch.join("groupName", ngSb, protoPortsAndNetworkGroupNameSearch.entity().getAllowedNetworkId(), ngSb.entity().getId(), JoinBuilder.JoinType.INNER);
         protoPortsAndNetworkGroupNameSearch.done();
 		return super.configure(name, params);
 	}

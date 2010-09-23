@@ -38,6 +38,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -171,7 +172,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         
         SearchBuilder<PodVlanMapVO> PodVlanSearch = _podVlanMapDao.createSearchBuilder();
         PodVlanSearch.and("podId", PodVlanSearch.entity().getPodId(), SearchCriteria.Op.NNULL);
-        ZoneTypeAllPodsSearch.join("vlan", PodVlanSearch, PodVlanSearch.entity().getVlanDbId(), ZoneTypeAllPodsSearch.entity().getId());
+        ZoneTypeAllPodsSearch.join("vlan", PodVlanSearch, PodVlanSearch.entity().getVlanDbId(), ZoneTypeAllPodsSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         
         ZoneTypeAllPodsSearch.done();
         PodVlanSearch.done();
@@ -182,7 +183,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         
         SearchBuilder<PodVlanMapVO> PodVlanSearch2 = _podVlanMapDao.createSearchBuilder();
         PodVlanSearch2.and("podId", PodVlanSearch2.entity().getPodId(), SearchCriteria.Op.EQ);
-        ZoneTypePodSearch.join("vlan", PodVlanSearch2,  PodVlanSearch2.entity().getVlanDbId(), ZoneTypePodSearch.entity().getId());
+        ZoneTypePodSearch.join("vlan", PodVlanSearch2,  PodVlanSearch2.entity().getVlanDbId(), ZoneTypePodSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         PodVlanSearch2.done();
         ZoneTypePodSearch.done();
 

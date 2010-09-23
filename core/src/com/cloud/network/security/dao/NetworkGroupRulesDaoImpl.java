@@ -11,6 +11,7 @@ import com.cloud.server.ManagementServer;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
@@ -70,7 +71,7 @@ public class NetworkGroupRulesDaoImpl extends GenericDaoBase<NetworkGroupRulesVO
             DomainSearch.and("domainId", DomainSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            DomainSearch.join("domainSearch", domainSearch, DomainSearch.entity().getDomainId(), domainSearch.entity().getId());
+            DomainSearch.join("domainSearch", domainSearch, DomainSearch.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
             DomainSearch.done();
         }
 
