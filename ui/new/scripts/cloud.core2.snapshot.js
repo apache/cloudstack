@@ -24,9 +24,7 @@ function snapshotToRigntPanel($midmenuItem) {
 
 function snapshotJsonToDetailsTab(jsonObj) {   
     var $detailsTab = $("#right_panel_content #tab_content_details");   
-    $detailsTab.data("jsonObj", jsonObj);         
-    
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
+    $detailsTab.data("jsonObj", jsonObj);  
     $detailsTab.find("#id").text(jsonObj.id);
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
     $detailsTab.find("#volume_name").text(fromdb(jsonObj.volumename));
@@ -38,7 +36,19 @@ function snapshotJsonToDetailsTab(jsonObj) {
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
-    buildActionLinkForDetailsTab("Create Volume", snapshotActionMap, $actionMenu, snapshotListAPIMap);			
+    buildActionLinkForDetailsTab("Create Volume", snapshotActionMap, $actionMenu, snapshotListAPIMap);		
+    buildActionLinkForDetailsTab("Delete snapshot", snapshotActionMap, $actionMenu, snapshotListAPIMap);				
+}
+
+function snapshotClearRightPanel() {
+    var $detailsTab = $("#right_panel_content #tab_content_details");   
+    $detailsTab.find("#id").text("");
+    $detailsTab.find("#name").text("");
+    $detailsTab.find("#volume_name").text("");
+    $detailsTab.find("#interval_type").text("");
+    $detailsTab.find("#account").text("");
+    $detailsTab.find("#domain").text("");      
+    $detailsTab.find("#created").text("");   
 }
 
 var snapshotActionMap = {  
@@ -47,10 +57,21 @@ var snapshotActionMap = {
         asyncJobResponse: "createvolumeresponse",
         dialogBeforeActionFn : doCreateVolumeFromSnapshotInSnapshotPage,
         inProcessText: "Creating Volume....",
-        afterActionSeccessFn: function(jsonObj) {           
-
+        afterActionSeccessFn: function(jsonObj) {}
+    }   
+    , 
+    "Delete snapshot": {              
+        api: "deleteSnapshot",     
+        isAsyncJob: true,
+        asyncJobResponse: "deletesnapshotresponse",        
+        inProcessText: "Deleting snapshot....",
+        afterActionSeccessFn: function(id) { 
+            var $midmenuItem1 = $("#midmenuItem_"+id); 
+            $midmenuItem1.remove();
+            clearRightPanel();
+            snapshotClearRightPanel();
         }
-    }    
+    } 
 }   
 
 var snapshotListAPIMap = {

@@ -101,20 +101,23 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap) {
 			                        if (result.jobstatus == 1) { // Succeeded 			                           
 			                            $detailsTab.find("#action_message_box #description").text(label + " action succeeded.");
 			                            $detailsTab.find("#action_message_box").removeClass("error").show();
-			                            
-			                            //DestroyVirtualMachine API doesn't return an embedded object on success (Bug 6041)
-	                                    //Before Bug 6041 get fixed, use the temporary solution below.							            
-	                                    $.ajax({
-                                            cache: false,
-                                            data: createURL("command="+listAPI+"&id="+id),
-                                            dataType: "json",                                            
-                                            success: function(json) {		                                                                                  
-                                                afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	                        
-                                            }
-                                        });										
-				                        //After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
-			                            //afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	   
-			                            
+			                            if(apiCommand.indexOf("command=delete")!=0) { 	
+			                                //DestroyVirtualMachine API doesn't return an embedded object on success (Bug 6041)
+	                                        //Before Bug 6041 get fixed, use the temporary solution below.							            
+	                                        $.ajax({
+                                                cache: false,
+                                                data: createURL("command="+listAPI+"&id="+id),
+                                                dataType: "json",                                            
+                                                success: function(json) {		                                                                                  
+                                                    afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	                        
+                                                }
+                                            });										
+				                            //After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
+			                                //afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	   
+			                            }
+				                        else { //apiCommand is deleteXXXXXXX	
+				                            afterActionSeccessFn(id);
+				                        }			                             
 			                        } else if (result.jobstatus == 2) { // Failed		
 			                            $detailsTab.find("#action_message_box #description").text(label + " action failed. Reason: " + sanitizeXSS(result.jobresult)); 
 			                            $detailsTab.find("#action_message_box").addClass("error").show();
