@@ -51,6 +51,12 @@ function showTemplatesTab() {
 		zIndex: 2000
 	}));
 	
+	activateDialog($("#dialog_create_vm_from_iso").dialog({ 
+		width:300,
+		autoOpen: false,
+		modal: true,
+		zIndex: 2000
+	}));
 	
 	var g_zoneIds = [], g_zoneNames = [];				
 	var addTemplateZoneField = $("#dialog_add_template #add_template_zone");	
@@ -109,9 +115,12 @@ function showTemplatesTab() {
 	    success: function(json) {
 	        var items = json.listserviceofferingsresponse.serviceoffering;
 	        if(items != null && items.length > 0 ) {
-	            var serviceOfferingField = $("#dialog_create_vm_from_template #service_offering").empty();
-	            for(var i = 0; i < items.length; i++)		        
-	                serviceOfferingField.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>");
+	            var templateServiceOfferingField = $("#dialog_create_vm_from_template #service_offering").empty();
+	            var isoServiceOfferingField = $("#dialog_create_vm_from_iso #service_offering").empty();
+	            for(var i = 0; i < items.length; i++) {		        
+	                templateServiceOfferingField.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>");
+	                isoServiceOfferingField.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>");
+	            }
 	        }		        
 	    }
 	});		
@@ -122,9 +131,15 @@ function showTemplatesTab() {
 	    success: function(json) {
 	        var items = json.listdiskofferingsresponse.diskoffering;
 	        if(items != null && items.length > 0 ) {
-	            var diskOfferingField = $("#dialog_create_vm_from_template #disk_offering").empty();
-	            for(var i = 0; i < items.length; i++)		        
-	                diskOfferingField.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>");
+	            var templateDiskOfferingField = $("#dialog_create_vm_from_template #disk_offering").empty();
+	            templateDiskOfferingField.append("<option value=''>No disk offering</option>");
+	            
+	            var isoDiskOfferingField = $("#dialog_create_vm_from_iso #disk_offering").empty();
+	            
+	            for(var i = 0; i < items.length; i++) {		        
+	                templateDiskOfferingField.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>");
+	                isoDiskOfferingField.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>");
+	            }
 	        }		  
 	        
 	    }
@@ -522,13 +537,21 @@ function showTemplatesTab() {
 			
 	function createVMFromTemplateOrISO(actionLink, sourceType) {					
 		var parentElementId = actionLink.data("parentElementId");
-		var thisTemplate = $("#"+parentElementId);			
-		var id = (sourceType == "template")? thisTemplate.data("templateId"): thisTemplate.data("isoId");					
+		var thisTemplate = $("#"+parentElementId);	
 		var name = thisTemplate.data("name");						
-		var zoneId = thisTemplate.data("zoneId");				
-						
-		var createVmDialog = $("#dialog_create_vm_from_template");				
-		createVmDialog.find("#template").text(name);
+		var zoneId = thisTemplate.data("zoneId");
+			
+		var id;
+		var createVmDialog;
+		if(sourceType == "template") {
+		    id = thisTemplate.data("templateId");
+		    createVmDialog = $("#dialog_create_vm_from_template");		
+		}
+		else { //sourceType == "iso"
+		    id = thisTemplate.data("isoId");
+		    createVmDialog = $("#dialog_create_vm_from_iso");		
+		}
+		createVmDialog.find("#source_name").text(name);
 			
 		createVmDialog
 		.dialog('option', 'buttons', {			    
@@ -540,12 +563,22 @@ function showTemplatesTab() {
 			    isValid &= validateString("Name", thisDialog.find("#name"), thisDialog.find("#name_errormsg"), true);
 			    isValid &= validateString("Group", thisDialog.find("#group"), thisDialog.find("#group_errormsg"), true);				
 			    if (!isValid) return;	       
-		                
-		        var name = trim(thisDialog.find("#name").val());		
-		        var group = trim(thisDialog.find("#group").val());		
-		        var serviceOfferingId = thisDialog.find("#service_offering").val();				        
+		                		          
+		        thisDialog.dialog("close");  
+		          
+		        var array1 = [];      
+		        var name = trim(thisDialog.find("#name").val());	
+		        array1.push("&displayname="+encodeURIComponent(name));
+		        	
+		        var group = trim(thisDialog.find("#group").val());	
+		        array1.push("&group="+encodeURIComponent(group));
+		        	
+		        var serviceOfferingId = thisDialog.find("#service_offering").val();		
+		        array1.push("&serviceOfferingId="+serviceOfferingId);
+		        		               
 		        var diskOfferingId = thisDialog.find("#disk_offering").val();
-		        thisDialog.dialog("close");
+		        if(diskOfferingId != null && diskOfferingId.length > 0)
+		            array1.push("&diskOfferingId="+diskOfferingId);	 
 		        		        
 		        var loadingImg = thisTemplate.find(".adding_loading");		
                 var rowContainer = thisTemplate.find("#row_container");                                         	                               
@@ -554,7 +587,7 @@ function showTemplatesTab() {
                 rowContainer.hide();      
 		        			        		        
                 $.ajax({
-			        data: "command=deployVirtualMachine&zoneId="+zoneId+"&serviceOfferingId="+serviceOfferingId+"&diskOfferingId="+diskOfferingId+"&templateId="+id+"&group="+encodeURIComponent(group)+"&displayname="+encodeURIComponent(name)+"&response=json",
+			        data: "command=deployVirtualMachine&zoneId="+zoneId+array1.join("")+"&templateId="+id+"&response=json",
 			        dataType: "json",
 			        success: function(json) {					            
 				        var jobId = json.deployvirtualmachineresponse.jobid;						        

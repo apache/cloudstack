@@ -609,9 +609,11 @@ long milliseconds = new Date().getTime();
 
 
 
-<!-- Create VM from template/ISO (begin) -->
-<div id="dialog_create_vm_from_template" title="Create VM" style="display:none">
-	<p>Create VM from <b id="template">xxx</b></p>
+
+
+<!-- Create VM from template (begin) -->
+<div id="dialog_create_vm_from_template" title="Create VM from template" style="display:none">
+	<p>Create VM from <b id="source_name">xxx</b></p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form5">
 			<ol>			   
@@ -639,4 +641,36 @@ long milliseconds = new Date().getTime();
 		</form>
 	</div>
 </div>
-<!-- Create VM from template/ISO (end) -->
+<!-- Create VM from template (end) -->
+
+<!-- Create VM from ISO (begin) -->
+<div id="dialog_create_vm_from_iso" title="Create VM from ISO" style="display:none">
+	<p>Create VM from <b id="source_name">xxx</b></p>
+	<div class="dialog_formcontent">
+		<form action="#" method="post" id="form5">
+			<ol>			   
+				<li>
+					<label>Name:</label>
+					<input class="text" type="text" id="name"/>
+					<div id="name_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+				</li>
+				<li>
+					<label>Group:</label>
+					<input class="text" type="text" id="group"/>
+					<div id="group_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+				</li>				
+				<li>
+                    <label>Service Offering:</label>
+                    <select class="select" id="service_offering">
+                    </select>
+                </li>					
+				<li>
+                    <label>Disk Offering:</label>
+                    <select class="select" id="disk_offering">
+                    </select>
+                </li>					
+			</ol>
+		</form>
+	</div>
+</div>
+<!-- Create VM from ISO (end) -->
