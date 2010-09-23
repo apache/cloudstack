@@ -162,6 +162,7 @@ function afterLoadTemplateJSP() {
 	        var items = json.listdiskofferingsresponse.diskoffering;
 	        if(items != null && items.length > 0 ) {
 	            var diskOfferingField = $("#dialog_create_vm_from_template #disk_offering").empty();
+	            diskOfferingField.append("<option value=''>No disk offering</option>");
 	            for(var i = 0; i < items.length; i++)		        
 	                diskOfferingField.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>");
 	        }		  
@@ -541,13 +542,22 @@ function doCreateVMFromTemplate($actionLink, listAPIMap, $detailsTab) {
 		    isValid &= validateString("Name", thisDialog.find("#name"), thisDialog.find("#name_errormsg"), true);
 		    isValid &= validateString("Group", thisDialog.find("#group"), thisDialog.find("#group_errormsg"), true);				
 		    if (!isValid) return;	       
-	                
-	        var name = trim(thisDialog.find("#name").val());		
-	        var group = trim(thisDialog.find("#group").val());		
-	        var serviceOfferingId = thisDialog.find("#service_offering").val();				        
-	        var diskOfferingId = thisDialog.find("#disk_offering").val();		        
 	        
-		    var apiCommand = "command=deployVirtualMachine&zoneId="+zoneId+"&serviceOfferingId="+serviceOfferingId+"&diskOfferingId="+diskOfferingId+"&templateId="+id+"&group="+encodeURIComponent(group)+"&displayname="+encodeURIComponent(name);
+	        var array1 = [];      
+	        var name = trim(thisDialog.find("#name").val());	
+	        array1.push("&displayname="+encodeURIComponent(name));
+	        	
+	        var group = trim(thisDialog.find("#group").val());	
+	        array1.push("&group="+encodeURIComponent(group));
+	        	
+	        var serviceOfferingId = thisDialog.find("#service_offering").val();		
+	        array1.push("&serviceOfferingId="+serviceOfferingId);
+	        		               
+	        var diskOfferingId = thisDialog.find("#disk_offering").val();
+	        if(diskOfferingId != null && diskOfferingId.length > 0)
+	            array1.push("&diskOfferingId="+diskOfferingId);	 		    	        
+	        
+		    var apiCommand = "command=deployVirtualMachine&zoneId="+zoneId+"&templateId="+id+array1.join("");
     	    doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);		
 	    }, 
 	    "Cancel": function() {
