@@ -397,6 +397,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         }
         
         vmJsonToDetailsTab(jsonObj, $midmenuItem);   
+        vmJsonToVolumeTab(jsonObj);
     }
      
     function vmJsonToDetailsTab(jsonObj, $midmenuItem){
@@ -416,11 +417,14 @@ function clickInstanceGroupHeader($arrowIcon) {
         $detailsTab.find("#group").text(fromdb(jsonObj.group));	
         
         setBooleanField(jsonObj.haenable, $detailsTab.find("#haenable"));	
-        setBooleanField((jsonObj.isoid != null && jsonObj.isoid.length > 0), $detailsTab.find("#iso"));	
-            
+        setBooleanField((jsonObj.isoid != null && jsonObj.isoid.length > 0), $detailsTab.find("#iso"));	   
+    }
+    
+    function vmJsonToVolumeTab(jsonObj) {
         //volume tab
         //if (getHypervisorType() == "kvm") 
-			//detail.find("#volume_action_create_template").show();		        
+			//detail.find("#volume_action_create_template").show();		
+    
         $.ajax({
 			cache: false,
 			data: createURL("command=listVolumes&virtualMachineId="+jsonObj.id+maxPageSize),
@@ -437,7 +441,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 					}
 				}						
 			}
-		});           
+		});          
     }
         
     function vmClearRightPanel(jsonObj) {       
@@ -510,12 +514,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 		} 
 		else { //json.type=="DATADISK": "detach disk" is allowed, "create template" is disallowed.			
 			buildActionLinkForSubgridItem("Detach Disk", vmVolumeActionMap, $actionMenu, volumeListAPIMap, template);				
-		}	
-		
-		template.find("#action_message_box #close_button").bind("click", function(event){
-		    $(this).parent().hide();
-		    return false;
-		});
+		}			
 	}
     //***** declaration for volume tab (end) *********************************************************
     
@@ -1255,18 +1254,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 	    });
         //***** VM Wizard (end) ********************************************************************************
         
-        //***** Volume tab (begin) *****************************************************************************
-        /*
-        $("#volume_action_link").live("mouseover", function(event) {
-            $(this).find("#volume_action_menu").show();    
-            return false;
-        });
-        $("#volume_action_link").live("mouseout", function(event) {
-            $(this).find("#volume_action_menu").hide();    
-            return false;
-        });
-        */
-                
+        //***** Volume tab (begin) *****************************************************************************         
         $.ajax({
 	        data: createURL("command=listOsTypes&response=json"),
 		    dataType: "json",
@@ -1279,10 +1267,8 @@ function clickInstanceGroupHeader($arrowIcon) {
 				    }
 			    }	
 		    }
-	    });
-        
-        //***** Volume tab (end) *******************************************************************************
-    
+	    });        
+        //***** Volume tab (end) *******************************************************************************    
     
     });	
 }  

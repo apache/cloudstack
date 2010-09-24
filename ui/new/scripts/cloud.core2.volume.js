@@ -351,6 +351,23 @@ function afterLoadVolumeJSP() {
 	});	
 	// *** recurring snapshot dialog - event binding (end) ******************************	    
      
+    //***** switch to different tab (begin) ********************************************************************
+    $("#tab_details").bind("click", function(event){
+        $(this).removeClass("off").addClass("on");
+        $("#tab_snapshot").removeClass("on").addClass("off");  
+        $("#tab_content_details").show();     
+        $("#tab_content_snapshot").hide();   
+        return false;
+    });
+    
+    $("#tab_snapshot").bind("click", function(event){
+        $(this).removeClass("off").addClass("on");
+        $("#tab_details").removeClass("on").addClass("off");   
+        $("#tab_content_snapshot").show();    
+        $("#tab_content_details").hide();    
+        return false;
+    });
+    //***** switch to different tab (end) ********************************************************************** 
 }
 
 function volumeAfterDetailsTabAction(jsonObj) {
@@ -370,8 +387,9 @@ function volumeToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function volumeToRigntPanel($midmenuItem) {       
-    var json = $midmenuItem.data("jsonObj");     
-    volumeJsonToDetailsTab(json);   
+    var jsonObj = $midmenuItem.data("jsonObj");     
+    volumeJsonToDetailsTab(jsonObj);   
+    volumeJsonToVolumeTab(jsonObj);
 }
  
 function volumeJsonToDetailsTab(jsonObj){
@@ -423,6 +441,53 @@ function volumeJsonToDetailsTab(jsonObj){
 	        }
         }
     }
+} 
+
+function  volumeJsonToVolumeTab(jsonObj) {
+    $.ajax({
+		cache: false,
+		data: createURL("command=listSnapshots&volumeid="+jsonObj.id+maxPageSize),
+		dataType: "json",
+		success: function(json) {							    
+			var items = json.listsnapshotsresponse.snapshot;																						
+			if (items != null && items.length > 0) {
+			    var container = $("#right_panel_content #tab_content_snapshot").empty();
+				var template = $("#snapshot_tab_template");				
+				for (var i = 0; i < items.length; i++) {
+					var newTemplate = template.clone(true);	               
+	                volumeSnapshotJSONToTemplate(items[i], newTemplate); 
+	                container.append(newTemplate.show());	
+				}			
+			}			
+		}
+	});
+} 
+ 
+function volumeSnapshotJSONToTemplate(jsonObj, template) {
+    template.data("jsonObj", jsonObj);       
+    
+    template.attr("id", "volume_snapshot_"+jsonObj.id).data("volumeSnapshotId", jsonObj.id);	   
+    template.find("#id").text(jsonObj.id);
+    template.find("#name").text(jsonObj.name);			      
+    template.find("#volumename").text(jsonObj.volumename);	
+    template.find("#intervaltype").text(jsonObj.intervaltype);	    		   
+    template.find("#account").text(jsonObj.account);
+    template.find("#domain").text(jsonObj.domain);    
+    setDateField(jsonObj.created, template.find("#created"));	 
+	
+	var $actionLink = template.find("#snapshot_action_link");		
+	$actionLink.bind("mouseover", function(event) {
+        $(this).find("#snapshot_action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {
+        $(this).find("#snapshot_action_menu").hide();    
+        return false;
+    });		
+	
+	var $actionMenu = $actionLink.find("#snapshot_action_menu");
+    $actionMenu.find("#action_list").empty();	
+	//buildActionLinkForSubgridItem("Create Template", vmSnapshotActionMap, $actionMenu, snapshotListAPIMap, template);		
 } 
  
 function volumeClearRightPanel() {       
@@ -708,7 +773,7 @@ function doRecurringSnapshot() {
 function populateVirtualMachineField(domainId, account, zoneId) {        
     $.ajax({
 	    cache: false,
-	    data: createURL("command=listVirtualMachines&state=Running&zoneid="+zoneId+"&domainid="+domainId+"&account="+account+"&response=json"+maxPageSize),
+	    data: createURL("command=listVirtualMachines&state=Running&zoneid="+zoneId+"&domainid="+domainId+"&account="+account+maxPageSize),
 	    dataType: "json",
 	    success: function(json) {			    
 		    var instances = json.listvirtualmachinesresponse.virtualmachine;				
@@ -720,7 +785,7 @@ function populateVirtualMachineField(domainId, account, zoneId) {
 		    }
 			$.ajax({
 				cache: false,
-				data: createURL("command=listVirtualMachines&state=Stopped&zoneid="+zoneId+"&domainid="+domainId+"&account="+account+"&response=json"+maxPageSize),
+				data: createURL("command=listVirtualMachines&state=Stopped&zoneid="+zoneId+"&domainid="+domainId+"&account="+account+maxPageSize),
 				dataType: "json",
 				success: function(json) {			    
 					var instances = json.listvirtualmachinesresponse.virtualmachine;								

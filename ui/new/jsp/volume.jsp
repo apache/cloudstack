@@ -22,8 +22,10 @@
         </p>
     </div>
     <div class="tabbox" style="margin-top: 15px;">
-        <div class="content_tabs on">
+        <div class="content_tabs on" id="tab_details">
             <%=t.t("Details")%></div>
+        <div class="content_tabs off" id="tab_snapshot">
+            <%=t.t("Snapshot")%></div>
     </div>
     <!--Details tab (start)-->
     <div id="tab_content_details">
@@ -161,6 +163,10 @@
             </div>
         </div>
     </div>
+    <!--Details tab (end)-->
+    <!--Snapshot tab (start)-->
+    <div style="display: none;" id="tab_content_snapshot">
+    </div> 
 </div>
 <!-- volume detail panel (end) -->
 <!-- Create Template Dialog -->
@@ -584,3 +590,103 @@
     </div>
 </div>
 <!-- Attach Volume Dialog (end) -->
+
+<!--  Snapshot tab template (begin) -->
+<div class="grid_container" id="snapshot_tab_template" style="display: none">
+    <div class="grid_header">
+        <div class="grid_header_title" id="name">
+        </div>
+        <div class="grid_actionbox" id="snapshot_action_link">
+            <div class="grid_actionsdropdown_box" id="snapshot_action_menu" style="display: none;">
+                <ul class="actionsdropdown_boxlist" id="action_list">
+                </ul>
+            </div>
+        </div>
+        <div class="gridheader_loaderbox" id="spinning_wheel" style="display: none; height: 18px;">
+            <div class="gridheader_loader" id="icon">
+            </div>
+            <p id="description">
+                Waiting &hellip;
+            </p>
+        </div>       
+    </div>
+    
+    <div class="grid_rows" id="after_action_info_container" style="display:none">
+        <div class="grid_row_cell" style="width: 90%; border: none;">
+            <div class="row_celltitles">
+                <strong id="after_action_info">Message will appear here</strong></div>
+        </div>
+    </div>
+        
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                ID:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="id">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Snapshot Name:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="name">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Volume Name:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="volumename">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Interval Type:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="intervaltype">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Created:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="created">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Account:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="account">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Domain:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="domain">
+            </div>
+        </div>
+    </div>    
+</div>
+<!--  Snapshot tab template (end) -->
