@@ -28,6 +28,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ResponseObject;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.google.gson.Gson;
@@ -42,8 +43,12 @@ public class SerializerHelper {
 		if(result != null) {
 			Class<?> clz = result.getClass();
 	    	Gson gson = GsonHelper.getBuilder().create();
-	    	
-			return clz.getName() + "/" + gson.toJson(result); 
+
+	    	if (result instanceof ResponseObject) {
+	            return clz.getName() + "/" + ((ResponseObject)result).getResponseName() + "/" + gson.toJson(result); 
+	    	} else {
+	            return clz.getName() + "/" + gson.toJson(result); 
+	    	}
 		} 
 		return null;
 	}
@@ -51,12 +56,27 @@ public class SerializerHelper {
 	public static Object fromSerializedString(String result) {
 		try {
 			if(result != null && !result.isEmpty()) {
-				int seperatorPos = result.indexOf('/');
-				if(seperatorPos < 0)
-					return null;
-				
-				String clzName = result.substring(0, seperatorPos);
-				String content = result.substring(seperatorPos + 1);
+			    String[] serializedParts = result.split("/");
+//				int seperatorPos = result.indexOf('/');
+//				if(seperatorPos < 0)
+//					return null;
+
+			    if (serializedParts.length < 2) {
+			        return null;
+			    }
+
+//				String clzName = result.substring(0, seperatorPos);
+//				String content = result.substring(seperatorPos + 1);
+                String clzName = serializedParts[0];
+                String nameField = null;
+                String content = null;
+                if (serializedParts.length == 2) {
+                    content = serializedParts[1];
+                } else {
+                    nameField = serializedParts[1];
+                    content = serializedParts[2];
+                }
+
 				Class<?> clz;
 				try {
 					clz = Class.forName(clzName);
@@ -65,7 +85,11 @@ public class SerializerHelper {
 				}
 				
 		    	Gson gson = GsonHelper.getBuilder().create();
-		    	return gson.fromJson(content, clz);
+		    	Object obj = gson.fromJson(content, clz);
+		    	if (nameField != null) {
+		    	    ((ResponseObject)obj).setResponseName(nameField);
+		    	}
+		    	return obj;
 			}
 			return null;
 		} catch(RuntimeException e) {

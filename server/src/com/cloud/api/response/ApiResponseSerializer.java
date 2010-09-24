@@ -4,14 +4,14 @@ import java.lang.reflect.Modifier;
 import java.util.List;
 
 import com.cloud.api.ResponseObject;
+import com.cloud.serializer.GsonHelper;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 public class ApiResponseSerializer {
     // FIXME:  what about XML response?
     public static String toSerializedString(ResponseObject result) {
         if (result != null) {
-            Gson gson = new GsonBuilder().excludeFieldsWithModifiers(Modifier.TRANSIENT).create();
+            Gson gson = GsonHelper.getBuilder().excludeFieldsWithModifiers(Modifier.TRANSIENT).create();
             StringBuilder sb = new StringBuilder();
 
             sb.append("{ \"" + result.getResponseName() + "\" : ");

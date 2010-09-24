@@ -33,6 +33,8 @@ import com.cloud.agent.manager.AgentManager;
 import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.consoleproxy.ConsoleProxyManager;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.server.ManagementServer;
@@ -89,6 +91,10 @@ public class ApiDispatcher {
         setupParameters(cmd, params);
 
         Implementation impl = cmd.getClass().getAnnotation(Implementation.class);
+        if (impl == null) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute create command " + cmd.getClass().getName() + ", no implementation specified.");
+        }
+
         String methodName = impl.createMethod();
         Object mgr = _mgmtServer;
         switch (impl.manager()) {
@@ -134,16 +140,25 @@ public class ApiDispatcher {
             return (Long)id;
         } catch (NoSuchMethodException nsme) {
             s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), nsme);
-            throw new CloudRuntimeException("Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", unable to find implementation.");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", unable to find implementation.");
         } catch (InvocationTargetException ite) {
+            Throwable cause = ite.getCause();
+            if (cause instanceof InvalidParameterValueException) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, cause.getMessage());
+            } else if (cause instanceof PermissionDeniedException) {
+                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, cause.getMessage());
+            }
             s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), ite);
-            throw new CloudRuntimeException("Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
         } catch (IllegalAccessException iae) {
             s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), iae);
-            throw new CloudRuntimeException("Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
         } catch (IllegalArgumentException iArgEx) {
             s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), iArgEx);
-            throw new CloudRuntimeException("Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
+        } catch (Exception ex) {
+            s_logger.error("Unhandled exception invoking method " + methodName + " for command " + cmd.getClass().getSimpleName(), ex);
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
         }
     }
 
@@ -152,7 +167,7 @@ public class ApiDispatcher {
 
         Implementation impl = cmd.getClass().getAnnotation(Implementation.class);
         if (impl == null) {
-            throw new CloudRuntimeException("Unable to execute command " + cmd.getClass().getName() + ", no implementation specified.");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute command " + cmd.getClass().getName() + ", no implementation specified.");
         }
 
         String methodName = impl.method();
@@ -196,16 +211,25 @@ public class ApiDispatcher {
             cmd.setResponseObject(result);
         } catch (NoSuchMethodException nsme) {
             s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), nsme);
-            throw new CloudRuntimeException("Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", unable to find implementation.");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", unable to find implementation.");
         } catch (InvocationTargetException ite) {
             s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), ite);
-            throw new CloudRuntimeException("Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
+            Throwable cause = ite.getCause();
+            if (cause instanceof InvalidParameterValueException) {
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, cause.getMessage());
+            } else if (cause instanceof PermissionDeniedException) {
+                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, cause.getMessage());
+            }
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
         } catch (IllegalAccessException iae) {
             s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), iae);
-            throw new CloudRuntimeException("Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
         } catch (IllegalArgumentException iArgEx) {
             s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), iArgEx);
-            throw new CloudRuntimeException("Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
+        } catch (Exception ex) {
+            s_logger.error("Unhandled exception invoking method " + methodName + " for command " + cmd.getClass().getSimpleName(), ex);
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
         }
     }
 

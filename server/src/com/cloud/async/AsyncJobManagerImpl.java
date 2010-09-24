@@ -36,6 +36,8 @@ import org.apache.log4j.NDC;
 
 import com.cloud.api.ApiDispatcher;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
+import com.cloud.api.ServerApiException;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -152,7 +154,6 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
 
     		if (resultObject != null) {
                 job.setResult(SerializerHelper.toSerializedStringOld(resultObject));
-//                job.setResult((String)resultObject);
     		}
 
     		job.setLastUpdated(DateUtil.currentGMTTime());
@@ -253,14 +254,6 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
 		} else {
 		    throw new AsyncCommandQueued(queue, "job-" + job.getId() + " queued");
 		}
-
-		/*
-        if (queue != null) {
-            checkQueue(queue.getId());
-        } else {
-            throw new CloudRuntimeException("Unable to insert queue item into database, DB is full?");
-        }
-        */
     }
 
     @Override @DB
@@ -311,93 +304,6 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
     	
     	return jobResult;
     }
-
-    /* old code...remove for new API framework
-    private AsyncJobExecutor getJobExecutor(AsyncJobVO job) {
-    	String executorClazzName = "com.cloud.async.executor." + job.getCmd() + "Executor";
-    	
-		try {
-			Class<?> consoleProxyClazz = Class.forName(executorClazzName);
-			
-			AsyncJobExecutor executor = (AsyncJobExecutor)ComponentLocator.inject(consoleProxyClazz);
-			executor.setJob(job);
-			executor.setAsyncJobMgr(this);
-			return executor;
-		} catch (final ClassNotFoundException e) {
-			s_logger.error("Unable to load async-job executor class: " + executorClazzName, e);
-		}
-    	return null;
-    }
-
-    // old code...remove for new API framework
-    private void scheduleExecution(final AsyncJobExecutor executor) {
-    	scheduleExecution(executor, false);
-    }
-
-    // old code...remove for new API framework
-    private void scheduleExecution(final AsyncJobExecutor executor, boolean executeInContext) {
-    	Runnable runnable = getExecutorRunnable(executor);
-    	if(executeInContext)
-    		runnable.run();
-    	else
-    		_executor.submit(runnable);
-    }
-
-    // old code...remove for new API framework
-    private Runnable getExecutorRunnable(final AsyncJobExecutor executor) {
-    	return new Runnable() {
-    		public void run() {
-    			long jobId = 0;
-    			BaseAsyncJobExecutor.setCurrentExecutor(executor);
-
-    			Transaction txn = Transaction.open(Transaction.CLOUD_DB);
-    			try {
-    				jobId = executor.getJob().getId();
-    				NDC.push("job-" + jobId);
-    				
-        			if(s_logger.isDebugEnabled())
-        				s_logger.debug("Executing " + executor.getClass().getName() + " for job-" + jobId);
-    				
-	    			if(executor.execute()) {
-	        			if(s_logger.isTraceEnabled())
-	        				s_logger.trace("Executing " + executor.getClass().getName() + " returns true for job-" + jobId);
-	    				
-		    			if(executor.getSyncSource() != null) {
-		    				_queueMgr.purgeItem(executor.getSyncSource().getId());
-		    				checkQueue(executor.getSyncSource().getQueueId());
-		    			}
-	    			} else {
-	        			if(s_logger.isTraceEnabled())
-	        				s_logger.trace("Executing " + executor.getClass().getName() + " returns false for job-" + jobId);
-	    			}
-	    			
-	    			if(s_logger.isDebugEnabled())
-	    				s_logger.debug("Done executing " + executor.getClass().getName() + " for job-" + jobId);
-	    			
-    			} catch(Throwable e) {
-    				s_logger.error("Unexpected exception while executing " + executor.getClass().getName(), e);
-    				
-    				try {
-		    			if(executor.getSyncSource() != null) {
-		    				_queueMgr.purgeItem(executor.getSyncSource().getId());
-		    				
-		    				checkQueue(executor.getSyncSource().getQueueId());
-		    			}
-    				} catch(Throwable ex) {
-    					s_logger.fatal("Exception on exception, log it for record", ex);
-    				}
-    			} finally {
-    				StackMaid.current().exitCleanup();
-    				txn.close();
-    				NDC.pop();
-    			}
-    			
-    			// leave no trace out after execution for security reason
-    			BaseAsyncJobExecutor.setCurrentExecutor(null);
-    		}
-    	};
-    }
-     */
 
     private void scheduleExecution(final AsyncJobVO job) {
         scheduleExecution(job, false);
@@ -457,8 +363,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
                     // serialize this to the async job table
                     completeAsyncJob(jobId, AsyncJobResult.STATUS_SUCCEEDED, 0, cmdObj.getResponse());
 
-                    // FIXME:  things might need to be queued as part of synchronization here, so they just have to be re-dispatched from the queue
-                    //         mechanism...
+                    // commands might need to be queued as part of synchronization here, so they just have to be re-dispatched from the queue mechanism...
                     if (job.getSyncSource() != null) {
                         _queueMgr.purgeItem(job.getSyncSource().getId());
                         checkQueue(job.getSyncSource().getQueueId());
@@ -474,9 +379,15 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
                         }
                         checkQueue(((AsyncCommandQueued)e).getQueue().getId());
                     } else {
-                        s_logger.error("Unexpected exception while executing " + job.getCmd(), e);
+                        if (!(e instanceof ServerApiException)) {
+                            s_logger.error("Unexpected exception while executing " + job.getCmd(), e);
+                        }
 
-                        //FIXME:  need to clean up any queue that happened as part of the dispatching and move on to the next item in the queue
+                        // FIXME:  setting resultCode to BaseCmd.INTERNAL_ERROR is not right, usually executors have their exception handling
+                        //         and we need to preserve that as much as possible here
+                        completeAsyncJob(jobId, AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, e.getMessage());
+
+                        // need to clean up any queue that happened as part of the dispatching and move on to the next item in the queue
                         try {
                             if (job.getSyncSource() != null) {
                                 _queueMgr.purgeItem(job.getSyncSource().getId());
@@ -491,38 +402,9 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
                     txn.close();
                     NDC.pop();
                 }
-                
-                // leave no trace out after execution for security reason
-//                BaseAsyncJobExecutor.setCurrentExecutor(null);
             }
         };
     }
-
-    /* Old method...remove as part of API refactoring...
-    private void executeQueueItem(SyncQueueItemVO item, boolean fromPreviousSession) {
-        AsyncJobVO job = _jobDao.findById(item.getContentId());
-        if(job != null) {
-            AsyncJobExecutor executor = getJobExecutor(job);
-            if(executor == null) {
-                s_logger.error("Unable to find job exectutor for job-" + job.getId());
-                _queueMgr.purgeItem(item.getId());
-            } else {
-                if(s_logger.isDebugEnabled())
-                    s_logger.debug("Schedule queued job-" + job.getId());
-
-                executor.setFromPreviousSession(fromPreviousSession);
-                executor.setSyncSource(item);
-                executor.setJob(job);
-                scheduleExecution(executor);
-            }
-        } else {
-            if(s_logger.isDebugEnabled())
-                s_logger.debug("Unable to find related job for queue item: " + item.toString());
-
-            _queueMgr.purgeItem(item.getId());
-        }
-    }
-    */
 
     private void executeQueueItem(SyncQueueItemVO item, boolean fromPreviousSession) {
         AsyncJobVO job = _jobDao.findById(item.getContentId());
@@ -738,4 +620,3 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
     	return _name;
     }
 }
-  

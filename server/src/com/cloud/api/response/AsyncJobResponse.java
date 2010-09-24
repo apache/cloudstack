@@ -19,6 +19,7 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.api.ResponseObject;
 import com.google.gson.annotations.SerializedName;
 
 public class AsyncJobResponse extends BaseResponse {
@@ -47,7 +48,7 @@ public class AsyncJobResponse extends BaseResponse {
     private String jobResultType;
 
     @SerializedName("jobresult")
-    private String jobResult;
+    private ResponseObject jobResult;
 
     @SerializedName("jobinstancetype")
     private String jobInstanceType;
@@ -122,11 +123,11 @@ public class AsyncJobResponse extends BaseResponse {
         this.jobResultType = jobResultType;
     }
 
-    public String getJobResult() {
+    public ResponseObject getJobResult() {
         return jobResult;
     }
 
-    public void setJobResult(String jobResult) {
+    public void setJobResult(ResponseObject jobResult) {
         this.jobResult = jobResult;
     }
 

@@ -28,6 +28,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ResponseObject;
 import com.cloud.api.response.AsyncJobResponse;
 import com.cloud.async.AsyncJobResult;
+import com.cloud.serializer.SerializerHelper;
 
 @Implementation(method="queryAsyncJobResult")
 public class QueryAsyncJobResultCmd extends BaseCmd {
@@ -68,7 +69,7 @@ public class QueryAsyncJobResultCmd extends BaseCmd {
         response.setJobStatus(result.getJobStatus());
         response.setJobProcStatus(result.getProcessStatus());
         response.setJobResultCode(result.getResultCode());
-        response.setJobResult(result.getResult());
+        response.setJobResult((ResponseObject)SerializerHelper.fromSerializedString(result.getResult()));
 
         Object resultObject = result.getResultObject();
         if (resultObject != null) {

@@ -325,11 +325,6 @@ public class ApiServer implements HttpRequestHandler {
 
                     // This is where the command is either serialized, or directly dispatched
                     response = queueCommand(cmdObj, paramMap);
-
-//                    Map<String, Object> validatedParams = cmdObj.validateParams(paramMap, decode);
-
-//                    List<Pair<String, Object>> resultValues = cmdObj.execute(validatedParams);
-//                    response = cmdObj.buildResponse(resultValues, responseType);
                 } else {
                     s_logger.warn("unknown API command: " + ((command == null) ? "null" : command[0]));
                     response = buildErrorResponse("unknown API command: " + ((command == null) ? "null" : command[0]), responseType);
