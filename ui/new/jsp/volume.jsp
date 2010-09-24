@@ -690,3 +690,52 @@
     </div>    
 </div>
 <!--  Snapshot tab template (end) -->
+
+<!-- Add Volume Dialog from Snapshot (begin) -->
+<div id="dialog_add_volume_from_snapshot" title="Add Volume from Snapshot" style="display: none">   
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form5">
+        <ol>
+            <li>
+                <label>Name:</label>
+                <input class="text" type="text" id="name" />
+                <div id="name_errormsg" class="dialog_formcontent_errormsg" style="display: none;"></div>
+            </li>           
+        </ol>
+        </form>
+    </div>
+</div>
+<!-- Add Volume Dialog from Snapshot (end) -->
+
+<!-- Create template from snapshot (begin) -->
+<div id="dialog_create_template_from_snapshot" title="Create Template from Snapshot" style="display:none">	
+	<div class="dialog_formcontent">
+		<form action="#" method="post" id="form6">
+			<ol>
+				<li>
+					<label>Name:</label>
+					<input class="text" type="text" id="name" style="width:250px"/>
+					<div id="name_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+				</li>
+				<li>
+					<label>Display Text:</label>
+					<input class="text" type="text" id="display_text" style="width:250px"/>
+					<div id="display_text_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+				</li>				
+				<li>
+					<label>OS Type:</label>
+					<select class="select" id="os_type">
+					</select>
+				</li>		
+				<li>
+					<label>Password Enabled?:</label>
+					<select class="select" id="password">						
+						<option value="false">No</option>
+						<option value="true">Yes</option>
+					</select>
+				</li>
+			</ol>
+		</form>
+	</div>
+</div>
+<!-- Create template from snapshot (end) -->

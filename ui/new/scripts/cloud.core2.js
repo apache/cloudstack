@@ -441,19 +441,23 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgrid
 			                            $subgridItem.find("#after_action_info").text(label + " action succeeded.");
                                         $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();   
 			                        
-			                            //DestroyVirtualMachine API doesn't return an embedded object on success (Bug 6041)
-	                                    //Before Bug 6041 get fixed, use the temporary solution below.							            
-	                                    $.ajax({
-                                            cache: false,
-                                            data: createURL("command="+listAPI+"&id="+id),
-                                            dataType: "json",                                            
-                                            success: function(json) {		                                                                                  
-                                                afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $subgridItem);	                        
-                                            }
-                                        });										
-				                        //After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
-			                            //afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $subgridItem);	   
-			                            
+			                            if(apiCommand.indexOf("command=delete")!=0) { 
+			                                //DestroyVirtualMachine API doesn't return an embedded object on success (Bug 6041)
+	                                        //Before Bug 6041 get fixed, use the temporary solution below.							            
+	                                        $.ajax({
+                                                cache: false,
+                                                data: createURL("command="+listAPI+"&id="+id),
+                                                dataType: "json",                                            
+                                                success: function(json) {		                                                                                  
+                                                    afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $subgridItem);	                        
+                                                }
+                                            });										
+				                            //After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
+			                                //afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $subgridItem);	 
+			                            }
+				                        else { //apiCommand is deleteXXXXXXX	
+				                            afterActionSeccessFn(id);
+				                        }	
 			                        } else if (result.jobstatus == 2) { // Failed
 			                            $subgridItem.find("#after_action_info").text(label + " action failed. Reason: " + fromdb(result.jobresult));
                                         $subgridItem.find("#after_action_info_container").removeClass("success").addClass("error").show();			                          
@@ -484,22 +488,26 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgrid
 	        async: false,
 	        success: function(json) {	   
 	            $spinningWheel.hide();      
-														              
-	            //RecoverVirtualMachine API doesn't return an embedded object on success (Bug 6037)
-	            //Before Bug 6037 get fixed, use the temporary solution below.							            
-	            $.ajax({
-                    cache: false,
-                    data: createURL("command="+listAPI+"&id="+id),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {	
-                        $subgridItem.find("#after_action_info").text(label + " action succeeded.");
-                        $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();   
-                        afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $subgridItem);	                           
-                    }
-                });										
-				//After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
-				//afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $subgridItem);	   
+				if(apiCommand.indexOf("command=delete")!=0) { 											              
+	                //RecoverVirtualMachine API doesn't return an embedded object on success (Bug 6037)
+	                //Before Bug 6037 get fixed, use the temporary solution below.							            
+	                $.ajax({
+                        cache: false,
+                        data: createURL("command="+listAPI+"&id="+id),
+                        dataType: "json",
+                        async: false,
+                        success: function(json) {	
+                            $subgridItem.find("#after_action_info").text(label + " action succeeded.");
+                            $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();   
+                            afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $subgridItem);	                           
+                        }
+                    });										
+				    //After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
+				    //afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $subgridItem);	 
+				}
+				else { //apiCommand is deleteXXXXXXX	
+				    afterActionSeccessFn(id);
+				}  
 	        },
             error: function(XMLHttpResponse) {	             
 		        handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, label);    

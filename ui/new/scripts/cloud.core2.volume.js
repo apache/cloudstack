@@ -26,7 +26,17 @@ function afterLoadVolumeJSP() {
 	    modal: true,
 	    zIndex: 2000
     }));	
-	     
+	activateDialog($("#dialog_add_volume_from_snapshot").dialog({ 
+	    autoOpen: false,
+	    modal: true,
+	    zIndex: 2000
+    }));
+    activateDialog($("#dialog_create_template_from_snapshot").dialog({ 
+        width: 400,
+        autoOpen: false,
+        modal: true,
+        zIndex: 2000
+    }));    
 	        
     $.ajax({
         data: createURL("command=listOsTypes"),
@@ -34,9 +44,11 @@ function afterLoadVolumeJSP() {
 	    success: function(json) {
 		    types = json.listostypesresponse.ostype;
 		    if (types != null && types.length > 0) {
-			    var select = $("#dialog_create_template #create_template_os_type").empty();
+			    var osTypeField1 = $("#dialog_create_template #create_template_os_type").empty();
+			    var osTypeField2 = $("#dialog_create_template_from_snapshot #os_type").empty();	
 			    for (var i = 0; i < types.length; i++) {
-				    select.append("<option value='" + types[i].id + "'>" + types[i].description + "</option>");
+				    osTypeField1.append("<option value='" + types[i].id + "'>" + types[i].description + "</option>");
+				    osTypeField2.append("<option value='" + types[i].id + "'>" + types[i].description + "</option>");
 			    }
 		    }	
 	    }
@@ -487,7 +499,10 @@ function volumeSnapshotJSONToTemplate(jsonObj, template) {
 	
 	var $actionMenu = $actionLink.find("#snapshot_action_menu");
     $actionMenu.find("#action_list").empty();	
-	//buildActionLinkForSubgridItem("Create Template", vmSnapshotActionMap, $actionMenu, snapshotListAPIMap, template);		
+    
+    buildActionLinkForSubgridItem("Create Volume", volumeSnapshotActionMap, $actionMenu, snapshotListAPIMap, template);	
+    buildActionLinkForSubgridItem("Delete Snapshot", volumeSnapshotActionMap, $actionMenu, snapshotListAPIMap, template);	
+    buildActionLinkForSubgridItem("Create Template", volumeSnapshotActionMap, $actionMenu, snapshotListAPIMap, template);	
 } 
  
 function volumeClearRightPanel() {       
@@ -825,3 +840,96 @@ function doAttachDisk($actionLink, listAPIMap, $detailsTab) {
 	    } 
     }).dialog("open");
 }	
+
+//Snapshot tab actions
+var volumeSnapshotActionMap = {  
+    "Create Volume": {              
+        isAsyncJob: true,
+        asyncJobResponse: "createvolumeresponse",
+        dialogBeforeActionFn : doCreateVolumeFromSnapshotInVolumePage,
+        inProcessText: "Creating Volume....",
+        afterActionSeccessFn: function(jsonObj) {}
+    }   
+    , 
+    "Delete Snapshot": {              
+        api: "deleteSnapshot",     
+        isAsyncJob: true,
+        asyncJobResponse: "deletesnapshotresponse",        
+        inProcessText: "Deleting snapshot....",
+        afterActionSeccessFn: function(id) { 
+//            var $midmenuItem1 = $("#midmenuItem_"+id); 
+//            $midmenuItem1.remove();
+//            clearRightPanel();
+//            snapshotClearRightPanel();
+        }
+    } 
+    ,
+    "Create Template": {              
+        isAsyncJob: true,
+        asyncJobResponse: "createtemplateresponse",
+        dialogBeforeActionFn : doCreateTemplateFromSnapshotInVolumePage,
+        inProcessText: "Creating Template....",
+        afterActionSeccessFn: function(jsonObj) {}
+    }
+}  
+                                              
+function doCreateVolumeFromSnapshotInVolumePage($actionLink, listAPIMap, $subgridItem) { 
+    var jsonObj = $subgridItem.data("jsonObj");
+       
+    $("#dialog_add_volume_from_snapshot")
+    .dialog("option", "buttons", {	                    
+     "Add": function() {	
+         var thisDialog = $(this);	 
+                                        
+         var isValid = true;					
+         isValid &= validateString("Name", thisDialog.find("#name"), thisDialog.find("#name_errormsg"));					          		
+         if (!isValid) return;   
+         
+         thisDialog.dialog("close");       	                                             
+         
+         var name = thisDialog.find("#name").val();	                
+         
+         var id = jsonObj.id;
+         var apiCommand = "command=createVolume&snapshotid="+id+"&name="+name;    	
+    	 doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgridItem);			
+     },
+     "Cancel": function() {	                         
+         $(this).dialog("close");
+     }
+    }).dialog("open");     
+}
+
+function doCreateTemplateFromSnapshotInVolumePage($actionLink, listAPIMap, $subgridItem) { 
+    var jsonObj = $subgridItem.data("jsonObj");
+       
+    $("#dialog_create_template_from_snapshot")
+    .dialog("option", "buttons", {
+     "Add": function() {	
+         var thisDialog = $(this);	 	                                                                        
+         var isValid = true;					
+         isValid &= validateString("Name", thisDialog.find("#name"), thisDialog.find("#name_errormsg"), false);		
+         isValid &= validateString("Display Text", thisDialog.find("#display_text"), thisDialog.find("#display_text_errormsg"), false);				         		          		
+         if (!isValid) return;                  	                                             
+         
+         thisDialog.dialog("close");	
+         
+         var name = thisDialog.find("#name").val();	 
+         var displayText = thisDialog.find("#display_text").val();	 
+         var osTypeId = thisDialog.find("#os_type").val(); 	  
+         var password = thisDialog.find("#password").val();	                                         
+       
+         var id = jsonObj.id;
+         var apiCommand = "command=createTemplate&snapshotid="+id+"&name="+name+"&displaytext="+displayText+"&ostypeid="+osTypeId+"&passwordEnabled="+password;    	 
+    	 doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgridItem);				
+     },
+     "Cancel": function() {	                         
+         $(this).dialog("close");
+     }	                     
+    }).dialog("open");	     
+}
+
+var snapshotListAPIMap = {
+    listAPI: "listSnapshots",
+    listAPIResponse: "listsnapshotsresponse",
+    listAPIResponseObj: "snapshot"
+}; 
