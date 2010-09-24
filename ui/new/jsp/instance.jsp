@@ -817,13 +817,16 @@
             <p id="description">
                 Waiting &hellip;
             </p>
-        </div>
-        <div class="gridheader_message" id="action_message_box" style="border: 1px solid #999; display: none;">
-            <p id="description"></p>
-            <div class="close_button" id="close_button">
-            </div>
-        </div>   
+        </div>       
     </div>
+    
+    <div class="grid_rows" id="after_action_info_container" style="display:none">
+        <div class="grid_row_cell" style="width: 90%; border: none;">
+            <div class="row_celltitles">
+                <strong id="after_action_info">Message will appear here</strong></div>
+        </div>
+    </div>
+        
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">

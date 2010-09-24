@@ -42,12 +42,7 @@
                 </div>
                 <p id="description">
                     Detaching Disk &hellip;</p>
-            </div>
-            <div class="gridheader_message" id="action_message_box" style="border: 1px solid #999; display: none;">
-                <p id="description"></p>
-                <div class="close_button" id="close_button">
-                </div>
-            </div>           
+            </div>                 
         </div>
         <div class="grid_container">
             <div class="grid_rows odd">

@@ -437,10 +437,10 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgrid
 		                        } else {											                    
 			                        $("body").stopTime(timerKey);				                        
 			                        $spinningWheel.hide();      		                       
-			                        if (result.jobstatus == 1) { // Succeeded 			                            
-			                            $subgridItem.find("#action_message_box #description").text(label + " action succeeded.");
-			                            $subgridItem.find("#action_message_box").removeClass("error").show();            
-			                            
+			                        if (result.jobstatus == 1) { // Succeeded 				                        
+			                            $subgridItem.find("#after_action_info").text(label + " action succeeded.");
+                                        $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();   
+			                        
 			                            //DestroyVirtualMachine API doesn't return an embedded object on success (Bug 6041)
 	                                    //Before Bug 6041 get fixed, use the temporary solution below.							            
 	                                    $.ajax({
@@ -455,8 +455,8 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgrid
 			                            //afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $subgridItem);	   
 			                            
 			                        } else if (result.jobstatus == 2) { // Failed
-			                            $subgridItem.find("#action_message_box #description").text(label + " action failed. Reason: " + sanitizeXSS(result.jobresult));
-			                            $subgridItem.find("#action_message_box").addClass("error").show();        
+			                            $subgridItem.find("#after_action_info").text(label + " action failed. Reason: " + fromdb(result.jobresult));
+                                        $subgridItem.find("#after_action_info_container").removeClass("success").addClass("error").show();			                          
 			                        }											                    
 		                        }
 	                        },
@@ -492,9 +492,9 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgrid
                     data: createURL("command="+listAPI+"&id="+id),
                     dataType: "json",
                     async: false,
-                    success: function(json) {			            
-			            $subgridItem.find("#action_message_box #description").text(label + " action succeeded.");
-			            $subgridItem.find("#action_message_box").removeClass("error").show();            
+                    success: function(json) {	
+                        $subgridItem.find("#after_action_info").text(label + " action succeeded.");
+                        $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();   
                         afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $subgridItem);	                           
                     }
                 });										
@@ -518,11 +518,12 @@ function handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, label) {
         var end = XMLHttpResponse.responseText.indexOf("</h1");
         errorMsg = XMLHttpResponse.responseText.substring(start, end);		
     }
-    if(errorMsg.length > 0)           
-        $subgridItem.find("#action_message_box #description").text(label + " action failed. Reason: " + sanitizeXSS(unescape(errorMsg))); 
-    else        
-        $subgridItem.find("#action_message_box #description").text(label + " action failed.");    
-	$subgridItem.find("#action_message_box").addClass("error").show();    
+    if(errorMsg.length > 0)  
+        $subgridItem.find("#after_action_info").text(label + " action failed. Reason: " + fromdb(errorMsg));    
+    else     
+        $subgridItem.find("#after_action_info").text(label + " action failed."); 
+        
+	$subgridItem.find("#after_action_info_container").removeClass("success").addClass("error").show();  
 }    	                
 //***** actions for a subgrid item in right panel (end) **************************************************************************
 
@@ -567,7 +568,6 @@ function clearMiddleMenu() {
 }
 
 function clearRightPanel() {
-    $("#right_panel_content #action_message_box").hide(); 
     $("#right_panel_content #tab_content_details #action_link #action_menu #action_list").empty();    
     $("#right_panel_content #after_action_info_container").hide(); 
 }
