@@ -1624,9 +1624,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     vmStatsAnswer.setNumCPUs(vmStatsAnswer.getNumCPUs() + 1);
                     vmStatsAnswer.setCPUUtilization((vmStatsAnswer.getCPUUtilization() + getDataAverage(dataNode, col, numRows))*100);
                 } else if (param.equals("vif_0_rx")) {
-                    vmStatsAnswer.setNetworkReadKBs(getDataAverage(dataNode, col, numRows));
+                	vmStatsAnswer.setNetworkReadKBs(getDataAverage(dataNode, col, numRows)/(8*2));
                 } else if (param.equals("vif_0_tx")) {
-                    vmStatsAnswer.setNetworkWriteKBs(getDataAverage(dataNode, col, numRows));
+                	vmStatsAnswer.setNetworkWriteKBs(getDataAverage(dataNode, col, numRows)/(8*2));
                 }
             }
 
