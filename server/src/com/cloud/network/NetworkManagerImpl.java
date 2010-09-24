@@ -2478,12 +2478,12 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     }
     
     @Override
-    public List<NicTO> prepare(VirtualMachineProfile vmProfile, DeployDestination dest) throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException {
+    public NicTO[] prepare(VirtualMachineProfile vmProfile, DeployDestination dest) throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException {
         List<NicVO> nics = _nicDao.listBy(vmProfile.getId());
-        List<NicTO> nicTos = new ArrayList<NicTO>(nics.size());
+        NicTO[] nicTos = new NicTO[nics.size()];
+        int i = 0;
         for (NicVO nic : nics) {
             NetworkConfigurationVO config = _networkProfileDao.findById(nic.getNetworkConfigurationId());
-            
             if (nic.getReservationStrategy() == ReservationStrategy.Start) {
                 NetworkGuru concierge = _networkGurus.get(config.getGuruName());
                 nic.setState(Resource.State.Reserving);
@@ -2510,7 +2510,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                 }
             }
             
-            nicTos.add(toNicTO(nic, config));
+            nicTos[i++] = toNicTO(nic, config);
             
         }
         return nicTos;

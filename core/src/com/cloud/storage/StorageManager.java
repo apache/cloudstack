@@ -24,8 +24,10 @@ import java.util.Map;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
@@ -41,6 +43,7 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachineProfile;
 
 public interface StorageManager extends Manager {
     
@@ -314,4 +317,6 @@ public interface StorageManager extends Manager {
     Long findHostIdForStoragePool(StoragePoolVO pool);
 	void createCapacityEntry(StoragePoolVO storagePool, long allocated);
 
+    
+    VolumeTO[] prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException;
 }

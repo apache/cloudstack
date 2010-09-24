@@ -28,7 +28,6 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.host.Host;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume.VolumeType;
@@ -42,12 +41,12 @@ public class UseLocalForRootAllocator extends LocalStoragePoolAllocator implemen
     boolean _useLocalStorage;
 
     @Override
-    public StoragePool allocateToPool(DiskProfile dskCh, ServiceOffering offering, DataCenterVO dc, HostPodVO pod, Long clusterId, VMInstanceVO vm, VMTemplateVO template, Set<? extends StoragePool> avoids) {
+    public StoragePool allocateToPool(DiskProfile dskCh, DataCenterVO dc, HostPodVO pod, Long clusterId, VMInstanceVO vm, VMTemplateVO template, Set<? extends StoragePool> avoids) {
         if (!_useLocalStorage) {
             return null;
         }
         
-        return super.allocateToPool(dskCh, offering, dc, pod, clusterId, vm, template, avoids);
+        return super.allocateToPool(dskCh, dc, pod, clusterId, vm, template, avoids);
     }
 
     @Override
@@ -69,13 +68,13 @@ public class UseLocalForRootAllocator extends LocalStoragePoolAllocator implemen
     }
     
     @Override
-    protected boolean localStorageAllocationNeeded(DiskProfile dskCh, VMInstanceVO vm, ServiceOffering offering) {
+    protected boolean localStorageAllocationNeeded(DiskProfile dskCh, VMInstanceVO vm) {
         if (dskCh.getType() == VolumeType.ROOT) {
             return true;
         } else if (dskCh.getType() == VolumeType.DATADISK) {
             return false;
         } else {
-            return super.localStorageAllocationNeeded(dskCh, vm, offering);
+            return super.localStorageAllocationNeeded(dskCh, vm);
         }
     }
     

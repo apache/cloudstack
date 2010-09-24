@@ -33,7 +33,6 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -85,13 +84,12 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     
     
     @Override
-    public boolean allocatorIsCorrectType(DiskProfile dskCh, VMInstanceVO vm, ServiceOffering offering) {
-    	return localStorageAllocationNeeded(dskCh, vm, offering);
+    public boolean allocatorIsCorrectType(DiskProfile dskCh, VMInstanceVO vm) {
+    	return localStorageAllocationNeeded(dskCh, vm);
     }
     
     @Override
     public StoragePool allocateToPool(DiskProfile dskCh,
-                                      ServiceOffering offering,
                                       DataCenterVO dc,
                                       HostPodVO pod,
                                       Long clusterId,
@@ -100,14 +98,14 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
                                       Set<? extends StoragePool> avoid) {
     	
     	// Check that the allocator type is correct
-        if (!allocatorIsCorrectType(dskCh, vm, offering)) {
+        if (!allocatorIsCorrectType(dskCh, vm)) {
         	return null;
         }
 
         Set<StoragePool> myAvoids = new HashSet<StoragePool>(avoid);
         VirtualMachineProfile vmc = new VirtualMachineProfile(vm.getType());
         StoragePool pool = null;
-        while ((pool = super.allocateToPool(dskCh, offering, dc, pod, clusterId, vm, template, myAvoids)) != null) {
+        while ((pool = super.allocateToPool(dskCh, dc, pod, clusterId, vm, template, myAvoids)) != null) {
             myAvoids.add(pool);
             if (pool.getPoolType().isShared()) {
                 return pool;

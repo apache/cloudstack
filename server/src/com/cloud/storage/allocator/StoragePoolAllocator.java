@@ -17,18 +17,21 @@
  */
 package com.cloud.storage.allocator;
 
+import java.util.List;
 import java.util.Set;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.host.Host;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 
 /**
  * Allocator for a disk.  This determines which StoragePool should
@@ -36,7 +39,9 @@ import com.cloud.vm.VirtualMachine;
  */
 public interface StoragePoolAllocator extends Adapter {
 	
-	StoragePool allocateToPool(DiskProfile dskCh, ServiceOffering offering, DataCenterVO dc, HostPodVO pod, Long cluster, VMInstanceVO vm, VMTemplateVO template, Set<? extends StoragePool> avoids);
+	StoragePool allocateToPool(DiskProfile dskCh, DataCenterVO dc, HostPodVO pod, Long cluster, VMInstanceVO vm, VMTemplateVO template, Set<? extends StoragePool> avoids);
 	
 	String chooseStorageIp(VirtualMachine vm, Host host, Host storage);
+	
+	StoragePool allocateTo(DiskProfile dskCh, VirtualMachineProfile vm, DeployDestination dest, List<Volume> disks, Set<StoragePool> avoids);
 }

@@ -27,7 +27,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
@@ -40,15 +39,15 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
     private static final Logger s_logger = Logger.getLogger(FirstFitStoragePoolAllocator.class);
 
     @Override
-    public boolean allocatorIsCorrectType(DiskProfile dskCh, VMInstanceVO vm, ServiceOffering offering) {
-    	return !localStorageAllocationNeeded(dskCh, vm, offering);
+    public boolean allocatorIsCorrectType(DiskProfile dskCh, VMInstanceVO vm) {
+    	return !localStorageAllocationNeeded(dskCh, vm);
     }
 
     @Override
-	public StoragePool allocateToPool(DiskProfile dskCh, ServiceOffering offering, DataCenterVO dc, HostPodVO pod, Long clusterId,
+	public StoragePool allocateToPool(DiskProfile dskCh, DataCenterVO dc, HostPodVO pod, Long clusterId,
 									  VMInstanceVO vm, VMTemplateVO template, Set<? extends StoragePool> avoid) {
 		// Check that the allocator type is correct
-        if (!allocatorIsCorrectType(dskCh, vm, offering)) {
+        if (!allocatorIsCorrectType(dskCh, vm)) {
         	return null;
         }
 
@@ -65,7 +64,7 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
         Collections.shuffle(pools);
         
         for (StoragePoolVO pool: pools) {
-        	if (checkPool(avoid, pool, dskCh, template, null, offering, vm, sc)) {
+        	if (checkPool(avoid, pool, dskCh, template, null, vm, sc)) {
         		return pool;
         	}
         }
