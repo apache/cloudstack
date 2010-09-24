@@ -848,7 +848,12 @@ var volumeSnapshotActionMap = {
         asyncJobResponse: "createvolumeresponse",
         dialogBeforeActionFn : doCreateVolumeFromSnapshotInVolumePage,
         inProcessText: "Creating Volume....",
-        afterActionSeccessFn: function(jsonObj) {}
+        afterActionSeccessFn: function(jsonObj, $subgridItem) {        
+            var $midmenuItem1 = $("#midmenu_item").clone();
+            $("#midmenu_container").append($midmenuItem1.show());
+            volumeToMidmenu(jsonObj, $midmenuItem1);
+			bindClickToMidMenu($midmenuItem1, volumeToRigntPanel);  
+        }
     }   
     , 
     "Delete Snapshot": {              
@@ -866,7 +871,7 @@ var volumeSnapshotActionMap = {
         asyncJobResponse: "createtemplateresponse",
         dialogBeforeActionFn : doCreateTemplateFromSnapshotInVolumePage,
         inProcessText: "Creating Template....",
-        afterActionSeccessFn: function(jsonObj) {}
+        afterActionSeccessFn: function(jsonObj, $subgridItem) {}
     }
 }  
                                               
