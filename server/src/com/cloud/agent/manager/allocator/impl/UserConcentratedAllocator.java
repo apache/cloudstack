@@ -78,6 +78,7 @@ public class UserConcentratedAllocator implements PodAllocator {
     
     Random _rand = new Random(System.currentTimeMillis());
     private int _hoursToSkipStoppedVMs = 24;
+    private int _hoursToSkipDestroyedVMs = 0;
     
     private int _secStorageVmRamSize = 1024;
     private int _proxyRamSize =  256;
@@ -202,15 +203,20 @@ public class UserConcentratedAllocator implements PodAllocator {
     		return true;
     	
     	if(vm.getState() == State.Stopped || vm.getState() == State.Destroyed) {
-    		// for stopped/Destroyed VMs, we will skip counting it if it hasn't been used for a while
+    		// for Stopped/Destroyed VMs, we will skip counting it if it hasn't been used for a while
+    		int _hoursToSkipVMs = _hoursToSkipStoppedVMs;
+    		
+    		if (vm.getState() == State.Destroyed)
+    			_hoursToSkipVMs = _hoursToSkipDestroyedVMs;
     		
     		long millisecondsSinceLastUpdate = DateUtil.currentGMTTime().getTime() - vm.getUpdateTime().getTime();
-    		if(millisecondsSinceLastUpdate > _hoursToSkipStoppedVMs*3600000L) {
+    		if(millisecondsSinceLastUpdate > _hoursToSkipVMs*3600000L) {
     			if(s_logger.isDebugEnabled())
-    				s_logger.debug("Skip counting vm " + vm.getInstanceName() + " in capacity allocation as it has been stopped for " + millisecondsSinceLastUpdate/60000 + " minutes");
+    				s_logger.debug("Skip counting " + vm.getState().toString() + " vm " + vm.getInstanceName() + " in capacity allocation as it has been " + vm.getState().toString().toLowerCase() + " for " + millisecondsSinceLastUpdate/60000 + " minutes");
     			return true;
     		}
     	}
+    	
     	return false;
     }
     
@@ -308,8 +314,10 @@ public class UserConcentratedAllocator implements PodAllocator {
         _name = name;
         
 		Map<String, String> configs = _configDao.getConfiguration("management-server", params);
-		String value = configs.get("capacity.skipcounting.hours");
-		_hoursToSkipStoppedVMs = NumbersUtil.parseInt(value, 24);
+		String stoppedValue = configs.get("capacity.skipcounting.hours");
+		String destroyedValue = configs.get("capacity.skipcounting.destroyed.hours");
+		_hoursToSkipStoppedVMs = NumbersUtil.parseInt(stoppedValue, 24);
+		_hoursToSkipDestroyedVMs = NumbersUtil.parseInt(destroyedValue, 0);
 
 		// TODO this is not good, there should be one place to get these values
 		_secStorageVmRamSize = NumbersUtil.parseInt(configs.get("secstorage.vm.ram.size"), 256);
