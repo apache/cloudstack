@@ -797,7 +797,7 @@ public class UserVmManagerImpl implements UserVmManager {
            	 	
                 if (vm.getDomainRouterId() != null) {
                 	vm.setVnet(vnet);
-                	vm.setInstanceName(VirtualMachineName.attachVnet(vm.getName(), vm.getVnet()));
+                	//vm.setInstanceName(VirtualMachineName.attachVnet(vm.getName(), vm.getVnet()));
                 } else {
                 	vm.setVnet("untagged");
                 }
