@@ -98,9 +98,10 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap) {
 		                        } else {											                    
 			                        $("body").stopTime(timerKey);				                        
 			                        $spinningWheel.hide();      		                       
-			                        if (result.jobstatus == 1) { // Succeeded 			                           
-			                            $detailsTab.find("#action_message_box #description").text(label + " action succeeded.");
-			                            $detailsTab.find("#action_message_box").removeClass("error").show();
+			                        if (result.jobstatus == 1) { // Succeeded 	
+			                            $("#right_panel_content #after_action_info").text(label + " action succeeded.");
+                                        $("#right_panel_content #after_action_info_container").removeClass("errorbox").show(); 
+                                        
 			                            if(apiCommand.indexOf("command=delete")!=0) { 	
 			                                //DestroyVirtualMachine API doesn't return an embedded object on success (Bug 6041)
 	                                        //Before Bug 6041 get fixed, use the temporary solution below.							            
@@ -119,8 +120,8 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap) {
 				                            afterActionSeccessFn(id);
 				                        }			                             
 			                        } else if (result.jobstatus == 2) { // Failed		
-			                            $detailsTab.find("#action_message_box #description").text(label + " action failed. Reason: " + sanitizeXSS(result.jobresult)); 
-			                            $detailsTab.find("#action_message_box").addClass("error").show();
+			                            $("#right_panel_content #after_action_info").text(label + " action failed. Reason: " + fromdb(result.jobresult));
+                                        $("#right_panel_content #after_action_info_container").addClass("errorbox").show();
 			                        }											                    
 		                        }
 	                        },
@@ -147,9 +148,9 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap) {
 	        dataType: "json",
 	        async: false,
 	        success: function(json) {	            
-	            $spinningWheel.hide(); 	            
-	            $detailsTab.find("#action_message_box #description").text(label + " action succeeded.");
-			    $detailsTab.find("#action_message_box").removeClass("error").show();         
+	            $spinningWheel.hide(); 	        
+	            $("#right_panel_content #after_action_info").text(label + " action succeeded.");
+                $("#right_panel_content #after_action_info_container").removeClass("errorbox").show();  
 								
 				if(apiCommand.indexOf("command=delete")!=0) { 									              
 	                //RecoverVirtualMachine API doesn't return an embedded object on success (Bug 6037)
@@ -188,10 +189,10 @@ function handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label) {
         errorMsg = XMLHttpResponse.responseText.substring(start, end);		
     }
     if(errorMsg.length > 0) 
-        $detailsTab.find("#action_message_box #description").text(label + " action failed. Reason: " + sanitizeXSS(unescape(errorMsg))); 
+        $("#right_panel_content #after_action_info").text(label + " action failed. Reason: " + fromdb(errorMsg));
     else
-        $detailsTab.find("#action_message_box #description").text(label + " action failed.");    
-    $detailsTab.find("#action_message_box").addClass("error").show();
+        $("#right_panel_content #after_action_info").text(label + " action failed.");        
+    $("#right_panel_content #after_action_info_container").addClass("errorbox").show();
 }    	                
 //***** actions for details tab in right panel (end) **************************************************************************
 
@@ -568,6 +569,7 @@ function clearMiddleMenu() {
 function clearRightPanel() {
     $("#right_panel_content #action_message_box").hide(); 
     $("#right_panel_content #tab_content_details #action_link #action_menu #action_list").empty();    
+    $("#right_panel_content #after_action_info_container").hide(); 
 }
     
 var selected_leftmenu_id = null; 
