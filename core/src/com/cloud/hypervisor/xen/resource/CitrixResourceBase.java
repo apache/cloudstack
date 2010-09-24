@@ -158,7 +158,6 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
