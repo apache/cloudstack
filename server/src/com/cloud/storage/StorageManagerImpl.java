@@ -939,6 +939,9 @@ public class StorageManagerImpl implements StorageManager {
         txn.start();
         if (Storage.ImageFormat.ISO == template.getFormat()) {
             rootVol = new VolumeVO(VolumeType.ROOT, vm.getId(), vm.getInstanceName() + "-ROOT", dc.getId(), pod.getId(), account.getId(), account.getDomainId(),(size>0)? size : diskOffering.getDiskSizeInBytes());
+
+        	createStartedEvent(account, rootVol);
+        	
             rootVol.setDiskOfferingId(diskOffering.getId());
             rootVol.setSourceType(SourceType.Template);
             rootVol.setSourceId(template.getId());
@@ -946,6 +949,9 @@ public class StorageManagerImpl implements StorageManager {
             rootVol = _volsDao.persist(rootVol);
         } else {
             rootVol = new VolumeVO(VolumeType.ROOT, vm.getId(), template.getId(), vm.getInstanceName() + "-ROOT", dc.getId(), pod.getId(), account.getId(), account.getDomainId(), offering.isRecreatable());
+         
+        	createStartedEvent(account, rootVol);
+            
             rootVol.setDiskOfferingId(offering.getId());
             rootVol.setTemplateId(template.getId());
             rootVol.setSourceId(template.getId());
@@ -955,6 +961,9 @@ public class StorageManagerImpl implements StorageManager {
             
             if (diskOffering != null && diskOffering.getDiskSizeInBytes() > 0) {
                 dataVol = new VolumeVO(VolumeType.DATADISK, vm.getId(), vm.getInstanceName() + "-DATA", dc.getId(), pod.getId(), account.getId(), account.getDomainId(), (size>0)? size : diskOffering.getDiskSizeInBytes());
+                
+                createStartedEvent(account, dataVol);
+                
                 dataVol.setDiskOfferingId(diskOffering.getId());
                 dataVol.setSourceType(SourceType.DiskOffering);
                 dataVol.setSourceId(diskOffering.getId());
@@ -994,6 +1003,16 @@ public class StorageManagerImpl implements StorageManager {
             throw new CloudRuntimeException("Unable to create volumes for " + vm, e);
         }
     }
+
+	private void createStartedEvent(Account account, VolumeVO rootVol) {
+		EventVO event1 = new EventVO();
+		event1.setAccountId(account.getId());
+		event1.setUserId(1L);
+		event1.setType(EventTypes.EVENT_VOLUME_CREATE);
+		event1.setState(EventState.Started);
+		event1.setDescription("Create volume: " + rootVol.getName()+ "started");
+		_eventDao.persist(event1);
+	}
     
 
     @Override
