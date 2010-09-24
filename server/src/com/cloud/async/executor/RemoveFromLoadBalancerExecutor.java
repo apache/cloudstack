@@ -20,14 +20,10 @@ package com.cloud.async.executor;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
 import com.cloud.async.AsyncJobManager;
-import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.serializer.GsonHelper;
-import com.cloud.server.ManagementServer;
 import com.google.gson.Gson;
 
 public class RemoveFromLoadBalancerExecutor extends BaseAsyncJobExecutor {

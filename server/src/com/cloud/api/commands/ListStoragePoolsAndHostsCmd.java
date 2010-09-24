@@ -120,7 +120,7 @@ public class ListStoragePoolsAndHostsCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public String getResponse() {
+    public ResponseObject getResponse() {
         List<Object> poolsAndHosts = (List<Object>)getResponseObject();
 
         ListResponse response = new ListResponse();
@@ -137,7 +137,7 @@ public class ListStoragePoolsAndHostsCmd extends BaseListCmd {
 
         response.setResponses(responses);
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 
     private StoragePoolResponse constructStoragePoolResponse(StoragePoolVO pool) {

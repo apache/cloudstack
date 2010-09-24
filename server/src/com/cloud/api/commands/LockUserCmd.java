@@ -23,6 +23,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="lockUser", manager=Manager.ManagementServer)
 public class LockUserCmd extends BaseCmd {
@@ -49,42 +51,17 @@ public class LockUserCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
 
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//        Account adminAccount = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-//        Long id = (Long)params.get(BaseCmd.Properties.ID.getName());
-//
-//        // Check if user with id exists in the system
-//        User user = getManagementServer().findUserById(id);
-//        if (user == null) {
-//            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find user by id");
-//        } else if (user.getRemoved() != null) {
-//            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find user by id");
-//        }
-//
-//        // If the user is a System user, return an error.  We do not allow this
-//        Account account = getManagementServer().findAccountById(user.getAccountId());
-//        if ((account != null) && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
-//            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "user id : " + id + " is a system user, locking is not allowed");
-//        }
-//
-//        if ((adminAccount != null) && !getManagementServer().isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
-//            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Failed to lock user " + id + ", permission denied.");
-//        }
-//
-//        boolean success = getManagementServer().lockUser(id.longValue());
-//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), Boolean.valueOf(success).toString()));
-//        return returnValues;
-//    }
-
 	@Override
-	public String getResponse() {
-		// TODO Auto-generated method stub
-		return null;
+	public ResponseObject getResponse() {
+        Boolean success = (Boolean)getResponseObject();
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(success);
+        response.setResponseName(getName());
+        return response;
 	}
 }

@@ -25,7 +25,7 @@ import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.storage.GuestOS;
@@ -135,7 +135,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public String getResponse() {
+    public ResponseObject getResponse() {
         VMTemplateVO template = (VMTemplateVO)getResponseObject();
 
         TemplateResponse response = new TemplateResponse();
@@ -181,6 +181,6 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
         }
 
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

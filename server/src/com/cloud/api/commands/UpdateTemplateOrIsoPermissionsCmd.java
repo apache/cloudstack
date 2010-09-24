@@ -8,6 +8,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="updateTemplatePermissions", manager=Manager.ManagementServer)
 public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
@@ -77,8 +79,11 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     }
     
     @Override
-    public String getResponse() 
-    {
-    	return null;//return the response here
+    public ResponseObject getResponse() {
+        Boolean success = (Boolean)getResponseObject();
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(success);
+        response.setResponseName(getResponseName());
+    	return response;
     }
 }

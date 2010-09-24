@@ -21,10 +21,18 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.UserVmResponse;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
 
 @Implementation(method="startVirtualMachine", manager=Manager.UserVmManager)
 public class StartVMCmd extends BaseAsyncCmd {
@@ -51,6 +59,7 @@ public class StartVMCmd extends BaseAsyncCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
@@ -59,51 +68,93 @@ public class StartVMCmd extends BaseAsyncCmd {
     	return "virtualmachine";
     }
 
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//        Long vmId = (Long)params.get(BaseCmd.Properties.ID.getName());
-//        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-//        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-//        
-//        //if account is removed, return error
-//        if(account!=null && account.getRemoved() != null)
-//        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account " + account.getId()+" is removed");
-//        
-//        //Verify input parameters
-//        UserVmVO vmInstanceCheck = getManagementServer().findUserVMInstanceById(vmId.longValue());
-//        if (vmInstanceCheck == null) {
-//        	throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
-//        }
-//
-//        if (account != null) {
-//            if (!isAdmin(account.getType()) && (account.getId().longValue() != vmInstanceCheck.getAccountId())) {
-//                throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId + " for this account");
-//            } else if (!getManagementServer().isChildDomain(account.getDomainId(), vmInstanceCheck.getDomainId())) {
-//                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid virtual machine id (" + vmId + ") given, unable to start virtual machine.");
-//            }
-//        }
-//
-//        if (userId == null) {
-//            userId = Long.valueOf(1);
-//        }
-//
-//        long jobId = getManagementServer().startVirtualMachineAsync(userId.longValue(), vmId.longValue(), null);
-//        if(jobId == 0) {
-//        	s_logger.warn("Unable to schedule async-job for StartVM comamnd");
-//        } else {
-//	        if(s_logger.isDebugEnabled())
-//	        	s_logger.debug("StartVM command has been accepted, job id: " + jobId);
-//        }
-//        
-//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-//        
-//        return returnValues;
-//    }
-
 	@Override
-	public String getResponse() {
-		// TODO Add the response object as per executor
-		return null;
+	public ResponseObject getResponse() {
+	    UserVm vm = (UserVm)getResponseObject();
+
+	    UserVmResponse response = new UserVmResponse();
+	    response.setId(vm.getId());
+	    response.setName(vm.getName());
+	    response.setCreated(vm.getCreated());
+	    response.setZoneId(vm.getDataCenterId());
+	    response.setZoneName(ApiDBUtils.findZoneById(vm.getDataCenterId()).getName());
+	    response.setPrivateIp(vm.getPrivateIpAddress());
+	    response.setServiceOfferingId(vm.getServiceOfferingId());
+	    response.setHaEnable(vm.isHaEnabled());
+        if (vm.getDisplayName() == null || vm.getDisplayName().length() == 0) {
+            response.setDisplayName(vm.getName());
+        } else {
+            response.setDisplayName(vm.getDisplayName());
+        }
+
+        if (vm.getGroup() != null) {
+            response.setGroup(vm.getGroup());
+        }
+
+        if (vm.getState() != null) {
+            response.setState(vm.getState().toString());
+        }
+
+        Account acct = ApiDBUtils.findAccountById(vm.getAccountId());
+        if (acct != null) {
+            response.setAccountName(acct.getAccountName());
+            response.setDomainId(acct.getDomainId());
+            response.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
+        }
+
+        if (BaseCmd.isAdmin(acct.getType()) && (vm.getHostId() != null)) {
+            response.setHostName(ApiDBUtils.findHostById(vm.getHostId()).getName());
+            response.setHostId(vm.getHostId());
+        }
+        
+        String templateName = "ISO Boot";
+        boolean templatePasswordEnabled = false;
+        String templateDisplayText = "ISO Boot";
+        
+        VMTemplateVO template = ApiDBUtils.findTemplateById(vm.getTemplateId());
+        if (template != null) {
+            templateName = template.getName();
+            templatePasswordEnabled = template.getEnablePassword();
+            templateDisplayText = template.getDisplayText();
+             if (templateDisplayText == null) {
+                templateDisplayText = templateName;
+             }
+        }
+
+        response.setTemplateId(vm.getTemplateId());
+        response.setTemplateName(templateName);
+        response.setTemplateDisplayText(templateDisplayText);
+        response.setPasswordEnabled(templatePasswordEnabled);
+        if (templatePasswordEnabled) {
+            response.setPassword(null); // FIXME:  Where should password come from?  In the old framework, password was always passed
+                                        //         in to composeResultObject() as null, so that behavior is preserved...
+        } else {
+            response.setPassword("");
+        }
+
+        String isoName = null;
+        if (vm.getIsoId() != null) {
+            VMTemplateVO iso = ApiDBUtils.findTemplateById(vm.getIsoId().longValue());
+            if (iso != null) {
+                isoName = iso.getName();
+            }
+        }
+
+        response.setIsoId(vm.getIsoId());
+        response.setIsoName(isoName);
+
+        ServiceOffering offering = ApiDBUtils.findServiceOfferingById(vm.getServiceOfferingId());
+        response.setServiceOfferingId(vm.getServiceOfferingId());
+        response.setServiceOfferingName(offering.getName());
+
+        response.setCpuNumber(offering.getCpu());
+        response.setCpuSpeed(offering.getSpeed());
+        response.setMemory(offering.getRamSize());
+        
+        //Network groups
+        response.setNetworkGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(vm.getId()));
+
+        response.setResponseName(getName());
+        return response;
 	}
 }

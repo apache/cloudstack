@@ -17,7 +17,6 @@
  */
 package com.cloud.api.response;
 
-import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class AccountResponse extends BaseResponse {

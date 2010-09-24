@@ -20,12 +20,20 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UpgradeVmResponse;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.user.Account;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VmStats;
 
 @Implementation(method="upgradeVirtualMachine", manager=Manager.UserVmManager)
 public class UpgradeVMCmd extends BaseCmd {
@@ -58,8 +66,7 @@ public class UpgradeVMCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    private UserVmVO responseObject = null;
-    
+    @Override
     public String getName() {
         return s_name;
     }
@@ -69,70 +76,58 @@ public class UpgradeVMCmd extends BaseCmd {
     }    
     
     @Override
-    public String getResponse() 
-    {
-        UpgradeVmResponse response = new UpgradeVmResponse();
+    public ResponseObject getResponse() {
         UserVmVO userVm = (UserVmVO)getResponseObject();
-        
-        UserVmVO responseObject = (UserVmVO)getResponseObject();
-        if (responseObject != null) 
-        {
-//            
-//    		Account acct = ms.findAccountById(Long.valueOf(vm.getAccountId()));
-//    		resultObj.setAccount(acct.getAccountName());
-//    		
-//    		ServiceOfferingVO offering = ms.findServiceOfferingById(vm.getServiceOfferingId());
-//    		resultObj.setCpuSpeed(offering.getSpeed());
-//    		resultObj.setMemory(offering.getRamSize());
-//    		if(offering.getDisplayText()!=null)
-//    			resultObj.setServiceOfferingName(offering.getDisplayText());
-//    		else
-//    			resultObj.setServiceOfferingName(offering.getName());
-//    		resultObj.setServiceOfferingId(vm.getServiceOfferingId());
-//    		
-//    		VmStats vmStats = ms.getVmStatistics(vm.getId());
-//    		if(vmStats != null)
-//    		{
-//    			resultObj.setCpuUsed((long) vmStats.getCPUUtilization());
-//    			resultObj.setNetworkKbsRead((long) vmStats.getNetworkReadKBs());
-//    			resultObj.setNetworkKbsWrite((long) vmStats.getNetworkWriteKBs());
-//    		}
-//    		
-//    		resultObj.setCreated(vm.getCreated());
-//    		resultObj.setDisplayName(vm.getDisplayName());
-//    		resultObj.setDomain(ms.findDomainIdById(acct.getDomainId()).getName());
-//    		resultObj.setDomainId(acct.getDomainId());
-//    		resultObj.setHaEnable(vm.isHaEnabled());
-//    		if(vm.getHostId() != null)
-//    		{
-//    			resultObj.setHostId(vm.getHostId());
-//    			resultObj.setHostName(ms.getHostBy(vm.getHostId()).getName());
-//    		}
-//    		resultObj.setIpAddress(vm.getPrivateIpAddress());
-//    		resultObj.setName(vm.getName());
-//    		resultObj.setState(vm.getState().toString());
-//    		resultObj.setZoneId(vm.getDataCenterId());
-//    		resultObj.setZoneName(ms.findDataCenterById(vm.getDataCenterId()).getName());
-//    		
-//    		VMTemplateVO template = ms.findTemplateById(vm.getTemplateId());
-//    		resultObj.setPasswordEnabled(template.getEnablePassword());
-//    		resultObj.setTemplateDisplayText(template.getDisplayText());
-//    		resultObj.setTemplateId(template.getId());
-//    		resultObj.setTemplateName(template.getName());
-//        } 
-//        else 
-//        {
-//        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update zone; internal error.");
-//        }
-//        
-//        return SerializerHelper.toSerializedString(responseObject);
-        	
+
+        UpgradeVmResponse response = new UpgradeVmResponse();
+        if (userVm != null) {
+    		Account acct = ApiDBUtils.findAccountById(userVm.getAccountId());
+    		response.setAccount(acct.getAccountName());
+
+    		ServiceOffering offering = ApiDBUtils.findServiceOfferingById(userVm.getServiceOfferingId());
+    		response.setCpuSpeed(offering.getSpeed());
+    		response.setMemory(offering.getRamSize());
+    		if (((ServiceOfferingVO)offering).getDisplayText() != null) {
+    		    response.setServiceOfferingName(((ServiceOfferingVO)offering).getDisplayText());
+    		} else {
+    		    response.setServiceOfferingName(offering.getName());
+    		}
+
+    		response.setServiceOfferingId(userVm.getServiceOfferingId());
+    		
+    		VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId());
+    		if (vmStats != null) {
+    		    response.setCpuUsed((long) vmStats.getCPUUtilization());
+    		    response.setNetworkKbsRead((long) vmStats.getNetworkReadKBs());
+    		    response.setNetworkKbsWrite((long) vmStats.getNetworkWriteKBs());
+    		}
+    		
+    		response.setCreated(userVm.getCreated());
+    		response.setDisplayName(userVm.getDisplayName());
+    		response.setDomain(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
+    		response.setDomainId(acct.getDomainId());
+    		response.setHaEnable(userVm.isHaEnabled());
+
+    		if (userVm.getHostId() != null) {
+    		    response.setHostId(userVm.getHostId());
+    			response.setHostName(ApiDBUtils.findHostById(userVm.getHostId()).getName());
+    		}
+    		response.setIpAddress(userVm.getPrivateIpAddress());
+    		response.setName(userVm.getName());
+    		response.setState(userVm.getState().toString());
+    		response.setZoneId(userVm.getDataCenterId());
+    		response.setZoneName(ApiDBUtils.findZoneById(userVm.getDataCenterId()).getName());
+    		
+    		VMTemplateVO template = ApiDBUtils.findTemplateById(userVm.getTemplateId());
+    		response.setPasswordEnabled(template.getEnablePassword());
+    		response.setTemplateDisplayText(template.getDisplayText());
+    		response.setTemplateId(template.getId());
+    		response.setTemplateName(template.getName());
+        } else {
+        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update zone; internal error.");
         }
-        return null;
+
+        response.setResponseName(getName());
+        return response;
     }
-    
-    public void setResponseObject(UserVmVO userVm) {
-        responseObject = userVm;
-    }
-        
 }

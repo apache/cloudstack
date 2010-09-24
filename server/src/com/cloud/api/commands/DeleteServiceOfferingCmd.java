@@ -24,6 +24,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="deleteServiceOffering", manager=Manager.ConfigManager)
 public class DeleteServiceOfferingCmd extends BaseCmd{
@@ -56,44 +58,12 @@ public class DeleteServiceOfferingCmd extends BaseCmd{
         return s_name;
     }
 
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//        Long offeringId = (Long)params.get(BaseCmd.Properties.ID.getName());
-//        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-//        
-//        if (userId == null) {
-//            userId = Long.valueOf(User.UID_SYSTEM);
-//        }
-// 
-//        //Verify service offering id
-//        ServiceOfferingVO offering = getManagementServer().findServiceOfferingById(offeringId);
-//    	if (offering == null) {
-//    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find service offering " + offeringId);
-//    	} else if (offering.getRemoved() != null) {
-//    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find service offering " + offeringId);
-//    	}
-//
-//    	boolean success = false;
-//        try {     
-//            success = getManagementServer().deleteServiceOffering(userId, offeringId);
-//        } catch (Exception ex) {
-//            s_logger.error("Exception deleting service offering", ex);
-//            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete service offering " + offeringId + ":  internal error.");
-//        }
-//
-//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//        if (success) {
-//        	returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), Boolean.TRUE));
-//        } else {
-//        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete serviceoffering " + offeringId);
-//        }
-//        return returnValues;
-//    }
-
-
 	@Override
-	public String getResponse() {
-		// TODO Auto-generated method stub
-		return null;
+	public ResponseObject getResponse() {
+        Boolean success = (Boolean)getResponseObject();
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(success);
+        response.setResponseName(getName());
+        return response;
 	}
 }

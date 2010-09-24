@@ -24,7 +24,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.network.SecurityGroupVO;
 
@@ -82,7 +82,7 @@ public class CreatePortForwardingServiceCmd extends BaseCmd {
     }
 
     @Override
-    public String getResponse() {
+    public ResponseObject getResponse() {
         SecurityGroupVO group = (SecurityGroupVO)getResponseObject();
 
         SecurityGroupResponse response = new SecurityGroupResponse();
@@ -94,6 +94,6 @@ public class CreatePortForwardingServiceCmd extends BaseCmd {
         response.setDomainName(ApiDBUtils.findDomainById(group.getDomainId()).getName());
 
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

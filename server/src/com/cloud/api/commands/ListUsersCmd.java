@@ -27,7 +27,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.UserResponse;
 import com.cloud.user.UserAccountVO;
@@ -98,7 +98,7 @@ public class ListUsersCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public String getResponse() {
+    public ResponseObject getResponse() {
         List<UserAccountVO> users = (List<UserAccountVO>)getResponseObject();
 
         ListResponse response = new ListResponse();
@@ -126,6 +126,6 @@ public class ListUsersCmd extends BaseListCmd {
 
         response.setResponses(userResponses);
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

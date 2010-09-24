@@ -24,7 +24,7 @@ import java.util.List;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.AsyncJobResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.async.AsyncJobVO;
@@ -73,7 +73,7 @@ public class ListAsyncJobsCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public String getResponse() {
+    public ResponseObject getResponse() {
         List<AsyncJobVO> jobs = (List<AsyncJobVO>)getResponseObject();
 
         ListResponse response = new ListResponse();
@@ -98,6 +98,6 @@ public class ListAsyncJobsCmd extends BaseListCmd {
 
         response.setResponses(jobResponses);
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

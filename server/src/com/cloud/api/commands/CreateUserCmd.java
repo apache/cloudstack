@@ -24,7 +24,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.UserResponse;
 import com.cloud.user.UserAccount;
 
@@ -117,7 +117,7 @@ public class CreateUserCmd extends BaseCmd {
     }
 
     @Override
-    public String getResponse() {
+    public ResponseObject getResponse() {
         UserAccount user = (UserAccount)getResponseObject();
 
         // TODO:  user keys?
@@ -136,6 +136,6 @@ public class CreateUserCmd extends BaseCmd {
         response.setUsername(user.getUsername());
 
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

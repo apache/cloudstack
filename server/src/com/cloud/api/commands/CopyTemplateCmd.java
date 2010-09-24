@@ -26,8 +26,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.VMTemplateHostVO;
@@ -86,7 +86,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
     }
 
 	@Override
-	public String getResponse() {
+	public ResponseObject getResponse() {
         TemplateResponse templateResponse = new TemplateResponse();
         VMTemplateVO template = (VMTemplateVO)getResponseObject();
         
@@ -158,7 +158,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
         }
         
         templateResponse.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(templateResponse);
+        return templateResponse;
 	}
 }
 

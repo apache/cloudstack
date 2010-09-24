@@ -417,8 +417,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 	}
 	
 	
-	@Override
-	@DB
+	@Override @DB @SuppressWarnings("rawtypes")
 	public List<IngressRuleVO> authorizeNetworkGroupIngress(AuthorizeNetworkGroupIngressCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
 		String groupName = cmd.getName();
 		String protocol = cmd.getProtocol();

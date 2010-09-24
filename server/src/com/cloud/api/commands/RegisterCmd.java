@@ -24,13 +24,14 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.RegisterResponse;
 
 @Implementation(method="createApiKeyAndSecretKey", manager=Manager.ManagementServer)
 public class RegisterCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterCmd.class.getName());
 
     private static final String s_name = "registeruserkeysresponse";
-
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -55,30 +56,15 @@ public class RegisterCmd extends BaseCmd {
         return s_name;
     }
 
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//        Long userId = (Long)params.get(BaseCmd.Properties.ID.getName());
-//
-//        User user = getManagementServer().findUserById(userId);
-//
-//        if (user == null) {
-//            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to find user for id : " + userId);
-//        }
-//        
-//        // generate both an api key and a secret key, update the user table with the keys, return the keys to the user
-//        String apiKey = getManagementServer().createApiKey(user.getId());
-//        String secretKey = getManagementServer().createSecretKey(user.getId());
-//
-//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.API_KEY.getName(), apiKey));
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SECRET_KEY.getName(), secretKey));
-//        return returnValues;
-//    }
-
 	@Override
-	public String getResponse() {
-		// TODO Auto-generated method stub
-		return null;
+	public ResponseObject getResponse() {
+	    String[] keys = (String[])getResponseObject();
+
+	    RegisterResponse response = new RegisterResponse();
+	    response.setApiKey(keys[0]);
+        response.setSecretKey(keys[1]);
+
+        response.setResponseName(getName());
+        return response;
 	}
 }

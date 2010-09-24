@@ -10,9 +10,8 @@ public class UpdateIsoPermissionsCmd extends UpdateTemplateOrIsoPermissionsCmd {
     protected String getResponseName() {
     	return "updateisopermissionsresponse";
     }
-    	
+
 	protected Logger getLogger() {
 		return Logger.getLogger(UpdateIsoPermissionsCmd.class.getName());    
 	}
-	
 }

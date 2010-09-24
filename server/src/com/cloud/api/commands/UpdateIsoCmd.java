@@ -23,8 +23,8 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.storage.VMTemplateVO;
 
@@ -55,7 +55,7 @@ public class UpdateIsoCmd extends UpdateTemplateOrIsoCmd {
         return s_name;
     }
     
-    public String getResponse() {
+    public ResponseObject getResponse() {
         TemplateResponse response = new TemplateResponse();
         VMTemplateVO responseObject = (VMTemplateVO)getResponseObject();
         if (responseObject != null) {
@@ -73,6 +73,6 @@ public class UpdateIsoCmd extends UpdateTemplateOrIsoCmd {
         }
 
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

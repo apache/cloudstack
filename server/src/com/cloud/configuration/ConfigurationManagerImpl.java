@@ -1034,7 +1034,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
     
     public ServiceOfferingVO updateServiceOffering(UpdateServiceOfferingCmd cmd) {
-
     	String displayText = cmd.getDisplayText();
     	Long id = cmd.getId();
     	String name = cmd.getName();

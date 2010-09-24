@@ -26,7 +26,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.PreallocatedLunResponse;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
@@ -69,7 +69,7 @@ public class ListPreallocatedLunsCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public String getResponse() {
+    public ResponseObject getResponse() {
         List<PreallocatedLunVO> preallocatedLuns = (List<PreallocatedLunVO>)getResponseObject();
 
         ListResponse response = new ListResponse();
@@ -91,6 +91,6 @@ public class ListPreallocatedLunsCmd extends BaseListCmd {
 
         response.setResponses(lunResponses);
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

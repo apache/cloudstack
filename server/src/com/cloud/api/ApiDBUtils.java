@@ -323,6 +323,19 @@ public class ApiDBUtils {
         return _userVmDao.findById(vmId);
     }
 
+    public static UserVm findUserVmByPublicIpAndGuestIp(String publicIp, String guestIp) {
+        IPAddressVO addr = _ipAddressDao.findById(publicIp);
+        List<UserVmVO> vms = _userVmDao.listVmsUsingGuestIpAddress(addr.getDataCenterId(), guestIp);
+        if (vms != null) {
+            for (UserVmVO vm : vms) {
+                if (vm.getAccountId() == addr.getAccountId()) {
+                    return vm;
+                }
+            }
+        }
+        return null;
+    }
+
     public static VlanVO findVlanById(long vlanDbId) {
         return _vlanDao.findById(vlanDbId);
     }
@@ -363,6 +376,10 @@ public class ApiDBUtils {
 
     public static List<UserVmVO> listUserVMsByHostId(long hostId) {
         return _userVmDao.listByHostId(hostId);
+    }
+
+    public static List<DataCenterVO> listZones() {
+        return _zoneDao.listAllActive();
     }
 
     public static boolean volumeIsOnSharedStorage(long volumeId) throws InvalidParameterValueException {

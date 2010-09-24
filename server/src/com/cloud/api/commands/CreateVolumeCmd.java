@@ -25,7 +25,7 @@ import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.VolumeResponse;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VolumeVO;
@@ -108,7 +108,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     }
     
     @Override
-    public String getResponse() {
+    public ResponseObject getResponse() {
         VolumeVO volume = (VolumeVO)getResponseObject();
 
         VolumeResponse response = new VolumeResponse();
@@ -136,6 +136,6 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
         response.setZoneName(ApiDBUtils.findZoneById(volume.getDataCenterId()).getName());
 
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

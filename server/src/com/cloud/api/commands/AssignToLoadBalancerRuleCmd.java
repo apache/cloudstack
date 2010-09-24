@@ -25,6 +25,8 @@ import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="assignToLoadBalancer", manager=Manager.NetworkManager)
 public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
@@ -70,9 +72,10 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
     }
     
     @Override
-    public String getResponse() {
-        // There's no specific response for this command, if the command failed an exception would have been thrown.  If we are here, then it succeeded.
-        // Seems like we should return success/true as the response though, so this will probably have to change.
-        return null;
+    public ResponseObject getResponse() {
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(Boolean.TRUE);
+        response.setResponseName(getName());
+        return response;
     }
 }

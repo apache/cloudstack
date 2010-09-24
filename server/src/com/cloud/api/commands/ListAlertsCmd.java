@@ -27,8 +27,8 @@ import com.cloud.alert.AlertVO;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.AlertResponse;
-import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.ListResponse;
 
 @Implementation(method="searchForAlerts")
@@ -65,7 +65,7 @@ public class ListAlertsCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public String getResponse() {
+    public ResponseObject getResponse() {
         List<AlertVO> alertList = (List<AlertVO>)getResponseObject();
 
         ListResponse response = new ListResponse();
@@ -82,6 +82,6 @@ public class ListAlertsCmd extends BaseListCmd {
 
         response.setResponses(alertResponseList);
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

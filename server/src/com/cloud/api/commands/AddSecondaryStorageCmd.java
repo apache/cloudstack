@@ -31,8 +31,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.dc.ClusterVO;
@@ -77,7 +77,7 @@ public class AddSecondaryStorageCmd extends BaseCmd {
     }
     
     @Override @SuppressWarnings("unchecked")
-    public String getResponse() {
+    public ResponseObject getResponse() {
 		List<HostVO> hosts = (List<HostVO>)getResponseObject();
 
         ListResponse response = new ListResponse();
@@ -149,6 +149,7 @@ public class AddSecondaryStorageCmd extends BaseCmd {
 
 	    response.setResponses(hostResponses);
 	    response.setResponseName(getName());
-	    return ApiResponseSerializer.toSerializedString(response);
+	    return response;
+	    //return ApiResponseSerializer.toSerializedString(response);
     }
 }

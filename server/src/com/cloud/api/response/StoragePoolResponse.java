@@ -67,6 +67,9 @@ public class StoragePoolResponse extends BaseResponse {
     @SerializedName("tags")
     private String tags;
 
+    @SerializedName("state")
+    private String state;
+
     public Long getId() {
         return id;
     }
@@ -185,5 +188,13 @@ public class StoragePoolResponse extends BaseResponse {
 
     public void setTags(String tags) {
         this.tags = tags;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 }

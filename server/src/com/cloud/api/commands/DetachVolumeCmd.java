@@ -24,6 +24,8 @@ import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="detachVolumeFromVM", manager=Manager.UserVmManager)
 public class DetachVolumeCmd extends BaseAsyncCmd {
@@ -51,6 +53,7 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
@@ -58,59 +61,13 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
     public static String getResultObjectName() {
     	return "volume";
     }
-    
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//    	Account account = (Account) params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-//    	Long volumeId = (Long) params.get(BaseCmd.Properties.ID.getName());
-//    	
-//    	boolean isAdmin;
-//    	if (account == null) {
-//    		// Admin API call
-//    		isAdmin = true;
-//    	} else {
-//    		// User API call
-//    		isAdmin = isAdmin(account.getType());
-//    	}
-//
-//    	// Check that the volume ID is valid
-//    	VolumeVO volume = getManagementServer().findVolumeById(volumeId);
-//    	if (volume == null)
-//    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId);
-//
-//    	// If the account is not an admin, check that the volume is owned by the account that was passed in
-//    	if (!isAdmin) {
-//    		if (account.getId() != volume.getAccountId())
-//    			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
-//    	} else if (account != null) {
-//    	    if (!getManagementServer().isChildDomain(account.getDomainId(), volume.getDomainId())) {
-//                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to detach volume with ID: " + volumeId + ", permission denied.");
-//    	    }
-//    	}
-//
-//    	try {
-//    		long jobId = getManagementServer().detachVolumeFromVMAsync(volumeId);
-//
-//    		if (jobId == 0) {
-//            	s_logger.warn("Unable to schedule async-job for DetachVolume comamnd");
-//            } else {
-//    	        if(s_logger.isDebugEnabled())
-//    	        	s_logger.debug("DetachVolume command has been accepted, job id: " + jobId);
-//            }
-//
-//    		List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-//
-//            return returnValues;
-//    	} catch (Exception ex) {
-//    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to detach volume: " + ex.getMessage());
-//    	}
-//    }
-
 
 	@Override
-	public String getResponse() {
-		// TODO Auto-generated method stub
-		return null;
+	public ResponseObject getResponse() {
+        Boolean success = (Boolean)getResponseObject();
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(success);
+        response.setResponseName(getName());
+        return response;
 	}
 }

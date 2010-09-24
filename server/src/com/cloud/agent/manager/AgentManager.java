@@ -215,7 +215,7 @@ public interface AgentManager extends Manager {
      * @return true if it's done.  false if not.
      */
     boolean cancelMaintenance(long hostId);
-    boolean cancelMaintenance(CancelMaintenanceCmd cmd) throws InvalidParameterValueException;
+    HostVO cancelMaintenance(CancelMaintenanceCmd cmd) throws InvalidParameterValueException;
 
     /**
      * Check to see if a virtual machine can be upgraded to the given service offering
@@ -228,7 +228,7 @@ public interface AgentManager extends Manager {
     
     public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException;
     public boolean reconnect(final long hostId) throws AgentUnavailableException;
-    public boolean reconnectHost(ReconnectHostCmd cmd) throws AgentUnavailableException;
+    public HostVO reconnectHost(ReconnectHostCmd cmd) throws AgentUnavailableException;
     
     public List<HostVO> discoverHosts(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password) throws DiscoveryException, InvalidParameterValueException;
     public List<HostVO> discoverHosts(AddHostCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;

@@ -1695,14 +1695,15 @@ function showInstancesTab(p_domainId, p_account) {
 										vmInstance.find("#vm_loading_container").hide();
 										if (result.jobstatus == 1) {
 											// Succeeded
-											vmJSONToTemplate(result.virtualmachine[0], vmInstance);
-											if (result.virtualmachine[0].passwordenabled == 'true') {
-												vmInstance.find(".loadingmessage_container .loadingmessage_top p").html("Your instance has been successfully created.  Your new password is : <b>" + result.virtualmachine[0].password + "</b> .  Please change it as soon as you log into your new instance");
+                                                                                        var virtualMachine = result.jobresult.deployvirtualmachineresponse;
+											vmJSONToTemplate(virtualMachine, vmInstance);
+											if (virtualMachine.passwordenabled == 'true') {
+												vmInstance.find(".loadingmessage_container .loadingmessage_top p").html("Your instance has been successfully created.  Your new password is : <b>" + virtualMachine.password + "</b> .  Please change it as soon as you log into your new instance");
 											} else {
 												vmInstance.find(".loadingmessage_container .loadingmessage_top p").html("Your instance has been successfully created.");
 											}
 											vmInstance.find(".loadingmessage_container").fadeIn("slow");
-											vmInstance.attr("id", "vm" + result.virtualmachine[0].id);
+											vmInstance.attr("id", "vm" + virtualMachine.id);
 											vmInstance.find("#vm_state_bar").removeClass("admin_vmred_arrow admin_vmgrey_arrow").addClass("admin_vmgreen_arrow");
 											vmInstance.find("#vm_state").text("Running").removeClass("grid_stoppedtitles grid_celltitles").addClass("grid_runningtitles");
 											changeGridRowsTotal($("#grid_rows_total"), 1); 

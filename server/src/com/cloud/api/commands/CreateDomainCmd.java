@@ -24,8 +24,8 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.DomainResponse;
 import com.cloud.domain.DomainVO;
 
@@ -69,7 +69,7 @@ public class CreateDomainCmd extends BaseCmd {
     }
 
     @Override
-    public String getResponse() {
+    public ResponseObject getResponse() {
         DomainResponse response = new DomainResponse();
         DomainVO responseObject = (DomainVO)getResponseObject();
         if (responseObject != null) {
@@ -83,6 +83,6 @@ public class CreateDomainCmd extends BaseCmd {
         }
 
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

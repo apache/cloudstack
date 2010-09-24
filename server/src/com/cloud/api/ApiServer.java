@@ -77,6 +77,7 @@ import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 
+import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.ConfigurationVO;
@@ -376,10 +377,10 @@ public class ApiServer implements HttpRequestHandler {
             if (objectId != null) {
                 return ((BaseAsyncCreateCmd)asyncCmd).getResponse(jobId, objectId);
             }
-            return asyncCmd.getResponse(jobId);
+            return ApiResponseSerializer.toSerializedString(asyncCmd.getResponse(jobId));
         } else {
             _dispatcher.dispatch(cmdObj, params);
-            return cmdObj.getResponse();
+            return ApiResponseSerializer.toSerializedString(cmdObj.getResponse());
         }
     }
 

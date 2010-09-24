@@ -30,7 +30,7 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.network.FirewallRuleVO;
@@ -70,7 +70,7 @@ public class ListPortForwardingRulesCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public String getResponse() {
+    public ResponseObject getResponse() {
         List<FirewallRuleVO> firewallRules = (List<FirewallRuleVO>)getResponseObject();
         Map<String, UserVmVO> userVmCache = new HashMap<String, UserVmVO>();
         IPAddressVO ipAddr = ApiDBUtils.findIpAddressById(ipAddress);
@@ -110,6 +110,6 @@ public class ListPortForwardingRulesCmd extends BaseListCmd {
 
         response.setResponses(fwResponses);
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

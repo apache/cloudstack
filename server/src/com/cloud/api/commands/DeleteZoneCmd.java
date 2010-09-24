@@ -24,6 +24,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="deleteZone", manager=Manager.ConfigManager)
 public class DeleteZoneCmd extends BaseCmd {
@@ -52,42 +54,17 @@ public class DeleteZoneCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
 
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//    	Long zoneId = (Long) params.get(BaseCmd.Properties.ID.getName());
-//    	Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-//    	
-//    	if (userId == null) {
-//            userId = Long.valueOf(User.UID_SYSTEM);
-//        }
-//    	
-//    	//verify input parameters
-//    	DataCenterVO zone = getManagementServer().findDataCenterById(zoneId);
-//    	if (zone == null) {
-//    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find zone by id " + zoneId);
-//    	}
-//
-//        try {
-//             getManagementServer().deleteZone(userId, zoneId);
-//        } catch (Exception ex) {
-//            s_logger.error("Exception deleting zone", ex);
-//            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-//        }
-//
-//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), "true"));
-//        
-//        return returnValues;
-//    }
-
-
 	@Override
-	public String getResponse() {
-		// TODO Auto-generated method stub
-		return null;
+	public ResponseObject getResponse() {
+        Boolean success = (Boolean)getResponseObject();
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(success);
+        response.setResponseName(getName());
+        return response;
 	}
 }

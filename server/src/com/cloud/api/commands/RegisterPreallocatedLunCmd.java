@@ -20,7 +20,7 @@ package com.cloud.api.commands;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.PreallocatedLunResponse;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 
@@ -88,7 +88,7 @@ public class RegisterPreallocatedLunCmd extends BaseCmd {
     }
 
     @Override
-    public String getResponse() {
+    public ResponseObject getResponse() {
         PreallocatedLunVO preallocatedLun = (PreallocatedLunVO)getResponseObject();
 
         PreallocatedLunResponse response = new PreallocatedLunResponse();
@@ -102,6 +102,6 @@ public class RegisterPreallocatedLunCmd extends BaseCmd {
         response.setTargetIqn(preallocatedLun.getTargetIqn());
 
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

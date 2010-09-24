@@ -20,6 +20,7 @@ package com.cloud.vm.dao;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
@@ -90,4 +91,6 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long> {
 	List<UserVmVO> listVirtualNetworkInstancesByAcctAndZone(long accountId, long dcId);
 	
 	List<UserVmVO> listVmsUsingGuestIpAddress(long dcId, String ipAddress);
+
+	UserVm findByZoneAndAcctAndGuestIpAddress(long zoneId, long accountId, String ipAddress);
 }

@@ -2207,7 +2207,7 @@ public class StorageManagerImpl implements StorageManager {
 
 	@Override
 	@DB
-	public boolean cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws InvalidParameterValueException{
+	public StoragePoolVO cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws InvalidParameterValueException{
 		Long primaryStorageId = cmd.getId();
 		Long userId = UserContext.current().getUserId();
 		
@@ -2248,7 +2248,7 @@ public class StorageManagerImpl implements StorageManager {
         					s_logger.warn("There was an error starting the console proxy id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance");
         	            	primaryStorage.setStatus(Status.ErrorInMaintenance);
         	        		_storagePoolDao.persist(primaryStorage);
-        					return false;
+        					return primaryStorage;
         				}
         			}
         			
@@ -2264,7 +2264,7 @@ public class StorageManagerImpl implements StorageManager {
         					s_logger.warn("There was an error starting the ssvm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance");
         	            	primaryStorage.setStatus(Status.ErrorInMaintenance);
         	        		_storagePoolDao.persist(primaryStorage);
-        					return false;
+        					return primaryStorage;
         				}
         			}
         			
@@ -2281,32 +2281,32 @@ public class StorageManagerImpl implements StorageManager {
 								s_logger.warn("There was an error starting the ssvm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance");
 	        	            	primaryStorage.setStatus(Status.ErrorInMaintenance);
 	        	        		_storagePoolDao.persist(primaryStorage);
-	        					return false;
+	        					return primaryStorage;
 							}
 						} catch (StorageUnavailableException e) {
 							s_logger.warn("There was an error starting the ssvm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance");
 							s_logger.warn(e);
         	            	primaryStorage.setStatus(Status.ErrorInMaintenance);
         	        		_storagePoolDao.persist(primaryStorage);
-        					return false;
+        					return primaryStorage;
 						} catch (InsufficientCapacityException e) {
 							s_logger.warn("There was an error starting the ssvm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance");
 							s_logger.warn(e);
         	            	primaryStorage.setStatus(Status.ErrorInMaintenance);
         	        		_storagePoolDao.persist(primaryStorage);
-        					return false;				
+        					return primaryStorage;				
 						} catch (ConcurrentOperationException e) {
 							s_logger.warn("There was an error starting the ssvm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance");
 							s_logger.warn(e);
         	            	primaryStorage.setStatus(Status.ErrorInMaintenance);
         	        		_storagePoolDao.persist(primaryStorage);
-        					return false;
+        					return primaryStorage;
 						} catch (ExecutionException e) {
 							s_logger.warn("There was an error starting the ssvm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance");
 							s_logger.warn(e);
         	            	primaryStorage.setStatus(Status.ErrorInMaintenance);
         	        		_storagePoolDao.persist(primaryStorage);
-        					return false;
+        					return primaryStorage;
 						}
         			}
         			    				
@@ -2321,19 +2321,19 @@ public class StorageManagerImpl implements StorageManager {
 			s_logger.warn("Error changing consoleproxy.restart back to false at end of cancel maintenance:"+e);
         	primaryStorage.setStatus(Status.ErrorInMaintenance);
     		_storagePoolDao.persist(primaryStorage);
-			return false;
+			return primaryStorage;
 		} catch (InternalErrorException e) {
 			s_logger.warn("Error changing consoleproxy.restart back to false at end of cancel maintenance:"+e);
         	primaryStorage.setStatus(Status.ErrorInMaintenance);
     		_storagePoolDao.persist(primaryStorage);
-			return false;
+			return primaryStorage;
 		}
 		
 		//Change the storage state back to up
 		primaryStorage.setStatus(Status.Up);
 		_storagePoolDao.persist(primaryStorage);
 		
-    	return true;
+    	return primaryStorage;
 	}
 	
 	private boolean sendToVmResidesOn(Command cmd) {

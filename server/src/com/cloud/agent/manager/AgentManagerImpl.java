@@ -1272,19 +1272,21 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
 
     @Override
-    public boolean reconnectHost(ReconnectHostCmd cmd) throws AgentUnavailableException
-    {
+    public HostVO reconnectHost(ReconnectHostCmd cmd) throws AgentUnavailableException {
     	Long hostId = cmd.getId();
-    	
+
     	HostVO host = _hostDao.findById(hostId);
     	if (host == null) {
     		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Host with id " + hostId.toString() + " doesn't exist");
     	}
 
-    	return reconnect(hostId);
-    	
+    	boolean result = reconnect(hostId);
+    	if (result) {
+    	    return host;
+    	}
+    	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to reconnect host with id " + hostId.toString() + ", internal error.");
     }
-    
+
     @Override
     public boolean reconnect(final long hostId) throws AgentUnavailableException {
         HostVO host;
@@ -1337,7 +1339,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
     
     @Override
-    public boolean cancelMaintenance(CancelMaintenanceCmd cmd) throws InvalidParameterValueException{
+    public HostVO cancelMaintenance(CancelMaintenanceCmd cmd) throws InvalidParameterValueException{
     	Long hostId = cmd.getId();
     	
         //verify input parameters
@@ -1346,7 +1348,11 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Host with id " + hostId.toString() + " doesn't exist");
     	}
     	
-    	return cancelMaintenance(hostId);
+    	boolean success = cancelMaintenance(hostId);
+    	if (!success) {
+    	    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error cancelling maintenance.");
+    	}
+    	return host;
     }
 
     @Override

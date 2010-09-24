@@ -23,6 +23,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="lockAccount", manager=Manager.ManagementServer)
 public class LockAccountCmd extends BaseCmd {
@@ -56,39 +58,17 @@ public class LockAccountCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
 
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//        Account adminAccount = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-//        Long domainId = (Long)params.get(BaseCmd.Properties.DOMAIN_ID.getName());
-//        String accountName = (String)params.get(BaseCmd.Properties.ACCOUNT.getName());
-//
-//        if ((adminAccount != null) && !getManagementServer().isChildDomain(adminAccount.getDomainId(), domainId)) {
-//            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Failed to lock account " + accountName + " in domain " + domainId + ", permission denied.");
-//        }
-//
-//        Account account = getManagementServer().findActiveAccount(accountName, domainId);
-//        if (account == null) {
-//            throw new ServerApiException (BaseCmd.PARAM_ERROR, "Unable to find active account with name " + accountName + " in domain " + domainId);
-//        }
-//
-//        // don't allow modify system account
-//        if (account.getId().longValue() == Account.ACCOUNT_ID_SYSTEM) {
-//            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "can not lock system account");
-//        }
-//
-//        boolean success = getManagementServer().lockAccount(account.getId().longValue());
-//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), Boolean.valueOf(success).toString()));
-//        return returnValues;
-//    }
-
 	@Override
-	public String getResponse() {
-		// TODO Auto-generated method stub
-		return null;
+	public ResponseObject getResponse() {
+        Boolean success = (Boolean)getResponseObject();
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(success);
+        response.setResponseName(getName());
+        return response;
 	}
 }

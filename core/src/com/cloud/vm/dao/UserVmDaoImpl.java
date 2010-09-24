@@ -27,6 +27,7 @@ import org.apache.log4j.Logger;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.GenericDaoBase;
@@ -52,6 +53,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     protected final SearchBuilder<UserVmVO> NameSearch;
     protected final SearchBuilder<UserVmVO> StateChangeSearch;
     protected final SearchBuilder<UserVmVO> GuestIpSearch;
+    protected final SearchBuilder<UserVmVO> ZoneAccountGuestIpSearch;
 
     protected final SearchBuilder<UserVmVO> DestroySearch;
     protected SearchBuilder<UserVmVO> AccountDataCenterVirtualSearch;
@@ -115,6 +117,12 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         DestroySearch.and("state", DestroySearch.entity().getState(), SearchCriteria.Op.IN);
         DestroySearch.and("updateTime", DestroySearch.entity().getUpdateTime(), SearchCriteria.Op.LT);
         DestroySearch.done();
+
+        ZoneAccountGuestIpSearch = createSearchBuilder();
+        ZoneAccountGuestIpSearch.and("dataCenterId", ZoneAccountGuestIpSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        ZoneAccountGuestIpSearch.and("accountId", ZoneAccountGuestIpSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        ZoneAccountGuestIpSearch.and("guestIpAddress", ZoneAccountGuestIpSearch.entity().getGuestIpAddress(), SearchCriteria.Op.EQ);
+        ZoneAccountGuestIpSearch.done();
 
         _updateTimeAttr = _allAttributes.get("updateTime");
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
@@ -292,5 +300,15 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     	sc.setParameters("states", new Object[] {State.Destroyed,  State.Expunging});
     	
     	return listActiveBy(sc);
+	}
+
+	@Override
+	public UserVm findByZoneAndAcctAndGuestIpAddress(long zoneId, long accountId, String ipAddress) {
+	    SearchCriteria<UserVmVO> sc = ZoneAccountGuestIpSearch.create();
+	    sc.setParameters("dataCenterId", zoneId);
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("guestIpAddress", ipAddress);
+
+        return findOneActiveBy(sc);
 	}
 }

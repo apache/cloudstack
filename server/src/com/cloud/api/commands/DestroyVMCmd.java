@@ -24,6 +24,8 @@ import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="destroyVm", manager=Manager.UserVmManager)
 public class DestroyVMCmd extends BaseAsyncCmd {
@@ -38,7 +40,6 @@ public class DestroyVMCmd extends BaseAsyncCmd {
     @Parameter(name="id", type=CommandType.LONG, required=true)
     private Long id;
 
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -47,7 +48,6 @@ public class DestroyVMCmd extends BaseAsyncCmd {
         return id;
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -55,52 +55,14 @@ public class DestroyVMCmd extends BaseAsyncCmd {
     public String getName() {
         return s_name;
     }
-    
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-//        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-//        Long vmId = (Long)params.get(BaseCmd.Properties.ID.getName());
-//
-//        // Verify input parameters
-//        UserVmVO vmInstance = getManagementServer().findUserVMInstanceById(vmId.longValue());
-//        if (vmInstance == null) {
-//        	throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
-//        }
-//
-//        if (account != null) {
-//            if (!isAdmin(account.getType())) {
-//                if (account.getId().longValue() != vmInstance.getAccountId()) {
-//                    throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId + "for this account");
-//                }
-//            } else if (!getManagementServer().isChildDomain(account.getDomainId(), vmInstance.getDomainId())) {
-//                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to destroy virtual machine with id " + vmId + ", permission denied.");
-//            }
-//        }
-//
-//        // If command is executed via 8096 port, set userId to the id of System account (1)
-//        if (userId == null) {
-//            userId = Long.valueOf(1);
-//        }
-//
-//        long jobId = getManagementServer().destroyVirtualMachineAsync(userId.longValue(), vmId.longValue());
-//        if (jobId == 0) {
-//            s_logger.warn("Unable to schedule async-job for DestroyVM command");
-//        } else {
-//            if (s_logger.isDebugEnabled())
-//                s_logger.debug("DestroyVM command has been accepted, job id: " + jobId);
-//        }
-//
-//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-//
-//        return returnValues;
-//    }
-
 
 	@Override
-	public String getResponse() {
-		// TODO Auto-generated method stub
-		return null;
+	public ResponseObject getResponse() {
+	    Boolean success = (Boolean)getResponseObject();
+
+	    SuccessResponse response = new SuccessResponse();
+	    response.setSuccess(success);
+	    response.setResponseName(getName());
+		return response;
 	}
 }

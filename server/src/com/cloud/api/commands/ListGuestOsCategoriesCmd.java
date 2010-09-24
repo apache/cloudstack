@@ -26,7 +26,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.GuestOSCategoryResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.storage.GuestOSCategoryVO;
@@ -64,7 +64,7 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public String getResponse() {
+    public ResponseObject getResponse() {
         List<GuestOSCategoryVO> osCategories = (List<GuestOSCategoryVO>)getResponseObject();
 
         ListResponse response = new ListResponse();
@@ -80,6 +80,6 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
 
         response.setResponses(osCatResponses);
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

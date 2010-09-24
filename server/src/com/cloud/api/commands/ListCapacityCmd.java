@@ -33,7 +33,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.CapacityResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.capacity.CapacityVO;
@@ -106,7 +106,7 @@ public class ListCapacityCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public String getResponse() {
+    public ResponseObject getResponse() {
         List<CapacityVO> capacities = (List<CapacityVO>)getResponseObject();
 
         ListResponse response = new ListResponse();
@@ -137,7 +137,7 @@ public class ListCapacityCmd extends BaseListCmd {
 
         response.setResponses(capacityResponses);
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 
     private List<CapacityVO> sumCapacities(List<CapacityVO> hostCapacities) {	        

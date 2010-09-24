@@ -25,7 +25,7 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SnapshotScheduleResponse;
 import com.cloud.storage.SnapshotScheduleVO;
@@ -66,7 +66,7 @@ public class ListRecurringSnapshotScheduleCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public String getResponse() {
+    public ResponseObject getResponse() {
         List<SnapshotScheduleVO> snapshotSchedules = (List<SnapshotScheduleVO>)getResponseObject();
 
         ListResponse response = new ListResponse();
@@ -84,6 +84,6 @@ public class ListRecurringSnapshotScheduleCmd extends BaseListCmd {
 
         response.setResponses(snapshotScheduleResponses);
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

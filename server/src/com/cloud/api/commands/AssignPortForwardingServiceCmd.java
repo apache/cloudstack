@@ -24,8 +24,10 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.response.SuccessResponse;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
 
 @Implementation(method="assignSecurityGroup", manager=Manager.ManagementServer)
 public class AssignPortForwardingServiceCmd extends BaseAsyncCmd {
@@ -75,83 +77,17 @@ public class AssignPortForwardingServiceCmd extends BaseAsyncCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
-    
-/*
 
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-        Long securityGroupId = (Long)params.get(BaseCmd.Properties.ID.getName());
-        String securityGroupIds = (String)params.get(BaseCmd.Properties.IDS.getName());
-        String publicIp = (String)params.get(BaseCmd.Properties.PUBLIC_IP.getName());
-        Long vmId = (Long)params.get(BaseCmd.Properties.VIRTUAL_MACHINE_ID.getName());
-
-        if ((securityGroupId == null) && (securityGroupIds == null)) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "No service id (or list of ids) specified.");
-        }
-
-        List<Long> sgIdList = null;
-        if (securityGroupIds != null) {
-            sgIdList = new ArrayList<Long>();
-            StringTokenizer st = new StringTokenizer(securityGroupIds, ",");
-            while (st.hasMoreTokens()) {
-                String token = st.nextToken();
-                try {
-                    Long nextSGId = Long.parseLong(token);
-                    sgIdList.add(nextSGId);
-                } catch (NumberFormatException nfe) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "The service id " + token + " is not a valid parameter.");
-                }
-            }
-        }
-
-        if (userId == null) {
-            userId = Long.valueOf(1);
-        }
-
-        List<Long> validateSGList = null;
-        if (securityGroupId == null) {
-            validateSGList = sgIdList;
-        } else {
-            validateSGList = new ArrayList<Long>();
-            validateSGList.add(securityGroupId);
-        }
-        Long validatedAccountId = getManagementServer().validateSecurityGroupsAndInstance(validateSGList, vmId);
-        if (validatedAccountId == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to apply port forwarding services " + StringUtils.join(sgIdList, ",") + " to instance " + vmId + ".  Invalid list of port forwarding services for the given instance.");
-        }
-        if (account != null) {
-            if (!isAdmin(account.getType()) && (account.getId().longValue() != validatedAccountId.longValue())) {
-                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Permission denied applying port forwarding services " + StringUtils.join(sgIdList, ",") + " to instance " + vmId + ".");
-            } else {
-                Account validatedAccount = getManagementServer().findAccountById(validatedAccountId);
-                if (!getManagementServer().isChildDomain(account.getDomainId(), validatedAccount.getDomainId())) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Permission denied applying port forwarding services " + StringUtils.join(sgIdList, ",") + " to instance " + vmId + ".");
-                }
-            }
-        }
-
-        long jobId = getManagementServer().assignSecurityGroupAsync(userId, securityGroupId, sgIdList, publicIp, vmId);
-        
-        if(jobId == 0) {
-        	s_logger.warn("Unable to schedule async-job for AssignPortForwardingServiceCmd comamnd");
-        } else {
-	        if(s_logger.isDebugEnabled())
-	        	s_logger.debug("AssignPortForwardingServiceCmd command has been accepted, job id: " + jobId);
-        }
-        
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-        return returnValues;
-    }
-    */
 	@Override
-	public String getResponse() {
-		// TODO Auto-generated method stub
-		return null;
+	public ResponseObject getResponse() {
+		Boolean success = (Boolean)getResponseObject();
+		SuccessResponse response = new SuccessResponse();
+		response.setSuccess(success);
+		response.setResponseName(getName());
+		return response;
 	}
 }

@@ -24,8 +24,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.UpgradeVmResponse;
-import com.cloud.vm.UserVmVO;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="updateVirtualMachine", manager=Manager.UserVmManager)
 public class UpdateVMCmd extends BaseCmd{
@@ -72,8 +72,6 @@ public class UpdateVMCmd extends BaseCmd{
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    private UserVmVO responseObject = null;
-    
     @Override
     public String getName() {
         return s_name;
@@ -82,20 +80,12 @@ public class UpdateVMCmd extends BaseCmd{
     public static String getResultObjectName() {
     	return "virtualmachine";
     }    
-    
-    @Override
-    public String getResponse() 
-    {
-        UpgradeVmResponse response = new UpgradeVmResponse();
-        UserVmVO userVm = (UserVmVO)getResponseObject();
-        
-        UserVmVO responseObject = (UserVmVO)getResponseObject();
-        if (responseObject != null) 
-        {
-        	//just pass back success or failure from here
-        }
-        
-        return null;
-    }
 
+    @Override
+    public ResponseObject getResponse() {
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(Boolean.TRUE);
+        response.setResponseName(getName());
+        return response;
+    }
 }

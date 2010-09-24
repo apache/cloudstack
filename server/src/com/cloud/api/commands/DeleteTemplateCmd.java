@@ -22,8 +22,10 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.response.SuccessResponse;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
 
 @Implementation(method="deleteTemplate", manager=Manager.TemplateManager)
 public class DeleteTemplateCmd extends BaseCmd {
@@ -68,59 +70,11 @@ public class DeleteTemplateCmd extends BaseCmd {
     }
 
 	@Override
-	public String getResponse() {
-		// TODO Auto-generated method stub
-		return null;
+	public ResponseObject getResponse() {
+        Boolean success = (Boolean)getResponseObject();
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(success);
+        response.setResponseName(getName());
+        return response;
 	}
-    
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//        Long templateId = (Long)params.get(BaseCmd.Properties.ID.getName());
-//        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-//        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-//        Long zoneId = (Long)params.get(BaseCmd.Properties.ZONE_ID.getName());
-//        
-//        if (userId == null) {
-//            userId = Long.valueOf(1);
-//        }
-//
-//        VMTemplateVO template = getManagementServer().findTemplateById(templateId.longValue());
-//        if (template == null) {
-//            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find template with id " + templateId);
-//        }
-//
-//        if (account != null) {
-//            if (!isAdmin(account.getType())) {
-//                if (template.getAccountId() != account.getId()) {
-//                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to delete template with id " + templateId);
-//                }
-//            } else {
-//                Account templateOwner = getManagementServer().findAccountById(template.getAccountId());
-//                if ((templateOwner == null) || !getManagementServer().isChildDomain(account.getDomainId(), templateOwner.getDomainId())) {
-//                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to delete template with id " + templateId + ", permission denied.");
-//                }
-//            }
-//        }
-//        
-//        try {
-//    		long jobId = getManagementServer().deleteTemplateAsync(userId, templateId, zoneId);
-//    		
-//    		if (jobId == 0) {
-//            	s_logger.warn("Unable to schedule async-job for DeleteTemplate command");
-//            } else {
-//    	        if(s_logger.isDebugEnabled()) {
-//    	        	s_logger.debug("DeleteTemplate command has been accepted, job id: " + jobId);
-//    	        }
-//            }
-//    		
-//    		List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-//            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_ID.getName(), Long.valueOf(templateId))); 
-//            
-//            return returnValues;
-//    	} catch (Exception ex) {
-//    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete template: " + ex.getMessage());
-//    	}
-//
-//    }
 }

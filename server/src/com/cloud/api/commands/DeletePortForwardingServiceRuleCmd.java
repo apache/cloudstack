@@ -24,6 +24,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="deleteNetworkRuleConfig", manager=Manager.NetworkManager)
 public class DeletePortForwardingServiceRuleCmd extends BaseCmd {
@@ -38,7 +40,6 @@ public class DeletePortForwardingServiceRuleCmd extends BaseCmd {
     @Parameter(name="id", type=CommandType.LONG, required=true)
     private Long id;
 
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -47,48 +48,21 @@ public class DeletePortForwardingServiceRuleCmd extends BaseCmd {
         return id;
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
-    
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-//        Long netRuleId = (Long)params.get(BaseCmd.Properties.ID.getName());
-//        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-//
-//        //If command is executed via 8096 port, set userId to the id of System account (1)
-//        if (userId == null) {
-//            userId = Long.valueOf(1);
-//        }
-//
-//        try {
-//            long jobId = getManagementServer().deleteNetworkRuleConfigAsync(userId, account, netRuleId);
-//
-//            if (jobId == 0) {
-//                s_logger.warn("Unable to schedule async-job for DeletePortForwardingServiceRuleCmd command");
-//            } else {
-//                if (s_logger.isDebugEnabled())
-//                    s_logger.debug("DeletePortForwardingServiceRuleCmd command has been accepted, job id: " + jobId);
-//            }
-//
-//            List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-//            return returnValues;
-//        } catch (PermissionDeniedException ex) {
-//            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, ex.getMessage());
-//        }
-//    }
-
 
 	@Override
-	public String getResponse() {
-		// TODO Auto-generated method stub
-		return null;
+	public ResponseObject getResponse() {
+        Boolean success = (Boolean)getResponseObject();
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(success);
+        response.setResponseName(getName());
+        return response;
 	}
 }

@@ -1314,21 +1314,19 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public String[] createApiKeyAndSecretKey(RegisterCmd cmd)
-    {
+    public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
     	Long userId = cmd.getId();
-    	
     	User user = _userDao.findById(userId);
-    	
+
     	if (user == null) {
            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to find user for id : " + userId);
     	}
-    	
+
     	// generate both an api key and a secret key, update the user table with the keys, return the keys to the user
     	String[] keys = new String[2];
     	keys[0] = createApiKey(userId);
     	keys[1] = createSecretKey(userId);
-    	
+
     	return keys;
     }
 

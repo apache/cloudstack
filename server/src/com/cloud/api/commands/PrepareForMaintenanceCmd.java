@@ -24,6 +24,8 @@ import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="maintain", manager=Manager.AgentManager)
 public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
@@ -49,6 +51,7 @@ public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
@@ -56,39 +59,13 @@ public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
     public static String getResultObjectName() {
     	return "host";
     }
-    
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//        Long hostId = (Long)params.get(BaseCmd.Properties.ID.getName());
-//        
-//        //verify input parameters
-//    	HostVO host = getManagementServer().getHostBy(hostId);
-//    	if (host == null) {
-//    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Host with id " + hostId.toString() + " doesn't exist");
-//    	}
-//        
-//    	long jobId = 0;
-//    	try {
-//    		jobId = getManagementServer().prepareForMaintenanceAsync(hostId);
-//    	} catch (InvalidParameterValueException e) {
-//    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to prepare host for maintenance: " + e.getMessage());
-//    	}
-//    	
-//        if(jobId == 0) {
-//        	s_logger.warn("Unable to schedule async-job for PrepareForMaintenance comamnd");
-//        } else {
-//	        if(s_logger.isDebugEnabled())
-//	        	s_logger.debug("PrepareForMaintenance command has been accepted, job id: " + jobId);
-//        }
-//        
-//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-//        return returnValues;
-//    }
-    
+
 	@Override
-	public String getResponse() {
-		// TODO Auto-generated method stub
-		return null;
+	public ResponseObject getResponse() {
+        Boolean success = (Boolean)getResponseObject();
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(success);
+        response.setResponseName(getName());
+        return response;
 	}
 }

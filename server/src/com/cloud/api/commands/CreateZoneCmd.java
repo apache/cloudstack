@@ -24,7 +24,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.dc.DataCenterVO;
 
@@ -102,7 +102,7 @@ public class CreateZoneCmd extends BaseCmd {
     }
 
     @Override
-    public String getResponse() {
+    public ResponseObject getResponse() {
         DataCenterVO zone = (DataCenterVO)getResponseObject();
 
         ZoneResponse response = new ZoneResponse();
@@ -116,6 +116,6 @@ public class CreateZoneCmd extends BaseCmd {
         response.setGuestCidrAddress(zone.getGuestNetworkCidr());
 
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

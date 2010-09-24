@@ -24,6 +24,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="disassociateIpAddress", manager=Manager.NetworkManager)
 public class DisassociateIPAddrCmd extends BaseCmd {
@@ -52,62 +54,17 @@ public class DisassociateIPAddrCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
 
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-//        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-//        String ipAddress = (String)params.get(BaseCmd.Properties.IP_ADDRESS.getName());
-//        boolean result = false;
-//
-//        // Verify input parameters
-//        Account accountByIp = getManagementServer().findAccountByIpAddress(ipAddress);
-//        if(accountByIp == null) {
-//            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find account owner for ip " + ipAddress);
-//        }
-//
-//        Long accountId = accountByIp.getId();
-//        if (account != null) {
-//            if (!isAdmin(account.getType())) {
-//                if (account.getId().longValue() != accountId.longValue()) {
-//                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "account " + account.getAccountName() + " doesn't own ip address " + ipAddress);
-//                }
-//            } else if (!getManagementServer().isChildDomain(account.getDomainId(), accountByIp.getDomainId())) {
-//                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to disassociate IP address " + ipAddress + ", permission denied.");
-//            }
-//        }
-//
-//        // If command is executed via 8096 port, set userId to the id of System account (1)
-//        if (userId == null) {
-//            userId = Long.valueOf(1);
-//        }
-//
-//        try {
-//            result = getManagementServer().disassociateIpAddress(userId.longValue(), accountId.longValue(), ipAddress);
-//        } catch (PermissionDeniedException ex) {
-//            throw new ServerApiException(BaseCmd.NET_INVALID_PARAM_ERROR, ex.getMessage());
-//        } catch (IllegalArgumentException ex1) {
-//        	throw new ServerApiException(BaseCmd.NET_INVALID_PARAM_ERROR, ex1.getMessage());
-//        } catch (Exception ex2) {
-//        	throw new ServerApiException(BaseCmd.NET_IP_DIASSOC_ERROR, "unable to disassociate ip address");
-//        }
-//        
-//        if (result == false) {
-//            throw new ServerApiException(BaseCmd.NET_IP_DIASSOC_ERROR, "unable to disassociate ip address");
-//        }
-//        
-//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), Boolean.valueOf(result).toString()));
-//        return returnValues;
-//    }
-
-
 	@Override
-	public String getResponse() {
-		// TODO Auto-generated method stub
-		return null;
+	public ResponseObject getResponse() {
+        Boolean success = (Boolean)getResponseObject();
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(success);
+        response.setResponseName(getName());
+        return response;
 	}
 }

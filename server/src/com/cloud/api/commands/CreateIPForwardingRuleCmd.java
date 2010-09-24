@@ -25,7 +25,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.uservm.UserVm;
@@ -91,7 +91,7 @@ public class CreateIPForwardingRuleCmd extends BaseCmd {
     }
 
     @Override
-    public String getResponse() {
+    public ResponseObject getResponse() {
         FirewallRuleVO fwRule = (FirewallRuleVO)getResponseObject();
 
         FirewallRuleResponse fwResponse = new FirewallRuleResponse();
@@ -105,6 +105,6 @@ public class CreateIPForwardingRuleCmd extends BaseCmd {
         fwResponse.setVirtualMachineName(vm.getName());
 
         fwResponse.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(fwResponse);
+        return fwResponse;
     }
 }

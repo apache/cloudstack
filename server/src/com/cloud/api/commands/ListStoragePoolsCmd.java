@@ -27,7 +27,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.dc.ClusterVO;
@@ -100,7 +100,7 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public String getResponse() {
+    public ResponseObject getResponse() {
         List<? extends StoragePoolVO> pools = (List<? extends StoragePoolVO>)getResponseObject();
 
         ListResponse response = new ListResponse();
@@ -151,6 +151,6 @@ public class ListStoragePoolsCmd extends BaseListCmd {
 
         response.setResponses(poolResponses);
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

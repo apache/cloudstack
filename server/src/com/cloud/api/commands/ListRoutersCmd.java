@@ -27,7 +27,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.async.AsyncJobVO;
@@ -107,7 +107,7 @@ public class ListRoutersCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public String getResponse() {
+    public ResponseObject getResponse() {
         List<DomainRouterVO> routers = (List<DomainRouterVO>)getResponseObject();
 
         ListResponse response = new ListResponse();
@@ -162,6 +162,6 @@ public class ListRoutersCmd extends BaseListCmd {
 
         response.setResponses(routerResponses);
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

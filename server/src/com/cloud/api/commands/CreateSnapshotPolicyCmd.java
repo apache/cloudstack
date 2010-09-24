@@ -24,7 +24,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.storage.SnapshotPolicyVO;
 
@@ -103,7 +103,7 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     }
 
     @Override
-    public String getResponse() {
+    public ResponseObject getResponse() {
         SnapshotPolicyVO snapshotPolicy = (SnapshotPolicyVO)getResponseObject();
 
         SnapshotPolicyResponse response = new SnapshotPolicyResponse();
@@ -114,6 +114,6 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
         response.setVolumeId(snapshotPolicy.getVolumeId());
 
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

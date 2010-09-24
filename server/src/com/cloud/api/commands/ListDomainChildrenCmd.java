@@ -27,7 +27,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.DomainResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.domain.DomainVO;
@@ -79,7 +79,7 @@ public class ListDomainChildrenCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public String getResponse() {
+    public ResponseObject getResponse() {
         List<DomainVO> domains = (List<DomainVO>)getResponseObject();
 
         ListResponse response = new ListResponse();
@@ -100,6 +100,6 @@ public class ListDomainChildrenCmd extends BaseListCmd {
 
         response.setResponses(domainResponses);
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

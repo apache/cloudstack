@@ -24,6 +24,8 @@ import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="detachIso", manager=Manager.TemplateManager)
 public class DetachIsoCmd extends BaseAsyncCmd {
@@ -57,60 +59,12 @@ public class DetachIsoCmd extends BaseAsyncCmd {
         return s_name;
     }
 
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//        Account account = (Account) params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-//        Long userId = (Long) params.get(BaseCmd.Properties.USER_ID.getName());
-//        Long vmId = (Long) params.get(BaseCmd.Properties.VIRTUAL_MACHINE_ID.getName());
-//
-//        // Verify input parameters
-//        UserVmVO vmInstanceCheck = getManagementServer().findUserVMInstanceById(vmId.longValue());
-//        if (vmInstanceCheck == null) {
-//            throw new ServerApiException (BaseCmd.VM_INVALID_PARAM_ERROR, "Unable to find a virtual machine with id " + vmId);
-//        }
-//
-//        if (account != null) {
-//            if (!isAdmin(account.getType())) {
-//                if (account.getId().longValue() != vmInstanceCheck.getAccountId()) {
-//                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to detach ISO from virtual machine " + vmInstanceCheck.getName() + " for this account");
-//                }
-//            } else if (!getManagementServer().isChildDomain(account.getDomainId(), vmInstanceCheck.getDomainId())) {
-//                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to detach ISO from virtual machine " + vmInstanceCheck.getName() + ", permission denied.");
-//            }
-//        }
-//
-//        // If command is executed via 8096 port, set userId to the id of System account (1)
-//        if (userId == null)
-//            userId = new Long(1);
-//
-//        try {
-//            long jobId = getManagementServer().detachISOFromVMAsync(vmId.longValue(), userId);
-//
-//            if (jobId == 0) {
-//                s_logger.warn("Unable to schedule async-job for AttachIsoCmd");
-//            } else {
-//                if(s_logger.isDebugEnabled())
-//                    s_logger.debug("AttachIsoCmd has been accepted, job id: " + jobId);
-//            }
-//            
-//            List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-//            
-//            return returnValues;
-//        } catch (ServerApiException apiEx) {
-//            s_logger.error("Exception detaching ISO", apiEx);
-//            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to detach ISO: " + apiEx.getDescription());
-//        } catch (Exception ex) {
-//            s_logger.error("Exception detaching ISO", ex);
-//            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to detach ISO: " + ex.getMessage());
-//        }
-//
-//    }
-
-
 	@Override
-	public String getResponse() {
-		// TODO Auto-generated method stub
-		return null;
+	public ResponseObject getResponse() {
+        Boolean success = (Boolean)getResponseObject();
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(success);
+        response.setResponseName(getName());
+        return response;
 	}
 }

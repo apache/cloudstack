@@ -27,7 +27,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.async.AsyncJobVO;
@@ -110,7 +110,7 @@ public class ListSnapshotsCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public String getResponse() {
+    public ResponseObject getResponse() {
         List<SnapshotVO> snapshots = (List<SnapshotVO>)getResponseObject();
 
         ListResponse response = new ListResponse();
@@ -148,6 +148,6 @@ public class ListSnapshotsCmd extends BaseListCmd {
 
         response.setResponses(snapshotResponses);
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

@@ -23,7 +23,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.PortForwardingServiceRuleResponse;
 import com.cloud.network.NetworkRuleConfigVO;
 
@@ -85,7 +85,7 @@ public class CreatePortForwardingServiceRuleCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public String getResponse() {
+    public ResponseObject getResponse() {
         NetworkRuleConfigVO netRule = (NetworkRuleConfigVO)getResponseObject();
 
         PortForwardingServiceRuleResponse response = new PortForwardingServiceRuleResponse();
@@ -96,6 +96,6 @@ public class CreatePortForwardingServiceRuleCmd extends BaseAsyncCreateCmd {
         response.setPublicPort(netRule.getPublicPort());
 
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

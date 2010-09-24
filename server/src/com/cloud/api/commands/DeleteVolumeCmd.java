@@ -24,6 +24,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="deleteVolume", manager=Manager.StorageManager)
 public class DeleteVolumeCmd extends BaseCmd {
@@ -51,6 +53,7 @@ public class DeleteVolumeCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
@@ -58,51 +61,13 @@ public class DeleteVolumeCmd extends BaseCmd {
     public static String getResultObjectName() {
     	return "volume";
     }
-    
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//    	Account account = (Account) params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-//    	Long volumeId = (Long) params.get(BaseCmd.Properties.ID.getName());
-//    	
-//    	boolean isAdmin;
-//    	if (account == null) {
-//    		// Admin API call
-//    		isAdmin = true;
-//    	} else {
-//    		// User API call
-//    		isAdmin = isAdmin(account.getType());
-//    	}
-//
-//    	// Check that the volume ID is valid
-//    	VolumeVO volume = getManagementServer().findVolumeById(volumeId);
-//    	if (volume == null) {
-//    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId);
-//    	}
-//    	
-//    	// If the account is not an admin, check that the volume is owned by the account that was passed in
-//    	if (!isAdmin) {
-//    		if (account.getId() != volume.getAccountId()) {
-//                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
-//    		}
-//    	} else if ((account != null) && !getManagementServer().isChildDomain(account.getDomainId(), volume.getDomainId())) {
-//            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to delete volume with id " + volumeId + ", permission denied.");
-//    	}
-//
-//    	try {
-//    		getManagementServer().destroyVolume(volumeId);
-//    		List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), "true")); 
-//
-//            return returnValues;
-//    	} catch (Exception ex) {
-//    		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete volume: " + ex.getMessage());
-//    	}
-//    }
-
 
 	@Override
-	public String getResponse() {
-		// TODO Auto-generated method stub
-		return null;
+	public ResponseObject getResponse() {
+        Boolean success = (Boolean)getResponseObject();
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(success);
+        response.setResponseName(getName());
+        return response;
 	}
 }

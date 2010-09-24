@@ -1,6 +1,5 @@
 package com.cloud.api;
 
-import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.AsyncJobResponse;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -16,12 +15,11 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     private AsyncJobVO _job = null;
     private Long startEventId;
 
-    public String getResponse(long jobId) {
-        // FIXME:  We need a generic response object here, see BaseAsyncCreateCmd
+    public ResponseObject getResponse(long jobId) {
         AsyncJobResponse response = new AsyncJobResponse();
         response.setId(jobId);
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 
     public void setAsyncJobManager(AsyncJobManager mgr) {

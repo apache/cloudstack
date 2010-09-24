@@ -24,6 +24,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="updateUser", manager=Manager.ManagementServer)
 public class UpdateUserCmd extends BaseCmd {
@@ -111,10 +113,11 @@ public class UpdateUserCmd extends BaseCmd {
     }
    
 	@Override
-	public String getResponse() {
-		// TODO Auto-generated method stub
-		
-		//response returned is true or false, based on which you can throw an error
-		return null;
+	public ResponseObject getResponse() {
+        Boolean success = (Boolean)getResponseObject();
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(success);
+        response.setResponseName(getName());
+        return response;
 	}
 }

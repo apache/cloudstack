@@ -27,7 +27,7 @@ import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.VMTemplateVO;
@@ -154,7 +154,7 @@ public class DeployVMCmd extends BaseAsyncCmd {
     }
     
     @Override
-    public String getResponse() {
+    public ResponseObject getResponse() {
         UserVm userVm = (UserVm)getResponseObject();
 
         UserVmResponse response = new UserVmResponse();
@@ -250,6 +250,6 @@ public class DeployVMCmd extends BaseAsyncCmd {
         response.setNetworkGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(userVm.getId()));
 
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

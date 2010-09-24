@@ -24,6 +24,8 @@ import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="deleteUser", manager=Manager.ManagementServer)
 public class DeleteUserCmd extends BaseAsyncCmd {
@@ -55,36 +57,17 @@ public class DeleteUserCmd extends BaseAsyncCmd {
 		return s_name;
 	}
 	
+    @Override
 	public String getName() {
         return s_name;
     }
 
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//        Long userId = (Long)params.get(BaseCmd.Properties.ID.getName());
-//        
-//        //Verify that the user exists in the system
-//        User user = getManagementServer().getUser(userId.longValue());
-//        if (user == null) {
-//            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find user " + userId);
-//        }
-//        
-//        // If the user is a System user, return an error.  We do not allow this
-//        Account account = getManagementServer().findAccountById(user.getAccountId());
-//        if ((account != null) && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
-//        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "user id : " + userId + " is a system account, delete is not allowed");
-//        }
-//        
-//        long jobId = getManagementServer().deleteUserAsync(userId.longValue());
-//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-//        return returnValues;
-//    }
-
-
 	@Override
-	public String getResponse() {
-		// TODO Auto-generated method stub
-		return null;
+	public ResponseObject getResponse() {
+        Boolean success = (Boolean)getResponseObject();
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(success);
+        response.setResponseName(getName());
+        return response;
 	}
 }

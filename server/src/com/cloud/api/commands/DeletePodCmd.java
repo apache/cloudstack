@@ -24,8 +24,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="deletePod", manager=Manager.ConfigManager)
@@ -59,7 +59,7 @@ public class DeletePodCmd extends BaseCmd {
     }
     
     @Override
-    public String getResponse() {
+    public ResponseObject getResponse() {
         SuccessResponse response = new SuccessResponse();
         Boolean responseObject = (Boolean)getResponseObject();
       
@@ -70,6 +70,6 @@ public class DeletePodCmd extends BaseCmd {
         }
 
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

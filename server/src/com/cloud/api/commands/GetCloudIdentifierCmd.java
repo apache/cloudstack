@@ -26,8 +26,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.CloudIdentifierResponse;
 
 @Implementation(method="getCloudIdentifierResponse", manager=Manager.ManagementServer)
@@ -61,7 +61,7 @@ public class GetCloudIdentifierCmd extends BaseCmd {
     }
     
     @Override @SuppressWarnings("unchecked")
-    public String getResponse() {
+    public ResponseObject getResponse() {
         CloudIdentifierResponse response = new CloudIdentifierResponse();
         ArrayList<String> responseObject = (ArrayList<String>)getResponseObject();
         if (responseObject != null) {
@@ -72,6 +72,6 @@ public class GetCloudIdentifierCmd extends BaseCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add config");
         }
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

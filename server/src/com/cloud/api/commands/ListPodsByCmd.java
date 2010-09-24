@@ -26,7 +26,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.PodResponse;
 import com.cloud.dc.HostPodVO;
@@ -78,7 +78,7 @@ public class ListPodsByCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public String getResponse() {
+    public ResponseObject getResponse() {
         List<HostPodVO> pods = (List<HostPodVO>)getResponseObject();
 
         ListResponse response = new ListResponse();
@@ -107,6 +107,6 @@ public class ListPodsByCmd extends BaseListCmd {
 
         response.setResponses(podResponses);
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

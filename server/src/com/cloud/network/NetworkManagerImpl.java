@@ -3260,7 +3260,6 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     	String algorithm = cmd.getAlgorithm();
     	String name = cmd.getName();
     	String description = cmd.getDescription();
-    	Long userId = UserContext.current().getUserId();
     	Account account = (Account)UserContext.current().getAccountObject();
     	
     	//Verify input parameters
@@ -3347,7 +3346,6 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 
 	@Override
 	public boolean deleteNetworkRuleConfig(DeletePortForwardingServiceRuleCmd cmd) throws PermissionDeniedException {
-		
         Long userId = UserContext.current().getUserId();
         Long netRuleId = cmd.getId();
         Account account = (Account)UserContext.current().getAccountObject();
@@ -3361,7 +3359,6 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         // admin or the owner of the security group to which the network rule
         // belongs
         NetworkRuleConfigVO netRule = _networkRuleConfigDao.findById(netRuleId);
-        long accountId = Account.ACCOUNT_ID_SYSTEM;
         if (netRule != null) {
             SecurityGroupVO sg = _securityGroupDao.findById(netRule.getSecurityGroupId());
             if (account != null) {
@@ -3373,15 +3370,11 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                     throw new PermissionDeniedException("Unable to delete port forwarding service rule " + netRuleId + "; account: " + account.getAccountName() + " is not an admin in the domain hierarchy.");
                 }
             }
-            if (sg != null) {
-                accountId = sg.getAccountId().longValue();
-            }
         } else {
             return false;  // failed to delete due to netRule not found
         }
 
         return deleteNetworkRuleConfigInternal(userId, netRuleId);
-		
 	}
 
     private boolean deleteNetworkRuleConfigInternal(long userId, long networkRuleId) {

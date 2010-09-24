@@ -24,6 +24,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="deleteVlanIpRange", manager=Manager.ConfigManager)
 public class DeleteVlanIpRangeCmd extends BaseCmd {
@@ -38,7 +40,6 @@ public class DeleteVlanIpRangeCmd extends BaseCmd {
     @Parameter(name="id", type=CommandType.LONG, required=true)
     private Long id;
 
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -47,42 +48,21 @@ public class DeleteVlanIpRangeCmd extends BaseCmd {
         return id;
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
 
-
 	@Override
-	public String getResponse() {
-		// TODO Auto-generated method stub
-		return null;
+	public ResponseObject getResponse() {
+        Boolean success = (Boolean)getResponseObject();
+        SuccessResponse response = new SuccessResponse();
+        response.setSuccess(success);
+        response.setResponseName(getName());
+        return response;
 	}
-
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//    	Long vlanDbId = (Long) params.get(BaseCmd.Properties.ID.getName());
-//    	Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-//    	
-//    	if (userId == null) {
-//            userId = Long.valueOf(User.UID_SYSTEM);
-//        }
-//    	
-//    	// Delete the VLAN and its public IP addresses
-//    	boolean success = false;
-//        try {
-//             success = getManagementServer().deleteVlanAndPublicIpRange(userId, vlanDbId);
-//        } catch (InvalidParameterValueException ex) {        	
-//            s_logger.error("Exception deleting VLAN", ex);
-//            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete VLAN: " + ex.getMessage());
-//        }
-//    	 
-//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), success));
-//        return returnValues;
-//    }
 }

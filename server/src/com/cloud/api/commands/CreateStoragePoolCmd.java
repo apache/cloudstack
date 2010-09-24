@@ -27,7 +27,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
@@ -106,7 +106,7 @@ public class CreateStoragePoolCmd extends BaseCmd {
     }
 
     @Override
-    public String getResponse() {
+    public ResponseObject getResponse() {
         StoragePoolVO pool = (StoragePoolVO)getResponseObject();
 
         StoragePoolResponse response = new StoragePoolResponse();
@@ -131,6 +131,6 @@ public class CreateStoragePoolCmd extends BaseCmd {
         response.setDiskSizeAllocated(used);
 
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
 }

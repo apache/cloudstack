@@ -8,7 +8,7 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.TemplatePermissionsResponse;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
@@ -58,7 +58,7 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public String getResponse() {
+    public ResponseObject getResponse() {
         List<String> accountNames = (List<String>)getResponseObject();
         Account account = (Account)UserContext.current().getAccountObject();
         boolean isAdmin = ((account == null) || isAdmin(account.getType()));
@@ -82,7 +82,7 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseListCmd {
         response.setAccountNames(accountNames);
 
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
     }
     
     protected boolean templateIsCorrectType(VMTemplateVO template) {

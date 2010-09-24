@@ -24,7 +24,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.service.ServiceOfferingVO;
 
@@ -114,7 +114,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 	}
 
 	@Override
-    public String getResponse() {
+    public ResponseObject getResponse() {
 	    ServiceOfferingVO offering = (ServiceOfferingVO)getResponseObject();
 
 	    ServiceOfferingResponse response = new ServiceOfferingResponse();
@@ -130,6 +130,6 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 	    response.setTags(offering.getTags());
 
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return response;
 	}
 }

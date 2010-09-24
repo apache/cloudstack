@@ -22,8 +22,14 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.StoragePoolResponse;
+import com.cloud.dc.ClusterVO;
+import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.StorageStats;
 
 @Implementation(method="cancelPrimaryStorageForMaintenance", manager=Manager.StorageManager)
 public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
@@ -60,47 +66,48 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
     	return "primarystorage";
     }
 
-    /*
-    @Override
-    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-        Long storagePoolId = (Long)params.get(BaseCmd.Properties.ID.getName());
-        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-        //verify input parameters
-    	StoragePoolVO storagePool = getManagementServer().findPoolById(storagePoolId);
-    	
-    	if (storagePool == null) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Primary storage with id " + storagePoolId + " doesn't exist");
-    	}
-        
-    	if (!storagePool.getStatus().equals(Status.Maintenance)) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Primary storage with id " + storagePoolId + " is not ready for migration, as the status is:"+storagePool.getStatus().toString());
-    	}
-    	
-    	long jobId = 0;
-    	try {
-    		jobId = getManagementServer().cancelPrimaryStorageMaintenanceAsync(storagePoolId);
-    	} catch (InvalidParameterValueException e) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to cancel primary storage maintenance: " + e.getMessage());
-    	}
-    	
-        if(jobId == 0) {
-        	s_logger.warn("Unable to schedule async-job for CancelPrimaryStorageMaintenance command");
-        } else {
-	        if(s_logger.isDebugEnabled())
-	        	s_logger.debug("CancelPrimaryStorageMaintenance command has been accepted, job id: " + jobId);
-        }
-        
-        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId))); 
-        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.STATE.getName(), Status.PrepareForMaintenance)); 
-        return returnValues;
-    }
-    */
-    
 	@Override
-	public String getResponse() {
-		// TODO Auto-generated method stub
-		return null;
+	public ResponseObject getResponse() {
+	    StoragePoolVO primaryStorage = (StoragePoolVO)getResponseObject();
+
+	    StoragePoolResponse response = new StoragePoolResponse();
+	    response.setId(primaryStorage.getId());
+	    response.setName(primaryStorage.getName());
+	    response.setType(primaryStorage.getPoolType().toString());
+	    response.setState(primaryStorage.getStatus().toString());
+	    response.setIpAddress(primaryStorage.getHostAddress());
+	    response.setZoneId(primaryStorage.getDataCenterId());
+	    response.setZoneName(ApiDBUtils.findZoneById(primaryStorage.getDataCenterId()).getName());
+
+        if (response.getPodId() != null && ApiDBUtils.findPodById(primaryStorage.getPodId()) != null) {
+            response.setPodId(primaryStorage.getPodId());
+            response.setPodName((ApiDBUtils.findPodById(primaryStorage.getPodId())).getName());
+        }
+
+        if (primaryStorage.getCreated() != null) {
+            response.setCreated(primaryStorage.getCreated());
+        }
+        response.setDiskSizeTotal(primaryStorage.getCapacityBytes());
+
+        StorageStats stats = ApiDBUtils.getStoragePoolStatistics(primaryStorage.getId());
+        long capacity = primaryStorage.getCapacityBytes();
+        long available = primaryStorage.getAvailableBytes() ;
+        long used = capacity - available;
+
+        if (stats != null) {
+            used = stats.getByteUsed();
+            available = capacity - used;
+        }
+
+        response.setDiskSizeAllocated(used);
+        if (primaryStorage.getClusterId() != null) {
+          ClusterVO cluster = ApiDBUtils.findClusterById(primaryStorage.getClusterId());
+          response.setClusterId(primaryStorage.getClusterId());
+          response.setClusterName(cluster.getName());
+        }
+
+        response.setTags(ApiDBUtils.getStoragePoolTags(primaryStorage.getId()));
+        response.setResponseName(getName());
+		return response;
 	}
 }

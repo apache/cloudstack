@@ -31,8 +31,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.HostResponse;
 import com.cloud.dc.ClusterVO;
 import com.cloud.host.Host;
@@ -84,7 +84,7 @@ public class UpdateHostCmd extends BaseCmd {
     }
     
     @Override
-    public String getResponse() {
+    public ResponseObject getResponse() {
         HostResponse hostResponse = new HostResponse();
         HostVO host = (HostVO)getResponseObject();
         if (host != null) {
@@ -177,6 +177,6 @@ public class UpdateHostCmd extends BaseCmd {
         }
 
         hostResponse.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(hostResponse);
+        return hostResponse;
     }
 }

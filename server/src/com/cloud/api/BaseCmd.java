@@ -94,7 +94,7 @@ public abstract class BaseCmd {
     private Object _responseObject = null;
 
     public abstract String getName();
-    public abstract String getResponse();
+    public abstract ResponseObject getResponse();
 
     public Object getResponseObject() {
         return _responseObject;

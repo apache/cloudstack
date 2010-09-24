@@ -24,6 +24,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="deleteIpForwardingRule", manager=Manager.NetworkManager)
 public class DeleteIPForwardingRuleCmd extends BaseCmd {
@@ -50,64 +52,17 @@ public class DeleteIPForwardingRuleCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
 
-//    @Override
-//    public List<Pair<String, Object>> execute(Map<String, Object> params) {
-//        Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
-//        Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-//        Long ruleId = (Long)params.get(BaseCmd.Properties.ID.getName());
-//
-//        if (userId == null) {
-//            userId = Long.valueOf(User.UID_SYSTEM);
-//        }
-//
-//        FirewallRuleVO fwRule = getManagementServer().findForwardingRuleById(ruleId);
-//        if (fwRule == null) {
-//            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find port forwarding rule " + ruleId);
-//        }
-//
-//        IPAddressVO ipAddress = getManagementServer().findIPAddressById(fwRule.getPublicIpAddress());
-//        if (ipAddress == null) {
-//            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to find IP address for port forwarding rule " + ruleId);
-//        }
-//
-//        Account ruleOwner = getManagementServer().findAccountById(ipAddress.getAccountId());
-//        if (ruleOwner == null) {
-//            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to find owning account for port forwarding rule " + ruleId);
-//        }
-//
-//        // if an admin account was passed in, or no account was passed in, make sure we honor the accountName/domainId parameters
-//        if (account != null) {
-//            if (isAdmin(account.getType())) {
-//                if (!getManagementServer().isChildDomain(account.getDomainId(), ruleOwner.getDomainId())) {
-//                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to delete port forwarding rule " + ruleId + ", permission denied.");
-//                }
-//            } else if (account.getId().longValue() != ruleOwner.getId().longValue()) {
-//                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to delete port forwarding rule " + ruleId + ", permission denied.");
-//            }
-//        }
-//
-//        try {
-//            getManagementServer().deleteRule(ruleId.longValue(), userId.longValue(), ruleOwner.getId().longValue());
-//        } catch (InvalidParameterValueException ex1) {
-//            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to delete port forwarding rule " + ruleId + ", internal error.");
-//        } catch (PermissionDeniedException ex2) {
-//            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to delete port forwarding rule " + ruleId + ", permission denied.");
-//        } catch (InternalErrorException ex3) {
-//            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to delete port forwarding rule " + ruleId + ", internal error.");
-//        }
-//
-//        List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
-//        returnValues.add(new Pair<String, Object>(BaseCmd.Properties.SUCCESS.getName(), "true"));
-//        return returnValues;
-//    }
-    
 	@Override
-	public String getResponse() {
-		// TODO Auto-generated method stub
-		return null;
+	public ResponseObject getResponse() {
+	    Boolean success = (Boolean)getResponseObject();
+	    SuccessResponse response = new SuccessResponse();
+	    response.setSuccess(success);
+	    response.setResponseName(getName());
+		return response;
 	}
 }
