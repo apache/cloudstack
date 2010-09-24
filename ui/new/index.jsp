@@ -95,7 +95,7 @@ long milliseconds = new Date().getTime();
                             </ol>
                             </form>
                             <a href="#">Advanced</a>
-                            <div class="adv_searchpopup" id="action_menu" style="display: none;">
+                            <div class="adv_searchpopup" id="adv_search_dialog" style="display: none;">
                                 <div class="adv_searchformbox">
                                     <h3>
                                         Advance Search</h3>
