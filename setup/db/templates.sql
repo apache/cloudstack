@@ -13,7 +13,7 @@ INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type,
     VALUES (6, 'winxpsp3', 'WindowsXP-SP3', 1, now(), 'ntfs', 0, 32, 1, 'http://nfs1.lab.vmops.com/templates/vmware/WinXPSP3.ova.bz2', '', 0, 'WindowsXP-SP3', 'OVA', 58, 1, 1, 'VMware');
 
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type)
-    VALUES (7, 'centos55-x64', 'centos55-x64', 1, now(), 'ext3', 0, 64, 1, 'http://nfs1.lab.vmops.com/templates/vmware/CentOS55-x64.ova.bz2', '', 0, 'centos55-x64', 'OVA', 112, 1, 1, 'VMware');
+    VALUES (7, 'centos53-x64', 'centos53-x64', 1, now(), 'ext3', 0, 64, 1, 'http://nfs1.lab.vmops.com/templates/vmware/CentOS5.3-x86_64.ova.bz2', '', 0, 'centos53-x64', 'OVA', 112, 1, 1, 'VMware');
 
 
 INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (1, 'CentOS');
