@@ -461,14 +461,14 @@ long milliseconds = new Date().getTime();
                     <div class="leftmenu_content" id="leftmenu_volume">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
-                                <img src="images/storage_leftmenuicon.png" alt="storage" /></div>
+                                <img src="images/leftmenu_volumeicon.png" alt="storage" /></div>
                             Volumes
                         </div>
                     </div>
                     <div class="leftmenu_content" id="leftmenu_snapshot">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
-                                <img src="images/storage_leftmenuicon.png" alt="storage" /></div>
+                                <img src="images/leftmenu_snapshotsicon.png" alt="storage" /></div>
                             Snapshots
                         </div>
                     </div>
@@ -479,7 +479,7 @@ long milliseconds = new Date().getTime();
                             <div class="leftmenu_arrows close" id="arrowIcon">
                             </div>
                             <div class="leftmenu_list_icons">
-                                <img src="images/network_leftmenuicon.png" alt="Network" /></div>
+                                <img src="images/leftmenu_networkgroupicon.png" alt="Network" /></div>
                             Network
                         </div>
                     </div>
@@ -488,14 +488,14 @@ long milliseconds = new Date().getTime();
                     <div class="leftmenu_content" id="leftmenu_ip">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
-                                <img src="images/network_leftmenuicon.png" alt="Network" /></div>
+                                <img src="images/leftmenu_ipaddressicon.png" alt="Network" /></div>
                             IP Addresses
                         </div>
                     </div>
                     <div class="leftmenu_content" id="leftmenu_network_group">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
-                                <img src="images/network_leftmenuicon.png" alt="Network" /></div>
+                                <img src="images/leftmenu_networkgroupicon.png" alt="Network" /></div>
                             Network Groups
                         </div>
                     </div>
