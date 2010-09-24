@@ -152,7 +152,7 @@ long milliseconds = new Date().getTime();
                                 </div>
                             </div>
                             <div class="actionsdropdown_box" id="action_menu" style="display: none;">
-                                <ul class="actionsdropdown_boxlist" id="action_list">
+                                <ul class="actionsdropdown_boxlist" style="width:97px;"id="action_list">
                                 	
                                 </ul>
                             </div>
@@ -742,7 +742,7 @@ long milliseconds = new Date().getTime();
     </div>
    
     <!-- action list item -->
-    <li id="action_list_item" style="display:none"><a id="link" href="#">(action)</a></li>
+    <li id="action_list_item" style="display:none; width:94px;"><a id="link" href="#">(action)</a></li>
     
     <!-- templates ends here-->
 </body>
