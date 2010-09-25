@@ -861,8 +861,10 @@ var volumeSnapshotActionMap = {
         isAsyncJob: true,
         asyncJobResponse: "deletesnapshotresponse",        
         inProcessText: "Deleting snapshot....",
-        afterActionSeccessFn: function(id) { 
-            $("#volume_snapshot_"+id).remove();
+        afterActionSeccessFn: function(id) {             
+            $("#volume_snapshot_"+id).slideUp("slow", function() {
+                $(this).remove();
+            });
         }
     } 
     ,
