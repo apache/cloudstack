@@ -45,7 +45,7 @@
             </div>                 
         </div>
         <div class="grid_container">
-            <div class="grid_rows odd">
+            <div class="grid_rows even">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
                         <%=t.t("id")%>:</div>
@@ -178,6 +178,10 @@
 
 <div id="dialog_disable_account" title="Disable account" style="display:none">
     <p>Please confirm you want to disable account that will prevent account access to the cloud and shut down all existing virtual instances.</p>
+</div>
+
+<div id="dialog_lock_account" title="Lock account" style="display:none">
+    <p>Please confirm you want to lock account that will prevent account access to the cloud.</p>
 </div>
 
 <div id="dialog_enable_account" title="Enable account" style="display:none">
