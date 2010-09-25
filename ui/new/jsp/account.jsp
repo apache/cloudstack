@@ -179,3 +179,7 @@
 <div id="dialog_disable_account" title="Disable account" style="display:none">
     <p>Please confirm you want to disable account that will prevent account access to the cloud and shut down all existing virtual instances.</p>
 </div>
+
+<div id="dialog_enable_account" title="Enable account" style="display:none">
+    <p>Please confirm you want to enable account.</p>
+</div>

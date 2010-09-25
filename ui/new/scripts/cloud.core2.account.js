@@ -6,9 +6,13 @@ function afterLoadAccountJSP() {
 		autoOpen: false,
 		modal: true,
 		zIndex: 2000
-	}));
-	
+	}));	
 	activateDialog($("#dialog_disable_account").dialog({ 
+		autoOpen: false,
+		modal: true,
+		zIndex: 2000
+	}));
+	activateDialog($("#dialog_enable_account").dialog({ 
 		autoOpen: false,
 		modal: true,
 		zIndex: 2000
@@ -60,9 +64,9 @@ function accountJsonToDetailsTab(jsonObj) {
             buildActionLinkForDetailsTab("Disable account", accountActionMap, $actionMenu, accountListAPIMap);  
             //buildActionLinkForDetailsTab("Lock account", accountActionMap, $actionMenu, accountListAPIMap);
         }          	        
-//        else if(jsonObj.state == "disabled") {
-//            buildActionLinkForDetailsTab("Enable account", accountActionMap, $actionMenu, accountListAPIMap);   
-//        }           
+        else if(jsonObj.state == "disabled" || jsonObj.state == "locked") {
+            buildActionLinkForDetailsTab("Enable account", accountActionMap, $actionMenu, accountListAPIMap);   
+        }           
     }    
 }
 
@@ -76,7 +80,18 @@ var accountActionMap = {
         asyncJobResponse: "disableaccountresponse",
         dialogBeforeActionFn : doDisableAccount,
         inProcessText: "Disabling account....",
+        afterActionSeccessFn: function(jsonObj) {            
+            $("#midmenuItem_"+jsonObj.id).data("jsonObj", jsonObj); 
+            accountJsonToDetailsTab(jsonObj);
+        }
+    }    
+    ,
+    "Enable account": {              
+        isAsyncJob: false,       
+        dialogBeforeActionFn : doEnableAccount,
+        inProcessText: "Enabling account....",
         afterActionSeccessFn: function(jsonObj) {
+            $("#midmenuItem_"+jsonObj.id).data("jsonObj", jsonObj); 
             accountJsonToDetailsTab(jsonObj);
         }
     }    
@@ -187,6 +202,22 @@ function doDisableAccount($actionLink, listAPIMap, $detailsTab) {
         "Yes": function() { 		                    
             $(this).dialog("close");	
 			var apiCommand = "command=disableAccount&account="+jsonObj.name+"&domainId="+jsonObj.domainid;
+	    	doActionToDetailsTab(jsonObj.id, $actionLink, apiCommand, listAPIMap);	         		                    	     
+        },
+        "Cancel": function() {
+            $(this).dialog("close");		     
+        }
+    }).dialog("open");  
+}
+
+function doEnableAccount($actionLink, listAPIMap, $detailsTab) {       
+    var jsonObj = $detailsTab.data("jsonObj");    
+    
+    $("#dialog_enable_account")    
+    .dialog('option', 'buttons', {                    
+        "Yes": function() { 		                    
+            $(this).dialog("close");	
+			var apiCommand = "command=enableAccount&account="+jsonObj.name+"&domainId="+jsonObj.domainid;
 	    	doActionToDetailsTab(jsonObj.id, $actionLink, apiCommand, listAPIMap);	         		                    	     
         },
         "Cancel": function() {
