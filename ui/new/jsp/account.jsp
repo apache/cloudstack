@@ -139,3 +139,60 @@
     </div>
 </div>
 <!-- account detail panel (end) -->
+
+
+<div id="dialog_resource_limits" title="Resource Limits" style="display:none">
+	<p>Please specify limits to the various resources.  A "-1" means the resource has no limits.</p>
+	<div class="dialog_formcontent">
+		<form action="#" method="post" id="form_acquire">
+			<ol>
+				<li>
+					<label for="user_name">Instance Limit:</label>
+					<input class="text" type="text" name="limits_vm" id="limits_vm" value="-1" />
+					<div id="limits_vm_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div> 
+				</li>
+				<li>
+					<label for="user_name">Public IP Limit:</label>
+					<input class="text" type="text" name="limits_ip" id="limits_ip" value="-1" />
+					<div id="limits_ip_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div> 
+				</li>
+				<li>
+					<label for="user_name">Disk Volume Limit:</label>
+					<input class="text" type="text" name="limits_volume" id="limits_volume" value="-1" />
+					<div id="limits_volume_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div> 
+				</li>
+				<li>
+					<label for="user_name">Snapshot Limit:</label>
+					<input class="text" type="text" name="limits_snapshot" id="limits_snapshot" value="-1" />
+					<div id="limits_snapshot_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div> 
+				</li>
+				<li>
+					<label for="user_name">Template Limit:</label>
+					<input class="text" type="text" name="limits_template" id="limits_template" value="-1" />
+					<div id="limits_template_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div> 
+				</li>
+			</ol>
+		</form>
+	</div>
+</div>
+
+<!-- disable or lock an account (begin) -->
+<div id="dialog_disable_account" title="Disable Account" style="display:none">	
+    <p>Select <b>"Disable"</b> to prevent account access to the cloud and to shut down all existing virtual instances.<br></br>
+       Select <b>"Lock"</b> to ONLY prevent account access to the cloud. <br></br>
+    </p>
+	<div class="dialog_formcontent">
+		<form action="#" method="post" id="form1">
+			<ol>		
+				<li>
+					<label>Action: </label>
+					<select class="select" id="change_state_type">
+						<option value="disable" selected>Disable</option>
+						<option value="lock">Lock</option>
+					</select>
+				</li>
+			</ol>
+		</form>
+	</div>
+</div>
+<!-- disable or lock an account (end) -->
