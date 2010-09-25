@@ -176,23 +176,6 @@
 	</div>
 </div>
 
-<!-- disable or lock an account (begin) -->
-<div id="dialog_disable_account" title="Disable Account" style="display:none">	
-    <p>Select <b>"Disable"</b> to prevent account access to the cloud and to shut down all existing virtual instances.<br></br>
-       Select <b>"Lock"</b> to ONLY prevent account access to the cloud. <br></br>
-    </p>
-	<div class="dialog_formcontent">
-		<form action="#" method="post" id="form1">
-			<ol>		
-				<li>
-					<label>Action: </label>
-					<select class="select" id="change_state_type">
-						<option value="disable" selected>Disable</option>
-						<option value="lock">Lock</option>
-					</select>
-				</li>
-			</ol>
-		</form>
-	</div>
+<div id="dialog_disable_account" title="Disable account" style="display:none">
+    <p>Please confirm you want to disable account that will prevent account access to the cloud and shut down all existing virtual instances.</p>
 </div>
-<!-- disable or lock an account (end) -->

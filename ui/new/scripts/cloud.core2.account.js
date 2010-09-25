@@ -56,17 +56,30 @@ function accountJsonToDetailsTab(jsonObj) {
         if (jsonObj.accounttype == roleTypeUser || jsonObj.accounttype == roleTypeDomainAdmin)
             buildActionLinkForDetailsTab("Resource limits", accountActionMap, $actionMenu, accountListAPIMap);	
         
-//        if(jsonObj.state == "enabled") 
-//            buildActionLinkForDetailsTab("Disable", accountActionMap, $actionMenu, accountListAPIMap);            	        
-//        else if(jsonObj.state == "disabled")
-//            buildActionLinkForDetailsTab("Enable", accountActionMap, $actionMenu, accountListAPIMap);               
+        if(jsonObj.state == "enabled") {
+            buildActionLinkForDetailsTab("Disable account", accountActionMap, $actionMenu, accountListAPIMap);  
+            //buildActionLinkForDetailsTab("Lock account", accountActionMap, $actionMenu, accountListAPIMap);
+        }          	        
+//        else if(jsonObj.state == "disabled") {
+//            buildActionLinkForDetailsTab("Enable account", accountActionMap, $actionMenu, accountListAPIMap);   
+//        }           
     }    
 }
 
 var accountActionMap = {  
     "Resource limits": {                 
         customActionFn : doResourceLimits 
-    }     
+    } 
+    ,
+    "Disable account": {              
+        isAsyncJob: true,
+        asyncJobResponse: "disableaccountresponse",
+        dialogBeforeActionFn : doDisableAccount,
+        inProcessText: "Disabling account....",
+        afterActionSeccessFn: function(jsonObj) {
+            accountJsonToDetailsTab(jsonObj);
+        }
+    }    
 }; 
 
 var accountListAPIMap = {
@@ -164,4 +177,20 @@ function doResourceLimits () {
 			}).dialog("open");
 		}
 	});	
+}
+
+function doDisableAccount($actionLink, listAPIMap, $detailsTab) {       
+    var jsonObj = $detailsTab.data("jsonObj");    
+    
+    $("#dialog_disable_account")    
+    .dialog('option', 'buttons', {                    
+        "Yes": function() { 		                    
+            $(this).dialog("close");	
+			var apiCommand = "command=disableAccount&account="+jsonObj.name+"&domainId="+jsonObj.domainid;
+	    	doActionToDetailsTab(jsonObj.id, $actionLink, apiCommand, listAPIMap);	         		                    	     
+        },
+        "Cancel": function() {
+            $(this).dialog("close");		     
+        }
+    }).dialog("open");  
 }
