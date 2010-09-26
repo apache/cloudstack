@@ -36,8 +36,7 @@ function afterLoadDashboardJSP() {
 				}
 			}
 		});
-		
-		//???		
+						
 		if (sessionExpired) 
 		    return false;
 		    
@@ -67,42 +66,21 @@ function afterLoadDashboardJSP() {
 			
 			// Reset to Defaults			
 			var $capacityContainer = $("#system_wide_capacity_container");
-			//var $allSections = $capacityContainer.find("#public_ip_address, #secondary_storage_used, #memory_allocated, #cpu, #primary_storage_used, #primary_storage_allocated, #private_ip_address");
-		    $capacityContainer.find("#capacityused").text("N");
+			$capacityContainer.find("#capacityused").text("N");
 		    $capacityContainer.find("#capacitytotal").text("A");
 		    $capacityContainer.find("#percentused").text("");		
 		    $capacityContainer.find("#bar_chart").removeClass().addClass("db_barbox").css("width", "0%");    
-			/*
-			$(".db_bargraph_barbox_safezone").attr("style", "width:0%");
-			$(".db_bargraph_barbox_unsafezone").attr("style", "width:0%");
-			*/	
-			
+						
 			if (capacities != null && capacities.length > 0) {
 				for (var i = 0; i < capacities.length; i++) {
 					var capacity = capacities[i];
-					if (capacity.zonename == selectedZone) {
-										
+					if (capacity.zonename == selectedZone) {										
 						// ***** Public IPs Addresses *****
 						if (capacity.type == "4") {
 						    var $c = $capacityContainer.find("#public_ip_address");
 						    $c.find("#capacityused").text(capacity.capacityused);
 						    $c.find("#capacitytotal").text(capacity.capacitytotal);						    
-						    capacityBarChart($c, capacity.percentused);
-							/*
-							$("#public_ip_used").attr("style", "width: " + ((parseFloat(capacity.percentused) < 50) ? "50%" : capacity.percentused + "%")).text("Used: " + capacity.capacityused + " / " + capacity.percentused + "%");
-							$("#public_ip_total").text("Total: " + capacity.capacitytotal);
-							var usedPercentage = parseInt(capacity.percentused);
-							if (usedPercentage > 70) {
-								$("#capacity_public_ip .db_bargraph_barbox_safezone").attr("style", "width:70%");
-								if(usedPercentage <= 100) 										
-								    $("#capacity_public_ip .db_bargraph_barbox_unsafezone").attr("style", "width:"+(usedPercentage - 70)+"%");
-								else 
-								    $("#capacity_public_ip .db_bargraph_barbox_unsafezone").attr("style", "width:30%");
-							} else {
-								$("#capacity_public_ip .db_bargraph_barbox_safezone").attr("style", "width:"+usedPercentage+"%");
-							    $("#capacity_public_ip .db_bargraph_barbox_unsafezone").attr("style", "width:0%");
-							}	
-							*/
+						    capacityBarChart($c, capacity.percentused);							
 						} 						
 						
 						// ***** Secondary Storage Used *****
@@ -110,22 +88,7 @@ function afterLoadDashboardJSP() {
 						    var $c = $capacityContainer.find("#secondary_storage_used");
 						    $c.find("#capacityused").text(convertBytes(parseInt(capacity.capacityused)));
 						    $c.find("#capacitytotal").text(convertBytes(parseInt(capacity.capacitytotal)));						    
-						    capacityBarChart($c, capacity.percentused);
-						    /*
-							$("#sec_storage_used").attr("style", "width: " + ((parseFloat(capacity.percentused) < 50) ? "50%" : capacity.percentused + "%")).text("Used: " + convertBytes(parseInt(capacity.capacityused)) + " / " + capacity.percentused + "%");
-							$("#sec_storage_total").text("Total: " + convertBytes(parseInt(capacity.capacitytotal)));
-							var usedPercentage = parseInt(capacity.percentused);
-							if (usedPercentage > 70) {
-								$("#capacity_sec_storage .db_bargraph_barbox_safezone").attr("style", "width:70%");
-								if(usedPercentage <= 100) 
-								    $("#capacity_sec_storage .db_bargraph_barbox_unsafezone").attr("style", "width:"+(usedPercentage - 70)+"%");
-								else
-								    $("#capacity_sec_storage .db_bargraph_barbox_unsafezone").attr("style", "width:30%");
-							} else {
-								$("#capacity_sec_storage .db_bargraph_barbox_safezone").attr("style", "width:"+usedPercentage+"%");
-							    $("#capacity_sec_storage .db_bargraph_barbox_unsafezone").attr("style", "width:0%");
-							}
-							*/
+						    capacityBarChart($c, capacity.percentused);						    
 						} 
 						
 						else {						    
@@ -135,22 +98,7 @@ function afterLoadDashboardJSP() {
 								    var $c = $capacityContainer.find("#memory_allocated");
 						            $c.find("#capacityused").text(convertBytes(parseInt(capacity.capacityused)));
 						            $c.find("#capacitytotal").text(convertBytes(parseInt(capacity.capacitytotal)));						            
-								    capacityBarChart($c, capacity.percentused);
-								    /*
-									$("#memory_used").attr("style", "width: " + ((parseFloat(capacity.percentused) < 50) ? "50%" : capacity.percentused + "%")).text("Used: " + convertBytes(parseInt(capacity.capacityused)) + " / " + capacity.percentused + "%");
-									$("#memory_total").text("Total: " + convertBytes(parseInt(capacity.capacitytotal)));
-									var usedPercentage = parseInt(capacity.percentused);
-									if (usedPercentage > 70) {
-										$("#capacity_memory .db_bargraph_barbox_safezone").attr("style", "width:70%");
-										if(usedPercentage <= 100) 
-										    $("#capacity_memory .db_bargraph_barbox_unsafezone").attr("style", "width:"+(usedPercentage - 70)+"%");
-										else
-										    $("#capacity_memory .db_bargraph_barbox_unsafezone").attr("style", "width:30%");
-									} else {
-										$("#capacity_memory .db_bargraph_barbox_safezone").attr("style", "width:"+usedPercentage+"%");
-									    $("#capacity_memory .db_bargraph_barbox_unsafezone").attr("style", "width:0%");
-									}
-									*/
+								    capacityBarChart($c, capacity.percentused);								    
 								} 
 																
 								// ***** CPU *****
@@ -158,22 +106,7 @@ function afterLoadDashboardJSP() {
 								    var $c = $capacityContainer.find("#cpu");
 						            $c.find("#capacityused").text(convertHz(parseInt(capacity.capacityused)));
 						            $c.find("#capacitytotal").text(convertHz(parseInt(capacity.capacitytotal)));						            
-								    capacityBarChart($c, capacity.percentused);
-								    /*
-									$("#cpu_used").attr("style", "width: " + ((parseFloat(capacity.percentused) < 50) ? "50%" : capacity.percentused + "%")).text("Used: " + convertHz(parseInt(capacity.capacityused)) + " / " + capacity.percentused + "%");
-									$("#cpu_total").text("Total: " + convertHz(parseInt(capacity.capacitytotal)));
-									var usedPercentage = parseInt(capacity.percentused);
-									if (usedPercentage > 70) {
-										$("#capacity_cpu .db_bargraph_barbox_safezone").attr("style", "width:70%");
-										if(usedPercentage <= 100) 
-										    $("#capacity_cpu .db_bargraph_barbox_unsafezone").attr("style", "width:"+(usedPercentage - 70)+"%");
-										else
-										    $("#capacity_cpu .db_bargraph_barbox_unsafezone").attr("style", "width:30%");
-									} else {
-										$("#capacity_cpu .db_bargraph_barbox_safezone").attr("style", "width:"+usedPercentage+"%");
-									    $("#capacity_cpu .db_bargraph_barbox_unsafezone").attr("style", "width:0%");
-									}
-									*/									
+								    capacityBarChart($c, capacity.percentused);								    						
 								} 
 																
 								// ***** Primary Storage Used *****
@@ -181,22 +114,7 @@ function afterLoadDashboardJSP() {
 								    var $c = $capacityContainer.find("#primary_storage_used");
 						            $c.find("#capacityused").text(convertBytes(parseInt(capacity.capacityused)));
 						            $c.find("#capacitytotal").text(convertBytes(parseInt(capacity.capacitytotal)));						            
-						            capacityBarChart($c, capacity.percentused);
-								    /*
-									$("#storage_used").attr("style", "width: " + ((parseFloat(capacity.percentused) < 50) ? "50%" : capacity.percentused + "%")).text("Used: " + convertBytes(parseInt(capacity.capacityused)) + " / " + capacity.percentused + "%");
-									$("#storage_total").text("Total: " + convertBytes(parseInt(capacity.capacitytotal)));
-									var usedPercentage = parseInt(capacity.percentused);									
-									if (usedPercentage > 70) {
-										$("#capacity_storage .db_bargraph_barbox_safezone").attr("style", "width:70%");
-										if(usedPercentage <= 100) 
-										    $("#capacity_storage .db_bargraph_barbox_unsafezone").attr("style", "width:"+(usedPercentage - 70)+"%");
-										else
-										    $("#capacity_storage .db_bargraph_barbox_unsafezone").attr("style", "width:30%");
-									} else {
-										$("#capacity_storage .db_bargraph_barbox_safezone").attr("style", "width:"+usedPercentage+"%");
-									    $("#capacity_storage .db_bargraph_barbox_unsafezone").attr("style", "width:0%");
-									}
-									*/
+						            capacityBarChart($c, capacity.percentused);								   
 								} 
 																
 								// ***** Primary Storage Allocated *****
@@ -204,22 +122,7 @@ function afterLoadDashboardJSP() {
 								    var $c = $capacityContainer.find("#primary_storage_allocated");
 						            $c.find("#capacityused").text(convertBytes(parseInt(capacity.capacityused)));
 						            $c.find("#capacitytotal").text(convertBytes(parseInt(capacity.capacitytotal)));						            
-						            capacityBarChart($c, capacity.percentused);
-								    /*
-									$("#storage_alloc").attr("style", "width: " + ((parseFloat(capacity.percentused) < 50) ? "50%" : capacity.percentused + "%")).text("Used: " + convertBytes(parseInt(capacity.capacityused)) + " / " + capacity.percentused + "%");
-									$("#storage_alloc_total").text("Total: " + convertBytes(parseInt(capacity.capacitytotal)));
-									var usedPercentage = parseInt(capacity.percentused);
-									if (usedPercentage > 70) {
-										$("#capacity_storage_alloc .db_bargraph_barbox_safezone").attr("style", "width:70%");
-										if(usedPercentage <= 100) 
-										    $("#capacity_storage_alloc .db_bargraph_barbox_unsafezone").attr("style", "width:"+(usedPercentage - 70)+"%");
-										else
-										    $("#capacity_storage_alloc .db_bargraph_barbox_unsafezone").attr("style", "width:30%");
-									} else {
-										$("#capacity_storage_alloc .db_bargraph_barbox_safezone").attr("style", "width:"+usedPercentage+"%");
-									    $("#capacity_storage_alloc .db_bargraph_barbox_unsafezone").attr("style", "width:0%");
-									}
-									*/
+						            capacityBarChart($c, capacity.percentused);								   
 								} 
 																
 								// ***** Private IP Addresses *****
@@ -227,32 +130,15 @@ function afterLoadDashboardJSP() {
 								    var $c = $capacityContainer.find("#private_ip_address");
 						            $c.find("#capacityused").text(capacity.capacityused);
 						            $c.find("#capacitytotal").text(capacity.capacitytotal);						            
-								    capacityBarChart($c, capacity.percentused);
-								    /*
-									$("#private_ip_used").attr("style", "width: " + ((parseFloat(capacity.percentused) < 50) ? "50%" : capacity.percentused + "%")).text("Used: " + capacity.capacityused + " / " + capacity.percentused + "%");
-									$("#private_ip_total").text("Total: " + capacity.capacitytotal);
-									var usedPercentage = parseInt(capacity.percentused);
-									if (usedPercentage > 70) {
-										$("#capacity_private_ip .db_bargraph_barbox_safezone").attr("style", "width:70%");
-										if(usedPercentage <= 100) 
-										    $("#capacity_private_ip .db_bargraph_barbox_unsafezone").attr("style", "width:"+(usedPercentage - 70)+"%");
-										else
-										    $("#capacity_private_ip .db_bargraph_barbox_unsafezone").attr("style", "width:30%");
-									} else {
-										$("#capacity_private_ip .db_bargraph_barbox_safezone").attr("style", "width:"+usedPercentage+"%");
-									    $("#capacity_private_ip .db_bargraph_barbox_unsafezone").attr("style", "width:0%");
-									}
-									*/									
-								}								
-								
+								    capacityBarChart($c, capacity.percentused);								    							
+								}	
 							}
 						}
 					}
 				}
 			}
 		});	
-		//???
-		
+				
         $("#capacity_zone_select").bind("change", function(event) {
 			var zoneId = $(this).val();
 			$.ajax({
@@ -273,6 +159,29 @@ function afterLoadDashboardJSP() {
 			});
 		});
 		$("#capacity_zone_select").change();
+		
+		//???
+		// Show Recent Alerts
+		$.ajax({
+		    data: createURL("command=listAlerts"),
+			dataType: "json",
+			success: function(json) {
+				var alerts = json.listalertsresponse.alert;
+				if (alerts != null && alerts.length > 0) {
+					var alertGrid = $("#alert_grid_content").empty();
+					var length = (alerts.length>=5) ? 5 : alerts.length;
+					var $alertTemplate = $("#alert_template");
+					for (var i = 0; i < length; i++) {
+						var template = $alertTemplate.clone(true);
+						template.find("#type").text(toAlertType(alerts[i].type));
+						template.find("#descripton").append(sanitizeXSS(alerts[i].description));											
+						setDateField(alerts[i].sent, template.find("#sent"));															
+						alertGrid.append(template.show());
+					}
+				}
+			}
+		});
+		//???
 	} 
 	else if (isDomainAdmin()) {
 	

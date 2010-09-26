@@ -189,87 +189,12 @@
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="grid_rows even">
-            <div class="grid_row_cell" style="width: 10%;">
-                <div class="row_celltitles">
-                    <img src="images/alert_icon.png" /></div>
+        </div>        
+        <div id="alert_grid_content">
+            <div style="height: 310px; text-align: center;">
+                <i>No Recent Alerts</i>
             </div>
-            <div class="grid_row_cell" style="width: 70%;">
-                <div class="row_celltitles alert">
-                    Alerts name</div>
-                <div class="row_celltitles alertdetails">
-                    Details about the alert will appear here</div>
-            </div>
-            <div class="grid_row_cell" style="width: 19%;">
-                <div class="row_celltitles">
-                    09/17/2010 14:33:49</div>
-            </div>
-        </div>
-        <div class="grid_rows odd">
-            <div class="grid_row_cell" style="width: 10%;">
-                <div class="row_celltitles">
-                    <img src="images/alert_icon.png" /></div>
-            </div>
-            <div class="grid_row_cell" style="width: 70%;">
-                <div class="row_celltitles alert">
-                    Alerts name</div>
-                <div class="row_celltitles alertdetails">
-                    Details about the alert will appear here</div>
-            </div>
-            <div class="grid_row_cell" style="width: 19%;">
-                <div class="row_celltitles">
-                    09/17/2010 14:33:49</div>
-            </div>
-        </div>
-        <div class="grid_rows even">
-            <div class="grid_row_cell" style="width: 10%;">
-                <div class="row_celltitles">
-                    <img src="images/alert_icon.png" /></div>
-            </div>
-            <div class="grid_row_cell" style="width: 70%;">
-                <div class="row_celltitles alert">
-                    Alerts name</div>
-                <div class="row_celltitles alertdetails">
-                    Details about the alert will appear here</div>
-            </div>
-            <div class="grid_row_cell" style="width: 19%;">
-                <div class="row_celltitles">
-                    09/17/2010 14:33:49</div>
-            </div>
-        </div>
-        <div class="grid_rows odd">
-            <div class="grid_row_cell" style="width: 10%;">
-                <div class="row_celltitles">
-                    <img src="images/alert_icon.png" /></div>
-            </div>
-            <div class="grid_row_cell" style="width: 70%;">
-                <div class="row_celltitles alert">
-                    Alerts name</div>
-                <div class="row_celltitles alertdetails">
-                    Details about the alert will appear here</div>
-            </div>
-            <div class="grid_row_cell" style="width: 19%;">
-                <div class="row_celltitles">
-                    09/17/2010 14:33:49</div>
-            </div>
-        </div>
-        <div class="grid_rows even">
-            <div class="grid_row_cell" style="width: 10%;">
-                <div class="row_celltitles">
-                    <img src="images/alert_icon.png" /></div>
-            </div>
-            <div class="grid_row_cell" style="width: 70%;">
-                <div class="row_celltitles alert">
-                    Alerts name</div>
-                <div class="row_celltitles alertdetails">
-                    Details about the alert will appear here</div>
-            </div>
-            <div class="grid_row_cell" style="width: 19%;">
-                <div class="row_celltitles">
-                    09/17/2010 14:33:49</div>
-            </div>
-        </div>
+        </div>      
     </div>
     <!--Host Alerts-->
     <div class="grid_container" style="width: 48%; margin-top: 15px; float: right;">
@@ -365,5 +290,19 @@
                     09/17/2010 14:33:49</div>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="grid_rows" id="alert_template" style="display:none">
+    <div class="grid_row_cell" style="width: 10%;">
+        <div class="row_celltitles">
+            <img src="images/alert_icon.png" /></div>
+    </div>
+    <div class="grid_row_cell" style="width: 70%;">
+        <div class="row_celltitles alert" id="type"></div>
+        <div class="row_celltitles alertdetails" id="description"></div>
+    </div>
+    <div class="grid_row_cell" style="width: 19%;">
+        <div class="row_celltitles" id="sent"></div>
     </div>
 </div>
