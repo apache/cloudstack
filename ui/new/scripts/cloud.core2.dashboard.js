@@ -60,26 +60,28 @@ function afterLoadDashboardJSP() {
 			}
 		});
 		
-		$("#capacity_pod_select").bind("change", function(event) {
-			// Reset to Defaults
-			/*
-			$("#public_ip_total, #storage_total, #storage_alloc_total, #sec_storage_total, #memory_total, #cpu_total, #private_ip_total").text("N/A");
-			$("#public_ip_used, #storage_used, #storage_alloc, #sec_storage_used, #memory_used, #cpu_used, #private_ip_used,").attr("style", "width:50%").text("N/A");
-			$(".db_bargraph_barbox_safezone").attr("style", "width:0%");
-			$(".db_bargraph_barbox_unsafezone").attr("style", "width:0%");
-			*/
-			
-			var selectedZone = $("#capacity_zone_select option:selected").text();
+		$("#capacity_pod_select").bind("change", function(event) {		    
+		    event.stopPropagation();		    
+		    var selectedZone = $("#capacity_zone_select option:selected").text();
 			var selectedPod = $("#capacity_pod_select").val();
 			
+			// Reset to Defaults			
 			var $capacityContainer = $("#system_wide_capacity_container");
+			var $allSections = $capacityContainer.find("#public_ip_address, #secondary_storage_used, #memory_allocated, #cpu, #primary_storage_used, #primary_storage_allocated, #private_ip_address");
+		    $allSections.find("#capacityused").text("N");
+		    $allSections.find("#capacitytotal").text("A");
+		    $allSections.find("#percentused").text("");		    
+			/*
+			$(".db_bargraph_barbox_safezone").attr("style", "width:0%");
+			$(".db_bargraph_barbox_unsafezone").attr("style", "width:0%");
+			*/	
 			
 			if (capacities != null && capacities.length > 0) {
 				for (var i = 0; i < capacities.length; i++) {
 					var capacity = capacities[i];
 					if (capacity.zonename == selectedZone) {
 										
-						// Public IPs Addresses
+						// ***** Public IPs Addresses *****
 						if (capacity.type == "4") {
 						    var $c = $capacityContainer.find("#public_ip_address");
 						    $c.find("#capacityused").text(capacity.capacityused);
@@ -102,7 +104,7 @@ function afterLoadDashboardJSP() {
 							*/
 						} 						
 						
-						// Secondary Storage Used
+						// ***** Secondary Storage Used *****
 						else if (capacity.type == "6") {
 						    var $c = $capacityContainer.find("#secondary_storage_used");
 						    $c.find("#capacityused").text(convertBytes(parseInt(capacity.capacityused)));
@@ -127,7 +129,7 @@ function afterLoadDashboardJSP() {
 						
 						else {						    
 							if (capacity.podname == selectedPod) {							    
-								// Memory Allocated
+								// ***** Memory Allocated *****
 								if (capacity.type == "0") {
 								    var $c = $capacityContainer.find("#memory_allocated");
 						            $c.find("#capacityused").text(convertBytes(parseInt(capacity.capacityused)));
@@ -151,7 +153,7 @@ function afterLoadDashboardJSP() {
 									*/
 								} 
 																
-								// CPU
+								// ***** CPU *****
 								else if (capacity.type == "1") {
 								    var $c = $capacityContainer.find("#cpu");
 						            $c.find("#capacityused").text(convertHz(parseInt(capacity.capacityused)));
@@ -175,7 +177,7 @@ function afterLoadDashboardJSP() {
 									*/									
 								} 
 																
-								// Primary Storage Used
+								// ***** Primary Storage Used *****
 								else if (capacity.type == "2") {
 								    var $c = $capacityContainer.find("#primary_storage_used");
 						            $c.find("#capacityused").text(convertBytes(parseInt(capacity.capacityused)));
@@ -199,7 +201,7 @@ function afterLoadDashboardJSP() {
 									*/
 								} 
 																
-								// Primary Storage Allocated
+								// ***** Primary Storage Allocated *****
 								else if (capacity.type == "3") {
 								    var $c = $capacityContainer.find("#primary_storage_allocated");
 						            $c.find("#capacityused").text(convertBytes(parseInt(capacity.capacityused)));
@@ -223,7 +225,7 @@ function afterLoadDashboardJSP() {
 									*/
 								} 
 																
-								// Private IP Addresses
+								// ***** Private IP Addresses *****
 								else if (capacity.type == "5") {								
 								    var $c = $capacityContainer.find("#private_ip_address");
 						            $c.find("#capacityused").text(capacity.capacityused);
@@ -245,8 +247,7 @@ function afterLoadDashboardJSP() {
 									    $("#capacity_private_ip .db_bargraph_barbox_unsafezone").attr("style", "width:0%");
 									}
 									*/									
-								}
-								
+								}								
 								
 							}
 						}
