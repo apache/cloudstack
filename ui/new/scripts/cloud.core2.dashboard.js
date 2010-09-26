@@ -159,9 +159,10 @@ function afterLoadDashboardJSP() {
 			});
 		});
 		$("#capacity_zone_select").change();
+				
+		// General Alerts
+		var $alertTemplate = $("#alert_template");
 		
-		//???
-		// Show Recent Alerts
 		$.ajax({
 		    data: createURL("command=listAlerts"),
 			dataType: "json",
@@ -169,19 +170,38 @@ function afterLoadDashboardJSP() {
 				var alerts = json.listalertsresponse.alert;
 				if (alerts != null && alerts.length > 0) {
 					var alertGrid = $("#alert_grid_content").empty();
-					var length = (alerts.length>=5) ? 5 : alerts.length;
-					var $alertTemplate = $("#alert_template");
+					var length = (alerts.length>=5) ? 5 : alerts.length;					
 					for (var i = 0; i < length; i++) {
 						var template = $alertTemplate.clone(true);
 						template.find("#type").text(toAlertType(alerts[i].type));
-						template.find("#descripton").append(sanitizeXSS(alerts[i].description));											
-						setDateField(alerts[i].sent, template.find("#sent"));															
+						template.find("#description").append(fromdb(alerts[i].description));											
+						setDateField(alerts[i].sent, template.find("#date"));															
 						alertGrid.append(template.show());
 					}
 				}
 			}
 		});
-		//???
+				
+		// Hosts Alerts
+		$.ajax({
+		    data: createURL("command=listHosts&state=Alert"),
+			dataType: "json",
+			success: function(json) {
+				var alerts = json.listhostsresponse.host;
+				if (alerts != null && alerts.length > 0) {
+					var alertGrid = $("#host_alert_grid_content").empty();
+					var length = (alerts.length>=4) ? 4 : alerts.length;
+					for (var i = 0; i < length; i++) {
+						var template = $alertTemplate.clone(true);
+						template.find("#type").text("Host - Alert State");
+						template.find("#description").append("Host - <b>" + fromdb(alerts[i].name) + "</b> has been detected in Alert state.");								
+						setDateField(alerts[i].disconnected, template.find("#date"));											
+						alertGrid.append(template.show());
+					}
+				}
+			}
+		});		
+		
 	} 
 	else if (isDomainAdmin()) {
 	
