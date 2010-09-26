@@ -96,7 +96,9 @@ $(document).ready(function() {
     
     $("#leftmenu_dashboard").bind("click", function(event) {      
         hideMiddleMenu();
-        $("#right_panel").load("jsp/dashboard.jsp", function(){});
+        $("#right_panel").load("jsp/dashboard.jsp", function(){
+            afterLoadDashboardJSP();        
+        });
         return false;
     });
     
