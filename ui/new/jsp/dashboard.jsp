@@ -20,7 +20,7 @@
         <p id="after_action_info">
         </p>
     </div>
-    <div class="grid_container">
+    <div class="grid_container" id="system_wide_capacity_container">
         <div class="grid_header">
             <div class="grid_header_cell" style="width: 60%; border: none;">
                 <div class="grid_header_title">
@@ -35,14 +35,14 @@
                 </div>
             </div>
         </div>
-        <div class="dbrow even">
+        <div class="dbrow even" id="public_ip_address">
             <div class="dbrow_cell" style="width: 29%;">
                 <div class="dbgraph_titlebox">
                     <h2>
                         Public IP Addresses</h2>
                     <div class="dbgraph_title_usedbox">
                         <p>
-                            Used: <span>2 / 11 </span>
+                            Used: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
                         </p>
                     </div>
                 </div>
@@ -52,18 +52,17 @@
                 </div>
             </div>
             <div class="dbrow_cell" style="width: 12%; border: none;">
-                <div class="db_totaltitle">
-                    18.2 %</div>
+                <div class="db_totaltitle" id="percentused"></div>
             </div>
         </div>
-        <div class="dbrow odd">
+        <div class="dbrow odd" id="private_ip_address">
             <div class="dbrow_cell" style="width: 29%;">
                 <div class="dbgraph_titlebox">
                     <h2>
                         Private IP Addresses</h2>
                     <div class="dbgraph_title_usedbox">
                         <p>
-                            Used: <span>2 / 10 </span>
+                            Used: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
                         </p>
                     </div>
                 </div>
@@ -73,18 +72,17 @@
                 </div>
             </div>
             <div class="dbrow_cell" style="width: 12%; border: none;">
-                <div class="db_totaltitle">
-                    20 %</div>
+                <div class="db_totaltitle" id="percentused"></div>
             </div>
         </div>
-        <div class="dbrow even">
+        <div class="dbrow even" id="memory_allocated">
             <div class="dbrow_cell" style="width: 29%;">
                 <div class="dbgraph_titlebox">
                     <h2>
                         Memory Allocated</h2>
                     <div class="dbgraph_title_usedbox">
                         <p>
-                            Used: <span>2.12 GB / 3.22 GB </span>
+                            Used: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
                         </p>
                     </div>
                 </div>
@@ -94,18 +92,17 @@
                 </div>
             </div>
             <div class="dbrow_cell" style="width: 12%; border: none;">
-                <div class="db_totaltitle">
-                    65.8 %</div>
+                <div class="db_totaltitle" id="percentused"></div>
             </div>
         </div>
-        <div class="dbrow odd">
+        <div class="dbrow odd" id="cpu">
             <div class="dbrow_cell" style="width: 29%;">
                 <div class="dbgraph_titlebox">
                     <h2>
                         CPU</h2>
                     <div class="dbgraph_title_usedbox">
                         <p>
-                            Used: <span>8 MHZ / 9.60 MHZ </span>
+                            Used: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
                         </p>
                     </div>
                 </div>
@@ -115,18 +112,17 @@
                 </div>
             </div>
             <div class="dbrow_cell" style="width: 12%; border: none;">
-                <div class="db_totaltitle">
-                    83.3 %</div>
+                <div class="db_totaltitle" id="percentused"></div>
             </div>
         </div>
-        <div class="dbrow even">
+        <div class="dbrow even" id="primary_storage_allocated">
             <div class="dbrow_cell" style="width: 29%;">
                 <div class="dbgraph_titlebox">
                     <h2>
                         Primary Storage Allocated</h2>
                     <div class="dbgraph_title_usedbox">
                         <p>
-                            Used: <span>Used: 4.00 GB / 3.50 TB </span>
+                            Used: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
                         </p>
                     </div>
                 </div>
@@ -136,18 +132,17 @@
                 </div>
             </div>
             <div class="dbrow_cell" style="width: 12%; border: none;">
-                <div class="db_totaltitle">
-                    15.2 %</div>
+                <div class="db_totaltitle" id="percentused"></div>
             </div>
         </div>
-        <div class="dbrow odd">
+        <div class="dbrow odd" id="primary_storage_used">
             <div class="dbrow_cell" style="width: 29%;">
                 <div class="dbgraph_titlebox">
                     <h2>
                         Primary Storage Used</h2>
                     <div class="dbgraph_title_usedbox">
                         <p>
-                            Used: <span>999.17 GB / 1.75 TB </span>
+                            Used: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
                         </p>
                     </div>
                 </div>
@@ -157,18 +152,17 @@
                 </div>
             </div>
             <div class="dbrow_cell" style="width: 12%; border: none;">
-                <div class="db_totaltitle">
-                    40.12 %</div>
+                <div class="db_totaltitle" id="percentused"></div>
             </div>
         </div>
-        <div class="dbrow even">
+        <div class="dbrow even" id="secondary_storage_used">
             <div class="dbrow_cell" style="width: 29%;">
                 <div class="dbgraph_titlebox">
                     <h2>
                         Secondary Storage Used</h2>
                     <div class="dbgraph_title_usedbox">
                         <p>
-                            Used: <span>599.17 GB / 1.75 TB </span>
+                            Used: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
                         </p>
                     </div>
                 </div>
@@ -178,8 +172,7 @@
                 </div>
             </div>
             <div class="dbrow_cell" style="width: 12%; border: none;">
-                <div class="db_totaltitle">
-                    20.12 %</div>
+                <div class="db_totaltitle" id="percentused"></div>
             </div>
         </div>
     </div>

@@ -1,5 +1,5 @@
 function afterLoadDashboardJSP() {
-        if (isAdmin()) {
+    if (isAdmin()) {
 		var sessionExpired = false;
 		var zones = null;
 		var noZones = false;
@@ -37,6 +37,224 @@ function afterLoadDashboardJSP() {
 			}
 		});
 		
+		//???		
+		if (sessionExpired) 
+		    return false;
+		    
+		if (noZones || noPods) {
+//			$("#tab_dashboard_user").hide();
+//			$("#menutab_role_user").hide();
+//			$("#menutab_role_root").show();
+//			$("#menutab_configuration").click();
+			return false;
+		}
+		
+		var capacities = null;
+		$.ajax({
+			cache: false,
+			async: false,
+			data: createURL("command=listCapacity"),
+			dataType: "json",
+			success: function(json) {
+				capacities = json.listcapacityresponse.capacity;
+			}
+		});
+		
+		$("#capacity_pod_select").bind("change", function(event) {
+			// Reset to Defaults
+			/*
+			$("#public_ip_total, #storage_total, #storage_alloc_total, #sec_storage_total, #memory_total, #cpu_total, #private_ip_total").text("N/A");
+			$("#public_ip_used, #storage_used, #storage_alloc, #sec_storage_used, #memory_used, #cpu_used, #private_ip_used,").attr("style", "width:50%").text("N/A");
+			$(".db_bargraph_barbox_safezone").attr("style", "width:0%");
+			$(".db_bargraph_barbox_unsafezone").attr("style", "width:0%");
+			*/
+			
+			var selectedZone = $("#capacity_zone_select option:selected").text();
+			var selectedPod = $("#capacity_pod_select").val();
+			
+			var $capacityContainer = $("#system_wide_capacity_container");
+			
+			if (capacities != null && capacities.length > 0) {
+				for (var i = 0; i < capacities.length; i++) {
+					var capacity = capacities[i];
+					if (capacity.zonename == selectedZone) {
+										
+						// Public IPs Addresses
+						if (capacity.type == "4") {
+						    var $c = $capacityContainer.find("#public_ip_address");
+						    $c.find("#capacityused").text(capacity.capacityused);
+						    $c.find("#capacitytotal").text(capacity.capacitytotal);
+						    $c.find("#percentused").text(capacity.percentused + "%");
+							/*
+							$("#public_ip_used").attr("style", "width: " + ((parseFloat(capacity.percentused) < 50) ? "50%" : capacity.percentused + "%")).text("Used: " + capacity.capacityused + " / " + capacity.percentused + "%");
+							$("#public_ip_total").text("Total: " + capacity.capacitytotal);
+							var usedPercentage = parseInt(capacity.percentused);
+							if (usedPercentage > 70) {
+								$("#capacity_public_ip .db_bargraph_barbox_safezone").attr("style", "width:70%");
+								if(usedPercentage <= 100) 										
+								    $("#capacity_public_ip .db_bargraph_barbox_unsafezone").attr("style", "width:"+(usedPercentage - 70)+"%");
+								else 
+								    $("#capacity_public_ip .db_bargraph_barbox_unsafezone").attr("style", "width:30%");
+							} else {
+								$("#capacity_public_ip .db_bargraph_barbox_safezone").attr("style", "width:"+usedPercentage+"%");
+							    $("#capacity_public_ip .db_bargraph_barbox_unsafezone").attr("style", "width:0%");
+							}	
+							*/
+						} 						
+						
+						// Secondary Storage Used
+						else if (capacity.type == "6") {
+						    var $c = $capacityContainer.find("#secondary_storage_used");
+						    $c.find("#capacityused").text(convertBytes(parseInt(capacity.capacityused)));
+						    $c.find("#capacitytotal").text(convertBytes(parseInt(capacity.capacitytotal)));
+						    $c.find("#percentused").text(capacity.percentused + "%");
+						    /*
+							$("#sec_storage_used").attr("style", "width: " + ((parseFloat(capacity.percentused) < 50) ? "50%" : capacity.percentused + "%")).text("Used: " + convertBytes(parseInt(capacity.capacityused)) + " / " + capacity.percentused + "%");
+							$("#sec_storage_total").text("Total: " + convertBytes(parseInt(capacity.capacitytotal)));
+							var usedPercentage = parseInt(capacity.percentused);
+							if (usedPercentage > 70) {
+								$("#capacity_sec_storage .db_bargraph_barbox_safezone").attr("style", "width:70%");
+								if(usedPercentage <= 100) 
+								    $("#capacity_sec_storage .db_bargraph_barbox_unsafezone").attr("style", "width:"+(usedPercentage - 70)+"%");
+								else
+								    $("#capacity_sec_storage .db_bargraph_barbox_unsafezone").attr("style", "width:30%");
+							} else {
+								$("#capacity_sec_storage .db_bargraph_barbox_safezone").attr("style", "width:"+usedPercentage+"%");
+							    $("#capacity_sec_storage .db_bargraph_barbox_unsafezone").attr("style", "width:0%");
+							}
+							*/
+						} 
+						
+						else {						    
+							if (capacity.podname == selectedPod) {							    
+								// Memory Allocated
+								if (capacity.type == "0") {
+								    var $c = $capacityContainer.find("#memory_allocated");
+						            $c.find("#capacityused").text(convertBytes(parseInt(capacity.capacityused)));
+						            $c.find("#capacitytotal").text(convertBytes(parseInt(capacity.capacitytotal)));
+						            $c.find("#percentused").text(capacity.percentused + "%");
+								
+								    /*
+									$("#memory_used").attr("style", "width: " + ((parseFloat(capacity.percentused) < 50) ? "50%" : capacity.percentused + "%")).text("Used: " + convertBytes(parseInt(capacity.capacityused)) + " / " + capacity.percentused + "%");
+									$("#memory_total").text("Total: " + convertBytes(parseInt(capacity.capacitytotal)));
+									var usedPercentage = parseInt(capacity.percentused);
+									if (usedPercentage > 70) {
+										$("#capacity_memory .db_bargraph_barbox_safezone").attr("style", "width:70%");
+										if(usedPercentage <= 100) 
+										    $("#capacity_memory .db_bargraph_barbox_unsafezone").attr("style", "width:"+(usedPercentage - 70)+"%");
+										else
+										    $("#capacity_memory .db_bargraph_barbox_unsafezone").attr("style", "width:30%");
+									} else {
+										$("#capacity_memory .db_bargraph_barbox_safezone").attr("style", "width:"+usedPercentage+"%");
+									    $("#capacity_memory .db_bargraph_barbox_unsafezone").attr("style", "width:0%");
+									}
+									*/
+								} 
+																
+								// CPU
+								else if (capacity.type == "1") {
+								    var $c = $capacityContainer.find("#cpu");
+						            $c.find("#capacityused").text(convertHz(parseInt(capacity.capacityused)));
+						            $c.find("#capacitytotal").text(convertHz(parseInt(capacity.capacitytotal)));
+						            $c.find("#percentused").text(capacity.percentused + "%");
+								
+								    /*
+									$("#cpu_used").attr("style", "width: " + ((parseFloat(capacity.percentused) < 50) ? "50%" : capacity.percentused + "%")).text("Used: " + convertHz(parseInt(capacity.capacityused)) + " / " + capacity.percentused + "%");
+									$("#cpu_total").text("Total: " + convertHz(parseInt(capacity.capacitytotal)));
+									var usedPercentage = parseInt(capacity.percentused);
+									if (usedPercentage > 70) {
+										$("#capacity_cpu .db_bargraph_barbox_safezone").attr("style", "width:70%");
+										if(usedPercentage <= 100) 
+										    $("#capacity_cpu .db_bargraph_barbox_unsafezone").attr("style", "width:"+(usedPercentage - 70)+"%");
+										else
+										    $("#capacity_cpu .db_bargraph_barbox_unsafezone").attr("style", "width:30%");
+									} else {
+										$("#capacity_cpu .db_bargraph_barbox_safezone").attr("style", "width:"+usedPercentage+"%");
+									    $("#capacity_cpu .db_bargraph_barbox_unsafezone").attr("style", "width:0%");
+									}
+									*/									
+								} 
+																
+								// Primary Storage Used
+								else if (capacity.type == "2") {
+								    var $c = $capacityContainer.find("#primary_storage_used");
+						            $c.find("#capacityused").text(convertBytes(parseInt(capacity.capacityused)));
+						            $c.find("#capacitytotal").text(convertBytes(parseInt(capacity.capacitytotal)));
+						            $c.find("#percentused").text(capacity.percentused + "%");
+						            
+								    /*
+									$("#storage_used").attr("style", "width: " + ((parseFloat(capacity.percentused) < 50) ? "50%" : capacity.percentused + "%")).text("Used: " + convertBytes(parseInt(capacity.capacityused)) + " / " + capacity.percentused + "%");
+									$("#storage_total").text("Total: " + convertBytes(parseInt(capacity.capacitytotal)));
+									var usedPercentage = parseInt(capacity.percentused);									
+									if (usedPercentage > 70) {
+										$("#capacity_storage .db_bargraph_barbox_safezone").attr("style", "width:70%");
+										if(usedPercentage <= 100) 
+										    $("#capacity_storage .db_bargraph_barbox_unsafezone").attr("style", "width:"+(usedPercentage - 70)+"%");
+										else
+										    $("#capacity_storage .db_bargraph_barbox_unsafezone").attr("style", "width:30%");
+									} else {
+										$("#capacity_storage .db_bargraph_barbox_safezone").attr("style", "width:"+usedPercentage+"%");
+									    $("#capacity_storage .db_bargraph_barbox_unsafezone").attr("style", "width:0%");
+									}
+									*/
+								} 
+																
+								// Primary Storage Allocated
+								else if (capacity.type == "3") {
+								    var $c = $capacityContainer.find("#primary_storage_allocated");
+						            $c.find("#capacityused").text(convertBytes(parseInt(capacity.capacityused)));
+						            $c.find("#capacitytotal").text(convertBytes(parseInt(capacity.capacitytotal)));
+						            $c.find("#percentused").text(capacity.percentused + "%");
+						            
+								    /*
+									$("#storage_alloc").attr("style", "width: " + ((parseFloat(capacity.percentused) < 50) ? "50%" : capacity.percentused + "%")).text("Used: " + convertBytes(parseInt(capacity.capacityused)) + " / " + capacity.percentused + "%");
+									$("#storage_alloc_total").text("Total: " + convertBytes(parseInt(capacity.capacitytotal)));
+									var usedPercentage = parseInt(capacity.percentused);
+									if (usedPercentage > 70) {
+										$("#capacity_storage_alloc .db_bargraph_barbox_safezone").attr("style", "width:70%");
+										if(usedPercentage <= 100) 
+										    $("#capacity_storage_alloc .db_bargraph_barbox_unsafezone").attr("style", "width:"+(usedPercentage - 70)+"%");
+										else
+										    $("#capacity_storage_alloc .db_bargraph_barbox_unsafezone").attr("style", "width:30%");
+									} else {
+										$("#capacity_storage_alloc .db_bargraph_barbox_safezone").attr("style", "width:"+usedPercentage+"%");
+									    $("#capacity_storage_alloc .db_bargraph_barbox_unsafezone").attr("style", "width:0%");
+									}
+									*/
+								} 
+																
+								// Private IP Addresses
+								else if (capacity.type == "5") {								
+								    var $c = $capacityContainer.find("#private_ip_address");
+						            $c.find("#capacityused").text(capacity.capacityused);
+						            $c.find("#capacitytotal").text(capacity.capacitytotal);
+						            $c.find("#percentused").text(capacity.percentused + "%");
+								
+								    /*
+									$("#private_ip_used").attr("style", "width: " + ((parseFloat(capacity.percentused) < 50) ? "50%" : capacity.percentused + "%")).text("Used: " + capacity.capacityused + " / " + capacity.percentused + "%");
+									$("#private_ip_total").text("Total: " + capacity.capacitytotal);
+									var usedPercentage = parseInt(capacity.percentused);
+									if (usedPercentage > 70) {
+										$("#capacity_private_ip .db_bargraph_barbox_safezone").attr("style", "width:70%");
+										if(usedPercentage <= 100) 
+										    $("#capacity_private_ip .db_bargraph_barbox_unsafezone").attr("style", "width:"+(usedPercentage - 70)+"%");
+										else
+										    $("#capacity_private_ip .db_bargraph_barbox_unsafezone").attr("style", "width:30%");
+									} else {
+										$("#capacity_private_ip .db_bargraph_barbox_safezone").attr("style", "width:"+usedPercentage+"%");
+									    $("#capacity_private_ip .db_bargraph_barbox_unsafezone").attr("style", "width:0%");
+									}
+									*/									
+								}
+								
+								
+							}
+						}
+					}
+				}
+			}
+		});	
+		//???
 		
         $("#capacity_zone_select").bind("change", function(event) {
 			var zoneId = $(this).val();
