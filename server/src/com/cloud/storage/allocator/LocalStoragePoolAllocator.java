@@ -29,12 +29,15 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.manager.allocator.HostAllocator;
+import com.cloud.agent.manager.allocator.impl.FirstFitAllocator;
 import com.cloud.agent.api.to.DiskCharacteristicsTO;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.host.Host;
 import com.cloud.service.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.ServiceOffering.GuestIpType;
@@ -57,6 +60,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmCharacteristics;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.storage.StoragePoolVO;
 
 //
 // TODO
@@ -73,7 +77,8 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     @Inject ServiceOfferingDao _offeringDao;
     @Inject CapacityDao _capacityDao;
     @Inject ConfigurationDao _configDao;
-    
+
+    HostAllocator _allocator = null;    
     protected SearchBuilder<VMInstanceVO> VmsOnPoolSearch;
 
     
@@ -110,6 +115,10 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
             myAvoids.add(pool);
             if (pool.getPoolType().isShared()) {
                 return pool;
+            }
+            
+            if (_allocator.allocateTo(vmc, offering, Host.Type.Routing, dc, pod, (StoragePoolVO)pool, template, new HashSet<Host>()) == null) {
+                continue;
             }
             
         	List<StoragePoolHostVO> hostsInSPool = _poolHostDao.listByPoolId(pool.getId());
@@ -297,6 +306,9 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
         
         sbVolume.done();
         VmsOnPoolSearch.done();
+        
+        _allocator = new FirstFitAllocator();
+        _allocator.configure("First fit", params);
         
         return true;
     }
