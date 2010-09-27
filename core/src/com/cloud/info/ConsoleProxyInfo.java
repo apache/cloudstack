@@ -30,7 +30,7 @@ public class ConsoleProxyInfo {
 		this.proxyUrlPort = proxyUrlPort;
 	}
 	
-	public ConsoleProxyInfo(boolean sslEnabled, String proxyIpAddress, int port, int proxyUrlPort) {
+	public ConsoleProxyInfo(boolean sslEnabled, String proxyIpAddress, int port, int proxyUrlPort, String consoleProxyUrlDomain) {
 		this.sslEnabled = sslEnabled;
 		
 		if(sslEnabled) {
@@ -38,7 +38,13 @@ public class ConsoleProxyInfo {
 			for(int i = 0; i < sb.length(); i++)
 				if(sb.charAt(i) == '.')
 					sb.setCharAt(i, '-');
-			sb.append(".realhostip.com");
+			if(consoleProxyUrlDomain!=null && consoleProxyUrlDomain.length()>0)
+			{
+				sb.append(".");
+				sb.append(consoleProxyUrlDomain);
+			}
+			else
+				sb.append(".realhostip.com");
 			proxyAddress = sb.toString();
 			proxyPort = port;
 			this.proxyUrlPort = proxyUrlPort;

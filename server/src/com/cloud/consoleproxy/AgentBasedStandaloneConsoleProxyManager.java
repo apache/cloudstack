@@ -85,7 +85,7 @@ AgentBasedConsoleProxyManager {
             if(allocatedHost.getProxyPort() != null && allocatedHost.getProxyPort().intValue() > 0)
                 urlPort = allocatedHost.getProxyPort().intValue();
             
-            return new ConsoleProxyInfo(_sslEnabled, publicIp, _consoleProxyPort, urlPort);
+            return new ConsoleProxyInfo(_sslEnabled, publicIp, _consoleProxyPort, urlPort, _consoleProxyUrlDomain);
 		} else {
 			s_logger.warn("Host that VM is running is no longer available, console access to VM " + userVmId + " will be temporarily unavailable.");
 		}
