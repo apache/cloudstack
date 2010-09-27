@@ -1174,7 +1174,8 @@ public interface ManagementServer {
     
     /**
      * Creates a template by downloading to all zones
-     * @param createdBy userId of the template creater
+     * @param createdBy userId of the template creator
+     * @param accountId accountId under which the template will get created.
      * @param zoneId optional zoneId. if null, assumed to be all zones
      * @param name - user specified name for the template
      * @param displayText user readable name.
@@ -1194,7 +1195,7 @@ public interface ManagementServer {
      * @throws ResourceAllocationException
      * @throws InvalidParameterValueException
      */
-    Long createTemplate(long createdBy, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) throws IllegalArgumentException, ResourceAllocationException, InvalidParameterValueException;
+    Long createTemplate(long createdBy, long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) throws IllegalArgumentException, ResourceAllocationException, InvalidParameterValueException;
     
     /**
      * Deletes a template from all secondary storage servers

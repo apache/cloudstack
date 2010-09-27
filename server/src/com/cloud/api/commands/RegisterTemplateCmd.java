@@ -52,7 +52,9 @@ public class RegisterTemplateCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_PUBLIC, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.IS_FEATURED, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.FORMAT, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.OS_TYPE_ID, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.TRUE));
@@ -72,6 +74,8 @@ public class RegisterTemplateCmd extends BaseCmd {
     @Override
     public List<Pair<String, Object>> execute(Map<String, Object> params) {
         Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
+        String accountName = (String)params.get(BaseCmd.Properties.ACCOUNT.getName());
+        Long domainId = (Long)params.get(BaseCmd.Properties.DOMAIN_ID.getName());
         Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
         String name = (String)params.get(BaseCmd.Properties.NAME.getName());
         String displayText = (String)params.get(BaseCmd.Properties.DISPLAY_TEXT.getName()); 
@@ -103,20 +107,31 @@ public class RegisterTemplateCmd extends BaseCmd {
         	zoneId = null;
         }
                 
-        long accountId = 1L; // default to system account
-        if (account != null) {
+        Long accountId = null;
+        if ((account == null) || isAdmin(account.getType())) {
+            if (domainId != null) {
+                if ((account != null) && !getManagementServer().isChildDomain(account.getDomainId(), domainId)) {
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid domain id (" + domainId + ") ");
+                }
+                if (accountName != null) {
+                    Account userAccount = getManagementServer().findActiveAccount(accountName, domainId);
+                    if (userAccount == null) {
+                        throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                    accountId = userAccount.getId();
+                }
+            } else {
+                accountId = ((account != null) ? account.getId() : null);
+            }
+        } else {
             accountId = account.getId();
         }
-        
-        Account accountObj;
-        if (account == null) {
-        	accountObj = getManagementServer().findAccountById(accountId);
-        } else {
-        	accountObj = account;
+
+        if (accountId == null) {
+            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "No valid account specified for registering template.");
         }
         
-        boolean isAdmin = (accountObj.getType() == Account.ACCOUNT_TYPE_ADMIN);
-        
+        boolean isAdmin = getManagementServer().findAccountById(accountId).getType() == Account.ACCOUNT_TYPE_ADMIN;
         if (!isAdmin && zoneId == null) {
         	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid zone Id.");
         }
@@ -131,7 +146,7 @@ public class RegisterTemplateCmd extends BaseCmd {
         	&&(!url.toLowerCase().endsWith("qcow2.bz2"))&&(!url.toLowerCase().endsWith("qcow2.gz")))){
         	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid "+format.toLowerCase());
         }
-        	
+       
         boolean allowPublicUserTemplates = Boolean.parseBoolean(getManagementServer().getConfigurationValue("allow.public.user.templates"));        
         if (!isAdmin && !allowPublicUserTemplates && isPublic) {
         	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Only private templates can be created.");
@@ -148,7 +163,7 @@ public class RegisterTemplateCmd extends BaseCmd {
 
         Long templateId;
         try {
-        	templateId = getManagementServer().createTemplate(userId, zoneId, name, displayText, isPublic, featured, format, "ext3", url, null, requiresHVM, bits, passwordEnabled, guestOSId, true);
+        	templateId = getManagementServer().createTemplate(userId, accountId, zoneId, name, displayText, isPublic, featured, format, "ext3", url, null, requiresHVM, bits, passwordEnabled, guestOSId, true);
         } catch (InvalidParameterValueException ipve) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "Internal error registering template " + name + "; " + ipve.getMessage());
         } catch (IllegalArgumentException iae) {

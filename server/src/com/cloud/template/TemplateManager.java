@@ -46,6 +46,7 @@ public interface TemplateManager extends Manager {
      * Creates a Template
      * 
      * @param userId the  Id of the user
+     * @param accountId of the template to be created.
      * @param zoneId (optional) the zone to download the template to
      * @param name - user specified name for the template
      * @param displayText user readable name.
@@ -62,7 +63,7 @@ public interface TemplateManager extends Manager {
      * @param bootable true if this template will represent a bootable ISO
      * @return id of the template created.
      */
-    Long create(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable);
+    Long create(long userId, long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable);
     
     /**
      * Creates a Template

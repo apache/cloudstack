@@ -4911,11 +4911,12 @@ public class ManagementServerImpl implements ManagementServer {
             
             throw new InternalErrorException(errorString);            
         }
-
+        String volumeLocalPath = "volumes/"+volume.getId()+"/"+cvAnswer.getVolumePath()+".vhd"; 
         uploadJob.setUploadState(UploadVO.Status.COPY_COMPLETE);        
         uploadJob.setLastUpdated(new Date());
         _uploadDao.update(uploadJob.getId(), uploadJob);
-        _uploadMonitor.extractVolume(uploadJob, sserver, volume, url, zoneId, "volumes/"+volume.getId()+"/"+cvAnswer.getVolumePath()+".vhd", eventId, asyncJobId, _asyncMgr);
+        
+        _uploadMonitor.extractVolume(uploadJob, sserver, volume, url, zoneId, volumeLocalPath, eventId, asyncJobId, _asyncMgr);
         
     }
     
@@ -4986,7 +4987,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public Long createTemplate(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) throws InvalidParameterValueException,IllegalArgumentException, ResourceAllocationException {
+    public Long createTemplate(long userId, long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) throws InvalidParameterValueException,IllegalArgumentException, ResourceAllocationException {
         try
         {
             if (name.length() > 32)
@@ -5030,11 +5031,10 @@ public class ManagementServerImpl implements ManagementServer {
             }
             
             // Check that the resource limit for templates/ISOs won't be exceeded
-            UserVO user = _userDao.findById(userId);
-            if (user == null) {
-                throw new IllegalArgumentException("Unable to find user with id " + userId);
+        	AccountVO account = _accountDao.findById(accountId);
+        	if (account == null) {
+                throw new InvalidParameterValueException("Unable to find account: " + accountId);
             }
-        	AccountVO account = _accountDao.findById(user.getAccountId());
             if (_accountMgr.resourceLimitExceeded(account, ResourceType.template)) {
             	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of templates and ISOs for account: " + account.getAccountName() + " has been exceeded.");
             	rae.setResourceType("template");
@@ -5052,7 +5052,7 @@ public class ManagementServerImpl implements ManagementServer {
             	throw new IllegalArgumentException("Cannot use reserved names for templates");
             }
             
-            return _tmpltMgr.create(userId, zoneId, name, displayText, isPublic, featured, imgfmt, fileSystem, uri, chksum, requiresHvm, bits, enablePassword, guestOSId, bootable);
+            return _tmpltMgr.create(userId, accountId, zoneId, name, displayText, isPublic, featured, imgfmt, fileSystem, uri, chksum, requiresHvm, bits, enablePassword, guestOSId, bootable);
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Invalid URL " + url);
         }

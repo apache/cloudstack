@@ -117,11 +117,9 @@ public class TemplateManagerImpl implements TemplateManager {
     
 
     @Override
-    public Long create(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) {
+    public Long create(long userId, long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) {
         Long id = _tmpltDao.getNextInSequence(Long.class, "id");
-        
-        UserVO user = _userDao.findById(userId);
-        long accountId = user.getAccountId();
+                
         AccountVO account = _accountDao.findById(accountId);
         if (account.getType() != Account.ACCOUNT_TYPE_ADMIN && zoneId == null) {
         	throw new IllegalArgumentException("Only admins can create templates in all zones");
@@ -139,12 +137,9 @@ public class TemplateManagerImpl implements TemplateManager {
 			_tmpltDao.addTemplateToZone(template, zoneId);
         }
 
-		
-        UserAccount userAccount = _userAccountDao.findById(userId);
-       
         _downloadMonitor.downloadTemplateToStorage(id, zoneId);
         
-        _accountMgr.incrementResourceCount(userAccount.getAccountId(), ResourceType.template);
+        _accountMgr.incrementResourceCount(accountId, ResourceType.template);
         
         return id;
     }
