@@ -729,7 +729,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	if (vnetRange != null) {
     		String[] tokens = vnetRange.split("-");
 	    	int begin = Integer.parseInt(tokens[0]);
-	    	int end = tokens.length == 1 ? (begin + 1) : Integer.parseInt(tokens[1]);
+	    	int end = tokens.length == 1 ? (begin) : Integer.parseInt(tokens[1]);
 	    	
 	    	_zoneDao.deleteVnet(zoneId);
 	    	_zoneDao.addVnet(zone.getId(), begin, end);
@@ -793,7 +793,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
             try {
             	vnetStart = Integer.parseInt(tokens[0]);
             	if (tokens.length == 1) {
-            		vnetEnd = vnetStart + 1;
+            		vnetEnd = vnetStart;
             	} else {
             		vnetEnd = Integer.parseInt(tokens[1]);
             	}

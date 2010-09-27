@@ -60,7 +60,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         try {
             txn.start();
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertVnet);
-            for (int i = start; i < end; i++) {
+            for (int i = start; i <= end; i++) {
                 stmt.setString(1, String.valueOf(i));
                 stmt.setLong(2, dcId);
                 stmt.addBatch();
