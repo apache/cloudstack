@@ -48,23 +48,14 @@ public class UpdateCertificateCmd extends BaseCmd {
 
     @Override
     public List<Pair<String, Object>> execute(Map<String, Object> params) {
-    	String instance = (String) params.get(BaseCmd.Properties.INSTANCE.getName());
-    	String component = (String) params.get(BaseCmd.Properties.COMPONENT.getName()); 
-    	String category = (String) params.get(BaseCmd.Properties.CATEGORY.getName());
-    	String name = (String) params.get(BaseCmd.Properties.NAME.getName());
-    	String value = (String) params.get(BaseCmd.Properties.VALUE.getName());
-    	String description = (String) params.get(BaseCmd.Properties.DESCRIPTION.getName());
+    	String certificatePath = (String) params.get(BaseCmd.Properties.PATH.getName());
     	    	
 		try 
 		{
-			boolean status = getManagementServer().addConfig(instance, component, category, name, value, description);
+			boolean status = getManagementServer().updateCertificate(certificatePath);
 			List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
 			
-			if(status)
-			{	
-				returnValues.add(new Pair<String, Object>(BaseCmd.Properties.NAME.getName(), name));
-				returnValues.add(new Pair<String, Object>(BaseCmd.Properties.VALUE.getName(), value));
-			}
+			returnValues.add(new Pair<String, Object>(BaseCmd.Properties.STATUS.getName(), status));
             
             return returnValues;
 		}
