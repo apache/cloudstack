@@ -25,7 +25,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
-import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
 public class UpdateCertificateCmd extends BaseCmd {
