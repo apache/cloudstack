@@ -593,3 +593,30 @@ for vendor in _glob(_join("vendor","*")) + _glob(_join("cloudstack-proprietary",
 		bld.install_files_filtered("${MSCONF}/%s"%vendor,filelist("%s/tomcatconf/*"%vendor))
 
 # ====================== End vendor-specific plugins ====================
+
+
+def generate_xml_api_description(task):
+	relationship = Utils.relpath(sourcedir,os.getcwd())
+	cp = [ _join(relationship,x) for x in task.generator.env.CLASSPATH.split(pathsep) ]
+	buildproducts = [ x.bldpath(task.env) for x in task.inputs ]
+	jars = [ x for x in buildproducts if x.endswith("jar") ]
+	properties = [ x for x in buildproducts if x.endswith("properties") ]
+	cp += jars
+	cp = pathsep.join(cp)
+	arguments = ["-f",",".join(properties),"-d",builddir]
+	ret = Utils.exec_command(["java","-cp",cp,"com.cloud.utils.commandlinetool.BuildCommandLineInputFile"]+arguments,log=True)
+	return ret
+
+props = " client/tomcatconf/commands.properties"
+if buildpremium: props += " cloudstack-proprietary/premium/tomcatconf/commands-ext.properties"
+jarnames = ['utils','server','core']
+if buildpremium: jarnames += ['server-extras']
+tgen = bld(
+	rule   = generate_xml_api_description,
+	source = " ".join( [ 'target/jar/cloud-%s.jar'%x for x in jarnames ] ) + props,
+	target = 'commands.xml',
+	name   = 'xmlapi',
+	after  = 'runant',
+)
+bld.process_after(tgen)
+

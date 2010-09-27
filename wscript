@@ -284,6 +284,7 @@ def run_java(classname,classpath,options=None,arguments=None):
 	cmd = ["java","-classpath",classpath] + options + [classname] + arguments
 	Utils.pprint("BLUE"," ".join([ _trm(x,32) for x in cmd ]))
 	_check_call(cmd)
+Utils.run_java = run_java
 
 # this will enforce the after= ordering constraints in the javac task generators
 from TaskGen import after, feature
