@@ -97,6 +97,7 @@ import com.cloud.async.executor.CreatePrivateTemplateParam;
 import com.cloud.async.executor.DeleteDomainParam;
 import com.cloud.async.executor.DeleteRuleParam;
 import com.cloud.async.executor.DeleteTemplateParam;
+import com.cloud.async.executor.DeleteUserParam;
 import com.cloud.async.executor.DeployVMParam;
 import com.cloud.async.executor.DisassociateIpAddressParam;
 import com.cloud.async.executor.ExtractJobResultObject;
@@ -903,7 +904,11 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public long deleteUserAsync(long userId) {
-        Long param = new Long(userId);
+        User user = getUser(userId, true);
+        String description = "User " + user.getUsername() + " (id: " + userId
+            + ") and accountId = " + user.getAccountId();
+        long eventId = saveScheduledEvent(1L, 1L, EventTypes.EVENT_USER_DELETE, description);                
+        DeleteUserParam param = new DeleteUserParam(userId, eventId);
         Gson gson = GsonHelper.getBuilder().create();
 
         AsyncJobVO job = new AsyncJobVO();

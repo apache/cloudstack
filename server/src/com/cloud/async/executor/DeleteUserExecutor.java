@@ -25,8 +25,10 @@ import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
+import com.cloud.event.EventTypes;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
+import com.cloud.user.User;
 import com.google.gson.Gson;
 
 public class DeleteUserExecutor extends BaseAsyncJobExecutor {
@@ -37,10 +39,15 @@ public class DeleteUserExecutor extends BaseAsyncJobExecutor {
 		AsyncJobManager asyncMgr = getAsyncJobMgr();
 		AsyncJobVO job = getJob();
 		ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
-		Long param = gson.fromJson(job.getCmdInfo(), Long.class);
+		DeleteUserParam param = gson.fromJson(job.getCmdInfo(), DeleteUserParam.class);
 		
 		try {
-			if(managementServer.deleteUser(param.longValue())) {
+		    User user = managementServer.getUser(param.getUserId(), true);
+		    String description = "Starting deleting User " + user.getUsername() + " (id: " + param.getUserId()
+            + ") for accountId = " + user.getAccountId();		    
+		    managementServer.saveStartedEvent(1L, 1L, EventTypes.EVENT_USER_DELETE, description, param.getEventId());
+		    
+		    if(managementServer.deleteUser(param.getUserId())) {
 				asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, 
 					"success");
 			} else {
@@ -48,7 +55,7 @@ public class DeleteUserExecutor extends BaseAsyncJobExecutor {
 					"operation failed");
 			}
 		} catch(Exception e) {
-			s_logger.warn("Unable to delete User " + param.longValue() + ": " + e.getMessage(), e);
+			s_logger.warn("Unable to delete User " + param.getUserId() + ": " + e.getMessage(), e);
 			asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, 
 				e.getMessage());
 		}
