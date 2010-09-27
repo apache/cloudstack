@@ -45,6 +45,7 @@ public class ConsoleProxyInfo {
 			}
 			else
 				sb.append(".realhostip.com");
+			
 			proxyAddress = sb.toString();
 			proxyPort = port;
 			this.proxyUrlPort = proxyUrlPort;
