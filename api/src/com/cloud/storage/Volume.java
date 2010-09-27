@@ -85,7 +85,6 @@ public interface Volume extends PartOf, OwnedBy, BasedOn {
             s_fsm.addTransition(Destroy, Event.Recover, Ready);
             s_fsm.addTransition(Expunging, Event.OperationSucceeded, Destroyed);
             s_fsm.addTransition(Expunging, Event.OperationFailed, Destroy);
-            s_fsm.addTransition(Allocated, Event.Destroy, Destroyed);
         }
 	}
 	

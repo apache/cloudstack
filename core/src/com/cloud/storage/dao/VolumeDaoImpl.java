@@ -299,7 +299,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         
         SearchCriteria<VolumeVO> sc = IdStateSearch.create();
         sc.setParameters("id", vol.getId());
-        sc.setParameters("state", vol.getState());
+        sc.setParameters("state", oldState);
         
         int rows = update(builder, sc, null);
         if (rows != 1) {
