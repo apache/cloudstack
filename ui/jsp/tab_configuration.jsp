@@ -431,7 +431,7 @@ long milliseconds = new Date().getTime();
 					<input class="text" type="text" name="add_publicip_vlan_vlan" id="add_publicip_vlan_vlan"/>
 					<div id="add_publicip_vlan_vlan_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>
-				<li style="display:none" id="add_publicip_vlan_scope_container">
+				<li id="add_publicip_vlan_scope_container">
 					<label for="add_publicip_vlan_scope">Scope:</label>
 					<select class="select" name="add_publicip_vlan_scope" id="add_publicip_vlan_scope">
 					    <option value="zone-wide">zone-wide</option>
@@ -443,7 +443,7 @@ long milliseconds = new Date().getTime();
 					<select class="select" name="add_publicip_vlan_pod" id="add_publicip_vlan_pod">					
 					</select>
 				</li>
-				<li id="add_publicip_vlan_domain_container">
+				<li style="display:none" id="add_publicip_vlan_domain_container">
 					<label for="user_name">Domain:</label>
 					<select class="select" name="add_publicip_vlan_domain" id="add_publicip_vlan_domain">					
 					</select>
