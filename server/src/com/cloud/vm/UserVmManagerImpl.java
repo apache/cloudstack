@@ -3154,6 +3154,7 @@ public class UserVmManagerImpl implements UserVmManager {
 		}
 	}
 	
+	@Override
 	public void removeInstanceFromGroup(long vmId) {
 		try {
 			List<InstanceGroupVMMapVO> groupVmMaps = _groupVMMapDao.listByInstanceId(vmId);

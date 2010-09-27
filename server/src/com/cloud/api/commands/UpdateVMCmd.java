@@ -67,10 +67,6 @@ public class UpdateVMCmd extends BaseCmd{
         if (userId == null) {
             userId = Long.valueOf(1);
         }
-        
-        //don't accept empty parameter for the group
-        if (group != null && group.isEmpty())
-        	group = null;
 
         // Verify input parameters
         try {

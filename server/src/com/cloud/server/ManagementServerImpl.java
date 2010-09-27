@@ -2804,9 +2804,14 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         if (group != null) {
-        	boolean addToGroup = _vmMgr.addInstanceToGroup(Long.valueOf(vmId), group);
-        	if (!addToGroup) {
-        		throw new CloudRuntimeException("Unable to update Vm with the the group " + group);
+        	if (group.isEmpty()) {
+        		_vmMgr.removeInstanceFromGroup(vmId);
+        	}
+        	else {
+        		boolean addToGroup = _vmMgr.addInstanceToGroup(Long.valueOf(vmId), group);
+            	if (!addToGroup) {
+            		throw new CloudRuntimeException("Unable to update Vm with the the group " + group);
+            	}
         	}
         }
 

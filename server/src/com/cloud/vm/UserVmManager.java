@@ -232,5 +232,7 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
     boolean addInstanceToGroup(long userVmId, String group);
     
     InstanceGroupVO getGroupForVm(long vmId);
+    
+    void removeInstanceFromGroup(long vmId);
 
 }
