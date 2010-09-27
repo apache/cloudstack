@@ -192,7 +192,7 @@ public class ListIsosCmd extends BaseCmd {
         		isoData.add(new Pair<String, Object>(BaseCmd.Properties.CROSS_ZONES.getName(), Boolean.valueOf(iso.isCrossZones()).toString()));
         		
         		GuestOS os = getManagementServer().findGuestOSById(iso.getGuestOSId());
-	            if(os != null) {
+	            if(os != null && !iso.getName().startsWith("xs-tools")) {
 	            	isoData.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_ID.getName(), os.getId()));
 	            	isoData.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_NAME.getName(), os.getDisplayName()));
 	            } else {
