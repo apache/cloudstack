@@ -2018,7 +2018,10 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         event.setState(EventState.Started);
         event.setDescription("Stopping Router with Id: "+routerId);
         event.setStartId(eventId);
-        _eventDao.persist(event);
+        event = _eventDao.persist(event);
+        if(eventId == 0){
+            eventId = event.getId();
+        }
         
         try {
             
@@ -2230,7 +2233,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 	@Override
 	public DomainRouterVO addVirtualMachineToGuestNetwork(UserVmVO vm, String password, long startEventId) throws ConcurrentOperationException {
         try {
-        	DomainRouterVO router = start(vm.getDomainRouterId(), startEventId);
+        	DomainRouterVO router = start(vm.getDomainRouterId(), 0);
 	        if (router == null) {
         		s_logger.error("Can't find a domain router to start VM: " + vm.getName());
         		return null;
