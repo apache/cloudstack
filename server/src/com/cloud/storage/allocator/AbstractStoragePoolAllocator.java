@@ -28,6 +28,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -229,8 +231,11 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 	}
 	
 	@Override
-	public StoragePool allocateTo(DiskProfile dskCh, VirtualMachineProfile vm, DeployDestination dest, List<Volume> disks, Set<StoragePool> avoids) {
+	public StoragePool allocateTo(DiskProfile dskCh, VirtualMachineProfile vm, DeployDestination dest, List<? extends Volume> disks, Set<? extends StoragePool> avoids) {
 	    
-	    return null;
+	    VMInstanceVO instance = (VMInstanceVO)(vm.getVm());
+	    
+	    VMTemplateVO template = vm.getTemplateId() != null ? _templateDao.findById(vm.getTemplateId()) : null;
+	    return allocateToPool(dskCh, (DataCenterVO)dest.getDataCenter(), (HostPodVO)dest.getPod(), dest.getCluster().getId(), instance, template, avoids);
 	}
 }

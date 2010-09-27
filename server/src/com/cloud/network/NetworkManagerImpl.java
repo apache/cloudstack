@@ -2139,7 +2139,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 
             if( ! _storageMgr.share(router, vols, routingHost, false) ) {
                 s_logger.warn("Can not share " + vol.getPath() + " to " + router.getName() );
-                throw new StorageUnavailableException(vol.getPoolId());
+                throw new StorageUnavailableException("Can not share " + vol.getPath() + " to " + router.getName(), vol);
             }
 
             final Answer answer = _agentMgr.easySend(routingHost.getId(), cmd);

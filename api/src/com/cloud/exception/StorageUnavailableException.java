@@ -20,18 +20,39 @@ package com.cloud.exception;
 import com.cloud.utils.SerialVersionUID;
 
 /**
- * This exception is thrown when the storage device can not be reached.
- *
+ * This exception is thrown when storage for a VM is unavailable. 
+ * If the cause is due to storage pool unavailable, calling 
+ * getOffendingObject() will return the object that we have
+ * problem with.
+ * 
  */
-public class StorageUnavailableException extends AgentUnavailableException {
+public class StorageUnavailableException extends Exception {
+    Object _obj;
 
     private static final long serialVersionUID = SerialVersionUID.StorageUnavailableException;
     
-    public StorageUnavailableException(long hostId) {
-        super(hostId);
-    }
-
 	public StorageUnavailableException(String msg) {
-		super(msg, -1);
+		super(msg);
+	}
+	
+	public StorageUnavailableException(String msg, Throwable cause) {
+	    super(msg, cause);
+	}
+	
+	public StorageUnavailableException(String msg, Object cause) {
+	    super(msg);
+	    _obj = cause;
+	}
+	
+    public StorageUnavailableException(String msg, Object obj, Throwable cause) {
+        super(msg, cause);
+        _obj = obj;
+    }
+    
+	/**
+	 * @return object that caused this problem.  It can either be a StoragePool or volume.
+	 */
+	public Object getOffendingObject() {
+	    return _obj;
 	}
 }

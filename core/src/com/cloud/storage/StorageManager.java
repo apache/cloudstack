@@ -28,6 +28,8 @@ import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
@@ -229,9 +231,9 @@ public interface StorageManager extends Manager {
 	 */
 	boolean volumeOnSharedStoragePool(VolumeVO volume);
 	
-	Answer[] sendToPool(StoragePoolVO pool, Command[] cmds, boolean stopOnError);
+	Answer[] sendToPool(StoragePool pool, Command[] cmds, boolean stopOnError);
 	
-	Answer sendToPool(StoragePoolVO pool, Command cmd);
+	Answer sendToPool(StoragePool pool, Command cmd);
 	
 	/**
 	 * Checks that one of the following is true:
@@ -314,9 +316,9 @@ public interface StorageManager extends Manager {
     <T extends VMInstanceVO> DiskProfile allocateTemplatedVolume(VolumeType type, String name, DiskOfferingVO offering, VMTemplateVO template, T vm, AccountVO owner);
     
     <T extends VMInstanceVO> void create(T vm);
-    Long findHostIdForStoragePool(StoragePoolVO pool);
+    Long findHostIdForStoragePool(StoragePool pool);
 	void createCapacityEntry(StoragePoolVO storagePool, long allocated);
 
     
-    VolumeTO[] prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException;
+    VolumeTO[] prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException;
 }

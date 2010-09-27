@@ -18,19 +18,16 @@
 package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.to.StoragePoolTO;
-import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.VolumeVO;
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.storage.StoragePool;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.VMInstanceVO;
 
 public class CreateCommand extends Command {
     private long volId;
-    private StoragePoolTO pool;
+    private StorageFilerTO pool;
     private DiskProfile diskCharacteristics;
     private String templateUrl;
     private long size;
-    private String instanceName;
     
     protected CreateCommand() {
         super();
@@ -45,8 +42,8 @@ public class CreateCommand extends Command {
      * @param templateUrl
      * @param pool
      */
-    public CreateCommand(VolumeVO vol, VMInstanceVO vm, DiskProfile diskCharacteristics, String templateUrl, StoragePoolVO pool) {
-        this(vol, vm, diskCharacteristics, pool, 0);
+    public CreateCommand(DiskProfile diskCharacteristics, String templateUrl, StorageFilerTO pool) {
+        this(diskCharacteristics, pool, 0);
         this.templateUrl = templateUrl;
     }
 
@@ -58,13 +55,20 @@ public class CreateCommand extends Command {
      * @param diskCharacteristics
      * @param pool
      */
-    public CreateCommand(VolumeVO vol, VMInstanceVO vm, DiskProfile diskCharacteristics, StoragePoolVO pool, long size) {
-        this.volId = vol.getId();
+    public CreateCommand(DiskProfile diskCharacteristics, StorageFilerTO pool, long size) {
+        this.volId = diskCharacteristics.getVolumeId();
         this.diskCharacteristics = diskCharacteristics;        
-        this.pool = new StoragePoolTO(pool);
+        this.pool = pool;
         this.templateUrl = null;
         this.size = size;
-        //this.instanceName = vm.getInstanceName();
+    }
+    
+    public CreateCommand(DiskProfile diskCharacteristics, String templateUrl, StoragePool pool) {
+        this(diskCharacteristics, templateUrl, new StorageFilerTO(pool));
+    }
+    
+    public CreateCommand(DiskProfile diskCharacteristics, StoragePool pool, long size) {
+        this(diskCharacteristics, new StorageFilerTO(pool), size);
     }
     
     @Override
@@ -76,7 +80,7 @@ public class CreateCommand extends Command {
         return templateUrl;
     }
     
-    public StoragePoolTO getPool() {
+    public StorageFilerTO getPool() {
         return pool;
     }
     
@@ -92,7 +96,8 @@ public class CreateCommand extends Command {
     	return this.size;
     }
     
+    @Deprecated
     public String getInstanceName() {
-    	return instanceName;
+        return null;
     }
 }

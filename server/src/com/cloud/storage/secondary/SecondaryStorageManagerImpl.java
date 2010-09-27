@@ -1822,7 +1822,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 			if( !_storageMgr.share(secStorageVm, vols, routingHost, false) ) {
 				s_logger.warn("Can not share " + vol.getPath() + " to " + secStorageVm.getName());
-				throw new StorageUnavailableException(vol.getPoolId());
+				throw new StorageUnavailableException("Can not share " + vol.getPath() + " to " + secStorageVm.getName(), vol);
 			}
 
 			Answer answer = _agentMgr.easySend(routingHost.getId(), cmd);

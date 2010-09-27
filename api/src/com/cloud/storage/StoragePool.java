@@ -101,4 +101,8 @@ public interface StoragePool  {
      * @return the storage pool status
      */
 	Status getStatus();
+	
+	int getPort();
+	
+	Long getPodId();
 }

@@ -26,7 +26,6 @@ import java.util.Enumeration;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -56,6 +55,7 @@ import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
+import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
@@ -84,6 +84,7 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
@@ -103,6 +104,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.Volume.Event;
 import com.cloud.storage.Volume.MirrorState;
 import com.cloud.storage.Volume.SourceType;
 import com.cloud.storage.Volume.VolumeType;
@@ -173,10 +175,6 @@ public class StorageManagerImpl implements StorageManager {
     @Inject protected ConsoleProxyDao _consoleProxyDao;
     @Inject protected DetailsDao _detailsDao;
     @Inject protected SnapshotDao _snapshotDao;
-    @Inject(adapter=StoragePoolAllocator.class)
-    protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
-    @Inject(adapter=StoragePoolDiscoverer.class)
-    protected Adapters<StoragePoolDiscoverer> _discoverers;
     @Inject protected StoragePoolHostDao _storagePoolHostDao;
     @Inject protected AlertManager _alertMgr;
     @Inject protected VMTemplateHostDao _vmTemplateHostDao = null;
@@ -196,6 +194,11 @@ public class StorageManagerImpl implements StorageManager {
     @Inject protected VMTemplateHostDao _templateHostDao;
     @Inject protected ServiceOfferingDao _offeringDao;
     @Inject protected UserDao _userDao;
+    
+    @Inject(adapter=StoragePoolAllocator.class)
+    protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
+    @Inject(adapter=StoragePoolDiscoverer.class)
+    protected Adapters<StoragePoolDiscoverer> _discoverers;
     
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     protected SearchBuilder<StoragePoolVO> PoolsUsedByVmSearch;
@@ -270,79 +273,6 @@ public class StorageManagerImpl implements StorageManager {
         DiskProfile rootDisk = new DiskProfile(rootId, VolumeType.ROOT, "ROOT-" + vm.getId() + "-" + rootId, rootOffering.getId(), size != null ? size : rootOffering.getDiskSizeInBytes(), rootOffering.getTagsArray(), rootOffering.getUseLocalStorage(), rootOffering.isRecreatable(), null);
         List<VolumeVO> vols = allocate(rootDisk, null, vm, dc, account);
         return vols.get(0);
-    }
-    
-    @Override
-    public VolumeTO[] prepare(VirtualMachineProfile vm, DeployDestination dest) {
-        List<VolumeVO> vols = _volsDao.findCreatedByInstance(vm.getId());
-        List<VolumeVO> recreateVols = new ArrayList<VolumeVO>(vols.size());
-        Host host = dest.getHost();
-        
-        VolumeTO[] disks = new VolumeTO[vols.size()];
-        int i = 0;
-        Iterator<VolumeVO> it = vols.iterator();
-        while (it.hasNext()) {
-            VolumeVO vol = it.next();
-            if (vol.isRecreatable()) {
-                it.remove();
-                //if we have a system vm
-                //get the storage pool
-                //if pool is in maintenance
-                //add to recreate vols, and continue
-                if(vm.getType().equals(VirtualMachine.Type.ConsoleProxy) || vm.getType().equals(VirtualMachine.Type.DomainRouter) || vm.getType().equals(VirtualMachine.Type.SecondaryStorageVm))
-                {
-                    StoragePoolVO sp = _storagePoolDao.findById(vol.getPoolId());
-                    
-                    if(sp!=null && sp.getStatus().equals(Status.PrepareForMaintenance))
-                    {
-                        recreateVols.add(vol);
-                        continue;
-                    }
-                }
-                
-                StoragePoolHostVO ph = _storagePoolHostDao.findByPoolHost(vol.getPoolId(), host.getId());
-                if (ph == null) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Must recreate " + vol + " since " + vol.getPoolId() + " has is not hooked up with host " + host.getId());
-                    }
-                    recreateVols.add(vol);
-                }
-            }
-        }
-        
-        for (VolumeVO vol : recreateVols) {
-            VolumeVO create = allocateDuplicateVolume(vol);
-            vols.add(vol);
-        }
-        
-        /*
-            create.setDiskOfferingId(vol.getDiskOfferingId());
-            create.setDeviceId(vol.getDeviceId());
-            create = _volsDao.persist(create);
-            VMTemplateVO template = _templateDao.findById(create.getTemplateId());
-            DataCenterVO dc = _dcDao.findById(create.getDataCenterId());
-            HostPodVO pod = _podDao.findById(host.getPodId());
-            DiskOfferingVO diskOffering = null;
-            diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
-            ServiceOfferingVO offering;
-            if (vm instanceof UserVmVO) {
-                offering = _offeringDao.findById(((UserVmVO)vm).getServiceOfferingId());
-            } else {
-                offering = _offeringDao.findById(vol.getDiskOfferingId());
-            }
-            VolumeVO created = createVolume(create, vm, template, dc, pod, host.getClusterId(), offering, diskOffering, new ArrayList<StoragePoolVO>(),0);
-            if (created == null) {
-                break;
-            }
-            createds.add(created);
-
-            for (VolumeVO vol : recreateVols) {
-                _volsDao.remove(vol.getId());
-            }
-            disks[i++] = null;
-        }
-        */
-        return disks;
     }
     
     VolumeVO allocateDuplicateVolume(VolumeVO oldVol) {
@@ -487,7 +417,7 @@ public class StorageManagerImpl implements StorageManager {
     }
 
     @Override
-    public Long findHostIdForStoragePool(StoragePoolVO pool) {
+    public Long findHostIdForStoragePool(StoragePool pool) {
         List<StoragePoolHostVO> poolHosts = _poolHostDao.listByHostStatus(pool.getId(), Status.Up);
 
         if (poolHosts.size() == 0) {
@@ -498,7 +428,7 @@ public class StorageManagerImpl implements StorageManager {
     }
 
     @Override
-    public Answer[] sendToPool(StoragePoolVO pool, Command[] cmds, boolean stopOnError) {
+    public Answer[] sendToPool(StoragePool pool, Command[] cmds, boolean stopOnError) {
         List<StoragePoolHostVO> poolHosts = _poolHostDao.listByHostStatus(pool.getId(), Status.Up);
         Collections.shuffle(poolHosts);
         
@@ -520,7 +450,7 @@ public class StorageManagerImpl implements StorageManager {
     }
     
     @Override
-    public Answer sendToPool(StoragePoolVO pool, Command cmd) {
+    public Answer sendToPool(StoragePool pool, Command cmd) {
         Command[] cmds = new Command[]{cmd};
         Answer[] answers = sendToPool(pool, cmds, true);
         if (answers == null) {
@@ -885,9 +815,9 @@ public class StorageManagerImpl implements StorageManager {
                 if (tmpltStoredOn == null) {
                     continue;
                 }
-                cmd = new CreateCommand(volume, vm, dskCh, tmpltStoredOn.getLocalDownloadPath(), pool);
+                cmd = new CreateCommand(dskCh, tmpltStoredOn.getLocalDownloadPath(), new StorageFilerTO(pool));
             } else {
-                cmd = new CreateCommand(volume, vm, dskCh, pool, size);
+                cmd = new CreateCommand(dskCh, new StorageFilerTO(pool), size);
             }
             
             Answer answer = sendToPool(pool, cmd);
@@ -2439,6 +2369,149 @@ public class StorageManagerImpl implements StorageManager {
     final protected DiskProfile createDiskCharacteristics(VolumeVO volume) {
         DiskOfferingVO offering = _diskOfferingDao.findById(volume.getDiskOfferingId());
         return createDiskCharacteristics(volume, offering);
+    }
+    
+    protected StoragePool findStorage(DiskProfile dskCh, DeployDestination dest, VirtualMachineProfile vm, List<? extends Volume> alreadyAllocated, Set<? extends StoragePool> avoid) {
+        for (StoragePoolAllocator allocator : _storagePoolAllocators) {
+            StoragePool pool = allocator.allocateTo(dskCh, vm, dest, alreadyAllocated, avoid);
+            if (pool != null) {
+                return pool;
+            }
+        }
+        return null;
+    }
+    
+    @Override
+    public VolumeTO[] prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException {
+        List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Preparing " + vols.size() + " volumes for " + vm);
+        }
+        
+        List<VolumeVO> recreateVols = new ArrayList<VolumeVO>(vols.size());
+        VolumeTO[] disks = new VolumeTO[vols.size()];
+        
+        int i = 0;
+        for (VolumeVO vol : vols) {
+            Volume.State state = vol.getState();
+            if (state == Volume.State.Ready) {
+                StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
+                if (pool.getRemoved() != null || pool.isInMaintenance()) {
+                    if (vol.isRecreatable()) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Volume " + vol + " has to be recreated due to storage pool " + pool + " is unavailable");
+                        }
+                        recreateVols.add(vol);
+                    } else {
+                        throw new StorageUnavailableException("Volume " + vol + " is not available on the storage pool.", pool);
+                    }
+                } else {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Volume " + vol + " is ready.");
+                    }
+                    disks[i++] = new VolumeTO(vol, pool);
+                }
+            } else if (state == Volume.State.Allocated) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Creating volume " + vol + " for the first time.");
+                }
+                recreateVols.add(vol);
+            } else {
+                throw new StorageUnavailableException("Volume " + vol + " can not be used", vol);
+            }
+        }
+        
+        for (VolumeVO vol : recreateVols) {
+            VolumeVO newVol;
+            if (vol.getState() == Volume.State.Allocated) {
+                newVol = vol;
+            } else {
+                newVol = switchVolume(vol);
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Created new volume " + newVol + " for old volume " + vol);
+                }
+            }
+
+            try {
+                _volsDao.update(newVol, Volume.Event.Create);
+            } catch(ConcurrentOperationException e) {
+                throw new StorageUnavailableException("Unable to create " + newVol, newVol);
+            }
+            Pair<VolumeTO, StoragePool> created = createVolume(newVol, _diskOfferingDao.findById(newVol.getDiskOfferingId()), vm, vols, dest);
+            if (created == null) {
+                newVol.setPoolId(null);
+                try {
+                    _volsDao.update(newVol, Event.OperationFailed);
+                } catch (ConcurrentOperationException e) {
+                    throw new CloudRuntimeException("Unable to update the failure on a volume: " + newVol, e);
+                }
+                throw new StorageUnavailableException("Unable to create " + newVol, newVol);
+            }
+            newVol.setStatus(AsyncInstanceCreateStatus.Created);
+            newVol.setFolder(created.second().getPath());
+            newVol.setPath(created.first().getPath());
+            newVol.setSize(created.first().getSize());
+            newVol.setPoolType(created.second().getPoolType());
+            newVol.setPodId(created.second().getPodId());
+            try {
+                _volsDao.update(newVol, Event.OperationSucceeded);
+            } catch (ConcurrentOperationException e) {
+                throw new CloudRuntimeException("Unable to update an CREATE operation succeeded on volume " + newVol, e);
+            }
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Volume " + newVol + " is created on " + created.second());
+            }
+            disks[i++] = created.first();
+        }
+        
+        return disks;
+    }
+    
+    @DB
+    protected VolumeVO switchVolume(VolumeVO existingVolume) throws StorageUnavailableException {
+        Transaction txn = Transaction.currentTxn();
+        try {
+            txn.start();
+            _volsDao.update(existingVolume, Event.Destroy);
+            VolumeVO newVolume = allocateDuplicateVolume(existingVolume);
+            txn.commit();
+            return newVolume;
+        } catch (ConcurrentOperationException e) {
+            throw new StorageUnavailableException("Unable to duplicate the volume " + existingVolume, existingVolume, e);
+        }
+    }
+    
+    public Pair<VolumeTO, StoragePool> createVolume(VolumeVO toBeCreated, DiskOfferingVO offering, VirtualMachineProfile vm, List<? extends Volume> alreadyCreated, DeployDestination dest) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Creating volume: " + toBeCreated);
+        }
+        DiskProfile diskProfile = new DiskProfile(toBeCreated, offering);
+
+        Set<StoragePool> avoids = new HashSet<StoragePool>();
+        StoragePool pool = null;
+        while ((pool = findStorage(diskProfile, dest, vm, alreadyCreated, avoids)) != null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Trying to create in " + pool);
+            }
+            avoids.add(pool);
+            toBeCreated.setPoolId(pool.getId());
+            try {
+                _volsDao.update(toBeCreated, Volume.Event.OperationRetry);
+            } catch (ConcurrentOperationException e) {
+                throw new CloudRuntimeException("Unable to retry a create operation on volume " + toBeCreated);
+            }
+            CreateCommand cmd = new CreateCommand(diskProfile, new StorageFilerTO(pool), diskProfile.getSize());
+            Answer answer = sendToPool(pool, cmd);
+            if (answer.getResult()) {
+                CreateAnswer createAnswer = (CreateAnswer)answer;
+                return new Pair<VolumeTO, StoragePool>(createAnswer.getVolume(), pool);
+            }
+        }
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Unable to create volume " + toBeCreated);
+        }
+        return null;
     }
     
     @Override

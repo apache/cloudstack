@@ -17,11 +17,10 @@
  */
 package com.cloud.agent.api.to;
 
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StoragePool;
 
-
-public class StoragePoolTO {
+public class StorageFilerTO {
     long id;
     String uuid;
     String host;
@@ -29,7 +28,7 @@ public class StoragePoolTO {
     int port;
     StoragePoolType type;
     
-    public StoragePoolTO(StoragePoolVO pool) {
+    public StorageFilerTO(StoragePool pool) {
         this.id = pool.getId();
         this.host = pool.getHostAddress();
         this.port = pool.getPort();
@@ -62,7 +61,7 @@ public class StoragePoolTO {
         return type;
     }
     
-    protected StoragePoolTO() {
+    protected StorageFilerTO() {
     }
     
     @Override

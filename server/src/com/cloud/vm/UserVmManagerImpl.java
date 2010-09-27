@@ -179,9 +179,9 @@ import com.cloud.vm.DomainRouter.Role;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.InstanceGroupDao;
 
 @Local(value={UserVmManager.class})
 public class UserVmManagerImpl implements UserVmManager {
@@ -1207,6 +1207,7 @@ public class UserVmManagerImpl implements UserVmManager {
      }
     
     
+    @Override
     public void releaseGuestIpAddress(UserVmVO userVm)  {
     	ServiceOffering offering = _offeringDao.findById(userVm.getServiceOfferingId());
     	
@@ -2117,7 +2118,7 @@ public class UserVmManagerImpl implements UserVmManager {
             
             if( !_storageMgr.share(vm, vols, vmHost, false) ) {
                 s_logger.warn("Can not share " + vm.toString() + " on host " + vmHost.getId());
-                throw new StorageUnavailableException(vmHost.getId());
+                throw new StorageUnavailableException("Can not share " + vm.toString() + " on host " + vmHost.getId());
             }
 
             Answer answer = _agentMgr.easySend(vmHost.getId(), cmd);
@@ -2400,6 +2401,7 @@ public class UserVmManagerImpl implements UserVmManager {
         }
     }
     
+    @Override
     public VMTemplateVO createPrivateTemplateRecord(Long userId, long volumeId, String name, String description, long guestOSId, Boolean requiresHvm, Integer bits, Boolean passwordEnabled, boolean isPublic, boolean featured)
     	throws InvalidParameterValueException {
 
@@ -3014,7 +3016,8 @@ public class UserVmManagerImpl implements UserVmManager {
     		_vmMgr = vmMgr;
     	}
 
-		public void run() {
+		@Override
+        public void run() {
 			GlobalLock scanLock = GlobalLock.getInternLock("UserVMExpunge");
 			try {
 				if(scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {

@@ -18,10 +18,14 @@
 package com.cloud.storage;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 import com.cloud.domain.PartOf;
 import com.cloud.template.BasedOn;
 import com.cloud.user.OwnedBy;
+import com.cloud.utils.fsm.FiniteState;
+import com.cloud.utils.fsm.StateMachine;
 
 
 public interface Volume extends PartOf, OwnedBy, BasedOn {
@@ -29,14 +33,70 @@ public interface Volume extends PartOf, OwnedBy, BasedOn {
 	
 	enum MirrorState {NOT_MIRRORED, ACTIVE, DEFUNCT};
 	
-	enum State {
-	    Allocated,
-	    Creating,
-	    Created,
-	    Corrupted,
-	    ToBeDestroyed,
-	    Expunging,
-	    Destroyed
+	enum State implements FiniteState<State, Event> {
+	    Allocated("The volume is allocated but has not been created yet."),
+	    Creating("The volume is being created.  getPoolId() should reflect the pool where it is being created."),
+	    Ready("The volume is ready to be used."),
+	    Destroy("The volume is set to be desctroyed but can be recovered."),
+	    Expunging("The volume is being destroyed.  There's no way to recover."),
+	    Destroyed("The volume is destroyed.  Should be removed.");
+	    
+	    String _description;
+	    
+	    private State(String description) {
+	        _description = description;
+	    }
+
+        @Override
+        public StateMachine<State, Event> getStateMachine() {
+            return s_fsm;
+        }
+
+        @Override
+        public State getNextState(Event event) {
+            return s_fsm.getNextState(this, event);
+        }
+
+        @Override
+        public List<State> getFromStates(Event event) {
+            return s_fsm.getFromStates(this, event);
+        }
+
+        @Override
+        public Set<Event> getPossibleEvents() {
+            return s_fsm.getPossibleEvents(this);
+        }
+        
+        @Override
+        public String getDescription() {
+            return _description;
+        }
+        
+        private final static StateMachine<State, Event> s_fsm = new StateMachine<State, Event>();
+        static {
+            s_fsm.addTransition(Allocated, Event.Create, Creating);
+            s_fsm.addTransition(Allocated, Event.Destroy, Destroyed);
+            s_fsm.addTransition(Creating, Event.OperationRetry, Creating);
+            s_fsm.addTransition(Creating, Event.OperationFailed, Allocated);
+            s_fsm.addTransition(Creating, Event.OperationSucceeded, Ready);
+            s_fsm.addTransition(Creating, Event.Destroy, Expunging);
+            s_fsm.addTransition(Ready, Event.Destroy, Destroy);
+            s_fsm.addTransition(Destroy, Event.Expunge, Expunging);
+            s_fsm.addTransition(Destroy, Event.Recover, Ready);
+            s_fsm.addTransition(Expunging, Event.OperationSucceeded, Destroyed);
+            s_fsm.addTransition(Expunging, Event.OperationFailed, Destroy);
+            s_fsm.addTransition(Allocated, Event.Destroy, Destroyed);
+        }
+	}
+	
+	enum Event {
+	    Create,
+	    OperationFailed,
+	    OperationSucceeded,
+	    OperationRetry,
+	    Destroy,
+	    Recover,
+	    Expunge;
 	}
 	
 	enum SourceType {

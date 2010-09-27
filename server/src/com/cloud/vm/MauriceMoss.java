@@ -36,7 +36,9 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.offering.ServiceOffering;
@@ -233,7 +235,7 @@ public class MauriceMoss implements VmManager {
     }
 
     @Override
-    public <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan) throws InsufficientCapacityException {
+    public <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan) throws InsufficientCapacityException, ConcurrentOperationException {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating actual resources for VM " + vm);
         }
@@ -246,7 +248,7 @@ public class MauriceMoss implements VmManager {
 
         Set<DeployDestination> avoids = new HashSet<DeployDestination>();
         int retry = _retry;
-        while (retry-- > 0) {
+        while (retry-- != 0) { // It's != so that it can match -1.
             DeployDestination dest = null;
             for (DeploymentPlanner dispatcher : _planners) {
                 dest = dispatcher.plan(vmProfile, plan, avoids);
@@ -266,8 +268,15 @@ public class MauriceMoss implements VmManager {
             _vmDao.updateIf(vm, Event.StartRequested, dest.getHost().getId());
             
             VirtualMachineTO vmTO = new VirtualMachineTO();
+            try {
+                _storageMgr.prepare(vmProfile, dest);
+            } catch (ConcurrentOperationException e) {
+                throw e;
+            } catch (StorageUnavailableException e) {
+                s_logger.warn("Unable to contact storage.", e);
+                continue;
+            }
             _networkMgr.prepare(vmProfile, dest);
-//            _storageMgr.prepare(vm, dest);
         }
         
         if (s_logger.isDebugEnabled()) {

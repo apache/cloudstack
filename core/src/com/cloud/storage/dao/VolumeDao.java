@@ -19,6 +19,7 @@ package com.cloud.storage.dao;
 
 import java.util.List;
 
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.utils.Pair;
@@ -47,4 +48,13 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long> {
     List<VolumeVO> findCreatedByInstance(long id);
     List<VolumeVO> findByPoolId(long poolId);
 	List<VolumeVO> findByInstanceAndDeviceId(long instanceId, long deviceId);
+    List<VolumeVO> findUsableVolumesForInstance(long instanceId);
+    
+    /**
+     * Updates the volume only if the state in memory matches the state in the database.
+     * @param vol Volume to be updated.
+     * @param event event that causes the database change.
+     * @return true if update happened, false if not.
+     */
+    boolean update(VolumeVO vol, Volume.Event event) throws ConcurrentOperationException;
 }

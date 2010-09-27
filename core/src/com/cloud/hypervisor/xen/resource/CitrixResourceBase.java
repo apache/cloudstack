@@ -145,7 +145,7 @@ import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ShareAnswer;
 import com.cloud.agent.api.storage.ShareCommand;
 import com.cloud.agent.api.to.NicTO;
-import com.cloud.agent.api.to.StoragePoolTO;
+import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.exception.InternalErrorException;
@@ -4449,7 +4449,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
     protected Answer execute(ModifyStoragePoolCommand cmd) {
         StoragePoolVO pool = cmd.getPool();
-        StoragePoolTO poolTO = new StoragePoolTO(pool);
+        StorageFilerTO poolTO = new StorageFilerTO(pool);
         try {
             Connection conn = getConnection();
 
@@ -4478,7 +4478,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
     protected Answer execute(DeleteStoragePoolCommand cmd) {
         StoragePoolVO pool = cmd.getPool();
-        StoragePoolTO poolTO = new StoragePoolTO(pool);
+        StorageFilerTO poolTO = new StorageFilerTO(pool);
         try {
             Connection conn = getConnection();
             SR sr = getStorageRepository(conn, poolTO);
@@ -4719,7 +4719,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
     @Override
     public CreateAnswer execute(CreateCommand cmd) {
-        StoragePoolTO pool = cmd.getPool();
+        StorageFilerTO pool = cmd.getPool();
         DiskProfile dskch = cmd.getDiskCharacteristics();
 
         VDI vdi = null;
@@ -4893,7 +4893,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
     }
 
-    protected SR getIscsiSR(StoragePoolTO pool) {
+    protected SR getIscsiSR(StorageFilerTO pool) {
         Connection conn = getConnection();
         synchronized (pool.getUuid().intern()) {
             Map<String, String> deviceConfig = new HashMap<String, String>();
@@ -5003,7 +5003,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
     }
 
-    protected SR getNfsSR(StoragePoolTO pool) {
+    protected SR getNfsSR(StorageFilerTO pool) {
         Connection conn = getConnection();
 
         Map<String, String> deviceConfig = new HashMap<String, String>();
@@ -5124,7 +5124,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     public CopyVolumeAnswer execute(final CopyVolumeCommand cmd) {
         String volumeUUID = cmd.getVolumePath();
         StoragePoolVO pool = cmd.getPool();
-        StoragePoolTO poolTO = new StoragePoolTO(pool);
+        StorageFilerTO poolTO = new StorageFilerTO(pool);
         String secondaryStorageURL = cmd.getSecondaryStorageURL();
 
         URI uri = null;
@@ -6041,7 +6041,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
     }
 
-    protected SR getStorageRepository(Connection conn, StoragePoolTO pool) {
+    protected SR getStorageRepository(Connection conn, StorageFilerTO pool) {
         Set<SR> srs;
         try {
             srs = SR.getByNameLabel(conn, pool.getUuid());

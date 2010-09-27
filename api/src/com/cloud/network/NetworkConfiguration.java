@@ -23,10 +23,10 @@ public interface NetworkConfiguration {
     }
     
     enum State implements FiniteState<State, Event> {
-        Allocated,  // Indicates the network configuration is in allocated but not setup.
-        Setup,      // Indicates the network configuration is setup.
-        Implemented,      // Indicates the network configuration is in use.
-        Destroying;
+        Allocated("Indicates the network configuration is in allocated but not setup"),
+        Setup("Indicates the network configuration is setup"),
+        Implemented("Indicates the network configuration is in use"),
+        Destroying("Indicates the network configuration is being destroyed");
 
         @Override
         public StateMachine<State, Event> getStateMachine() {
@@ -48,7 +48,23 @@ public interface NetworkConfiguration {
             return s_fsm.getPossibleEvents(this);
         }
         
+        String _description;
+        
+        @Override
+        public String getDescription() {
+            return _description;
+        }
+        
+        private State(String description) {
+            _description = description;
+        }
+        
         private static StateMachine<State, Event> s_fsm = new StateMachine<State, Event>();
+        static {
+            s_fsm.addTransition(State.Allocated, Event.ImplementNetwork, State.Implemented);
+            s_fsm.addTransition(State.Implemented, Event.DestroyNetwork, State.Destroying);
+        }
+        
     }
     
     

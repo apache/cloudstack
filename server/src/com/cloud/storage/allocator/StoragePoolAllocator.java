@@ -43,5 +43,5 @@ public interface StoragePoolAllocator extends Adapter {
 	
 	String chooseStorageIp(VirtualMachine vm, Host host, Host storage);
 	
-	StoragePool allocateTo(DiskProfile dskCh, VirtualMachineProfile vm, DeployDestination dest, List<Volume> disks, Set<StoragePool> avoids);
+	StoragePool allocateTo(DiskProfile dskCh, VirtualMachineProfile vm, DeployDestination dest, List<? extends Volume> disks, Set<? extends StoragePool> avoids);
 }

@@ -137,7 +137,7 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
-import com.cloud.agent.api.to.StoragePoolTO;
+import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.resource.computing.LibvirtStoragePoolDef.poolType;
 import com.cloud.agent.resource.computing.LibvirtStorageVolumeDef.volFormat;
@@ -1173,7 +1173,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	}
 
     protected Answer execute(CreateCommand cmd) {
-    	  StoragePoolTO pool = cmd.getPool();
+    	  StorageFilerTO pool = cmd.getPool();
           DiskProfile dskch = cmd.getDiskCharacteristics();
           StorageVol tmplVol = null;
           StoragePool primaryPool = null;
