@@ -65,8 +65,7 @@ public class CreateCommand extends Command {
     
     @Override
     public boolean executeInSequence() {
-    	//Temporary relaxing serialization
-        return false;
+        return true;
     }
 
     public String getTemplateUrl() {

@@ -54,8 +54,7 @@ public class StartSecStorageVmCommand extends AbstractStartCommand {
 	
 	@Override
 	public boolean executeInSequence() {
-		//Temporary relaxing serialization
-        return false;
+        return true;
 	}
 	
 	public SecondaryStorageVmVO getSecondaryStorageVmVO() {

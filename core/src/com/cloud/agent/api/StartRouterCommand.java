@@ -37,8 +37,7 @@ public class StartRouterCommand extends AbstractStartCommand {
     
     @Override
     public boolean executeInSequence() {
-    	//Temporary relaxing serialization
-        return false;
+        return true;
     }
     
     public StartRouterCommand(DomainRouterVO router, int networkRateMbps, int networkRateMulticastMbps, 

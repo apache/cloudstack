@@ -42,7 +42,6 @@ public class DestroyCommand extends StorageCommand {
 
     @Override
     public boolean executeInSequence() {
-    	//Temporary relaxing serialization
-        return false;
+        return true;
     }
 }

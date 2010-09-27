@@ -59,8 +59,7 @@ public class StopCommand extends RebootCommand {
     
     @Override
     public boolean executeInSequence() {
-    	//Temporary relaxing serialization
-        return false;
+        return true;
     }
 
 	public boolean isMirroredVolumes() {
