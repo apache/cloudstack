@@ -20,18 +20,24 @@ package com.cloud.agent.api;
 
 public class NetworkUsageCommand extends Command {
     private String privateIP;
+    private String domRName;
     
     protected NetworkUsageCommand() {
         
     }
     
-    public NetworkUsageCommand(String privateIP)
+    public NetworkUsageCommand(String privateIP, String domRName)
     {
         this.privateIP = privateIP;
+        this.domRName = domRName; 
     }
 
     public String getPrivateIP() {
         return privateIP;
+    }
+    
+    public String getDomRName() {
+        return domRName;
     }
     
     /**

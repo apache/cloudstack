@@ -2559,7 +2559,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             for (DomainRouterVO router : routers) {
                 String privateIP = router.getPrivateIpAddress();
                 if(privateIP != null){
-                    final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP);
+                    final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getName());
                     final NetworkUsageAnswer answer = (NetworkUsageAnswer)_agentMgr.easySend(router.getHostId(), usageCmd);
                     if(answer != null){
                         Transaction txn = Transaction.open(Transaction.CLOUD_DB);
