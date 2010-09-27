@@ -9110,6 +9110,12 @@ public class ManagementServerImpl implements ManagementServer {
         }
         return version;
     }
+    
+    @Override
+    public boolean updateCertificate(String certificatePath)
+    {
+    	return false;
+    }
 
 }
 

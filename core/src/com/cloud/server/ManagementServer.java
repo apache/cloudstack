@@ -2260,5 +2260,6 @@ public interface ManagementServer {
 	 * Fetches the version of cloud stack 
 	 */
     String getVersion();
+	boolean updateCertificate(String certificatePath);
 
 }
