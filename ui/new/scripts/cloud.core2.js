@@ -201,7 +201,7 @@ var selectedItemsInMidMenu = {};
 
 function buildActionLinkForMidMenu(label, actionMap, $actionMenu, listAPIMap) {
     var apiInfo = actionMap[label];
-    var $listItem = $("#action_list_item").clone();
+    var $listItem = $("#action_list_item_middle_menu").clone();
     $actionMenu.find("#action_list").append($listItem.show());
     var $link = $listItem.find("#link").text(label);
     $link.data("label", label);	  

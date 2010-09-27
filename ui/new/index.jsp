@@ -743,8 +743,11 @@ long milliseconds = new Date().getTime();
         </div>
     </div>
    
-    <!-- action list item -->
-    <li id="action_list_item" style="display:none; width:94px;"><a id="link" href="#">(action)</a></li>
+    <!-- action list item for middle menu -->
+    <li id="action_list_item_middle_menu" style="display:none; width:94px;"><a id="link" href="#">(middle menu action)</a></li>
+    
+    <!-- action list item for details tab, subgrid item-->
+    <li id="action_list_item" style="display:none;"><a id="link" href="#">(action)</a></li>
     
     <!-- templates ends here-->
 </body>
