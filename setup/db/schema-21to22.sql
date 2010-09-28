@@ -19,6 +19,11 @@ CREATE TABLE `cloud`.`instance_group_vm_map` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`certificate` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `certificate` text COMMENT 'the actual custom certificate being stored in the db',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cloud`.`data_center` MODIFY COLUMN `guest_network_cidr` varchar(18); -- modify column width to 18 from 15
 

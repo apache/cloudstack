@@ -82,6 +82,7 @@ DROP TABLE IF EXISTS `cloud`.`hypervisor_properties`;
 DROP TABLE IF EXISTS `cloud`.`account_network_ref`;
 DROP TABLE IF EXISTS `cloud`.`instance_group`;
 DROP TABLE IF EXISTS `cloud`.`instance_group_vm_map`;
+DROP TABLE IF EXISTS `cloud`.`certificate`;
 
 CREATE TABLE `cloud`.`hypervsior_properties` (
   `hypervisor` varchar(32) NOT NULL UNIQUE COMMENT 'hypervisor type',
@@ -110,6 +111,12 @@ CREATE TABLE `cloud`.`account_network_ref` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `account_id` bigint unsigned NOT NULL COMMENT 'account id',
   `network_configuration_id` bigint unsigned NOT NULL COMMENT 'network configuration id',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`certificate` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `certificate` text COMMENT 'the actual custom certificate being stored in the db',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
