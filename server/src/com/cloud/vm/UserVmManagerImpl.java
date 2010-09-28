@@ -2451,6 +2451,7 @@ public class UserVmManagerImpl implements UserVmManager {
             List<VlanVO> zoneWideVlans = null;
             int freeIpCount = 0;
             boolean forAccount = false;
+            
             if (vlansForAccount.size() > 0) {
             	//iterate over the vlan to see if there are actually addresses available 
             	for(VlanVO vlan:vlansForAccount)
@@ -2466,7 +2467,8 @@ public class UserVmManagerImpl implements UserVmManager {
             	}
             	
             }
-	        else if(!forAccount)
+	        
+            if(!forAccount)
 	        {
 	          	//list zone wide vlans that are direct attached and tagged
 	          	//if exists pick random one
