@@ -522,72 +522,22 @@ function clickInstanceGroupHeader($arrowIcon) {
     $("#midmenu_add_link").show(); 
 	if($arrowIcon.hasClass("close") == true) {
         $arrowIcon.removeClass("close").addClass("open");    
+        
+        appendInstanceGroup(-1, noGroupName);
+        
         $.ajax({
 	        cache: false,
-	        data: createURL("command=listVirtualMachines"),
+	        data: createURL("command=listInstanceGroups"),	       
 	        dataType: "json",
-	        success: function(json) {	
-	            var instanceGroupMap = {};	       
-	            var instanceGroupArray = [];						        		            
-		        var instances = json.listvirtualmachinesresponse.virtualmachine;								
-		        if (instances != null && instances.length > 0) {		
-			        for (var i = 0; i < instances.length; i++) {
-			            var group1 = instances[i].group;
-			            if(group1 == null || group1.length == 0)
-			                group1 = noGroupName;
-			            if(group1 in instanceGroupMap) {
-			                instanceGroupMap[group1].push(instances[i]);
-			            }							        
-			            else {
-			                instanceGroupMap[group1] = [instances[i]];
-			                instanceGroupArray.push(group1);
-			            }	
-			        }				    
-		        }
-		        for(var i=0; i < instanceGroupArray.length; i++) {
-		            if(instanceGroupArray[i]!=null && instanceGroupArray[i].length>0) {
-		        	    var $leftmenuSubmenuTemplate = $("#leftmenu_submenu_template").clone().show();			        	    
-		        	    $leftmenuSubmenuTemplate.attr("id", ("leftmenu_instance_group_"+i));			        	            	
-		                $leftmenuSubmenuTemplate.find("#submenu_name").text(instanceGroupArray[i]);
-		                $leftmenuSubmenuTemplate.find("#icon").attr("src", "images/instance_leftmenuicon.png").show();
-		                 		                			                
-		                $leftmenuSubmenuTemplate.bind("click", function(event) { 
-		                    if(selected_leftmenu_id != null && selected_leftmenu_id.length > 0)
-                                $("#"+selected_leftmenu_id).removeClass("selected");                            
-                            selected_leftmenu_id = $(this).attr("id");
-                            $(this).addClass("selected");		                    
-		                                
-                            $("#midmenu_container").empty();
-                            selectedItemsInMidMenu = {};
-                            
-                            var groupName = $(this).find("#submenu_name").text();                                                         
-                            var group1 = groupName; 
-                            if(groupName == noGroupName)
-                                group1 = "";                           
-                                                        
-                            $.ajax({
-	                            cache: false,
-	                            data: createURL("command=listVirtualMachines&group="+group1+"&pagesize="+midmenuItemCount),
-	                            dataType: "json",
-	                            success: function(json) {		                                                             
-	                                var instances = json.listvirtualmachinesresponse.virtualmachine;    
-	                                if (instances != null && instances.length > 0) {	                           
-                                        for(var i=0; i<instances.length;i++) {  
-                                            var $midmenuItem1 = $midmenuItem.clone();
-                                            $midmenuItem1.data("toRightPanelFn", vmToRightPanel);                                                                                                                               
-                                            vmToMidmenu(instances[i], $midmenuItem1);  
-                                            $("#midmenu_container").append($midmenuItem1.show());
-                                        }  
-                                    }  
-	                            }
-	                        });                            
-                            return false;
-                        });	
-		                $("#leftmenu_instance_group_container").append($leftmenuSubmenuTemplate);
+	        success: function(json) {	            
+	            var instancegroups = json.listinstancegroupsresponse.instancegroup;	        	
+	        	if(instancegroups!=null && instancegroups.length>0) {           
+		            for(var i=0; i < instancegroups.length; i++) {		            
+		        	    appendInstanceGroup(instancegroups[i].id, instancegroups[i].name);
 		            }
 		        }
 		        
-		        //action menu			        
+		        //action menu	???		        
 		        $("#midmenu_action_link").show();
 		        $("#action_menu #action_list").empty();		        
 		        for(var label in vmActionMap) 				            
@@ -598,7 +548,46 @@ function clickInstanceGroupHeader($arrowIcon) {
     else if($arrowIcon.hasClass("open") == true) {
         $arrowIcon.removeClass("open").addClass("close");            
         $("#leftmenu_instance_group_container").empty();   
-    }	     
+    }	
+    
+    function appendInstanceGroup(groupId, groupName) {
+        var $leftmenuSubmenuTemplate = $("#leftmenu_submenu_template").clone().show();			        	    
+        $leftmenuSubmenuTemplate.attr("id", ("leftmenu_instance_group_"+groupId));		
+        $leftmenuSubmenuTemplate.data("groupId", groupId)	        	            	
+        $leftmenuSubmenuTemplate.find("#submenu_name").text(groupName);
+        $leftmenuSubmenuTemplate.find("#icon").attr("src", "images/instance_leftmenuicon.png").show();
+         		                			                
+        $leftmenuSubmenuTemplate.bind("click", function(event) { 
+            if(selected_leftmenu_id != null && selected_leftmenu_id.length > 0)
+                $("#"+selected_leftmenu_id).removeClass("selected");                            
+            selected_leftmenu_id = $(this).attr("id");
+            $(this).addClass("selected");		                    
+                        
+            $("#midmenu_container").empty();
+            selectedItemsInMidMenu = {};
+                                        
+            var groupId = $(this).data("groupId");                                   
+            $.ajax({
+                cache: false,
+                data: createURL("command=listVirtualMachines&groupid="+groupId+"&pagesize="+midmenuItemCount),
+                dataType: "json",
+                success: function(json) {		                                                             
+                    var instances = json.listvirtualmachinesresponse.virtualmachine;    
+                    if (instances != null && instances.length > 0) {	                           
+                        for(var i=0; i<instances.length;i++) {  
+                            var $midmenuItem1 = $midmenuItem.clone();
+                            $midmenuItem1.data("toRightPanelFn", vmToRightPanel);                                                                                                                               
+                            vmToMidmenu(instances[i], $midmenuItem1);  
+                            $("#midmenu_container").append($midmenuItem1.show());
+                        }  
+                    }  
+                }
+            });                            
+            return false;
+        });	
+        $("#leftmenu_instance_group_container").append($leftmenuSubmenuTemplate);
+    }	 
+       
     //***** VM Detail (end) ********************************************************************************    
     $("#right_panel").load("jsp/instance.jsp", function() {	
         $rightPanelHeader = $("#right_panel_header");			                                		                                
@@ -1304,5 +1293,3 @@ function doCreateTemplateFromVmVolume($actionLink, listAPIMap, $subgridItem) {
 		} 
 	}).dialog("open");
 }   
-
-	 
