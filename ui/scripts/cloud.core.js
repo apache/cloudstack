@@ -82,6 +82,14 @@ function isDomainAdmin() {
 	return (g_role == 2);
 }
 
+function fromdb(val) {
+    return sanitizeXSS(unescape(noNull(val)));
+}
+
+function todb(val) {
+    return encodeURIComponent(escape(val));
+}
+
 function setDateField(dateValue, dateField, htmlMarkup) {
     if (dateValue != null && dateValue.length > 0) {
 	    var disconnected = new Date();
@@ -465,6 +473,13 @@ function trim(val) {
     if(val == null)
         return null;
     return val.replace(/^\s*/, "").replace(/\s*$/, "");
+}
+
+function noNull(val) {
+    if(val == null)
+        return "";
+    else
+        return val;
 }
 
 // Prevent cross-site-script(XSS) attack. 

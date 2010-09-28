@@ -35,10 +35,10 @@ function showStorageTab(domainId, targetTab) {
 			    if (zones != null && zones.length > 0) {
 			        for (var i = 0; i < zones.length; i++) {	
 			            if(isAdmin) {			
-				            poolZoneSelect.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 
-				            hostZoneSelect.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 
+				            poolZoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
+				            hostZoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
 				        }
-				        volumeZoneSelect.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 
+				        volumeZoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
 			        }
 			    }
 				if (isAdmin) {
@@ -58,7 +58,7 @@ function showStorageTab(domainId, targetTab) {
 			    if (offerings != null && offerings.length > 0) {								
 			        if (offerings != null && offerings.length > 0) {
 			            for (var i = 0; i < offerings.length; i++) 				
-				            volumeDiskOfferingSelect.append("<option value='" + offerings[i].id + "'>" + sanitizeXSS(offerings[i].displaytext) + "</option>"); 		
+				            volumeDiskOfferingSelect.append("<option value='" + offerings[i].id + "'>" + fromdb(offerings[i].displaytext) + "</option>"); 		
 				    }	
 				}	
 		    }
@@ -177,7 +177,7 @@ function showStorageTab(domainId, targetTab) {
                                                 });	
 											                                                              
 										    } else if (result.jobstatus == 2) {
-											    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");
+											    $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");
 											    template.slideUp("slow", function() {
 													$(this).remove();
 												});						    
@@ -252,8 +252,8 @@ function showStorageTab(domainId, targetTab) {
 		    template.data("vmname", getVmName(json.vmname, json.vmdisplayname));	
 			template.data("vmstate", json.vmstate);
 		    template.data("domainId", json.domainid);	
-		    template.data("account", sanitizeXSS(json.account));	
-			template.data("volumeName", sanitizeXSS(json.name));
+		    template.data("account", fromdb(json.account));	
+			template.data("volumeName", fromdb(json.name));
 			template.data("vmid", json.virtualmachineid);
 			template.data("zoneId", json.zoneid);
 		    
@@ -449,7 +449,7 @@ function showStorageTab(domainId, targetTab) {
 										            } else if (result.jobstatus == 2) {
 										                loadingImg.hide(); 		
 											            rowContainer.show(); 	
-											            $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");											    				    
+											            $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");											    				    
 										            }
 									            }
 								            },
@@ -509,7 +509,7 @@ function showStorageTab(domainId, targetTab) {
 										    } else if (result.jobstatus == 2) {
 										        loadingImg.hide(); 		
 									            rowContainer.show(); 
-											    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");											    					    
+											    $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");											    					    
 										    }
 									    }
 								    },
@@ -576,7 +576,7 @@ function showStorageTab(domainId, targetTab) {
                                                     } else if (result.jobstatus == 2) {		                                                    
                                                         loadingImg.hide();
 														rowContainer.show(); 
-														$("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");            											            										    				    
+														$("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");            											            										    				    
 										            }
 									            }
 								            },
@@ -1052,7 +1052,7 @@ function showStorageTab(domainId, targetTab) {
 														// Failed	
 														loadingImg.hide(); 								                            
 														rowContainer.show(); 	
-														$("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");
+														$("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");
 													}
 												}
 											},
@@ -1132,7 +1132,7 @@ function showStorageTab(domainId, targetTab) {
 														// Failed		
 														loadingImg.hide(); 								                            
 														rowContainer.show(); 												               										                
-														$("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");
+														$("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");
 													}
 												}
 											},
@@ -1209,7 +1209,7 @@ function showStorageTab(domainId, targetTab) {
 														if (result.jobstatus == 1) {
 															$("#dialog_info").html("<p>" + ((isPublic=="true")? "Public":"Private") + " template: " + name + " has been successfully created</p>").dialog("open");
 														} else if (result.jobstatus == 2) {
-															$("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");
+															$("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");
 														}
 													}
 												},
@@ -1275,7 +1275,7 @@ function showStorageTab(domainId, targetTab) {
 													} else if (result.jobstatus == 2) {
 														loadingImg.hide();
 														rowContainer.show(); 
-														$("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");
+														$("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");
 													}
 												}
 											},
@@ -1508,7 +1508,7 @@ function showStorageTab(domainId, targetTab) {
                                                             rowContainer.show(); 
                                                         });	                                                                     											                                                               
 										            } else if (result.jobstatus == 2) {										                
-											            $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");												            
+											            $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");												            
 											            template.slideUp("slow", function() {
 													        $(this).remove();
 												        });												            										    				    
@@ -1577,7 +1577,7 @@ function showStorageTab(domainId, targetTab) {
 										    } else if (result.jobstatus == 2) {
 										        loadingImg.hide(); 		
 									            rowContainer.show(); 
-											    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");											    					    
+											    $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");											    					    
 										    }
 									    }
 								    },
@@ -1643,7 +1643,7 @@ function showStorageTab(domainId, targetTab) {
                                                     } else if (result.jobstatus == 2) {		                                                    
                                                         loadingImg.hide();
 														rowContainer.show(); 
-														$("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");            											            										    				    
+														$("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");            											            										    				    
 										            }
 									            }
 								            },
@@ -1717,7 +1717,7 @@ function showStorageTab(domainId, targetTab) {
 			    template.find("#row_container").addClass("smallrow_odd");
 		    }
 	
-		    template.data("id", json.id).data("name", sanitizeXSS(json.name));
+		    template.data("id", json.id).data("name", fromdb(json.name));
 		    template.find("#pool_id").text(json.id);
 		    template.find("#pool_name").text(json.name);
 		    template.find("#pool_zone").text(json.zonename);
@@ -1790,7 +1790,7 @@ function showStorageTab(domainId, targetTab) {
 					var podSelect = $("#dialog_add_pool").find("#pool_pod").empty();	
 					if (pods != null && pods.length > 0) {
 					    for (var i = 0; i < pods.length; i++) {
-						    podSelect.append("<option value='" + pods[i].id + "'>" + sanitizeXSS(pods[i].name) + "</option>"); 
+						    podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 
 					    }
 					}
 					$("#dialog_add_pool").find("#pool_pod").change();
@@ -2094,7 +2094,7 @@ function showStorageTab(domainId, targetTab) {
 		    } else {
 			    template.find("#row_container").addClass("smallrow_odd");
 		    }
-		    template.data("hostName", sanitizeXSS(json.name));
+		    template.data("hostName", fromdb(json.name));
 			template.find("#storage_type").text(json.type);
 		    template.find("#storage_name").text(json.name);
 			template.find("#storage_zone").text(json.zonename);

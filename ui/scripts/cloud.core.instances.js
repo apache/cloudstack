@@ -205,7 +205,7 @@ function showInstancesTab(p_domainId, p_account) {
 															vmInstance.data("state", result.virtualmachine[0].state);
 																																										
 															if (result.virtualmachine[0].hostname != undefined) {
-				                                                vmInstance.find("#vm_host").html("<strong>Host:</strong> " + sanitizeXSS(result.virtualmachine[0].hostname));
+				                                                vmInstance.find("#vm_host").html("<strong>Host:</strong> " + fromdb(result.virtualmachine[0].hostname));
 			                                                } else {
 			                                                    vmInstance.find("#vm_host").html("<strong>Host:</strong> ");
 			                                                }	
@@ -295,7 +295,7 @@ function showInstancesTab(p_domainId, p_account) {
 															vmInstance.data("state", result.virtualmachine[0].state);
 																															
 															if (result.virtualmachine[0].hostname != undefined) {
-				                                                vmInstance.find("#vm_host").html("<strong>Host:</strong> " + sanitizeXSS(result.virtualmachine[0].hostname));
+				                                                vmInstance.find("#vm_host").html("<strong>Host:</strong> " + fromdb(result.virtualmachine[0].hostname));
 			                                                } else {
 			                                                    vmInstance.find("#vm_host").html("<strong>Host:</strong> ");
 			                                                }																	
@@ -576,7 +576,7 @@ function showInstancesTab(p_domainId, p_account) {
 						
 						if (offerings != null && offerings.length > 0) {
 							for (var i = 0; i < offerings.length; i++) {
-								var option = $("<option value='" + offerings[i].id + "'>" + sanitizeXSS(unescape(offerings[i].displaytext)) + "</option>").data("name", unescape(offerings[i].name));
+								var option = $("<option value='" + offerings[i].id + "'>" + fromdb(offerings[i].displaytext) + "</option>").data("name", fromdb(offerings[i].name));
 								offeringSelect.append(option); 
 							}
 						} 
@@ -611,7 +611,7 @@ function showInstancesTab(p_domainId, p_account) {
 								                        vmInstance.find(".row_loading").show();
 								                        vmInstance.find(".loadingmessage_container .loadingmessage_top p").html("Your virtual instance has been upgraded.  Please restart your virtual instance for the new service offering to take effect.");
 								                        vmInstance.find(".loadingmessage_container").fadeIn("slow");										                        
-								                        vmInstance.find("#vm_service").html("<strong>Service:</strong> " + sanitizeXSS(unescape(result.virtualmachine[0].serviceofferingname)));		
+								                        vmInstance.find("#vm_service").html("<strong>Service:</strong> " + fromdb(result.virtualmachine[0].serviceofferingname));		
 								                        if (result.virtualmachine[0].haenable =='true') {
 			                                                vmInstance.find("#vm_ha").html("<strong>HA:</strong> Enabled");
 			                                                vmInstance.find("#vm_action_ha").text("Disable HA");
@@ -620,7 +620,7 @@ function showInstancesTab(p_domainId, p_account) {
 			                                                vmInstance.find("#vm_action_ha").text("Enable HA");
 		                                                }									                        
 										            } else if (result.jobstatus == 2) { // Failed
-											            $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");		
+											            $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");		
 										            }
 									            }
 								            },
@@ -840,7 +840,7 @@ function showInstancesTab(p_domainId, p_account) {
 						if (isos != null && isos.length > 0) {
 							isoSelect.empty();
 							for (var i = 0; i < isos.length; i++) {
-								isoSelect.append("<option value='"+isos[i].id+"'>"+sanitizeXSS(isos[i].displaytext)+"</option>");;
+								isoSelect.append("<option value='"+isos[i].id+"'>"+fromdb(isos[i].displaytext)+"</option>");;
 							}
 						}
 					}
@@ -1089,15 +1089,15 @@ function showInstancesTab(p_domainId, p_account) {
 		var vmName = getVmName(instanceJSON.name, instanceJSON.displayname);
 					
 		instanceTemplate.data("id", instanceJSON.id)
-			.data("systemName", sanitizeXSS(instanceJSON.name))
-			.data("name", sanitizeXSS(vmName))				
+			.data("systemName", fromdb(instanceJSON.name))
+			.data("name", fromdb(vmName))				
 			.data("passwordEnabled", instanceJSON.passwordenabled)
 			.data("domainId", instanceJSON.domainid)
-			.data("account", sanitizeXSS(instanceJSON.account))
-			.data("zoneId", sanitizeXSS(instanceJSON.zoneid))
+			.data("account", fromdb(instanceJSON.account))
+			.data("zoneId", fromdb(instanceJSON.zoneid))
 			.data("state", instanceJSON.state)
 			.data("ha", instanceJSON.haenable);
-		instanceTemplate.data("group", sanitizeXSS(instanceJSON.group));	
+		instanceTemplate.data("group", fromdb(instanceJSON.group));	
 			
 		if (instanceJSON.isoId != undefined && instanceJSON.isoid.length > 0) {
 			instanceTemplate.data("isoId", instanceJSON.isoid);
@@ -1105,11 +1105,11 @@ function showInstancesTab(p_domainId, p_account) {
 		instanceTemplate.find("#vm_actions").data("id", instanceJSON.id);
 		
 		// Populate the template
-		instanceTemplate.find("#vm_name").html("<strong>Name:</strong> " + sanitizeXSS(vmName));
+		instanceTemplate.find("#vm_name").html("<strong>Name:</strong> " + fromdb(vmName));
 		instanceTemplate.find("#vm_ip_address").html("<strong>IP Address:</strong> " + instanceJSON.ipaddress);
-		instanceTemplate.find("#vm_zone").html("<strong>Zone:</strong> " + sanitizeXSS(instanceJSON.zonename));
-		instanceTemplate.find("#vm_template").html("<strong>Template:</strong> " + sanitizeXSS(instanceJSON.templatename));
-		instanceTemplate.find("#vm_service").html("<strong>Service:</strong> " + sanitizeXSS(unescape(instanceJSON.serviceofferingname)));
+		instanceTemplate.find("#vm_zone").html("<strong>Zone:</strong> " + fromdb(instanceJSON.zonename));
+		instanceTemplate.find("#vm_template").html("<strong>Template:</strong> " + fromdb(instanceJSON.templatename));
+		instanceTemplate.find("#vm_service").html("<strong>Service:</strong> " + fromdb(instanceJSON.serviceofferingname));
 		if (instanceJSON.haenable =='true') {
 			instanceTemplate.find("#vm_ha").html("<strong>HA:</strong> Enabled");
 			instanceTemplate.find("#vm_action_ha").text("Disable HA");
@@ -1120,11 +1120,11 @@ function showInstancesTab(p_domainId, p_account) {
 		
 		setDateField(instanceJSON.created, instanceTemplate.find("#vm_created"), "<strong>Created:</strong> ");
 					
-		instanceTemplate.find("#vm_account").html("<strong>Account:</strong> " + sanitizeXSS(instanceJSON.account));
-		instanceTemplate.find("#vm_domain").html("<strong>Domain:</strong> " + sanitizeXSS(instanceJSON.domain));
+		instanceTemplate.find("#vm_account").html("<strong>Account:</strong> " + fromdb(instanceJSON.account));
+		instanceTemplate.find("#vm_domain").html("<strong>Domain:</strong> " + fromdb(instanceJSON.domain));
 		if (isAdmin()) {
 			if (instanceJSON.hostname != undefined) {
-				instanceTemplate.find("#vm_host").html("<strong>Host:</strong> " + sanitizeXSS(instanceJSON.hostname));
+				instanceTemplate.find("#vm_host").html("<strong>Host:</strong> " + fromdb(instanceJSON.hostname));
 			} else {
 			    instanceTemplate.find("#vm_host").html("<strong>Host:</strong> ");
 			}				
@@ -1240,7 +1240,7 @@ function showInstancesTab(p_domainId, p_account) {
 				var zoneSelect = vmPopup.find("#wizard_zone").empty();	
 				if (zones != null && zones.length > 0) {
 					for (var i = 0; i < zones.length; i++) {
-						zoneSelect.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 
+						zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
 					}
 				}				
 				listTemplatesInVmPopup();	
@@ -1256,7 +1256,7 @@ function showInstancesTab(p_domainId, p_account) {
 				if (items != null && items.length > 0) {
 					for (var i = 0; i < items.length; i++) {
 					    if(items[i].name != "default")						
-						    networkGroupSelect.append("<option value='" + sanitizeXSS(items[i].name) + "'>" + sanitizeXSS(items[i].name) + "</option>"); 
+						    networkGroupSelect.append("<option value='" + fromdb(items[i].name) + "'>" + fromdb(items[i].name) + "</option>"); 
 					}
 				}					    
 			}
@@ -1275,7 +1275,7 @@ function showInstancesTab(p_domainId, p_account) {
 					for (var i = 0; i < offerings.length; i++) {
 						var checked = "checked";
 						if (first == false) checked = "";
-						var listItem = $("<li><input class='radio' type='radio' name='service' id='service' value='"+offerings[i].id+"'" + checked + "/><label style='width:500px;font-size:11px;' for='service'>"+sanitizeXSS(unescape(offerings[i].displaytext))+"</label></li>");
+						var listItem = $("<li><input class='radio' type='radio' name='service' id='service' value='"+offerings[i].id+"'" + checked + "/><label style='width:500px;font-size:11px;' for='service'>"+fromdb(offerings[i].displaytext)+"</label></li>");
 						$("#wizard_service_offering").append(listItem);													
 						first = false;
 					}
@@ -1304,14 +1304,14 @@ function showInstancesTab(p_domainId, p_account) {
 								var html = 
 									"<li>"
 										+"<input class='radio' type='radio' name='rootdisk' id='rootdisk' value='"+offerings[i].id+"'" + ((i==0)?"checked":"") + "/>"
-										+"<label style='width:500px;font-size:11px;' for='disk'>"+sanitizeXSS(unescape(offerings[i].displaytext))+"</label>"
+										+"<label style='width:500px;font-size:11px;' for='disk'>"+fromdb(offerings[i].displaytext)+"</label>"
 								   +"</li>";
 								$("#wizard_root_disk_offering").append(html);
 							
 								var html2 = 
 								"<li>"
 									+"<input class='radio' type='radio' name='datadisk' id='datadisk' value='"+offerings[i].id+"'" + "/>"
-									+"<label style='width:500px;font-size:11px;' for='disk'>"+sanitizeXSS(unescape(offerings[i].displaytext))+"</label>"
+									+"<label style='width:500px;font-size:11px;' for='disk'>"+fromdb(offerings[i].displaytext)+"</label>"
 							   +"</li>";
 								$("#wizard_data_disk_offering").append(html2);																		
 							}
@@ -1454,8 +1454,8 @@ function showInstancesTab(p_domainId, p_account) {
 
 						var html = '<div class="'+divClass+'" id="'+items[i].id+'">'
 									  +'<div class="'+getIconForOS(items[i].ostypename)+'"></div>'
-									  +'<div class="rev_wiztemp_listtext">'+sanitizeXSS(items[i].displaytext)+'</div>'
-									  +'<div class="rev_wiztemp_ownertext">'+sanitizeXSS(items[i].account)+'</div>'
+									  +'<div class="rev_wiztemp_listtext">'+fromdb(items[i].displaytext)+'</div>'
+									  +'<div class="rev_wiztemp_ownertext">'+fromdb(items[i].account)+'</div>'
 								  +'</div>';
 						container.append(html);
 					}						
@@ -2577,7 +2577,7 @@ function showInstancesTab(p_domainId, p_account) {
 													// Failed
 													template.find(".adding_loading").hide();
 													template.find("#volume_body").show();
-													$("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");
+													$("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");
 												}
 											}
 										},

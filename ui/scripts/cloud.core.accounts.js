@@ -118,7 +118,7 @@ function showAccountsTab(domainId) {
 							                    loadingImg.hide();  
                                                 rowContainer.show();	                                                             
 						                    } else if (result.jobstatus == 2) {										        
-							                    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");		
+							                    $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");		
 							                    loadingImg.hide();  
                                                 rowContainer.show();										   					    
 						                    }
@@ -166,7 +166,7 @@ function showAccountsTab(domainId) {
 	    var accountId = json.id;
 	    var accountName = json.name;
 	    var domainId = json.domainid;
-	    template.attr("id", "account"+accountId).data("accountId", accountId).data("accountName", sanitizeXSS(accountName)).data("domainId", sanitizeXSS(domainId));		
+	    template.attr("id", "account"+accountId).data("accountId", accountId).data("accountName", fromdb(accountName)).data("domainId", fromdb(domainId));		
 	       		    				    
 	    template.find("#account_role").text(toRole(json.accounttype));
 	    template.find("#account_accountid").text(json.id);

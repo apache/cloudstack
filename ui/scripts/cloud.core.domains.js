@@ -55,7 +55,7 @@ function showDomainsTab() {
     
         var template = treenodeTemplate.clone(true);	            
         template.attr("id", "domain_"+json.id);	 
-        template.data("domainId", json.id).data("domainName", sanitizeXSS(json.name)).data("domainLevel", level); 	       
+        template.data("domainId", json.id).data("domainName", fromdb(json.name)).data("domainLevel", level); 	       
         template.find("#domain_title_container").attr("id", "domain_title_container_"+json.id); 	        
         template.find("#domain_expand_icon").attr("id", "domain_expand_icon_"+json.id); 
         template.find("#domain_name").attr("id", "domain_name_"+json.id).text(json.name);        	              	

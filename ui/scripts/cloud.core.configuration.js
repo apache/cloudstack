@@ -71,7 +71,7 @@ function showConfigurationTab() {
 	});
 	
 	function globalJSONToTemplate(json, template) {
-	    template.data("name", sanitizeXSS(json.name)).attr("id", "global_"+json.name);
+	    template.data("name", fromdb(json.name)).attr("id", "global_"+json.name);
 	    (index++ % 2 == 0)? template.addClass("smallrow_even"): template.addClass("smallrow_odd");		
 		template.find("#global_name").text(json.name);
 		template.find("#global_value").text(json.value);
@@ -128,9 +128,9 @@ function showConfigurationTab() {
 	}	
 				
 	function zoneObjectToRightPanel(obj) {
-        rightPanel.html("<strong>Zone:</strong> "+sanitizeXSS(obj.name));					
+        rightPanel.html("<strong>Zone:</strong> "+fromdb(obj.name));					
 		var rightContentHtml = 
-			"<p><span>ZONE:</span> "+sanitizeXSS(obj.name)+"</p>"
+			"<p><span>ZONE:</span> "+fromdb(obj.name)+"</p>"
 			+ "<p><span>DNS 1:</span> "+obj.dns1+"</p>"
 			+ "<p><span>DNS 2:</span> "+((obj.dns2 == null) ? "" : obj.dns2) +"</p>"
 			+ "<p><span>Internal DNS 1:</span> "+obj.internaldns1+"</p>"
@@ -155,10 +155,10 @@ function showConfigurationTab() {
 	}	
 	
 	function podObjectToRightPanel(obj) {		    
-		rightPanel.html("<strong>Pod:</strong> " + sanitizeXSS(obj.name));
+		rightPanel.html("<strong>Pod:</strong> " + fromdb(obj.name));
 					
 		var rightContentHtml = 
-			"<p><span>POD:</span> "+sanitizeXSS(obj.name)+"</p>"
+			"<p><span>POD:</span> "+fromdb(obj.name)+"</p>"
 			+ "<p><span>Private CIDR:</span> "+obj.cidr+"</p>"
 			+ "<p><span>Private IP Range:</span> "+obj.ipRange+"</p>"
 			+ "<p><span>Gateway:</span> "+obj.gateway+"</p>";
@@ -329,7 +329,7 @@ function showConfigurationTab() {
 					    var obj = {"id": id, "name": name, "dns1": dns1, "dns2": dns2, "internaldns1": internaldns1, "internaldns2": internaldns2, "vlan": vlan, "guestcidraddress": guestcidraddress };
 				        zoneObjectToRightPanel(obj);						
 						var zoneName = $("#zone_"+id).find("#zone_name").text(name);		
-						zoneName.data("id", id).data("name", sanitizeXSS(name)).data("dns1", dns1).data("internaldns1", internaldns1).data("guestcidraddress", guestcidraddress);							
+						zoneName.data("id", id).data("name", fromdb(name)).data("dns1", dns1).data("internaldns1", internaldns1).data("guestcidraddress", guestcidraddress);							
 						if (dns2 != "") 
 							zoneName.data("dns2", dns2);
 						if (internaldns2 != "") 
@@ -592,7 +592,7 @@ function showConfigurationTab() {
 						var obj = {"id": id, "zoneid": zoneid, "name": newName, "cidr": newCidr, "startip": newStartip, "endip": newEndip, "ipRange": newIpRange, "gateway": newGateway};  
 				        podObjectToRightPanel(obj);					
 						var podName = $("#pod_"+id).find("#pod_name").text(newName);
-						podName.data("id", id).data("name", sanitizeXSS(newName)).data("cidr", newCidr).data("startip", newStartip).data("endip", newEndip).data("ipRange", newIpRange).data("gateway", newGateway);	
+						podName.data("id", id).data("name", fromdb(newName)).data("cidr", newCidr).data("startip", newStartip).data("endip", newEndip).data("ipRange", newIpRange).data("gateway", newGateway);	
 						loadingImg.hide(); 								                            
                         row_container.show();							
 					},
@@ -632,7 +632,7 @@ function showConfigurationTab() {
 					var pods = json.listpodsresponse.pod;						
 					if (pods != null && pods.length > 0) {
 						for (var i = 0; i < pods.length; i++) {
-							podSelect.append("<option value='" + pods[i].id + "'>" + sanitizeXSS(pods[i].name) + "</option>"); 
+							podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 
 						}
 					} else {
 						podSelect.append("<option value=''>No available pods</option>"); 
@@ -649,7 +649,7 @@ function showConfigurationTab() {
 					var domains = json.listdomainsresponse.domain;						
 					if (domains != null && domains.length > 0) {
 						for (var i = 0; i < domains.length; i++) {
-							domainSelect.append("<option value='" + domains[i].id + "'>" + sanitizeXSS(domains[i].name) + "</option>"); 
+							domainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 
 						}
 					} 
 				}
@@ -900,11 +900,11 @@ function showConfigurationTab() {
 	
 	function zoneJSONToTemplate(json, template) {
 	    var zoneid = json.id;
-		template.data("id", zoneid).data("name", sanitizeXSS(json.name));
+		template.data("id", zoneid).data("name", fromdb(json.name));
 		template.find("#zone_name")
 			.text(json.name)
 			.data("id", zoneid)
-			.data("name", sanitizeXSS(json.name))
+			.data("name", fromdb(json.name))
 			.data("dns1", json.dns1)
 			.data("internaldns1", json.internaldns1)
 			.data("guestcidraddress", json.guestcidraddress);
@@ -1269,17 +1269,17 @@ function showConfigurationTab() {
 	function serviceJSONToTemplate(json, template) {	
 	    template.attr("id", "service_"+json.id);	   
 		(index++ % 2 == 0)? template.addClass("smallrow_even"): template.addClass("smallrow_odd");	
-		template.data("svcId", json.id).data("svcName", sanitizeXSS(unescape(json.name)));
+		template.data("svcId", json.id).data("svcName", fromdb(json.name));
 		
 		template.find("#service_id").text(json.id);
-		template.find("#service_name").text(unescape(json.name));
-		template.find("#service_display").text(unescape(json.displaytext));
+		template.find("#service_name").text(fromdb(json.name));
+		template.find("#service_display").text(fromdb(json.displaytext));
 		template.find("#service_storagetype").text(json.storagetype);
 		template.find("#service_cpu").text(json.cpunumber + " x " + convertHz(json.cpuspeed));
 		template.find("#service_memory").text(convertBytes(parseInt(json.memory)*1024*1024));			
 		template.find("#service_offerha").text(toBooleanText(json.offerha));
 		template.find("#service_networktype").text((json.usevirtualnetwork=="true")? "Public":"Direct");
-		template.find("#service_tags").text(unescape(json.tags));
+		template.find("#service_tags").text(fromdb(json.tags));
 		
 		setDateField(json.created, template.find("#service_created"));			
 	}
@@ -1587,14 +1587,14 @@ function showConfigurationTab() {
 		} else {
 			template.addClass("smallrow_odd");
 		}
-		template.data("diskId", json.id).data("diskName", sanitizeXSS(unescape(json.name)));	
+		template.data("diskId", json.id).data("diskName", fromdb(json.name));	
 				
 		template.find("#disk_id").text(json.id);			
-		template.find("#disk_name").text(unescape(json.name));
-		template.find("#disk_description").text(unescape(json.displaytext));
+		template.find("#disk_name").text(fromdb(json.name));
+		template.find("#disk_description").text(fromdb(json.displaytext));
 	    template.find("#disk_disksize").text(convertBytes(json.disksize));
-	    template.find("#disk_tags").text(unescape(json.tags));
-		template.find("#disk_domain").text(unescape(json.domain)); 	
+	    template.find("#disk_tags").text(fromdb(json.tags));
+		template.find("#disk_domain").text(fromdb(json.domain)); 	
 	}
 		
 	function listDiskOfferings() {		  

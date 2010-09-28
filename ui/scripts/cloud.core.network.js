@@ -36,7 +36,7 @@ function showNetworkingTab(p_domainId, p_account) {
 			var zoneSelect = $("#dialog_acquire_public_ip #acquire_zone").empty();	
 			if (zones != null && zones.length > 0) {	
 			    for (var i = 0; i < zones.length; i++) {
-				    zoneSelect.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 
+				    zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
 			    }
 		    }
 		}
@@ -221,7 +221,7 @@ function showNetworkingTab(p_domainId, p_account) {
 			    var domains = json.listdomainsresponse.domain;			 
 			    if (domains != null && domains.length > 0) {
 			        for (var i = 0; i < domains.length; i++) {
-				        domainSelect.append("<option value='" + domains[i].id + "'>" + sanitizeXSS(domains[i].name) + "</option>"); 
+				        domainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 
 			        }
 			    }
 		    }
@@ -517,7 +517,7 @@ function showNetworkingTab(p_domainId, p_account) {
 								    } else if (result.jobstatus == 2) { //Fail
 								        loadingImg.hide(); 		
 							            rowContainer.show(); 
-									    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");											    					    
+									    $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");											    					    
 								    }
 							    }
 						    },
@@ -784,7 +784,7 @@ function showNetworkingTab(p_domainId, p_account) {
 								    } else if (result.jobstatus == 2) { //Fail
 								        loadingContainer.hide(); 		
 							            rowContainer.show(); 
-									    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");											    					    
+									    $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");											    					    
 								    }
 							    }
 						    },
@@ -845,7 +845,7 @@ function showNetworkingTab(p_domainId, p_account) {
 			                                loading.hide();  
 			                                rowContainer.show(); 
 										} else if (result.jobstatus == 2) { // Failed
-											$("#dialog_error").html("<p style='color:red'><b>Operation error:</b></p><br/><p style='color:red'>"+ sanitizeXSS(result.jobresult)+"</p>").dialog("open");
+											$("#dialog_error").html("<p style='color:red'><b>Operation error:</b></p><br/><p style='color:red'>"+ fromdb(result.jobresult)+"</p>").dialog("open");
 											loading.hide();  
 											rowContainer.show();  
 										}
@@ -1148,7 +1148,7 @@ function showNetworkingTab(p_domainId, p_account) {
 	//*** Network Group (begin) **********************************************************************	   
     function networkGroupJSONToTemplate(json, template) {	       
         (index++ % 2 == 0)? template.addClass("smallrow_even"): template.addClass("smallrow_odd");	    
-        template.attr("id", "networkGroup_"+json.id).data("networkGroupId", json.id).data("domainId", json.domainid).data("account",json.account).data("networkGroupName", sanitizeXSS(json.name));	      		    				   
+        template.attr("id", "networkGroup_"+json.id).data("networkGroupId", json.id).data("domainId", json.domainid).data("account",json.account).data("networkGroupName", fromdb(json.name));	      		    				   
 	    template.find("#id").text(json.id);
 	    template.find("#name").text(json.name);
 	    template.find("#description").text(json.description);	      
@@ -1597,7 +1597,7 @@ function showNetworkingTab(p_domainId, p_account) {
                                                 });                                                        
                                             });							                                                           
 					                    } else if (result.jobstatus == 2) {										        
-						                    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");		
+						                    $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");		
 						                    loadingImg.hide();  
                                             rowContainer.show();                                                         									   					    
 					                    }
