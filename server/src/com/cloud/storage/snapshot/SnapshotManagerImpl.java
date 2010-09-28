@@ -132,7 +132,6 @@ public class SnapshotManagerImpl implements SnapshotManager {
     protected SearchBuilder<SnapshotVO> PolicySnapshotSearch;
     protected SearchBuilder<SnapshotPolicyVO> PoliciesForSnapSearch;
 
-    private String _hypervisorType;
     private final boolean _shouldBeSnapshotCapable = true; // all methods here should be snapshot capable.
 
     @Override @DB
@@ -996,8 +995,6 @@ public class SnapshotManagerImpl implements SnapshotManager {
         if (configDao == null) {
             throw new ConfigurationException("Unable to get the configuration dao.");
         }
-        
-        _hypervisorType = configDao.getValue("hypervisor.type");
         
         DateUtil.IntervalType.HOURLY.setMax(NumbersUtil.parseInt(configDao.getValue("snapshot.max.hourly"), HOURLYMAX));
         DateUtil.IntervalType.DAILY.setMax(NumbersUtil.parseInt(configDao.getValue("snapshot.max.daily"), DAILYMAX));

@@ -51,6 +51,7 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
@@ -82,7 +83,6 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     static final Logger s_logger = Logger.getLogger(DownloadMonitorImpl.class);
 
 	private static final String DEFAULT_HTTP_COPY_PORT = "80";
-	private String _hyperVisorType;
     @Inject 
     VMTemplateHostDao _vmTemplateHostDao;
     @Inject
@@ -143,11 +143,8 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         	s_logger.warn("Only realhostip.com ssl cert is supported, ignoring self-signed and other certs");
         }
         
-        _hyperVisorType = _configDao.getValue("hypervisor.type");
-        
         _copyAuthPasswd = configs.get("secstorage.copy.password");
         
-
         _agentMgr.registerForHostEvents(new DownloadListener(this), true, false, false);
 		return true;
 	}
@@ -253,8 +250,11 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			}
 			return generateCopyUrl(ssVm.getPublicIpAddress(), srcTmpltHost.getInstallPath());
 		}
+		
+		VMTemplateVO tmplt = _templateDao.findById(srcTmpltHost.getTemplateId());
+		HypervisorType hyperType = tmplt.getHypervisorType();
 		/*No secondary storage vm yet*/
-		if (_hyperVisorType.equalsIgnoreCase("KVM")) {
+		if (hyperType != null && hyperType == HypervisorType.KVM) {
 			return "file://" + sourceServer.getParent() + "/" + srcTmpltHost.getInstallPath();
 		}
 		return null;

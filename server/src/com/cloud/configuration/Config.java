@@ -23,6 +23,7 @@ import java.util.List;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.ha.HighAvailabilityManager;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageManager;
@@ -133,7 +134,8 @@ public enum Config {
 	CPUOverprovisioningFactor("Advanced", ManagementServer.class, String.class, "cpu.overprovisioning.factor", "1", "Used for CPU overprovisioning calculation; available CPU will be (actualCpuCapacity * cpu.overprovisioning.factor)", null),
 	NetworkType("Advanced", ManagementServer.class, String.class, "network.type", "vlan", "The type of network that this deployment will use.", "vlan,direct"),
 	LinkLocalIpNums("Advanced", ManagementServer.class, Integer.class, "linkLocalIp.nums", "10", "The number of link local ip that needed by domR(in power of 2)", null),
-	HypervisorType("Advanced", ManagementServer.class, String.class, "hypervisor.type", "kvm", "The type of hypervisor that this deployment will use.", "kvm,xenserver"),
+	HypervisorDefaultType("Advanced", ManagementServer.class, String.class, "hypervisor.type", HypervisorType.KVM.toString(), "The type of hypervisor that this deployment will use.", "kvm|xenserver"),
+	HypervisorList("Advanced", ManagementServer.class, String.class, "hypervisor.list", HypervisorType.KVM + "," + HypervisorType.XenServer + "," + HypervisorType.VmWare, "The type of hypervisor that this deployment will use.", "kvm,xenserver,vmware"),
 	ManagementHostIPAdr("Advanced", ManagementServer.class, String.class, "host", "localhost", "The ip address of management server", null),
 	UseSecondaryStorageVm("Advanced", ManagementServer.class, Boolean.class, "secondary.storage.vm", "false", "Deploys a VM per zone to manage secondary storage if true, otherwise secondary storage is mounted on management server", null),
 	EventPurgeDelay("Advanced", ManagementServer.class, Integer.class, "event.purge.delay", "0", "Events older than specified number days will be purged", null),
