@@ -2449,13 +2449,24 @@ public class UserVmManagerImpl implements UserVmManager {
             List<VlanVO> vlansForAccount = _vlanDao.listVlansForAccountByType(dc.getId(), account.getId(), VlanType.DirectAttached);
             List<VlanVO> vlansForPod = null;
             List<VlanVO> zoneWideVlans = null;
-
+            int freeIpCount = 0;
             boolean forAccount = false;
             if (vlansForAccount.size() > 0) {
-            	forAccount = true;
-            	guestVlan = vlansForAccount.get(0);//FIXME: iterate over all vlans
+            	//iterate over the vlan to see if there are actually addresses available 
+            	for(VlanVO vlan:vlansForAccount)
+            	{
+            		freeIpCount = (_ipAddressDao.countIPs(dc.getId(), vlan.getId(), false) - _ipAddressDao.countIPs(dc.getId(), vlan.getId(), true));
+            		
+            		if(freeIpCount>0)
+            		{
+            			forAccount = true;
+                    	guestVlan = vlan;//FIXME: iterate over all vlans
+                    	break;
+            		}
+            	}
+            	
             }
-	        else 
+	        else if(!forAccount)
 	        {
 	          	//list zone wide vlans that are direct attached and tagged
 	          	//if exists pick random one
@@ -2464,11 +2475,23 @@ public class UserVmManagerImpl implements UserVmManager {
 	          	//note the dao method below does a NEQ on vlan id, hence passing untagged
 	        	zoneWideVlans = _vlanDao.searchForZoneWideVlans(dc.getId(),VlanType.DirectAttached.toString(),"untagged");
 	          	
-	          	if(zoneWideVlans!=null && zoneWideVlans.size()>0){
-	          		forZone = true;
-	          		guestVlan = zoneWideVlans.get(0);//FIXME: iterate over all vlans
+	          	if(zoneWideVlans!=null && zoneWideVlans.size()>0)
+	          	{
+	          		//iterate over zone vlans to see if addresses are available
+	          		for(VlanVO vlan : zoneWideVlans)
+	          		{
+	          			freeIpCount = (_ipAddressDao.countIPs(dc.getId(), vlan.getId(), false) - _ipAddressDao.countIPs(dc.getId(), vlan.getId(), true));
+	          		
+		          		if(freeIpCount>0)
+		          		{
+		          			forZone = true;
+		          			guestVlan = vlan;//FIXME: iterate over all vlans
+		          			break;
+		          		}
+	          		}
 	          	}
 	        }
+            
             while ((pod = _agentMgr.findPod(template, offering, dc, account.getId(), avoids)) != null) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Attempting to create direct attached vm in pod " + pod.first().getName());
