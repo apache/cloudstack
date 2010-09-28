@@ -60,8 +60,8 @@ public class UpdateCertificateCmd extends BaseCmd {
             return returnValues;
 		}
 		catch (Exception ex) {
-			s_logger.error("Exception adding config value: ", ex);
-			throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add config value : " + ex.getMessage());
+			s_logger.error("Exception updating the ssl certificate in db: ", ex);
+			throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Exception updating the ssl certificate in db: " + ex.getMessage());
 		}
 
     }
