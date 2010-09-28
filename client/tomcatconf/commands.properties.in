@@ -200,6 +200,6 @@ authorizeNetworkGroupIngress=com.cloud.api.commands.AuthorizeNetworkGroupIngress
 revokeNetworkGroupIngress=com.cloud.api.commands.RevokeNetworkGroupIngressCmd;11
 listNetworkGroups=com.cloud.api.commands.ListNetworkGroupsCmd;11
 
-registerPreallocatedLun=com.cloud.server.api.commands.RegisterPreallocatedLunCmd;1
-deletePreallocatedLun=com.cloud.server.api.commands.DeletePreallocatedLunCmd;1
+registerPreallocatedLun=com.cloud.api.commands.RegisterPreallocatedLunCmd;1
+deletePreallocatedLun=com.cloud.api.commands.DeletePreallocatedLunCmd;1
 listPreallocatedLuns=com.cloud.api.commands.ListPreallocatedLunsCmd;1
