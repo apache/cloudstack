@@ -6,104 +6,15 @@
     CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
 %>
 
-<!-- event detail panel (begin) -->
-<div class="main_title" id="right_panel_header">
-   
-    <div class="main_titleicon">
-        <img src="images/title_eventsicon.gif" alt="Event" /></div>
-   
-    <h1>Domain
-    </h1>
-</div>
-<div class="contentbox" id="right_panel_content">
-    <div class="info_detailbox errorbox" id="after_action_info_container" style="display:none">
-        <p id="after_action_info"></p>
-    </div>
-    <div class="tabbox" style="margin-top:15px;">
-        <div class="content_tabs on">
-            <%=t.t("Details")%></div>        
-    </div>
-    <div class="grid_container">
-        <div class="grid_rows odd">
-            <div class="grid_row_cell" style="width: 20%;">
-                <div class="row_celltitles">
-                    <%=t.t("id")%>:</div>
-            </div>
-            <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="id">
-                </div>
-            </div>
+<!-- treenode template (begin) -->
+<div id="treenode_template" class="tree_levelspanel" style="display:none">
+	<div class="tree_levelsbox" style="margin-left:20px;">
+        <div id="domain_title_container" class="tree_levels">
+            <div id="domain_expand_icon" class="zonetree_closedarrows"></div>
+            <div id="domain_name" class="tree_links">Domain Name</div>
         </div>
-        <div class="grid_rows odd">
-            <div class="grid_row_cell" style="width: 20%;">
-                <div class="row_celltitles">
-                    <%=t.t("Initiated.By")%>:</div>
-            </div>
-            <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="username">
-                </div>
-            </div>
-        </div>
-        <div class="grid_rows even">
-            <div class="grid_row_cell" style="width: 20%;">
-                <div class="row_celltitles">
-                    <%=t.t("Owner.Account")%>:</div>
-            </div>
-            <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="account">
-                    </div>
-            </div>
-        </div>
-        <div class="grid_rows odd">
-            <div class="grid_row_cell" style="width: 20%;">
-                <div class="row_celltitles">
-                    <%=t.t("Type")%>:</div>
-            </div>
-            <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="type">
-                </div>
-            </div>
-        </div>
-        <div class="grid_rows even">
-            <div class="grid_row_cell" style="width: 20%;">
-                <div class="row_celltitles">
-                    <%=t.t("Level")%>:</div>
-            </div>
-            <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="level">
-                </div>
-            </div>
-        </div>
-        <div class="grid_rows odd">
-            <div class="grid_row_cell" style="width: 20%;">
-                <div class="row_celltitles">
-                    <%=t.t("Description")%>:</div>
-            </div>
-            <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="description">
-                </div>
-            </div>
-        </div>
-        <div class="grid_rows even">
-            <div class="grid_row_cell" style="width: 20%;">
-                <div class="row_celltitles">
-                    <%=t.t("State")%>:</div>
-            </div>
-            <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="state">
-                </div>
-            </div>
-        </div>
-        <div class="grid_rows odd">
-            <div class="grid_row_cell" style="width: 20%;">
-                <div class="row_celltitles">
-                    <%=t.t("Date")%>:</div>
-            </div>
-            <div class="grid_row_cell" style="width: 79%;">
-                <div class="row_celltitles" id="created">
-                </div>
-            </div>
-        </div>       
+		<div id="domain_children_container" style="display:none">
+		</div>   
     </div>
 </div>
-<!-- event detail panel (end) -->
+<!-- treenode template (end) -->
