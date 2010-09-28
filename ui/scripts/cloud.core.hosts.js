@@ -41,7 +41,7 @@ function showHostsTab() {
 			var zoneSelect = dialogAddRouting.find("#host_zone").empty();								
 			if (zones != null && zones.length > 0) {
 				for (var i = 0; i < zones.length; i++) 
-					zoneSelect.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 				    
+					zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 				    
 			}
 			//dialogAddRouting.find("#host_zone").change();
 		}
@@ -58,7 +58,7 @@ function showHostsTab() {
 				var podSelect = dialogAddRouting.find("#host_pod").empty();	
 				if (pods != null && pods.length > 0) {
 					for (var i = 0; i < pods.length; i++) {
-						podSelect.append("<option value='" + pods[i].id + "'>" + sanitizeXSS(pods[i].name) + "</option>"); 
+						podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 
 					}
 				}
 				dialogAddRouting.find("#host_pod").change();
@@ -228,7 +228,7 @@ function showHostsTab() {
 				break;
 			case "host_action_enable_maint" :
 				$("#dialog_confirmation")
-				.html("<p>Please confirm you enable maintenance for host: <b>"+sanitizeXSS(hostName)+"</b>.  Enabling maintenance mode will cause a live migration of all running instances on this host to any available host.  An alert will be sent to the admin when this process has been completed.</p>")
+				.html("<p>Please confirm you enable maintenance for host: <b>"+fromdb(hostName)+"</b>.  Enabling maintenance mode will cause a live migration of all running instances on this host to any available host.  An alert will be sent to the admin when this process has been completed.</p>")
 				.dialog('option', 'buttons', { 						
 					"Confirm": function() { 							
 						$(this).dialog("close"); 
@@ -302,7 +302,7 @@ function showHostsTab() {
 				break;
 			case "host_action_cancel_maint" :
 				$("#dialog_confirmation")
-				.html("<p>Please confirm you want to cancel maintenance for host: <b>"+sanitizeXSS(hostName)+"</b>. </p>")
+				.html("<p>Please confirm you want to cancel maintenance for host: <b>"+fromdb(hostName)+"</b>. </p>")
 				.dialog('option', 'buttons', { 						
 					"Confirm": function() { 							
 						$(this).dialog("close");
@@ -377,7 +377,7 @@ function showHostsTab() {
 				break;
 			case "host_action_reconnect" :
 				$("#dialog_confirmation")
-				.html("<p>Please confirm you want to force a reconnection for host: <b>"+sanitizeXSS(hostName)+"</b>. </p>")
+				.html("<p>Please confirm you want to force a reconnection for host: <b>"+fromdb(hostName)+"</b>. </p>")
 				.dialog('option', 'buttons', { 						
 					"Confirm": function() { 							
 						$(this).dialog("close");
@@ -452,7 +452,7 @@ function showHostsTab() {
 				break;
 			case "host_action_remove" :
 				$("#dialog_confirmation")
-				.html("<p>Please confirm you want to remove this host: <b>"+sanitizeXSS(hostName)+"</b> from the management server. </p>")
+				.html("<p>Please confirm you want to remove this host: <b>"+fromdb(hostName)+"</b> from the management server. </p>")
 				.dialog('option', 'buttons', { 						
 					"Confirm": function() { 
 						$(this).dialog("close"); 
@@ -513,7 +513,7 @@ function showHostsTab() {
 		} else {
 			template.find("#row_container").addClass("row_odd");
 		}
-		template.data("hostId", json.id).data("hostName", sanitizeXSS(json.name));
+		template.data("hostId", json.id).data("hostName", fromdb(json.name));
 				
 		template.find("#routing_zone").text(json.zonename);
 		template.find("#routing_pod").text(json.podname);

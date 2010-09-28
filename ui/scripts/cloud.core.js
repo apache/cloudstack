@@ -89,6 +89,14 @@ function createURL(url) {
     return url + "&sessionkey=" + g_sessionKey;
 }
 
+function fromdb(val) {
+    return sanitizeXSS(unescape(noNull(val)));
+}
+
+function todb(val) {
+    return encodeURIComponent(escape(val));
+}
+
 function setDateField(dateValue, dateField, htmlMarkup) {
     if (dateValue != null && dateValue.length > 0) {
 	    var disconnected = new Date();
