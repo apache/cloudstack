@@ -38,7 +38,7 @@ public class CertificateVO {
     @Column(name="id")
     private Long id = null;
 
-    @Column(name="certificate")
+    @Column(name="certificate",length=65535)
     private String certificate;
 
     public CertificateVO() {}
