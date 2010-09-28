@@ -31,7 +31,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.storage.StoragePoolDetailVO;
 import com.cloud.storage.StoragePoolVO;
