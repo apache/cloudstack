@@ -141,7 +141,7 @@ setup_common() {
   fi
 
   ip route  delete default 
-  ip route add default via $GW eth2
+  ip route add default via $GW dev eth2
 }
 
 setup_dnsmasq() {
