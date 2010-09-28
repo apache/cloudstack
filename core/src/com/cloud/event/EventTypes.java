@@ -75,16 +75,18 @@ public class EventTypes {
 	public static final String EVENT_TEMPLATE_CREATE = "TEMPLATE.CREATE";
 	public static final String EVENT_TEMPLATE_DELETE = "TEMPLATE.DELETE";
 	public static final String EVENT_TEMPLATE_UPDATE = "TEMPLATE.UPDATE";
-	public static final String EVENT_TEMPLATE_COPY = "TEMPLATE.COPY";
-	public static final String EVENT_TEMPLATE_DOWNLOAD_START = "TEMPLATE.DOWNLOAD.START";
-	public static final String EVENT_TEMPLATE_DOWNLOAD_SUCCESS = "TEMPLATE.DOWNLOAD.SUCCESS";
-	public static final String EVENT_TEMPLATE_DOWNLOAD_FAILED = "TEMPLATE.DOWNLOAD.FAILED";
+    public static final String EVENT_TEMPLATE_DOWNLOAD_START = "TEMPLATE.DOWNLOAD.START";
+    public static final String EVENT_TEMPLATE_DOWNLOAD_SUCCESS = "TEMPLATE.DOWNLOAD.SUCCESS";
+    public static final String EVENT_TEMPLATE_DOWNLOAD_FAILED = "TEMPLATE.DOWNLOAD.FAILED";
+	public static final String EVENT_TEMPLATE_COPY = "TEMPLATE.COPY";	
+	public static final String EVENT_TEMPLATE_UPLOAD = "TEMPLATE.UPLOAD";	
 	
 	// Volume Events
 	public static final String EVENT_VOLUME_CREATE = "VOLUME.CREATE";
 	public static final String EVENT_VOLUME_DELETE = "VOLUME.DELETE";
 	public static final String EVENT_VOLUME_ATTACH = "VOLUME.ATTACH";
-	public static final String EVENT_VOLUME_DETACH = "VOLUME.DETACH";	
+	public static final String EVENT_VOLUME_DETACH = "VOLUME.DETACH";
+	public static final String EVENT_VOLUME_UPLOAD = "VOLUME.UPLOAD";	
 	
 	// Domains
 	public static final String EVENT_DOMAIN_CREATE = "DOMAIN.CREATE";
@@ -104,6 +106,7 @@ public class EventTypes {
     public static final String EVENT_ISO_COPY = "ISO.COPY";
     public static final String EVENT_ISO_ATTACH = "ISO.ATTACH";
     public static final String EVENT_ISO_DETACH = "ISO.DETACH";
+	public static final String EVENT_ISO_UPLOAD = "ISO.UPLOAD";
     
     //SSVM
     public static final String EVENT_SSVM_CREATE = "SSVM.CREATE";
@@ -117,6 +120,11 @@ public class EventTypes {
 	public static final String EVENT_SERVICE_OFFERING_CREATE = "SERVICE.OFFERING.CREATE";
 	public static final String EVENT_SERVICE_OFFERING_EDIT = "SERVICE.OFFERING.EDIT";
 	public static final String EVENT_SERVICE_OFFERING_DELETE = "SERVICE.OFFERING.DELETE";
+	
+	// Disk Offerings
+    public static final String EVENT_DISK_OFFERING_CREATE = "DISK.OFFERING.CREATE";
+    public static final String EVENT_DISK_OFFERING_EDIT = "DISK.OFFERING.EDIT";
+    public static final String EVENT_DISK_OFFERING_DELETE = "DISK.OFFERING.DELETE";
 	
 	// Pods
 	public static final String EVENT_POD_CREATE = "POD.CREATE";

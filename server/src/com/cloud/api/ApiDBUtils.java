@@ -63,6 +63,8 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.vm.InstanceGroupVO;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VmStats;
@@ -76,6 +78,7 @@ public class ApiDBUtils {
     private static NetworkGroupManager _networkGroupMgr;
     private static SnapshotManager _snapMgr;
     private static StorageManager _storageMgr;
+    private static UserVmManager _userVmMgr;
     private static StatsCollector _statsCollector;
 
     private static AccountDao _accountDao;
@@ -110,6 +113,7 @@ public class ApiDBUtils {
         _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
         _snapMgr = locator.getManager(SnapshotManager.class);
         _storageMgr = locator.getManager(StorageManager.class);
+        _userVmMgr = locator.getManager(UserVmManager.class);
 
         _accountDao = locator.getDao(AccountDao.class);
         _accountVlanMapDao = locator.getDao(AccountVlanMapDao.class);
@@ -155,6 +159,10 @@ public class ApiDBUtils {
 
     public static Long getPodIdForVlan(long vlanDbId) {
         return _ms.getPodIdForVlan(vlanDbId);
+    }
+
+    public static String getVersion() {
+        return _ms.getVersion();
     }
 
     public static List<UserVmVO> searchForUserVMs(Criteria c) {
@@ -220,6 +228,10 @@ public class ApiDBUtils {
     
     public static boolean isLocalStorageActiveOnHost(HostVO host) {
         return _storageMgr.isLocalStorageActiveOnHost(host);
+    }
+
+    public static InstanceGroupVO findInstanceGroupForVM(long vmId) {
+        return _userVmMgr.getGroupForVm(vmId);
     }
 
     /////////////////////////////////////////////////////////////
@@ -379,7 +391,7 @@ public class ApiDBUtils {
     }
 
     public static List<DataCenterVO> listZones() {
-        return _zoneDao.listAllActive();
+        return _zoneDao.listAll();
     }
 
     public static boolean volumeIsOnSharedStorage(long volumeId) throws InvalidParameterValueException {

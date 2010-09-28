@@ -26,6 +26,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.DestroyConsoleProxyCmd;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.ConsoleProxyVO;
 public interface ConsoleProxyManager extends Manager {
@@ -41,7 +42,7 @@ public interface ConsoleProxyManager extends Manager {
 	
 	public static final String ALERT_SUBJECT = "proxy-alert";
 	
-	public ConsoleProxyVO assignProxy(long dataCenterId, long userVmId);
+	public ConsoleProxyInfo assignProxy(long dataCenterId, long userVmId);
 	
 	public ConsoleProxyVO startProxy(long proxyVmId, long startEventId);
 	public boolean stopProxy(long proxyVmId, long startEventId);

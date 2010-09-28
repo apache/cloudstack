@@ -61,7 +61,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         sc.setParameters("instanceId", instanceId);
         sc.setParameters("status", AsyncJobResult.STATUS_IN_PROGRESS);
         
-        List<AsyncJobVO> l = listBy(sc);
+        List<AsyncJobVO> l = listIncludingRemovedBy(sc);
         if(l != null && l.size() > 0) {
         	if(l.size() > 1) {
         		s_logger.warn("Instance " + instanceType + "-" + instanceId + " has multiple pending async-job");
@@ -76,6 +76,6 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
 		SearchCriteria<AsyncJobVO> sc = expiringAsyncJobSearch.create();
 		sc.setParameters("created", cutTime);
 		Filter filter = new Filter(AsyncJobVO.class, "created", true, 0L, (long)limit);
-		return listBy(sc, filter);
+		return listIncludingRemovedBy(sc, filter);
 	}
 }

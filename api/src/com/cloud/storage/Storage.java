@@ -18,20 +18,30 @@
 package com.cloud.storage;
 
 public class Storage {
-    public enum ImageFormat {
+    public static enum ImageFormat {
         QCOW2(true, true, false),
         RAW(false, false, false),
         VHD(true, true, true),
-        ISO(false, false, false);
+        ISO(false, false, false),
+        VMDK(true, true, true, "vmw.tar");
         
         private final boolean thinProvisioned;
         private final boolean supportSparse;
         private final boolean supportSnapshot;
+        private final String fileExtension;
         
         private ImageFormat(boolean thinProvisioned, boolean supportSparse, boolean supportSnapshot) {
             this.thinProvisioned = thinProvisioned;
             this.supportSparse = supportSparse;
             this.supportSnapshot = supportSnapshot;
+            fileExtension = null;
+        }
+        
+        private ImageFormat(boolean thinProvisioned, boolean supportSparse, boolean supportSnapshot, String fileExtension) {
+            this.thinProvisioned = thinProvisioned;
+            this.supportSparse = supportSparse;
+            this.supportSnapshot = supportSnapshot;
+            this.fileExtension = fileExtension;
         }
         
         public boolean isThinProvisioned() {
@@ -47,11 +57,14 @@ public class Storage {
         }
         
         public String getFileExtension() {
-            return toString().toLowerCase();
+        	if(fileExtension == null)
+        		return toString().toLowerCase();
+        	
+        	return fileExtension;
         }
     }
     
-    public enum FileSystem {
+    public static enum FileSystem {
         Unknown,
         ext3,
         ntfs,
@@ -66,7 +79,7 @@ public class Storage {
         hfsp
     }
     
-    public enum StoragePoolType {
+    public static enum StoragePoolType {
         Filesystem(false), //local directory
         NetworkFilesystem(true), //NFS or CIFS
         IscsiLUN(true), //shared LUN, with a clusterfs overlay
@@ -84,4 +97,6 @@ public class Storage {
             return shared;
         }
     }
+
+    public static enum StorageResourceType {STORAGE_POOL, STORAGE_HOST, SECONDARY_STORAGE}
 }

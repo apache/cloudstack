@@ -1,0 +1,31 @@
+1. The buildsystemvm.sh script builds a 32-bit system vm disk based on the Debian Squeeze distro. This system vm can boot on any hypervisor thanks to the pvops support in the kernel. It is fully automated except for one step (see 4 below)
+2. The files under config/ are the specific tweaks to the default Debian configuration that are required for CloudStack operation.
+3. The variables at the top of the buildsystemvm.sh script can be customized:
+   
+	IMAGENAME=systemvm # dont touch this
+	LOCATION=/var/lib/images/systemvm #
+	MOUNTPOINT=/mnt/$IMAGENAME/ # this is where the image is mounted on your host while the vm image is built
+	IMAGELOC=$LOCATION/$IMAGENAME.img
+	PASSWORD=password # password for the vm
+	APT_PROXY= #you can put in an APT cacher such as apt-cacher-ng
+	HOSTNAME=systemvm # dont touch this
+	SIZE=2000 # dont touch this for now
+	DEBIAN_MIRROR=ftp.us.debian.org/debian 
+	MINIMIZE=true # if this is true, a lot of docs, fonts, locales and apt cache is wiped out
+
+4. The systemvm includes the (non-free) Sun JRE. You can put in the standard debian jre-headless package instead but it pulls in X and bloats the image. The sun jre package install requires a manual step of saying "yes" to the license. The packages() function is where you can swap in the standard jre
+5. You need to be 'root' to run the buildsystemvm.sh script
+
+6. The image is a raw image. However Citrix Xenserver requires the image to be in the VHD format. To convert this to VHD, follow these steps: 
+   a. The xen repository has a tool called vhd-util that compiles and runs on any linux system (http://xenbits.xensource.com/xen-4.0-testing.hg?file/8e8dd38374e9/tools/blktap2/vhd/ or full Xen source at http://www.xen.org/products/xen_source.html).
+   b. Apply this patch: http://lists.xensource.com/archives/cgi-bin/mesg.cgi?a=xen-devel&i=006101cb22f6%242004dd40%24600e97c0%24%40zhuo%40cloudex.cn.
+   c. Build the vhd-util tool
+     cd tools/blktap2
+     make
+     sudo make install
+   d. Use the vhd-util tool to convert from raw to vhd:
+    cp <raw image file> <raw image file copy>
+    vhd-util convert -s 0 -t 1 -i <raw image file copy> -o <vhd file name>
+    vhd-util convert -s 1 -t 2 -i <vhd file name> -o <vhd file name>
+7. Cloudstack requires the system vm disk to be in QCOW2 format to support the KVM hypervisor. To convert the raw disk image to qcow2, you need the qemu-img tool on the host system. 
+    qemu-img  convert -f raw -O qcow2 systemvm.img systemvm.qcow2

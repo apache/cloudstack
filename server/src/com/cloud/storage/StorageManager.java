@@ -29,8 +29,10 @@ import com.cloud.api.commands.DeletePoolCmd;
 import com.cloud.api.commands.DeleteVolumeCmd;
 import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
+import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -40,13 +42,21 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.Volume.VolumeType;
 import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.exception.ExecutionException;
+import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachineProfile;
 
 public interface StorageManager extends Manager {
+    
+    
+    VolumeVO allocateIsoInstalledVm(VMInstanceVO vm, VMTemplateVO template, DiskOfferingVO rootOffering, Long size, DataCenterVO dc, AccountVO account);
+    
 	/**
 	 * Calls the storage agent and makes the volumes sharable with this host.
 	 * 
@@ -294,4 +304,26 @@ public interface StorageManager extends Manager {
     public StoragePoolVO cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws InvalidParameterValueException;
 
 	public StoragePoolVO updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException;
+    
+    /**
+     * Allocates one volume.
+     * @param <T>
+     * @param type
+     * @param offering
+     * @param name
+     * @param size
+     * @param template
+     * @param vm
+     * @param account
+     * @return VolumeVO a persisted volume.
+     */
+    <T extends VMInstanceVO> DiskProfile allocateRawVolume(VolumeType type, String name, DiskOfferingVO offering, Long size, T vm, AccountVO owner);
+    <T extends VMInstanceVO> DiskProfile allocateTemplatedVolume(VolumeType type, String name, DiskOfferingVO offering, VMTemplateVO template, T vm, AccountVO owner);
+    
+    <T extends VMInstanceVO> void create(T vm);
+    Long findHostIdForStoragePool(StoragePoolVO pool);
+	void createCapacityEntry(StoragePoolVO storagePool, long allocated);
+
+    
+    VolumeTO[] prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException;
 }

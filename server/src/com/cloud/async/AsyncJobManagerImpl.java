@@ -506,7 +506,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
 					List<AsyncJobVO> l = _jobDao.getExpiredJobs(cutTime, 100);
 					if(l != null && l.size() > 0) {
 						for(AsyncJobVO job : l) {
-							_jobDao.delete(job.getId());
+							_jobDao.expunge(job.getId());
 						}
 					}
 					

@@ -28,7 +28,8 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.storage.Volume.StorageResourceType;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.StorageResourceType;
 
 public class SecondaryStorageListener implements Listener {
     private final static Logger s_logger = Logger.getLogger(SecondaryStorageListener.class);
@@ -82,7 +83,7 @@ public class SecondaryStorageListener implements Listener {
         if (cmd instanceof StartupStorageCommand) {
             
             StartupStorageCommand ss = (StartupStorageCommand)cmd;
-            if (ss.getResourceType() == StorageResourceType.SECONDARY_STORAGE) {
+            if (ss.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE) {
             	_ssVmMgr.onAgentConnect(agent.getDataCenterId(), cmd);
             	_ssVmMgr.generateFirewallConfiguration(agent.getId());
             	_ssVmMgr.generateSetupCommand(agent.getDataCenterId());

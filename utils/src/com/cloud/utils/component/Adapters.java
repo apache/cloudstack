@@ -17,8 +17,12 @@
  */
 package com.cloud.utils.component;
 
+import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.utils.EnumerationImpl;
 
@@ -30,13 +34,13 @@ import com.cloud.utils.EnumerationImpl;
  * the iterator even during dynamic reloading.
  * 
  **/
-public class Adapters<T extends Adapter> {
-    private List<T> _adapters;
+public class Adapters<T extends Adapter> implements Iterable<T> {
+    private Map<String, T> _map; 
     protected String      _name;
 
     public Adapters(String name, List<T> adapters) {
         _name = name;
-        _adapters = adapters;
+        set(adapters);
     }
 
     /**
@@ -49,18 +53,31 @@ public class Adapters<T extends Adapter> {
     }
 
     public Enumeration<T> enumeration() {
-        return new EnumerationImpl<T>(_adapters.iterator());
+        return new EnumerationImpl<T>(_map.values().iterator());
+    }
+    
+    @Override
+    public Iterator<T> iterator() {
+        return new EnumerationImpl<T>(_map.values().iterator());
     }
 
-    protected List<T> get() {
-        return _adapters;
+    protected Collection<T> get() {
+        return _map.values();
     }
     
     protected void set(List<T> adapters) {
-        this._adapters = adapters;
+        HashMap<String, T> map = new HashMap<String, T>(adapters.size());
+        for (T adapter : adapters) {
+            map.put(adapter.getName(), adapter);
+        }
+        this._map = map;
+    }
+    
+    public T get(String name) {
+        return _map.get(name);
     }
 
     public boolean isSet() {
-        return _adapters.size() != 0;
+        return _map.size() != 0;
     }
 }

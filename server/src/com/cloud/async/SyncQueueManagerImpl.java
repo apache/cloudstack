@@ -184,7 +184,7 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
 			if(itemVO != null) {
 				SyncQueueVO queueVO = _syncQueueDao.lock(itemVO.getQueueId(), true);
 				
-				_syncQueueItemDao.delete(itemVO.getId());
+				_syncQueueItemDao.expunge(itemVO.getId());
 				
 				queueVO.setLastProcessTime(null);
 				queueVO.setLastUpdated(DateUtil.currentGMTTime());

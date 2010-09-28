@@ -52,6 +52,7 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
         SearchCriteria<DataCenterLinkLocalIpAddressVO> sc = FreeIpSearch.create();
         sc.setParameters("dc", dcId);
         sc.setParameters("pod", podId);
+        sc.setParameters("ipAddr", NetUtils.getLinkLocalGateway());  /*explicitly removing the gateway*/
         
         Transaction txn = Transaction.currentTxn();
         try {
@@ -136,11 +137,23 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
         update(vo, sc);
     }
     
+    public void releaseIpAddress(long nicId) {
+        SearchCriteria<DataCenterLinkLocalIpAddressVO> sc = IpDcSearch.create();
+        sc.setParameters("instance", nicId);
+
+        DataCenterLinkLocalIpAddressVO vo = createForUpdate();
+        
+        vo.setTakenAt(null);
+        vo.setInstanceId(null);
+        update(vo, sc);
+    }
+    
     protected DataCenterLinkLocalIpAddressDaoImpl() {
     	super();
         FreeIpSearch = createSearchBuilder();
         FreeIpSearch.and("dc", FreeIpSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         FreeIpSearch.and("pod", FreeIpSearch.entity().getPodId(), SearchCriteria.Op.EQ);
+        FreeIpSearch.and("ipAddr", FreeIpSearch.entity().getIpAddress(), SearchCriteria.Op.NEQ);
         FreeIpSearch.and("taken", FreeIpSearch.entity().getTakenAt(), SearchCriteria.Op.NULL);
         FreeIpSearch.done();
         
@@ -173,7 +186,7 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
 		SearchCriteria<DataCenterLinkLocalIpAddressVO> sc = PodDcSearch.create();
 		sc.setParameters("podId", podId);
 		sc.setParameters("dataCenterId", dcId);
-		return listBy(sc);
+		return listIncludingRemovedBy(sc);
 	}
     
     public List<DataCenterLinkLocalIpAddressVO> listByPodIdDcIdIpAddress(long podId, long dcId, String ipAddress) {
@@ -181,7 +194,7 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
     	sc.setParameters("dcId", dcId);
 		sc.setParameters("podId", podId);
 		sc.setParameters("ipAddress", ipAddress);
-		return listBy(sc);
+		return listIncludingRemovedBy(sc);
     }
     
     public int countIPs(long podId, long dcId, boolean onlyCountAllocated) {

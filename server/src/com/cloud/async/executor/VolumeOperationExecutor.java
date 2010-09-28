@@ -86,7 +86,7 @@ public class VolumeOperationExecutor extends BaseAsyncJobExecutor {
                     eventType = EventTypes.EVENT_VOLUME_DETACH;
                     failureDescription = "Failed to detach volume";
 
-    				asyncMgr.getExecutorContext().getManagementServer().detachVolumeFromVM(param.getVolumeId(), param.getEventId());
+    				asyncMgr.getExecutorContext().getManagementServer().detachVolumeFromVM(param.getVolumeId(), param.getEventId(),param.getDeviceId(),param.getVmId());
     				success = true;
     				asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, null);
     			} else {

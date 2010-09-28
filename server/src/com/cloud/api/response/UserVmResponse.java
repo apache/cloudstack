@@ -52,6 +52,9 @@ public class UserVmResponse extends BaseResponse {
     @SerializedName("haenable")
     private Boolean haEnable;
 
+    @SerializedName("groupid")
+    private Long groupId;
+
     @SerializedName("group")
     private String group;
 
@@ -205,6 +208,14 @@ public class UserVmResponse extends BaseResponse {
 
     public void setHaEnable(Boolean haEnable) {
         this.haEnable = haEnable;
+    }
+
+    public Long getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(Long groupId) {
+        this.groupId = groupId;
     }
 
     public String getGroup() {

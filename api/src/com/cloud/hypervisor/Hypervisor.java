@@ -23,7 +23,9 @@ public class Hypervisor {
     	None, //for storage hosts
     	Xen,
     	XenServer,
-    	KVM;
+    	KVM,
+    	VmWare,
+    	VirtualBox,
+    	Parralels;
     }
-
 }

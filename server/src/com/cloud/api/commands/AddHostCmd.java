@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import java.text.DecimalFormat;
@@ -48,6 +47,7 @@ import com.cloud.vm.UserVmVO;
 @Implementation(method="discoverHosts", manager=Manager.AgentManager)
 public class AddHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddHostCmd.class.getName());
+
     private static final String s_name = "addhostresponse";
     
     /////////////////////////////////////////////////////
@@ -219,6 +219,5 @@ public class AddHostCmd extends BaseCmd {
         response.setResponses(hostResponses);
         response.setResponseName(getName());
         return response;
-        //return ApiResponseSerializer.toSerializedString(response);
     }
 }

@@ -85,7 +85,7 @@ do
   esac
 done
 
-CERT="$(dirname $0)/id_rsa"
+cert="/root/.ssh/id_rsa.cloud"
 
 # Check if DomR is up and running. If not, exit with error code 1.
 check_gw "$domRIp"
@@ -114,7 +114,7 @@ then
   exit 2
 fi
 
-ssh -p 3922 -q -o StrictHostKeyChecking=no -i $CERT root@$domRIp "/root/firewall.sh $*"
+ssh -p 3922 -q -o StrictHostKeyChecking=no -i $cert root@$domRIp "/root/firewall.sh $*"
 exit $?
 
 

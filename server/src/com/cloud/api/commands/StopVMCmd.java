@@ -15,23 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd.Manager;
-import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ResponseObject;
+import com.cloud.api.response.UserVmResponse;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.InstanceGroupVO;
 
 @Implementation(method="stopVirtualMachine", manager=Manager.UserVmManager)
 public class StopVMCmd extends BaseAsyncCmd {
@@ -82,8 +82,10 @@ public class StopVMCmd extends BaseAsyncCmd {
             response.setDisplayName(vm.getDisplayName());
         }
 
-        if (vm.getGroup() != null) {
-            response.setGroup(vm.getGroup());
+        InstanceGroupVO group = ApiDBUtils.findInstanceGroupForVM(vm.getId());
+        if (group != null) {
+            response.setGroup(group.getName());
+            response.setGroupId(group.getId());
         }
 
         if (vm.getState() != null) {

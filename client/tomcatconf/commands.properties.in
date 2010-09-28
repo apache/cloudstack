@@ -61,6 +61,7 @@ deleteTemplate=com.cloud.api.commands.DeleteTemplateCmd;15
 listTemplates=com.cloud.api.commands.ListTemplatesCmd;15
 updateTemplatePermissions=com.cloud.api.commands.UpdateTemplatePermissionsCmd;15
 listTemplatePermissions=com.cloud.api.commands.ListTemplatePermissionsCmd;15
+extractTemplate=com.cloud.api.commands.ExtractTemplateCmd;15
 
 #### iso commands
 attachIso=com.cloud.api.commands.AttachIsoCmd;15
@@ -72,6 +73,7 @@ deleteIso=com.cloud.api.commands.DeleteIsoCmd;15
 copyIso=com.cloud.api.commands.CopyIsoCmd;15
 updateIsoPermissions=com.cloud.api.commands.UpdateIsoPermissionsCmd;15
 listIsoPermissions=com.cloud.api.commands.ListIsoPermissionsCmd;15
+extractIso=com.cloud.api.commands.ExtractIsoCmd;15
 
 #### guest OS commands
 listOsTypes=com.cloud.api.commands.ListGuestOsCmd;15
@@ -139,6 +141,7 @@ listSystemVms=com.cloud.api.commands.ListSystemVMsCmd;1
 updateConfiguration=com.cloud.api.commands.UpdateCfgCmd;1
 listConfigurations=com.cloud.api.commands.ListCfgsByCmd;1
 addConfig=com.cloud.api.commands.AddConfigCmd;15
+listCapabilities=com.cloud.api.commands.ListCapabilitiesCmd;15
 
 #### pod commands
 createPod=com.cloud.api.commands.CreatePodCmd;1
@@ -177,6 +180,7 @@ detachVolume=com.cloud.api.commands.DetachVolumeCmd;15
 createVolume=com.cloud.api.commands.CreateVolumeCmd;15
 deleteVolume=com.cloud.api.commands.DeleteVolumeCmd;15
 listVolumes=com.cloud.api.commands.ListVolumesCmd;15
+extractVolume=com.cloud.api.commands.ExtractVolumeCmd;15
 
 #### registration command:  FIXME -- this really should be something in management server that
 ####                                 generates a new key for the user and they just have to
@@ -208,3 +212,10 @@ listNetworkGroups=com.cloud.api.commands.ListNetworkGroupsCmd;11
 registerPreallocatedLun=com.cloud.server.api.commands.RegisterPreallocatedLunCmd;1
 deletePreallocatedLun=com.cloud.server.api.commands.DeletePreallocatedLunCmd;1
 listPreallocatedLuns=com.cloud.api.commands.ListPreallocatedLunsCmd;1
+
+
+#### vm group commands
+createInstanceGroup=com.cloud.api.commands.CreateVMGroupCmd;15
+deleteInstanceGroup=com.cloud.api.commands.DeleteVMGroupCmd;15
+updateInstanceGroup=com.cloud.api.commands.UpdateVMGroupCmd;15
+listInstanceGroups=com.cloud.api.commands.ListVMGroupsCmd;15

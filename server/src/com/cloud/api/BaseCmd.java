@@ -27,6 +27,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.server.ManagementServerImpl;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
@@ -298,13 +299,14 @@ public abstract class BaseCmd {
         StringBuffer sb = new StringBuffer();
         if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
             // JSON response
-            sb.append("{ \"" + getName() + "\" : { \"errorcode\" : \"" + apiException.getErrorCode() + "\", \"description\" : \"" + apiException.getDescription() + "\" } }");
+            sb.append("{ \"" + getName() + "\" : { " + "\"@attributes\":{\"cloud-stack-version\":\""+ApiDBUtils.getVersion()+"\"},");
+            sb.append("\"errorcode\" : \"" + apiException.getErrorCode() + "\", \"description\" : \"" + apiException.getDescription() + "\" } }");
         } else {
             sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
             sb.append("<" + getName() + ">");
             sb.append("<errorcode>" + apiException.getErrorCode() + "</errorcode>");
             sb.append("<description>" + escapeXml(apiException.getDescription()) + "</description>");
-            sb.append("</" + getName() + ">");
+            sb.append("</" + getName() + " cloud-stack-version=\""+ApiDBUtils.getVersion()+ "\">");
         }
         return sb.toString();
     }
@@ -314,10 +316,10 @@ public abstract class BaseCmd {
 
         // set up the return value with the name of the response
         if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-            sb.append("{ \"" + getName() + "\" : { ");
+            sb.append("{ \"" + getName() + "\" : { \"@attributes\":{\"cloud-stack-version\":\""+ApiDBUtils.getVersion()+"\"},");
         } else {
             sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
-            sb.append("<" + getName() + ">");
+            sb.append("<" + getName() + " cloud-stack-version=\""+ApiDBUtils.getVersion()+ "\">");
         }
 
         int i = 0;

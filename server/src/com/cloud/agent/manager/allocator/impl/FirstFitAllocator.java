@@ -51,11 +51,12 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.Inject;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VmCharacteristics;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -68,23 +69,22 @@ import com.cloud.vm.dao.UserVmDao;
 public class FirstFitAllocator implements HostAllocator {
     private static final Logger s_logger = Logger.getLogger(FirstFitAllocator.class);
     private String _name;
-    protected HostDao _hostDao;
-    protected DetailsDao _hostDetailsDao;
-    protected UserVmDao _vmDao;
-    protected ServiceOfferingDao _offeringDao;
-    protected DomainRouterDao _routerDao;
-    protected ConsoleProxyDao _consoleProxyDao;
-    protected SecondaryStorageVmDao _secStorgaeVmDao;
-    protected StoragePoolHostDao _storagePoolHostDao;
-    protected ConfigurationDao _configDao;
-    protected GuestOSDao _guestOSDao;
-    protected GuestOSCategoryDao _guestOSCategoryDao;
+    @Inject HostDao _hostDao = null;
+    @Inject DetailsDao _hostDetailsDao = null;
+    @Inject UserVmDao _vmDao = null;
+    @Inject ServiceOfferingDao _offeringDao = null;
+    @Inject DomainRouterDao _routerDao = null;
+    @Inject ConsoleProxyDao _consoleProxyDao = null;
+    @Inject SecondaryStorageVmDao _secStorgaeVmDao = null;
+    @Inject ConfigurationDao _configDao = null;
+    @Inject GuestOSDao _guestOSDao = null; 
+    @Inject GuestOSCategoryDao _guestOSCategoryDao = null;
     float _factor = 1;
     protected String _allocationAlgorithm = "random";
     
 	@Override
-	public Host allocateTo(VmCharacteristics vm, ServiceOffering offering, Type type, DataCenterVO dc,
-			HostPodVO pod, StoragePoolVO sp, VMTemplateVO template,
+	public Host allocateTo(VirtualMachineProfile vm, ServiceOffering offering, Type type, DataCenterVO dc,
+			HostPodVO pod, Long clusterId, VMTemplateVO template,
 			Set<Host> avoid) {
 
         if (type == Host.Type.Storage) {
@@ -92,28 +92,21 @@ public class FirstFitAllocator implements HostAllocator {
             return null;
         }
         
-        s_logger.debug("Looking for hosts associated with storage pool " + sp.getId());
+        s_logger.debug("Looking for hosts in dc: " + dc.getId() + "  pod:" + pod.getId() + "  cluster:" + clusterId);
 
-        List<StoragePoolHostVO> poolhosts = _storagePoolHostDao.listByPoolId(sp.getId());
-        List<HostVO> hosts = new ArrayList<HostVO>();
-        for( StoragePoolHostVO poolhost : poolhosts ){
-            hosts.add(_hostDao.findById(poolhost.getHostId()));
-        }
-        
-        long podId = pod.getId();
-        List<HostVO> podHosts = new ArrayList<HostVO>(hosts.size());
-        Iterator<HostVO> it = hosts.iterator();
+        List<HostVO> clusterHosts = _hostDao.listBy(type, clusterId, pod.getId(), dc.getId());
+        Iterator<HostVO> it = clusterHosts.iterator();
         while (it.hasNext()) {
         	HostVO host = it.next();
-        	if (host.getPodId() == podId && !avoid.contains(host)) {
+        	if (avoid.contains(host)) {
+			it.remove();
+        	} else {
         	    if (s_logger.isDebugEnabled()) {
         	        s_logger.debug("Adding host " + host + " as possible pod host");
         	    }
-        		podHosts.add(host);
         	}
-        }
-        
-        return allocateTo(offering, template, avoid, podHosts);
+        }   
+        return allocateTo(offering, template, avoid, clusterHosts);
     }
 
     protected Host allocateTo(ServiceOffering offering, VMTemplateVO template, Set<Host> avoid, List<HostVO> hosts) {
@@ -335,17 +328,6 @@ public class FirstFitAllocator implements HostAllocator {
     public boolean configure(String name, Map<String, Object> params) {
         _name = name;
         ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        _hostDao = locator.getDao(HostDao.class);
-        _hostDetailsDao = locator.getDao(DetailsDao.class);
-        _vmDao = locator.getDao(UserVmDao.class);
-        _offeringDao = locator.getDao(ServiceOfferingDao.class);
-        _routerDao = locator.getDao(DomainRouterDao.class);
-        _consoleProxyDao = locator.getDao(ConsoleProxyDao.class);
-        _secStorgaeVmDao = locator.getDao(SecondaryStorageVmDao.class);
-        _storagePoolHostDao  = locator.getDao(StoragePoolHostDao.class);
-        _configDao = locator.getDao(ConfigurationDao.class);
-        _guestOSDao = locator.getDao(GuestOSDao.class);
-        _guestOSCategoryDao = locator.getDao(GuestOSCategoryDao.class);
     	if (_configDao != null) {
     		Map<String, String> configs = _configDao.getConfiguration(params);
             String opFactor = configs.get("cpu.overprovisioning.factor");

@@ -36,8 +36,8 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 
 @Local(value={AccountDao.class})
 public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements AccountDao {
@@ -74,7 +74,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     	SearchCriteria<AccountVO> sc = CleanupSearch.create();
     	sc.setParameters("cleanup", true);
     	
-    	return searchAll(sc, null, null, false);
+    	return searchIncludingRemoved(sc, null, null, false);
     }
     
     public Pair<User, Account> findUserAccountByApiKey(String apiKey) {
@@ -94,7 +94,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
                 u.setSecretKey(rs.getString(4));
                 u.setState(rs.getString(5));
 
-                Account a = new AccountVO(rs.getLong(6));
+                AccountVO a = new AccountVO(rs.getLong(6));
                 a.setAccountName(rs.getString(7));
                 a.setType(rs.getShort(8));
                 a.setDomainId(rs.getLong(9));
@@ -112,26 +112,26 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     public List<AccountVO> findAccountsLike(String accountName) {
         SearchCriteria<AccountVO> sc = createSearchCriteria();
         sc.addAnd("accountName", SearchCriteria.Op.LIKE, "%"+accountName+"%");
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
     public Account findActiveAccount(String accountName, Long domainId) {
         SearchCriteria<AccountVO> sc = AccountNameSearch.create("accountName", accountName);
         sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        return findOneActiveBy(sc);
+        return findOneBy(sc);
     }
 
     @Override
     public Account findAccount(String accountName, Long domainId) {
         SearchCriteria<AccountVO> sc = AccountNameSearch.create("accountName", accountName);
         sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        return findOneBy(sc);
+        return findOneIncludingRemovedBy(sc);
     }
     
     public Account findActiveAccountByName(String accountName) {
     	SearchCriteria<AccountVO> sc = AccountNameSearch.create("accountName", accountName);
-        return findOneActiveBy(sc);
+        return findOneBy(sc);
     }
 
     public List<AccountVO> findActiveAccounts(Long maxAccountId, Filter filter) {
@@ -140,7 +140,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         SearchCriteria<AccountVO> sc = createSearchCriteria();
         sc.addAnd("id", SearchCriteria.Op.LTEQ, maxAccountId);
 
-        return listActiveBy(sc, filter);
+        return listBy(sc, filter);
     }
 
     public List<AccountVO> findRecentlyDeletedAccounts(Long maxAccountId, Date earliestRemovedDate, Filter filter) {
@@ -152,7 +152,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         sc.addAnd("removed", SearchCriteria.Op.NNULL);
         sc.addAnd("removed", SearchCriteria.Op.GTEQ, earliestRemovedDate);
 
-        return listBy(sc, filter);
+        return listIncludingRemovedBy(sc, filter);
     }
 
     public List<AccountVO> findNewAccounts(Long minAccountId, Filter filter) {
@@ -161,7 +161,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         SearchCriteria<AccountVO> sc = createSearchCriteria();
         sc.addAnd("id", SearchCriteria.Op.GT, minAccountId);
 
-        return listBy(sc, filter);
+        return listIncludingRemovedBy(sc, filter);
     }
 
 	@Override

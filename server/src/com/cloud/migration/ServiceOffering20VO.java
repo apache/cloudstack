@@ -11,7 +11,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.offering.ServiceOffering.GuestIpType;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -51,7 +52,7 @@ public class ServiceOffering20VO {
     
     @Column(name="guest_ip_type")
     @Enumerated(EnumType.STRING)
-    private GuestIpType guestIpType = GuestIpType.Virtualized;
+    private NetworkOffering.GuestIpType guestIpType = NetworkOffering.GuestIpType.Virtualized;
     
     @Column(name="use_local_storage")
     private boolean useLocalStorage;
@@ -66,10 +67,10 @@ public class ServiceOffering20VO {
     }
 
     public ServiceOffering20VO(Long id, String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, boolean localStorageRequired) {
-        this(id, name, cpu, ramSize, speed, rateMbps, multicastRateMbps, offerHA, displayText, GuestIpType.Virtualized, localStorageRequired);
+        this(id, name, cpu, ramSize, speed, rateMbps, multicastRateMbps, offerHA, displayText, NetworkOffering.GuestIpType.Virtualized, localStorageRequired);
     }
     
-    public ServiceOffering20VO(Long id, String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, GuestIpType guestIpType, boolean useLocalStorage) {
+    public ServiceOffering20VO(Long id, String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, NetworkOffering.GuestIpType guestIpType, boolean useLocalStorage) {
         this.id = id;
         this.name = name;
         this.cpu = cpu;
@@ -167,11 +168,11 @@ public class ServiceOffering20VO {
 		return multicastRateMbps;
 	}
 
-	public void setGuestIpType(GuestIpType guestIpType) {
+	public void setGuestIpType(NetworkOffering.GuestIpType guestIpType) {
 		this.guestIpType = guestIpType;
 	}
 
-	public GuestIpType getGuestIpType() {
+	public NetworkOffering.GuestIpType getGuestIpType() {
 		return guestIpType;
 	}
 	

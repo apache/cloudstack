@@ -15,23 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
-import com.cloud.api.ResponseObject;
-import com.cloud.api.response.SuccessResponse;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.ResponseObject;
+import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="preparePrimaryStorageForMaintenance", manager=Manager.StorageManager)
 public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(PreparePrimaryStorageForMaintenanceCmd.class.getName());	
     private static final String s_name = "prepareprimarystorageformaintenanceresponse";
-
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

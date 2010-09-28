@@ -46,7 +46,7 @@ public class DiskTemplateDaoImpl extends GenericDaoBase<DiskTemplateVO, Long> im
     	sc.setParameters("type", type);
     	sc.setParameters("size", size);
     	
-        List<DiskTemplateVO> vos = listActiveBy(sc);
+        List<DiskTemplateVO> vos = listBy(sc);
         assert(vos.size() <= 1);   // Should only have one.  If more than one something is wrong.
         return vos.size() == 0 ? null : vos.get(0);
     }

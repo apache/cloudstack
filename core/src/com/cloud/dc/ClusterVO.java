@@ -24,11 +24,12 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.org.Cluster;
 import com.cloud.utils.NumbersUtil;
 
 @Entity
 @Table(name="cluster")
-public class ClusterVO {
+public class ClusterVO implements Cluster {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -55,7 +55,7 @@ public class SnapshotPolicyRefDaoImpl extends GenericDaoBase<SnapshotPolicyRefVO
 		SearchCriteria<SnapshotPolicyRefVO> sc = snapPolicy.create();
 	    sc.setParameters("snapshotId", snapshotId);
 	    sc.setParameters("policyId", policyId);
-	    return findOneBy(sc);
+	    return findOneIncludingRemovedBy(sc);
 	}
 	
 	@Override
@@ -63,14 +63,14 @@ public class SnapshotPolicyRefDaoImpl extends GenericDaoBase<SnapshotPolicyRefVO
 		SearchCriteria<SnapshotPolicyRefVO> sc = snapPolicy.create();
 	    sc.setParameters("snapshotId", snapshotId);
 	    sc.setParameters("policyId", policyId);
-	    return delete(sc);
+	    return expunge(sc);
 	}
 
 	@Override
 	public List<SnapshotPolicyRefVO> listBySnapshotId(long snapshotId) {
 	    SearchCriteria<SnapshotPolicyRefVO> sc = snapSearch.create();
 	    sc.setParameters("snapshotId", snapshotId);
-	    return listBy(sc);
+	    return listIncludingRemovedBy(sc);
 	}
 	
 	@Override
@@ -78,6 +78,6 @@ public class SnapshotPolicyRefDaoImpl extends GenericDaoBase<SnapshotPolicyRefVO
 	    SearchCriteria<SnapshotPolicyRefVO> sc = policySearch.create();
 	    sc.setParameters("policyId", policyId);
 	    sc.setParameters("volumeId", volumeId);
-	    return listBy(sc);
+	    return listIncludingRemovedBy(sc);
 	}
 }

@@ -1,0 +1,4 @@
+import Options
+
+if not Options.options.PRESERVECONFIG:
+	bld.install_files_filtered("${SERVERSYSCONFDIR}","conf/*")

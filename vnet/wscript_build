@@ -1,0 +1,21 @@
+import Utils
+
+if bld.env.DISTRO not in ['Windows','Mac']:
+	# build / install declarations of vnet
+	files = """vnetd/connection.c vnetd/select.c vnetd/timer.c vnetd/spinlock.c vnetd/skbuff.c
+		vnetd/vnetd.c vnet-module/skb_util.c vnet-module/sxpr_util.c vnet-module/timer_util.c
+		vnet-module/etherip.c vnet-module/vnet.c vnet-module/vnet_eval.c vnet-module/vnet_forward.c
+		vnet-module/vif.c vnet-module/tunnel.c vnet-module/sa.c vnet-module/varp.c
+		libxutil/allocate.c libxutil/enum.c libxutil/file_stream.c libxutil/hash_table.c
+		libxutil/iostream.c libxutil/lexis.c libxutil/socket_stream.c libxutil/string_stream.c
+		libxutil/sxpr.c libxutil/sxpr_parser.c libxutil/sys_net.c libxutil/sys_string.c libxutil/util.c"""
+	files = [ "src/%s"%s for s in Utils.to_list(files) ]
+	bld(
+		name='vnetd',
+		features='cc cprogram',
+		source= files,
+		includes="src/libxutil src/vnet-module src/vnetd",
+		lib='dl pthread'.split(),
+		target='%s-vnetd'%bld.env.PACKAGE,
+		install_path="${SBINDIR}"
+		)

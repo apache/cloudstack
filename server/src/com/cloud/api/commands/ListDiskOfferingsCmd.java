@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import java.util.ArrayList;
@@ -52,7 +51,6 @@ public class ListDiskOfferingsCmd extends BaseListCmd {
     @Parameter(name="name", type=CommandType.STRING)
     private String diskOfferingName;
 
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -68,7 +66,6 @@ public class ListDiskOfferingsCmd extends BaseListCmd {
     public String getDiskOfferingName() {
         return diskOfferingName;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

@@ -17,6 +17,8 @@
  */
 package com.cloud.offerings;
 
+import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -26,11 +28,19 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.network.Network.TrafficType;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="network_offerings")
 public class NetworkOfferingVO implements NetworkOffering {
+    public final static String SystemVmPublicNetwork = "System-Vm-Public-Network";
+    public final static String SystemVmGuestNetwork = "System-Vm-Guest-Network";
+    public final static String SystemVmControlNetwork = "System-Vm-Control-Network";
+    public final static String SystemVmManagementNetwork = "System-Vm-Management-Network";
+    public final static String SystemVmStorageNetwork = "System-Vm-Storage-Network";
+    
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -42,10 +52,10 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name="display_text")
     String displayText;
     
-    @Column(name="rate")
+    @Column(name="nw_rate")
     Integer rateMbps;
     
-    @Column(name="multicast_rate")
+    @Column(name="mc_rate")
     Integer multicastRateMbps;
     
     @Column(name="concurrent_connections")
@@ -54,6 +64,22 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name="type")
     @Enumerated(value=EnumType.STRING)
     GuestIpType guestIpType;
+    
+    @Column(name="traffic_type")
+    @Enumerated(value=EnumType.STRING)
+    TrafficType trafficType;
+    
+    @Column(name="system_only")
+    boolean systemOnly;
+    
+    @Column(name="tags")
+    String tags;
+    
+    @Column(name=GenericDao.REMOVED_COLUMN)
+    Date removed;
+    
+    @Column(name=GenericDao.CREATED_COLUMN)
+    Date created;
 
     @Override
     public String getDisplayText() {
@@ -68,6 +94,11 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Override
     public long getId() {
         return id;
+    }
+    
+    @Override
+    public TrafficType getTrafficType() {
+        return trafficType;
     }
 
     @Override
@@ -85,21 +116,58 @@ public class NetworkOfferingVO implements NetworkOffering {
         return rateMbps;
     }
     
+    public Date getCreated() {
+        return created;
+    }
+    
+    public boolean isSystemOnly() {
+        return systemOnly;
+    }
+    
+    public Date getRemoved() {
+        return removed;
+    }
+    
+    @Override
+    public Integer getConcurrentConnections() {
+        return concurrentConnections;
+    }
+    
+    public String getTags() {
+        return tags;
+    }
+    
+    public void setTags(String tags) {
+        this.tags = tags;
+    }
+    
     public NetworkOfferingVO() {
     }
     
-    public NetworkOfferingVO(String name, String displayText, GuestIpType type, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections) {
+    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, GuestIpType type, boolean systemOnly, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections) {
         this.name = name;
         this.displayText = displayText;
         this.guestIpType = type;
         this.rateMbps = rateMbps;
         this.multicastRateMbps = multicastRateMbps;
         this.concurrentConnections = concurrentConnections;
+        this.trafficType = trafficType;
+        this.systemOnly = systemOnly;
     }
-
+    
+    /**
+     * Network Offering for all system vms.
+     * @param name
+     * @param trafficType
+     * @param type
+     */
+    public NetworkOfferingVO(String name, TrafficType trafficType, GuestIpType type) {
+        this(name, "System Offering for " + name, trafficType, type, true, null, null, null);
+    }
+    
     @Override
-    public Integer getConcurrentConnections() {
-        return concurrentConnections;
+    public String toString() {
+        StringBuilder buf = new StringBuilder("[Network Offering [");
+        return buf.append(id).append("-").append(trafficType).append("-").append(name).append("-").append(guestIpType).append("]").toString();
     }
-
 }

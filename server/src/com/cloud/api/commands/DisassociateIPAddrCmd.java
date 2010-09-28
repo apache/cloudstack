@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
@@ -40,7 +39,6 @@ public class DisassociateIPAddrCmd extends BaseCmd {
     @Parameter(name="ipaddress", type=CommandType.STRING, required=true)
     private String ipAddress;
 
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -48,7 +46,6 @@ public class DisassociateIPAddrCmd extends BaseCmd {
     public String getIpAddress() {
         return ipAddress;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

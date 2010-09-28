@@ -22,12 +22,20 @@ public abstract class BaseAsyncCmd extends BaseCmd {
         return response;
     }
 
+    public AsyncJobManager getAsyncJobManager() {
+        return _asyncJobMgr;
+    }
+
     public void setAsyncJobManager(AsyncJobManager mgr) {
         _asyncJobMgr = mgr;
     }
 
     public void synchronizeCommand(String syncObjType, long syncObjId) {
         _asyncJobMgr.syncAsyncJobExecution(_job, syncObjType, syncObjId);
+    }
+
+    public AsyncJobVO getJob() {
+        return _job;
     }
 
     public void setJob(AsyncJobVO job) {

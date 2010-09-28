@@ -33,28 +33,30 @@ import com.cloud.agent.manager.allocator.PodAllocator;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.offering.ServiceOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.VirtualMachineTemplate;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
-import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -75,8 +77,8 @@ public class UserConcentratedAllocator implements PodAllocator {
     @Inject VMInstanceDao _vmInstanceDao;
     
     Random _rand = new Random(System.currentTimeMillis());
-    private final GlobalLock m_capacityCheckLock = GlobalLock.getInternLock("capacity.check");
     private int _hoursToSkipStoppedVMs = 24;
+    private int _hoursToSkipDestroyedVMs = 0;
     
     private int _secStorageVmRamSize = 1024;
     private int _proxyRamSize =  256;
@@ -142,7 +144,7 @@ public class UserConcentratedAllocator implements PodAllocator {
         }
         
         if (availablePods.size() == 0) {
-            s_logger.debug("There are no pods with enough memory/CPU capacity in zone" + zone.getName());
+            s_logger.debug("There are no pods with enough memory/CPU capacity in zone " + zone.getName());
             return null;
         } else {
         	// Return a random pod
@@ -154,54 +156,40 @@ public class UserConcentratedAllocator implements PodAllocator {
     }
 
     private boolean dataCenterAndPodHasEnoughCapacity(long dataCenterId, long podId, long capacityNeeded, short capacityType, long[] hostCandidate) {
-        if (m_capacityCheckLock.lock(120)) { // 2 minutes
-            try {
-                SearchCriteria<CapacityVO> sc = _capacityDao.createSearchCriteria();
-                sc.addAnd("capacityType", SearchCriteria.Op.EQ, capacityType);
-                sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, dataCenterId);
-                sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
-                List<CapacityVO> capacities = _capacityDao.search(sc, null);
-                boolean enoughCapacity = false;
-                if (capacities != null) {
-                    for (CapacityVO capacity : capacities) {
-                    	if(capacityType == CapacityVO.CAPACITY_TYPE_CPU || capacityType == CapacityVO.CAPACITY_TYPE_MEMORY) {
-                    		//
-                    		// for CPU/Memory, we now switch to static allocation
-                    		//
-	                        if ((capacity.getTotalCapacity() -
-	                        	calcHostAllocatedCpuMemoryCapacity(capacity.getHostOrPoolId(), capacityType)) >= capacityNeeded) {
+        List<CapacityVO> capacities = null;
+        
+        SearchCriteria<CapacityVO> sc = _capacityDao.createSearchCriteria();
+        sc.addAnd("capacityType", SearchCriteria.Op.EQ, capacityType);
+        sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, dataCenterId);
+        sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
+        s_logger.trace("Executing search");
+        capacities = _capacityDao.search(sc, null);
+        s_logger.trace("Done with a search");
 
-	                            hostCandidate[0] = capacity.getHostOrPoolId();
-	                            enoughCapacity = true;
-	                            break;
-	                        }
-                    	} else {
-	                        if ((capacity.getTotalCapacity() - capacity.getUsedCapacity()) >= capacityNeeded) {
-	                            hostCandidate[0] = capacity.getHostOrPoolId();
-	                            enoughCapacity = true;
-	                            break;
-	                        }
-                    	}
+        boolean enoughCapacity = false;
+        if (capacities != null) {
+            for (CapacityVO capacity : capacities) {
+                if(capacityType == CapacityVO.CAPACITY_TYPE_CPU || capacityType == CapacityVO.CAPACITY_TYPE_MEMORY) {
+                    //
+                    // for CPU/Memory, we now switch to static allocation
+                    //
+                    if ((capacity.getTotalCapacity() -
+                            calcHostAllocatedCpuMemoryCapacity(capacity.getHostOrPoolId(), capacityType)) >= capacityNeeded) {
+
+                        hostCandidate[0] = capacity.getHostOrPoolId();
+                        enoughCapacity = true;
+                        break;
+                    }
+                } else {
+                    if ((capacity.getTotalCapacity() - capacity.getUsedCapacity()) >= capacityNeeded) {
+                        hostCandidate[0] = capacity.getHostOrPoolId();
+                        enoughCapacity = true;
+                        break;
                     }
                 }
-                return enoughCapacity;
-            } finally {
-                m_capacityCheckLock.unlock();
             }
-        } else {
-        	s_logger.error("Unable to acquire synchronization lock for pod allocation");
-        	
-        	// we now try to enforce reservation-style allocation, waiting time has been adjusted
-        	// to 2 minutes
-        	return false;
-
-/*
-            // If we can't lock the table, just return that there is enough capacity and allow instance creation to fail on the agent
-            // if there is not enough capacity.  All that does is skip the optimization of checking for capacity before sending the
-            // command to the agent.
-            return true;
-*/
         }
+        return enoughCapacity;
     }
     
     private boolean skipCalculation(VMInstanceVO vm) {
@@ -215,15 +203,20 @@ public class UserConcentratedAllocator implements PodAllocator {
     		return true;
     	
     	if(vm.getState() == State.Stopped || vm.getState() == State.Destroyed) {
-    		// for stopped/Destroyed VMs, we will skip counting it if it hasn't been used for a while
+    		// for Stopped/Destroyed VMs, we will skip counting it if it hasn't been used for a while
+    		int _hoursToSkipVMs = _hoursToSkipStoppedVMs;
+    		
+    		if (vm.getState() == State.Destroyed)
+    			_hoursToSkipVMs = _hoursToSkipDestroyedVMs;
     		
     		long millisecondsSinceLastUpdate = DateUtil.currentGMTTime().getTime() - vm.getUpdateTime().getTime();
-    		if(millisecondsSinceLastUpdate > _hoursToSkipStoppedVMs*3600000L) {
+    		if(millisecondsSinceLastUpdate > _hoursToSkipVMs*3600000L) {
     			if(s_logger.isDebugEnabled())
-    				s_logger.debug("Skip counting vm " + vm.getInstanceName() + " in capacity allocation as it has been stopped for " + millisecondsSinceLastUpdate/60000 + " minutes");
+    				s_logger.debug("Skip counting " + vm.getState().toString() + " vm " + vm.getInstanceName() + " in capacity allocation as it has been " + vm.getState().toString().toLowerCase() + " for " + millisecondsSinceLastUpdate/60000 + " minutes");
     			return true;
     		}
     	}
+    	
     	return false;
     }
     
@@ -251,14 +244,14 @@ public class UserConcentratedAllocator implements PodAllocator {
         		so = _offeringDao.findById(userVm.getServiceOfferingId());
         	} else if(vm.getType() == VirtualMachine.Type.ConsoleProxy) {
         		so = new ServiceOfferingVO("Fake Offering For DomP", 1,
-    				_proxyRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
+    				_proxyRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null);
         	} else if(vm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
-        		so = new ServiceOfferingVO("Fake Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
+        		so = new ServiceOfferingVO("Fake Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null);
         	} else if(vm.getType() == VirtualMachine.Type.DomainRouter) {
-                so = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
+                so = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null);
         	} else {
         		assert(false) : "Unsupported system vm type";
-                so = new ServiceOfferingVO("Fake Offering For unknow system VM", 1, 128, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
+                so = new ServiceOfferingVO("Fake Offering For unknow system VM", 1, 128, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null);
         	}
             
             if(capacityType == CapacityVO.CAPACITY_TYPE_MEMORY) {
@@ -321,8 +314,10 @@ public class UserConcentratedAllocator implements PodAllocator {
         _name = name;
         
 		Map<String, String> configs = _configDao.getConfiguration("management-server", params);
-		String value = configs.get("capacity.skipcounting.hours");
-		_hoursToSkipStoppedVMs = NumbersUtil.parseInt(value, 24);
+		String stoppedValue = configs.get("capacity.skipcounting.hours");
+		String destroyedValue = configs.get("capacity.skipcounting.destroyed.hours");
+		_hoursToSkipStoppedVMs = NumbersUtil.parseInt(stoppedValue, 24);
+		_hoursToSkipDestroyedVMs = NumbersUtil.parseInt(destroyedValue, 0);
 
 		// TODO this is not good, there should be one place to get these values
 		_secStorageVmRamSize = NumbersUtil.parseInt(configs.get("secstorage.vm.ram.size"), 256);
@@ -362,5 +357,10 @@ public class UserConcentratedAllocator implements PodAllocator {
         }
 */
         return true;
+    }
+
+    @Override
+    public Pod allocateTo(VirtualMachineProfile vm, DataCenter dc, Set<? extends Pod> avoids) {
+        return null;
     }
 }

@@ -75,7 +75,6 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     @Parameter(name="volumeid", type=CommandType.LONG)
     private Long volumeId;
 
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -119,7 +118,6 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     public Long getVolumeId() {
         return volumeId;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

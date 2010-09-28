@@ -128,7 +128,7 @@ public class CopyIsoCmd extends BaseAsyncCmd {
     		//Return download status for admin users
             VMTemplateHostVO templateHostRef = ApiDBUtils.findTemplateHostRef(iso.getId(), destZoneId);
             
-    		if (isAdmin || iso.getAccountId() == account.getId().longValue()) {
+    		if (isAdmin || iso.getAccountId() == account.getId()) {
                 if (templateHostRef.getDownloadState()!=Status.DOWNLOADED) {
                     String templateStatus = "Processing";
                     if (templateHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {

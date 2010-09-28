@@ -10,7 +10,7 @@ usage() {
 }
 
 set -x
-CERT="/root/.ssh/id_rsa.cloud"
+cert="/root/.ssh/id_rsa.cloud"
 PORT=3922
 
 create_htaccess() {
@@ -24,7 +24,7 @@ create_htaccess() {
   entry="RewriteRule ^$file$  ../$folder/%{REMOTE_ADDR}/$file [L,NC,QSA]"
   htaccessFolder="/var/www/html/latest"
   htaccessFile=$htaccessFolder/.htaccess
-  ssh -p $PORT -o StrictHostKeyChecking=no -i $CERT root@$domrIp "mkdir -p $htaccessFolder; touch $htaccessFile; grep -F \"$entry\" $htaccessFile; if [ \$? -gt 0 ]; then echo -e \"$entry\" >> $htaccessFile; fi" >/dev/null
+  ssh -p $PORT -o StrictHostKeyChecking=no -i $cert root@$domrIp "mkdir -p $htaccessFolder; touch $htaccessFile; grep -F \"$entry\" $htaccessFile; if [ \$? -gt 0 ]; then echo -e \"$entry\" >> $htaccessFile; fi" >/dev/null
   result=$?
   
   if [ $result -eq 0 ]
@@ -32,7 +32,7 @@ create_htaccess() {
     entry="Options -Indexes\\nOrder Deny,Allow\\nDeny from all\\nAllow from $vmIp"
     htaccessFolder="/var/www/html/$folder/$vmIp"
     htaccessFile=$htaccessFolder/.htaccess
-    ssh -p $PORT -o StrictHostKeyChecking=no -i $CERT root@$domrIp "mkdir -p $htaccessFolder; echo -e \"$entry\" > $htaccessFile" >/dev/null
+    ssh -p $PORT -o StrictHostKeyChecking=no -i $cert root@$domrIp "mkdir -p $htaccessFolder; echo -e \"$entry\" > $htaccessFile" >/dev/null
     result=$?
   fi
   
@@ -47,7 +47,7 @@ copy_vm_data_file() {
   local dataFile=$5        
   
   chmod +r $dataFile
-  scp -P $PORT -o StrictHostKeyChecking=no -i $CERT $dataFile root@$domrIp:/var/www/html/$folder/$vmIp/$file >/dev/null
+  scp -P $PORT -o StrictHostKeyChecking=no -i $cert $dataFile root@$domrIp:/var/www/html/$folder/$vmIp/$file >/dev/null
   return $?
 }
 
@@ -58,7 +58,7 @@ delete_vm_data_file() {
   local file=$4
   
   vmDataFilePath="/var/www/html/$folder/$vmIp/$file"
-  ssh -p $PORT -o StrictHostKeyChecking=no -i $CERT root@$domrIp "if [ -f $vmDataFilePath ]; then rm -rf $vmDataFilePath; fi" >/dev/null
+  ssh -p $PORT -o StrictHostKeyChecking=no -i $cert root@$domrIp "if [ -f $vmDataFilePath ]; then rm -rf $vmDataFilePath; fi" >/dev/null
   return $?
 }
 

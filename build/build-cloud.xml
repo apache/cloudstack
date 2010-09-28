@@ -140,7 +140,7 @@
   </path>
 
   <path id="thirdparty.classpath">
-    <filelist files="${thirdparty.classpath}" />
+    <!--filelist files="${thirdparty.classpath}" /-->
     <fileset dir="${thirdparty.dir}" erroronmissingdir="false">
       <include name="*.jar" />
     </fileset>

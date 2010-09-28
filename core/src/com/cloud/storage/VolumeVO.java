@@ -27,6 +27,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
@@ -39,9 +40,10 @@ import com.google.gson.annotations.Expose;
 @Table(name="volumes")
 public class VolumeVO implements Volume {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @TableGenerator(name="volume_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="volume_seq", allocationSize=1)
+    @GeneratedValue(strategy=GenerationType.TABLE)
     @Column(name="id")
-    Long id;
+    long id;
     
     @Expose
     @Column(name="name")
@@ -88,6 +90,10 @@ public class VolumeVO implements Volume {
     @Column(name="created")
     Date created;
     
+    @Column(name="attached")
+    @Temporal(value=TemporalType.TIMESTAMP)
+    Date attached;
+    
     @Column(name="data_center_id")
     long dataCenterId;
     
@@ -96,7 +102,7 @@ public class VolumeVO implements Volume {
     String hostip;
 
     @Column(name="disk_offering_id")
-    Long diskOfferingId;
+    long diskOfferingId;
 
     @Expose
     @Column(name="mirror_vol")
@@ -129,7 +135,7 @@ public class VolumeVO implements Volume {
     @Expose
     @Column(name="resource_type")
     @Enumerated(EnumType.STRING)
-	StorageResourceType storageResourceType;
+	Storage.StorageResourceType storageResourceType;
     
     @Expose
     @Column(name="status", updatable = true, nullable=false)
@@ -142,6 +148,17 @@ public class VolumeVO implements Volume {
 
     @Column(name="recreatable")
     boolean recreatable;
+    
+    @Column(name="state")
+    @Enumerated(value=EnumType.STRING)
+    private State state;
+    
+    @Column(name="source_type")
+    @Enumerated(value=EnumType.STRING)
+    Volume.SourceType sourceType;
+    
+    @Column(name="source_id")
+    Long sourceId;
     
     /**
      * Constructor for data disk.
@@ -167,8 +184,23 @@ public class VolumeVO implements Volume {
         this.templateId = null;
         this.mirrorState = MirrorState.NOT_MIRRORED;
         this.mirrorVolume = null;
-        this.storageResourceType = StorageResourceType.STORAGE_POOL;
+        this.storageResourceType = Storage.StorageResourceType.STORAGE_POOL;
         this.poolType = null;
+    }
+ 
+    // Real Constructor
+    public VolumeVO(VolumeType type, String name, long dcId, long domainId, long accountId, long diskOfferingId, long size) {
+        this.volumeType = type;
+        this.name = name;
+        this.dataCenterId = dcId;
+        this.accountId = accountId;
+        this.domainId = domainId;
+        this.size = size;
+        this.mirrorVolume = null;
+        this.mirrorState = MirrorState.NOT_MIRRORED;
+        this.diskOfferingId = diskOfferingId;
+        this.status = AsyncInstanceCreateStatus.Creating;
+        this.state = State.Allocated;
     }
 
     /**
@@ -190,8 +222,7 @@ public class VolumeVO implements Volume {
     }
     
     
-    public VolumeVO(Long id, String name, long dcId, long podId, long accountId, long domainId, Long instanceId, String folder, String path, long size, Volume.VolumeType vType) {
-        this.id = id;
+    public VolumeVO(String name, long dcId, long podId, long accountId, long domainId, Long instanceId, String folder, String path, long size, Volume.VolumeType vType) {
         this.name = name;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -214,7 +245,7 @@ public class VolumeVO implements Volume {
 		return iscsiName;
 	}
 
-	public Long getId() {
+	public long getId() {
         return id;
 	}
 	
@@ -269,7 +300,8 @@ public class VolumeVO implements Volume {
         return size;
     }
     
-	public void setSize(long size) {
+	@Override
+    public void setSize(long size) {
 		this.size = size;
 	}
     
@@ -291,10 +323,6 @@ public class VolumeVO implements Volume {
 		return volumeType;
 	}
 	
-	public void setId(Long id) {
-		this.id = id;
-	}
-
 	public void setName(String name) {
 		this.name = name;
 	}
@@ -371,15 +399,16 @@ public class VolumeVO implements Volume {
 		this.mirrorState = mirrorState;
 	}
 
-	public Long getDiskOfferingId() {
+	public long getDiskOfferingId() {
 		return diskOfferingId;
 	}
 
-	public void setDiskOfferingId(Long diskOfferingId) {
+	public void setDiskOfferingId(long diskOfferingId) {
 		this.diskOfferingId = diskOfferingId;
 	}
 
-	public Long getTemplateId() {
+	@Override
+    public Long getTemplateId() {
 		return templateId;
 	}
 
@@ -404,15 +433,16 @@ public class VolumeVO implements Volume {
 	}
 
 	@Override
-	public StorageResourceType getStorageResourceType() {
+	public Storage.StorageResourceType getStorageResourceType() {
 		return storageResourceType;
 	}
 
-	public void setStorageResourceType(StorageResourceType storageResourceType2) {
+	public void setStorageResourceType(Storage.StorageResourceType storageResourceType2) {
 		this.storageResourceType = storageResourceType2;
 	}
 
-	public Long getPoolId() {
+	@Override
+    public Long getPoolId() {
 		return poolId;
 	}
 	
@@ -420,12 +450,10 @@ public class VolumeVO implements Volume {
 		this.poolId = poolId;
 	}
 	
-	@Override
     public AsyncInstanceCreateStatus getStatus() {
 		return status;
 	}
 	
-	@Override
 	public void setStatus(AsyncInstanceCreateStatus status) {
 		this.status = status;
 	}
@@ -433,6 +461,11 @@ public class VolumeVO implements Volume {
 	public Date getUpdated() {
         return updated;
     }
+	
+	@Override
+    public State getState() {
+	    return state;
+	}
 
     public void setUpdated(Date updated) {
         this.updated = updated;
@@ -490,4 +523,35 @@ public class VolumeVO implements Volume {
     public String toString() {
 	    return new StringBuilder("Vol[").append(id).append("|vm=").append(instanceId).append("|").append(volumeType).append("]").toString();
 	}
+
+	@Override
+	public SourceType getSourceType() {
+		return this.sourceType;
+	}
+
+	@Override
+	public void setSourceType(SourceType sourceType) {
+		this.sourceType = sourceType;
+	}
+	
+	@Override
+	public void setSourceId(Long sourceId){
+		this.sourceId = sourceId;
+	}
+	
+	@Override
+	public Long getSourceId(){
+		return this.sourceId;
+	}
+	
+	@Override
+	public Date getAttached(){
+		return this.attached; 
+	}
+	
+	@Override
+	public void setAttached(Date attached){
+		this.attached = attached;
+	}
+
 }

@@ -86,7 +86,6 @@ public class DiskOfferingVO implements DiskOffering {
     
     @Column(name="use_local_storage")
     private boolean useLocalStorage;
-
     
     public DiskOfferingVO() {
     }
@@ -236,4 +235,8 @@ public class DiskOfferingVO implements DiskOffering {
         
         setTags(buf.toString());
     }
+
+	public void setUseLocalStorage(boolean useLocalStorage) {
+		this.useLocalStorage = useLocalStorage;
+	}
 }

@@ -30,18 +30,18 @@ import org.apache.log4j.Logger;
 
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Volume.MirrorState;
 import com.cloud.storage.Volume.VolumeType;
+import com.cloud.storage.VolumeVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value=VolumeDao.class) @DB(txn=false)
@@ -61,6 +61,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected final GenericSearchBuilder<VolumeVO, Long> ActiveTemplateSearch;
     protected final SearchBuilder<VolumeVO> RemovedButNotDestroyedSearch;
     protected final SearchBuilder<VolumeVO> PoolIdSearch;
+    protected final SearchBuilder<VolumeVO> InstanceAndDeviceIdSearch;
     
     protected static final String SELECT_VM_SQL = "SELECT DISTINCT instance_id from volumes v where v.host_id = ? and v.mirror_state = ?";
     protected static final String SELECT_VM_ID_SQL = "SELECT DISTINCT instance_id from volumes v where v.host_id = ?";
@@ -70,7 +71,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         SearchCriteria<VolumeVO> sc = RemovedButNotDestroyedSearch.create();
         sc.setParameters("destroyed", false);
         
-        return searchAll(sc, null, null, false);
+        return searchIncludingRemoved(sc, null, null, false);
     }
     
     @Override @DB
@@ -100,7 +101,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     	SearchCriteria<VolumeVO> sc = DetachedAccountIdSearch.create();
     	sc.setParameters("accountId", accountId);
     	sc.setParameters("destroyed", false);
-    	return listActiveBy(sc);
+    	return listBy(sc);
     }
     
     @Override
@@ -108,21 +109,29 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         SearchCriteria<VolumeVO> sc = AccountIdSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("destroyed", false);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
     
     @Override
     public List<VolumeVO> findByInstance(long id) {
         SearchCriteria<VolumeVO> sc = InstanceIdSearch.create();
         sc.setParameters("instanceId", id);
-	    return listActiveBy(sc);
+	    return listBy(sc);
 	}
+   
+    @Override
+    public List<VolumeVO> findByInstanceAndDeviceId(long instanceId, long deviceId){
+    	SearchCriteria<VolumeVO> sc = InstanceAndDeviceIdSearch.create();
+    	sc.setParameters("instanceId", instanceId);
+    	sc.setParameters("deviceId", deviceId);
+    	return listBy(sc);
+    }
     
     @Override
     public List<VolumeVO> findByPoolId(long poolId) {
         SearchCriteria<VolumeVO> sc = PoolIdSearch.create();
         sc.setParameters("poolId", poolId);
-	    return listActiveBy(sc);
+	    return listBy(sc);
 	}
     
     @Override 
@@ -131,7 +140,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         sc.setParameters("instanceId", id);
         sc.setParameters("status", AsyncInstanceCreateStatus.Created);
         sc.setParameters("destroyed", false);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
     
 	@Override
@@ -139,7 +148,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         SearchCriteria<VolumeVO> sc = InstanceAndTypeSearch.create();
         sc.setParameters("instanceId", id);
         sc.setParameters("vType", vType.toString());
-	    return listActiveBy(sc);
+	    return listBy(sc);
 	}
 	
 	@Override
@@ -147,14 +156,14 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 		SearchCriteria<VolumeVO> sc = InstanceIdDestroyedSearch.create();
 		sc.setParameters("instanceId", vmId);
 		sc.setParameters("destroyed", true);
-		return listBy(sc);
+		return listIncludingRemovedBy(sc);
 	}
 	
 	@Override
 	public List<VolumeVO> findByDetachedDestroyed() {
 		SearchCriteria<VolumeVO> sc = DetachedDestroyedSearch.create();
 		sc.setParameters("destroyed", true);
-		return listActiveBy(sc);
+		return listBy(sc);
 	}
 	
 	@Override
@@ -165,7 +174,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         sc.setParameters("destroyed", false);
         sc.setParameters("status", AsyncInstanceCreateStatus.Created);
         
-        return listBy(sc);
+        return listIncludingRemovedBy(sc);
 	}
 	
 	@Override
@@ -174,7 +183,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 		sc.setParameters("template", templateId);
 		sc.setParameters("zone", zoneId);
 		
-		return listBy(sc);
+		return listIncludingRemovedBy(sc);
 	}
 
 	@Override @DB
@@ -206,7 +215,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 		SearchCriteria<VolumeVO> sc = MirrorSearch.create();
         sc.setParameters("mirrorState", MirrorState.ACTIVE.toString());
 
-	    return listBy(sc);
+	    return listIncludingRemovedBy(sc);
 	}
 	
 	@Override
@@ -215,7 +224,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 	    sc.setParameters("template", templateId);
 	    sc.setParameters("pool", poolId);
 	    
-	    List<Long> results = searchAll(sc, null);
+	    List<Long> results = searchIncludingRemoved(sc, null);
 	    assert results.size() > 0 : "How can this return a size of " + results.size();
 	    
 	    return results.get(0) > 0;
@@ -225,7 +234,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public void deleteVolumesByInstance(long instanceId) {
         SearchCriteria<VolumeVO> sc = InstanceIdSearch.create();
         sc.setParameters("instanceId", instanceId);
-        delete(sc);
+        expunge(sc);
     }
     
     @Override
@@ -234,6 +243,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     	volume.setInstanceId(vmId);
     	volume.setDeviceId(deviceId);
     	volume.setUpdated(new Date());
+    	volume.setAttached(new Date());
     	update(volumeId, volume);
     }
     
@@ -243,6 +253,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     	volume.setInstanceId(null);
         volume.setDeviceId(null);
     	volume.setUpdated(new Date());
+    	volume.setAttached(null);
     	update(volumeId, volume);
     }
     
@@ -302,6 +313,11 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         InstanceIdSearch.and("instanceId", InstanceIdSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
         InstanceIdSearch.done();
 
+        InstanceAndDeviceIdSearch = createSearchBuilder();
+        InstanceAndDeviceIdSearch.and("instanceId", InstanceAndDeviceIdSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
+        InstanceAndDeviceIdSearch.and("deviceId", InstanceAndDeviceIdSearch.entity().getDeviceId(), SearchCriteria.Op.EQ);
+        InstanceAndDeviceIdSearch.done();
+        
         PoolIdSearch = createSearchBuilder();
         PoolIdSearch.and("poolId", PoolIdSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
         PoolIdSearch.done();
@@ -343,7 +359,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 	public Pair<Long, Long> getCountAndTotalByPool(long poolId) {
         SearchCriteria<SumCount> sc = TotalSizeByPoolSearch.create();
         sc.setParameters("poolId", poolId);
-        List<SumCount> results = searchAll(sc, null);
+        List<SumCount> results = searchIncludingRemoved(sc, null);
         SumCount sumCount = results.get(0);
         return new Pair<Long, Long>(sumCount.count, sumCount.sum);
 	}

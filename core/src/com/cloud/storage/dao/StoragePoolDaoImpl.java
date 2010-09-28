@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -55,7 +54,9 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
     protected final SearchBuilder<StoragePoolVO> HostPathDcSearch;
     protected final SearchBuilder<StoragePoolVO> DcPodAnyClusterSearch;
     protected final SearchBuilder<StoragePoolVO> DeleteLvmSearch;
+    protected final SearchBuilder<StoragePoolVO> StatusSearch;
     protected final GenericSearchBuilder<StoragePoolVO, Long> MaintenanceCountSearch;
+    
     
     protected final StoragePoolDetailsDao _detailsDao;
 	
@@ -104,6 +105,10 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
         HostSearch.and("host", HostSearch.entity().getHostAddress(), SearchCriteria.Op.EQ);
         HostSearch.done();
         
+        StatusSearch = createSearchBuilder();
+        StatusSearch.and("status",StatusSearch.entity().getStatus(),SearchCriteria.Op.EQ);
+        StatusSearch.done();
+        
         HostPathDcPodSearch = createSearchBuilder();
         HostPathDcPodSearch.and("hostAddress", HostPathDcPodSearch.entity().getHostAddress(), SearchCriteria.Op.EQ);
         HostPathDcPodSearch.and("path", HostPathDcPodSearch.entity().getPath(), SearchCriteria.Op.EQ);
@@ -129,7 +134,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 	public List<StoragePoolVO> findPoolByName(String name) {
 		SearchCriteria<StoragePoolVO> sc = NameSearch.create();
         sc.setParameters("name", name);
-        return listBy(sc);
+        return listIncludingRemovedBy(sc);
 	}
 
 
@@ -137,7 +142,14 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 	public StoragePoolVO findPoolByUUID(String uuid) {
 		SearchCriteria<StoragePoolVO> sc = UUIDSearch.create();
         sc.setParameters("uuid", uuid);
-        return findOneBy(sc);
+        return findOneIncludingRemovedBy(sc);
+	}
+
+	@Override
+	public List<StoragePoolVO> findIfDuplicatePoolsExistByUUID(String uuid) {
+		SearchCriteria<StoragePoolVO> sc = UUIDSearch.create();
+        sc.setParameters("uuid", uuid);
+        return listBy(sc);
 	}
 
 
@@ -145,7 +157,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 	public List<StoragePoolVO> listByDataCenterId(long datacenterId) {
 		SearchCriteria<StoragePoolVO> sc = DatacenterSearch.create();
         sc.setParameters("datacenterId", datacenterId);
-        return listBy(sc);
+        return listIncludingRemovedBy(sc);
 	}
 
 
@@ -169,7 +181,14 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
     public List<StoragePoolVO> listByStorageHost(String hostFqdnOrIp) {
         SearchCriteria<StoragePoolVO> sc = HostSearch.create();
         sc.setParameters("host", hostFqdnOrIp);
-        return listBy(sc);
+        return listIncludingRemovedBy(sc);
+    }
+    
+    @Override
+    public List<StoragePoolVO> listPoolsByStatus(Status status){
+    	SearchCriteria<StoragePoolVO> sc = StatusSearch.create();
+    	sc.setParameters("status", status);
+    	return listBy(sc);
     }
 
     @Override
@@ -180,7 +199,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
         sc.setParameters("datacenterId", datacenterId);
         sc.setParameters("podId", podId);
         
-        return findOneBy(sc);
+        return findOneIncludingRemovedBy(sc);
     }
 
 	@Override
@@ -191,12 +210,12 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
             sc.setParameters("podId", podId);
            
             sc.setParameters("cluster", clusterId);
-            return listActiveBy(sc);
+            return listBy(sc);
 	    } else {
 	        SearchCriteria<StoragePoolVO> sc = DcPodAnyClusterSearch.create();
 	        sc.setParameters("datacenterId", datacenterId);
 	        sc.setParameters("podId", podId);
-	        return listActiveBy(sc);
+	        return listBy(sc);
 	    }
 	}
 
@@ -206,7 +225,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
         sc.setParameters("hostAddress", host);
         sc.setParameters("path", path);
         
-        return listActiveBy(sc);
+        return listIncludingRemovedBy(sc);
 	}
 	
 	public StoragePoolVO listById(Integer id)
@@ -214,7 +233,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
         SearchCriteria<StoragePoolVO> sc = HostSearch.create();
         sc.setParameters("id", id);
         
-        return findOneBy(sc);
+        return findOneIncludingRemovedBy(sc);
 	}
 	
 	@Override @DB
@@ -250,7 +269,6 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 	    if (clusterId != null) {
 	        sql.append("storage_pool.cluster_id = ? OR storage_pool.cluster_id IS NULL) AND (");
 	    }
-	    Set<Map.Entry<String, String>> entries = details.entrySet();
 	    for (Map.Entry<String, String> detail : details.entrySet()) {
 	        sql.append("((storage_pool_details.name='").append(detail.getKey()).append("') AND (storage_pool_details.value='").append(detail.getValue()).append("')) OR ");
 	    }
@@ -363,7 +381,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
         sc.setParameters("status", (Object[])statuses);
         sc.setParameters("pool", primaryStorageId);
         
-        List<Long> rs = searchAll(sc, null);
+        List<Long> rs = searchIncludingRemoved(sc, null);
         if (rs.size() == 0) {
             return 0;
         }

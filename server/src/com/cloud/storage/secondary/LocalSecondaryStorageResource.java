@@ -40,9 +40,9 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
-import com.cloud.storage.Volume;
 import com.cloud.storage.template.DownloadManager;
 import com.cloud.storage.template.DownloadManagerImpl;
 import com.cloud.storage.template.TemplateInfo;
@@ -160,7 +160,7 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
     public StartupCommand[] initialize() {
         
         final StartupStorageCommand cmd = new StartupStorageCommand(_parent, StoragePoolType.Filesystem, 1024l*1024l*1024l*1024l, _dlMgr.gatherTemplateInfo());
-        cmd.setResourceType(Volume.StorageResourceType.SECONDARY_STORAGE);
+        cmd.setResourceType(Storage.StorageResourceType.SECONDARY_STORAGE);
         cmd.setIqn(null);
         fillNetworkInformation(cmd);
         cmd.setDataCenter(_dc);

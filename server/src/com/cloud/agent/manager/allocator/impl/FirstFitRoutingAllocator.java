@@ -31,13 +31,13 @@ import com.cloud.host.Host;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.vm.VmCharacteristics;
+import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value={HostAllocator.class})
 public class FirstFitRoutingAllocator extends FirstFitAllocator {
     @Override
-    public Host allocateTo(VmCharacteristics vm, ServiceOffering offering, Host.Type type, DataCenterVO dc, HostPodVO pod,
-    		StoragePoolVO sp, VMTemplateVO template, Set<Host> avoid) {
+    public Host allocateTo(VirtualMachineProfile vm, ServiceOffering offering, Host.Type type, DataCenterVO dc, HostPodVO pod,
+    		Long clusterId, VMTemplateVO template, Set<Host> avoid) {
         try {
             NDC.push("FirstFitRoutingAllocator");
             if (type != Host.Type.Routing) {
@@ -45,7 +45,7 @@ public class FirstFitRoutingAllocator extends FirstFitAllocator {
                 return null;
             }
             //all hosts should be of type routing anyway.
-            return super.allocateTo(vm, offering, type, dc, pod, sp, template, avoid);
+            return super.allocateTo(vm, offering, type, dc, pod, clusterId, template, avoid);
         } finally {
             NDC.pop();
         }

@@ -271,7 +271,7 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
     		_vmTemplateZoneDao.persist(vmTemplateZone);
     	}
 
-    	List<VMTemplateVO> allTemplates = _vmTemplateDao.listAllActive();
+    	List<VMTemplateVO> allTemplates = _vmTemplateDao.listAll();
     	for (VMTemplateVO vt: allTemplates){
     		if (vt.isCrossZones()){
     			tmpltZone = _vmTemplateZoneDao.findByZoneTemplate(dcId, vt.getId());

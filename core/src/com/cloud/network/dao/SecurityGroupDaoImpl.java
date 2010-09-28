@@ -41,7 +41,7 @@ public class SecurityGroupDaoImpl extends GenericDaoBase<SecurityGroupVO, Long> 
     public List<SecurityGroupVO> listByAccountId(long accountId) {
         SearchCriteria<SecurityGroupVO> sc = AccountIdSearch.create();
         sc.setParameters("accountId", accountId);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
@@ -55,7 +55,7 @@ public class SecurityGroupDaoImpl extends GenericDaoBase<SecurityGroupVO, Long> 
             sc.addAnd("accountId", SearchCriteria.Op.NULL);
         }
 
-        List<SecurityGroupVO> securityGroups = listActiveBy(sc);
+        List<SecurityGroupVO> securityGroups = listBy(sc);
         return ((securityGroups != null) && !securityGroups.isEmpty());
     }
 }

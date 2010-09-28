@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
@@ -36,9 +35,14 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG)
     private Long id;
 
+    @Parameter(name="deviceid", type=CommandType.LONG)
+    private Long deviceId;
+
+    @Parameter(name="virtualmachineid", type=CommandType.LONG)
+    private Long virtualMachineId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -48,6 +52,13 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
         return id;
     }
 
+    public Long getDeviceId() {
+        return deviceId;
+    }
+
+    public Long getVirtualMachineId() {
+        return virtualMachineId;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

@@ -44,7 +44,8 @@ public class RouterExecutorHelper {
 		resultObject.setGuestMacAddress(router.getGuestMacAddress());
 		resultObject.setTemplateId(router.getTemplateId());
 		resultObject.setCreated(router.getCreated());
-		
+		resultObject.setGuestNetmask(router.getGuestNetmask());
+        
 		if (router.getHostId() != null) {
         	resultObject.setHostname(managementServer.getHostBy(router.getHostId()).getName());
         	resultObject.setHostId(router.getHostId());

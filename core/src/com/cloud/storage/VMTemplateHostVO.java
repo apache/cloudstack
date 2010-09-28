@@ -76,7 +76,7 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc {
 	
 	@Column (name="job_id")
 	private String jobId;
-	
+
 	@Column (name="pool_id")
 	private Long poolId;
 	
@@ -85,7 +85,7 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc {
 	
 	@Column (name="url")
 	private String downloadUrl;
-	
+
 	@Column(name="is_copy")
 	private boolean isCopy = false;
     
@@ -263,4 +263,5 @@ public class VMTemplateHostVO implements VMTemplateStorageResourceAssoc {
 	public boolean isCopy() {
 		return isCopy;
 	}
+
 }

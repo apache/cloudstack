@@ -59,7 +59,7 @@ public class UpgradeManagerImpl implements UpgradeManager {
     String _name;
     String _minimalVersion;
     String _recommendedVersion;
-    String _upgradeUrl;
+//    String _upgradeUrl;
     String _agentPath;
     long _checkInterval;
     
@@ -137,10 +137,10 @@ public class UpgradeManagerImpl implements UpgradeManager {
         return "File will be deployed.";
     }
     
-    @Override
-    public String getAgentUrl() {
-        return _upgradeUrl;
-    }
+//    @Override
+//    public String getAgentUrl() {
+//        return _upgradeUrl;
+//    }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -177,12 +177,12 @@ public class UpgradeManagerImpl implements UpgradeManager {
                 _recommendedVersion = _minimalVersion;
             }
 
-            _upgradeUrl = configs.get("upgrade.url");
+            //_upgradeUrl = configs.get("upgrade.url");
             
-			if (_upgradeUrl == null) {
-				s_logger.debug("There is no upgrade url found in configuration table");
-                // _upgradeUrl = "http://updates.vmops.com/releases/rss.xml";
-            }
+//			if (_upgradeUrl == null) {
+//				s_logger.debug("There is no upgrade url found in configuration table");
+//                // _upgradeUrl = "http://updates.vmops.com/releases/rss.xml";
+//            }
 
             return true;
         } catch (IOException ex) {

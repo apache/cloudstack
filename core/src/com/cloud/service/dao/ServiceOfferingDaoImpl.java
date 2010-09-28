@@ -49,7 +49,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     public ServiceOfferingVO findByName(String name) {
         SearchCriteria<ServiceOfferingVO> sc = UniqueNameSearch.create();
         sc.setParameters("name", name);
-        List<ServiceOfferingVO> vos = searchAll(sc, null, null, false);
+        List<ServiceOfferingVO> vos = searchIncludingRemoved(sc, null, null, false);
         if (vos.size() == 0) {
             return null;
         }

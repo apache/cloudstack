@@ -17,25 +17,54 @@
  */
 package com.cloud.vm;
 
-import com.cloud.offerings.NetworkOfferingVO;
+import java.util.List;
+
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.StorageUnavailableException;
+import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.user.AccountVO;
+import com.cloud.utils.Pair;
+import com.cloud.utils.component.Manager;
 
 /**
  * Manages allocating resources to vms.
  */
-public interface VmManager {
+public interface VmManager extends Manager {
     
-    VMInstanceVO allocate(VMInstanceVO vm, 
-            ServiceOfferingVO serviceOffering, 
-            NetworkOfferingVO[] networkOfferings, 
-            DiskOfferingVO[] diskOffering);
+    <T extends VMInstanceVO> VirtualMachineProfile allocate(T vm,
+            VMTemplateVO template,
+            ServiceOfferingVO serviceOffering,
+            Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
+            List<Pair<DiskOfferingVO, Long>> dataDiskOfferings,
+            List<Pair<NetworkConfigurationVO, NicProfile>> networks, 
+            DeploymentPlan plan,
+            AccountVO owner) throws InsufficientCapacityException, StorageUnavailableException;
     
-    void create(VMInstanceVO vm);
+    <T extends VMInstanceVO> VirtualMachineProfile allocate(T vm,
+            VMTemplateVO template,
+            ServiceOfferingVO serviceOffering,
+            Long rootSize,
+            Pair<DiskOfferingVO, Long> dataDiskOffering,
+            List<Pair<NetworkConfigurationVO, NicProfile>> networks,
+            DeploymentPlan plan,
+            AccountVO owner) throws InsufficientCapacityException, StorageUnavailableException;
     
-    void start();
+    <T extends VMInstanceVO> VirtualMachineProfile allocate(T vm,
+            VMTemplateVO template,
+            ServiceOfferingVO serviceOffering,
+            List<NetworkConfigurationVO> networkProfiles,
+            DeploymentPlan plan,
+            AccountVO owner) throws InsufficientCapacityException, StorageUnavailableException;
     
-    void stop();
+    <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException;
+    
+    <T extends VMInstanceVO> T stop(T vm) throws AgentUnavailableException, ConcurrentOperationException;
     
     void destroy();
     

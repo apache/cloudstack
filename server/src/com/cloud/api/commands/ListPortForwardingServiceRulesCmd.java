@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import java.util.ArrayList;
@@ -54,7 +53,6 @@ public class ListPortForwardingServiceRulesCmd extends BaseListCmd {
 
     @Parameter(name="portforwardingserviceid", type=CommandType.LONG)
     private Long portForwardingServiceId;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////

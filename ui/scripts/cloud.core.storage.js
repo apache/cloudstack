@@ -16,14 +16,14 @@
  * 
  */
 
-// Version: 1.9.1.452
+// Version: @VERSION@
 
 function showStorageTab(domainId, targetTab) {      
     var currentSubMenu;
        		
     var populateZoneField = function(isAdmin) {         
         $.ajax({
-	            data: createURL("command=listZones&available=true&response=json"+maxPageSize),
+	        data: createURL("command=listZones&available=true&response=json"+maxPageSize),
 		    dataType: "json",
 		    success: function(json) {
 			    var zones = json.listzonesresponse.zone;					    
@@ -50,7 +50,7 @@ function showStorageTab(domainId, targetTab) {
     
     var populateDiskOfferingField = function() {        
         $.ajax({
-	            data: createURL("command=listDiskOfferings&response=json"),
+	        data: createURL("command=listDiskOfferings&response=json"),
 		    dataType: "json",
 		    success: function(json) {			    
 		        var offerings = json.listdiskofferingsresponse.diskoffering;								
@@ -75,7 +75,7 @@ function showStorageTab(domainId, targetTab) {
 			    var volumeVmSelect = $("#dialog_attach_volume").find("#volume_vm").empty();					
 			    if (instances != null && instances.length > 0) {
 				    for (var i = 0; i < instances.length; i++) {
-					    volumeVmSelect.append("<option value='" + instances[i].id + "'>" + getVmName(instances[i].name, instances[i].displayname)+ "</option>"); 
+					    volumeVmSelect.append("<option value='" + instances[i].id + "'>" + getVmName(instances[i].name, instances[i].displayname) + "</option>"); 
 				    }				    
 			    }
 				$.ajax({
@@ -86,7 +86,7 @@ function showStorageTab(domainId, targetTab) {
 						var instances = json.listvirtualmachinesresponse.virtualmachine;								
 						if (instances != null && instances.length > 0) {
 							for (var i = 0; i < instances.length; i++) {
-								volumeVmSelect.append("<option value='" + instances[i].id + "'>" + sanitizeXSS(instances[i].name) + "</option>");
+								volumeVmSelect.append("<option value='" + instances[i].id + "'>" + getVmName(instances[i].name, instances[i].displayname) + "</option>");
 							}				    
 						}
 					}
@@ -274,8 +274,10 @@ function showStorageTab(domainId, targetTab) {
 			setDateField(json.created, template.find("#volume_created"));			
 		   		    		
 			if(json.type=="ROOT") {
-			} else {
-				// DataDisk
+			    if (json.vmstate == "Stopped") 
+			        template.find("#volume_action_create_template_span").show();	
+			} 
+			else { //json.type=="DATADISK": "detach disk" is allowed, "create template" is disallowed.	
 				if (json.virtualmachineid != undefined) {
 					if (json.storagetype == "shared" && (json.vmstate == "Running" || json.vmstate == "Stopped")) {
 						template.find("#volume_action_detach_span").show();
@@ -531,7 +533,8 @@ function showStorageTab(domainId, targetTab) {
 	                         
 	                         var name = thisDialog.find("#name").val();	 
 	                         var displayText = thisDialog.find("#display_text").val();	 
-	                         var osTypeId = thisDialog.find("#os_type").val(); 	                                           
+	                         var osTypeId = thisDialog.find("#os_type").val(); 	  
+	                         var password = thisDialog.find("#password").val();	                                         
 	                         thisDialog.dialog("close");	
 	                         		     	                                                         	                                                  						
 							 var loadingImg = template.find(".adding_loading");							
@@ -541,7 +544,7 @@ function showStorageTab(domainId, targetTab) {
 				             rowContainer.hide(); 	                                  
 	                                                    
 	                         $.ajax({
-					                 data: createURL("command=createTemplate&snapshotid="+snapshotId+"&name="+name+"&displaytext="+displayText+"&ostypeid="+osTypeId+"&response=json"),
+					                 data: createURL("command=createTemplate&snapshotid="+snapshotId+"&name="+name+"&displaytext="+displayText+"&ostypeid="+osTypeId+"&passwordEnabled="+password+"&response=json"),
 						         dataType: "json",
 						         success: function(json) {							            					           								 
 							        var jobId = json.createtemplateresponse.jobid;					        
@@ -592,28 +595,29 @@ function showStorageTab(domainId, targetTab) {
 	        }
 	    }); 
 	    
-			$("#volume_action_snapshot_grid, #volume_action_take_snapshot_container, #volume_action_recurring_snapshot_container").show();
-			$("#submenu_snapshot").show().bind("click", function(event) {			        
-				event.preventDefault();
-			  
-				currentSubMenu.addClass("submenu_links_off").removeClass("submenu_links_on");  	
-				$(this).addClass("submenu_links_on").removeClass("submenu_links_off");			    		    
-				currentSubMenu = $(this);
-				
-				$("#submenu_content_snapshot").show();
-				$("#submenu_content_pool").hide();
-				$("#submenu_content_storage").hide();  
-				$("#submenu_content_volume").hide(); 
-				
-				var submenuContent = $("#submenu_content_snapshot");			
-				if (isAdmin)
-				    submenuContent.find("#adv_search_domain_li, #adv_search_account_li").show();  
-				else  //There are no fields in Advanced Search Dialog Box for non-admin user. So, hide Advanced Search Link.
-				    submenuContent.find("#advanced_search_link").hide(); 
-							 
-				currentPage = 1;  			
-				listSnapshots();
-			});  
+		$("#volume_action_snapshot_grid, #volume_action_take_snapshot_container, #volume_action_recurring_snapshot_container").show();
+		$("#submenu_snapshot").show().bind("click", function(event) {			        
+			event.preventDefault();
+		  
+			currentSubMenu.addClass("submenu_links_off").removeClass("submenu_links_on");  	
+			$(this).addClass("submenu_links_on").removeClass("submenu_links_off");			    		    
+			currentSubMenu = $(this);
+			
+			$("#submenu_content_snapshot").show();
+			$("#submenu_content_pool").hide();
+			$("#submenu_content_storage").hide();  
+			$("#submenu_content_volume").hide(); 
+			
+			var submenuContent = $("#submenu_content_snapshot");			
+			if (isAdmin)
+			    submenuContent.find("#adv_search_domain_li, #adv_search_account_li").show();  
+			else  //There are no fields in Advanced Search Dialog Box for non-admin user. So, hide Advanced Search Link.
+			    submenuContent.find("#advanced_search_link").hide(); 
+						 
+			currentPage = 1;  			
+			listSnapshots();
+		});  
+		
 		if (getHypervisorType() == "kvm") {
 		    $("#dialog_add_pool #pool_cluster_container").hide();
 		}
@@ -979,7 +983,7 @@ function showStorageTab(domainId, targetTab) {
 				            rowContainer.hide(); 
 				                					            					        
 						    $.ajax({
-							        data: createURL("command=deleteVolume&id="+volumeId+"&response=json"),
+							    data: createURL("command=deleteVolume&id="+volumeId+"&response=json"),
 								dataType: "json",
 								success: function(json) {							                    					                    				                				                
 									volumeTemplate.slideUp("slow", function(){
@@ -1596,7 +1600,8 @@ function showStorageTab(domainId, targetTab) {
 	                         
 	                         var name = thisDialog.find("#name").val();	 
 	                         var displayText = thisDialog.find("#display_text").val();	 
-	                         var osTypeId = thisDialog.find("#os_type").val(); 	                                           
+	                         var osTypeId = thisDialog.find("#os_type").val(); 	
+	                         var password = thisDialog.find("#password").val();		                                           
 	                         thisDialog.dialog("close");	
 	                         		     	                                                         	                                                  						
 							 var loadingImg = template.find(".adding_loading");							
@@ -1606,7 +1611,7 @@ function showStorageTab(domainId, targetTab) {
 				             rowContainer.hide(); 	                                  
 	                                                    
 	                         $.ajax({
-					                 data: createURL("command=createTemplate&snapshotid="+snapshotId+"&name="+name+"&displaytext="+displayText+"&ostypeid="+osTypeId+"&response=json"),
+					                 data: createURL("command=createTemplate&snapshotid="+snapshotId+"&name="+name+"&displaytext="+displayText+"&ostypeid="+osTypeId+"&passwordEnabled="+password+"&response=json"),
 						         dataType: "json",
 						         success: function(json) {							            					           								 
 							        var jobId = json.createtemplateresponse.jobid;					        

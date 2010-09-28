@@ -21,7 +21,8 @@ E_AGENTRECONFIGFAILED = 9
 E_AGENTFAILEDTOSTART = 10
 E_NOFQDN = 11
 E_SELINUXENABLED = 12
-E_USAGE = os.EX_USAGE
+try: E_USAGE = os.EX_USAGE
+except AttributeError: E_USAGE = 64
 
 E_NEEDSMANUALINTERVENTION = 13
 E_INTERRUPTED = 14
@@ -45,9 +46,11 @@ elif os.path.exists("/etc/redhat-release") and not os.path.exists("/etc/fedora-r
 elif os.path.exists("/etc/legal") and "Ubuntu" in file("/etc/legal").read(-1): distro = Ubuntu
 else: distro = Unknown
 
-
+logFileName=None
 # ==================  LIBRARY UTILITY CODE=============
-
+def setLogFile(logFile):
+	global logFileName
+	logFileName=logFile
 def read_properties(propfile):
 	if not hasattr(propfile,"read"): propfile = file(propfile)
 	properties = propfile.read().splitlines()
@@ -63,9 +66,10 @@ def read_properties(propfile):
 def stderr(msgfmt,*args):
 	"""Print a message to stderr, optionally interpolating the arguments into it"""
 	msgfmt += "\n"
+	if logFileName != None:
+		sys.stderr = open(logFileName, 'a+')
 	if args: sys.stderr.write(msgfmt%args)
 	else: sys.stderr.write(msgfmt)
-	sys.stderr.flush()
 
 def exit(errno=E_GENERIC,message=None,*args):
 	"""Exit with an error status code, printing a message to stderr if specified"""
@@ -325,6 +329,7 @@ class TaskFailed(Exception): pass
 
 class ConfigTask:
 	name = "generic config task"
+	autoMode=False
 	def __init__(self): pass
 	def done(self):
 		"""Returns true if the config task has already been done in the past, false if it hasn't"""
@@ -342,6 +347,10 @@ class ConfigTask:
 		else:
 			for msg in it: stderr(msg)
 		stderr("Completed %s"%self.name)
+	def setAutoMode(self, autoMode):
+		self.autoMode = autoMode
+	def  isAutoMode(self):
+		return self.autoMode
 
 
 # ============== these are some configuration tasks ==================
@@ -551,7 +560,9 @@ save"""%(automatic,self.brname,inconfigfile,self.brname,inconfigfile,dev)
 				raise TaskFailed("Network reconfiguration failed")
 		
 		yield "We are going to restart network services now, to make the network changes take effect.  Hit ENTER when you are ready."
-		raw_input()
+		if self.isAutoMode(): pass
+        	else:
+		    raw_input()
 		
 		# if we reach here, then if something goes wrong we should attempt to revert the runinng state
 		# if not, then no point
@@ -881,6 +892,7 @@ def prompt_for_hostpods(zonespods):
 		for n,(z,p) in enumerate(zonespods):
 			print "%3d) %s, %s"%(n,z,p)
 		print "================"
+		print "> ",
 		zoneandpod = raw_input().strip()
 		
 		if not zoneandpod:
@@ -900,7 +912,7 @@ def prompt_for_hostpods(zonespods):
 	
 # this configures the agent
 
-def setup_agent_config(configfile):
+def setup_agent_config(configfile, host, zone, pod, cluster, guid):
 	stderr("Examining Agent configuration")
 	fn = configfile
 	text = file(fn).read(-1)
@@ -908,29 +920,40 @@ def setup_agent_config(configfile):
 	confopts = dict([ m.split("=",1) for m in lines if "=" in m and not m.startswith("#") ])
 	confposes = dict([ (m.split("=",1)[0],n) for n,m in enumerate(lines) if "=" in m and not m.startswith("#") ])
 	
-	if not "guid" in confopts:
-		stderr("Generating GUID for this Agent")
-		confopts['guid'] = uuidgen().stdout.strip()
+	if guid != None:
+		confopts['guid'] = guid
+	else:
+		if not "guid" in confopts:
+			stderr("Generating GUID for this Agent")
+			confopts['guid'] = uuidgen().stdout.strip()
 	
-	try: host = confopts["host"]
-	except KeyError: host = "localhost"
-	stderr("Please enter the host name of the management server that this agent will connect to: (just hit ENTER to go with %s)",host)
-	newhost = raw_input().strip()
-	if newhost: host = newhost
+	if host == None:
+		try: host = confopts["host"]
+		except KeyError: host = "localhost"
+		stderr("Please enter the host name of the management server that this agent will connect to: (just hit ENTER to go with %s)",host)
+		print "> ",
+		newhost = raw_input().strip()
+		if newhost: host = newhost
+
 	confopts["host"] = host
 	
 	stderr("Querying %s for zones and pods",host)
 	
 	try:
-		x = list_zonespods(confopts['host'])
-		zoneandpod = prompt_for_hostpods(x)
-		if zoneandpod:
-			confopts["zone"],confopts["pod"] = zoneandpod
-			stderr("You selected zone %s pod %s",confopts["zone"],confopts["pod"])
-		else:
-			stderr("Skipped -- using the previous zone %s pod %s",confopts["zone"],confopts["pod"])
+	    if zone == None or pod == None:
+			x = list_zonespods(confopts['host'])
+			zoneandpod = prompt_for_hostpods(x)
+			if zoneandpod:
+				confopts["zone"],confopts["pod"] = zoneandpod
+				stderr("You selected zone %s pod %s",confopts["zone"],confopts["pod"])
+			else:
+				stderr("Skipped -- using the previous zone %s pod %s",confopts["zone"],confopts["pod"])
+	    else:
+			confopts["zone"] = zone
+			confopts["pod"] = pod
+			confopts["cluster"] = cluster
 	except (urllib2.URLError,urllib2.HTTPError),e:
-		stderr("Query failed: %s.  Defaulting to zone %s pod %s",confopts["zone"],confopts["pod"])
+		stderr("Query failed: %s.  Defaulting to zone %s pod %s",str(e),confopts["zone"],confopts["pod"])
 
 	for opt,val in confopts.items():
 		line = "=".join([opt,val])
@@ -940,7 +963,7 @@ def setup_agent_config(configfile):
 	text = "\n".join(lines)
 	file(fn,"w").write(text)
 
-def setup_consoleproxy_config(configfile):
+def setup_consoleproxy_config(configfile, host, zone, pod):
 	stderr("Examining Console Proxy configuration")
 	fn = configfile
 	text = file(fn).read(-1)
@@ -952,25 +975,31 @@ def setup_consoleproxy_config(configfile):
 		stderr("Generating GUID for this Console Proxy")
 		confopts['guid'] = uuidgen().stdout.strip()
 
-	try: host = confopts["host"]
-	except KeyError: host = "localhost"
-	stderr("Please enter the host name of the management server that this console-proxy will connect to: (just hit ENTER to go with %s)",host)
-	newhost = raw_input().strip()
-	if newhost: host = newhost
+        if host == None:
+		try: host = confopts["host"]
+		except KeyError: host = "localhost"
+		stderr("Please enter the host name of the management server that this console-proxy will connect to: (just hit ENTER to go with %s)",host)
+		print "> ",
+		newhost = raw_input().strip()
+		if newhost: host = newhost
 	confopts["host"] = host
 
 	stderr("Querying %s for zones and pods",host)
 	
 	try:
-		x = list_zonespods(confopts['host'])
-		zoneandpod = prompt_for_hostpods(x)
-		if zoneandpod:
-			confopts["zone"],confopts["pod"] = zoneandpod
-			stderr("You selected zone %s pod %s",confopts["zone"],confopts["pod"])
+                if zone == None or pod == None:
+			x = list_zonespods(confopts['host'])
+			zoneandpod = prompt_for_hostpods(x)
+			if zoneandpod:
+				confopts["zone"],confopts["pod"] = zoneandpod
+				stderr("You selected zone %s pod %s",confopts["zone"],confopts["pod"])
+			else:
+				stderr("Skipped -- using the previous zone %s pod %s",confopts["zone"],confopts["pod"])
 		else:
-			stderr("Skipped -- using the previous zone %s pod %s",confopts["zone"],confopts["pod"])
+			confopts["zone"] = zone
+			confopts["pod"] = pod
 	except (urllib2.URLError,urllib2.HTTPError),e:
-		stderr("Query failed: %s.  Defaulting to zone %s pod %s",e,confopts["zone"],confopts["pod"])
+		stderr("Query failed: %s.  Defaulting to zone %s pod %s",str(e),confopts["zone"],confopts["pod"])
 
 	for opt,val in confopts.items():
 		line = "=".join([opt,val])

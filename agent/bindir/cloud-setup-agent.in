@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys, os, subprocess, errno, re, traceback
+import sys, os, subprocess, errno, re, traceback, getopt
 
 # ---- This snippet of code adds the sources path and the waf configured PYTHONDIR to the Python path ----
 # ---- We do this so cloud_utils can be looked up in the following order:
@@ -37,13 +37,44 @@ backupdir = "@SHAREDSTATEDIR@/@AGENTPATH@/etcbackup"
 
 #=================== the magic happens here ====================
 
-stderr("Welcome to the Cloud Agent setup")
-stderr("")
 
 try:
+# parse cmd line	
+	opts, args = getopt.getopt(sys.argv[1:], "a", ["host=", "zone=", "pod=", "cluster=", "no-kvm", "guid="])
+	host=None
+	zone=None
+	pod=None
+  	cluster=None
+	guid=None
+    	autoMode=False
+	do_check_kvm = True	
+	for opt, arg in opts:
+		if opt == "--host":
+			if arg != "":
+				host = arg
+		elif opt == "--zone":
+			if arg != "":
+				zone = arg
+		elif opt == "--pod":
+			if arg != "":
+				pod = arg
+		elif opt == "--cluster":
+			if arg != "":
+				cluster = arg
+		elif opt == "--guid":
+			if arg != "":
+				guid = arg
+		elif opt == "--no-kvm":
+			do_check_kvm = False
+        	elif opt == "-a":
+            		autoMode=True
+		
+	if autoMode:
+		cloud_utils.setLogFile("/var/log/cloud/setupAgent.log")
 	
+	stderr("Welcome to the Cloud Agent setup")
+	stderr("")
 	# pre-flight checks for things that the administrator must fix
-	do_check_kvm = not ( "--no-kvm" in sys.argv[1:] )
 	try:
 		for f,n in cloud_utils.preflight_checks(
 				do_check_kvm=do_check_kvm
@@ -59,6 +90,8 @@ try:
 	
 	try:
 		tasks = cloud_utils.config_tasks(brname)
+        	for t in tasks:
+            		t.setAutoMode(autoMode)
 		if all( [ t.done() for t in tasks ] ):
 			
 			stderr("All configuration tasks have been performed already")
@@ -83,7 +116,7 @@ try:
 		stderr(str(e))
 		bail(cloud_utils.E_SETUPFAILED,"Cloud Agent setup failed")
 	
-	setup_agent_config(configfile)
+	setup_agent_config(configfile, host, zone, pod, cluster, guid)
 	stderr("Enabling and starting the Cloud Agent")
 	stop_service(servicename)
 	enable_service(servicename)

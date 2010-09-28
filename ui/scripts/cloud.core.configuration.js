@@ -596,8 +596,12 @@ function showConfigurationTab() {
                     array1.push("&cidr="+encodeURIComponent(newCidr));
                 if(newStartip != oldStartip)
                     array1.push("&startIp="+encodeURIComponent(newStartip));    
-                if(newEndip != oldEndip && newEndip != null && newEndip.length > 0)  
+                if(newEndip != oldEndip && newEndip != null && newEndip.length > 0) { 
+                    if(newStartip == oldStartip) {
+                        array1.push("&startIp="+encodeURIComponent(newStartip));  //startIp needs to be passed to updatePod API when endIp is passed to updatePod API.
+                    }
 					array1.push("&endIp="+encodeURIComponent(newEndip));	
+		        }
 				if(newGateway != oldGateway && newGateway != null && newGateway.length > 0)				             
 				    array1.push("&gateway="+encodeURIComponent(newGateway)); 
 				
@@ -697,10 +701,7 @@ function showConfigurationTab() {
 					isTagged = thisDialog.find("#add_publicip_vlan_tagged").val() == "tagged";
 				}
 				
-				if (isDirect && isTagged) 
-					isValid &= validateString("Account", thisDialog.find("#add_publicip_vlan_account"), thisDialog.find("#add_publicip_vlan_account_errormsg"), false); //required
-				else
-				    isValid &= validateString("Account", thisDialog.find("#add_publicip_vlan_account"), thisDialog.find("#add_publicip_vlan_account_errormsg"), true); //optional
+				isValid &= validateString("Account", thisDialog.find("#add_publicip_vlan_account"), thisDialog.find("#add_publicip_vlan_account_errormsg"), true); //optional
 				
 				if (isTagged) {
 					isValid &= validateNumber("VLAN", thisDialog.find("#add_publicip_vlan_vlan"), thisDialog.find("#add_publicip_vlan_vlan_errormsg"), 2, 4095);
@@ -717,15 +718,11 @@ function showConfigurationTab() {
 				} else {
 					vlan = "&vlan=untagged";
 				}
-				var directParams = "";
-				if (isDirect && isTagged) {
-					directParams = "&domainId="+trim(thisDialog.find("#add_publicip_vlan_domain").val())+"&account="+trim(thisDialog.find("#add_publicip_vlan_account").val());
-				} else if (isDirect && !isTagged) {
-					directParams = "&podId="+trim(thisDialog.find("#add_publicip_vlan_pod").val());
-				} else if (!isDirect && (dialogAddVlanForZone.find("#add_publicip_vlan_scope").val()=="account-specific")) {  //public VLAN, account-specific
-				    directParams = "&domainId="+trim(thisDialog.find("#add_publicip_vlan_domain").val())+"&account="+trim(thisDialog.find("#add_publicip_vlan_account").val());
-				}					
-				
+								
+				var scopeParams = "";
+				if(dialogAddVlanForZone.find("#add_publicip_vlan_scope").val()=="account-specific")
+				    scopeParams = "&domainId="+trim(thisDialog.find("#add_publicip_vlan_domain").val())+"&account="+trim(thisDialog.find("#add_publicip_vlan_account").val());    
+								
 				var type = "true";
 				if (getNetworkType() == "vlan") type = trim(thisDialog.find("#add_publicip_vlan_type").val());
 				var gateway = trim(thisDialog.find("#add_publicip_vlan_gateway").val());
@@ -747,7 +744,7 @@ function showConfigurationTab() {
 		        template.fadeIn("slow");					
 				
 				$.ajax({
-				  data: createURL("command=createVlanIpRange&forVirtualNetwork="+type+"&zoneId="+id+vlan+directParams+"&gateway="+encodeURIComponent(gateway)+"&netmask="+encodeURIComponent(netmask)+"&startip="+encodeURIComponent(startip)+"&endip="+encodeURIComponent(endip)+"&response=json"),
+				  data: createURL("command=createVlanIpRange&forVirtualNetwork="+type+"&zoneId="+id+vlan+scopeParams+"&gateway="+encodeURIComponent(gateway)+"&netmask="+encodeURIComponent(netmask)+"&startip="+encodeURIComponent(startip)+"&endip="+encodeURIComponent(endip)+"&response=json"),
 					dataType: "json",
 					success: function(json) {
 						var vlan = json.createvlaniprangeresponse;
@@ -1041,21 +1038,16 @@ function showConfigurationTab() {
 	dialogAddVlanForZone.find("#add_publicip_vlan_type").change(function(event) {
 	    var addPublicipVlanTagged = dialogAddVlanForZone.find("#add_publicip_vlan_tagged").empty();
 	   	
-		if ($(this).val() == "false") { //direct VLAN (only tagged option)				
-			dialogAddVlanForZone.find("#add_publicip_vlan_scope_container").hide();		
+		// default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 
+		dialogAddVlanForZone.find("#add_publicip_vlan_scope").change(); 
+		
+		if ($(this).val() == "false") { //direct VLAN (only tagged option)		
 			addPublicipVlanTagged.append('<option value="tagged">tagged</option>');
 							
-			dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container").show();
-			dialogAddVlanForZone.find("#add_publicip_vlan_domain_container").show();
-			dialogAddVlanForZone.find("#add_publicip_vlan_account_container").show();
+			dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container").show();			
 			dialogAddVlanForZone.find("#add_publicip_vlan_pod_container").hide();
 			
-		} else { //public VLAN				
-			dialogAddVlanForZone.find("#add_publicip_vlan_scope_container").show();
-			
-			// default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 
-			dialogAddVlanForZone.find("#add_publicip_vlan_scope").change(); 					
-							
+		} else { //public VLAN	
 			addPublicipVlanTagged.append('<option value="untagged">untagged</option>').append('<option value="tagged">tagged</option>');	
 			
 			if (dialogAddVlanForZone.find("#add_publicip_vlan_tagged") == "tagged") {
@@ -1070,20 +1062,14 @@ function showConfigurationTab() {
 	});
 			
 	if (getNetworkType() != "vnet") {
-		dialogAddVlanForZone.find("#add_publicip_vlan_tagged").change(function(event) {
-			if (dialogAddVlanForZone.find("#add_publicip_vlan_type").val() == "false") { //direct VLAN (only tagged option)						
-				dialogAddVlanForZone.find("#add_publicip_vlan_scope_container").hide();					
-				dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container").show();
-				dialogAddVlanForZone.find("#add_publicip_vlan_domain_container").show();
-				dialogAddVlanForZone.find("#add_publicip_vlan_account_container").show();
-				dialogAddVlanForZone.find("#add_publicip_vlan_pod_container").hide();					
+		dialogAddVlanForZone.find("#add_publicip_vlan_tagged").change(function(event) {			
+			// default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 
+			dialogAddVlanForZone.find("#add_publicip_vlan_scope").change(); 	
 			
+			if (dialogAddVlanForZone.find("#add_publicip_vlan_type").val() == "false") { //direct VLAN (only tagged option)						
+				dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container").show();				
+				dialogAddVlanForZone.find("#add_publicip_vlan_pod_container").hide();	
 			} else { //public VLAN		
-			    dialogAddVlanForZone.find("#add_publicip_vlan_scope_container").show();
-			    
-			    // default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 
-			    dialogAddVlanForZone.find("#add_publicip_vlan_scope").change(); 				
-			    
 				if ($(this).val() == "tagged") {
 					dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container").show();
 					dialogAddVlanForZone.find("#add_publicip_vlan_pod_container").hide();
@@ -1098,7 +1084,7 @@ function showConfigurationTab() {
 		dialogAddVlanForZone.find("#add_publicip_vlan_container").hide();
 	}
 	
-	dialogAddVlanForZone.find("#add_publicip_vlan_scope").change(function(event) {
+	dialogAddVlanForZone.find("#add_publicip_vlan_scope").change(function(event) {	   
 	    if($(this).val() == "zone-wide") {
 	        dialogAddVlanForZone.find("#add_publicip_vlan_domain_container").hide();
 			dialogAddVlanForZone.find("#add_publicip_vlan_account_container").hide();    
@@ -1244,7 +1230,7 @@ function showConfigurationTab() {
 				
 				dialogEditService.find("#service_name").text(svcName);
 				dialogEditService.find("#edit_service_name").val(svcName);
-				dialogEditService.find("#edit_service_display").val(template.find("#service_display").text());
+			    dialogEditService.find("#edit_service_display").val(template.find("#service_displaytext").text());
 				dialogEditService.find("#edit_service_offerha").val(toBooleanValue(template.find("#service_offerha").text()));					
 				
 				dialogEditService
@@ -1260,9 +1246,9 @@ function showConfigurationTab() {
 				
 				        var moreCriteria = [];	
 				        var name = trim(thisDialog.find("#edit_service_name").val());
-				        moreCriteria.push("&name="+encodeURIComponent(name));						        
+				        moreCriteria.push("&name="+encodeURIComponent(escape(name)));						        
 						var displaytext = trim(thisDialog.find("#edit_service_display").val());
-						moreCriteria.push("&displayText="+encodeURIComponent(displaytext));								
+						moreCriteria.push("&displayText="+encodeURIComponent(escape(displaytext)));								
 						var offerha = trim(thisDialog.find("#edit_service_offerha").val());
 						moreCriteria.push("&offerha="+offerha);								
 										
@@ -1316,17 +1302,17 @@ function showConfigurationTab() {
 	function serviceJSONToTemplate(json, template) {	
 	    template.attr("id", "service_"+json.id);	   
 		(index++ % 2 == 0)? template.addClass("smallrow_even"): template.addClass("smallrow_odd");	
-		template.data("svcId", json.id).data("svcName", sanitizeXSS(json.name));
+		template.data("svcId", json.id).data("svcName", sanitizeXSS(unescape(json.name)));
 		
 		template.find("#service_id").text(json.id);
-		template.find("#service_name").text(json.name);
-		template.find("#service_displaytext").text(json.displaytext);
+		template.find("#service_name").text(unescape(json.name));
+		template.find("#service_displaytext").text(unescape(json.displaytext));
 		template.find("#service_storagetype").text(json.storagetype);
 		template.find("#service_cpu").text(json.cpunumber + " x " + convertHz(json.cpuspeed));
 		template.find("#service_memory").text(convertBytes(parseInt(json.memory)*1024*1024));			
 		template.find("#service_offerha").text(toBooleanText(json.offerha));
 		template.find("#service_networktype").text(toNetworkType(json.usevirtualnetwork));
-		template.find("#service_tags").text(json.tags);
+		template.find("#service_tags").text(unescape(json.tags));
 		
 		setDateField(json.created, template.find("#service_created"));			
 	}
@@ -1454,10 +1440,10 @@ function showConfigurationTab() {
 									
 				var array1 = [];						
 				var name = trim(thisDialog.find("#add_service_name").val());
-				array1.push("&name="+encodeURIComponent(name));	
+				array1.push("&name="+encodeURIComponent(escape(name)));	
 				
 				var display = trim(thisDialog.find("#add_service_display").val());
-				array1.push("&displayText="+encodeURIComponent(display));	
+				array1.push("&displayText="+encodeURIComponent(escape(display)));	
 				
 				var storagetype = trim(thisDialog.find("#add_service_storagetype").val());
 				array1.push("&storageType="+storagetype);	
@@ -1480,7 +1466,7 @@ function showConfigurationTab() {
 				
 				var tags = trim(thisDialog.find("#add_service_tags").val());
 				if(tags != null && tags.length > 0)
-				    array1.push("&tags="+encodeURIComponent(tags));		
+				    array1.push("&tags="+encodeURIComponent(escape(tags)));		
 				
 				thisDialog.dialog("close");
 				$.ajax({
@@ -1529,7 +1515,7 @@ function showConfigurationTab() {
 				var isValid = true;					
 				isValid &= validateString("Name", thisDialog.find("#add_disk_name"), thisDialog.find("#add_disk_name_errormsg"));
 				isValid &= validateString("Description", thisDialog.find("#add_disk_description"), thisDialog.find("#add_disk_description_errormsg"));
-				isValid &= validateNumber("Disk size", thisDialog.find("#add_disk_disksize"), thisDialog.find("#add_disk_disksize_errormsg"), 1, null); 
+				isValid &= validateNumber("Disk size", thisDialog.find("#add_disk_disksize"), thisDialog.find("#add_disk_disksize_errormsg"), 0, null); 
 				isValid &= validateString("Tags", thisDialog.find("#add_disk_tags"), thisDialog.find("#add_disk_tags_errormsg"), true);	//optional	
 				if (!isValid) return;		
 				
@@ -1544,17 +1530,17 @@ function showConfigurationTab() {
 					
 				var array1 = [];					
 				var name = trim(thisDialog.find("#add_disk_name").val());
-				array1.push("&name="+encodeURIComponent(name));
+				array1.push("&name="+encodeURIComponent(escape(name)));
 				
 				var description = trim(thisDialog.find("#add_disk_description").val());	
-				array1.push("&displaytext="+encodeURIComponent(description));
+				array1.push("&displaytext="+encodeURIComponent(escape(description)));
 							
 				var disksize = trim(thisDialog.find("#add_disk_disksize").val());
 				array1.push("&disksize="+disksize);
 				
 				var tags = trim(thisDialog.find("#add_disk_tags").val());
 				if(tags != null && tags.length > 0)
-				    array1.push("&tags="+encodeURIComponent(tags));		
+				    array1.push("&tags="+encodeURIComponent(escape(tags)));		
 						
 				thisDialog.dialog("close");
 				$.ajax({
@@ -1649,7 +1635,7 @@ function showConfigurationTab() {
 						var dialogBox = $(this);					
 						dialogBox.dialog("close");
 						$.ajax({
-						  data: createURL("command=updateDiskOffering&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(display)+"&id="+diskId+"&response=json"),
+						  data: createURL("command=updateDiskOffering&name="+encodeURIComponent(escape(name))+"&displayText="+encodeURIComponent(escape(display))+"&id="+diskId+"&response=json"),
 							dataType: "json",
 							success: function(json) {									   				    
 								template.find("#disk_description").text(display);
@@ -1699,15 +1685,14 @@ function showConfigurationTab() {
 		} else {
 			template.addClass("smallrow_odd");
 		}
-		template.data("diskId", json.id).data("diskName", sanitizeXSS(json.name));	
+		template.data("diskId", json.id).data("diskName", sanitizeXSS(unescape(json.name)));	
 				
 		template.find("#disk_id").text(json.id);			
-		template.find("#disk_name").text(json.name);
-		template.find("#disk_description").text(json.displaytext);
+		template.find("#disk_name").text(unescape(json.name));
+		template.find("#disk_description").text(unescape(json.displaytext));
 	    template.find("#disk_disksize").text(convertBytes(json.disksize));
-	    template.find("#disk_tags").text(json.tags);
-		template.find("#disk_domain").text(json.domain); 			
-	    template.find("#disk_ismirrored").text(json.ismirrored);	
+	    template.find("#disk_tags").text(unescape(json.tags));
+		template.find("#disk_domain").text(unescape(json.domain)); 		
 	}
 		
 	function listDiskOfferings() {		  

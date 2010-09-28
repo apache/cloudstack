@@ -24,7 +24,7 @@ import java.util.Date;
  *
  */
 public interface VMTemplateStorageResourceAssoc {
-	public static enum Status  {UNKNOWN, DOWNLOAD_ERROR, NOT_DOWNLOADED, DOWNLOAD_IN_PROGRESS, DOWNLOADED, ABANDONED}
+	public static enum Status  {UNKNOWN, DOWNLOAD_ERROR, NOT_DOWNLOADED, DOWNLOAD_IN_PROGRESS, DOWNLOADED, ABANDONED, UPLOADED, NOT_UPLOADED, UPLOAD_ERROR, UPLOAD_IN_PROGRESS}
 
 	public String getInstallPath();
 

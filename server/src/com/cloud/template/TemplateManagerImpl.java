@@ -44,8 +44,12 @@ import com.cloud.api.commands.CopyTemplateCmd;
 import com.cloud.api.commands.DeleteIsoCmd;
 import com.cloud.api.commands.DeleteTemplateCmd;
 import com.cloud.api.commands.DetachIsoCmd;
+import com.cloud.api.commands.ExtractIsoCmd;
+import com.cloud.api.commands.ExtractTemplateCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
+import com.cloud.async.AsyncJobManager;
+import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
@@ -70,6 +74,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.Upload.Type;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -86,6 +91,7 @@ import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
+import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -101,6 +107,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -125,6 +132,7 @@ public class TemplateManagerImpl implements TemplateManager {
     @Inject StoragePoolHostDao _poolHostDao;
     @Inject EventDao _eventDao;
     @Inject DownloadMonitor _downloadMonitor;
+    @Inject UploadMonitor _uploadMonitor;
     @Inject UserAccountDao _userAccountDao;
     @Inject AccountDao _accountDao;
     @Inject UserDao _userDao;
@@ -165,7 +173,7 @@ public class TemplateManagerImpl implements TemplateManager {
         
         long accountId = 1L; // default to system account
         if (account != null) {
-            accountId = account.getId().longValue();
+            accountId = account.getId();
         }
         
         Account accountObj;
@@ -249,7 +257,7 @@ public class TemplateManagerImpl implements TemplateManager {
                 
         long accountId = 1L; // default to system account
         if (account != null) {
-            accountId = account.getId().longValue();
+            accountId = account.getId();
         }
         
         Account accountObj;
@@ -378,7 +386,7 @@ public class TemplateManagerImpl implements TemplateManager {
         
         VMTemplateVO template = new VMTemplateVO(id, name, format, isPublic, featured, fs, url.toString(), requiresHvm, bits, accountId, chksum, displayText, enablePassword, guestOSId, bootable);
         if (zoneId == null) {
-            List<DataCenterVO> dcs = _dcDao.listAll();
+            List<DataCenterVO> dcs = _dcDao.listAllIncludingRemoved();
 
         	for (DataCenterVO dc: dcs) {
     			_tmpltDao.addTemplateToZone(template, dc.getId());
@@ -396,6 +404,123 @@ public class TemplateManagerImpl implements TemplateManager {
         _accountMgr.incrementResourceCount(userAccount.getAccountId(), ResourceType.template);
         
         return id;
+    }
+
+    @Override
+    public void extract(ExtractIsoCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long templateId = cmd.getId();
+        Long zoneId = cmd.getZoneId();
+        String url = cmd.getUrl();
+
+        extract(account, templateId, url, zoneId, true, cmd.getJob(), cmd.getAsyncJobManager());
+    }
+
+    @Override
+    public void extract(ExtractTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long templateId = cmd.getId();
+        Long zoneId = cmd.getZoneId();
+        String url = cmd.getUrl();
+
+        extract(account, templateId, url, zoneId, true, cmd.getJob(), cmd.getAsyncJobManager());
+    }
+
+    private void extract(Account account, Long templateId, String url, Long zoneId, boolean isISO, AsyncJobVO job, AsyncJobManager mgr) throws InvalidParameterValueException, PermissionDeniedException {
+        String desc = "template";
+        if (isISO) {
+            desc = "ISO";
+        }
+
+        VMTemplateVO template = _tmpltDao.findById(templateId);
+        if (template == null) {
+            throw new InvalidParameterValueException("Unable to find template with id " + templateId);
+        }
+        if (template.getName().startsWith("xs-tools") ){
+            throw new InvalidParameterValueException("Unable to extract the " + desc + " " + template.getName() + " It is not allowed");
+        }
+        if (isISO) {
+            if (template.getFormat() != ImageFormat.ISO ){
+                throw new InvalidParameterValueException("Unsupported format, could not extract the ISO");
+            }
+        } else {
+            if (template.getFormat() == ImageFormat.ISO ){
+                throw new InvalidParameterValueException("Unsupported format, could not extract the template");
+            }
+        }
+
+        if (_dcDao.findById(zoneId) == null) {
+            throw new IllegalArgumentException("Please specify a valid zone.");
+        }
+
+        if (url.toLowerCase().contains("file://")){
+            throw new InvalidParameterValueException("file:// type urls are currently unsupported");
+        }
+
+        URI uri = null;
+        try {
+            uri = new URI(url);
+            if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("ftp") )) {
+               throw new InvalidParameterValueException("Unsupported scheme for url: " + url);
+            }
+        } catch (URISyntaxException ex) {
+            throw new InvalidParameterValueException("Invalid url given: " + url);
+        }
+
+        String host = uri.getHost();
+        try {
+            InetAddress hostAddr = InetAddress.getByName(host);
+            if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress() ) {
+                throw new InvalidParameterValueException("Illegal host specified in url");
+            }
+            if (hostAddr instanceof Inet6Address) {
+                throw new InvalidParameterValueException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
+            }
+        } catch (UnknownHostException uhe) {
+            throw new InvalidParameterValueException("Unable to resolve " + host);
+        }
+                
+        if (account != null) {                  
+            if(!isAdmin(account.getType())){
+                if (template.getAccountId() != account.getId()){
+                    throw new PermissionDeniedException("Unable to find " + desc + " with ID: " + templateId + " for account: " + account.getAccountName());
+                }
+            } else {
+                Account userAccount = _accountDao.findById(template.getAccountId());
+                if((userAccount == null) || !_domainDao.isChildDomain(account.getDomainId(), userAccount.getDomainId())) {
+                    throw new PermissionDeniedException("Unable to extract " + desc + " " + templateId + " to " + url + ", permission denied.");
+                }
+            }
+        }
+
+        HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
+        VMTemplateHostVO tmpltHostRef = null;
+        if (secondaryStorageHost != null) {
+            tmpltHostRef = _tmpltHostDao.findByHostTemplate(secondaryStorageHost.getId(), templateId);
+            if (tmpltHostRef != null && tmpltHostRef.getDownloadState() != com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+                throw new InvalidParameterValueException("The " + desc + " has not been downloaded ");
+            }
+        }
+
+        if ( _uploadMonitor.isTypeUploadInProgress(templateId, isISO ? Type.ISO : Type.TEMPLATE) ){
+            throw new IllegalArgumentException(template.getName() + " upload is in progress. Please wait for some time to schedule another upload for the same"); 
+        }
+
+        long userId = UserContext.current().getUserId();
+        long accountId = template.getAccountId();
+        String event = isISO ? EventTypes.EVENT_ISO_UPLOAD : EventTypes.EVENT_TEMPLATE_UPLOAD;
+        long eventId = EventUtils.saveScheduledEvent(userId, accountId, event, "Extraction job");
+  
+// FIXME:  scheduled event should've already been saved, we should be saving this started event here...
+//        String event = template.getFormat() == ImageFormat.ISO ? EventTypes.EVENT_ISO_UPLOAD : EventTypes.EVENT_TEMPLATE_UPLOAD;
+//        EventUtils.saveStartedEvent(template.getAccountId(), template.getAccountId(), event, "Starting upload of " +template.getName()+ " to " +url, cmd.getStartEventId());
+
+        extract(template, url, tmpltHostRef, zoneId, eventId, job.getId(), mgr);
+    }
+
+    @Override
+    public void extract(VMTemplateVO template, String url, VMTemplateHostVO tmpltHostRef, Long zoneId, long eventId, long asyncJobId, AsyncJobManager asyncMgr){
+        _uploadMonitor.extractTemplate(template, url, tmpltHostRef, zoneId, eventId, asyncJobId, asyncMgr);
     }
     
     @Override @DB
@@ -476,14 +601,21 @@ public class TemplateManagerImpl implements TemplateManager {
                 return templateStoragePoolRef;
             }
             String url = origUrl + "/" + templateHostRef.getInstallPath();
-            PrimaryStorageDownloadCommand dcmd = new PrimaryStorageDownloadCommand(template.getUniqueName(), url, template.getFormat(), template.getAccountId(), pool.getId(), pool.getUuid());
+            PrimaryStorageDownloadCommand dcmd = new PrimaryStorageDownloadCommand(template.getUniqueName(), url, template.getFormat(), 
+            	template.getAccountId(), pool.getId(), pool.getUuid());
+            HostVO secondaryStorageHost = _hostDao.findSecondaryStorageHost(pool.getDataCenterId());
+            assert(secondaryStorageHost != null);
+            dcmd.setSecondaryStorageUrl(secondaryStorageHost.getStorageUrl());
+            // TODO temporary hacking, hard-coded to NFS primary data store
+            dcmd.setPrimaryStorageUrl("nfs://" + pool.getHostAddress() + pool.getPath());
             
             for (StoragePoolHostVO vo : vos) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Downloading " + templateId + " via " + vo.getHostId());
                 }
             	dcmd.setLocalPath(vo.getLocalPath());
-                DownloadAnswer answer = (DownloadAnswer)_agentMgr.easySend(vo.getHostId(), dcmd);
+            	// set 120 min timeout for this command
+                DownloadAnswer answer = (DownloadAnswer)_agentMgr.easySend(vo.getHostId(), dcmd, 120*60*1000);
                 if (answer != null) {
             		templateStoragePoolRef.setDownloadPercent(templateStoragePoolRef.getDownloadPercent());
             		templateStoragePoolRef.setDownloadState(answer.getDownloadStatus());
@@ -905,7 +1037,7 @@ public class TemplateManagerImpl implements TemplateManager {
         SearchBuilder<HostVO> HostSearch = _hostDao.createSearchBuilder();
         HostSearch.and("dcId", HostSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         
-        HostTemplateStatesSearch.join("host", HostSearch, HostSearch.entity().getId(), HostTemplateStatesSearch.entity().getHostId());
+        HostTemplateStatesSearch.join("host", HostSearch, HostSearch.entity().getId(), HostTemplateStatesSearch.entity().getHostId(), JoinBuilder.JoinType.INNER);
         HostSearch.done();
         HostTemplateStatesSearch.done();
         
@@ -1070,11 +1202,11 @@ public class TemplateManagerImpl implements TemplateManager {
 		
     	if (account != null) {
     	    if (!isAdmin(account.getType())) {
-				if ((vmInstanceCheck != null) && (account.getId().longValue() != vmInstanceCheck.getAccountId())) {
+				if ((vmInstanceCheck != null) && (account.getId() != vmInstanceCheck.getAccountId())) {
 		            throw new PermissionDeniedException(msg + ". Permission denied.");
 		        }
 
-	    		if ((template != null) && (!template.isPublicTemplate() && (account.getId().longValue() != template.getAccountId()) && (!template.getName().startsWith("xs-tools")))) {
+	    		if ((template != null) && (!template.isPublicTemplate() && (account.getId() != template.getAccountId()) && (!template.getName().startsWith("xs-tools")))) {
                     throw new PermissionDeniedException(msg + ". Permission denied.");
                 }
                 

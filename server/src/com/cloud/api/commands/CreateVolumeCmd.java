@@ -121,12 +121,11 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
         response.setAccountName(ApiDBUtils.findAccountById(volume.getAccountId()).getAccountName());
         response.setDomainId(volume.getDomainId());
         response.setDiskOfferingId(volume.getDiskOfferingId());
-        
-        if (volume.getDiskOfferingId() != null) {
-            DiskOfferingVO diskOffering = ApiDBUtils.findDiskOfferingById(volume.getDiskOfferingId());
-            response.setDiskOfferingName(diskOffering.getName());
-            response.setDiskOfferingDisplayText(diskOffering.getDisplayText());
-        }
+
+        DiskOfferingVO diskOffering = ApiDBUtils.findDiskOfferingById(volume.getDiskOfferingId());
+        response.setDiskOfferingName(diskOffering.getName());
+        response.setDiskOfferingDisplayText(diskOffering.getDisplayText());
+
         response.setDomainName(ApiDBUtils.findDomainById(volume.getDomainId()).getName());
         response.setStorageType("shared"); // NOTE: You can never create a local disk volume but if that changes, we need to change this
         if (volume.getPoolId() != null) {

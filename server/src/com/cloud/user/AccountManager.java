@@ -113,4 +113,6 @@ public interface AccountManager extends Manager {
      * @throws InvalidParameterValueException
      */
 	ResourceLimitVO updateResourceLimit(UpdateResourceLimitCmd cmd) throws InvalidParameterValueException;
+	
+	AccountVO getSystemAccount();
 }

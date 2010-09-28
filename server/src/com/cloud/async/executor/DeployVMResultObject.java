@@ -103,6 +103,9 @@ public class DeployVMResultObject {
 	@Param(name="group")
 	private String group;
 	
+	@Param(name="groupid")
+	private Long groupId;
+	
 	@Param(name="domainid")
 	private Long domainId;
 	
@@ -120,6 +123,28 @@ public class DeployVMResultObject {
 	
 	@Param(name="networkgrouplist")
 	private String networkGroupList;
+	
+	@Param(name="rootdeviceid")
+	private Long rootDeviceId;
+	
+	@Param(name="rootdevicetype")
+	private String rootDeviceType;
+	
+	public Long getRootDeviceId(){
+		return this.rootDeviceId;
+	}
+	
+	public void setRootDeviceId(Long rootDeviceId){
+		this.rootDeviceId = rootDeviceId;
+	}
+	
+	public String getRootDeviceType(){
+		return this.rootDeviceType;
+	}
+	
+	public void setRootDeviceType(String deviceType){
+		this.rootDeviceType = deviceType;
+	}
 	
 	public String getNetworkGroupList(){
 		return this.networkGroupList;
@@ -335,6 +360,14 @@ public class DeployVMResultObject {
 
 	public void setGroup(String group) {
 		this.group = group;
+	}
+	
+	public Long getGroupId() {
+		return groupId;
+	}
+
+	public void setGroupId(Long groupId) {
+		this.groupId = groupId;
 	}
 	
 	public Long getDomainId() {

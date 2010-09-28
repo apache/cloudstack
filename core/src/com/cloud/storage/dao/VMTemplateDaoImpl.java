@@ -74,21 +74,21 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     public List<VMTemplateVO> listByPublic() {
     	SearchCriteria<VMTemplateVO> sc = PublicSearch.create();
     	sc.setParameters("public", 1);
-	    return listActiveBy(sc);
+	    return listBy(sc);
 	}
     
 	@Override
 	public VMTemplateVO findByName(String templateName) {
 		SearchCriteria<VMTemplateVO> sc = UniqueNameSearch.create();
 		sc.setParameters("uniqueName", templateName);
-		return findOneBy(sc);
+		return findOneIncludingRemovedBy(sc);
 	}
 
 	@Override
 	public VMTemplateVO findByTemplateName(String templateName) {
 		SearchCriteria<VMTemplateVO> sc = NameSearch.create();
 		sc.setParameters("name", templateName);
-		return findOneBy(sc);
+		return findOneIncludingRemovedBy(sc);
 	}
 
     @Override
@@ -103,14 +103,14 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	public VMTemplateVO findRoutingTemplate() {
 		SearchCriteria<VMTemplateVO> sc = UniqueNameSearch.create();
 		sc.setParameters("uniqueName", routerTmpltName);
-		return findOneBy(sc);
+		return findOneIncludingRemovedBy(sc);
 	}
 	
 	@Override
 	public VMTemplateVO findConsoleProxyTemplate() {
 		SearchCriteria<VMTemplateVO> sc = UniqueNameSearch.create();
 		sc.setParameters("uniqueName", consoleProxyTmpltName);
-		return findOneBy(sc);
+		return findOneIncludingRemovedBy(sc);
 	}
 	
 	@Override
@@ -118,7 +118,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		SearchCriteria<VMTemplateVO> sc = createSearchCriteria();
 		sc.addAnd("ready", SearchCriteria.Op.EQ, true);
 		sc.addAnd("format", SearchCriteria.Op.NEQ, Storage.ImageFormat.ISO);
-		return listBy(sc);
+		return listIncludingRemovedBy(sc);
 	}
 	
 	@Override
@@ -131,14 +131,14 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 			sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
 		if (path != null)
 			sc.addAnd("path", SearchCriteria.Op.EQ, path);
-		return listBy(sc);
+		return listIncludingRemovedBy(sc);
 	}
 
 	@Override
 	public List<VMTemplateVO> listByAccountId(long accountId) {
         SearchCriteria<VMTemplateVO> sc = AccountIdSearch.create();
         sc.setParameters("accountId", accountId);
-        return listActiveBy(sc);
+        return listBy(sc);
 	}
 
 	@Override
@@ -195,7 +195,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         	String accountId = null;
         	if (account != null) {
         		accountType = account.getType();
-        		accountId = account.getId().toString();
+        		accountId = Long.toString(account.getId());
         	} else {
         		accountType = Account.ACCOUNT_TYPE_ADMIN;
         	}

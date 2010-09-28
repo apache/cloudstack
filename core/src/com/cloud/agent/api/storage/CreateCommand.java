@@ -18,18 +18,19 @@
 package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.to.DiskCharacteristicsTO;
 import com.cloud.agent.api.to.StoragePoolTO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 
 public class CreateCommand extends Command {
     private long volId;
     private StoragePoolTO pool;
-    private DiskCharacteristicsTO diskCharacteristics;
+    private DiskProfile diskCharacteristics;
     private String templateUrl;
     private long size;
+    private String instanceName;
     
     protected CreateCommand() {
         super();
@@ -44,7 +45,7 @@ public class CreateCommand extends Command {
      * @param templateUrl
      * @param pool
      */
-    public CreateCommand(VolumeVO vol, VMInstanceVO vm, DiskCharacteristicsTO diskCharacteristics, String templateUrl, StoragePoolVO pool) {
+    public CreateCommand(VolumeVO vol, VMInstanceVO vm, DiskProfile diskCharacteristics, String templateUrl, StoragePoolVO pool) {
         this(vol, vm, diskCharacteristics, pool, 0);
         this.templateUrl = templateUrl;
     }
@@ -57,12 +58,13 @@ public class CreateCommand extends Command {
      * @param diskCharacteristics
      * @param pool
      */
-    public CreateCommand(VolumeVO vol, VMInstanceVO vm, DiskCharacteristicsTO diskCharacteristics, StoragePoolVO pool, long size) {
+    public CreateCommand(VolumeVO vol, VMInstanceVO vm, DiskProfile diskCharacteristics, StoragePoolVO pool, long size) {
         this.volId = vol.getId();
         this.diskCharacteristics = diskCharacteristics;        
         this.pool = new StoragePoolTO(pool);
         this.templateUrl = null;
         this.size = size;
+        //this.instanceName = vm.getInstanceName();
     }
     
     @Override
@@ -78,7 +80,7 @@ public class CreateCommand extends Command {
         return pool;
     }
     
-    public DiskCharacteristicsTO getDiskCharacteristics() {
+    public DiskProfile getDiskCharacteristics() {
         return diskCharacteristics;
     }
     
@@ -88,5 +90,9 @@ public class CreateCommand extends Command {
     
     public long getSize(){
     	return this.size;
+    }
+    
+    public String getInstanceName() {
+    	return instanceName;
     }
 }

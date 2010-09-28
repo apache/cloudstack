@@ -18,7 +18,12 @@
 package com.cloud.server;
 
 import java.math.BigInteger;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
+import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -48,6 +53,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.storage.CopyVolumeAnswer;
+import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.manager.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.alert.AlertVO;
@@ -66,10 +73,12 @@ import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
+import com.cloud.api.commands.ExtractVolumeCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.ListAccountsCmd;
 import com.cloud.api.commands.ListAlertsCmd;
 import com.cloud.api.commands.ListAsyncJobsCmd;
+import com.cloud.api.commands.ListCapabilitiesCmd;
 import com.cloud.api.commands.ListCapacityCmd;
 import com.cloud.api.commands.ListCfgsByCmd;
 import com.cloud.api.commands.ListClustersCmd;
@@ -98,6 +107,7 @@ import com.cloud.api.commands.ListSystemVMsCmd;
 import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.ListUsersCmd;
+import com.cloud.api.commands.ListVMGroupsCmd;
 import com.cloud.api.commands.ListVMsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.ListVolumesCmd;
@@ -119,6 +129,7 @@ import com.cloud.api.commands.UpdateTemplateOrIsoCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateTemplatePermissionsCmd;
 import com.cloud.api.commands.UpdateUserCmd;
+import com.cloud.api.commands.UpdateVMGroupCmd;
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
@@ -126,10 +137,7 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.async.dao.AsyncJobDao;
-import com.cloud.async.executor.NetworkGroupIngressParam;
-import com.cloud.async.executor.SecurityGroupParam;
-import com.cloud.async.executor.VMOperationParam;
-import com.cloud.async.executor.VMOperationParam.VmOp;
+import com.cloud.async.executor.ExtractJobResultObject;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.ConfigurationManager;
@@ -172,6 +180,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.info.ConsoleProxyInfo;
@@ -193,9 +202,9 @@ import com.cloud.network.dao.SecurityGroupVMMapDao;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.network.security.dao.NetworkGroupDao;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.offering.ServiceOffering.GuestIpType;
-import com.cloud.serializer.GsonHelper;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -211,9 +220,13 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
+import com.cloud.storage.Upload.Type;
+import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
@@ -225,6 +238,8 @@ import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.storage.dao.VolumeDao;
@@ -232,6 +247,7 @@ import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -260,6 +276,8 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -268,8 +286,9 @@ import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
-import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.InstanceGroupVMMapVO;
+import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmManager;
@@ -278,10 +297,11 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.InstanceGroupDao;
+import com.cloud.vm.dao.InstanceGroupVMMapDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.gson.Gson;
 
 public class ManagementServerImpl implements ManagementServer {	
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
@@ -330,6 +350,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final GuestOSDao _guestOSDao;
     private final GuestOSCategoryDao _guestOSCategoryDao;
     private final StoragePoolDao _poolDao;
+    private final StoragePoolHostDao _poolHostDao;
     private final StorageManager _storageMgr;
     private final UserVmDao _vmDao;
 
@@ -348,6 +369,10 @@ public class ManagementServerImpl implements ManagementServer {
     private final int _purgeDelay;
     private final boolean _directAttachNetworkExternalIpAllocator;
     private final PreallocatedLunDao _lunDao;
+    private final InstanceGroupDao _vmGroupDao;
+    private final InstanceGroupVMMapDao _groupVMMapDao;
+    private final UploadMonitor _uploadMonitor;
+    private final UploadDao _uploadDao;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -357,9 +382,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final Map<String, String> _configs;
 
     private String _domain;
-    private int _consoleProxyPort = ConsoleProxyManager.DEFAULT_PROXY_VNC_PORT;
-    // private int _consoleProxyUrlPort =
-    // ConsoleProxyManager.DEFAULT_PROXY_URL_PORT;
 
     private final int _routerRamSize;
     private final int _proxyRamSize;
@@ -422,7 +444,11 @@ public class ManagementServerImpl implements ManagementServer {
         _guestOSDao = locator.getDao(GuestOSDao.class);
         _guestOSCategoryDao = locator.getDao(GuestOSCategoryDao.class);
         _poolDao = locator.getDao(StoragePoolDao.class);
+        _poolHostDao = locator.getDao(StoragePoolHostDao.class);
         _vmDao = locator.getDao(UserVmDao.class);
+        _vmGroupDao = locator.getDao(InstanceGroupDao.class);
+        _groupVMMapDao = locator.getDao(InstanceGroupVMMapDao.class);
+        _uploadDao = locator.getDao(UploadDao.class);
 
         _configs = _configDao.getConfiguration();
         _userStatsDao = locator.getDao(UserStatisticsDao.class);
@@ -434,6 +460,7 @@ public class ManagementServerImpl implements ManagementServer {
         _tmpltMgr = locator.getManager(TemplateManager.class);
         _snapMgr = locator.getManager(SnapshotManager.class);
         _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
+        _uploadMonitor = locator.getManager(UploadMonitor.class);                
         
         _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
         if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
@@ -448,21 +475,11 @@ public class ManagementServerImpl implements ManagementServer {
             _domain = "." + _domain;
         }
 
-        String value = _configs.get("consoleproxy.port");
-        if (value != null)
-            _consoleProxyPort = NumbersUtil.parseInt(value, ConsoleProxyManager.DEFAULT_PROXY_VNC_PORT);
-
-        // value = _configs.get("consoleproxy.url.port");
-        // if(value != null)
-        // _consoleProxyUrlPort = NumbersUtil.parseInt(value,
-        // ConsoleProxyManager.DEFAULT_PROXY_URL_PORT);
-
-        value = _configs.get("account.cleanup.interval");
+        String value = _configs.get("account.cleanup.interval");
         int cleanup = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 hour.
 
         // Parse the max number of UserVMs and public IPs from server-setup.xml,
         // and set them in the right places
-        
         _routerRamSize = NumbersUtil.parseInt(_configs.get("router.ram.size"),NetworkManager.DEFAULT_ROUTER_VM_RAMSIZE);
         _proxyRamSize = NumbersUtil.parseInt(_configs.get("consoleproxy.ram.size"), ConsoleProxyManager.DEFAULT_PROXY_VM_RAMSIZE);
         _ssRamSize = NumbersUtil.parseInt(_configs.get("secstorage.ram.size"), SecondaryStorageVmManager.DEFAULT_SS_VM_RAMSIZE);
@@ -694,6 +711,7 @@ public class ManagementServerImpl implements ManagementServer {
         return user;
     }
 
+    @Override
     public User getUser(long userId, boolean active) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Retrieiving user with id: " + userId + " and active = " + active);
@@ -815,6 +833,15 @@ public class ManagementServerImpl implements ManagementServer {
         boolean accountCleanupNeeded = false;
         
         try {
+        	//delete all vm groups belonging to accont
+        	List<InstanceGroupVO> groups = _vmGroupDao.listByAccountId(accountId);
+            for (InstanceGroupVO group : groups) {
+                if (!_vmMgr.deleteVmGroup(group.getId())) {
+                    s_logger.error("Unable to delete group: " + group.getId());
+                    accountCleanupNeeded = true;
+                } 
+            }
+        	
             // Delete the snapshots dir for the account. Have to do this before destroying the VMs.
             boolean success = _snapMgr.deleteSnapshotDirsForAccount(accountId);
             if (success) {
@@ -838,6 +865,9 @@ public class ManagementServerImpl implements ManagementServer {
             // Mark the account's volumes as destroyed
             List<VolumeVO> volumes = _volumeDao.findDetachedByAccount(accountId);
             for (VolumeVO volume : volumes) {
+            	if(volume.getPoolId()==null){
+            		accountCleanupNeeded = true;
+            	}
             	_storageMgr.destroyVolume(volume);
             }
 
@@ -884,10 +914,10 @@ public class ManagementServerImpl implements ManagementServer {
                     // All vm instances have been destroyed, delete the security group -> instance_id mappings
                     SearchCriteria<SecurityGroupVMMapVO> sc = _securityGroupVMMapDao.createSearchCriteria();
                     sc.addAnd("securityGroupId", SearchCriteria.Op.EQ, securityGroup.getId());
-                    _securityGroupVMMapDao.delete(sc);
+                    _securityGroupVMMapDao.expunge(sc);
 
                     // now clean the network rules and security groups themselves
-                    _networkRuleConfigDao.deleteBySecurityGroup(securityGroup.getId().longValue());
+                    _networkRuleConfigDao.deleteBySecurityGroup(securityGroup.getId());
                     _securityGroupDao.remove(securityGroup.getId());
                 }
             }
@@ -943,20 +973,6 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         return doSetUserStatus(userId, Account.ACCOUNT_STATE_DISABLED);
-    }
-
-    @Override
-    public long disableUserAsync(long userId) {
-        Long param = new Long(userId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-        job.setCmd("DisableUser");
-        job.setCmdInfo(gson.toJson(param));
-        
-        return _asyncMgr.submitAsyncJob(job);
     }
 
     @Override
@@ -1071,20 +1087,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public long disableAccountAsync(long accountId) {
-        Long param = new Long(accountId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-        job.setCmd("DisableAccount");
-        job.setCmdInfo(gson.toJson(param));
-        
-        return _asyncMgr.submitAsyncJob(job);
-    }
-
-    @Override
     public boolean updateAccount(UpdateAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	Long domainId = cmd.getDomainId();
     	String accountName = cmd.getAccountName();
@@ -1104,7 +1106,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         //Don't allow to modify system account
-        if (account.getId().longValue() == Account.ACCOUNT_ID_SYSTEM) {
+        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
     		throw new InvalidParameterValueException ("Can not modify system account");
     	}
         
@@ -1167,7 +1169,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         //Don't allow to modify system account
-        if (account.getId().longValue() == Account.ACCOUNT_ID_SYSTEM) {
+        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
     		throw new InvalidParameterValueException ("Can not modify system account");
     	}
         
@@ -1221,8 +1223,7 @@ public class ManagementServerImpl implements ManagementServer {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find user by id");
         }
 
-        if((apiKey == null && secretKey != null) || (apiKey != null && secretKey == null))
-        {
+        if((apiKey == null && secretKey != null) || (apiKey != null && secretKey == null)) {
         	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please provide an api key/secret key pair");
         }
         
@@ -1555,12 +1556,12 @@ public class ManagementServerImpl implements ManagementServer {
             ArrayList<StoragePoolVO> a = new ArrayList<StoragePoolVO>(avoids.values());
             if (_directAttachNetworkExternalIpAllocator) {
             	try {
-            		created = _vmMgr.createDirectlyAttachedVMExternal(vmId, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, networkGroupVOs, startEventId, size);
+            		created = _vmMgr.createDirectlyAttachedVMExternal(vmId, userId, account, dc, offering, template, diskOffering, displayName, userData, a, networkGroupVOs, startEventId, size);
             	} catch (ResourceAllocationException rae) {
             		throw rae;
             	}
             } else {
-            	if (offering.getGuestIpType() == GuestIpType.Virtualized) {
+            	if (offering.getGuestIpType() == NetworkOffering.GuestIpType.Virtualized) {
             		try {
             			externalIp = _networkMgr.assignSourceNatIpAddress(account, dc, domain, offering, startEventId);
             		} catch (ResourceAllocationException rae) {
@@ -1576,19 +1577,32 @@ public class ManagementServerImpl implements ManagementServer {
             		}
 
             		try {
-            			created = _vmMgr.createVirtualMachine(vmId, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, startEventId, size);
+            			created = _vmMgr.createVirtualMachine(vmId, userId, account, dc, offering, template, diskOffering, displayName, userData, a, startEventId, size);
             		} catch (ResourceAllocationException rae) {
             			throw rae;
             		}
             	} else {
             		try {
-            			created = _vmMgr.createDirectlyAttachedVM(vmId, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, networkGroupVOs, startEventId, size);
+            			created = _vmMgr.createDirectlyAttachedVM(vmId, userId, account, dc, offering, template, diskOffering, displayName, userData, a, networkGroupVOs, startEventId, size);
             		} catch (ResourceAllocationException rae) {
             			throw rae;
             		}
             	}
             }
 
+            //assign vm to the group
+            try{
+            	if (group != null) {
+            	boolean addToGroup = _vmMgr.addInstanceToGroup(Long.valueOf(vmId), group);
+            	if (!addToGroup) {
+            		throw new InternalErrorException("Unable to assing Vm to the group " + group);
+            	}
+                }
+            } catch (Exception ex) {
+            	throw new InternalErrorException("Unable to assing Vm to the group " + group);
+            }
+            
+            
             if (created == null) {
                 throw new InternalErrorException("Unable to create VM for account (" + accountId + "): " + account.getAccountName());
             }
@@ -1778,7 +1792,7 @@ public class ManagementServerImpl implements ManagementServer {
             if (!BaseCmd.isAdmin(account.getType()) && ((templateOwner == null) || (templateOwner.longValue() != accountId))) {
                 // since the current account is not the owner of the template, check the launch permissions table to see if the
                 // account can launch a VM from this template
-                LaunchPermissionVO permission = _launchPermissionDao.findByTemplateAndAccount(templateId, account.getId().longValue());
+                LaunchPermissionVO permission = _launchPermissionDao.findByTemplateAndAccount(templateId, account.getId());
                 if (permission == null) {
                     throw new PermissionDeniedException("Account " + account.getAccountName() + " does not have permission to launch instances from template " + template.getName());
                 }
@@ -1799,12 +1813,12 @@ public class ManagementServerImpl implements ManagementServer {
         	}
 			
         }
-        if (offering.getGuestIpType() != GuestIpType.Virtualized) {
+        if (offering.getGuestIpType() != NetworkOffering.GuestIpType.Virtualized) {
         	_networkGroupMgr.createDefaultNetworkGroup(accountId);
     	}
         
         if (networkGroups != null) {
-        	if (offering.getGuestIpType() == GuestIpType.Virtualized) {
+        	if (offering.getGuestIpType() == NetworkOffering.GuestIpType.Virtualized) {
         		throw new InvalidParameterValueException("Network groups are not compatible with service offering " + offering.getName());
         	}
         	Set<String> nameSet = new HashSet<String>(); //handle duplicate names -- allowed
@@ -1816,7 +1830,7 @@ public class ManagementServerImpl implements ManagementServer {
         		throw new InvalidParameterValueException("Some network group names do not exist");
         	}
         } else { //create a default group if necessary
-        	if (offering.getGuestIpType() != GuestIpType.Virtualized && _networkGroupsEnabled) {
+        	if (offering.getGuestIpType() != NetworkOffering.GuestIpType.Virtualized && _networkGroupsEnabled) {
         		networkGroups = new String[]{NetworkGroupManager.DEFAULT_GROUP_NAME};
         	}
         }
@@ -1870,43 +1884,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean destroyVirtualMachine(long userId, long vmId) {
-        return _vmMgr.destroyVirtualMachine(userId, vmId);
-    }
-
-    @Override
-    public long destroyVirtualMachineAsync(long userId, long vmId) {
-        
-        UserVmVO userVm = _userVmDao.findById(vmId);
-
-        long eventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_VM_DESTROY, "destroying Vm with Id: "+vmId);
-        VMOperationParam param = new VMOperationParam(userId, userVm.getAccountId(), vmId, null, eventId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-    	job.setUserId(UserContext.current().getUserId());
-    	job.setAccountId(userVm.getAccountId());
-        job.setCmd("DestroyVM");
-        job.setCmdInfo(gson.toJson(param));
-        return _asyncMgr.submitAsyncJob(job, true);
-    }
-
-    @Override
-    public DomainRouter startRouter(long routerId, long startEventId) throws InternalErrorException {
-        return _networkMgr.startRouter(routerId, startEventId);
-    }
-
-    @Override
-    public boolean stopRouter(long routerId, long startEventId) {
-        return _networkMgr.stopRouter(routerId, startEventId);
-    }
-
-    @Override
-    public boolean rebootRouter(long routerId, long startEventId) throws InternalErrorException {
-        return _networkMgr.rebootRouter(routerId, startEventId);
-    }
-
-    @Override
     public DomainRouterVO findDomainRouterBy(long accountId, long dataCenterId) {
         return _routerDao.findBy(accountId, dataCenterId);
     }
@@ -1918,7 +1895,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<DataCenterVO> listDataCenters(ListZonesByCmd cmd) {
-        List<DataCenterVO> dcs = _dcDao.listAllActive();
+        List<DataCenterVO> dcs = _dcDao.listAll();
 
         Account account = (Account)UserContext.current().getAccountObject();
         Boolean available = cmd.isAvailable();
@@ -1947,7 +1924,7 @@ public class ManagementServerImpl implements ManagementServer {
     public HostVO getHostBy(long hostId) {
         return _hostDao.findById(hostId);
     }
-    
+
     @Override
     public long getId() {
         return MacAddress.getMacAddress().toLong();
@@ -2005,7 +1982,7 @@ public class ManagementServerImpl implements ManagementServer {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to apply port forwarding services " + StringUtils.join(sgIdList, ",") + " to instance " + vmId + ".  Invalid list of port forwarding services for the given instance.");
         }
         if (account != null) {
-            if (!isAdmin(account.getType()) && (account.getId().longValue() != validatedAccountId.longValue())) {
+            if (!isAdmin(account.getType()) && (account.getId() != validatedAccountId.longValue())) {
                 throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Permission denied applying port forwarding services " + StringUtils.join(sgIdList, ",") + " to instance " + vmId + ".");
             } else {
                 Account validatedAccount = findAccountById(validatedAccountId);
@@ -2039,7 +2016,7 @@ public class ManagementServerImpl implements ManagementServer {
 
             // sanity check that the vm can be applied to the load balancer
             ServiceOfferingVO offering = _offeringsDao.findById(userVm.getServiceOfferingId());
-            if ((offering == null) || !GuestIpType.Virtualized.equals(offering.getGuestIpType())) {
+            if ((offering == null) || !NetworkOffering.GuestIpType.Virtualized.equals(offering.getGuestIpType())) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Unable to apply port forwarding service to virtual machine " + userVm.toString() + ", bad network type (" + ((offering == null) ? "null" : offering.getGuestIpType()) + ")");
                 }
@@ -2274,7 +2251,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (securityG == null) {
         	throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a port forwarding service with id " + securityGroupId);
         } else if (account != null) {
-            if (!isAdmin(account.getType()) && (account.getId().longValue() != securityG.getAccountId())) {
+            if (!isAdmin(account.getType()) && (account.getId() != securityG.getAccountId())) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a port forwarding service with id " + securityGroupId + " for this account");
             } else if (!isChildDomain(account.getDomainId(), securityG.getDomainId())) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid port forwarding service id (" + securityGroupId + ") given, unable to remove port forwarding service.");
@@ -2286,7 +2263,7 @@ public class ManagementServerImpl implements ManagementServer {
         	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
         }
         if (account != null) {
-            if (!isAdmin(account.getType()) && (account.getId().longValue() != vmInstance.getAccountId())) {
+            if (!isAdmin(account.getType()) && (account.getId() != vmInstance.getAccountId())) {
                 throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + vmId + " for this account");
             } else if (!isChildDomain(account.getDomainId(), vmInstance.getDomainId())) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid virtual machine id (" + vmId + ") given, unable to remove port forwarding service.");
@@ -2304,7 +2281,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         Long accountId = ipAddrAccount.getId();
         if ((account != null) && !isAdmin(account.getType())) {
-            if (account.getId().longValue() != accountId) {
+            if (account.getId() != accountId) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "account " + account.getAccountName() + " doesn't own ip address " + publicIp);
             }
         }
@@ -2466,21 +2443,6 @@ public class ManagementServerImpl implements ManagementServer {
                 _publicIpAddressDao.release(publicIp);
             }
         }
-    }
-
-    @Override
-    public long removeSecurityGroupAsync(Long userId, long securityGroupId, String publicIp, long vmId) {
-        UserVm userVm = _userVmDao.findById(vmId);
-        long eventId = EventUtils.saveScheduledEvent(userId, userVm.getAccountId(), EventTypes.EVENT_PORT_FORWARDING_SERVICE_REMOVE, "removing port forwarding services for Vm with Id: "+vmId);
-        SecurityGroupParam param = new SecurityGroupParam(userId, securityGroupId, null, publicIp, vmId, eventId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-    	job.setUserId(UserContext.current().getUserId());
-    	job.setAccountId(userVm.getAccountId());
-        job.setCmd("RemoveSecurityGroup");
-        job.setCmdInfo(gson.toJson(param));
-        return _asyncMgr.submitAsyncJob(job);
     }
 
     @Override
@@ -2663,7 +2625,7 @@ public class ManagementServerImpl implements ManagementServer {
         if ((accountName == null) && (domainId != null)) {
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId());
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
         SearchCriteria<UserAccountVO> sc = sb.create();
@@ -2734,7 +2696,7 @@ public class ManagementServerImpl implements ManagementServer {
                 throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
             }
             if ((account != null) && !isAdmin(account.getType())) {
-                if (account.getId().longValue() != vmInstance.getAccountId()) {
+                if (account.getId() != vmInstance.getAccountId()) {
                     throw new PermissionDeniedException("unable to find a virtual machine with id " + vmId + " for this account");
                 }
             }
@@ -2927,13 +2889,13 @@ public class ManagementServerImpl implements ManagementServer {
         if (accountId != null) {
         	SearchBuilder<AccountVlanMapVO> accountVlanMapSearch = _accountVlanMapDao.createSearchBuilder();
         	accountVlanMapSearch.and("accountId", accountVlanMapSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        	sb.join("accountVlanMapSearch", accountVlanMapSearch, sb.entity().getId(), accountVlanMapSearch.entity().getVlanDbId());
+        	sb.join("accountVlanMapSearch", accountVlanMapSearch, sb.entity().getId(), accountVlanMapSearch.entity().getVlanDbId(), JoinBuilder.JoinType.INNER);
         }
         
         if (podId != null) {
         	SearchBuilder<PodVlanMapVO> podVlanMapSearch = _podVlanMapDao.createSearchBuilder();
         	podVlanMapSearch.and("podId", podVlanMapSearch.entity().getPodId(), SearchCriteria.Op.EQ);
-        	sb.join("podVlanMapSearch", podVlanMapSearch, sb.entity().getId(), podVlanMapSearch.entity().getVlanDbId());
+        	sb.join("podVlanMapSearch", podVlanMapSearch, sb.entity().getId(), podVlanMapSearch.entity().getVlanDbId(), JoinBuilder.JoinType.INNER);
         }
         
         SearchCriteria<VlanVO> sc = sb.create();
@@ -3253,6 +3215,7 @@ public class ManagementServerImpl implements ManagementServer {
         SearchBuilder<AccountVO> sb = _accountDao.createSearchBuilder();
         sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("nid", sb.entity().getId(), SearchCriteria.Op.NEQ);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("needsCleanup", sb.entity().getNeedsCleanup(), SearchCriteria.Op.EQ);
@@ -3261,7 +3224,7 @@ public class ManagementServerImpl implements ManagementServer {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId());
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
         SearchCriteria<AccountVO> sc = sb.create();
@@ -3284,6 +3247,9 @@ public class ManagementServerImpl implements ManagementServer {
 
             // I want to join on user_vm.domain_id = domain.id where domain.path like 'foo%'
             sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+            sc.setParameters("nid", 1L);
+        } else {
+        	sc.setParameters("nid", 1L);
         }
 
         if (type != null) {
@@ -3316,7 +3282,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (limitId == null)
             return false;
 
-        return _resourceLimitDao.delete(limitId);
+        return _resourceLimitDao.expunge(limitId);
     }
 
     @Override
@@ -3379,12 +3345,12 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<ServiceOfferingVO> listAllServiceOfferings() {
-        return _offeringsDao.listAll();
+        return _offeringsDao.listAllIncludingRemoved();
     }
 
     @Override
     public List<HostVO> listAllActiveHosts() {
-        return _hostDao.listAllActive();
+        return _hostDao.listAll();
     }
 
     @Override
@@ -3418,7 +3384,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (account != null) {
             Long templateOwner = template.getAccountId();
             if (!BaseCmd.isAdmin(account.getType())) {
-                if ((templateOwner == null) || (account.getId().longValue() != templateOwner.longValue())) {
+                if ((templateOwner == null) || (account.getId() != templateOwner.longValue())) {
                     throw new PermissionDeniedException("Unable to modify template/iso with id " + id + ", permission denied.");
                 }
             } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
@@ -3547,12 +3513,13 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public List<UserVmVO> searchForUserVMs(Criteria c) {
         Filter searchFilter = new Filter(UserVmVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
+        
         SearchBuilder<UserVmVO> sb = _userVmDao.createSearchBuilder();
-
+       
         // some criteria matter for generating the join condition
         Object[] accountIds = (Object[]) c.getCriteria(Criteria.ACCOUNTID);
         Object domainId = c.getCriteria(Criteria.DOMAINID);
-
+        
         // get the rest of the criteria
         Object id = c.getCriteria(Criteria.ID);
         Object name = c.getCriteria(Criteria.NAME);
@@ -3565,7 +3532,8 @@ public class ManagementServerImpl implements ManagementServer {
         Object keyword = c.getCriteria(Criteria.KEYWORD);
         Object isAdmin = c.getCriteria(Criteria.ISADMIN);
         Object ipAddress = c.getCriteria(Criteria.IPADDRESS);
-
+        Object groupId = c.getCriteria(Criteria.GROUPID);
+        
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("accountIdEQ", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
@@ -3579,22 +3547,39 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("hostIdEQ", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("hostIdIN", sb.entity().getHostId(), SearchCriteria.Op.IN);
         sb.and("guestIP", sb.entity().getGuestIpAddress(), SearchCriteria.Op.EQ);
-
+        
         if ((accountIds == null) && (domainId != null)) {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId());
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+        
+        if (groupId != null && (Long)groupId == -1) {
+        	SearchBuilder<InstanceGroupVMMapVO> vmSearch = _groupVMMapDao.createSearchBuilder();
+        	vmSearch.and("instanceId", vmSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
+            sb.join("vmSearch", vmSearch, sb.entity().getId(), vmSearch.entity().getInstanceId(), JoinBuilder.JoinType.LEFTOUTER);
+        }
+        else if (groupId != null) {
+        	SearchBuilder<InstanceGroupVMMapVO> groupSearch = _groupVMMapDao.createSearchBuilder();
+        	groupSearch.and("groupId", groupSearch.entity().getGroupId(), SearchCriteria.Op.EQ);
+            sb.join("groupSearch", groupSearch, sb.entity().getId(), groupSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
         }
 
         // populate the search criteria with the values passed in
         SearchCriteria<UserVmVO> sc = sb.create();
+        
+        if (groupId != null && (Long)groupId == -1){
+        	sc.setJoinParameters("vmSearch", "instanceId", (Object)null);
+        }
+        else if (groupId != null ) {
+        	sc.setJoinParameters("groupSearch", "groupId", groupId);
+        }
 
         if (keyword != null) {
             SearchCriteria<UserVmVO> ssc = _userVmDao.createSearchCriteria();
             ssc.addOr("displayName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("group", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
@@ -3668,7 +3653,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (ipAddress != null) {
             sc.setParameters("guestIP", ipAddress);
         }
-
+        
         return _userVmDao.search(sc, searchFilter);
     }
 
@@ -3735,7 +3720,7 @@ public class ManagementServerImpl implements ManagementServer {
                 if (!_domainDao.isChildDomain(account.getDomainId(), ipAddressVO.getDomainId())) {
                     throw new PermissionDeniedException("Unable to update port forwarding rule on IP address " + publicIp + ", permission denied.");
                 }
-            } else if (account.getId().longValue() != ipAddressVO.getAccountId()) {
+            } else if (account.getId() != ipAddressVO.getAccountId()) {
                 throw new PermissionDeniedException("Unable to update port forwarding rule on IP address " + publicIp + ", permission denied.");
             }
         }
@@ -3793,7 +3778,7 @@ public class ManagementServerImpl implements ManagementServer {
         if ((groupId != null) && (accountId != null)) {
             SecurityGroupVO sg = _securityGroupDao.findById(groupId);
             if (sg != null) {
-                if ((sg.getAccountId() != null) && sg.getAccountId().longValue() != accountId.longValue()) {
+                if (sg.getAccountId() != accountId.longValue()) {
                     throw new PermissionDeniedException("Unable to list port forwarding service rules, account " + accountId + " does not own port forwarding service " + groupId);
                 }
             } else {
@@ -3819,7 +3804,7 @@ public class ManagementServerImpl implements ManagementServer {
             // join with securityGroup table to make sure the account is the owner of the network rule
             SearchBuilder<SecurityGroupVO> securityGroupSearch = _securityGroupDao.createSearchBuilder();
             securityGroupSearch.and("accountId", securityGroupSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-            sb.join("groupId", securityGroupSearch, securityGroupSearch.entity().getId(), sb.entity().getSecurityGroupId());
+            sb.join("groupId", securityGroupSearch, securityGroupSearch.entity().getId(), sb.entity().getSecurityGroupId(), JoinBuilder.JoinType.INNER);
         }
 
         SearchCriteria<NetworkRuleConfigVO> sc = sb.create();
@@ -3902,7 +3887,7 @@ public class ManagementServerImpl implements ManagementServer {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId());
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
         SearchCriteria<EventVO> sc = sb.create();
@@ -3957,7 +3942,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<DomainRouterVO> listAllActiveRouters() {
-        return _routerDao.listAllActive();
+        return _routerDao.listAll();
     }
 
     @Override
@@ -4005,13 +3990,12 @@ public class ManagementServerImpl implements ManagementServer {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId());
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
         SearchCriteria<DomainRouterVO> sc = sb.create();
         if (keyword != null) {
             SearchCriteria<DomainRouterVO> ssc = _routerDao.createSearchCriteria();
-            ssc.addOr("displayName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -4168,7 +4152,7 @@ public class ManagementServerImpl implements ManagementServer {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId());
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
         // now set the SC criteria...
@@ -4210,14 +4194,42 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         // Don't return DomR and ConsoleProxy volumes
+        /*
         sc.setParameters("domRNameLabel", "r-%");
         sc.setParameters("domPNameLabel", "v-%");
         sc.setParameters("domSNameLabel", "s-%");
-
+		*/
+        
         // Only return volumes that are not destroyed
         sc.setParameters("destroyed", false);
 
-        return _volumeDao.search(sc, searchFilter);
+        List<VolumeVO> allVolumes = _volumeDao.search(sc, searchFilter);
+        List<VolumeVO> returnableVolumes = new ArrayList<VolumeVO>(); //these are ones without domr and console proxy
+        
+        for(VolumeVO v:allVolumes)
+        {
+        	VMTemplateVO template = _templateDao.findById(v.getTemplateId());
+        	if(template!=null && template.getUniqueName().equalsIgnoreCase("routing"))
+        	{
+        		//do nothing
+        	}
+        	else
+        	{
+        		returnableVolumes.add(v);
+        	}
+        }
+        
+        return returnableVolumes;
+    }
+
+    @Override
+    public VolumeVO findVolumeByInstanceAndDeviceId(long instanceId, long deviceId) {
+         VolumeVO volume = _volumeDao.findByInstanceAndDeviceId(instanceId, deviceId).get(0);
+         if (volume != null && !volume.getDestroyed() && volume.getRemoved() == null) {
+             return volume;
+         } else {
+             return null;
+         }
     }
 
     @Override
@@ -4282,13 +4294,13 @@ public class ManagementServerImpl implements ManagementServer {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId());
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
         
         if (forVirtualNetwork != null) {
         	SearchBuilder<VlanVO> vlanSearch = _vlanDao.createSearchBuilder();
         	vlanSearch.and("vlanType", vlanSearch.entity().getVlanType(), SearchCriteria.Op.EQ);
-        	sb.join("vlanSearch", vlanSearch, sb.entity().getVlanDbId(), vlanSearch.entity().getId());
+        	sb.join("vlanSearch", vlanSearch, sb.entity().getVlanDbId(), vlanSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
         if ((isAllocated != null) && (isAllocated == true)) {
@@ -4329,7 +4341,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<DiskTemplateVO> listAllActiveDiskTemplates() {
-        return _diskTemplateDao.listAllActive();
+        return _diskTemplateDao.listAll();
     }
 
     @Override
@@ -4486,7 +4498,7 @@ public class ManagementServerImpl implements ManagementServer {
                     if (!_domainDao.isChildDomain(account.getDomainId(), sg.getDomainId())) {
                         throw new PermissionDeniedException("Unable to find rules for port forwarding service id = " + securityGroupId + ", permission denied.");
                     }
-                } else if (account.getId().longValue() != sg.getAccountId().longValue()) {
+                } else if (account.getId() != sg.getAccountId()) {
                     throw new PermissionDeniedException("Invalid port forwarding service (" + securityGroupId + ") given, unable to create rule.");
                 }
             }
@@ -4549,8 +4561,9 @@ public class ManagementServerImpl implements ManagementServer {
         return netRule;
     }
 
+    @Override
     public List<VMTemplateVO> listAllTemplates() {
-        return _templateDao.listAll();
+        return _templateDao.listAllIncludingRemoved();
     }
 
     @Override
@@ -4593,76 +4606,32 @@ public class ManagementServerImpl implements ManagementServer {
     	return _guestOSCategoryDao.search(sc, searchFilter);
     }
     
+    @Override
     public String getConfigurationValue(String name) {
     	return _configDao.getValue(name);
     }
 
+    @Override
     public ConsoleProxyInfo getConsoleProxy(long dataCenterId, long userVmId) {
-        ConsoleProxyVO proxy = _consoleProxyMgr.assignProxy(dataCenterId, userVmId);
-        if (proxy == null)
-            return null;
-        
-        return new ConsoleProxyInfo(proxy.isSslEnabled(), proxy.getPublicIpAddress(), _consoleProxyPort, proxy.getPort());
+        return _consoleProxyMgr.assignProxy(dataCenterId, userVmId);
     }
 
+    @Override
     public ConsoleProxyVO startConsoleProxy(long instanceId, long startEventId) throws InternalErrorException {
         return _consoleProxyMgr.startProxy(instanceId, startEventId);
     }
 
+    @Override
     public boolean stopConsoleProxy(long instanceId, long startEventId) {
         return _consoleProxyMgr.stopProxy(instanceId, startEventId);
     }
 
+    @Override
     public boolean rebootConsoleProxy(long instanceId, long startEventId) {
         return _consoleProxyMgr.rebootProxy(instanceId, startEventId);
     }
 
-    public long startConsoleProxyAsync(long instanceId) {
-        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_START, "starting console proxy with Id: "+instanceId);
-        VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-        job.setCmd("StartConsoleProxy");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(StartSystemVMCmd.getResultObjectName());
-        return _asyncMgr.submitAsyncJob(job, true);
-    }
-
-    public long stopConsoleProxyAsync(long instanceId) {
-        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_STOP, "stopping console proxy with Id: "+instanceId);
-        VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-        job.setCmd("StopConsoleProxy");
-        job.setCmdInfo(gson.toJson(param));
-        // use the same result object name as StartConsoleProxyCmd
-        job.setCmdOriginator(StartSystemVMCmd.getResultObjectName());
-        
-        return _asyncMgr.submitAsyncJob(job, true);
-    }
-
-    public long rebootConsoleProxyAsync(long instanceId) {
-        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy with Id: "+instanceId);
-        VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-        job.setCmd("RebootConsoleProxy");
-        job.setCmdInfo(gson.toJson(param));
-        // use the same result object name as StartConsoleProxyCmd
-        job.setCmdOriginator(StartSystemVMCmd.getResultObjectName());
-        
-        return _asyncMgr.submitAsyncJob(job, true);
-    }
-
+    @Override
     public String getConsoleAccessUrlRoot(long vmId) {
         VMInstanceVO vm = this.findVMInstanceById(vmId);
         if (vm != null) {
@@ -4673,6 +4642,7 @@ public class ManagementServerImpl implements ManagementServer {
         return null;
     }
 
+    @Override
     public int getVncPort(VirtualMachine vm) {
         if (vm.getHostId() == null) {
         	s_logger.warn("VM " + vm.getName() + " does not have host, return -1 for its VNC port");
@@ -4691,6 +4661,7 @@ public class ManagementServerImpl implements ManagementServer {
         return port;
     }
 
+    @Override
     public ConsoleProxyVO findConsoleProxyById(long instanceId) {
         return _consoleProxyDao.findById(instanceId);
     }
@@ -4844,7 +4815,7 @@ public class ManagementServerImpl implements ManagementServer {
         try {
             DomainVO domain = _domainDao.findById(domainId);
             if (domain != null) {
-                long ownerId = domain.getOwner();
+                long ownerId = domain.getAccountId();
                 if ((cleanup != null) && cleanup.booleanValue()) {
                     boolean success = cleanupDomain(domainId, ownerId);
                     if (!success) {
@@ -4880,7 +4851,7 @@ public class ManagementServerImpl implements ManagementServer {
 
             // cleanup sub-domains first
             for (DomainVO domain : domains) {
-                success = (success && cleanupDomain(domain.getId(), domain.getOwner()));
+                success = (success && cleanupDomain(domain.getId(), domain.getAccountId()));
             }
         }
 
@@ -4910,6 +4881,7 @@ public class ManagementServerImpl implements ManagementServer {
         return success && deleteDomainSuccess;
     }
 
+    @Override
     public boolean updateDomain(UpdateDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
     	Long domainId = cmd.getId();
     	String domainName = cmd.getName();
@@ -4939,15 +4911,16 @@ public class ManagementServerImpl implements ManagementServer {
         if ((domains == null) || domains.isEmpty()) {
             _domainDao.update(domainId, domainName);
             domain = _domainDao.findById(domainId);
-            EventUtils.saveEvent(new Long(1), domain.getOwner(), EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_UPDATE, "Domain, " + domainName + " was updated");
+            EventUtils.saveEvent(new Long(1), domain.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_UPDATE, "Domain, " + domainName + " was updated");
             return true;
         } else {
             domain = _domainDao.findById(domainId);
-            EventUtils.saveEvent(new Long(1), domain.getOwner(), EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_UPDATE, "Failed to update domain " + domain.getName() + " with name " + domainName + ", name in use.");
+            EventUtils.saveEvent(new Long(1), domain.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_UPDATE, "Failed to update domain " + domain.getName() + " with name " + domainName + ", name in use.");
             return false;
         }
     }
 
+    @Override
     public Long findDomainIdByAccountId(Long accountId) {
         if (accountId == null) {
             return null;
@@ -5024,6 +4997,7 @@ public class ManagementServerImpl implements ManagementServer {
         return _capacityDao.search(sc, searchFilter);
     }
     
+    @Override
     public long getMemoryUsagebyHost(Long hostId) {
         long mem = 0;
         List<VMInstanceVO> vms = _vmInstanceDao.listUpByHostIdTypes(hostId, VirtualMachine.Type.DomainRouter);
@@ -5276,12 +5250,12 @@ public class ManagementServerImpl implements ManagementServer {
             for (String accountName : accountNames) {
                 Account permittedAccount = _accountDao.findActiveAccount(accountName, domainId);
                 if (permittedAccount != null) {
-                    if (permittedAccount.getId().longValue() == account.getId().longValue()) {
+                    if (permittedAccount.getId() == account.getId()) {
                         continue; // don't grant permission to the template owner, they implicitly have permission
                     }
-                    LaunchPermissionVO existingPermission = _launchPermissionDao.findByTemplateAndAccount(id, permittedAccount.getId().longValue());
+                    LaunchPermissionVO existingPermission = _launchPermissionDao.findByTemplateAndAccount(id, permittedAccount.getId());
                     if (existingPermission == null) {
-                        LaunchPermissionVO launchPermission = new LaunchPermissionVO(id, permittedAccount.getId().longValue());
+                        LaunchPermissionVO launchPermission = new LaunchPermissionVO(id, permittedAccount.getId());
                         _launchPermissionDao.persist(launchPermission);
                     }
                 } else {
@@ -5541,7 +5515,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (account != null) {
             if (!isAdmin(account.getType())) {
-                if (account.getId().longValue() != securityGroup.getAccountId()) {
+                if (account.getId() != securityGroup.getAccountId()) {
                     throw new PermissionDeniedException("unable to find port forwarding service with id " + securityGroupId + " for this account, permission denied");
                 }
             } else if (!isChildDomain(account.getDomainId(), securityGroup.getDomainId())) {
@@ -5637,7 +5611,7 @@ public class ManagementServerImpl implements ManagementServer {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId());
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
         SearchCriteria<SecurityGroupVO> sc = sb.create();
@@ -5796,7 +5770,7 @@ public class ManagementServerImpl implements ManagementServer {
                 if (!_domainDao.isChildDomain(account.getDomainId(), userAccount.getDomainId())) {
                     throw new PermissionDeniedException("Invalid load balancer rule id (" + loadBalancerId + ") given, unable to list load balancer instances.");
                 }
-            } else if (account.getId().longValue() != lbAcctId) {
+            } else if (account.getId() != lbAcctId) {
                 throw new PermissionDeniedException("Unable to list load balancer instances, account " + account.getAccountName() + " does not own load balancer rule " + loadBalancer.getName());
             }
         }
@@ -5907,13 +5881,13 @@ public class ManagementServerImpl implements ManagementServer {
             // if accountId isn't specified, we can do a domain match for the admin case
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId());
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
         if (instanceId != null) {
             SearchBuilder<LoadBalancerVMMapVO> lbVMSearch = _loadBalancerVMMapDao.createSearchBuilder();
             lbVMSearch.and("instanceId", lbVMSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
-            sb.join("lbVMSearch", lbVMSearch, sb.entity().getId(), lbVMSearch.entity().getLoadBalancerId());
+            sb.join("lbVMSearch", lbVMSearch, sb.entity().getId(), lbVMSearch.entity().getLoadBalancerId(), JoinBuilder.JoinType.INNER);
         }
 
         SearchCriteria<LoadBalancerVO> sc = sb.create();
@@ -6020,7 +5994,7 @@ public class ManagementServerImpl implements ManagementServer {
                     List<EventVO> oldEvents = _eventDao.listOlderEvents(purgeTime);
                     s_logger.debug("Found "+oldEvents.size()+" events to be purged");
                     for (EventVO event : oldEvents){
-                        _eventDao.delete(event.getId());
+                        _eventDao.expunge(event.getId());
                     }
                 } catch (Exception e) {
                     s_logger.error("Exception ", e);
@@ -6164,9 +6138,9 @@ public class ManagementServerImpl implements ManagementServer {
                 domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
 
                 SearchBuilder<AccountVO> accountSearch = _accountDao.createSearchBuilder();
-                accountSearch.join("domainSearch", domainSearch, accountSearch.entity().getDomainId(), domainSearch.entity().getId());
+                accountSearch.join("domainSearch", domainSearch, accountSearch.entity().getDomainId(), domainSearch.entity().getId(), JoinType.INNER);
 
-                sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId());
+                sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinType.INNER);
             }
         } else {
             accountId = account.getId();
@@ -6204,7 +6178,7 @@ public class ManagementServerImpl implements ManagementServer {
     public boolean isChildDomain(Long parentId, Long childId) {
         return _domainDao.isChildDomain(parentId, childId);
     }
-    
+
     public SecondaryStorageVmVO startSecondaryStorageVm(long instanceId, long startEventId) throws InternalErrorException {
         return _secStorageVmMgr.startSecStorageVm(instanceId, startEventId);
     }
@@ -6219,66 +6193,6 @@ public class ManagementServerImpl implements ManagementServer {
 
     public boolean destroySecondaryStorageVm(long instanceId, long startEventId) {
         return _secStorageVmMgr.destroySecStorageVm(instanceId, startEventId);
-    }
-
-    public long startSecondaryStorageVmAsync(long instanceId) {
-        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_START, "starting secondary storage Vm Id: "+instanceId);
-        VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
-        param.setOperation(VmOp.Start);
-        Gson gson = GsonHelper.getBuilder().create();
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-        job.setCmd("SystemVmCmd");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(StartSystemVMCmd.getResultObjectName());
-        return _asyncMgr.submitAsyncJob(job, true);
-    }
-
-    public long stopSecondaryStorageVmAsync(long instanceId) {
-        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_STOP, "stopping secondary storage Vm Id: "+instanceId);
-        VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
-        Gson gson = GsonHelper.getBuilder().create();
-        param.setOperation(VmOp.Stop);
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-        job.setCmd("SystemVmCmd");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(StartSystemVMCmd.getResultObjectName());
-        return _asyncMgr.submitAsyncJob(job, true);
-    }
-
-    public long rebootSecondaryStorageVmAsync(long instanceId) {
-        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_REBOOT, "rebooting secondary storage Vm Id: "+instanceId);
-        VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
-        Gson gson = GsonHelper.getBuilder().create();
-        param.setOperation(VmOp.Reboot);
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-        job.setCmd("SystemVmCmd");
-        job.setCmdInfo(gson.toJson(param));
-        job.setCmdOriginator(StartSystemVMCmd.getResultObjectName());
-        return _asyncMgr.submitAsyncJob(job, true);
-    }
-
-    public long destroySecondaryStorageVmAsync(long instanceId) {
-        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_DESTROY, "destroying secondary storage Vm Id: "+instanceId);
-        VMOperationParam param = new VMOperationParam(0, instanceId, null, eventId);
-        Gson gson = GsonHelper.getBuilder().create();
-        param.setOperation(VmOp.Destroy);
-
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-        job.setCmd("SystemVmCmd");
-        job.setCmdInfo(gson.toJson(param));
-        return _asyncMgr.submitAsyncJob(job);
-
     }
 
 	@Override
@@ -6442,7 +6356,7 @@ public class ManagementServerImpl implements ManagementServer {
 		}
 		return null;
 	}
-        
+
     public ArrayList<String> getCloudIdentifierResponse(GetCloudIdentifierCmd cmd) throws InvalidParameterValueException{
     	Long userId = cmd.getUserId();
     	
@@ -6485,24 +6399,6 @@ public class ManagementServerImpl implements ManagementServer {
         NetworkGroupVO groupVO = _networkSecurityGroupDao.findById(networkGroupId);
         return groupVO;
     }
-
-	@Override
-	public long revokeNetworkGroupIngressAsync(Long accountId, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups) {
-		AccountVO account = (AccountVO)findAccountById(accountId);
-		if (account == null) {
-			s_logger.warn("Unable to revoke network group ingress on group: " + groupName + " for account " + accountId + " -- account not found.");
-			return 0;
-		}
-
-		NetworkGroupIngressParam param = new NetworkGroupIngressParam(account, groupName, protocol, startPort, endPort, cidrList, authorizedGroups);
-        Gson gson = GsonHelper.getBuilder().create();
-        AsyncJobVO job = new AsyncJobVO();
-        job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(accountId);
-        job.setCmd("RevokeNetworkGroupIngress");
-        job.setCmdInfo(gson.toJson(param));
-        return _asyncMgr.submitAsyncJob(job);
-	}
 
     /**
      * {@inheritDoc}
@@ -6573,7 +6469,6 @@ public class ManagementServerImpl implements ManagementServer {
 
 	@Override
 	public boolean lockAccount(LockAccountCmd cmd) {
-
         Account adminAccount = (Account)UserContext.current().getAccountObject();
         Long domainId = cmd.getDomainId();
         String accountName = UserContext.current().getAccountName();
@@ -6588,7 +6483,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         // don't allow modify system account
-        if (account.getId().longValue() == Account.ACCOUNT_ID_SYSTEM) {
+        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "can not lock system account");
         }
 
@@ -6614,13 +6509,302 @@ public class ManagementServerImpl implements ManagementServer {
         return deleteUserInternal(userId);
 	}
 
+	@Override
+	public boolean checkIfMaintenable(long hostId) {
+
+		//get the poolhostref record
+		List<StoragePoolHostVO> poolHostRecordSet = _poolHostDao.listByHostId(hostId);
+		
+		if(poolHostRecordSet!=null)
+		{
+			//the above list has only 1 record
+			StoragePoolHostVO poolHostRecord = poolHostRecordSet.get(0);
+			
+			//get the poolId and get hosts associated in that pool
+			List<StoragePoolHostVO> hostsInPool = _poolHostDao.listByPoolId(poolHostRecord.getPoolId());
+			
+			if(hostsInPool!=null && hostsInPool.size()>1)
+			{
+				return true; //since there are other hosts to take over as master in this pool
+			}
+		}
+		return false;
+	}
+
+    @Override
+    public Map<String, String> listCapabilities(ListCapabilitiesCmd cmd) {
+        Map<String, String> capabilities = new HashMap<String, String>();
+        
+        String networkGroupsEnabled = _configs.get("direct.attach.network.groups.enabled");
+        if(networkGroupsEnabled == null) 
+            networkGroupsEnabled = "false";             
+
+        capabilities.put("networkGroupsEnabled", networkGroupsEnabled);        
+        capabilities.put("cloudStackVersion", getVersion());
+        return capabilities;
+    }
+
+    @Override
+    public GuestOSVO getGuestOs(Long guestOsId)
+    {
+    	return _guestOSDao.findById(guestOsId);
+    }
+    
+    @Override
+    public VolumeVO getRootVolume(Long instanceId)
+    {
+    	return _volumeDao.findByInstanceAndType(instanceId, Volume.VolumeType.ROOT).get(0);
+    }
+    
+    @Override
+    public long getPsMaintenanceCount(long podId){
+    	List<StoragePoolVO> poolsInTransition = new ArrayList<StoragePoolVO>();
+    	poolsInTransition.addAll(_poolDao.listPoolsByStatus(Status.Maintenance));
+    	poolsInTransition.addAll(_poolDao.listPoolsByStatus(Status.PrepareForMaintenance));
+    	poolsInTransition.addAll(_poolDao.listPoolsByStatus(Status.ErrorInMaintenance));
+
+    	return poolsInTransition.size();
+    }
+    
+    @Override
+    public boolean isPoolUp(long instanceId){
+		VolumeVO rootVolume = _volumeDao.findByInstance(instanceId).get(0);
+		
+		if(rootVolume!=null){
+			Status poolStatus = _poolDao.findById(rootVolume.getPoolId()).getStatus();
+    	
+			if(!poolStatus.equals(Status.Up))
+				return false;
+			else
+				return true;
+		}
+		
+		return false;
+    }
+
+    @Override
+    public void extractVolume(ExtractVolumeCmd cmd) throws URISyntaxException, InternalErrorException {
+        Long volumeId = cmd.getId();
+        String url = cmd.getUrl();
+        Long zoneId = cmd.getZoneId();
+        AsyncJobVO job = cmd.getJob();
+          
+        VolumeVO volume = _volumeDao.findById(volumeId);        
+        if (volume == null) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to find volume with id " + volumeId);
+        }
+
+        URI uri = new URI(url);
+        if ( (uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("ftp") )) {
+           throw new IllegalArgumentException("Unsupported scheme for url: " + url);
+        }
+
+        String host = uri.getHost();
+        try {
+            InetAddress hostAddr = InetAddress.getByName(host);
+            if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress() ) {
+                throw new IllegalArgumentException("Illegal host specified in url");
+            }
+            if (hostAddr instanceof Inet6Address) {
+                throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
+            }
+        } catch (UnknownHostException uhe) {
+            throw new IllegalArgumentException("Unable to resolve " + host);
+        }
+        
+        if (_dcDao.findById(zoneId) == null) {
+            throw new IllegalArgumentException("Please specify a valid zone.");
+        }
+        
+        if ( _uploadMonitor.isTypeUploadInProgress(volumeId, Type.VOLUME) ){
+            throw new IllegalArgumentException(volume.getName() + " upload is in progress. Please wait for some time to schedule another upload for the same");
+        }
+        
+        long userId = UserContext.current().getUserId();
+        long accountId = volume.getAccountId();        
+        long eventId = EventUtils.saveScheduledEvent(userId, accountId, EventTypes.EVENT_VOLUME_UPLOAD, "Extraction job");
+
+        String secondaryStorageURL = _storageMgr.getSecondaryStorageURL(zoneId); 
+        StoragePoolVO srcPool = _poolDao.findById(volume.getPoolId());
+        Long sourceHostId = _storageMgr.findHostIdForStoragePool(srcPool);
+        List<HostVO> storageServers = _hostDao.listByTypeDataCenter(Host.Type.SecondaryStorage, zoneId);
+        HostVO sserver = storageServers.get(0);
+
+// FIXME:  fix the saving of scheduled v. started events
+//        EventUtils.saveStartedEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_UPLOAD, "Starting upload of " +volume.getName()+ " to " +url, eventId);        
+        UploadVO uploadJob = _uploadMonitor.createNewUploadEntry(sserver.getId(), volumeId, UploadVO.Status.COPY_IN_PROGRESS, 0, Type.VOLUME, null, null, url);
+        uploadJob = _uploadDao.createForUpdate(uploadJob.getId());
+        
+        // Update the async Job
+        ExtractJobResultObject resultObj = new ExtractJobResultObject(volume.getAccountId(), volume.getName(), UploadVO.Status.COPY_IN_PROGRESS.toString(), 0, uploadJob.getId());
+        _asyncMgr.updateAsyncJobAttachment(job.getId(), Type.VOLUME.toString(), volumeId);
+        _asyncMgr.updateAsyncJobStatus(job.getId(), AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
+        
+        
+     // Copy the volume from the source storage pool to secondary storage
+        CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(), volume.getPath(), srcPool, secondaryStorageURL, true);
+        CopyVolumeAnswer cvAnswer = (CopyVolumeAnswer) _agentMgr.easySend(sourceHostId, cvCmd);
+                
+        if (cvAnswer == null || !cvAnswer.getResult()) {
+            
+            String errorString = "Failed to copy the volume from the source primary storage pool to secondary storage.";
+            
+            resultObj.setResult_string(errorString);
+            resultObj.setUploadStatus(UploadVO.Status.COPY_ERROR.toString());
+            _asyncMgr.completeAsyncJob(job.getId(), AsyncJobResult.STATUS_FAILED, 0, resultObj);
+            
+            uploadJob.setUploadState(UploadVO.Status.COPY_ERROR);            
+            uploadJob.setErrorString(errorString);
+            uploadJob.setLastUpdated(new Date());
+            _uploadDao.update(uploadJob.getId(), uploadJob);
+            
+            EventUtils.saveEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_UPLOAD, errorString);
+            
+            throw new InternalErrorException(errorString);            
+        }
+        String volumeLocalPath = "volumes/"+volume.getId()+"/"+cvAnswer.getVolumePath()+".vhd"; 
+        uploadJob.setUploadState(UploadVO.Status.COPY_COMPLETE);        
+        uploadJob.setLastUpdated(new Date());
+        _uploadDao.update(uploadJob.getId(), uploadJob);
+        
+        _uploadMonitor.extractVolume(uploadJob, sserver, volume, url, zoneId, volumeLocalPath, eventId, job.getId(), _asyncMgr);
+    }
+
+    @Override
+    public InstanceGroupVO updateVmGroup(UpdateVMGroupCmd cmd) {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long groupId = cmd.getId();
+        String groupName = cmd.getGroupName();
+
+        // Verify input parameters
+        InstanceGroupVO group = _vmGroupDao.findById(groupId.longValue());
+        if (group == null) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a vm group with id " + groupId);
+        }
+
+        if (account != null) {
+            Account tempAccount = _accountDao.findById(group.getAccountId());
+            if (!isAdmin(account.getType()) && (account.getId() != group.getAccountId())) {
+                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to find a group with id " + groupId + " for this account");
+            } else if (!_domainDao.isChildDomain(account.getDomainId(), tempAccount.getDomainId())) {
+                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Invalid group id (" + groupId + ") given, unable to update the group.");
+            }
+        }
+
+        //Check if name is already in use by this account (exclude this group)
+        boolean isNameInUse = _vmGroupDao.isNameInUse(group.getAccountId(), groupName);
+
+        if (isNameInUse && !group.getName().equals(groupName)) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to update vm group, a group with name " + groupName + " already exisits for account");
+        }
+
+        if (groupName != null) {
+        	_vmGroupDao.updateVmGroup(groupId, groupName);
+        }
+        InstanceGroupVO vmGroup = _vmGroupDao.findById(groupId);
+        return vmGroup;
+    }
+
+    @Override
+    public List<InstanceGroupVO> searchForVmGroups(ListVMGroupsCmd cmd) {
+        Account account = (Account)UserContext.current().getAccountObject();
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
+        Long accountId = null;
+        if ((account == null) || isAdmin(account.getType())) {
+            if (domainId != null) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid domain id (" + domainId + ") given, unable to list vm groups.");
+                }
+
+                if (accountName != null) {
+                    account = _accountDao.findActiveAccount(accountName, domainId);
+                    if (account == null) {
+                        throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                    accountId = account.getId();
+                }
+            } else {
+                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+            }
+        } else {
+            accountName = account.getAccountName();
+            accountId = account.getId();
+            domainId = account.getDomainId();
+        }
+
+        Filter searchFilter = new Filter(InstanceGroupVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        Object id = cmd.getId();
+        Object name = cmd.getGroupName();
+        Object keyword = cmd.getKeyword();
+
+        SearchBuilder<InstanceGroupVO> sb = _vmGroupDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+
+        if ((accountId == null) && (domainId != null)) {
+            // if accountId isn't specified, we can do a domain match for the admin case
+            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+
+        SearchCriteria<InstanceGroupVO> sc = sb.create();
+        if (keyword != null) {
+            SearchCriteria<InstanceGroupVO> ssc = _vmGroupDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+        }
+        
+    	if (id != null) {
+        	sc.setParameters("id", id);
+    	}
+        
+        if (name != null) {
+            sc.setParameters("name", "%" + name + "%");
+        }
+
+        if (accountId != null) {
+            sc.setParameters("accountId", accountId);
+        } else if (domainId != null) {
+            DomainVO domain = _domainDao.findById((Long)domainId);
+            if (domain != null){
+            	sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+            }   
+        }
+
+        return _vmGroupDao.search(sc, searchFilter);
+    }
+
+	@Override
+	public InstanceGroupVO getGroupForVm(long vmId){
+		return _vmMgr.getGroupForVm(vmId);
+	}
+
+    @Override
+    public List<VlanVO> searchForZoneWideVlans(long dcId, String vlanType, String vlanId){
+    	return _vlanDao.searchForZoneWideVlans(dcId, vlanType, vlanId);
+    }
+
+    @Override
+    public String getVersion(){
+        final Class<?> c = ManagementServer.class;
+        String fullVersion = c.getPackage().getImplementationVersion();
+        String version = "unknown"; 
+        if(fullVersion.length() > 0){
+            version = fullVersion.substring(0,fullVersion.lastIndexOf("."));
+        }
+        return version;
+    }
+
 	private Long checkAccountPermissions(long targetAccountId, long targetDomainId, String targetDesc, long targetId) throws ServerApiException {
         Long accountId = null;
 
         Account account = (Account)UserContext.current().getAccountObject();
         if (account != null) {
             if (!isAdmin(account.getType())) {
-                if (account.getId().longValue() != targetAccountId) {
+                if (account.getId() != targetAccountId) {
                     throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find a " + targetDesc + " with id " + targetId + " for this account");
                 }
             } else if (!_domainDao.isChildDomain(account.getDomainId(), targetDomainId)) {

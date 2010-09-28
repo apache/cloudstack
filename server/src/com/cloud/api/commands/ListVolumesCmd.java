@@ -189,11 +189,10 @@ public class ListVolumesCmd extends BaseListCmd {
             volResponse.setStorageType(storageType);
             
             volResponse.setDiskOfferingId(volume.getDiskOfferingId());
-            if (volume.getDiskOfferingId() != null) {
-                DiskOfferingVO diskOffering = ApiDBUtils.findDiskOfferingById(volume.getDiskOfferingId());
-                volResponse.setDiskOfferingName(diskOffering.getName());
-                volResponse.setDiskOfferingDisplayText(diskOffering.getDisplayText());
-            }
+
+            DiskOfferingVO diskOffering = ApiDBUtils.findDiskOfferingById(volume.getDiskOfferingId());
+            volResponse.setDiskOfferingName(diskOffering.getName());
+            volResponse.setDiskOfferingDisplayText(diskOffering.getDisplayText());
 
             Long poolId = volume.getPoolId();
             String poolName = (poolId == null) ? "none" : ApiDBUtils.findStoragePoolById(poolId).getName();

@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
@@ -26,7 +25,6 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ResponseObject;
-import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.IPAddressResponse;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;

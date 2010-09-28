@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
@@ -70,7 +69,7 @@ public class UpdateAccountCmd extends BaseCmd{
     public String getName() {
         return s_name;
     }
-    
+
     @Override
     public ResponseObject getResponse() {
         SuccessResponse response = new SuccessResponse();

@@ -61,6 +61,7 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmStats;
@@ -99,7 +100,7 @@ public class StatsCollector {
 	long storageStatsInterval = -1L;
 	long volumeStatsInterval = -1L;
 
-	private final GlobalLock m_capacityCheckLock = GlobalLock.getInternLock("capacity.check");
+	//private final GlobalLock m_capacityCheckLock = GlobalLock.getInternLock("capacity.check");
 
     public static StatsCollector getInstance() {
         return s_instance;
@@ -283,7 +284,7 @@ public class StatsCollector {
 				
 				ConcurrentHashMap<Long, StorageStats> storagePoolStats = new ConcurrentHashMap<Long, StorageStats>();
 
-				List<StoragePoolVO> storagePools = _storagePoolDao.listAllActive();
+				List<StoragePoolVO> storagePools = _storagePoolDao.listAll();
 				for (StoragePoolVO pool: storagePools) {
 					GetStorageStatsCommand command = new GetStorageStatsCommand(pool.getUuid(), pool.getPoolType(), pool.getPath());
 					Answer answer = _storageManager.sendToPool(pool, command);
@@ -293,65 +294,64 @@ public class StatsCollector {
 				}
 				_storagePoolStats = storagePoolStats;
 
-		        if (m_capacityCheckLock.lock(5)) { // 5 second timeout
-		            if (s_logger.isTraceEnabled()) {
+				// a list to store the new capacity entries that will be committed once everything is calculated
+				List<CapacityVO> newCapacities = new ArrayList<CapacityVO>();
+
+                // create new entries
+                for (Long hostId : storageStats.keySet()) {
+                    StorageStats stats = storageStats.get(hostId);
+                    HostVO host = _hostDao.findById(hostId);
+                    host.setTotalSize(stats.getCapacityBytes());
+                    _hostDao.update(host.getId(), host);
+
+                    if (Host.Type.SecondaryStorage.equals(host.getType())) {
+                        CapacityVO capacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), stats.getByteUsed(), stats.getCapacityBytes(), CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE);
+                        newCapacities.add(capacity);
+//                        _capacityDao.persist(capacity);
+                    } else if (Host.Type.Storage.equals(host.getType())) {
+                        CapacityVO capacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), stats.getByteUsed(), stats.getCapacityBytes(), CapacityVO.CAPACITY_TYPE_STORAGE);
+                        newCapacities.add(capacity);
+//                        _capacityDao.persist(capacity);
+                    }
+                }
+
+                for (Long poolId : storagePoolStats.keySet()) {
+                    StorageStats stats = storagePoolStats.get(poolId);
+                    StoragePoolVO pool = _storagePoolDao.findById(poolId);
+                    
+                    if (pool == null) {
+                        continue;
+                    }
+                    
+                    pool.setCapacityBytes(stats.getCapacityBytes());
+                    long available = stats.getCapacityBytes() - stats.getByteUsed();
+                    if( available < 0 ) {
+                        available = 0;
+                    }
+                    pool.setAvailableBytes(available);
+                    _storagePoolDao.update(pool.getId(), pool);                         
+                    
+                    _storageManager.createCapacityEntry(pool, 0L);
+                }
+
+                Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+                try {
+                	if (s_logger.isTraceEnabled()) {
 		                s_logger.trace("recalculating system storage capacity");
 		            }
-		            try {
-		                // now update the capacity table with the new stats
-		                // FIXME: the right way to do this is to register a listener (see RouterStatsListener)
-		                //        for the host stats, send the Watch<something>Command at a regular interval
-		                //        to collect the stats from an agent and update the database as needed.  The
-		                //        listener model has connects/disconnects to keep things in sync much better
-		                //        than this model right now
-		                _capacityDao.clearStorageCapacities();
-
-		                // create new entries
-		                for (Long hostId : storageStats.keySet()) {
-		                    StorageStats stats = storageStats.get(hostId);
-		                    HostVO host = _hostDao.findById(hostId);
-		                    host.setTotalSize(stats.getCapacityBytes());
-		                    _hostDao.update(host.getId(), host);
-
-		                    if (Host.Type.SecondaryStorage.equals(host.getType())) {
-	                            CapacityVO capacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), stats.getByteUsed(), stats.getCapacityBytes(), CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE);
-	                            _capacityDao.persist(capacity);
-		                    } else if (Host.Type.Storage.equals(host.getType())) {
-	                            CapacityVO capacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), stats.getByteUsed(), stats.getCapacityBytes(), CapacityVO.CAPACITY_TYPE_STORAGE);
-	                            _capacityDao.persist(capacity);
-		                    }
-		                }
-
-		                for (Long poolId : storagePoolStats.keySet()) {
-		                    StorageStats stats = storagePoolStats.get(poolId);
-		                    StoragePoolVO pool = _storagePoolDao.findById(poolId);
-		                    
-		                    if (pool == null) {
-		                    	continue;
-		                    }
-		                    
-		                    pool.setCapacityBytes(stats.getCapacityBytes());
-		                    long available = stats.getCapacityBytes() - stats.getByteUsed();
-		                    if( available < 0 ) {
-		                        available = 0;
-		                    }
-		                    pool.setAvailableBytes(available);
-		                    _storagePoolDao.update(pool.getId(), pool);		                    
-		                    
-		                    CapacityVO capacity = new CapacityVO(poolId, pool.getDataCenterId(), pool.getPodId(), stats.getByteUsed(), stats.getCapacityBytes(), CapacityVO.CAPACITY_TYPE_STORAGE);
-		                    _capacityDao.persist(capacity);
-		                }
-		            } finally {
-		                m_capacityCheckLock.unlock();
-		            }
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("done recalculating system storage capacity");
-                    }
-		        } else {
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("not recalculating system storage capacity, unable to lock capacity table");
-                    }
-		        }
+                	txn.start();
+	                for (CapacityVO newCapacity : newCapacities) {
+	                	s_logger.trace("Executing capacity update");
+	                    _capacityDao.persist(newCapacity);
+	                    s_logger.trace("Done with capacity update");
+	                }
+		            txn.commit();
+                } catch (Exception ex) {
+                	txn.rollback();
+                	s_logger.error("Unable to start transaction for storage capacity update");
+                }finally {
+                	txn.close();
+                }
 			} catch (Throwable t) {
 				s_logger.error("Error trying to retrieve storage stats", t);
 			}
@@ -373,7 +373,7 @@ public class StatsCollector {
 	class VolumeCollector implements Runnable {
 		public void run() {
 			try {
-				List<VolumeVO> volumes = _volsDao.listAllActive();
+				List<VolumeVO> volumes = _volsDao.listAll();
 				Map<Long, List<VolumeCommand>> commandsByPool = new HashMap<Long, List<VolumeCommand>>();
 				
 				for (VolumeVO volume : volumes) {

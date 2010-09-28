@@ -1,4 +1,5 @@
 build/build.number
+<<<<<<< HEAD
 build.number
 bin
 cloudstack-proprietary
@@ -15,3 +16,23 @@ dist
 cloud-*.tar.bz2
 *.pyc
 build.number
+=======
+bin/
+cloudstack-proprietary/
+premium/
+.lock-wscript
+artifacts/
+.waf-*
+waf-*
+target/
+override/
+.metadata
+dist/
+*~
+*.bak
+cloud-*.tar.bz2
+*.log
+*.pyc
+build.number
+cloud.log.*.*
+>>>>>>> master

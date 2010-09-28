@@ -17,6 +17,7 @@
  */
 package com.cloud.server;
 
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -35,10 +36,12 @@ import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
+import com.cloud.api.commands.ExtractVolumeCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.ListAccountsCmd;
 import com.cloud.api.commands.ListAlertsCmd;
 import com.cloud.api.commands.ListAsyncJobsCmd;
+import com.cloud.api.commands.ListCapabilitiesCmd;
 import com.cloud.api.commands.ListCapacityCmd;
 import com.cloud.api.commands.ListCfgsByCmd;
 import com.cloud.api.commands.ListClustersCmd;
@@ -67,6 +70,7 @@ import com.cloud.api.commands.ListSystemVMsCmd;
 import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.ListUsersCmd;
+import com.cloud.api.commands.ListVMGroupsCmd;
 import com.cloud.api.commands.ListVMsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.ListVolumesCmd;
@@ -86,6 +90,7 @@ import com.cloud.api.commands.UpdateIPForwardingRuleCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateUserCmd;
+import com.cloud.api.commands.UpdateVMGroupCmd;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.capacity.CapacityVO;
@@ -136,8 +141,8 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.vm.ConsoleProxyVO;
-import com.cloud.vm.DomainRouter;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -201,7 +206,6 @@ public interface ManagementServer {
      * @return true if disable was successful, false otherwise
      */
     boolean disableUser(long userId);
-    long disableUserAsync(long userId);
 
     /**
      * Disables an account by accountId
@@ -209,7 +213,6 @@ public interface ManagementServer {
      * @return true if disable was successful, false otherwise
      */
     boolean disableAccount(long accountId);
-    long disableAccountAsync(long accountId); 
     
     /**
      * Enables an account by accountId
@@ -382,45 +385,6 @@ public interface ManagementServer {
      * @throws ConcurrentOperationException
      */
     UserVm deployVirtualMachine(DeployVMCmd cmd) throws ResourceAllocationException, InvalidParameterValueException, InternalErrorException, InsufficientStorageCapacityException, PermissionDeniedException, ExecutionException, StorageUnavailableException, ConcurrentOperationException;
-
-    /**
-     * Destroys a Virtual Machine
-     * @param vmId
-     * @return true if destroyed, false otherwise
-     */
-    boolean destroyVirtualMachine(long userId, long vmId);
-    
-    /**
-     * 
-     * @param userId
-     * @param vmId
-     * @return the async-call job id
-     */
-    long destroyVirtualMachineAsync(long userId, long vmId);
-
-    /**
-     * Starts a Domain Router
-     * 
-     * @param routerId
-     * @return DomainRouter if successfully started, false otherwise
-     */
-	DomainRouter startRouter(long routerId, long startEventId) throws InternalErrorException;
-	
-	/**
-	 * Stops a Domain Router
-	 * 
-	 * @param routerId
-	 * @return true if successfully stopped, false otherwise
-	 */
-	boolean stopRouter(long routerId, long startEventId);
-	
-	/**
-	 * Reboots a Domain Router
-	 * 
-	 * @param routerId
-	 * @return true if successfully rebooted, false otherwise
-	 */
-	boolean rebootRouter(long routerId, long startEventId) throws InternalErrorException;
 
     /**
      * Finds a domain router by user and data center
@@ -815,11 +779,8 @@ public interface ManagementServer {
 
 	ConsoleProxyInfo getConsoleProxy(long dataCenterId, long userVmId);
 	ConsoleProxyVO startConsoleProxy(long instanceId, long startEventId) throws InternalErrorException;
-	long startConsoleProxyAsync(long instanceId);
 	boolean stopConsoleProxy(long instanceId, long startEventId);
-	long stopConsoleProxyAsync(long instanceId);
 	boolean rebootConsoleProxy(long instanceId, long startEventId);
-	long rebootConsoleProxyAsync(long instanceId);
 	String getConsoleAccessUrlRoot(long vmId);
 	ConsoleProxyVO findConsoleProxyById(long instanceId);
 	VMInstanceVO findSystemVMById(long instanceId);
@@ -1087,8 +1048,6 @@ public interface ManagementServer {
      */
     void removeSecurityGroup(long userId, long securityGroupId, String publicIp, long vmId, long startEventId) throws InvalidParameterValueException, PermissionDeniedException;
     void removeSecurityGroup(RemovePortForwardingServiceCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
-    
-    long removeSecurityGroupAsync(Long userId, long securityGroupId, String publicIp, long vmId);
 
     /**
      * validate that the list of security groups can be applied to the instance
@@ -1210,21 +1169,6 @@ public interface ManagementServer {
      */
     NetworkGroupVO findNetworkGroupById(long networkGroupId);
 
-
-    /**
-	 * Revoke access to a network group.  Access could have been granted to a set of IP ranges, or to network groups belonging to other accounts.  Access
-	 * can be revoked in a similar manner (either from a set of IP ranges or from network groups belonging to other accounts).
-	 * @param accountId the account id of the owner of the given network group
-	 * @param groupName the name of the network group from which access is being revoked
-	 * @param protocol access had been granted on a port range (start port, end port) and network protocol, this protocol scopes the network protocol from which access is being revoked
-	 * @param startPort access had been granted on a port range (start port, end port) and network protocol, this start port scopes the start of a network port range from which access is being revoked
-	 * @param endPort access had been granted on a port range (start port, end port) and network protocol, this end port scopes the end of a network port range from which access is being revoked
-	 * @param cidrList the IP range from which access is being revoked
-	 * @param authorizedGroups the network groups (looked up by group name/account) from which access is being revoked
-	 * @return the job id if scheduled, 0 if the job was not scheduled
-	 */
-	long revokeNetworkGroupIngressAsync(Long accountId, String groupName, String protocol, int startPort, int endPort, String [] cidrList, List<NetworkGroupVO> authorizedGroups);
-
 	/**
 	 * Is the hypervisor snapshot capable.
 	 * @return True if the hypervisor.type is XenServer
@@ -1239,4 +1183,35 @@ public interface ManagementServer {
 	boolean updateUser(UpdateUserCmd cmd) throws InvalidParameterValueException;
 	boolean updateTemplatePermissions(UpdateTemplateOrIsoPermissionsCmd cmd)throws InvalidParameterValueException, PermissionDeniedException,InternalErrorException;
 	String[] createApiKeyAndSecretKey(RegisterCmd cmd);
+
+	VolumeVO findVolumeByInstanceAndDeviceId(long instanceId, long deviceId);
+
+    InstanceGroupVO updateVmGroup(UpdateVMGroupCmd cmd);
+
+    List<InstanceGroupVO> searchForVmGroups(ListVMGroupsCmd cmd);
+
+    InstanceGroupVO getGroupForVm(long vmId);
+
+    List<VlanVO> searchForZoneWideVlans(long dcId, String vlanType,String vlanId);
+
+    /* 
+     * Fetches the version of cloud stack 
+     */
+    String getVersion();
+
+    Map<String, String> listCapabilities(ListCapabilitiesCmd cmd);
+    GuestOSVO getGuestOs(Long guestOsId);
+    VolumeVO getRootVolume(Long instanceId);
+    long getPsMaintenanceCount(long podId);
+    boolean isPoolUp(long instanceId);
+    boolean checkIfMaintenable(long hostId);
+
+    /**
+     * Extracts the volume to a particular location.
+     * @param cmd the command specifying url (where the volume needs to be extracted to), zoneId (zone where the volume exists), id (the id of the volume)
+     * @throws URISyntaxException
+     * @throws InternalErrorException
+     *
+     */
+    void extractVolume(ExtractVolumeCmd cmd) throws URISyntaxException, InternalErrorException;
 }

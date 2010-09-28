@@ -82,6 +82,7 @@ import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.maid.StackMaid;
@@ -360,7 +361,7 @@ public class ApiServer implements HttpRequestHandler {
                 params.put("ctxUserId", userId.toString());
             }
             if (account != null) {
-                params.put("ctxAccountId", account.getId().toString());
+                params.put("ctxAccountId", String.valueOf(account.getId()));
             }
 
             AsyncJobVO job = new AsyncJobVO();
@@ -468,7 +469,7 @@ public class ApiServer implements HttpRequestHandler {
                 /*
     			requestParameters.put(BaseCmd.Properties.USER_ID.getName(), new String[] { user.getId().toString() });
                 requestParameters.put(BaseCmd.Properties.ACCOUNT.getName(), new String[] { account.getAccountName() });
-                requestParameters.put(BaseCmd.Properties.DOMAIN_ID.getName(), new String[] { account.getDomainId().toString() });
+                requestParameters.put(BaseCmd.Properties.DOMAIN_ID.getName(), new String[] { Long.toString(account.getDomainId()) });
         		requestParameters.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { account });
         		*/
     		} else {
@@ -516,7 +517,7 @@ public class ApiServer implements HttpRequestHandler {
         	if (domainPath == null || domainPath.trim().length() == 0) {
         		domainId = DomainVO.ROOT_DOMAIN;
         	} else {
-                DomainVO domainObj = _ms.findDomainByPath(domainPath);
+                Domain domainObj = _ms.findDomainByPath(domainPath);
         		if (domainObj != null) {
         			domainId = domainObj.getId();
         		} else { // if an unknown path is passed in, fail the login call
@@ -569,13 +570,14 @@ public class ApiServer implements HttpRequestHandler {
             session.setAttribute("lastname", userAcct.getLastname());
             session.setAttribute("accountobj", account);
             session.setAttribute("account", account.getAccountName());
-            session.setAttribute("domainid", account.getDomainId().toString());
+            session.setAttribute("domainid", account.getDomainId());
             session.setAttribute("type", Short.valueOf(account.getType()).toString());
             session.setAttribute("networktype", networkType);
             session.setAttribute("hypervisortype", hypervisorType);
             session.setAttribute("directattachnetworkgroupsenabled", directAttachNetworkGroupsEnabled);
             session.setAttribute("directattacheduntaggedenabled", directAttachedUntaggedEnabled);
             session.setAttribute("systemvmuselocalstorage", systemVmUseLocalStorage);
+
             if (timezone != null) {
                 session.setAttribute("timezone", timezone);
                 session.setAttribute("timezoneoffset", Float.valueOf(offsetInHrs).toString());

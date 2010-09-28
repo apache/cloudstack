@@ -41,16 +41,6 @@ import com.cloud.utils.Profiler;
 //		}
 //		lock.releaseRef();
 //
-//
-// 		GlobalLock.Auto lock = GlobalLock.getAutoInternLock("some table name" + rowId);
-//		if(lock.lock()) {
-//			try {
-//				do something
-//			} finally {
-//				lock.unlock();
-//			}
-//		}
-//
 public class GlobalLock {
     protected final static Logger s_logger = Logger.getLogger(GlobalLock.class);
 
@@ -92,11 +82,7 @@ public class GlobalLock {
 			releaseInternLock(name);
 		return refCount;
 	}
-	
-	public static GlobalLock.Auto getAutoInternLock(String name) {
-		return new GlobalLock.Auto(getInternLock(name));
-	}
-	
+
 	public static GlobalLock getInternLock(String name) {
 		synchronized(s_lockMap) {
 			if(s_lockMap.containsKey(name)) {
@@ -202,29 +188,5 @@ public class GlobalLock {
 	
 	public String getName() {
 		return name;
-	}
-	
-	public static class Auto {
-		private GlobalLock lock;
-		
-		public Auto(GlobalLock lock) {
-			this.lock = lock;
-		}
-		
-		protected void finalize() throws Throwable {
-		    try {
-		    	lock.releaseRef();
-		    } finally {
-		        super.finalize();
-		    }
-		}
-		
-		public boolean lock(int timeoutSeconds) {
-			return lock.lock(timeoutSeconds); 
-		}
-		
-		public boolean unlock() {
-			return lock.unlock();
-		}
 	}
 }

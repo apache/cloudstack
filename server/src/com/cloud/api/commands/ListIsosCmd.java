@@ -231,7 +231,7 @@ public class ListIsosCmd extends BaseListCmd {
                 isoResponse.setZoneName(datacenter.getName());
                             
                 // If the user is an admin, add the template download status
-                if (isAdmin || account.getId().longValue() == iso.getAccountId()) {
+                if (isAdmin || account.getId() == iso.getAccountId()) {
                     // add download status
                     if (isoHost.getDownloadState()!=Status.DOWNLOADED) {
                         String isoStatus = "Processing";

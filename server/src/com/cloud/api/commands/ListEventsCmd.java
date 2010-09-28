@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import java.util.ArrayList;
@@ -67,7 +66,6 @@ public class ListEventsCmd extends BaseListCmd {
 
     @Parameter(name="type", type=CommandType.STRING)
     private String type;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////

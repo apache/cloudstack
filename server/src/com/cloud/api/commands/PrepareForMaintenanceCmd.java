@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
@@ -29,7 +28,8 @@ import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="maintain", manager=Manager.AgentManager)
 public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(PrepareForMaintenanceCmd.class.getName());	
+	public static final Logger s_logger = Logger.getLogger(PrepareForMaintenanceCmd.class.getName());
+	
     private static final String s_name = "preparehostformaintenanceresponse";
 
     /////////////////////////////////////////////////////

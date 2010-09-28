@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
 import com.cloud.utils.db.GenericSearchBuilder.Condition;
 import com.cloud.utils.db.GenericSearchBuilder.Select;
 
@@ -117,7 +116,7 @@ public class SearchCriteria<K> {
     private ArrayList<Condition> _additionals = null;
     private final HashMap<String, Object[]> _params = new HashMap<String, Object[]>();
     private int _counter;
-    private HashMap<String, Ternary<SearchCriteria<?>, Attribute, Attribute>> _joins;
+    private HashMap<String, JoinBuilder<SearchCriteria<?>>> _joins;
     private final ArrayList<Select> _selects;
     private final ArrayList<Attribute> _groupBys;
     private final Class<K> _resultType;
@@ -130,10 +129,10 @@ public class SearchCriteria<K> {
         this._counter = 0;
         this._joins = null;
         if (sb._joins != null) {
-            _joins = new HashMap<String, Ternary<SearchCriteria<?>, Attribute, Attribute>>(sb._joins.size());
-            for (Map.Entry<String, Ternary<GenericSearchBuilder<?, ?>, Attribute, Attribute>> entry : sb._joins.entrySet()) {
-                Ternary<GenericSearchBuilder<?, ?>, Attribute, Attribute> value = entry.getValue();
-                _joins.put(entry.getKey(), new Ternary<SearchCriteria<?>, Attribute, Attribute>(value.first().create(), value.second(), value.third()));
+        	_joins = new HashMap<String, JoinBuilder<SearchCriteria<?>>>(sb._joins.size());
+            for (Map.Entry<String, JoinBuilder<GenericSearchBuilder<?, ?>>> entry : sb._joins.entrySet()) {
+                JoinBuilder<GenericSearchBuilder<?, ?>> value =  entry.getValue();
+                _joins.put(entry.getKey(), new JoinBuilder<SearchCriteria<?>>(value.getT().create(),value.getFirstAttribute(), value.getSecondAttribute(), value.getType()));
             }
         }
         _selects = sb._selects;
@@ -187,25 +186,26 @@ public class SearchCriteria<K> {
     }
     
     public void setJoinParameters(String joinName, String conditionName, Object... params) {
-        Ternary<SearchCriteria<?>, Attribute, Attribute> join = _joins.get(joinName);
+    	JoinBuilder<SearchCriteria<?>> join = _joins.get(joinName);
         assert (join != null) : "Incorrect join name specified: " + joinName;
-        join.first().setParameters(conditionName, params);
+        join.getT().setParameters(conditionName, params);
+
     }
     
     public void addJoinAnd(String joinName, String field, Op op, Object... values) {
-        Ternary<SearchCriteria<?>, Attribute, Attribute> join = _joins.get(joinName);
+    	JoinBuilder<SearchCriteria<?>> join = _joins.get(joinName);
         assert (join != null) : "Incorrect join name specified: " + joinName;
-        join.first().addAnd(field, op, values);
+        join.getT().addAnd(field, op, values);
     }
     
     public void addJoinOr(String joinName, String field, Op op, Object... values) {
-        Ternary<SearchCriteria<?>, Attribute, Attribute> join = _joins.get(joinName);
+        JoinBuilder<SearchCriteria<?>> join = _joins.get(joinName);
         assert (join != null) : "Incorrect join name specified: " + joinName;
-        join.first().addOr(field, op, values);
+        join.getT().addOr(field, op, values);
     }
     
     public SearchCriteria getJoin(String joinName) {
-        return _joins.get(joinName).first();
+    	return _joins.get(joinName).getT();
     }
     
     public List<Attribute> getGroupBy() {
@@ -290,12 +290,11 @@ public class SearchCriteria<K> {
         return params;
     }
     
-    public Collection<Ternary<SearchCriteria<?>, Attribute, Attribute>> getJoins() {
+    public Collection<JoinBuilder<SearchCriteria<?>>> getJoins() {
         return _joins != null ? _joins.values() : null;
     }
     
     private void getParams(ArrayList<Pair<Attribute, Object>> params, Condition condition, Object[] objs) {
-        //Object[] objs = _params.get(condition.name);
         if (condition.op == Op.SC) {
             assert (objs != null && objs.length > 0) : " Where's your search criteria object? " + condition.name;
             params.addAll(((SearchCriteria<?>)objs[0]).getValues());

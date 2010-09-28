@@ -9,7 +9,6 @@ APPNAME = 'cloud'
 import shutil,os
 import email,time
 import optparse
-import platform
 import Utils,Node,Options,Logs,Scripting,Environment,Build,Configure
 from subprocess import Popen as _Popen,PIPE
 import os
@@ -144,8 +143,9 @@ def svninfo(*args):
 	else: url = "SVN " + url[0].strip()
 	return rev + "\n" + url
 
-def gitinfo(*args):
-	try: p = _Popen(['git','remote','show','-n','origin']+list(args),stdin=PIPE,stdout=PIPE,stderr=PIPE)
+def gitinfo(dir=None):
+	if dir and not _isdir(dir): return ''
+	try: p = _Popen(['git','remote','show','-n','origin'],stdin=PIPE,stdout=PIPE,stderr=PIPE,cwd=dir)
 	except OSError,e:
 		if e.errno == 2: return '' # svn command is not installed
 		raise
@@ -158,7 +158,7 @@ def gitinfo(*args):
 	except IndexError: url = [ s[5:] for s in stdout if s.startswith("URL") ][0]
 	assert url
 	
-	p = _Popen(['git','log','-1']+list(args),stdin=PIPE,stdout=PIPE,stderr=PIPE)
+	p = _Popen(['git','log','-1'],stdin=PIPE,stdout=PIPE,stderr=PIPE,cwd=dir)
 	stdout,stderr = p.communicate('')
 	retcode = p.wait()
 	if retcode: return
@@ -168,6 +168,15 @@ def gitinfo(*args):
 	assert commitid
 	
 	return "Git Revision: %s"%commitid + "\n" + "Git URL: %s"%url
+
+def allgitinfo():
+	t = gitinfo()
+	if not t: return t
+	
+	u = gitinfo(_join(pardir,"cloudstack-proprietary"))
+	if not u: return t
+	
+	return t + "\n\ncloustack-proprietary:\n" + u
 
 def _getbuildnumber(): # FIXME implement for git
 	n = Options.options.BUILDNUMBER
@@ -188,14 +197,6 @@ def _getbuildnumber(): # FIXME implement for git
 		rev = rev[0][14:].strip()
 		return rev
 Utils.getbuildnumber = _getbuildnumber
-
-def _subst_add_destdir(x,bld):
-	a = "${DESTDIR}" + x
-	a = a.replace("${DESTDIR}",Options.options.destdir)
-	a = Utils.subst_vars(a,bld.env)
-	if a.startswith("//"): a = a[1:]
-	return a
-Build.BuildContext.subst_add_destdir = staticmethod(_subst_add_destdir)
 
 def mkdir_p(directory):
 	if not _isdir(directory):
@@ -230,6 +231,7 @@ def discover_ant_targets_and_properties(files):
 	propsinpropfiles = [ l.strip().split("=",1) for f in files if f.endswith(".properties") for l in file(f).readlines() if "=" in l and not l.startswith("#") ]
 	props = dict( propsinxml + propsinpropfiles )
 	props["base.dir"] = '.'
+	props["p.base.dir"] = '.'
 
 	result = []
 	for name,target in targets.items():
@@ -268,7 +270,9 @@ def runant(tsk):
 			"-Dthirdparty.classpath=%s"%(tsk.env.CLASSPATH.replace(os.pathsep,",")),
 		]
 	stanzas += tsk.generator.antargs + tsk.generator.anttgts
-	return Utils.exec_command(" ".join(stanzas),cwd=tsk.generator.bld.srcnode.abspath(),env=environ,log=True)
+	ret = Utils.exec_command(" ".join(stanzas),cwd=tsk.generator.bld.srcnode.abspath(),env=environ,log=True)
+	if ret != 0: raise Utils.WafError("Ant command %s failed with error value %s"%(stanzas,ret))
+	return ret
 Utils.runant = runant
 
 @throws_command_errors
@@ -331,68 +335,45 @@ def _install_files_filtered(self,destdir,listoffiles,**kwargs):
 	return ret
 Build.BuildContext.install_files_filtered = _install_files_filtered
 
-def _setownership(ctx,path,owner,group,mode=None):
-	def f(bld,path,owner,group,mode):
-		dochown = not Options.options.NOCHOWN \
-				and hasattr(os,"getuid") and os.getuid() == 0 \
-				and _chown \
-				and _chmod \
-				and pwd \
-				and grp \
-				and stat
-		if not dochown: return
-		
-		try: uid = pwd.getpwnam(owner).pw_uid
-		except KeyError,e: raise Utils.WafError("If installing as root, please either create a %s user or use the --nochown parameter of waf install to install the files as root"%owner)
-		try: gid = grp.getgrnam(group).gr_gid
-		except KeyError,e: raise Utils.WafError("If installing as root, please either create a %s group or use the --nochown parameter of waf install to install the files as root"%group)
-		
-		path = _subst_add_destdir(path,bld)
-		current_uid,current_gid = os.stat(path).st_uid,os.stat(path).st_gid
-		if current_uid != uid:
-			Utils.pprint("GREEN","* setting owner of %s to UID %s"%(path,uid))
-			_chown(path,uid,current_gid)
-			current_uid = uid
-		if current_gid != gid:
-			Utils.pprint("GREEN","* setting group of %s to GID %s"%(path,gid))
-			_chown(path,current_uid,gid)
-			current_gid = gid
-		if mode is not None:
-			current_mode = stat.S_IMODE(os.stat(path).st_mode)
-			if current_mode != mode:
-				Utils.pprint("GREEN","* adjusting permissions on %s to mode %o"%(path,mode))
-				_chmod(path,mode)
-				current_mode = mode
-	
-	if Options.is_install:
-		ctx.add_post_fun(lambda ctx: f(ctx,path,owner,group,mode))
-Build.BuildContext.setownership = _setownership
+def _substitute(self,listoffiles,install_to=None,cwd=None,dict=None,name=None,**kwargs):
+	if cwd is None: cwd = self.path
+	tgenkwargs = {}
+	if name is not None: tgenkwargs["name"] = name
+	if isinstance(listoffiles,str) and '**' in listoffiles:
+		listoffiles = cwd.ant_glob(listoffiles,flat=True)
+	elif isinstance(listoffiles,str) and '*' in listoffiles:
+		listoffiles = [ n for x in listoffiles.split() for n in _glob(cwd.abspath() + os.sep + x.replace("/",os.sep))  ]
+	for src in Utils.to_list(listoffiles):
+		tgt = src + ".subst"
+		inst = src # Utils.relpath(src,relative_to) <- disabled
+		tgen = self(features='subst', source=src, target=tgt, **tgenkwargs)
+		if dict is not None: tgen.dict = dict
+		else: tgen.dict = self.env.get_merged_dict()
+		self.path.find_or_declare(tgt)
+		if install_to is not None: self.install_as("%s/%s"%(install_to,inst), tgt, **kwargs)
+Build.BuildContext.substitute = _substitute
 
 def set_options(opt):
 	"""Register command line options"""
 	opt.tool_options('gnu_dirs')
-	if platform.system() not in ['Windows',"Darwin"]: opt.tool_options('compiler_cc')
 	opt.tool_options('python')
+	opt.tool_options('tar',tooldir='tools/waf')
+	opt.tool_options('mkisofs',tooldir='tools/waf')
+	if Options.platform not in ['darwin','win32']: opt.tool_options('usermgmt',tooldir='tools/waf')
+	if Options.platform not in ['darwin','win32']: opt.tool_options('javadir',tooldir='tools/waf')
+	opt.tool_options('tomcat',tooldir='tools/waf')
+	if Options.platform not in ['darwin',"win32"]: opt.tool_options('compiler_cc')
 	
-        inst_dir = opt.get_option_group('--bindir') # get the group that contains bindir
-	inst_dir.add_option('--javadir', # add javadir to the group that contains bindir
-		help = 'Java class and jar files [Default: ${DATADIR}/java]',
-		default = '',
-		dest = 'JAVADIR')
-	inst_dir.add_option('--with-tomcat', # add javadir to the group that contains bindir
-		help = 'Path to installed Tomcat 6 environment [Default: ${DATADIR}/tomcat6 (unless %%CATALINA_HOME%% is set)]',
-		default = '',
-		dest = 'TOMCATHOME')
-        inst_dir = opt.get_option_group('--srcdir') # get the group that contains the srcdir
-	inst_dir.add_option('--with-db-host', # add javadir to the group that contains bindir
+        inst_dir = opt.get_option_group('--srcdir')
+	inst_dir.add_option('--with-db-host',
 		help = 'Database host to use for waf deploydb [Default: 127.0.0.1]',
 		default = '127.0.0.1',
 		dest = 'DBHOST')
-	inst_dir.add_option('--with-db-user', # add javadir to the group that contains bindir
+	inst_dir.add_option('--with-db-user',
 		help = 'Database user to use for waf deploydb [Default: root]',
 		default = 'root',
 		dest = 'DBUSER')
-	inst_dir.add_option('--with-db-pw', # add javadir to the group that contains bindir
+	inst_dir.add_option('--with-db-pw',
 		help = 'Database password to use for waf deploydb [Default: ""]',
 		default = '',
 		dest = 'DBPW')
@@ -410,12 +391,7 @@ def set_options(opt):
 		help = 'does ---no-dep-check',
 		default = False,
 		dest = 'NODEPCHECK')
-        inst_dir = opt.get_option_group('--force') # get the group that contains the force
-	inst_dir.add_option('--nochown',
-		action='store_true',
-		help = 'skip chown and chmod upon install (skipped on Windows or by non-root users by default)',
-		default = False,
-		dest = 'NOCHOWN')
+        inst_dir = opt.get_option_group('--force')
 	inst_dir.add_option('--preserve-config',
 		action='store_true',
 		help = 'do not install configuration files',
@@ -424,7 +400,7 @@ def set_options(opt):
 
 	debugopts = optparse.OptionGroup(opt.parser,'run/debug options')
 	opt.add_option_group(debugopts)
-	debugopts.add_option('--debug-port', # add javadir to the group that contains bindir
+	debugopts.add_option('--debug-port',
 		help = 'Port on which the debugger will listen when running waf debug [Default: 8787]',
 		default = '8787',
 		dest = 'DEBUGPORT')
@@ -441,15 +417,15 @@ def set_options(opt):
 	
 	rpmopts = optparse.OptionGroup(opt.parser,'RPM/DEB build options')
 	opt.add_option_group(rpmopts)
-	rpmopts.add_option('--build-number', # add javadir to the group that contains bindir
+	rpmopts.add_option('--build-number',
 		help = 'Build number [Default: SVN revision number for builds from checkouts, or empty for builds from source releases]',
 		default = '',
 		dest = 'BUILDNUMBER')
-	rpmopts.add_option('--prerelease', # add javadir to the group that contains bindir
+	rpmopts.add_option('--prerelease',
 		help = 'Branch name to append to the release number (if specified, alter release number to be a prerelease); this option requires --build-number=X [Default: nothing]',
 		default = '',
 		dest = 'PRERELEASE')
-	rpmopts.add_option('--skip-dist', # add javadir to the group that contains bindir
+	rpmopts.add_option('--skip-dist',
 		action='store_true',
 		help = 'Normally, dist() is called during package build.  This makes the package build assume that a distribution tarball has already been made, and use that.  This option is also valid during distcheck and dist.',
 		default = False,
@@ -457,7 +433,7 @@ def set_options(opt):
 	
 	distopts = optparse.OptionGroup(opt.parser,'dist options')
 	opt.add_option_group(distopts)
-	distopts.add_option('--oss', # add javadir to the group that contains bindir
+	distopts.add_option('--oss',
 		help = 'Only include open source components',
 		action = 'store_true',
 		default = False,
@@ -475,6 +451,18 @@ def showconfig(conf):
 				Utils.pprint("BLUE","     %s"%v)
 			continue
 		Utils.pprint("BLUE","  %s:	%s"%(key,val))
+
+def _getconfig(self):
+	lines = []
+	for key,val in sorted(self.env.get_merged_dict().items()):
+		if "CLASSPATH" in key:
+			lines.append("  %s:"%key)
+			for v in val.split(pathsep):
+				lines.append("     %s"%v)
+			continue
+		lines.append("  %s:	%s"%(key,val))
+	return "\n".join(lines)
+Build.BuildContext.getconfig = _getconfig
 
 def list_targets(ctx):
         """return the list of buildable and installable targets"""
@@ -528,7 +516,7 @@ def dist_hook():
 	if Options.options.OSS:
 		[ shutil.rmtree(f) for f in "cloudstack-proprietary".split() if _exists(f) ]
 		
-	stdout = svninfo("..") or gitinfo()
+	stdout = svninfo("..") or allgitinfo()
 	if stdout:
 		f = file("sccs-info","w")
 		f.write(stdout)
@@ -579,12 +567,15 @@ def rpm(context):
 	if not Options.options.blddir: outputdir = _join(context.curdir,blddir,"rpmbuild")
 	else:			   outputdir = _join(_abspath(Options.options.blddir),"rpmbuild")
 	Utils.pprint("GREEN","Building RPMs")
+
 	tarball = Scripting.dist()
+	sourcedir = _join(outputdir,"SOURCES")
 	
-	#if _isdir(outputdir): shutil.rmtree(outputdir)
+	if _exists(sourcedir): shutil.rmtree(sourcedir)
 	for a in ["RPMS/noarch","SRPMS","BUILD","SPECS","SOURCES"]: mkdir_p(_join(outputdir,a))
+	shutil.copy(tarball,_join(sourcedir,tarball))
+
 	specfile = "%s.spec"%APPNAME
-	shutil.copy(tarball,_join(outputdir,"SOURCES"))
 	checkdeps = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"--nobuild",specfile])
 	dorpm = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"-ba",specfile]+buildnumber+prerelease)
 	try: checkdeps()
@@ -622,13 +613,15 @@ def deb(context):
 	if not Options.options.blddir: outputdir = _join(context.curdir,blddir,"debbuild")
 	else:			   outputdir = _join(_abspath(Options.options.blddir),"debbuild")
 	Utils.pprint("GREEN","Building DEBs")
-	tarball = Scripting.dist()
-	
-	#if _isdir(outputdir): shutil.rmtree(outputdir)
+
+	tarball = Scripting.dist()	
+	srcdir = "%s/%s-%s"%(outputdir,APPNAME,VERSION)
+
+	if _exists(srcdir): shutil.rmtree(srcdir)
 	mkdir_p(outputdir)
+
 	f = tarfile.open(tarball,'r:bz2')
 	f.extractall(path=outputdir)
-	srcdir = "%s/%s-%s"%(outputdir,APPNAME,VERSION)
 	if tempchangelog:
 		f = file(_join(srcdir,"debian","changelog"),"w")
 		f.write(tempchangelog)
@@ -642,7 +635,6 @@ def deb(context):
 		Utils.pprint("YELLOW","Dependencies might be missing.  Trying to auto-install them...")
 		installdebdeps(context)
 	dodeb()
-	shutil.rmtree(srcdir)
 
 def uninstallrpms(context):
 	"""uninstalls any Cloud Stack RPMs on this system"""
@@ -684,58 +676,26 @@ def installdebdeps(context):
 
 @throws_command_errors
 def deploydb(ctx,virttech=None):
-	if not virttech: raise Utils.WafError('use deploydb_xenserver or deploydb_kvm rather than deploydb')
+	if not virttech: raise Utils.WafError('use deploydb_xenserver, deploydb_vmware or deploydb_kvm rather than deploydb')
 	
 	ctx = _getbuildcontext()
-	srcdir = ctx.path.abspath()
-	builddir = ctx.path.abspath(ctx.env)
+	setupdatabases = _join(ctx.env.BINDIR,"cloud-setup-databases")
+	serversetup = _join(ctx.env.SETUPDATADIR,"server-setup.xml")
 	
-	dbhost = ctx.env.DBHOST
-	dbuser = ctx.env.DBUSER
-	dbpw   = ctx.env.DBPW
-	dbdir  = ctx.env.DBDIR
+	if not _exists(setupdatabases): # Needs install!
+		Scripting.install(ctx)
+
+	cmd = [
+		ctx.env.PYTHON,
+		setupdatabases,
+		"cloud@%s"%ctx.env.DBHOST,
+		virttech,
+		"--auto=%s"%serversetup,
+                "--deploy-as=%s:%s"%(ctx.env.DBUSER,ctx.env.DBPW),
+		]
 	
-	if not _exists(_join(builddir,"client","tomcatconf","db.properties")): raise Utils.WafError("Please build at least once to generate the db.properties configuration file")
-
-	cp = []
-	cp += [ _join(builddir,"client","tomcatconf") ]
-	cp += [ _join("test","conf") ]
-	cp += _glob(_join(builddir,"target", "jar", "*.jar"))
-	cp += [ctx.env.CLASSPATH]
-	cp = pathsep.join(cp)
-
-	before = ""
-	for f in ["create-database","create-schema"]:
-		p = _join("setup","db",f+".sql")
-		p = dev_override(p)
-		before = before + file(p).read()
-		Utils.pprint("GREEN","Reading database code from %s"%p)
-
-	cmd = ["mysql","--user=%s"%dbuser,"-h",dbhost,"--password=%s"%dbpw]
-	Utils.pprint("GREEN","Deploying database scripts to %s (user %s)"%(dbhost,dbuser))
 	Utils.pprint("BLUE"," ".join(cmd))
-	p = _Popen(cmd,stdin=PIPE,stdout=None,stderr=None)
-	p.communicate(before)
-	retcode = p.wait()
-	if retcode: raise CalledProcessError(retcode,cmd)
-	
-	serversetup = dev_override(_join("setup","db","server-setup.xml"))
-	Utils.pprint("GREEN","Configuring database with com.cloud.test.DatabaseConfig")
-	run_java("com.cloud.test.DatabaseConfig",cp,['-Dlog4j.configuration=log4j-stdout.properties'],[serversetup])
-
-	after = ""
-	for f in ["templates.%s"%virttech,"create-index-fk"]:
-		p = _join("setup","db",f+".sql")
-		p = dev_override(p)
-		after = after + file(p).read()
-		Utils.pprint("GREEN","Reading database code from %s"%p)
-
-	cmd = ["mysql","--user=%s"%dbuser,"-h",dbhost,"--password=%s"%dbpw]
-	Utils.pprint("GREEN","Deploying post-configuration database scripts to %s (user %s)"%(dbhost,dbuser))
-	Utils.pprint("BLUE"," ".join(cmd))
-	p = _Popen(cmd,stdin=PIPE,stdout=None,stderr=None)
-	p.communicate(after)
-	retcode = p.wait()
+	retcode = Utils.exec_command(cmd,shell=False,stdout=None,stderr=None,log=True)
 	if retcode: raise CalledProcessError(retcode,cmd)
 	
 def deploydb_xenserver(ctx):
@@ -744,6 +704,9 @@ def deploydb_xenserver(ctx):
 def deploydb_kvm(ctx):
 	"""re-deploys the database using the MySQL connection information and the KVM templates.sql"""
 	return deploydb(ctx,"kvm")
+def deploydb_vmware(ctx):
+	"""re-deploys the database using the MySQL connection information and the KVM templates.sql"""
+	return deploydb(ctx,"vmware")
 
 def run(args):
 	"""runs the management server"""
@@ -768,6 +731,8 @@ def run(args):
 		"-Dcatalina.home=" + conf.env.MSENVIRON,
 		"-Djava.io.tmpdir="+_join(conf.env.MSENVIRON,"temp"), ]
 
+	if not _exists(_join(conf.env.BINDIR,"cloud-setup-databases")): Scripting.install(conf)
+
 	cp = [conf.env.MSCONF]
 	cp += _glob(_join(conf.env.MSENVIRON,'bin',"*.jar"))
 	cp += _glob(_join(conf.env.MSENVIRON,'lib',"*.jar"))
@@ -782,8 +747,6 @@ def run(args):
 	#vendorconfs = _glob(  _join(conf.env.MSCONF,"vendor","*")  )
 	#if vendorconfs: cp = plugins + cp
 
-	#Scripting.install(conf)
-
 	run_java("org.apache.catalina.startup.Bootstrap",cp,options,["start"])
 
 def debug(ctx):
@@ -792,14 +755,16 @@ def debug(ctx):
 
 @throws_command_errors
 def run_agent(args):
-	"""runs the management server"""
+	"""runs the agent""" # FIXME: make this use the run/debug options
 	conf = _getbuildcontext()
+	if not _exists(_join(conf.env.LIBEXECDIR,"agent-runner")): Scripting.install(conf)
 	_check_call("sudo",[_join(conf.env.LIBEXECDIR,"agent-runner")])
 
 @throws_command_errors
 def run_console_proxy(args):
-	"""runs the management server"""
+	"""runs the console proxy""" # FIXME: make this use the run/debug options
 	conf = _getbuildcontext()
+	if not _exists(_join(conf.env.LIBEXECDIR,"console-proxy-runner")): Scripting.install(conf)
 	_check_call("sudo",[_join(conf.env.LIBEXECDIR,"console-proxy-runner")])
 
 def simulate_agent(args):
@@ -826,7 +791,7 @@ def simulate_agent(args):
 	cp += [conf.env.DEPSCLASSPATH]
 	cp += [conf.env.AGENTSIMULATORCLASSPATH]
 
-	#Scripting.install(conf)
+	if not _exists(_join(conf.env.LIBEXECDIR,"agent-runner")): Scripting.install(conf)
 
 	run_java("com.cloud.agent.AgentSimulator",cp,arguments=args)
 

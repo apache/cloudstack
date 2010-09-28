@@ -34,6 +34,8 @@ BuildRequires: commons-httpclient
 BuildRequires: jpackage-utils
 BuildRequires: gcc
 BuildRequires: glibc-devel
+BuildRequires: /usr/bin/mkisofs
+BuildRequires: MySQL-python
 
 %global _premium %(tar jtvmf %{SOURCE0} '*/cloudstack-proprietary/' --occurrence=1 2>/dev/null | wc -l)
 
@@ -44,6 +46,7 @@ intelligent cloud implementation.
 %package utils
 Summary:   Cloud.com utility library
 Requires: java >= 1.6.0
+Requires: python
 Group:     System Environment/Libraries
 Obsoletes: vmops-utils < %{version}-%{release}
 %description utils
@@ -180,12 +183,11 @@ Summary:   Cloud.com setup tools
 Obsoletes: vmops-setup < %{version}-%{release}
 Requires: java >= 1.6.0
 Requires: python
-Requires: mysql
+Requires: MySQL-python
 Requires: %{name}-utils = %{version}-%{release}
 Requires: %{name}-server = %{version}-%{release}
 Requires: %{name}-deps = %{version}-%{release}
 Requires: %{name}-python = %{version}-%{release}
-Requires: MySQL-python
 Group:     System Environment/Libraries
 %description setup
 The Cloud.com setup tools let you set up your Management Server and Usage Server.
@@ -231,6 +233,9 @@ Requires: %{name}-daemonize
 Requires: /sbin/service
 Requires: /sbin/chkconfig
 Requires: kvm
+%if 0%{?fedora} >= 12
+Requires: cloud-qemu-system-x86
+%endif
 Requires: libcgroup
 Requires: /usr/bin/uuidgen
 Requires: augeas >= 0.7.1
@@ -368,7 +373,6 @@ if [ "$1" == "1" ] ; then
     /sbin/chkconfig --add %{name}-management > /dev/null 2>&1 || true
     /sbin/chkconfig --level 345 %{name}-management on > /dev/null 2>&1 || true
 fi
-test -f %{_sharedstatedir}/%{name}/management/.ssh/id_rsa || su - %{name} -c 'yes "" 2>/dev/null | ssh-keygen -t rsa -q -N ""' < /dev/null
 
 
 
@@ -447,82 +451,43 @@ fi
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-utils.jar
 %{_javadir}/%{name}-api.jar
+%attr(755,root,root) %{_bindir}/cloud-sccs
+%attr(755,root,root) %{_bindir}/cloud-gitrevs
 %doc %{_docdir}/%{name}-%{version}/sccs-info
 %doc %{_docdir}/%{name}-%{version}/version-info
 %doc %{_docdir}/%{name}-%{version}/configure-info
-%doc README
-%doc INSTALL
-%doc HACKING
 %doc README.html
 %doc debian/copyright
 
 %files client-ui
 %defattr(0644,root,root,0755)
 %{_datadir}/%{name}/management/webapps/client/*
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %files server
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-server.jar
 %{_sysconfdir}/%{name}/server/*
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
-
-%if %{_premium}
 
 %files agent-scripts
 %defattr(-,root,root,-)
 %{_libdir}/%{name}/agent/scripts/*
-%{_libdir}/%{name}/agent/vms/systemvm.zip
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
-
-%else
-
-%files agent-scripts
-%defattr(-,root,root,-)
-%{_libdir}/%{name}/agent/scripts/installer/*
-%{_libdir}/%{name}/agent/scripts/network/domr/*.sh
-%{_libdir}/%{name}/agent/scripts/storage/*.sh
-%{_libdir}/%{name}/agent/scripts/storage/zfs/*
-%{_libdir}/%{name}/agent/scripts/storage/qcow2/*
-%{_libdir}/%{name}/agent/scripts/storage/secondary/*
-%{_libdir}/%{name}/agent/scripts/util/*
-%{_libdir}/%{name}/agent/scripts/vm/*.sh
-%{_libdir}/%{name}/agent/scripts/vm/storage/nfs/*
-%{_libdir}/%{name}/agent/scripts/vm/storage/iscsi/*
-%{_libdir}/%{name}/agent/scripts/vm/network/*
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/*.sh
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/kvm/*
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xen/*
-%{_libdir}/%{name}/agent/vms/systemvm.zip
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/*
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
-
+# maintain the following list in sync with files agent-scripts
+%if %{_premium}
+%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/check_heartbeat.sh
+%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/find_bond.sh
+%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/launch_hb.sh
+%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/setup_heartbeat_sr.sh
+%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/vmopspremium
+%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenheartbeat.sh
+%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenserver56/patch-premium
+%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xs_cleanup.sh
 %endif
+%{_libdir}/%{name}/agent/vms/systemvm.zip
+%{_libdir}/%{name}/agent/vms/systemvm.iso
 
 %files daemonize
 %defattr(-,root,root,-)
 %attr(755,root,root) %{_bindir}/%{name}-daemonize
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %files deps
 %defattr(0644,root,root,0755)
@@ -543,39 +508,20 @@ fi
 %{_javadir}/%{name}-xenserver-5.5.0-1.jar
 %{_javadir}/%{name}-xmlrpc-common-3.*.jar
 %{_javadir}/%{name}-xmlrpc-client-3.*.jar
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %files core
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-core.jar
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc debian/copyright
 
 %files vnet
 %defattr(0644,root,root,0755)
 %attr(0755,root,root) %{_sbindir}/%{name}-vnetd
 %attr(0755,root,root) %{_sbindir}/%{name}-vn
 %attr(0755,root,root) %{_initrddir}/%{name}-vnetd
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %files python
 %defattr(0644,root,root,0755)
 %{_prefix}/lib*/python*/site-packages/%{name}*
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %files setup
 %attr(0755,root,root) %{_bindir}/%{name}-setup-databases
@@ -585,19 +531,18 @@ fi
 %{_datadir}/%{name}/setup/create-index-fk.sql
 %{_datadir}/%{name}/setup/create-schema.sql
 %{_datadir}/%{name}/setup/server-setup.sql
-%{_datadir}/%{name}/setup/templates.kvm.sql
-%{_datadir}/%{name}/setup/templates.xenserver.sql
+%{_datadir}/%{name}/setup/templates.*.sql
 %{_datadir}/%{name}/setup/deploy-db-dev.sh
 %{_datadir}/%{name}/setup/server-setup.xml
 %{_datadir}/%{name}/setup/data-20to21.sql
 %{_datadir}/%{name}/setup/index-20to21.sql
+%{_datadir}/%{name}/setup/index-212to213.sql
 %{_datadir}/%{name}/setup/postprocess-20to21.sql
 %{_datadir}/%{name}/setup/schema-20to21.sql
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
+%{_datadir}/%{name}/setup/schema-level.sql
+%{_datadir}/%{name}/setup/schema-21to22.sql
+%{_datadir}/%{name}/setup/data-21to22.sql
+%{_datadir}/%{name}/setup/index-21to22.sql
 
 %files client
 %defattr(0644,root,root,0755)
@@ -637,19 +582,10 @@ fi
 %dir %attr(770,root,%{name}) %{_localstatedir}/cache/%{name}/management/temp
 %dir %attr(770,root,%{name}) %{_localstatedir}/log/%{name}/management
 %dir %attr(770,root,%{name}) %{_localstatedir}/log/%{name}/agent
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %files agent-libs
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-agent.jar
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc debian/copyright
 
 %files agent
 %defattr(0644,root,root,0755)
@@ -665,11 +601,6 @@ fi
 %{_libdir}/%{name}/agent/images
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
 %dir %attr(770,root,root) %{_localstatedir}/log/%{name}/agent
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %files console-proxy
 %defattr(0644,root,root,0755)
@@ -682,11 +613,6 @@ fi
 %{_libdir}/%{name}/console-proxy/*
 %attr(0755,root,root) %{_bindir}/%{name}-setup-console-proxy
 %dir %attr(770,root,root) %{_localstatedir}/log/%{name}/console-proxy
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %if %{_premium}
 
@@ -697,20 +623,10 @@ fi
 %{_sharedstatedir}/%{name}/test/*
 %{_libdir}/%{name}/test/*
 %{_sysconfdir}/%{name}/test/*
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %files premium-deps
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-premium/*.jar
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %files premium
 %defattr(0644,root,root,0755)
@@ -718,15 +634,18 @@ fi
 %{_javadir}/%{name}-server-extras.jar
 %{_sysconfdir}/%{name}/management/commands-ext.properties
 %{_sysconfdir}/%{name}/management/components-premium.xml
-%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/*
-%{_libdir}/%{name}/agent/vms/systemvm-premium.zip
+%{_libdir}/%{name}/agent/vms/systemvm-premium.iso
 %{_datadir}/%{name}/setup/create-database-premium.sql
 %{_datadir}/%{name}/setup/create-schema-premium.sql
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
+# maintain the following list in sync with files agent-scripts
+%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/check_heartbeat.sh
+%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/find_bond.sh
+%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/launch_hb.sh
+%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/setup_heartbeat_sr.sh
+%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/vmopspremium
+%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenheartbeat.sh
+%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenserver56/patch-premium
+%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xs_cleanup.sh
 
 %files usage
 %defattr(0644,root,root,0755)
@@ -737,11 +656,6 @@ fi
 %{_sysconfdir}/%{name}/usage/usage-components.xml
 %config(noreplace) %{_sysconfdir}/%{name}/usage/log4j-%{name}_usage.xml
 %config(noreplace) %attr(640,root,%{name}) %{_sysconfdir}/%{name}/usage/db.properties
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %endif
 

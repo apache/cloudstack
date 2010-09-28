@@ -53,12 +53,14 @@ import com.cloud.agent.api.storage.ShareAnswer;
 import com.cloud.agent.api.storage.ShareCommand;
 import com.cloud.agent.api.storage.UpgradeDiskAnswer;
 import com.cloud.agent.api.storage.UpgradeDiskCommand;
+import com.cloud.agent.api.storage.UploadCommand;
 import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.template.DownloadManager;
 import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.template.UploadManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
@@ -112,6 +114,7 @@ public abstract class StorageResource extends ServerResourceBase implements Serv
 	protected String _zfsScriptsDir;
 
 	protected DownloadManager _downloadManager;
+	protected UploadManager _uploadManager;
 
 	protected Map<Long, VolumeSnapshotRequest> _volumeHourlySnapshotRequests = new HashMap<Long, VolumeSnapshotRequest>();
     protected Map<Long, VolumeSnapshotRequest> _volumeDailySnapshotRequests = new HashMap<Long, VolumeSnapshotRequest>();
@@ -127,6 +130,8 @@ public abstract class StorageResource extends ServerResourceBase implements Serv
         	return execute((PrimaryStorageDownloadCommand)cmd);
         } else if (cmd instanceof DownloadCommand) {
             return execute((DownloadCommand)cmd);
+        }else if (cmd instanceof UploadCommand) {
+                return execute((UploadCommand)cmd);
         } else if (cmd instanceof GetStorageStatsCommand) {
             return execute((GetStorageStatsCommand)cmd);
         } else if (cmd instanceof UpgradeDiskCommand) {
@@ -159,6 +164,10 @@ public abstract class StorageResource extends ServerResourceBase implements Serv
     protected Answer execute(final PrimaryStorageDownloadCommand cmd) {
     	return Answer.createUnsupportedCommandAnswer(cmd);
     }
+
+	private Answer execute(UploadCommand cmd) {		
+		return _uploadManager.handleUploadCommand(cmd);
+	}
     
     protected Answer execute(final DownloadCommand cmd) {
     	return _downloadManager.handleDownloadCommand(cmd);
@@ -195,7 +204,7 @@ public abstract class StorageResource extends ServerResourceBase implements Serv
         String path = rootdiskFolder + File.separator + "rootdisk";
         long totalSize = getVolumeSize(path);
 
-        VolumeVO vol = new VolumeVO(null, null, -1, -1, -1, -1, new Long(-1), rootdiskFolder, path, totalSize, Volume.VolumeType.ROOT);
+        VolumeVO vol = new VolumeVO(null, -1, -1, -1, -1, new Long(-1), rootdiskFolder, path, totalSize, Volume.VolumeType.ROOT);
         vols.add(vol);
 
         // Get the datadisk volume
@@ -203,7 +212,7 @@ public abstract class StorageResource extends ServerResourceBase implements Serv
         	path = datadiskFolder + File.separator + datadiskName;
             totalSize = getVolumeSize(path);
 
-            vol = new VolumeVO(null, null, -1, -1, -1, -1, new Long(-1), datadiskFolder, path, totalSize, Volume.VolumeType.DATADISK);
+            vol = new VolumeVO(null, -1, -1, -1, -1, new Long(-1), datadiskFolder, path, totalSize, Volume.VolumeType.DATADISK);
             vols.add(vol);
         }
 
@@ -216,7 +225,7 @@ public abstract class StorageResource extends ServerResourceBase implements Serv
         String path = getVolumeName(imagePath, null);
         long totalSize = getVolumeSize(path);
 
-        VolumeVO vol = new VolumeVO(null, null, -1, -1, -1, -1, new Long(-1), null, path, totalSize, Volume.VolumeType.ROOT);
+        VolumeVO vol = new VolumeVO(null, -1, -1, -1, -1, new Long(-1), null, path, totalSize, Volume.VolumeType.ROOT);
 
         vols.add(vol);
 
@@ -225,7 +234,7 @@ public abstract class StorageResource extends ServerResourceBase implements Serv
             totalSize = getVolumeSize(path);
 
 
-            vol = new VolumeVO(null, null, -1, -1, -1, -1, new Long(-1), null, path, totalSize, Volume.VolumeType.DATADISK);
+            vol = new VolumeVO(null, -1, -1, -1, -1, new Long(-1), null, path, totalSize, Volume.VolumeType.DATADISK);
             vols.add(vol);
         }
 
@@ -304,7 +313,7 @@ public abstract class StorageResource extends ServerResourceBase implements Serv
     protected abstract Answer execute(DestroyCommand cmd) ;
     protected abstract UpgradeDiskAnswer execute(final UpgradeDiskCommand cmd);
 	protected abstract String  delete(String imagePath, String extra);
-    protected abstract Volume.StorageResourceType getStorageResourceType();
+    protected abstract Storage.StorageResourceType getStorageResourceType();
     protected abstract void configureFolders(String name,  Map<String, Object> params) throws ConfigurationException ;
 
 

@@ -400,7 +400,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
             
             if (alive== null && !fenced) {
             	s_logger.debug("We were unable to fence off the VM " + vm.toString());
-                _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getName() + " which was running on host " + hostDesc, "Insufficient capcity to restart VM, name: " + vm.getName() + ", id: " + vmId + " which was running on host " + hostDesc);
+                _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getName() + " which was running on host " + hostDesc, "Insufficient capacity to restart VM, name: " + vm.getName() + ", id: " + vmId + " which was running on host " + hostDesc);
             	return (System.currentTimeMillis() >> 10) + _restartRetryInterval;
             }
 
@@ -453,7 +453,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
             return (System.currentTimeMillis() >> 10) + _restartRetryInterval;
         } catch (final InsufficientCapacityException e) {
         	s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
-            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getName() + " which was running on host " + hostDesc, "Insufficient capcity to restart VM, name: " + vm.getName() + ", id: " + vmId + " which was running on host " + hostDesc);
+            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getName() + " which was running on host " + hostDesc, "Insufficient capacity to restart VM, name: " + vm.getName() + ", id: " + vmId + " which was running on host " + hostDesc);
             return null;
         } catch (final StorageUnavailableException e) {
         	s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
@@ -722,7 +722,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
                     _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to migrate vm " + vm.getName() + " from host " + fromHostName + " in zone " + dcVO.getName() + " and pod " + podVO.getName(), "Unable to find a suitable host");
                 }
             } catch(final InsufficientCapacityException e) {
-            	s_logger.warn("Unable to mgirate due to insufficient capcity " + vm.toString());
+            	s_logger.warn("Unable to mgirate due to insufficient capacity " + vm.toString());
                 _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to migrate vm " + vm.getName() + " from host " + fromHostName + " in zone " + dcVO.getName() + " and pod " + podVO.getName(), "Insufficient capacity");
             } catch(final StorageUnavailableException e) {
                 s_logger.warn("Storage is unavailable: " + vm.toString());

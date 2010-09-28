@@ -48,7 +48,7 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
 		sc.setParameters("domainId", domainId);
 		sc.setParameters("type", type);
 		
-		return findOneBy(sc);
+		return findOneIncludingRemovedBy(sc);
 	}
 	
 	public List<ResourceLimitVO> listByDomainId(Long domainId) {
@@ -58,7 +58,7 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
 		SearchCriteria<ResourceLimitVO> sc = IdTypeSearch.create();
 		sc.setParameters("domainId", domainId);
 		
-		return listBy(sc);
+		return listIncludingRemovedBy(sc);
 	}
 	
 	public ResourceLimitVO findByAccountIdAndType(Long accountId, ResourceCount.ResourceType type) {
@@ -69,7 +69,7 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
 		sc.setParameters("accountId", accountId);
 		sc.setParameters("type", type);
 		
-		return findOneBy(sc);
+		return findOneIncludingRemovedBy(sc);
 	}
 	
 	public List<ResourceLimitVO> listByAccountId(Long accountId) {
@@ -79,7 +79,7 @@ public class ResourceLimitDaoImpl extends GenericDaoBase<ResourceLimitVO, Long> 
 		SearchCriteria<ResourceLimitVO> sc = IdTypeSearch.create();
 		sc.setParameters("accountId", accountId);
 		
-		return listBy(sc);
+		return listIncludingRemovedBy(sc);
 	}
 	
 	public boolean update(Long id, Long max) {

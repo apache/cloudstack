@@ -120,7 +120,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<WorkVO, Long> implem
     public List<WorkVO> findPreviousHA(final long instanceId) {
         final SearchCriteria<WorkVO> sc = PreviousInstanceSearch.create();
         sc.setParameters("instance", instanceId);
-        return listBy(sc);
+        return listIncludingRemovedBy(sc);
     }
 
     @Override
@@ -128,7 +128,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<WorkVO, Long> implem
         final SearchCriteria<WorkVO> sc = CleanupSearch.create();
         sc.setParameters("time", time);
         sc.setParameters("step", HighAvailabilityManager.Step.Done, HighAvailabilityManager.Step.Cancelled);
-        delete(sc);
+        expunge(sc);
     }
 
     @Override
@@ -152,7 +152,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<WorkVO, Long> implem
     	sc.setParameters("type", type);
     	sc.setParameters("step", Step.Done, Step.Cancelled, Step.Error);
     	
-    	return listActiveBy(sc);
+    	return listBy(sc);
     }
     
     
@@ -161,7 +161,7 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<WorkVO, Long> implem
     	SearchCriteria<WorkVO> sc = PreviousWorkSearch.create();
     	sc.setParameters("instance", instanceId);
     	sc.setParameters("type", type);
-    	return delete(sc) > 0;
+    	return expunge(sc) > 0;
     }
     
     @Override
@@ -169,6 +169,6 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<WorkVO, Long> implem
     	SearchCriteria<WorkVO> sc = PreviousWorkSearch.create();
     	sc.setParameters("instance", instanceId);
     	sc.setParameters("type", type);
-    	return listActiveBy(sc, null).size() > 0;
+    	return listBy(sc, null).size() > 0;
     }
 }

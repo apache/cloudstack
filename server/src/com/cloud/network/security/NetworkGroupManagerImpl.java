@@ -76,6 +76,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -116,7 +117,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 			Comparator<NetworkGroupVO> {
 		@Override
 		public int compare(NetworkGroupVO o1, NetworkGroupVO o2) {
-			return o1.getId().compareTo(o2.getId());
+			return o1.getId() == o2.getId() ? 0 : o1.getId() < o2.getId() ? -1 : 1;
 		}
 	}
 
@@ -1050,6 +1051,9 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 	@Override
 	@DB
 	public boolean addInstanceToGroups(final Long userVmId, final List<NetworkGroupVO> groups) {
+		if (!_enabled) {
+			return true;
+		}
 		if (groups != null) {
 			final Set<NetworkGroupVO> uniqueGroups = new TreeSet<NetworkGroupVO>(new NetworkGroupVOComparator());
 			uniqueGroups.addAll(groups);
@@ -1090,6 +1094,9 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 	@Override
 	@DB
 	public void removeInstanceFromGroups(Long userVmId) {
+		if (!_enabled) {
+			return;
+		}
 		final Transaction txn = Transaction.currentTxn();
 		txn.start();
 		UserVm userVm = _userVMDao.acquire(userVmId); //ensures that duplicate entries are not created in addInstance
@@ -1180,7 +1187,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 			txn.rollback();
 			throw new ResourceInUseException("Cannot delete group when there are ingress rules in this group");
 		}
-        _networkGroupDao.delete(groupId);
+        _networkGroupDao.expunge(groupId);
         txn.commit();
 	}
 
@@ -1234,7 +1241,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 
                 if (account != null) {
                     // check that the user is the owner of the VM (admin case was already verified
-                    if (account.getId().longValue() != userVM.getAccountId()) {
+                    if (account.getId() != userVM.getAccountId()) {
                         throw new PermissionDeniedException("Unable to list network groups for virtual machine instance " + instanceId + "; permission denied.");
                     }
                 }
@@ -1255,7 +1262,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
         if ((accountId == null) && (instanceId == null) && (domainId != null) && Boolean.TRUE.equals(recursive)) {
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId());
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
         SearchCriteria<NetworkGroupRulesVO> sc = sb.create();

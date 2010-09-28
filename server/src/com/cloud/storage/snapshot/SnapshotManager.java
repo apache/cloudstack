@@ -32,6 +32,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.Filter;
 
@@ -148,4 +149,5 @@ public interface SnapshotManager extends Manager {
     void validateSnapshot(Long userId, SnapshotVO snapshot);
 
     boolean deleteSnapshotPolicies(DeleteSnapshotPoliciesCmd cmd) throws InvalidParameterValueException;
+	ImageFormat getImageFormat(Long volumeId);
 }

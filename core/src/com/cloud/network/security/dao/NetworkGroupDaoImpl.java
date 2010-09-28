@@ -52,7 +52,7 @@ public class NetworkGroupDaoImpl extends GenericDaoBase<NetworkGroupVO, Long> im
     public List<NetworkGroupVO> listByAccountId(long accountId) {
         SearchCriteria<NetworkGroupVO> sc = AccountIdSearch.create();
         sc.setParameters("accountId", accountId);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
@@ -66,7 +66,7 @@ public class NetworkGroupDaoImpl extends GenericDaoBase<NetworkGroupVO, Long> im
             sc.addAnd("accountId", SearchCriteria.Op.NULL);
         }
 
-        List<NetworkGroupVO> securityGroups = listActiveBy(sc);
+        List<NetworkGroupVO> securityGroups = listBy(sc);
         return ((securityGroups != null) && !securityGroups.isEmpty());
     }
 
@@ -76,7 +76,7 @@ public class NetworkGroupDaoImpl extends GenericDaoBase<NetworkGroupVO, Long> im
 		sc.setParameters("accountId", accountId);
 		sc.setParameters("groupName", name);
 
-		return findOneBy(sc);
+		return findOneIncludingRemovedBy(sc);
 	}
 
 	@Override
@@ -86,6 +86,6 @@ public class NetworkGroupDaoImpl extends GenericDaoBase<NetworkGroupVO, Long> im
 
 		sc.setParameters("groupNames", (Object [])names);
 
-		return listActiveBy(sc);
+		return listBy(sc);
 	}
 }

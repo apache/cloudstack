@@ -35,6 +35,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.InstanceGroupVO;
 
 @Implementation(method="deployVirtualMachine")
 public class DeployVMCmd extends BaseAsyncCmd {
@@ -166,7 +167,13 @@ public class DeployVMCmd extends BaseAsyncCmd {
         response.setPrivateIp(userVm.getPrivateIpAddress());
         response.setServiceOfferingId(userVm.getServiceOfferingId());
         response.setHaEnable(userVm.isHaEnabled());
-        response.setGroup(userVm.getGroup());
+
+        InstanceGroupVO group = ApiDBUtils.findInstanceGroupForVM(userVm.getId());
+        if (group != null) {
+            response.setGroup(group.getName());
+            response.setGroupId(group.getId());
+        }
+
         if (userVm.getDisplayName() == null || userVm.getDisplayName().length() == 0) {
             response.setDisplayName(userVm.getName());
         } else {

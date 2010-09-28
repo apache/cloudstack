@@ -49,7 +49,9 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import com.cloud.offering.ServiceOffering.GuestIpType;
+import com.cloud.host.Status;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.storage.DiskOfferingVO;
@@ -528,7 +530,7 @@ public class DatabaseConfig {
          String storageType = _currentObjectParams.get("storageType");
          String uuid = UUID.nameUUIDFromBytes(new String(hostAddress+hostPath).getBytes()).toString();
  
-         String insertSql1 = "INSERT INTO `storage_pool` (`id`, `name`, `uuid` , `pool_type` , `port`, `data_center_id` ,`available_bytes` , `capacity_bytes` ,`host_address`, `path`, `created`, `pod_id` ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+         String insertSql1 = "INSERT INTO `storage_pool` (`id`, `name`, `uuid` , `pool_type` , `port`, `data_center_id` ,`available_bytes` , `capacity_bytes` ,`host_address`, `path`, `created`, `pod_id`,`status` ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
          // String insertSql2 = "INSERT INTO `netfs_storage_pool` VALUES (?,?,?)";
          
          Transaction txn = Transaction.currentTxn();
@@ -549,6 +551,7 @@ public class DatabaseConfig {
              stmt.setString(10, hostPath);
              stmt.setDate(11, new Date(new java.util.Date().getTime()));
              stmt.setLong(12, podId);
+             stmt.setString(13, Status.Up.toString());
              stmt.executeUpdate();
              // stmt = txn.prepareAutoCloseStatement(insertSql2);
              // stmt.setLong(1, 2);
@@ -720,11 +723,11 @@ public class DatabaseConfig {
         boolean ha = Boolean.parseBoolean(_currentObjectParams.get("enableHA"));
         boolean mirroring = Boolean.parseBoolean(_currentObjectParams.get("mirrored"));
         String guestIpType = _currentObjectParams.get("guestIpType");
-        GuestIpType type = null;
+        NetworkOffering.GuestIpType type = null;
         if (guestIpType == null) {
-            type = GuestIpType.Virtualized;
+            type = NetworkOffering.GuestIpType.Virtualized;
         } else {
-            type = GuestIpType.valueOf(guestIpType);
+            type = NetworkOffering.GuestIpType.valueOf(guestIpType);
         }
         
         boolean useLocalStorage;
@@ -770,6 +773,11 @@ public class DatabaseConfig {
         int diskSpace = Integer.parseInt(_currentObjectParams.get("diskSpace"));
 //        boolean mirroring = Boolean.parseBoolean(_currentObjectParams.get("mirrored"));
         String tags = _currentObjectParams.get("tags");
+        String useLocal = _currentObjectParams.get("useLocal");
+        boolean local = false;
+        if (useLocal != null) {
+        	local = Boolean.parseBoolean(useLocal);
+        }
         
         if (tags != null && tags.length() > 0) {
             String[] tokens = tags.split(",");
@@ -781,6 +789,7 @@ public class DatabaseConfig {
             tags = newTags.toString();
         }
         DiskOfferingVO diskOffering = new DiskOfferingVO(domainId, name, displayText, diskSpace, tags);
+        diskOffering.setUseLocalStorage(local);
         DiskOfferingDaoImpl offering = ComponentLocator.inject(DiskOfferingDaoImpl.class);
         try {
             offering.persist(diskOffering);

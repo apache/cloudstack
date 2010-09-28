@@ -22,7 +22,6 @@ import com.cloud.capacity.CapacityVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface CapacityDao extends GenericDao<CapacityVO, Long> {
-    void setUsedStorage(Long hostId, long totalUsed);
     void clearNonStorageCapacities();
     void clearStorageCapacities();
 }

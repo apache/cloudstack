@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
@@ -40,7 +39,6 @@ public class DetachIsoCmd extends BaseAsyncCmd {
     @Parameter(name="virtualmachineid", type=CommandType.LONG, required=true)
     private Long virtualMachineId;
 
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -48,7 +46,6 @@ public class DetachIsoCmd extends BaseAsyncCmd {
     public Long getVirtualMachineId() {
         return virtualMachineId;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

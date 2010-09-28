@@ -188,7 +188,7 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
     public DomainVO findDomainByPath(String domainPath) {
         SearchCriteria<DomainVO> sc = createSearchCriteria();
         sc.addAnd("path", SearchCriteria.Op.EQ, domainPath);
-        return findOneActiveBy(sc);
+        return findOneBy(sc);
     }
 
     @Override
@@ -205,13 +205,13 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
         SearchCriteria<DomainVO> sc = DomainPairSearch.create();
         sc.setParameters("id", parentId, childId);
 
-        List<DomainVO> domainPair = listActiveBy(sc);
+        List<DomainVO> domainPair = listBy(sc);
 
         if ((domainPair != null) && (domainPair.size() == 2)) {
             DomainVO d1 = domainPair.get(0);
             DomainVO d2 = domainPair.get(1);
 
-            if (d1.getId().equals(parentId)) {
+            if (d1.getId() == parentId) {
                 result = d2.getPath().startsWith(d1.getPath());
             } else {
                 result = d1.getPath().startsWith(d2.getPath());

@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.async.executor;
 
 import com.cloud.api.BaseCmd;
@@ -45,12 +44,14 @@ public class VMExecutorHelper {
 			resultObject.setDisplayName(vm.getDisplayName());
 		}
 		
-		if (vm.getGroup() != null) {
-			resultObject.setGroup(vm.getGroup());
-		}
-		
 		if(vm.getState() != null)
 			resultObject.setState(vm.getState().toString());
+		
+//		InstanceGroupVO group = managementServer.getGroupForVm(vm.getId());
+//		if (group != null) {
+//			resultObject.setGroupId(group.getId());
+//			resultObject.setGroup(group.getName());
+//		}
 		
         VMTemplateVO template = managementServer.findTemplateById(vm.getTemplateId());
         
@@ -85,8 +86,8 @@ public class VMExecutorHelper {
         resultObject.setPasswordEnabled(templatePasswordEnabled);
         if(templatePasswordEnabled)
         	resultObject.setPassword(vmPassword);
-        else
-        	resultObject.setPassword("");
+//        else
+//        	resultObject.setPassword("");
         
         String isoName = null;
         if (vm.getIsoId() != null) {

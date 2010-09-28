@@ -102,7 +102,7 @@ function trim(val) {
 // Prevent cross-site-script(XSS) attack. 
 // used right before adding user input to the DOM tree. e.g. DOM_element.html(sanitizeXSS(user_input));  
 function sanitizeXSS(val) {     
-    if(val == null)
+    if(val == null || typeof(val) != "string")
         return val; 
     val = val.replace(/</g, "&lt;");  //replace < whose unicode is \u003c     
     val = val.replace(/>/g, "&gt;");  //replace > whose unicode is \u003e  
@@ -290,7 +290,7 @@ $(document).ready(function() {
                         submenuContent.find("#grid_content").prepend(template.fadeIn("slow"));    
 																								
 						var username = thisDialog.find("#add_user_username").val();
-						var password = $.md5(thisDialog.find("#add_user_password").val());
+						var password = $.md5(encodeURIComponent(thisDialog.find("#add_user_password").val()));
 						var email = thisDialog.find("#add_user_email").val();
 						if(email == "")
 							email = username;
@@ -318,7 +318,7 @@ $(document).ready(function() {
 											
 						$.ajax({
 							type: "POST",
-						      data: createURL("command=createUser&username="+encodeURIComponent(username)+"&password="+encodeURIComponent(password)+"&email="+encodeURIComponent(email)+"&firstname="+encodeURIComponent(firstname)+"&lastname="+encodeURIComponent(lastname)+"&account="+account+"&accounttype="+accountType+"&domainid="+domainId+moreCriteria.join("")+"&response=json"),
+						      data: createURL("command=createUser&username="+encodeURIComponent(username)+"&password="+password+"&email="+encodeURIComponent(email)+"&firstname="+encodeURIComponent(firstname)+"&lastname="+encodeURIComponent(lastname)+"&account="+account+"&accounttype="+accountType+"&domainid="+domainId+moreCriteria.join("")+"&response=json"),
 							dataType: "json",
 							async: false,
 							success: function(json) {								    					

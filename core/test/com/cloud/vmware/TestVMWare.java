@@ -10,22 +10,35 @@ import java.util.Map;
 import org.apache.log4j.xml.DOMConfigurator;
 
 import com.cloud.utils.PropertiesUtil;
-import com.vmware.apputils.AppUtil;
-import com.vmware.vim.ArrayOfManagedObjectReference;
-import com.vmware.vim.DatastoreInfo;
-import com.vmware.vim.DynamicProperty;
-import com.vmware.vim.InvalidProperty;
-import com.vmware.vim.ManagedObjectReference;
-import com.vmware.vim.ObjectContent;
-import com.vmware.vim.ObjectSpec;
-import com.vmware.vim.PropertyFilterSpec;
-import com.vmware.vim.PropertySpec;
-import com.vmware.vim.RuntimeFault;
-import com.vmware.vim.SelectionSpec;
-import com.vmware.vim.TraversalSpec;
+import com.vmware.apputils.version.ExtendedAppUtil;
+import com.vmware.vim25.HostIpConfig;
+import com.vmware.vim25.HostVirtualNicSpec;
+import com.vmware.vim25.HostConfigManager;
+import com.vmware.vim25.HostPortGroupSpec;
+import com.vmware.vim25.VirtualMachineConfigSpec;
+import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
+import com.vmware.vim25.VirtualEthernetCard;
+import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
+import com.vmware.vim25.VirtualNicManagerNetConfig;
+import com.vmware.vim25.VirtualPCNet32;
+import com.vmware.vim25.VirtualDeviceConfigSpec;
+import com.vmware.vim25.VirtualMachineCloneSpec;
+import com.vmware.vim25.VirtualMachineRelocateSpec;
+import com.vmware.vim25.ArrayOfManagedObjectReference;
+import com.vmware.vim25.DatastoreInfo;
+import com.vmware.vim25.DynamicProperty;
+import com.vmware.vim25.InvalidProperty;
+import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.ObjectContent;
+import com.vmware.vim25.ObjectSpec;
+import com.vmware.vim25.PropertyFilterSpec;
+import com.vmware.vim25.PropertySpec;
+import com.vmware.vim25.RuntimeFault;
+import com.vmware.vim25.SelectionSpec;
+import com.vmware.vim25.TraversalSpec;
 
 public class TestVMWare {
-	private static AppUtil cb;
+	private static ExtendedAppUtil cb;
 	
 	private static void setupLog4j() {
 	   File file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
@@ -98,7 +111,7 @@ public class TestVMWare {
       PropertyFilterSpec spec = new PropertyFilterSpec();
       spec.setPropSet(propspecary);
       spec.setObjectSet(new ObjectSpec[] { new ObjectSpec() });
-      spec.getObjectSet(0).setObj(cb.getConnection().getRootFolder());
+      spec.getObjectSet(0).setObj(cb.getServiceConnection3().getRootFolder());
       spec.getObjectSet(0).setSkip(new Boolean(false));
       spec.getObjectSet(0).setSelectSet(
       new SelectionSpec[] { folderTraversalSpec });      
@@ -106,8 +119,8 @@ public class TestVMWare {
       // Recursively get all ManagedEntity ManagedObjectReferences 
       // and the "name" property for all ManagedEntities retrieved
       ObjectContent[] ocary = 
-        cb.getConnection().getService().retrieveProperties(
-        cb.getConnection().getServiceContent().getPropertyCollector(), 
+        cb.getServiceConnection3().getService().retrieveProperties(
+        cb.getServiceConnection3().getServiceContent().getPropertyCollector(), 
            new PropertyFilterSpec[] { spec }
       );
 
@@ -253,15 +266,15 @@ public class TestVMWare {
 	    PropertyFilterSpec filterSpec = new PropertyFilterSpec();
 	    filterSpec.setPropSet(propSpecs);
 	    filterSpec.setObjectSet(new ObjectSpec[] { new ObjectSpec() });
-	    filterSpec.getObjectSet(0).setObj(cb.getConnection().getRootFolder());
+	    filterSpec.getObjectSet(0).setObj(cb.getServiceConnection3().getRootFolder());
 	    filterSpec.getObjectSet(0).setSkip(new Boolean(false));
 	    filterSpec.getObjectSet(0).setSelectSet(
     		new SelectionSpec[] { folderTraversalSpec }
     	);      
 	    
 	    try {
-			ObjectContent[] objContent = cb.getConnection().getService().retrieveProperties(
-				cb.getConnection().getServiceContent().getPropertyCollector(), 
+			ObjectContent[] objContent = cb.getServiceConnection3().getService().retrieveProperties(
+				cb.getServiceConnection3().getServiceContent().getPropertyCollector(), 
 				new PropertyFilterSpec[] { filterSpec } 
 			);
 			printContent(objContent);
@@ -293,7 +306,7 @@ public class TestVMWare {
 	    pSpec.setPathSet(new String[] { "name"} );
 
 	    ObjectSpec oSpec = new ObjectSpec();
-	    oSpec.setObj(cb.getConnection().getRootFolder());
+	    oSpec.setObj(cb.getServiceConnection3().getRootFolder());
 	    oSpec.setSkip(Boolean.TRUE);
 	    oSpec.setSelectSet(new SelectionSpec[] { getFolderRecursiveTraversalSpec() });
 
@@ -301,8 +314,8 @@ public class TestVMWare {
 	    pfSpec.setPropSet(new PropertySpec[] { pSpec });
 	    pfSpec.setObjectSet(new ObjectSpec[] { oSpec });
 	      
-	    ObjectContent[] ocs = cb.getConnection().getService().retrieveProperties(
-            cb.getConnection().getServiceContent().getPropertyCollector(),
+	    ObjectContent[] ocs = cb.getServiceConnection3().getService().retrieveProperties(
+            cb.getServiceConnection3().getServiceContent().getPropertyCollector(),
             new PropertyFilterSpec[] { pfSpec });
 	    
 	    if(ocs != null) {
@@ -336,8 +349,8 @@ public class TestVMWare {
 	    pfSpec.setPropSet(new PropertySpec[] { pSpec });
 	    pfSpec.setObjectSet(new ObjectSpec[] { oSpec });
 	      
-	    ObjectContent[] ocs = cb.getConnection().getService().retrieveProperties(
-            cb.getConnection().getServiceContent().getPropertyCollector(),
+	    ObjectContent[] ocs = cb.getServiceConnection3().getService().retrieveProperties(
+            cb.getServiceConnection3().getServiceContent().getPropertyCollector(),
             new PropertyFilterSpec[] { pfSpec });
 	    
 	    if(ocs != null) {
@@ -380,8 +393,8 @@ public class TestVMWare {
 	    pfSpec.setPropSet(new PropertySpec[] { pSpec });
 	    pfSpec.setObjectSet(new ObjectSpec[] { oSpec });
 	      
-	    ObjectContent[] ocs = cb.getConnection().getService().retrieveProperties(
-            cb.getConnection().getServiceContent().getPropertyCollector(),
+	    ObjectContent[] ocs = cb.getServiceConnection3().getService().retrieveProperties(
+            cb.getServiceConnection3().getServiceContent().getPropertyCollector(),
             new PropertyFilterSpec[] { pfSpec });
 	    
 	    if(ocs != null) {
@@ -416,8 +429,8 @@ public class TestVMWare {
 	    pfSpec.setPropSet(new PropertySpec[] { pSpec });
 	    pfSpec.setObjectSet(new ObjectSpec[] { oSpec });
 	      
-	    ObjectContent[] ocs = cb.getConnection().getService().retrieveProperties(
-            cb.getConnection().getServiceContent().getPropertyCollector(),
+	    ObjectContent[] ocs = cb.getServiceConnection3().getService().retrieveProperties(
+            cb.getServiceConnection3().getServiceContent().getPropertyCollector(),
             new PropertyFilterSpec[] { pfSpec });
 	    
 	    if(ocs != null) {
@@ -461,8 +474,8 @@ public class TestVMWare {
 	    pfSpec.setPropSet(new PropertySpec[] { pSpec });
 	    pfSpec.setObjectSet(new ObjectSpec[] { oSpec });
 	    
-	    ObjectContent[] ocs = cb.getConnection().getService().retrieveProperties(
-            cb.getConnection().getServiceContent().getPropertyCollector(),
+	    ObjectContent[] ocs = cb.getServiceConnection3().getService().retrieveProperties(
+            cb.getServiceConnection3().getServiceContent().getPropertyCollector(),
             new PropertyFilterSpec[] { pfSpec });
 	    
 	    if(ocs != null) {
@@ -495,7 +508,7 @@ public class TestVMWare {
 	    folder2childEntity.setSelectSet(new SelectionSpec[] { recurseFolders });
 
 	    ObjectSpec oSpec = new ObjectSpec();
-	    oSpec.setObj(cb.getConnection().getRootFolder());
+	    oSpec.setObj(cb.getServiceConnection3().getRootFolder());
 	    oSpec.setSkip(Boolean.TRUE);
 	    oSpec.setSelectSet(new SelectionSpec[] { folder2childEntity });
 
@@ -503,8 +516,8 @@ public class TestVMWare {
 	    pfSpec.setPropSet(new PropertySpec[] { pSpec });
 	    pfSpec.setObjectSet(new ObjectSpec[] { oSpec });
 	      
-	    return cb.getConnection().getService().retrieveProperties(
-            cb.getConnection().getServiceContent().getPropertyCollector(),
+	    return cb.getServiceConnection3().getService().retrieveProperties(
+            cb.getServiceConnection3().getServiceContent().getPropertyCollector(),
             new PropertyFilterSpec[] { pfSpec });
 	}
 	
@@ -556,8 +569,8 @@ public class TestVMWare {
 		pfSpec.setPropSet(new PropertySpec[] {pSpec} );
 		pfSpec.setObjectSet(new ObjectSpec[] {oSpec} );
 		
-		ObjectContent[] ocs = cb.getConnection().getService().retrieveProperties(
-	         cb.getConnection().getServiceContent().getPropertyCollector(),
+		ObjectContent[] ocs = cb.getServiceConnection3().getService().retrieveProperties(
+	         cb.getServiceConnection3().getServiceContent().getPropertyCollector(),
 	         new PropertyFilterSpec[] {pfSpec} );
 		
 		if(ocs != null) {
@@ -584,8 +597,8 @@ public class TestVMWare {
 		PropertyFilterSpec pfSpec = new PropertyFilterSpec();
 		pfSpec.setPropSet(new PropertySpec[] {pSpec} );
 		pfSpec.setObjectSet(new ObjectSpec[] {oSpec} );
-		ObjectContent[] ocs = cb.getConnection().getService().retrieveProperties(
-	         cb.getConnection().getServiceContent().getPropertyCollector(),
+		ObjectContent[] ocs = cb.getServiceConnection3().getService().retrieveProperties(
+	         cb.getServiceConnection3().getServiceContent().getPropertyCollector(),
 	         new PropertyFilterSpec[] {pfSpec} );
 
 		Object[] ret = new Object[properties.length];
@@ -613,7 +626,7 @@ public class TestVMWare {
 		morVm.setType("VirtualMachine");
 		morVm.set_value("vm-66");
 		
-		cb.getConnection().getService().powerOnVM_Task(morVm, null);
+		cb.getServiceConnection3().getService().powerOnVM_Task(morVm, null);
 	}
 	
 	private void powerOffVm() throws Exception {
@@ -621,7 +634,192 @@ public class TestVMWare {
 		morVm.setType("VirtualMachine");
 		morVm.set_value("vm-66");
 		
-		cb.getConnection().getService().powerOffVM_Task(morVm);
+		cb.getServiceConnection3().getService().powerOffVM_Task(morVm);
+	}
+	
+	private void createSnapshot() throws Exception {
+		ManagedObjectReference morVm = new ManagedObjectReference();
+		morVm.setType("VirtualMachine");
+		morVm.set_value("vm-66");
+		cb.getServiceConnection3().getService().createSnapshot_Task(morVm, "RunningSnapshotProg", "", false, false);
+	}
+	
+	private void registerTemplate() throws Exception {
+      ManagedObjectReference morFolder = new ManagedObjectReference();
+      morFolder.setType("Folder");
+      morFolder.set_value("group-v3");
+      
+      ManagedObjectReference morHost = new ManagedObjectReference();
+      morHost.setType("HostSystem");
+      morHost.set_value("host-48");
+
+      System.out.println("Begin registerVM_Task");
+      ManagedObjectReference taskmor = cb.getServiceConnection3().getService().registerVM_Task(
+    		  morFolder, "[NFS datastore] Template-Fedora/Template-Fedora.vmtx", "Template-Fedora", true, 
+		  null, morHost);
+      System.out.println("End registerVM_Task");
+
+      String result = cb.getServiceUtil3().waitForTask(taskmor);
+      if (result.equalsIgnoreCase("Sucess")) {
+    	  System.out.println("Registering The Virtual Machine ..........Done");
+      } else {
+    	  System.out.println("Some Exception While Registering The VM");
+      }
+	}
+	
+	private void createVmFromTemplate() throws Exception {
+	     VirtualMachineCloneSpec cloneSpec = new VirtualMachineCloneSpec();
+	     
+	     ManagedObjectReference morDatastore = new ManagedObjectReference();
+	     morDatastore.setType("Datastore");
+	     morDatastore.set_value("datastore-30");
+	     
+	     ManagedObjectReference morHost = new ManagedObjectReference();
+	     morHost.setType("HostSystem");
+	     morHost.set_value("host-48");
+	     
+	     ManagedObjectReference morPool = new ManagedObjectReference();
+	     morPool.setType("ResourcePool");
+	     morPool.set_value("resgroup-41");
+	     
+	     VirtualMachineRelocateSpec relocSpec = new VirtualMachineRelocateSpec();
+	     cloneSpec.setLocation(relocSpec);
+	     cloneSpec.setPowerOn(false);
+	     cloneSpec.setTemplate(false);
+	     
+	     relocSpec.setDatastore(morDatastore);
+	     relocSpec.setHost(morHost);
+	     relocSpec.setPool(morPool);
+	     
+	     ManagedObjectReference morTemplate = new ManagedObjectReference();
+	     morTemplate.setType("VirtualMachine");
+	     morTemplate.set_value("vm-76");
+	     
+	     ManagedObjectReference morFolder = new ManagedObjectReference();
+	     morFolder.setType("Folder");
+	     morFolder.set_value("group-v3");
+	      
+         ManagedObjectReference cloneTask 
+            = cb.getServiceConnection3().getService().cloneVM_Task(morTemplate, morFolder, 
+            	"Fedora-clone-test", cloneSpec);
+         
+         String status = cb.getServiceUtil3().waitForTask(cloneTask);
+         if(status.equalsIgnoreCase("failure")) {
+            System.out.println("Failure -: Virtual Machine cannot be cloned");
+         }
+                  
+         if(status.equalsIgnoreCase("sucess")) {
+            System.out.println("Virtual Machine Cloned  successfully.");
+         }
+	}
+	
+	private void addNic() throws Exception {
+		ManagedObjectReference morVm = new ManagedObjectReference();
+		morVm.setType("VirtualMachine");
+		morVm.set_value("vm-77");
+		
+		ManagedObjectReference morNetwork = new ManagedObjectReference();
+		morNetwork.setType("DistributedVirtualPortgroup");
+		morNetwork.set_value("dvportgroup-56");
+		
+		VirtualDeviceConfigSpec nicSpec = new VirtualDeviceConfigSpec();
+        nicSpec.setOperation(VirtualDeviceConfigSpecOperation.add);
+        VirtualEthernetCard nic =  new VirtualPCNet32();
+        VirtualEthernetCardNetworkBackingInfo nicBacking 
+           = new VirtualEthernetCardNetworkBackingInfo();
+        nicBacking.setDeviceName("Adapter to dSwitch-vlan26");
+        nicBacking.setNetwork(morNetwork);
+        
+        nic.setAddressType("generated");
+        nic.setBacking(nicBacking);
+        nic.setKey(4);
+        nicSpec.setDevice(nic);
+        
+        VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+        VirtualDeviceConfigSpec [] nicSpecArray = {nicSpec};                     
+        vmConfigSpec.setDeviceChange(nicSpecArray);
+        
+        ManagedObjectReference tmor 
+        	= cb.getServiceConnection3().getService().reconfigVM_Task(
+            morVm, vmConfigSpec);
+        
+        String status = cb.getServiceUtil3().waitForTask(tmor);
+        if(status.equalsIgnoreCase("failure")) {
+           System.out.println("Failure -: Virtual Machine cannot be cloned");
+        }
+                 
+        if(status.equalsIgnoreCase("sucess")) {
+           System.out.println("Virtual Machine Cloned  successfully.");
+        }
+	}
+	
+	// add virtual NIC to vmkernel
+	private void addNicToNetwork() throws Exception {
+		ManagedObjectReference morHost = new ManagedObjectReference();
+		morHost.setType("HostSystem");
+		morHost.set_value("host-48");
+		
+        HostPortGroupSpec portgrp = new HostPortGroupSpec();
+        portgrp.setName("VM Network vlan26");
+		
+        Object cmobj = cb.getServiceUtil3().getDynamicProperty(morHost, "configManager");
+        HostConfigManager configMgr = (HostConfigManager)cmobj;
+        ManagedObjectReference nwSystem = configMgr.getNetworkSystem();
+        
+        HostVirtualNicSpec vNicSpec = new HostVirtualNicSpec();
+        HostIpConfig ipConfig = new HostIpConfig();
+        ipConfig.setDhcp(false);
+        ipConfig.setIpAddress("192.168.26.177");
+        ipConfig.setSubnetMask("255.255.255.0");
+        
+        vNicSpec.setIp(ipConfig);
+        vNicSpec.setPortgroup("VM Network vlan26");
+        
+        cb.getServiceConnection3().getService().addVirtualNic(nwSystem, 
+        		"dvPortGroup-vlan26", vNicSpec);
+	}
+	
+	private void createDatacenter() throws Exception {
+		cb.getServiceConnection3().getService().createDatacenter(
+			cb.getServiceConnection3().getRootFolder(), 
+			"cloud.dc.test");
+	}
+	
+	private void getPropertyWithPath() throws Exception {
+		ManagedObjectReference morHost = new ManagedObjectReference();
+		morHost.setType("HostSystem");
+		morHost.set_value("host-161");
+		
+		VirtualNicManagerNetConfig[] netConfigs = (VirtualNicManagerNetConfig[])cb.getServiceUtil3().getDynamicProperty(morHost, "config.virtualNicManagerInfo.netConfig");
+	}
+	
+	private void getHostVMs() throws Exception {
+		ManagedObjectReference morHost = new ManagedObjectReference();
+		morHost.setType("HostSystem");
+		morHost.set_value("host-48");
+		
+		PropertySpec pSpec = new PropertySpec();
+		pSpec.setType("VirtualMachine");
+		pSpec.setPathSet(new String[] { "name", "runtime.powerState", "config.template" });
+		
+	    TraversalSpec host2VmTraversal = new TraversalSpec();
+	    host2VmTraversal.setType("HostSystem");
+	    host2VmTraversal.setPath("vm");
+	    host2VmTraversal.setName("host2VmTraversal");
+
+	    ObjectSpec oSpec = new ObjectSpec();
+	    oSpec.setObj(morHost);
+	    oSpec.setSkip(Boolean.TRUE);
+	    oSpec.setSelectSet(new SelectionSpec[] { host2VmTraversal });
+
+	    PropertyFilterSpec pfSpec = new PropertyFilterSpec();
+	    pfSpec.setPropSet(new PropertySpec[] { pSpec });
+	    pfSpec.setObjectSet(new ObjectSpec[] { oSpec });
+		      
+	    ObjectContent[] ocs = cb.getServiceConnection3().getService().retrieveProperties(
+            cb.getServiceConnection3().getServiceContent().getPropertyCollector(),
+            new PropertyFilterSpec[] { pfSpec });
+	    this.printContent(ocs);
 	}
 	
 	public static void main(String[] args) throws Exception {
@@ -631,21 +829,31 @@ public class TestVMWare {
 		// skip certificate check
 		System.setProperty("axis.socketSecureFactory", "org.apache.axis.components.net.SunFakeTrustSocketFactory");
 		 
-		String serviceUrl = "https://vsphere-1.lab.vmops.com/sdk/vimService";
+		String serviceUrl = "https://" + args[0] + "/sdk/vimService";
+		
 		try {
-			String[] params = new String[] {"--url", serviceUrl, "--username", "Administrator", "--password", "Suite219" };
+			String[] params = new String[] {"--url", serviceUrl, "--username", args[1], "--password", args[2] };
 		 
-			cb = AppUtil.initialize("Connect", params);
+			cb = ExtendedAppUtil.initialize("Connect", params);
 			cb.connect();
 			System.out.println("Connection Succesful.");
 
 			// client.listInventoryFolders();
 			// client.listDataCenters();
-			client.powerOnVm();
-			
+			// client.powerOnVm();
+			// client.createSnapshot();
+			// client.registerTemplate();
+			// client.createVmFromTemplate();
+			// client.addNic();
+			// client.addNicToNetwork();
+
+			// client.createDatacenter();
+			// client.getPropertyWithPath();
+			client.getHostVMs();
+		
 			cb.disConnect();
 		} catch (Exception e) {
-			System.out.println("Failed to connect to " + serviceUrl);
+			e.printStackTrace();
 		}
 	}
 }

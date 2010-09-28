@@ -24,7 +24,7 @@ BEGIN
   IF foo > 0 THEN 
          DROP USER 'cloud'@'%' ;
   END IF;
-END ;$$
+END $$
 DELIMITER ;
 
 CALL `mysql`.`cloud_drop_user_if_exists`() ;

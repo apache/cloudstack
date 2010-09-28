@@ -27,7 +27,7 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.domain.DomainVO;
+import com.cloud.domain.Domain;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.VMTemplateHostVO;
@@ -81,7 +81,7 @@ public class CopyTemplateExecutor extends BaseAsyncJobExecutor {
 	public void processTimeout(VMOperationListener listener, long agentId, long seq) {
 	}
 	
-	private CopyTemplateResultObject composeResultObject(VMTemplateVO template, VMTemplateHostVO templateHostRef, DataCenterVO destZone, String guestOSName, Account owner, DomainVO domain) {
+	private CopyTemplateResultObject composeResultObject(VMTemplateVO template, VMTemplateHostVO templateHostRef, DataCenterVO destZone, String guestOSName, Account owner, Domain domain) {
 		CopyTemplateResultObject resultObject = new CopyTemplateResultObject();
 		
 		
@@ -91,7 +91,7 @@ public class CopyTemplateExecutor extends BaseAsyncJobExecutor {
 		if(owner.getType() == Account.ACCOUNT_TYPE_ADMIN)
 			isAdmin = true;
 		
-		if (isAdmin || owner.getId().longValue() == template.getAccountId()) {
+		if (isAdmin || owner.getId() == template.getAccountId()) {
             // add download status
             if (templateHostRef.getDownloadState()!=Status.DOWNLOADED) {
                 String templateStatus = "Processing";

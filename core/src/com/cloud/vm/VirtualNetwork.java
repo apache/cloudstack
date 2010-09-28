@@ -17,25 +17,15 @@
  */
 package com.cloud.vm;
 
+import com.cloud.network.Network.IsolationType;
+import com.cloud.network.Network.Mode;
+
 /**
  * VirtualNetwork describes from a management level the
  * things needed to provide the network to the virtual
  * machine.
  */
 public class VirtualNetwork {
-    public enum Mode {
-        None,
-        Local,
-        Static,
-        Dhcp;
-    }
-    
-    public enum Isolation {
-        VNET,
-        VLAN,
-        OSWITCH,
-    }
-    
     /**
      * The gateway for this network.
      */
@@ -74,7 +64,7 @@ public class VirtualNetwork {
     /**
      * Isolation method for networking.
      */
-    public Isolation method;
+    public IsolationType method;
     
     public boolean firewalled;
     

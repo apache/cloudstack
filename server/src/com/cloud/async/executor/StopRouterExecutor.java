@@ -40,6 +40,7 @@ public class StopRouterExecutor extends VMOperationExecutor {
 		ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
     	VMOperationParam param = gson.fromJson(job.getCmdInfo(), VMOperationParam.class);
     	
+    	/*
 		if(getSyncSource() == null) {
 	    	asyncMgr.syncAsyncJobExecution(job, "Router", param.getVmId());
 			return true;
@@ -60,6 +61,8 @@ public class StopRouterExecutor extends VMOperationExecutor {
 	    	}
 	    	return true;
 		}
+		*/
+    	return true;
 	}
 	
 	public void processAnswer(VMOperationListener listener, long agentId, long seq, Answer answer) {

@@ -27,11 +27,10 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.to.DiskCharacteristicsTO;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
@@ -43,6 +42,7 @@ import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -54,10 +54,11 @@ import com.cloud.template.TemplateManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
+import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 
 public abstract class AbstractStoragePoolAllocator extends AdapterBase implements StoragePoolAllocator {
 	private static final Logger s_logger = Logger.getLogger(FirstFitStoragePoolAllocator.class);
@@ -79,7 +80,6 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
         
         Map<String, String> configs = _configDao.getConfiguration(null, params);
         
@@ -100,7 +100,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         return true;
     }
     
-    abstract boolean allocatorIsCorrectType(DiskCharacteristicsTO dskCh, VMInstanceVO vm, ServiceOffering offering);
+    abstract boolean allocatorIsCorrectType(DiskProfile dskCh, VMInstanceVO vm);
     
 	protected boolean templateAvailable(long templateId, long poolId) {
     	VMTemplateStorageResourceAssoc thvo = _templatePoolDao.findByPoolTemplate(poolId, templateId);
@@ -114,26 +114,16 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     	}
     }
 	
-	protected boolean localStorageAllocationNeeded(DiskCharacteristicsTO dskCh, VMInstanceVO vm, ServiceOffering offering) {
-		if (vm == null) {
-    		// We are finding a pool for a volume, so we need a shared storage allocator
-    		return false;
-    	} else if (vm.getType() == VirtualMachine.Type.User) {
-    		// We are finding a pool for a UserVM, so check the service offering to see if we should use local storage
-    		return offering.getUseLocalStorage();
-    	} else {
-    		// We are finding a pool for a DomR or ConsoleProxy, so check the configuration table to see if we should use local storage
-    		String configValue = _configDao.getValue("system.vm.use.local.storage");
-    		return Boolean.parseBoolean(configValue);
-    	}
+	protected boolean localStorageAllocationNeeded(DiskProfile dskCh, VMInstanceVO vm) {
+	    return dskCh.useLocalStorage();
 	}
 	
-	protected boolean poolIsCorrectType(DiskCharacteristicsTO dskCh, StoragePool pool, VMInstanceVO vm, ServiceOffering offering) {
-		boolean localStorageAllocationNeeded = localStorageAllocationNeeded(dskCh, vm, offering);
+	protected boolean poolIsCorrectType(DiskProfile dskCh, StoragePool pool, VMInstanceVO vm) {
+		boolean localStorageAllocationNeeded = localStorageAllocationNeeded(dskCh, vm);
 		return ((!localStorageAllocationNeeded && pool.getPoolType().isShared()) || (localStorageAllocationNeeded && !pool.getPoolType().isShared()));
 	}
 	
-	protected boolean checkPool(Set<? extends StoragePool> avoid, StoragePoolVO pool, DiskCharacteristicsTO dskCh, VMTemplateVO template, List<VMTemplateStoragePoolVO> templatesInPool, ServiceOffering offering,
+	protected boolean checkPool(Set<? extends StoragePool> avoid, StoragePoolVO pool, DiskProfile dskCh, VMTemplateVO template, List<VMTemplateStoragePoolVO> templatesInPool, 
 			VMInstanceVO vm, StatsCollector sc) {
 		if (avoid.contains(pool)) {
 			return false;
@@ -144,7 +134,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             
 		
 		// Check that the pool type is correct
-		if (!poolIsCorrectType(dskCh, pool, vm, offering)) {
+		if (!poolIsCorrectType(dskCh, pool, vm)) {
 			return false;
 		}
 
@@ -166,7 +156,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 
 		Pair<Long, Long> sizes = _volumeDao.getCountAndTotalByPool(pool.getId());
 		
-		long totalAllocatedSize = sizes.second() + (long)sizes.first() * _extraBytesPerVolume;
+		long totalAllocatedSize = sizes.second() + sizes.first() * _extraBytesPerVolume;
 
 		// Iterate through all templates on this storage pool
 		boolean tmpinstalled = false;
@@ -179,11 +169,10 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 
 		for (VMTemplateStoragePoolVO templatePoolVO : templatePoolVOs) {
 			VMTemplateVO templateInPool = _templateDao.findById(templatePoolVO.getTemplateId());
-			int templateSizeMultiplier = 2;
+			int templateSizeMultiplier = pool.getPoolType() == StoragePoolType.NetworkFilesystem ? 1 : 2;
 
 			if ((template != null) && !tmpinstalled && (templateInPool.getId() == template.getId())) {
 				tmpinstalled = true;
-				templateSizeMultiplier = 3;
 			}
 			
 			s_logger.debug("For template: " + templateInPool.getName() + ", using template size multiplier: " + templateSizeMultiplier);
@@ -203,9 +192,9 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 				if (templateHostVO == null) {
 					return false;
 				} else {
-					s_logger.debug("For template: " + template.getName() + ", using template size multiplier: " + 3);
+					s_logger.debug("For template: " + template.getName() + ", using template size multiplier: " + 2);
 					long templateSize = templateHostVO.getSize();
-					totalAllocatedSize += 3 * (templateSize + _extraBytesPerVolume);
+					totalAllocatedSize += 2 * (templateSize + _extraBytesPerVolume);
 				}
 			}
 		}
@@ -235,5 +224,11 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 	@Override
 	public String chooseStorageIp(VirtualMachine vm, Host host, Host storage) {
 		return storage.getStorageIpAddress();
+	}
+	
+	@Override
+	public StoragePool allocateTo(DiskProfile dskCh, VirtualMachineProfile vm, DeployDestination dest, List<Volume> disks, Set<StoragePool> avoids) {
+	    
+	    return null;
 	}
 }

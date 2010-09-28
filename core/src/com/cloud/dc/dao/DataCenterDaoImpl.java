@@ -66,7 +66,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     public DataCenterVO findByName(String name) {
     	SearchCriteria<DataCenterVO> sc = NameSearch.create();
     	sc.setParameters("name", name);
-        return findOneActiveBy(sc);
+        return findOneBy(sc);
     }
 
     @Override
@@ -82,6 +82,16 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     @Override
     public void releasePrivateIpAddress(String ipAddress, long dcId, Long instanceId) {
         _ipAllocDao.releaseIpAddress(ipAddress, dcId, instanceId);
+    }
+    
+    @Override
+    public void releasePrivateIpAddress(long nicId) {
+        _ipAllocDao.releaseIpAddress(nicId);
+    }
+    
+    @Override
+    public void releaseLinkLocalPrivateIpAddress(long nicId) {
+        _LinkLocalIpAllocDao.releaseIpAddress(nicId);
     }
     
     @Override

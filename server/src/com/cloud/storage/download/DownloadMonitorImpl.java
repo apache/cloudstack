@@ -303,7 +303,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			List<DataCenterVO> dcs = new ArrayList<DataCenterVO>();
 			
 			if (zoneId == null) {
-				dcs.addAll(_dcDao.listAll());
+				dcs.addAll(_dcDao.listAllIncludingRemoved());
 			} else {
 				dcs.add(_dcDao.findById(zoneId));
 			}
@@ -446,12 +446,13 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
                     tmpltHost.setDownloadPercent(100);
                     tmpltHost.setDownloadState(Status.DOWNLOADED);
                     tmpltHost.setInstallPath(templateInfo.get(uniqueName).getInstallPath());
+                    tmpltHost.setSize(templateInfo.get(uniqueName).getSize());
                     tmpltHost.setLastUpdated(new Date());
 					_vmTemplateHostDao.update(tmpltHost.getId(), tmpltHost);
 				} else {
-					VMTemplateHostVO templtHost = new VMTemplateHostVO(sserverId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, templateInfo.get(uniqueName).getInstallPath(), tmplt.getUrl());
-					templtHost.setSize(templateInfo.get(uniqueName).getSize());
-					_vmTemplateHostDao.persist(templtHost);
+				    tmpltHost = new VMTemplateHostVO(sserverId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, templateInfo.get(uniqueName).getInstallPath(), tmplt.getUrl());
+					tmpltHost.setSize(templateInfo.get(uniqueName).getSize());
+					_vmTemplateHostDao.persist(tmpltHost);
 				}
 				templateInfo.remove(uniqueName);
 				continue;
@@ -482,7 +483,15 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			TemplateInfo tInfo = templateInfo.get(uniqueName);
 			DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(tInfo.getInstallPath());
 			long result = send(sserverId, dtCommand, null);
-			s_logger.info("Deleted template " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " since it isn't in the database, result=" + result);
+			if (result == -1 ){
+			    String description = "Failed to delete " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " which isn't in the database";
+			    logEvent(1L, EventTypes.EVENT_TEMPLATE_DELETE, description , EventVO.LEVEL_ERROR);
+			    s_logger.error(description);
+			    return;
+			}
+			String description = "Deleted template " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " since it isn't in the database, result=" + result;
+			logEvent(1L, EventTypes.EVENT_TEMPLATE_DELETE, description, EventVO.LEVEL_INFO);
+			s_logger.info(description);
 
 		}
 

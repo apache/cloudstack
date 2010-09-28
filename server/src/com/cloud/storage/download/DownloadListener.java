@@ -40,10 +40,10 @@ import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.host.HostVO;
+import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.download.DownloadState.DownloadEvent;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -286,8 +286,8 @@ public class DownloadListener implements Listener {
 	    long agentId = agent.getId();
 	    
 	    StartupStorageCommand storage = (StartupStorageCommand)cmd;
-	    if (storage.getResourceType() == Volume.StorageResourceType.STORAGE_HOST ||
-	    storage.getResourceType() == Volume.StorageResourceType.SECONDARY_STORAGE )
+	    if (storage.getResourceType() == Storage.StorageResourceType.STORAGE_HOST ||
+	    storage.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE )
 	    {
 	    	downloadMonitor.handleTemplateSync(agentId, storage.getTemplateInfo());
 	    } else {

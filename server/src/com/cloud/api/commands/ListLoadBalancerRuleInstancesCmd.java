@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import java.util.ArrayList;
@@ -49,7 +48,6 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
     @Parameter(name="id", type=CommandType.LONG, required=true)
     private Long id;
 
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -61,7 +59,6 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
     public Long getId() {
         return id;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

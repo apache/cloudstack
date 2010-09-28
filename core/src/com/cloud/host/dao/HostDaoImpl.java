@@ -206,7 +206,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("status", (Object[])statuses);
         sc.setParameters("pod", podId);
         
-        List<Long> rs = searchAll(sc, null);
+        List<Long> rs = searchIncludingRemoved(sc, null);
         if (rs.size() == 0) {
             return 0;
         }
@@ -219,7 +219,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     	SearchCriteria<HostVO> sc = TypeDcSearch.create();
     	sc.setParameters("type", Host.Type.SecondaryStorage);
     	sc.setParameters("dc", dcId);
-    	List<HostVO> storageHosts = listActiveBy(sc);
+    	List<HostVO> storageHosts = listBy(sc);
     	
     	if (storageHosts == null || storageHosts.size() != 1) {
     		return null;
@@ -232,7 +232,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     public List<HostVO> listSecondaryStorageHosts() {
     	SearchCriteria<HostVO> sc = TypeSearch.create();
     	sc.setParameters("type", Host.Type.SecondaryStorage);
-    	List<HostVO> secondaryStorageHosts = listBy(sc);
+    	List<HostVO> secondaryStorageHosts = listIncludingRemovedBy(sc);
     	
     	return secondaryStorageHosts;
     }
@@ -281,7 +281,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("dc", dcId);
         sc.setParameters("status", Status.Up.toString());
 
-        return listActiveBy(sc);
+        return listBy(sc);
     }
     
     @Override
@@ -290,7 +290,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         
         sc.setParameters("cluster", clusterId);
         
-        return listActiveBy(sc);
+        return listBy(sc);
     }
     
     @Override
@@ -300,7 +300,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("dc", dcId);
         sc.setParameters("status", Status.Up.toString());
 
-        return listActiveBy(sc);
+        return listBy(sc);
     }
     
     @Override
@@ -309,7 +309,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("dc", dcId);
         sc.setParameters("privateIpAddress", privateIpAddress);
         
-        return findOneActiveBy(sc);
+        return findOneBy(sc);
     }
     
     @Override
@@ -318,7 +318,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("dc", dcId);
         sc.setParameters("storageIpAddress", privateIpAddress);
         
-        return findOneActiveBy(sc);
+        return findOneBy(sc);
     }
     
     @Override
@@ -416,7 +416,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     @Override
     public HostVO findByGuid(String guid) {
         SearchCriteria<HostVO> sc = GuidSearch.create("guid", guid);
-        return findOneActiveBy(sc);
+        return findOneBy(sc);
     }
 
     @Override
@@ -425,13 +425,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("ping", timeout);
         sc.setParameters("state", Status.Up.toString(), Status.Updating.toString(),
                 Status.Disconnected.toString(), Status.Down.toString());
-        return listActiveBy(sc);
+        return listBy(sc);
     }
     
     public List<HostVO> findHostsLike(String hostName) {
     	SearchCriteria<HostVO> sc = NameLikeSearch.create();
         sc.setParameters("name", "%" + hostName + "%");
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
@@ -439,25 +439,25 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         SearchCriteria<HostVO> sc = LastPingedSearch2.create();
         sc.setParameters("ping", timeout);
         sc.setParameters("type", type.toString());
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
     public List<HostVO> listByDataCenter(long dcId) {
         SearchCriteria<HostVO> sc = DcSearch.create("dc", dcId);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     public List<HostVO> listByHostPod(long podId) {
         SearchCriteria<HostVO> sc = PodSearch.create("pod", podId);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
     
     @Override
     public List<HostVO> listByStatus(Status... status) {
     	SearchCriteria<HostVO> sc = StatusSearch.create();
     	sc.setParameters("status", (Object[])status);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
@@ -466,7 +466,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("type", type.toString());
         sc.setParameters("dc", dcId);
 
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
@@ -478,7 +478,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             sc.addAnd("routing_capbable", SearchCriteria.Op.EQ, Integer.valueOf(1));
         }
 
-        return listBy(sc);
+        return listIncludingRemovedBy(sc);
     }
 
     protected void saveDetails(HostVO host) {

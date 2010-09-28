@@ -17,8 +17,6 @@ case "$1" in
 		chgrp cloud $i
 	done
 
-	test -f /var/lib/cloud/management/.ssh/id_rsa || su - cloud -c 'yes "" | ssh-keygen -t rsa -q -N ""' < /dev/null
-
 	for i in /etc/cloud/management/db.properties
 	do
 		chmod 0640 $i

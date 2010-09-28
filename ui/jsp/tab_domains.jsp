@@ -1,11 +1,7 @@
-<%@ page import="java.util.*" %>
-
+<%@ page import="java.util.Date" %>
 <%
-    Locale browserLocale = request.getLocale();
-	ResourceBundle t = ResourceBundle.getBundle("resources/resource", browserLocale);
+long milliseconds = new Date().getTime();
 %>
-
-<script type="text/javascript" src="scripts/cloud.core.domains.js"></script>
 	
 <!-- Content Panel -->
 <div class="maincontent" style="display:block;" id="submenu_content_domains">
@@ -75,14 +71,7 @@
             </div>
             <div class="domain_detailsbox_right"></div>
         </div>
-        <div style="display:none">
-            <p>browser locale: <%=browserLocale%></p> <br>  
-            <span style="padding-left:3px"><%=t.getString("computer")%></span>   
-            <span style="padding-left:3px"><%=t.getString("computer_disk_hahaha")%></span>   
-            <span style="padding-left:3px"><%=t.getString("disk")%></span>        
-            <span style="padding-left:3px"><%=t.getString("monitor")%></span>        
-            <span style="padding-left:3px"><%=t.getString("keyboard")%></span>               
-        </div>
+       
     </div>    
 </div>
 

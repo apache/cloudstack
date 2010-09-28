@@ -192,7 +192,7 @@ public class ListTemplatesCmd extends BaseListCmd {
                 templateResponse.setZoneName(datacenter.getName());
                 
                 // If the user is an admin, add the template download status
-                if (isAdmin || account.getId().longValue() == template.getAccountId()) {
+                if (isAdmin || account.getId() == template.getAccountId()) {
                     // add download status
                     if (templateHostRef.getDownloadState()!=Status.DOWNLOADED) {
                         String templateStatus = "Processing";

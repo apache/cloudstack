@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.configuration;
 
 import java.sql.PreparedStatement;
@@ -75,7 +74,8 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.IPAddressDao;
-import com.cloud.offering.ServiceOffering.GuestIpType;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -93,10 +93,15 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value={ConfigurationManager.class})
@@ -123,6 +128,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 	@Inject HostPodDao _hostPodDao;
 	@Inject AccountManager _accountMgr;
 	@Inject NetworkManager _networkMgr;
+	@Inject ConsoleProxyDao _consoleDao;
+	@Inject SecondaryStorageVmDao _secStorageDao;
 	public boolean _premium;
 
 	private int _maxVolumeSizeInGb;
@@ -162,6 +169,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         return true;
     }
     
+    @Override
     public void updateConfiguration(long userId, String name, String value) throws InvalidParameterValueException, InternalErrorException {
     	if (value != null && (value.trim().isEmpty() || value.equals("null"))) {
     		value = null;
@@ -390,6 +398,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		}
     }
     
+    @Override
     @DB
     public boolean deletePod(DeletePodCmd cmd) throws InvalidParameterValueException, InternalErrorException {
     	Long podId = cmd.getId();
@@ -402,22 +411,22 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	if (!validPod(podId)) {
     		throw new InvalidParameterValueException("A pod with ID: " + podId + " does not exist.");
     	}
-    	
+
     	checkIfPodIsDeletable(podId);
-    	
+
     	HostPodVO pod = _podDao.findById(podId);
     	DataCenterVO zone = _zoneDao.findById(pod.getDataCenterId());
-    	
+
     	//Delete the pod and private IP addresses in the pod
-    	if (_podDao.delete(podId) && _privateIpAddressDao.deleteIpAddressByPod(podId)) {
+    	if (_podDao.expunge(podId) && _privateIpAddressDao.deleteIpAddressByPod(podId)) {
     		saveConfigurationEvent(userId, null, EventTypes.EVENT_POD_DELETE, "Successfully deleted pod with name: " + pod.getName() + " in zone: " + zone.getName() + ".", "podId=" + podId, "dcId=" + zone.getId());
     		return true;
-    		
     	} else {
     		return false;
     	}
     }
-    
+
+    @Override
     @DB
     public HostPodVO editPod(UpdatePodCmd cmd) throws InvalidParameterValueException, InternalErrorException 
     {
@@ -481,7 +490,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	checkPodAttributes(id, name, pod.getDataCenterId(), gateway, cidr, startIp, endIp, checkForDuplicates);
     	
     	String cidrAddress = getCidrAddress(cidr);
-    	long cidrSize = getCidrSize(cidr);
+    	int cidrSize = getCidrSize(cidr);
     	
     	if (startIp != null && endIp == null) {
     		endIp = NetUtils.getIpRangeEndIpFromCidr(cidrAddress, cidrSize);
@@ -562,7 +571,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	checkPodAttributes(-1, podName, zoneId, gateway, cidr, startIp, endIp, true);
 		
 		String cidrAddress = getCidrAddress(cidr);
-		long cidrSize = getCidrSize(cidr);
+		int cidrSize = getCidrSize(cidr);
 		
 		if (startIp != null) {
 			if (endIp == null) {
@@ -753,6 +762,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	
     }
     
+    @Override
     @DB
     public void deleteZone(DeleteZoneCmd cmd) throws InvalidParameterValueException, InternalErrorException {
     	
@@ -772,7 +782,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	
     	DataCenterVO zone = _zoneDao.findById(zoneId);
     	
-    	_zoneDao.delete(zoneId);
+    	_zoneDao.expunge(zoneId);
     	
     	// Delete vNet
         _zoneDao.deleteVnet(zoneId);
@@ -810,41 +820,24 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	if (!validZone(zoneId)) {
     		throw new InvalidParameterValueException("A zone with ID: " + zoneId + " does not exist.");
     	}
-    	
-    	// If DNS values are being changed, make sure there are no VMs in this zone
-    	if (dns1 != null || dns2 != null || internalDns1 != null || internalDns2 != null) {
-    		if (zoneHasVMs(zoneId)) {
-    			throw new InternalErrorException("The zone is not editable because there are VMs in the zone.");
-    		}
-    	}
-    	
+
     	// If the Vnet range is being changed, make sure there are no allocated VNets
     	if (vnetRange != null) {
     		if (zoneHasAllocatedVnets(zoneId)) {
     			throw new InternalErrorException("The vlan range is not editable because there are allocated vlans.");
     		}
     	}
-    	
-    	//To modify a zone, we need to make sure there are no domr's associated with it
-    	//1. List all the domain router objs
-    	//2. Check if any of these has the current data center associated
-    	//3. If yes, throw exception
-    	//4, If no, edit
-    	List<DomainRouterVO> allDomainRoutersAvailable = _domrDao.listAll();
-    	
-    	for(DomainRouterVO domR : allDomainRoutersAvailable)
-    	{
-    		if(domR.getDataCenterId() == zoneId)
-    		{
-    			throw new InternalErrorException("The zone is not editable because there are domR's associated with the zone.");
-    		}
-    	}
-    	
-    	//5. Reached here, hence editable   	
+
     	String oldZoneName = zone.getName();
     	
     	if (zoneName == null) {
     		zoneName = oldZoneName;
+    	}
+    	
+    	boolean dnsUpdate = false;
+    	
+    	if(dns1 != null || dns2 != null){
+    	    dnsUpdate = true;
     	}
     	
     	if (dns1 == null) {
@@ -886,6 +879,48 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 	    	_zoneDao.addVnet(zone.getId(), begin, end);
     	}
     	
+    	if(dnsUpdate){
+    	    
+    	    //Update dns for domRs in zone
+    	    
+    	    List<DomainRouterVO> DomainRouters = _domrDao.listByDataCenter(zoneId);
+
+    	    for(DomainRouterVO domR : DomainRouters)
+    	    {
+    	        domR.setDns1(dns1);
+    	        domR.setDns2(dns2);
+    	        _domrDao.update(domR.getId(), domR);
+    	    }
+    	    
+    	  //Update dns for console proxies in zone
+            List<VMInstanceVO> ConsoleProxies = _vmInstanceDao.listByZoneIdAndType(zoneId, VirtualMachine.Type.ConsoleProxy);
+            
+            for(VMInstanceVO consoleVm : ConsoleProxies)
+            {
+                ConsoleProxyVO proxy = _consoleDao.findById(consoleVm.getId());
+                if( proxy!= null ){
+                    proxy.setDns1(dns1);
+                    proxy.setDns2(dns2);
+                    _consoleDao.update(proxy.getId(), proxy);
+                }
+            }    	    
+            
+          //Update dns for secondary storage Vms in zone
+            List<VMInstanceVO> storageVms = _vmInstanceDao.listByZoneIdAndType(zoneId, VirtualMachine.Type.SecondaryStorageVm);
+            
+            for(VMInstanceVO storageVm : storageVms)
+            {
+                SecondaryStorageVmVO secStorageVm = _secStorageDao.findById(storageVm.getId());
+                if( secStorageVm!= null ){
+                    secStorageVm.setDns1(dns1);
+                    secStorageVm.setDns2(dns2);
+                    _secStorageDao.update(secStorageVm.getId(), secStorageVm);
+                }
+            }           
+            
+    	}
+
+    	
     	saveConfigurationEvent(userId, null, EventTypes.EVENT_ZONE_EDIT, "Successfully edited zone with name: " + zone.getName() + ".", "dcId=" + zone.getId(), "dns1=" + dns1, "dns2=" + dns2, "internalDns1=" + internalDns1, "internalDns2=" + internalDns2, "vnetRange=" + vnetRange, "guestCidr=" + guestCidr);
     	
     	return zone;
@@ -926,14 +961,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         checkZoneParameters(zoneName, dns1, dns2, internalDns1, internalDns2, true);
 
         // Create the new zone in the database
-        DataCenterVO zone = new DataCenterVO(null, zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr);
+        DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr);
         zone = _zoneDao.persist(zone);
 
         // Add vnet entries for the new zone
         _zoneDao.addVnet(zone.getId(), vnetStart, vnetEnd);
 
         saveConfigurationEvent(userId, null, EventTypes.EVENT_ZONE_CREATE, "Successfully created new zone with name: " + zoneName + ".", "dcId=" + zone.getId(), "dns1=" + dns1, "dns2=" + dns2, "internalDns1=" + internalDns1, "internalDns2=" + internalDns2, "vnetRange=" + vnetRange, "guestCidr=" + guestCidr);
-        
+
         return zone;
     }
 
@@ -1020,7 +1055,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
     	int networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
     	int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
-    	GuestIpType guestIpType = useVirtualNetwork ? GuestIpType.Virtualized : GuestIpType.DirectSingle;        
+    	NetworkOffering.GuestIpType guestIpType = useVirtualNetwork ? NetworkOffering.GuestIpType.Virtualized : NetworkOffering.GuestIpType.DirectSingle;        
     	tags = cleanupTags(tags);
     	ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, multicastRate, offerHA, displayText, guestIpType, localStorageRequired, false, tags);
     	
@@ -1032,7 +1067,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     		return null;
     	}
     }
-    
+
     public ServiceOfferingVO updateServiceOffering(UpdateServiceOfferingCmd cmd) {
     	String displayText = cmd.getDisplayText();
     	Long id = cmd.getId();
@@ -1072,7 +1107,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         }
 	    
         if (useVirtualNetwork != null) {
-        	GuestIpType guestIpType = useVirtualNetwork ? GuestIpType.Virtualized : GuestIpType.DirectSingle;
+        	NetworkOffering.GuestIpType guestIpType = useVirtualNetwork ? NetworkOffering.GuestIpType.Virtualized : NetworkOffering.GuestIpType.DirectSingle;
             offering.setGuestIpType(guestIpType);
         }
         
@@ -1087,7 +1122,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         if (_serviceOfferingDao.update(id, offering)) {
         	offering = _serviceOfferingDao.findById(id);
     		saveConfigurationEvent(userId, null, EventTypes.EVENT_SERVICE_OFFERING_EDIT, "Successfully updated service offering with name: " + offering.getName() + ".", "soId=" + offering.getId(), "name=" + offering.getName(),
-    				"displayText=" + offering.getDisplayText(), "offerHA=" + offering.getOfferHA(), "useVirtualNetwork=" + (offering.getGuestIpType() == GuestIpType.Virtualized), "tags=" + offering.getTags());
+    				"displayText=" + offering.getDisplayText(), "offerHA=" + offering.getOfferHA(), "useVirtualNetwork=" + (offering.getGuestIpType() == NetworkOffering.GuestIpType.Virtualized), "tags=" + offering.getTags());
         	return offering;
         } else {
         	return null;
@@ -1122,7 +1157,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 
         return createDiskOffering(domainId, name, description, numGibibytes, tags);
     }
-    
+
     public DiskOfferingVO updateDiskOffering(UpdateDiskOfferingCmd cmd) throws InvalidParameterValueException{
     	Long diskOfferingId = cmd.getId();
     	String name = cmd.getName();
@@ -1158,15 +1193,16 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         		diskOffering.setTagsArray(csvTagsToList(tags));
         	}     	
         }
-    	
+
     	if (_diskOfferingDao.update(diskOfferingId, diskOffering)) {
+            saveConfigurationEvent(UserContext.current().getUserId(), null, EventTypes.EVENT_DISK_OFFERING_EDIT, "Successfully updated disk offering with name: " + diskOffering.getName() + ".", "doId=" + diskOffering.getId(), "name=" + diskOffering.getName(),
+                    "displayText=" + diskOffering.getDisplayText(), "diskSize=" + diskOffering.getDiskSize(),"tags=" + diskOffering.getTags());
     		return _diskOfferingDao.findById(diskOfferingId);
     	} else { 
     		return null;
     	}
     }
-    
-    
+
     public boolean deleteDiskOffering(DeleteDiskOfferingCmd cmd) throws InvalidParameterValueException{
     	Long diskOfferingId = cmd.getId();
     	
@@ -1183,7 +1219,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     }
 
-    
     public boolean deleteServiceOffering(DeleteServiceOfferingCmd cmd) throws InvalidParameterValueException{
     	
         Long offeringId = cmd.getId();
@@ -1229,7 +1264,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     }
 
     @Override
-//    public VlanVO createVlanAndPublicIpRange(long userId, VlanType vlanType, Long zoneId, Long accountId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String startIP, String endIP) throws InvalidParameterValueException, InternalErrorException {    		
     public VlanVO createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InvalidParameterValueException, InternalErrorException, InsufficientCapacityException {
         Long userId = UserContext.current().getUserId();
         if (userId == null) {
@@ -1282,6 +1316,16 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 	    	
 		}
 
+        //if we have an ip range for vlan id=x, vlantype=y; we should
+	    //only allow adding another range with id=x for same type y
+        if (!vlanId.equals(Vlan.UNTAGGED)) {
+            VlanVO vlanHandle = _vlanDao.findByZoneAndVlanId(zoneId, vlanId);
+
+            if (vlanHandle!=null && !vlanHandle.getVlanType().equals(vlanType))
+                throw new InvalidParameterValueException("This vlan id is already associated with the vlan type "+vlanHandle.getVlanType().toString()
+                        +",whilst you are trying to associate it with vlan type "+vlanType.toString());
+        }
+
     	DataCenterVO zone;
     	if (zoneId == null || ((zone = _zoneDao.findById(zoneId)) == null)) {
 			throw new InvalidParameterValueException("Please specify a valid zone.");
@@ -1320,15 +1364,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         				throw new InvalidParameterValueException("Zone " + zone.getName() + " already has pod-wide IP ranges. A zone may contain either pod-wide IP ranges or account-wide IP ranges, but not both.");
         			}
         		}
-        		
-        		// Make sure the specified account isn't already assigned to a VLAN in this zone
-        		List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAccountVlanMapsByAccount(account.getId());
-        		for (AccountVlanMapVO accountVlanMap : accountVlanMaps) {
-        			VlanVO vlan = _vlanDao.findById(accountVlanMap.getVlanDbId());
-        			if (vlan.getDataCenterId() == zone.getId().longValue()) {
-        				throw new InvalidParameterValueException("The account " + account.getAccountName() + " is already assigned to an IP range in zone " + zone.getName() + ".");
-        			}
-        		}
     		} else if (podId != null) {
     			// Pod-wide VLANs must be untagged
         		if (!vlanId.equals(Vlan.UNTAGGED)) {
@@ -1341,10 +1376,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         		}
 
         		// Make sure there aren't any account VLANs in this zone
-        		List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAll();
+        		List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAllIncludingRemoved();
         		for (AccountVlanMapVO accountVlanMap : accountVlanMaps) {
         			VlanVO vlan = _vlanDao.findById(accountVlanMap.getVlanDbId());
-        			if (vlan.getDataCenterId() == zone.getId().longValue()) {
+        			if (vlan.getDataCenterId() == zone.getId()) {
         				throw new InvalidParameterValueException("Zone " + zone.getName() + " already has account-wide IP ranges. A zone may contain either pod-wide IP ranges or account-wide IP ranges, but not both.");
         			}
         		}
@@ -1435,12 +1470,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		if (account != null && vlanType.equals(VlanType.VirtualNetwork)){
 			if(!savePublicIPRangeForAccount(startIP, endIP, zoneId, vlan.getId(), account.getId(), account.getDomainId())) {
 				deletePublicIPRange(vlan.getId());
-				_vlanDao.delete(vlan.getId());
+				_vlanDao.expunge(vlan.getId());
 				throw new InternalErrorException("Failed to save IP range. Please contact Cloud Support."); //It can be Direct IP or Public IP.
 			}				
 		}else if (!savePublicIPRange(startIP, endIP, zoneId, vlan.getId())) {
 			deletePublicIPRange(vlan.getId());
-			_vlanDao.delete(vlan.getId());
+			_vlanDao.expunge(vlan.getId());
 			throw new InternalErrorException("Failed to save IP range. Please contact Cloud Support."); //It can be Direct IP or Public IP.
 		}
 		
@@ -1510,7 +1545,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
                 txn.start();
                 List<String> ipAddrsList = new ArrayList<String>();
                 for (VlanVO vlan : vlansForAccount){
-                    ipAddrsList.addAll(_publicIpAddressDao.assignAcccountSpecificIps(accountId, account.getDomainId().longValue(), vlan.getId(), false));
+                    ipAddrsList.addAll(_publicIpAddressDao.assignAcccountSpecificIps(accountId, account.getDomainId(), vlan.getId(), false));
 
                     long size = ipAddrsList.size();
                     _accountMgr.incrementResourceCount(accountId, ResourceType.public_ip, size);
@@ -1522,7 +1557,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
                 String params = "\nsourceNat=" + false + "\ndcId=" + zoneId;
 
                 // Associate the IP's to DomR
-                boolean success = _networkMgr.associateIP(router,ipAddrsList, true);
+                boolean success = _networkMgr.associateIP(router,ipAddrsList, true, 0);
                 String errorMsg = "Unable to assign public IP address pool";
                 if (!success) {
                     s_logger.debug(errorMsg);
@@ -1551,6 +1586,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     
     }
     
+    @Override
     public boolean deleteVlanAndPublicIpRange(long userId, long vlanDbId) throws InvalidParameterValueException {
     	VlanVO vlan = _vlanDao.findById(vlanDbId);
     	if (vlan == null) {
@@ -1586,7 +1622,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     	
 		// Delete the VLAN
-		boolean success = _vlanDao.delete(vlanDbId);
+		boolean success = _vlanDao.expunge(vlanDbId);
 		
 		if (success) {
 			String[] ipRange = vlan.getIpRange().split("\\-");
@@ -1607,6 +1643,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		return success;
     }
     
+    @Override
     public List<String> csvTagsToList(String tags) {
     	List<String> tagsList = new ArrayList<String>();
     	
@@ -1620,6 +1657,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	return tagsList;
     }
     
+    @Override
     public String listToCsvTags(List<String> tagsList) {
     	String tags = "";
     	if (tagsList.size() > 0) {
@@ -1906,9 +1944,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		return cidrPair[0];
 	}
 	
-	private long getCidrSize(String cidr) {
+	private int getCidrSize(String cidr) {
 		String[] cidrPair = cidr.split("\\/");
-		return Long.parseLong(cidrPair[1]);
+		return Integer.parseInt(cidrPair[1]);
 	}
 	
 	private String getCidrAddress(long podId) {

@@ -50,6 +50,22 @@ check_gw() {
   return $?;
 }
 
+#Add 1:1 NAT entry
+add_one_to_one_nat_entry() {
+  local guestIp=$1
+  local publicIp=$2  
+  local dIp=$3
+  ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dIp "\
+  iptables -t nat -A PREROUTING -i eth2 -d $publicIp -j DNAT --to-destination $guestIp
+  iptables -t nat -A POSTROUTING -o eth2 -s $guestIp -j SNAT --to-source $publicIp
+  iptables -P FORWARD DROP
+  iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+  iptables -A FORWARD -i eth2 -o eth0 -d $guestIp -m state --state NEW -j ACCEPT
+  iptables -A FORWARD -i eth0 -o eth2 -s $guestIp -m state --state NEW -j ACCEPT
+  "
+  return $?
+}
+
 #Add the NAT entries into iptables in the routing domain
 add_nat_entry() {
   local dRIp=$1
@@ -57,7 +73,7 @@ add_nat_entry() {
    ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
       ip addr add dev $correctVif $pubIp
       iptables -t nat -I POSTROUTING   -j SNAT -o $correctVif --to-source $pubIp ;
-      /sbin/arping -c 3 -I $correctVif -A -U -s $pubIp $pubIp;
+      arping -c 3 -I $correctVif -A -U -s $pubIp $pubIp;
      "
   if [ $? -gt 0  -a $? -ne 2 ]
   then
@@ -91,7 +107,7 @@ add_an_ip () {
    ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
    	  ifconfig $correctVif up;
       ip addr add dev $correctVif $pubIp ;
-      /sbin/arping -c 3 -I $correctVif -A -U -s $pubIp $pubIp;
+      arping -c 3 -I $correctVif -A -U -s $pubIp $pubIp;
      "
    return $?
 }
@@ -120,9 +136,10 @@ vflag=
 gflag=
 nflag=
 cflag=
+Gflag=
 op=""
 
-while getopts 'fADr:i:a:l:v:g:n:c:' OPTION
+while getopts 'fADr:i:a:l:v:g:n:c:G:' OPTION
 do
   case $OPTION in
   A)	Aflag=1
@@ -157,11 +174,25 @@ do
   c)	cflag=1
   		correctVif="$OPTARG"
   		;;
+  G)    Gflag=1
+        guestIp="$OPTARG"
+        ;;
   ?)	usage
 		exit 2
 		;;
   esac
 done
+
+#1:1 NAT
+if [ "$Gflag" == "1" ]
+then
+  add_nat_entry $domRIp $publicIp 
+  if [ $? -eq 0 ]
+  then
+    add_one_to_one_nat_entry $guestIp $publicIp $domRIp
+  fi
+  exit $?
+fi
 
 #Either the A flag or the D flag but not both
 if [ "$Aflag$Dflag" != "1" ]
@@ -181,7 +212,6 @@ then
    printf "Unable to ping the routing domain, exiting\n" >&2
    exit 3
 fi
-
 
 if [ "$fflag" == "1" ] && [ "$Aflag" == "1" ]
 then
@@ -208,4 +238,3 @@ then
 fi
 
 exit 0
-

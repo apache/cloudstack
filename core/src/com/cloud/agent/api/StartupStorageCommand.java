@@ -20,7 +20,7 @@ package com.cloud.agent.api;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.cloud.storage.Volume;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.template.TemplateInfo;
 
@@ -31,7 +31,7 @@ public class StartupStorageCommand extends StartupCommand {
     Map<String, TemplateInfo> templateInfo;
     long totalSize;
     StoragePoolInfo poolInfo;
-    Volume.StorageResourceType resourceType;
+    Storage.StorageResourceType resourceType;
     StoragePoolType fsType;
     Map<String, String> hostDetails = new HashMap<String, String>();
     String nfsShare;
@@ -91,11 +91,11 @@ public class StartupStorageCommand extends StartupCommand {
 		this.poolInfo = poolInfo;
 	}
 
-	public Volume.StorageResourceType getResourceType() {
+	public Storage.StorageResourceType getResourceType() {
 		return resourceType;
 	}
 
-	public void setResourceType(Volume.StorageResourceType resourceType) {
+	public void setResourceType(Storage.StorageResourceType resourceType) {
 		this.resourceType = resourceType;
 	}
 

@@ -51,7 +51,7 @@ public class DetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implements De
         sc.setParameters("hostId", hostId);
         sc.setParameters("name", name);
         
-        return findOneBy(sc);
+        return findOneIncludingRemovedBy(sc);
     }
 
     @Override
@@ -73,7 +73,7 @@ public class DetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implements De
         txn.start();
         SearchCriteria<DetailVO> sc = HostSearch.create();
         sc.setParameters("hostId", hostId);
-        delete(sc);
+        expunge(sc);
         
         for (Map.Entry<String, String> detail : details.entrySet()) {
             DetailVO vo = new DetailVO(hostId, detail.getKey(), detail.getValue());

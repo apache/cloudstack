@@ -41,7 +41,7 @@ import com.cloud.agent.api.storage.UpgradeDiskAnswer;
 import com.cloud.agent.api.storage.UpgradeDiskCommand;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.Volume.StorageResourceType;
+import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NfsUtils;
@@ -329,8 +329,8 @@ public abstract class FileSystemStorageResource extends StorageResource {
 	}
 
 	@Override
-	protected StorageResourceType getStorageResourceType() {
-		return StorageResourceType.STORAGE_POOL;
+	protected Storage.StorageResourceType getStorageResourceType() {
+		return Storage.StorageResourceType.STORAGE_POOL;
 	}
 
 	protected String mountNfs(String hostAddress, String hostPath, String localPath) {

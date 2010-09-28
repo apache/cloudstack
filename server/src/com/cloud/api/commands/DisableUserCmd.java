@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
@@ -36,7 +35,6 @@ public class DisableUserCmd extends BaseCmd {
     @Parameter(name="id", type=CommandType.LONG, required=true)
     private Long id;
 
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -44,7 +42,6 @@ public class DisableUserCmd extends BaseCmd {
     public Long getId() {
         return id;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

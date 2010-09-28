@@ -47,11 +47,12 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VirtualMachineTemplate;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachineProfile;
 
 /**
  * AgentManager manages hosts.  It directly coordinates between the
@@ -196,6 +197,8 @@ public interface AgentManager extends Manager {
 	 * @return
 	 */
     Pair<HostPodVO, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc, long userId, Set<Long> avoids);
+    
+    Host findHost(VirtualMachineProfile vm, Set<? extends Host> avoids);
 
     /**
      * Put the agent in maintenance mode.
@@ -233,4 +236,6 @@ public interface AgentManager extends Manager {
     public List<HostVO> discoverHosts(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password) throws DiscoveryException, InvalidParameterValueException;
     public List<HostVO> discoverHosts(AddHostCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
     public List<HostVO> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
+
+	Answer easySend(Long hostId, Command cmd, int timeout);
 }

@@ -79,35 +79,35 @@ public class NetworkGroupVMMapDaoImpl extends GenericDaoBase<NetworkGroupVMMapVO
         SearchCriteria<NetworkGroupVMMapVO> sc = ListByIpAndVmId.create();
         sc.setParameters("ipAddress", ipAddress);
         sc.setParameters("instanceId", vmId);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
     public List<NetworkGroupVMMapVO> listByNetworkGroup(long networkGroupId) {
         SearchCriteria<NetworkGroupVMMapVO> sc = ListByNetworkGroup.create();
         sc.setParameters("networkGroupId", networkGroupId);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
     public List<NetworkGroupVMMapVO> listByIp(String ipAddress) {
         SearchCriteria<NetworkGroupVMMapVO> sc = ListByIp.create();
         sc.setParameters("ipAddress", ipAddress);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
     public List<NetworkGroupVMMapVO> listByInstanceId(long vmId) {
         SearchCriteria<NetworkGroupVMMapVO> sc = ListByVmId.create();
         sc.setParameters("instanceId", vmId);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
 
     @Override
     public int deleteVM(long instanceId) {
     	SearchCriteria<NetworkGroupVMMapVO> sc = ListByVmId.create();
         sc.setParameters("instanceId", instanceId);
-        return super.delete(sc);
+        return super.expunge(sc);
     }
 
 	@Override
@@ -115,14 +115,14 @@ public class NetworkGroupVMMapDaoImpl extends GenericDaoBase<NetworkGroupVMMapVO
 		SearchCriteria<NetworkGroupVMMapVO> sc = ListByNetworkGroupAndStates.create();
 		sc.setParameters("networkGroupId", networkGroupId);
 		sc.setParameters("states", (Object[])vmStates);
-		return listActiveBy(sc);
+		return listBy(sc);
 	}
 	
     @Override
     public List<Long> listVmIdsByNetworkGroup(long networkGroupId) {
         SearchCriteria<Long> sc = ListVmIdByNetworkGroup.create();
         sc.setParameters("networkGroupId", networkGroupId);
-        return searchAll(sc, null);
+        return searchIncludingRemoved(sc, null);
     }
 
 	@Override
@@ -130,7 +130,7 @@ public class NetworkGroupVMMapDaoImpl extends GenericDaoBase<NetworkGroupVMMapVO
         SearchCriteria<NetworkGroupVMMapVO> sc = ListByVmIdGroupId.create();
         sc.setParameters("networkGroupId", networkGroupId);
         sc.setParameters("instanceId", instanceId);
-		return findOneBy(sc);
+		return findOneIncludingRemovedBy(sc);
 	}
 	
 }

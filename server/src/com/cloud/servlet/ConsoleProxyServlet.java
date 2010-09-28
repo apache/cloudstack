@@ -19,7 +19,15 @@
 package com.cloud.servlet;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -31,7 +39,10 @@ import com.cloud.host.HostVO;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.encoding.Base64;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 
@@ -56,24 +67,32 @@ public class ConsoleProxyServlet extends HttpServlet {
 	@Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 		try {
+            String userId = null;
+            String account = null;
+            Account accountObj = null;
+			
+            Map<String, Object[]> params = new HashMap<String, Object[]>();
+            params.putAll(req.getParameterMap());
+            
             HttpSession session = req.getSession(false);
             if(session == null) {
-				s_logger.info("Invalid web session, reject console/thumbnail access");
-				sendResponse(resp, "Access denied. You haven't logged in or your web session has timed out");
-				return;
-            }
-
-            // FIXME:  are these set up correctly from ApiServer?
-            String userIdStr = (String)session.getAttribute("userid");
-            String account = (String)session.getAttribute("account");
-            Object accountObj = session.getAttribute("accountobj");
-            Long userId = null;
-            if (userIdStr != null) {
-                userId = Long.parseLong(userIdStr);
+            	if(verifyRequest(params)) {
+                    userId = (String)params.get("userid")[0];
+                    account = (String)params.get("account")[0];
+                    accountObj = (Account)params.get("accountobj")[0];
+            	} else {
+					s_logger.info("Invalid web session or API key in request, reject console/thumbnail access");
+					sendResponse(resp, "Access denied. Invalid web session or API key in request");
+					return;
+            	}
+            } else {
+                userId = (String)session.getAttribute("userid");
+                account = (String)session.getAttribute("account");
+                accountObj = (Account)session.getAttribute("accountobj");
             }
 
             // Do a sanity check here to make sure the user hasn't already been deleted
-            if ((userId == null) || (account == null) || (accountObj == null) || !verifyUser(userId)) {
+            if ((userId == null) || (account == null) || (accountObj == null) || !verifyUser(Long.valueOf(userId))) {
 				s_logger.info("Invalid user/account, reject console/thumbnail access");
 				sendResponse(resp, "Access denied. Invalid or inconsistent account is found");
 				return;
@@ -96,7 +115,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 				return;
 			}
 			
-			if(!checkSessionPermision(req, vmId)) {
+			if(!checkSessionPermision(req, vmId, accountObj)) {
 				sendResponse(resp, "Permission denied");
 				return;
 			}
@@ -110,7 +129,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 			
 		} catch (Throwable e) {
 			s_logger.error("Unexepected exception in ConsoleProxyServlet", e);
-			sendResponse(resp, "");
+			sendResponse(resp, "Server Internal Error");
 		}
 	}
 	
@@ -262,6 +281,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 	
 	private void sendResponse(HttpServletResponse resp, String content) {
 		try {
+			resp.setContentType("text/html");
 			resp.getWriter().print(content);
 		} catch(IOException e) {
 			if(s_logger.isInfoEnabled())
@@ -269,18 +289,15 @@ public class ConsoleProxyServlet extends HttpServlet {
 		}
 	}
 	
-	private boolean checkSessionPermision(HttpServletRequest req, long vmId) {
+	private boolean checkSessionPermision(HttpServletRequest req, long vmId, Account accountObj) {
 
-        HttpSession session = req.getSession(false);
-        Account accountObj = (Account)session.getAttribute("accountobj");
-        
         VMInstanceVO vm = _ms.findVMInstanceById(vmId);
         UserVmVO userVm;
         switch(vm.getType())
         {
         case User :
         	userVm = _ms.findUserVMInstanceById(vmId);
-        	if(userVm.getAccountId() != accountObj.getId().longValue() && accountObj.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        	if(userVm.getAccountId() != accountObj.getId() && accountObj.getType() != Account.ACCOUNT_TYPE_ADMIN) {
         		if(s_logger.isDebugEnabled())
 	        		s_logger.debug("VM access is denied. VM owner account " + userVm.getAccountId() 
 	        			+ " does not match the account id in session " + accountObj.getId());
@@ -324,5 +341,96 @@ public class ConsoleProxyServlet extends HttpServlet {
     		return false;
     	}
     	return true;
+    }
+    
+	// copied and modified from ApiServer.java.
+    // TODO need to replace the whole servlet with a API command
+    private boolean verifyRequest(Map<String, Object[]> requestParameters) {
+        try {
+            String apiKey = null;
+            String secretKey = null;
+            String signature = null;
+            String unsignedRequest = null;
+
+            // - build a request string with sorted params, make sure it's all lowercase
+            // - sign the request, verify the signature is the same
+            List<String> parameterNames = new ArrayList<String>();
+
+            for (Object paramNameObj : requestParameters.keySet()) {
+                parameterNames.add((String)paramNameObj); // put the name in a list that we'll sort later
+            }
+
+            Collections.sort(parameterNames);
+
+            for (String paramName : parameterNames) {
+                // parameters come as name/value pairs in the form String/String[]
+                String paramValue = ((String[])requestParameters.get(paramName))[0];
+                
+                if ("signature".equalsIgnoreCase(paramName)) {
+                    signature = paramValue;
+                } else {
+                    if ("apikey".equalsIgnoreCase(paramName)) {
+                        apiKey = paramValue;
+                    }
+
+                    if (unsignedRequest == null) {
+                        unsignedRequest = paramName + "=" + URLEncoder.encode(paramValue, "UTF-8").replaceAll("\\+", "%20");
+                    } else {
+                        unsignedRequest = unsignedRequest + "&" + paramName + "=" + URLEncoder.encode(paramValue, "UTF-8").replaceAll("\\+", "%20");
+                    }
+                }
+            }
+            
+
+            // if api/secret key are passed to the parameters
+            if ((signature == null) || (apiKey == null)) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.info("expired session, missing signature, or missing apiKey -- ignoring request...sig: " + signature + ", apiKey: " + apiKey);
+                }
+                return false; // no signature, bad request
+            }
+
+            Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+            txn.close();
+            User user = null;
+            // verify there is a user with this api key
+            Pair<User, Account> userAcctPair = _ms.findUserByApiKey(apiKey);
+            if (userAcctPair == null) {
+                s_logger.info("apiKey does not map to a valid user -- ignoring request, apiKey: " + apiKey);
+                return false;
+            }
+
+            user = userAcctPair.first();
+            Account account = userAcctPair.second();
+
+            if (!user.getState().equals(Account.ACCOUNT_STATE_ENABLED) || !account.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
+                s_logger.info("disabled or locked user accessing the api, userid = " + user.getId() + "; name = " + user.getUsername() + "; state: " + user.getState() + "; accountState: " + account.getState());
+                return false;
+            }     
+
+            // verify secret key exists
+            secretKey = user.getSecretKey();
+            if (secretKey == null) {
+                s_logger.info("User does not have a secret key associated with the account -- ignoring request, username: " + user.getUsername());
+                return false;
+            }
+
+            unsignedRequest = unsignedRequest.toLowerCase();
+
+            Mac mac = Mac.getInstance("HmacSHA1");
+            SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA1");
+            mac.init(keySpec);
+            mac.update(unsignedRequest.getBytes());
+            byte[] encryptedBytes = mac.doFinal();
+            String computedSignature = Base64.encodeBytes(encryptedBytes);
+            boolean equalSig = signature.equals(computedSignature);
+            if (!equalSig) {
+            	s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
+            }
+            return equalSig;
+        } catch (Exception ex) {
+            s_logger.error("unable to verifty request signature", ex);
+        }
+        return false;
     }
 }

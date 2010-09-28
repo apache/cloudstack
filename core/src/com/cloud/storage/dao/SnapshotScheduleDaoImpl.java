@@ -64,7 +64,7 @@ public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, 
 	    sc.setParameters("scheduledTimestamp", date);
 	    // Don't return manual snapshots. They will be executed through another code path.
         sc.addAnd("policyId", SearchCriteria.Op.NEQ, 1L);
-        return listActiveBy(sc);
+        return listBy(sc);
 	}
 
 	/**
@@ -76,7 +76,7 @@ public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, 
         sc.setParameters("scheduledTimestamp", currentTimestamp);
         // Don't return manual snapshots. They will be executed through another code path.
         sc.addAnd("policyId", SearchCriteria.Op.NEQ, 1L);
-        return listActiveBy(sc);
+        return listBy(sc);
     }
     
     /**
@@ -92,7 +92,7 @@ public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, 
         }
         SearchCriteria.Op op = executing ? SearchCriteria.Op.NNULL : SearchCriteria.Op.NULL;
         sc.addAnd("asyncJobId", op);
-        List<SnapshotScheduleVO> snapshotSchedules = listActiveBy(sc);
+        List<SnapshotScheduleVO> snapshotSchedules = listBy(sc);
         // This will return only one schedule because of a DB uniqueness constraint.
         assert (snapshotSchedules.size() <= 1);
         if (snapshotSchedules.isEmpty()) {

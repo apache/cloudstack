@@ -17,21 +17,79 @@
  */
 package com.cloud.agent.api.to;
 
+import com.cloud.network.Network.BroadcastDomainType;
+import com.cloud.network.Network.TrafficType;
+
 /**
  * Transfer object to transfer network settings.
  */
 public class NetworkTO {
+    private String uuid;
     private String ip;
     private String netmask;
     private String gateway;
     private String mac;
     private String dns1;
     private String dns2;
-    private String vlan;
+    private Long vlan;
+    private BroadcastDomainType broadcastType;
+    private TrafficType type;
     
-    protected NetworkTO() {
+    public NetworkTO() {
     }
     
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public Long getVlan() {
+        return vlan;
+    }
+
+    public void setVlan(Long vlan) {
+        this.vlan = vlan;
+    }
+
+    public BroadcastDomainType getBroadcastType() {
+        return broadcastType;
+    }
+
+    public void setBroadcastType(BroadcastDomainType broadcastType) {
+        this.broadcastType = broadcastType;
+    }
+
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
+
+    public void setNetmask(String netmask) {
+        this.netmask = netmask;
+    }
+
+    public void setGateway(String gateway) {
+        this.gateway = gateway;
+    }
+
+    public void setMac(String mac) {
+        this.mac = mac;
+    }
+
+    public void setDns1(String dns1) {
+        this.dns1 = dns1;
+    }
+
+    public void setDns2(String dns2) {
+        this.dns2 = dns2;
+    }
+
+    public void setType(TrafficType type) {
+        this.type = type;
+    }
+
     /**
      * This constructor is usually for hosts where the other information are not important.
      * 
@@ -55,7 +113,7 @@ public class NetworkTO {
      * @param dns1
      * @param dns2
      */
-    public NetworkTO(String ip, String vlan, String netmask, String mac, String gateway, String dns1, String dns2) {
+    public NetworkTO(String ip, Long vlan, String netmask, String mac, String gateway, String dns1, String dns2) {
         this.ip = ip;
         this.netmask = netmask;
         this.mac = mac;
@@ -87,5 +145,9 @@ public class NetworkTO {
 
     public String getDns2() {
         return dns2;
+    }
+    
+    public TrafficType getType() {
+        return type;
     }
 }

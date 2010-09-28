@@ -58,9 +58,9 @@ public class StackMaidDaoImpl extends GenericDaoBase<StackMaidVO, Long> implemen
         sc.setParameters("threadId", Thread.currentThread().getId());
         
 		Filter filter = new Filter(StackMaidVO.class, "seq", false, 0L, (long)1);
-		List<StackMaidVO> l = listBy(sc, filter);
+		List<StackMaidVO> l = listIncludingRemovedBy(sc, filter);
 		if(l != null && l.size() > 0) {
-			delete(l.get(0).getId());
+			expunge(l.get(0).getId());
 			return l.get(0);
 		}
 		
@@ -72,7 +72,7 @@ public class StackMaidDaoImpl extends GenericDaoBase<StackMaidVO, Long> implemen
         SearchCriteria<StackMaidVO> sc = clearSearch.create();
         sc.setParameters("msid", msid);
         
-        delete(sc);
+        expunge(sc);
 	}
     
     @DB

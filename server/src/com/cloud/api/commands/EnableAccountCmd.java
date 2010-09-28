@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
@@ -43,7 +42,6 @@ public class EnableAccountCmd extends BaseCmd {
     @Parameter(name="domainid", type=CommandType.LONG)
     private Long domainId;
 
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -55,7 +53,6 @@ public class EnableAccountCmd extends BaseCmd {
     public Long getDomainId() {
         return domainId;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

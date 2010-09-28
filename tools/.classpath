@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="taglets/demo/custom/src"/>
-	<classpathentry kind="src" path="taglets/demo/extended/src"/>
-	<classpathentry kind="src" path="taglets/demo/simple/src"/>
 	<classpathentry kind="lib" path="ant/apache-ant-1.7.1/etc/ant-bootstrap.jar"/>
 	<classpathentry kind="lib" path="ant/apache-ant-1.7.1/lib/ant-antlr.jar"/>
 	<classpathentry kind="lib" path="ant/apache-ant-1.7.1/lib/ant-apache-bcel.jar"/>

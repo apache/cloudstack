@@ -17,6 +17,9 @@
  */
 package com.cloud.vm;
 
+import java.net.URI;
+import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -26,11 +29,11 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.network.Network.AddressFormat;
 import com.cloud.network.Network.Mode;
-import com.cloud.network.Network.TrafficType;
 
 @Entity
-@Table(name="network")
+@Table(name="nics")
 public class NicVO implements Nic {
     protected NicVO() {
     }
@@ -43,33 +46,60 @@ public class NicVO implements Nic {
     @Column(name="instance_id")
     long instanceId;
     
-    @Column(name="type")
-    @Enumerated(value=EnumType.STRING)
-    TrafficType trafficType;
-    
     @Column(name="ip4_address")
     String ip4Address;
     
-    @Column(name="mac_address")
-    String macAddress;
+    @Column(name="ip6_address")
+    String ip6Address;
     
     @Column(name="netmask")
-    String netMask;
+    String netmask;
+    
+    @Column(name="isolation_uri")
+    URI isolationUri;
+    
+    @Column(name="ip_type")
+    AddressFormat addressFormat;
+    
+    @Column(name="broadcast_uri")
+    URI broadcastUri;
+    
+    @Column(name="gateway")
+    String gateway;
+    
+    @Column(name="mac_address")
+    String macAddress;
     
     @Column(name="mode")
     @Enumerated(value=EnumType.STRING)
     Mode mode;
     
-    @Column(name="network_profile_id")
-    long networkProfileId;
-    
-    @Column(name="String")
-    String vlan;
+    @Column(name="network_configuration_id")
+    long networkConfigurationId;
     
     @Column(name="state")
     @Enumerated(value=EnumType.STRING)
     State state;
+    
+    @Column(name="reserver_name")
+    String reserver;
+    
+    @Column(name="reservation_id")
+    String reservationId;
+    
+    @Column(name="device_id")
+    int deviceId;
+    
+    @Column(name="update_time")
+    Date updateTime;
 
+    public NicVO(String reserver, long instanceId, long configurationId) {
+        this.reserver = reserver;
+        this.instanceId = instanceId;
+        this.networkConfigurationId = configurationId;
+        this.state = State.Allocated;
+    }
+    
     @Override
     public String getIp4Address() {
         return ip4Address;
@@ -83,10 +113,78 @@ public class NicVO implements Nic {
     public String getMacAddress() {
         return macAddress;
     }
+    
+    public void setMacAddress(String macAddress) {
+        this.macAddress = macAddress;
+    }
 
     @Override
     public State getState() {
         return state;
+    }
+    
+    public String getIp6Address() {
+        return ip6Address;
+    }
+
+    public void setIp6Address(String ip6Address) {
+        this.ip6Address = ip6Address;
+    }
+
+    public String getNetmask() {
+        return netmask;
+    }
+    
+    public String getGateway() {
+        return gateway;
+    }
+    
+    public void setGateway(String gateway) {
+        this.gateway = gateway;
+    }
+    
+    public AddressFormat getAddressFormat() {
+        return addressFormat;
+    }
+    
+    public void setAddressFormat(AddressFormat format) {
+        this.addressFormat = format;
+    }
+
+    public void setNetmask(String netmask) {
+        this.netmask = netmask;
+    }
+
+    public URI getIsolationUri() {
+        return isolationUri;
+    }
+
+    public void setIsolationUri(URI isolationUri) {
+        this.isolationUri = isolationUri;
+    }
+
+    public URI getBroadcastUri() {
+        return broadcastUri;
+    }
+
+    public void setBroadcastUri(URI broadcastUri) {
+        this.broadcastUri = broadcastUri;
+    }
+
+    public void setInstanceId(long instanceId) {
+        this.instanceId = instanceId;
+    }
+
+    public void setNetworkConfigurationId(long networkConfigurationId) {
+        this.networkConfigurationId = networkConfigurationId;
+    }
+
+    public void setUpdateTime(Date updateTime) {
+        this.updateTime = updateTime;
+    }
+
+    public void setState(State state) {
+        this.state = state;
     }
 
     @Override
@@ -100,7 +198,63 @@ public class NicVO implements Nic {
     }
 
     @Override
-    public long getNetworkProfileId() {
-        return networkProfileId;
+    public long getNetworkConfigurationId() {
+        return networkConfigurationId;
+    }
+    
+    @Override
+    public int getDeviceId() {
+        return deviceId;
+    }
+    
+    @Override
+    public String getReservationId() {
+        return reservationId;
+    }
+    
+    public void setReservationId(String id) {
+        this.reservationId = id;
+    }
+    
+    public void setDeviceId(int deviceId) {
+        this.deviceId = deviceId;
+    }
+
+    @Override
+    public Mode getMode() {
+        return mode;
+    }
+    
+    public void setMode(Mode mode) {
+        this.mode = mode;
+    }
+
+    @Override
+    public String getReserver() {
+        return reserver;
+    }
+    
+    public void setReserver(String reserver) {
+        this.reserver = reserver;
+    }
+    
+    @Override
+    public ReservationStrategy getReservationStrategy() {
+        return ReservationStrategy.Start;
+    }
+
+    @Override
+    public int getExpectedReservationInterval() {
+        return -1;
+    }
+
+    @Override
+    public int getExpectedReleaseInterval() {
+        return -1;
+    }
+
+    @Override
+    public Date getUpdateTime() {
+        return updateTime;
     }
 }

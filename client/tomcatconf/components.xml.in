@@ -88,6 +88,7 @@
 	<dao name="ResourceCount" class="com.cloud.configuration.dao.ResourceCountDaoImpl"/>
         <dao name="UserAccount" class="com.cloud.user.dao.UserAccountDaoImpl"/>
         <dao name="VM Template Host" class="com.cloud.storage.dao.VMTemplateHostDaoImpl"/>
+        <dao name="Upload" class="com.cloud.storage.dao.UploadDaoImpl"/>
         <dao name="VM Template Pool" class="com.cloud.storage.dao.VMTemplatePoolDaoImpl"/>
         <dao name="VM Template Zone" class="com.cloud.storage.dao.VMTemplateZoneDaoImpl"/>
         <dao name="Launch Permission" class="com.cloud.storage.dao.LaunchPermissionDaoImpl"/>
@@ -110,7 +111,12 @@
         <dao name="GuestOSDao" class="com.cloud.storage.dao.GuestOSDaoImpl"/>
         <dao name="GuestOSCategoryDao" class="com.cloud.storage.dao.GuestOSCategoryDaoImpl"/>
         <dao name="ClusterDao" class="com.cloud.dc.dao.ClusterDaoImpl"/>
-        
+        <dao name="NetworkConfigurationDao" class="com.cloud.network.dao.NetworkConfigurationDaoImpl"/>
+        <dao name="NetworkOfferingDao" class="com.cloud.offerings.dao.NetworkOfferingDaoImpl"/>
+        <dao name="NicDao" class="com.cloud.vm.dao.NicDaoImpl"/>
+        <dao name="InstanceGroupDao" class="com.cloud.vm.dao.InstanceGroupDaoImpl"/>
+        <dao name="Instance Group to VM Mapping" class="com.cloud.vm.dao.InstanceGroupVMMapDaoImpl"/>
+
         <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
             <adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator"/>
             <adapter name="FirstFit" class="com.cloud.agent.manager.allocator.impl.FirstFitAllocator"/>
@@ -146,7 +152,8 @@
 
         <adapters key="com.cloud.resource.Discoverer">
             <adapter name="SecondaryStorage" class="com.cloud.storage.secondary.SecondaryStorageDiscoverer"/>
-            <adapter name="XenServer" class="com.cloud.hypervisor.xen.discoverer.XcpServerDiscoverer"/>
+            <adapter name="XCP Agent" class="com.cloud.hypervisor.xen.discoverer.XcpServerDiscoverer"/>
+            <adapter name="KVM Agent" class="com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer"/>
         </adapters>
 
         <manager name="Cluster Manager" class="com.cloud.cluster.DummyClusterManagerImpl">
@@ -165,6 +172,8 @@
         <manager name="network manager" class="com.cloud.network.NetworkManagerImpl">
         </manager>
         <manager name="download manager" class="com.cloud.storage.download.DownloadMonitorImpl">
+        </manager>
+        <manager name="upload manager" class="com.cloud.storage.upload.UploadMonitorImpl">
         </manager>
         <manager name="console proxy manager" class="com.cloud.consoleproxy.AgentBasedStandaloneConsoleProxyManager">
         </manager>
@@ -209,8 +218,9 @@
         <dao name="IP Addresses configuration server" class="com.cloud.network.dao.IPAddressDaoImpl"/>
 		<dao name="Datacenter IP Addresses configuration server" class="com.cloud.dc.dao.DataCenterIpAddressDaoImpl"/>
 		<dao name="domain router" class="com.cloud.vm.dao.DomainRouterDaoImpl"/>
-		<dao name="host zone configuration server" class="com.cloud.dc.dao.DataCenterDaoImpl">
-        </dao>
+		<dao name="host zone configuration server" class="com.cloud.dc.dao.DataCenterDaoImpl"/>
+        <dao name="Console Proxy" class="com.cloud.vm.dao.ConsoleProxyDaoImpl"/>
+        <dao name="Secondary Storage VM" class="com.cloud.vm.dao.SecondaryStorageVmDaoImpl"/>
         <dao name="host pod configuration server" class="com.cloud.dc.dao.HostPodDaoImpl">
         </dao>
 		<dao name="PodVlanMap configuration server" class="com.cloud.dc.dao.PodVlanMapDaoImpl"/>

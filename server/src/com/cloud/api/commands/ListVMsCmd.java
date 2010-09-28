@@ -35,6 +35,7 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
+import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmStats;
 
@@ -154,7 +155,11 @@ public class ListVMsCmd extends BaseListCmd {
                 userVmResponse.setDisplayName(userVm.getName());
             }
 
-            userVmResponse.setGroup(userVm.getGroup());
+            InstanceGroupVO group = ApiDBUtils.findInstanceGroupForVM(userVm.getId());
+            if (group != null) {
+                userVmResponse.setGroup(group.getName());
+                userVmResponse.setGroupId(group.getId());
+            }
 
             // Data Center Info
             userVmResponse.setZoneId(userVm.getDataCenterId());

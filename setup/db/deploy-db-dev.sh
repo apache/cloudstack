@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # deploy-db.sh -- deploys the database configuration.
-
+#
 # set -x
 
 if [ "$1" == "" ]; then

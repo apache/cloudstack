@@ -79,6 +79,7 @@
         <dao name="UserAccount" class="com.vmops.user.dao.UserAccountDaoImpl"/>
         <dao name="Usage IPAddress" class="com.vmops.usage.dao.UsageIPAddressDaoImpl"/>
         <dao name="VM Template Host" class="com.vmops.storage.dao.VMTemplateHostDaoImpl"/>
+        <dao name="Upload" class="com.vmops.storage.dao.UploadDaoImpl"/>
         <dao name="VM Template Pool" class="com.vmops.storage.dao.VMTemplatePoolDaoImpl"/>
         <dao name="Launch Permission" class="com.vmops.storage.dao.LaunchPermissionDaoImpl"/>
         <dao name="Configuration" class="com.vmops.configuration.dao.ConfigurationDaoImpl"/>
@@ -149,6 +150,8 @@
         <manager name="network manager" class="com.vmops.network.NetworkManagerImpl">
         </manager>
         <manager name="download manager" class="com.vmops.storage.download.DownloadMonitorImpl">
+        </manager>
+        <manager name="upload manager" class="com.cloud.storage.upload.UploadMonitorImpl">
         </manager>
         <manager name="console proxy manager" class="com.vmops.consoleproxy.ConsoleProxyManagerImpl">
         </manager>

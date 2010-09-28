@@ -26,15 +26,14 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.to.DiskCharacteristicsTO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 
 @Local(value=StoragePoolAllocator.class)
@@ -48,7 +47,7 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
     boolean _storagePoolCleanupEnabled;
     
     @Override
-    public boolean allocatorIsCorrectType(DiskCharacteristicsTO dskCh, VMInstanceVO vm, ServiceOffering offering) {
+    public boolean allocatorIsCorrectType(DiskProfile dskCh, VMInstanceVO vm) {
     	return true;
     }
     
@@ -61,8 +60,7 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
     }
     
     @Override
-    public StoragePool allocateToPool(DiskCharacteristicsTO dskCh,
-                                      ServiceOffering offering,
+    public StoragePool allocateToPool(DiskProfile dskCh,
                                       DataCenterVO dc,
                                       HostPodVO pod,
                                       Long clusterId,
@@ -80,7 +78,7 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
     	
     	// Determine what allocator to use
     	StoragePoolAllocator allocator;
-    	if (localStorageAllocationNeeded(dskCh, vm, offering)) {
+    	if (localStorageAllocationNeeded(dskCh, vm)) {
     		allocator = _localStoragePoolAllocator;
     	} else {
     		allocator = _firstFitStoragePoolAllocator;
@@ -92,7 +90,7 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
             myAvoids.add(pool);
         }
         
-        return allocator.allocateToPool(dskCh, offering, dc, pod, clusterId, vm, template, myAvoids);
+        return allocator.allocateToPool(dskCh, dc, pod, clusterId, vm, template, myAvoids);
     }
 
     @Override

@@ -23,73 +23,72 @@ function showHostsTab() {
 	var sIndex = 0;
 	var pIndex = 0;
 	
-	// Dialog Setup
-	if (getHypervisorType() != "kvm") { //"xenserver"
-		$("#host_action_new_routing").show();
-		activateDialog($("#dialog_add_routing").dialog({ 
-			autoOpen: false,
-			modal: true,
-			zIndex: 2000
-		}));
-		
-		var dialogAddRouting = $("#dialog_add_routing");
-					
+	// Dialog Setup	
+	$("#host_action_new_routing").show();
+	activateDialog($("#dialog_add_routing").dialog({ 
+		autoOpen: false,
+		modal: true,
+		zIndex: 2000
+	}));
+	
+	var dialogAddRouting = $("#dialog_add_routing");
+	
+	$.ajax({
+	       data: createURL("command=listZones&available=true&response=json"+maxPageSize),
+		dataType: "json",
+		success: function(json) {
+			var zones = json.listzonesresponse.zone;
+			var zoneSelect = dialogAddRouting.find("#host_zone").empty();								
+			if (zones != null && zones.length > 0) {
+				for (var i = 0; i < zones.length; i++) 
+					zoneSelect.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 				    
+			}
+			//dialogAddRouting.find("#host_zone").change();
+		}
+	});
+	
+	dialogAddRouting.find("#host_zone").bind("change", function(event) {
+		var zoneId = $(this).val();
 		$.ajax({
-		       data: createURL("command=listZones&available=true&response=json"+maxPageSize),
+		       data: createURL("command=listPods&zoneId="+zoneId+"&response=json"+maxPageSize),
 			dataType: "json",
+			async: false,
 			success: function(json) {
-				var zones = json.listzonesresponse.zone;
-				var zoneSelect = dialogAddRouting.find("#host_zone").empty();								
-				if (zones != null && zones.length > 0) {
-					for (var i = 0; i < zones.length; i++) 
-						zoneSelect.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 				    
+				var pods = json.listpodsresponse.pod;
+				var podSelect = dialogAddRouting.find("#host_pod").empty();	
+				if (pods != null && pods.length > 0) {
+					for (var i = 0; i < pods.length; i++) {
+						podSelect.append("<option value='" + pods[i].id + "'>" + sanitizeXSS(pods[i].name) + "</option>"); 
+					}
 				}
-				//dialogAddRouting.find("#host_zone").change();
+				dialogAddRouting.find("#host_pod").change();
 			}
 		});
-		
-		dialogAddRouting.find("#host_zone").bind("change", function(event) {
-			var zoneId = $(this).val();
-			$.ajax({
-			       data: createURL("command=listPods&zoneId="+zoneId+"&response=json"+maxPageSize),
-				dataType: "json",
-				async: false,
-				success: function(json) {
-					var pods = json.listpodsresponse.pod;
-					var podSelect = dialogAddRouting.find("#host_pod").empty();	
-					if (pods != null && pods.length > 0) {
-						for (var i = 0; i < pods.length; i++) {
-							podSelect.append("<option value='" + pods[i].id + "'>" + sanitizeXSS(pods[i].name) + "</option>"); 
-						}
-					}
-					dialogAddRouting.find("#host_pod").change();
-				}
-			});
-		});
-		
-		dialogAddRouting.find("#host_pod").bind("change", function(event) {			   
-		    var podId = $(this).val();
-		    if(podId == null || podId.length == 0)
-		        return;
-		    var clusterSelect = dialogAddRouting.find("#cluster_select").empty();		        
-		    $.ajax({
-			   data: createURL("command=listClusters&response=json&podid=" + podId+maxPageSize),
-		        dataType: "json",
-		        success: function(json) {			            
-		            var items = json.listclustersresponse.cluster;
-		            if(items != null && items.length > 0) {			                
-		                for(var i=0; i<items.length; i++) 			                    
-		                    clusterSelect.append("<option value='" + items[i].id + "'>" + items[i].name + "</option>");		      
-	                    dialogAddRouting.find("input[value=existing_cluster_radio]").attr("checked", true);
-		            }
-		            else {
-						clusterSelect.append("<option value='-1'>None Available</option>");
-		                dialogAddRouting.find("input[value=new_cluster_radio]").attr("checked", true);
-		            }
-		        }
-		    });
-		});
-	}
+	});
+	
+	dialogAddRouting.find("#host_pod").bind("change", function(event) {			   
+	    var podId = $(this).val();
+	    if(podId == null || podId.length == 0)
+	        return;
+	    var clusterSelect = dialogAddRouting.find("#cluster_select").empty();		        
+	    $.ajax({
+		   data: createURL("command=listClusters&response=json&podid=" + podId+maxPageSize),
+	        dataType: "json",
+	        success: function(json) {			            
+	            var items = json.listclustersresponse.cluster;
+	            if(items != null && items.length > 0) {			                
+	                for(var i=0; i<items.length; i++) 			                    
+	                    clusterSelect.append("<option value='" + items[i].id + "'>" + items[i].name + "</option>");		      
+                    dialogAddRouting.find("input[value=existing_cluster_radio]").attr("checked", true);
+	            }
+	            else {
+					clusterSelect.append("<option value='-1'>None Available</option>");
+	                dialogAddRouting.find("input[value=new_cluster_radio]").attr("checked", true);
+	            }
+	        }
+	    });
+	});
+	
 	activateDialog($("#dialog_update_os").dialog({ 
 		autoOpen: false,
 		modal: true,
@@ -566,7 +565,7 @@ function showHostsTab() {
 			} else if (state == "Maintenance") {
 				template.find(".grid_links").find("#host_action_reconnect_container, #host_action_enable_maint_container").hide();
 			} else if (state == "Disconnected") {
-				template.find(".grid_links").find("#host_action_reconnect_container, #host_action_enable_maint_container, #host_action_cancel_maint_container, #host_action_remove_container").hide();
+				template.find(".grid_links").find("#host_action_reconnect_container, #host_action_enable_maint_container, #host_action_cancel_maint_container").hide();
 			} else {
 				alert("Unsupported Host State: " + state);
 			}
@@ -575,105 +574,101 @@ function showHostsTab() {
 	
 	var submenuContent = $("#submenu_content_routing");
 	
-	// Add New Routing Host
-	if (getHypervisorType() != "kvm") {
-		$("#host_action_new_routing").bind("click", function(event) {
-			dialogAddRouting.find("#new_cluster_name").val("");
-			dialogAddRouting.find("#host_zone").change(); //refresh cluster dropdown
-		    
-		    dialogAddRouting
-		    .dialog('option', 'buttons', { 				
-			    "Add": function() { 
-			        var dialogBox = $(this);				   
-				    var clusterRadio = dialogBox.find("input[name=cluster]:checked").val();				
+	// Add New Routing Host	
+	$("#host_action_new_routing").bind("click", function(event) {
+		dialogAddRouting.find("#new_cluster_name").val("");
+		dialogAddRouting.find("#host_zone").change(); //refresh cluster dropdown
+	    
+	    dialogAddRouting
+	    .dialog('option', 'buttons', { 				
+		    "Add": function() { 
+		        var dialogBox = $(this);				   
+			    var clusterRadio = dialogBox.find("input[name=cluster]:checked").val();				
+			
+			    // validate values
+			    var isValid = true;									
+			    isValid &= validateString("Host name", dialogBox.find("#host_hostname"), dialogBox.find("#host_hostname_errormsg"));
+			    isValid &= validateString("User name", dialogBox.find("#host_username"), dialogBox.find("#host_username_errormsg"));
+			    isValid &= validateString("Password", dialogBox.find("#host_password"), dialogBox.find("#host_password_errormsg"));						
+			    if (!isValid) return;
 				
-				    // validate values
-				    var isValid = true;									
-				    isValid &= validateString("Host name", dialogBox.find("#host_hostname"), dialogBox.find("#host_hostname_errormsg"));
-				    isValid &= validateString("User name", dialogBox.find("#host_username"), dialogBox.find("#host_username_errormsg"));
-				    isValid &= validateString("Password", dialogBox.find("#host_password"), dialogBox.find("#host_password_errormsg"));						
-				    if(clusterRadio == "new_cluster_radio")
-				        isValid &= validateString("Cluster name", dialogBox.find("#new_cluster_name"), dialogBox.find("#new_cluster_name_errormsg"));					
-				    if (!isValid) return;
-					
-				    var array1 = [];
-					
-				    var zoneId = dialogBox.find("#host_zone").val();
-				    array1.push("&zoneId="+zoneId);
-					
-				    var podId = dialogBox.find("#host_pod").val();	
-				    array1.push("&podId="+podId);
-							      
-				    var username = trim(dialogBox.find("#host_username").val());
-				    array1.push("&username="+encodeURIComponent(username));
-					
-				    var password = trim(dialogBox.find("#host_password").val());
-				    array1.push("&password="+encodeURIComponent(password));
-					
-				    if(clusterRadio == "new_cluster_radio") {
-				        var newClusterName = trim(dialogBox.find("#new_cluster_name").val());
-				        array1.push("&clustername="+encodeURIComponent(newClusterName));				    
-				    }
-				    else if(clusterRadio == "existing_cluster_radio") {
-				        var clusterId = dialogBox.find("#cluster_select").val();
-						// We will default to no cluster if someone selects Join Cluster with no cluster available.
-						if (clusterId != '-1') {
-							array1.push("&clusterid="+clusterId);
-						}
-				    }
-					
-				    var hostname = trim(dialogBox.find("#host_hostname").val());
-				    var url;					
-				    if(hostname.indexOf("http://")==-1)
-				        url = "http://" + hostname;
-				    else
-				        url = hostname;
-				    array1.push("&url="+encodeURIComponent(url));
-										
-				    var template = $("#routing_template").clone(true);		
-				    var loadingImg = template.find(".adding_loading");		
-                    var rowContainer = template.find("#row_container");    	                               
-                    loadingImg.find(".adding_text").text("Adding....");	
-                    loadingImg.show();  
-                    rowContainer.hide();                                                                                     					
-				    submenuContent.find("#grid_content").append(template.fadeIn("slow")); 
-					
-				    dialogBox.dialog("close");
-				    $.ajax({
-					   data: createURL("command=addHost&response=json" + array1.join("")),
-					    dataType: "json",
-					    success: function(json) {						    
-						    var items = json.addhostresponse.host;
-						    routingJSONToTemplate(items[0], template);							
-						    loadingImg.hide();  
-                            rowContainer.show();  
-                            changeGridRowsTotal(submenuContent.find("#grid_rows_total"), 1); 
-                                                            
-                            if(items.length > 1) { 
-                                for(var i=1; i<items.length; i++) { 
-                                    var anotherNewTemplate = $("#routing_template").clone(true);	
-                                    routingJSONToTemplate(items[i], anotherNewTemplate);	
-                                    submenuContent.find("#grid_content").append(anotherNewTemplate.fadeIn("slow")); 
-                                    changeGridRowsTotal(submenuContent.find("#grid_rows_total"), 1); 
-                                }	
-                            }                                
-                            
-                            if(clusterRadio == "new_cluster_radio")
-                                dialogBox.find("#new_cluster_name").val("");
-					    },			
-                        error: function(XMLHttpResponse) {		                   
-	                        handleError(XMLHttpResponse);	
-	                        template.slideUp("slow", function(){ $(this).remove(); } );							    
-                        }				
-				    });
-			    }, 
-			    "Cancel": function() { 
-				    $(this).dialog("close"); 
-			    } 
-		    }).dialog("open");
-		    return false;
-		});
-	}
+			    var array1 = [];
+				
+			    var zoneId = dialogBox.find("#host_zone").val();
+			    array1.push("&zoneId="+zoneId);
+				
+			    var podId = dialogBox.find("#host_pod").val();	
+			    array1.push("&podId="+podId);
+						      
+			    var username = trim(dialogBox.find("#host_username").val());
+			    array1.push("&username="+encodeURIComponent(username));
+				
+			    var password = trim(dialogBox.find("#host_password").val());
+			    array1.push("&password="+encodeURIComponent(password));
+											
+				if(clusterRadio == "new_cluster_radio") {
+			        var newClusterName = trim(dialogBox.find("#new_cluster_name").val());
+			        array1.push("&clustername="+encodeURIComponent(newClusterName));				    
+			    }
+			    else if(clusterRadio == "existing_cluster_radio") {
+			        var clusterId = dialogBox.find("#cluster_select").val();
+					// We will default to no cluster if someone selects Join Cluster with no cluster available.
+					if (clusterId != '-1') {
+						array1.push("&clusterid="+clusterId);
+					}
+			    }				
+				
+			    var hostname = trim(dialogBox.find("#host_hostname").val());
+			    var url;					
+			    if(hostname.indexOf("http://")==-1)
+			        url = "http://" + hostname;
+			    else
+			        url = hostname;
+			    array1.push("&url="+encodeURIComponent(url));
+									
+			    var template = $("#routing_template").clone(true);		
+			    var loadingImg = template.find(".adding_loading");		
+                var rowContainer = template.find("#row_container");    	                               
+                loadingImg.find(".adding_text").text("Adding....");	
+                loadingImg.show();  
+                rowContainer.hide();                                                                                     					
+			    submenuContent.find("#grid_content").append(template.fadeIn("slow")); 
+				
+			    dialogBox.dialog("close");
+			    $.ajax({
+				   data: createURL("command=addHost&response=json" + array1.join("")),
+				    dataType: "json",
+				    success: function(json) {						    
+					    var items = json.addhostresponse.host;
+					    routingJSONToTemplate(items[0], template);							
+					    loadingImg.hide();  
+                        rowContainer.show();  
+                        changeGridRowsTotal(submenuContent.find("#grid_rows_total"), 1); 
+                                                        
+                        if(items.length > 1) { 
+                            for(var i=1; i<items.length; i++) { 
+                                var anotherNewTemplate = $("#routing_template").clone(true);	
+                                routingJSONToTemplate(items[i], anotherNewTemplate);	
+                                submenuContent.find("#grid_content").append(anotherNewTemplate.fadeIn("slow")); 
+                                changeGridRowsTotal(submenuContent.find("#grid_rows_total"), 1); 
+                            }	
+                        }                                
+                        
+                        if(clusterRadio == "new_cluster_radio")
+                            dialogBox.find("#new_cluster_name").val("");
+				    },			
+                    error: function(XMLHttpResponse) {		                   
+                        handleError(XMLHttpResponse);	
+                        template.slideUp("slow", function(){ $(this).remove(); } );							    
+                    }				
+			    });
+		    }, 
+		    "Cancel": function() { 
+			    $(this).dialog("close"); 
+		    } 
+	    }).dialog("open");
+	    return false;
+	});
 			
 	function listHosts() {			
 	    var submenuContent = $("#submenu_content_routing");			    

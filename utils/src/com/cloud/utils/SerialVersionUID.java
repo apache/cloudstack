@@ -55,6 +55,7 @@ public interface SerialVersionUID {
     public static final long StorageUnavailableException = Base | 0x19;
     public static final long InfficientVirtualNetworkCapacityException = Base | 0x1a;
     public static final long DiscoveryException = Base | 0x1b;
-    public static final long CloudAuthenticationException = Base | 0x1c;
-    public static final long AsyncCommandQueued = Base | 0x1d;
+    public static final long ConflictingNetworkSettingException = Base | 0x1c;
+    public static final long CloudAuthenticationException = Base | 0x1d;
+    public static final long AsyncCommandQueued = Base | 0x1e;
 }

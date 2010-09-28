@@ -27,14 +27,13 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.to.DiskCharacteristicsTO;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.offering.ServiceOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StoragePool;
@@ -46,14 +45,16 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
+import com.cloud.vm.DiskProfile;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VmCharacteristics;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -83,13 +84,12 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     
     
     @Override
-    public boolean allocatorIsCorrectType(DiskCharacteristicsTO dskCh, VMInstanceVO vm, ServiceOffering offering) {
-    	return localStorageAllocationNeeded(dskCh, vm, offering);
+    public boolean allocatorIsCorrectType(DiskProfile dskCh, VMInstanceVO vm) {
+    	return localStorageAllocationNeeded(dskCh, vm);
     }
     
     @Override
-    public StoragePool allocateToPool(DiskCharacteristicsTO dskCh,
-                                      ServiceOffering offering,
+    public StoragePool allocateToPool(DiskProfile dskCh,
                                       DataCenterVO dc,
                                       HostPodVO pod,
                                       Long clusterId,
@@ -98,14 +98,14 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
                                       Set<? extends StoragePool> avoid) {
     	
     	// Check that the allocator type is correct
-        if (!allocatorIsCorrectType(dskCh, vm, offering)) {
+        if (!allocatorIsCorrectType(dskCh, vm)) {
         	return null;
         }
 
         Set<StoragePool> myAvoids = new HashSet<StoragePool>(avoid);
-        VmCharacteristics vmc = new VmCharacteristics(vm.getType());
+        VirtualMachineProfile vmc = new VirtualMachineProfile(vm.getType());
         StoragePool pool = null;
-        while ((pool = super.allocateToPool(dskCh, offering, dc, pod, clusterId, vm, template, myAvoids)) != null) {
+        while ((pool = super.allocateToPool(dskCh, dc, pod, clusterId, vm, template, myAvoids)) != null) {
             myAvoids.add(pool);
             if (pool.getPoolType().isShared()) {
                 return pool;
@@ -119,7 +119,7 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
         	SearchCriteria<Long> sc = VmsOnPoolSearch.create();
         	sc.setJoinParameters("volumeJoin", "poolId", pool.getId());
         	sc.setParameters("state", State.Expunging);
-        	List<Long> vmsOnHost = _vmInstanceDao.searchAll(sc, null);
+        	List<Long> vmsOnHost = _vmInstanceDao.searchIncludingRemoved(sc, null);
             
         	if(s_logger.isDebugEnabled()) {
         		s_logger.debug("Found " + vmsOnHost.size() + " VM instances are alloacated at host " + spHost.getHostId() + " with local storage pool " + pool.getName());
@@ -146,14 +146,14 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     			so = _offeringDao.findById(userVm.getServiceOfferingId());
     	} else if(vm.getType() == VirtualMachine.Type.ConsoleProxy) {
     		so = new ServiceOfferingVO("Fake Offering For DomP", 1,
-				_proxyRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
+				_proxyRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null);
     	} else if(vm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
-    		so = new ServiceOfferingVO("Fake Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
+    		so = new ServiceOfferingVO("Fake Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null);
     	} else if(vm.getType() == VirtualMachine.Type.DomainRouter) {
-            so = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
+            so = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null);
     	} else {
     		assert(false) : "Unsupported system vm type";
-            so = new ServiceOfferingVO("Fake Offering For unknow system VM", 1, 128, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
+            so = new ServiceOfferingVO("Fake Offering For unknow system VM", 1, 128, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null);
     	}
     	
     	long usedMemory = calcHostAllocatedCpuMemoryCapacity(vmOnHost, CapacityVO.CAPACITY_TYPE_MEMORY);
@@ -243,14 +243,14 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
         		so = _offeringDao.findById(userVm.getServiceOfferingId());
         	} else if(vm.getType() == VirtualMachine.Type.ConsoleProxy) {
         		so = new ServiceOfferingVO("Fake Offering For DomP", 1,
-    				_proxyRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
+    				_proxyRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null);
         	} else if(vm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
-        		so = new ServiceOfferingVO("Fake Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
+        		so = new ServiceOfferingVO("Fake Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null);
         	} else if(vm.getType() == VirtualMachine.Type.DomainRouter) {
-                so = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
+                so = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null);
         	} else {
         		assert(false) : "Unsupported system vm type";
-                so = new ServiceOfferingVO("Fake Offering For unknow system VM", 1, 128, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
+                so = new ServiceOfferingVO("Fake Offering For unknow system VM", 1, 128, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtualized, false, true, null);
         	}
             
             if(capacityType == CapacityVO.CAPACITY_TYPE_MEMORY) {
@@ -287,7 +287,7 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
         SearchBuilder<VolumeVO> sbVolume = _volumeDao.createSearchBuilder();
         sbVolume.and("poolId", sbVolume.entity().getPoolId(), SearchCriteria.Op.EQ);
         
-        VmsOnPoolSearch.join("volumeJoin", sbVolume, VmsOnPoolSearch.entity().getId(), sbVolume.entity().getInstanceId());
+        VmsOnPoolSearch.join("volumeJoin", sbVolume, VmsOnPoolSearch.entity().getId(), sbVolume.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
         
         sbVolume.done();
         VmsOnPoolSearch.done();

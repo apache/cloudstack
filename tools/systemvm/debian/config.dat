@@ -1,0 +1,398 @@
+Name: adduser/homedir-permission
+Template: adduser/homedir-permission
+Value: true
+Owners: adduser
+
+Name: ca-certificates/enable_crts
+Template: ca-certificates/enable_crts
+Value: brasil.gov.br/brasil.gov.br.crt, cacert.org/cacert.org.crt, cacert.org/class3.crt, cacert.org/root.crt, debconf.org/ca.crt, gouv.fr/cert_igca_dsa.crt, gouv.fr/cert_igca_rsa.crt, mozilla/ABAecom_=sub.__Am._Bankers_Assn.=_Root_CA.crt, mozilla/AddTrust_External_Root.crt, mozilla/AddTrust_Low-Value_Services_Root.crt, mozilla/AddTrust_Public_Services_Root.crt, mozilla/AddTrust_Qualified_Certificates_Root.crt, mozilla/America_Online_Root_Certification_Authority_1.crt, mozilla/America_Online_Root_Certification_Authority_2.crt, mozilla/AOL_Time_Warner_Root_Certification_Authority_1.crt, mozilla/AOL_Time_Warner_Root_Certification_Authority_2.crt, mozilla/Baltimore_CyberTrust_Root.crt, mozilla/beTRUSTed_Root_CA-Baltimore_Implementation.crt, mozilla/beTRUSTed_Root_CA.crt, mozilla/beTRUSTed_Root_CA_-_Entrust_Implementation.crt, mozilla/beTRUSTed_Root_CA_-_RSA_Implementation.crt, mozilla/Camerfirma_Chambers_of_Commerce_Root.crt, mozilla/Camerfirma_Global_Chambersign_Root.crt, mozilla/Certplus_Class_2_Primary_CA.crt, mozilla/Certum_Root_CA.crt, mozilla/Comodo_AAA_Services_root.crt, mozilla/COMODO_Certification_Authority.crt, mozilla/Comodo_Secure_Services_root.crt, mozilla/Comodo_Trusted_Services_root.crt, mozilla/DigiCert_Assured_ID_Root_CA.crt, mozilla/DigiCert_Global_Root_CA.crt, mozilla/DigiCert_High_Assurance_EV_Root_CA.crt, mozilla/Digital_Signature_Trust_Co._Global_CA_1.crt, mozilla/Digital_Signature_Trust_Co._Global_CA_2.crt, mozilla/Digital_Signature_Trust_Co._Global_CA_3.crt, mozilla/Digital_Signature_Trust_Co._Global_CA_4.crt, mozilla/DST_ACES_CA_X6.crt, mozilla/DST_Root_CA_X3.crt, mozilla/Entrust.net_Global_Secure_Personal_CA.crt, mozilla/Entrust.net_Global_Secure_Server_CA.crt, mozilla/Entrust.net_Premium_2048_Secure_Server_CA.crt, mozilla/Entrust.net_Secure_Personal_CA.crt, mozilla/Entrust.net_Secure_Server_CA.crt, mozilla/Entrust_Root_Certification_Authority.crt, mozilla/Equifax_Secure_CA.crt, mozilla/Equifax_Secure_eBusiness_CA_1.crt, mozilla/Equifax_Secure_eBusiness_CA_2.crt, mozilla/Equifax_Secure_Global_eBusiness_CA.crt, mozilla/Firmaprofesional_Root_CA.crt, mozilla/GeoTrust_Global_CA_2.crt, mozilla/GeoTrust_Global_CA.crt, mozilla/GeoTrust_Primary_Certification_Authority.crt, mozilla/GeoTrust_Universal_CA_2.crt, mozilla/GeoTrust_Universal_CA.crt, mozilla/GlobalSign_Root_CA.crt, mozilla/GlobalSign_Root_CA_-_R2.crt, mozilla/Go_Daddy_Class_2_CA.crt, mozilla/GTE_CyberTrust_Global_Root.crt, mozilla/GTE_CyberTrust_Root_CA.crt, mozilla/IPS_Chained_CAs_root.crt, mozilla/IPS_CLASE1_root.crt, mozilla/IPS_CLASE3_root.crt, mozilla/IPS_CLASEA1_root.crt, mozilla/IPS_CLASEA3_root.crt, mozilla/IPS_Servidores_root.crt, mozilla/IPS_Timestamping_root.crt, mozilla/NetLock_Business_=Class_B=_Root.crt, mozilla/NetLock_Express_=Class_C=_Root.crt, mozilla/NetLock_Notary_=Class_A=_Root.crt, mozilla/NetLock_Qualified_=Class_QA=_Root.crt, mozilla/QuoVadis_Root_CA_2.crt, mozilla/QuoVadis_Root_CA_3.crt, mozilla/QuoVadis_Root_CA.crt, mozilla/RSA_Root_Certificate_1.crt, mozilla/RSA_Security_1024_v3.crt, mozilla/RSA_Security_2048_v3.crt, mozilla/Secure_Global_CA.crt, mozilla/SecureTrust_CA.crt, mozilla/Security_Communication_Root_CA.crt, mozilla/Sonera_Class_1_Root_CA.crt, mozilla/Sonera_Class_2_Root_CA.crt, mozilla/Staat_der_Nederlanden_Root_CA.crt, mozilla/Starfield_Class_2_CA.crt, mozilla/StartCom_Certification_Authority.crt, mozilla/StartCom_Ltd..crt, mozilla/Swisscom_Root_CA_1.crt, mozilla/SwissSign_Gold_CA_-_G2.crt, mozilla/SwissSign_Platinum_CA_-_G2.crt, mozilla/SwissSign_Silver_CA_-_G2.crt, mozilla/Taiwan_GRCA.crt, mozilla/TC_TrustCenter__Germany__Class_2_CA.crt, mozilla/TC_TrustCenter__Germany__Class_3_CA.crt, mozilla/TDC_Internet_Root_CA.crt, mozilla/TDC_OCES_Root_CA.crt, mozilla/Thawte_Personal_Basic_CA.crt, mozilla/Thawte_Personal_Freemail_CA.crt, mozilla/Thawte_Personal_Premium_CA.crt, mozilla/Thawte_Premium_Server_CA.crt, mozilla/thawte_Primary_Root_CA.crt, mozilla/Thawte_Server_CA.crt, mozilla/Thawte_Time_Stamping_CA.crt, mozilla/TURKTRUST_Certificate_Services_Provider_Root_1.crt, mozilla/TURKTRUST_Certificate_Services_Provider_Root_2.crt, mozilla/UTN_DATACorp_SGC_Root_CA.crt, mozilla/UTN_USERFirst_Email_Root_CA.crt, mozilla/UTN_USERFirst_Hardware_Root_CA.crt, mozilla/UTN-USER_First-Network_Applications.crt, mozilla/UTN_USERFirst_Object_Root_CA.crt, mozilla/ValiCert_Class_1_VA.crt, mozilla/ValiCert_Class_2_VA.crt, mozilla/Verisign_Class_1_Public_Primary_Certification_Authority.crt, mozilla/Verisign_Class_1_Public_Primary_Certification_Authority_-_G2.crt, mozilla/Verisign_Class_1_Public_Primary_Certification_Authority_-_G3.crt, mozilla/Verisign_Class_2_Public_Primary_Certification_Authority.crt, mozilla/Verisign_Class_2_Public_Primary_Certification_Authority_-_G2.crt, mozilla/Verisign_Class_2_Public_Primary_Certification_Authority_-_G3.crt, mozilla/Verisign_Class_3_Public_Primary_Certification_Authority.crt, mozilla/Verisign_Class_3_Public_Primary_Certification_Authority_-_G2.crt, mozilla/Verisign_Class_3_Public_Primary_Certification_Authority_-_G3.crt, mozilla/VeriSign_Class_3_Public_Primary_Certification_Authority_-_G5.crt, mozilla/Verisign_Class_4_Public_Primary_Certification_Authority_-_G2.crt, mozilla/Verisign_Class_4_Public_Primary_Certification_Authority_-_G3.crt, mozilla/Verisign_RSA_Secure_Server_CA.crt, mozilla/Verisign_Time_Stamping_Authority_CA.crt, mozilla/Visa_eCommerce_Root.crt, mozilla/Visa_International_Global_Root_2.crt, mozilla/Wells_Fargo_Root_CA.crt, mozilla/XRamp_Global_CA_Root.crt, quovadis.bm/QuoVadis_Root_Certification_Authority.crt, signet.pl/signet_ca1_pem.crt, signet.pl/signet_ca2_pem.crt, signet.pl/signet_ca3_pem.crt, signet.pl/signet_ocspklasa2_pem.crt, signet.pl/signet_ocspklasa3_pem.crt, signet.pl/signet_pca2_pem.crt, signet.pl/signet_pca3_pem.crt, signet.pl/signet_rootca_pem.crt, signet.pl/signet_tsa1_pem.crt, spi-inc.org/spi-ca-2003.crt, spi-inc.org/spi-cacert-2008.crt, telesec.de/deutsche-telekom-root-ca-2.crt
+Owners: ca-certificates
+Variables:
+ enable_crts = brasil.gov.br/brasil.gov.br.crt, cacert.org/cacert.org.crt, cacert.org/class3.crt, cacert.org/root.crt, debconf.org/ca.crt, gouv.fr/cert_igca_dsa.crt, gouv.fr/cert_igca_rsa.crt, mozilla/ABAecom_=sub.__Am._Bankers_Assn.=_Root_CA.crt, mozilla/AddTrust_External_Root.crt, mozilla/AddTrust_Low-Value_Services_Root.crt, mozilla/AddTrust_Public_Services_Root.crt, mozilla/AddTrust_Qualified_Certificates_Root.crt, mozilla/America_Online_Root_Certification_Authority_1.crt, mozilla/America_Online_Root_Certification_Authority_2.crt, mozilla/AOL_Time_Warner_Root_Certification_Authority_1.crt, mozilla/AOL_Time_Warner_Root_Certification_Authority_2.crt, mozilla/Baltimore_CyberTrust_Root.crt, mozilla/beTRUSTed_Root_CA-Baltimore_Implementation.crt, mozilla/beTRUSTed_Root_CA.crt, mozilla/beTRUSTed_Root_CA_-_Entrust_Implementation.crt, mozilla/beTRUSTed_Root_CA_-_RSA_Implementation.crt, mozilla/Camerfirma_Chambers_of_Commerce_Root.crt, mozilla/Camerfirma_Global_Chambersign_Root.crt, mozilla/Certplus_Class_2_Primary_CA.crt, mozilla/Certum_Root_CA.crt, mozilla/Comodo_AAA_Services_root.crt, mozilla/COMODO_Certification_Authority.crt, mozilla/Comodo_Secure_Services_root.crt, mozilla/Comodo_Trusted_Services_root.crt, mozilla/DigiCert_Assured_ID_Root_CA.crt, mozilla/DigiCert_Global_Root_CA.crt, mozilla/DigiCert_High_Assurance_EV_Root_CA.crt, mozilla/Digital_Signature_Trust_Co._Global_CA_1.crt, mozilla/Digital_Signature_Trust_Co._Global_CA_2.crt, mozilla/Digital_Signature_Trust_Co._Global_CA_3.crt, mozilla/Digital_Signature_Trust_Co._Global_CA_4.crt, mozilla/DST_ACES_CA_X6.crt, mozilla/DST_Root_CA_X3.crt, mozilla/Entrust.net_Global_Secure_Personal_CA.crt, mozilla/Entrust.net_Global_Secure_Server_CA.crt, mozilla/Entrust.net_Premium_2048_Secure_Server_CA.crt, mozilla/Entrust.net_Secure_Personal_CA.crt, mozilla/Entrust.net_Secure_Server_CA.crt, mozilla/Entrust_Root_Certification_Authority.crt, mozilla/Equifax_Secure_CA.crt, mozilla/Equifax_Secure_eBusiness_CA_1.crt, mozilla/Equifax_Secure_eBusiness_CA_2.crt, mozilla/Equifax_Secure_Global_eBusiness_CA.crt, mozilla/Firmaprofesional_Root_CA.crt, mozilla/GeoTrust_Global_CA_2.crt, mozilla/GeoTrust_Global_CA.crt, mozilla/GeoTrust_Primary_Certification_Authority.crt, mozilla/GeoTrust_Universal_CA_2.crt, mozilla/GeoTrust_Universal_CA.crt, mozilla/GlobalSign_Root_CA.crt, mozilla/GlobalSign_Root_CA_-_R2.crt, mozilla/Go_Daddy_Class_2_CA.crt, mozilla/GTE_CyberTrust_Global_Root.crt, mozilla/GTE_CyberTrust_Root_CA.crt, mozilla/IPS_Chained_CAs_root.crt, mozilla/IPS_CLASE1_root.crt, mozilla/IPS_CLASE3_root.crt, mozilla/IPS_CLASEA1_root.crt, mozilla/IPS_CLASEA3_root.crt, mozilla/IPS_Servidores_root.crt, mozilla/IPS_Timestamping_root.crt, mozilla/NetLock_Business_=Class_B=_Root.crt, mozilla/NetLock_Express_=Class_C=_Root.crt, mozilla/NetLock_Notary_=Class_A=_Root.crt, mozilla/NetLock_Qualified_=Class_QA=_Root.crt, mozilla/QuoVadis_Root_CA_2.crt, mozilla/QuoVadis_Root_CA_3.crt, mozilla/QuoVadis_Root_CA.crt, mozilla/RSA_Root_Certificate_1.crt, mozilla/RSA_Security_1024_v3.crt, mozilla/RSA_Security_2048_v3.crt, mozilla/Secure_Global_CA.crt, mozilla/SecureTrust_CA.crt, mozilla/Security_Communication_Root_CA.crt, mozilla/Sonera_Class_1_Root_CA.crt, mozilla/Sonera_Class_2_Root_CA.crt, mozilla/Staat_der_Nederlanden_Root_CA.crt, mozilla/Starfield_Class_2_CA.crt, mozilla/StartCom_Certification_Authority.crt, mozilla/StartCom_Ltd..crt, mozilla/Swisscom_Root_CA_1.crt, mozilla/SwissSign_Gold_CA_-_G2.crt, mozilla/SwissSign_Platinum_CA_-_G2.crt, mozilla/SwissSign_Silver_CA_-_G2.crt, mozilla/Taiwan_GRCA.crt, mozilla/TC_TrustCenter__Germany__Class_2_CA.crt, mozilla/TC_TrustCenter__Germany__Class_3_CA.crt, mozilla/TDC_Internet_Root_CA.crt, mozilla/TDC_OCES_Root_CA.crt, mozilla/Thawte_Personal_Basic_CA.crt, mozilla/Thawte_Personal_Freemail_CA.crt, mozilla/Thawte_Personal_Premium_CA.crt, mozilla/Thawte_Premium_Server_CA.crt, mozilla/thawte_Primary_Root_CA.crt, mozilla/Thawte_Server_CA.crt, mozilla/Thawte_Time_Stamping_CA.crt, mozilla/TURKTRUST_Certificate_Services_Provider_Root_1.crt, mozilla/TURKTRUST_Certificate_Services_Provider_Root_2.crt, mozilla/UTN_DATACorp_SGC_Root_CA.crt, mozilla/UTN_USERFirst_Email_Root_CA.crt, mozilla/UTN_USERFirst_Hardware_Root_CA.crt, mozilla/UTN-USER_First-Network_Applications.crt, mozilla/UTN_USERFirst_Object_Root_CA.crt, mozilla/ValiCert_Class_1_VA.crt, mozilla/ValiCert_Class_2_VA.crt, mozilla/Verisign_Class_1_Public_Primary_Certification_Authority.crt, mozilla/Verisign_Class_1_Public_Primary_Certification_Authority_-_G2.crt, mozilla/Verisign_Class_1_Public_Primary_Certification_Authority_-_G3.crt, mozilla/Verisign_Class_2_Public_Primary_Certification_Authority.crt, mozilla/Verisign_Class_2_Public_Primary_Certification_Authority_-_G2.crt, mozilla/Verisign_Class_2_Public_Primary_Certification_Authority_-_G3.crt, mozilla/Verisign_Class_3_Public_Primary_Certification_Authority.crt, mozilla/Verisign_Class_3_Public_Primary_Certification_Authority_-_G2.crt, mozilla/Verisign_Class_3_Public_Primary_Certification_Authority_-_G3.crt, mozilla/VeriSign_Class_3_Public_Primary_Certification_Authority_-_G5.crt, mozilla/Verisign_Class_4_Public_Primary_Certification_Authority_-_G2.crt, mozilla/Verisign_Class_4_Public_Primary_Certification_Authority_-_G3.crt, mozilla/Verisign_RSA_Secure_Server_CA.crt, mozilla/Verisign_Time_Stamping_Authority_CA.crt, mozilla/Visa_eCommerce_Root.crt, mozilla/Visa_International_Global_Root_2.crt, mozilla/Wells_Fargo_Root_CA.crt, mozilla/XRamp_Global_CA_Root.crt, quovadis.bm/QuoVadis_Root_Certification_Authority.crt, signet.pl/signet_ca1_pem.crt, signet.pl/signet_ca2_pem.crt, signet.pl/signet_ca3_pem.crt, signet.pl/signet_ocspklasa2_pem.crt, signet.pl/signet_ocspklasa3_pem.crt, signet.pl/signet_pca2_pem.crt, signet.pl/signet_pca3_pem.crt, signet.pl/signet_rootca_pem.crt, signet.pl/signet_tsa1_pem.crt, spi-inc.org/spi-ca-2003.crt, spi-inc.org/spi-cacert-2008.crt, telesec.de/deutsche-telekom-root-ca-2.crt
+
+Name: ca-certificates/new_crts
+Template: ca-certificates/new_crts
+Owners: ca-certificates
+Variables:
+ new_crts = 
+
+Name: ca-certificates/trust_new_crts
+Template: ca-certificates/trust_new_crts
+Value: yes
+Owners: ca-certificates
+
+Name: debconf-apt-progress/info
+Template: debconf-apt-progress/info
+Owners: debconf
+
+Name: debconf-apt-progress/media-change
+Template: debconf-apt-progress/media-change
+Owners: debconf
+
+Name: debconf-apt-progress/preparing
+Template: debconf-apt-progress/preparing
+Owners: debconf
+
+Name: debconf-apt-progress/title
+Template: debconf-apt-progress/title
+Owners: debconf
+
+Name: debconf/frontend
+Template: debconf/frontend
+Value: noninteractive
+Owners: debconf
+
+Name: debconf/priority
+Template: debconf/priority
+Value: high
+Owners: debconf
+
+Name: dhcp3-client/dhclient-needs-restarting
+Template: dhcp3-client/dhclient-needs-restarting
+Owners: dhcp3-client
+
+Name: dhcp3-client/dhclient-script_moved
+Template: dhcp3-client/dhclient-script_moved
+Owners: dhcp3-client
+
+Name: glibc/restart-failed
+Template: glibc/restart-failed
+Owners: libc6
+
+Name: glibc/restart-services
+Template: glibc/restart-services
+Owners: libc6
+
+Name: glibc/upgrade
+Template: glibc/upgrade
+Owners: libc6
+
+Name: libpam-modules/disable-screensaver
+Template: libpam-modules/disable-screensaver
+Owners: libpam-modules
+
+Name: libpam0g/restart-failed
+Template: libpam0g/restart-failed
+Owners: libpam0g
+
+Name: libpam0g/restart-services
+Template: libpam0g/restart-services
+Owners: libpam0g
+
+Name: libpam0g/xdm-needs-restart
+Template: libpam0g/xdm-needs-restart
+Owners: libpam0g
+
+Name: libssl0.9.8/restart-failed
+Template: libssl0.9.8/restart-failed
+Owners: libssl0.9.8
+
+Name: libssl0.9.8/restart-services
+Template: libssl0.9.8/restart-services
+Owners: libssl0.9.8
+
+Name: linux-base/disk-id-convert-auto
+Template: linux-base/disk-id-convert-auto
+Owners: linux-base
+
+Name: linux-base/disk-id-convert-plan
+Template: linux-base/disk-id-convert-plan
+Owners: linux-base
+
+Name: linux-base/disk-id-convert-plan-no-relabel
+Template: linux-base/disk-id-convert-plan-no-relabel
+Owners: linux-base
+
+Name: linux-base/disk-id-manual
+Template: linux-base/disk-id-manual
+Owners: linux-base
+
+Name: linux-base/disk-id-manual-boot-loader
+Template: linux-base/disk-id-manual-boot-loader
+Owners: linux-base
+
+Name: linux-image-2.6.32-bpo.5-686/postinst/bootloader-error-2.6.32-bpo.5-686
+Template: linux-image-2.6.32-bpo.5-686/postinst/bootloader-error-2.6.32-bpo.5-686
+Owners: linux-image-2.6.32-bpo.5-686
+
+Name: linux-image-2.6.32-bpo.5-686/postinst/bootloader-test-error-2.6.32-bpo.5-686
+Template: linux-image-2.6.32-bpo.5-686/postinst/bootloader-test-error-2.6.32-bpo.5-686
+Owners: linux-image-2.6.32-bpo.5-686
+
+Name: linux-image-2.6.32-bpo.5-686/postinst/depmod-error-initrd-2.6.32-bpo.5-686
+Template: linux-image-2.6.32-bpo.5-686/postinst/depmod-error-initrd-2.6.32-bpo.5-686
+Owners: linux-image-2.6.32-bpo.5-686
+
+Name: linux-image-2.6.32-bpo.5-686/postinst/missing-firmware-2.6.32-bpo.5-686
+Template: linux-image-2.6.32-bpo.5-686/postinst/missing-firmware-2.6.32-bpo.5-686
+Owners: linux-image-2.6.32-bpo.5-686
+
+Name: linux-image-2.6.32-bpo.5-686/prerm/removing-running-kernel-2.6.32-bpo.5-686
+Template: linux-image-2.6.32-bpo.5-686/prerm/removing-running-kernel-2.6.32-bpo.5-686
+Owners: linux-image-2.6.32-bpo.5-686
+
+Name: linux-image-2.6.32-bpo.5-686/prerm/would-invalidate-boot-loader-2.6.32-bpo.5-686
+Template: linux-image-2.6.32-bpo.5-686/prerm/would-invalidate-boot-loader-2.6.32-bpo.5-686
+Owners: linux-image-2.6.32-bpo.5-686
+
+Name: linux-image-2.6.32-bpo.5-xen-686/postinst/bootloader-error-2.6.32-bpo.5-xen-686
+Template: linux-image-2.6.32-bpo.5-xen-686/postinst/bootloader-error-2.6.32-bpo.5-xen-686
+Owners: linux-image-2.6.32-bpo.5-xen-686
+
+Name: linux-image-2.6.32-bpo.5-xen-686/postinst/bootloader-test-error-2.6.32-bpo.5-xen-686
+Template: linux-image-2.6.32-bpo.5-xen-686/postinst/bootloader-test-error-2.6.32-bpo.5-xen-686
+Owners: linux-image-2.6.32-bpo.5-xen-686
+
+Name: linux-image-2.6.32-bpo.5-xen-686/postinst/depmod-error-initrd-2.6.32-bpo.5-xen-686
+Template: linux-image-2.6.32-bpo.5-xen-686/postinst/depmod-error-initrd-2.6.32-bpo.5-xen-686
+Owners: linux-image-2.6.32-bpo.5-xen-686
+
+Name: linux-image-2.6.32-bpo.5-xen-686/postinst/missing-firmware-2.6.32-bpo.5-xen-686
+Template: linux-image-2.6.32-bpo.5-xen-686/postinst/missing-firmware-2.6.32-bpo.5-xen-686
+Owners: linux-image-2.6.32-bpo.5-xen-686
+
+Name: linux-image-2.6.32-bpo.5-xen-686/prerm/removing-running-kernel-2.6.32-bpo.5-xen-686
+Template: linux-image-2.6.32-bpo.5-xen-686/prerm/removing-running-kernel-2.6.32-bpo.5-xen-686
+Owners: linux-image-2.6.32-bpo.5-xen-686
+
+Name: linux-image-2.6.32-bpo.5-xen-686/prerm/would-invalidate-boot-loader-2.6.32-bpo.5-xen-686
+Template: linux-image-2.6.32-bpo.5-xen-686/prerm/would-invalidate-boot-loader-2.6.32-bpo.5-xen-686
+Owners: linux-image-2.6.32-bpo.5-xen-686
+
+Name: locales/default_environment_locale
+Template: locales/default_environment_locale
+Value: en_US.UTF-8
+Owners: locales
+Variables:
+ locales = en_US.UTF-8
+
+Name: locales/locales_to_be_generated
+Template: locales/locales_to_be_generated
+Value: en_US.UTF-8 UTF-8
+Owners: locales
+Variables:
+ locales = aa_DJ ISO-8859-1, aa_DJ.UTF-8 UTF-8, aa_ER UTF-8, aa_ER@saaho UTF-8, aa_ET UTF-8, af_ZA ISO-8859-1, af_ZA.UTF-8 UTF-8, am_ET UTF-8, an_ES ISO-8859-15, an_ES.UTF-8 UTF-8, ar_AE ISO-8859-6, ar_AE.UTF-8 UTF-8, ar_BH ISO-8859-6, ar_BH.UTF-8 UTF-8, ar_DZ ISO-8859-6, ar_DZ.UTF-8 UTF-8, ar_EG ISO-8859-6, ar_EG.UTF-8 UTF-8, ar_IN UTF-8, ar_IQ ISO-8859-6, ar_IQ.UTF-8 UTF-8, ar_JO ISO-8859-6, ar_JO.UTF-8 UTF-8, ar_KW ISO-8859-6, ar_KW.UTF-8 UTF-8, ar_LB ISO-8859-6, ar_LB.UTF-8 UTF-8, ar_LY ISO-8859-6, ar_LY.UTF-8 UTF-8, ar_MA ISO-8859-6, ar_MA.UTF-8 UTF-8, ar_OM ISO-8859-6, ar_OM.UTF-8 UTF-8, ar_QA ISO-8859-6, ar_QA.UTF-8 UTF-8, ar_SA ISO-8859-6, ar_SA.UTF-8 UTF-8, ar_SD ISO-8859-6, ar_SD.UTF-8 UTF-8, ar_SY ISO-8859-6, ar_SY.UTF-8 UTF-8, ar_TN ISO-8859-6, ar_TN.UTF-8 UTF-8, ar_YE ISO-8859-6, ar_YE.UTF-8 UTF-8, as_IN.UTF-8 UTF-8, ast_ES ISO-8859-15, ast_ES.UTF-8 UTF-8, az_AZ.UTF-8 UTF-8, be_BY CP1251, be_BY.UTF-8 UTF-8, be_BY@latin UTF-8, ber_DZ UTF-8, ber_MA UTF-8, bg_BG CP1251, bg_BG.UTF-8 UTF-8, bn_BD UTF-8, bn_IN UTF-8, br_FR ISO-8859-1, br_FR.UTF-8 UTF-8, br_FR@euro ISO-8859-15, bs_BA ISO-8859-2, bs_BA.UTF-8 UTF-8, byn_ER UTF-8, ca_AD ISO-8859-15, ca_AD.UTF-8 UTF-8, ca_ES ISO-8859-1, ca_ES.UTF-8 UTF-8, ca_ES.UTF-8@valencia UTF-8, ca_ES@euro ISO-8859-15, ca_ES@valencia ISO-8859-15, ca_FR ISO-8859-15, ca_FR.UTF-8 UTF-8, ca_IT ISO-8859-15, ca_IT.UTF-8 UTF-8, crh_UA UTF-8, cs_CZ ISO-8859-2, cs_CZ.UTF-8 UTF-8, csb_PL UTF-8, cy_GB ISO-8859-14, cy_GB.UTF-8 UTF-8, da_DK ISO-8859-1, da_DK.ISO-8859-15 ISO-8859-15, da_DK.UTF-8 UTF-8, de_AT ISO-8859-1, de_AT.UTF-8 UTF-8, de_AT@euro ISO-8859-15, de_BE ISO-8859-1, de_BE.UTF-8 UTF-8, de_BE@euro ISO-8859-15, de_CH ISO-8859-1, de_CH.UTF-8 UTF-8, de_DE ISO-8859-1, de_DE.UTF-8 UTF-8, de_DE@euro ISO-8859-15, de_LI.UTF-8 UTF-8, de_LU ISO-8859-1, de_LU.UTF-8 UTF-8, de_LU@euro ISO-8859-15, dz_BT UTF-8, el_CY ISO-8859-7, el_CY.UTF-8 UTF-8, el_GR ISO-8859-7, el_GR.UTF-8 UTF-8, en_AU ISO-8859-1, en_AU.UTF-8 UTF-8, en_BW ISO-8859-1, en_BW.UTF-8 UTF-8, en_CA ISO-8859-1, en_CA.UTF-8 UTF-8, en_DK ISO-8859-1, en_DK.ISO-8859-15 ISO-8859-15, en_DK.UTF-8 UTF-8, en_GB ISO-8859-1, en_GB.ISO-8859-15 ISO-8859-15, en_GB.UTF-8 UTF-8, en_HK ISO-8859-1, en_HK.UTF-8 UTF-8, en_IE ISO-8859-1, en_IE.UTF-8 UTF-8, en_IE@euro ISO-8859-15, en_IN UTF-8, en_NG UTF-8, en_NZ ISO-8859-1, en_NZ.UTF-8 UTF-8, en_PH ISO-8859-1, en_PH.UTF-8 UTF-8, en_SG ISO-8859-1, en_SG.UTF-8 UTF-8, en_US ISO-8859-1, en_US.ISO-8859-15 ISO-8859-15, en_US.UTF-8 UTF-8, en_ZA ISO-8859-1, en_ZA.UTF-8 UTF-8, en_ZW ISO-8859-1, en_ZW.UTF-8 UTF-8, eo ISO-8859-3, eo.UTF-8 UTF-8, es_AR ISO-8859-1, es_AR.UTF-8 UTF-8, es_BO ISO-8859-1, es_BO.UTF-8 UTF-8, es_CL ISO-8859-1, es_CL.UTF-8 UTF-8, es_CO ISO-8859-1, es_CO.UTF-8 UTF-8, es_CR ISO-8859-1, es_CR.UTF-8 UTF-8, es_DO ISO-8859-1, es_DO.UTF-8 UTF-8, es_EC ISO-8859-1, es_EC.UTF-8 UTF-8, es_ES ISO-8859-1, es_ES.UTF-8 UTF-8, es_ES@euro ISO-8859-15, es_GT ISO-8859-1, es_GT.UTF-8 UTF-8, es_HN ISO-8859-1, es_HN.UTF-8 UTF-8, es_MX ISO-8859-1, es_MX.UTF-8 UTF-8, es_NI ISO-8859-1, es_NI.UTF-8 UTF-8, es_PA ISO-8859-1, es_PA.UTF-8 UTF-8, es_PE ISO-8859-1, es_PE.UTF-8 UTF-8, es_PR ISO-8859-1, es_PR.UTF-8 UTF-8, es_PY ISO-8859-1, es_PY.UTF-8 UTF-8, es_SV ISO-8859-1, es_SV.UTF-8 UTF-8, es_US ISO-8859-1, es_US.UTF-8 UTF-8, es_UY ISO-8859-1, es_UY.UTF-8 UTF-8, es_VE ISO-8859-1, es_VE.UTF-8 UTF-8, et_EE ISO-8859-1, et_EE.ISO-8859-15 ISO-8859-15, et_EE.UTF-8 UTF-8, eu_ES ISO-8859-1, eu_ES.UTF-8 UTF-8, eu_ES@euro ISO-8859-15, eu_FR ISO-8859-1, eu_FR.UTF-8 UTF-8, eu_FR@euro ISO-8859-15, fa_IR UTF-8, fi_FI ISO-8859-1, fi_FI.UTF-8 UTF-8, fi_FI@euro ISO-8859-15, fil_PH UTF-8, fo_FO ISO-8859-1, fo_FO.UTF-8 UTF-8, fr_BE ISO-8859-1, fr_BE.UTF-8 UTF-8, fr_BE@euro ISO-8859-15, fr_CA ISO-8859-1, fr_CA.UTF-8 UTF-8, fr_CH ISO-8859-1, fr_CH.UTF-8 UTF-8, fr_FR ISO-8859-1, fr_FR.UTF-8 UTF-8, fr_FR@euro ISO-8859-15, fr_LU ISO-8859-1, fr_LU.UTF-8 UTF-8, fr_LU@euro ISO-8859-15, fur_IT UTF-8, fy_DE UTF-8, fy_NL UTF-8, ga_IE ISO-8859-1, ga_IE.UTF-8 UTF-8, ga_IE@euro ISO-8859-15, gd_GB ISO-8859-15, gd_GB.UTF-8 UTF-8, gez_ER UTF-8, gez_ER@abegede UTF-8, gez_ET UTF-8, gez_ET@abegede UTF-8, gl_ES ISO-8859-1, gl_ES.UTF-8 UTF-8, gl_ES@euro ISO-8859-15, gu_IN UTF-8, gv_GB ISO-8859-1, gv_GB.UTF-8 UTF-8, ha_NG UTF-8, he_IL ISO-8859-8, he_IL.UTF-8 UTF-8, hi_IN UTF-8, hr_HR ISO-8859-2, hr_HR.UTF-8 UTF-8, hsb_DE ISO-8859-2, hsb_DE.UTF-8 UTF-8, hu_HU ISO-8859-2, hu_HU.UTF-8 UTF-8, hy_AM UTF-8, hy_AM.ARMSCII-8 ARMSCII-8, ia UTF-8, id_ID ISO-8859-1, id_ID.UTF-8 UTF-8, ig_NG UTF-8, ik_CA UTF-8, is_IS ISO-8859-1, is_IS.UTF-8 UTF-8, it_CH ISO-8859-1, it_CH.UTF-8 UTF-8, it_IT ISO-8859-1, it_IT.UTF-8 UTF-8, it_IT@euro ISO-8859-15, iu_CA UTF-8, iw_IL ISO-8859-8, iw_IL.UTF-8 UTF-8, ja_JP.EUC-JP EUC-JP, ja_JP.UTF-8 UTF-8, ka_GE GEORGIAN-PS, ka_GE.UTF-8 UTF-8, kk_KZ PT154, kk_KZ.UTF-8 UTF-8, kl_GL ISO-8859-1, kl_GL.UTF-8 UTF-8, km_KH UTF-8, kn_IN UTF-8, ko_KR.EUC-KR EUC-KR, ko_KR.UTF-8 UTF-8, ks_IN UTF-8, ku_TR ISO-8859-9, ku_TR.UTF-8 UTF-8, kw_GB ISO-8859-1, kw_GB.UTF-8 UTF-8, ky_KG UTF-8, lg_UG ISO-8859-10, lg_UG.UTF-8 UTF-8, li_BE UTF-8, li_NL UTF-8, lo_LA UTF-8, lt_LT ISO-8859-13, lt_LT.UTF-8 UTF-8, lv_LV ISO-8859-13, lv_LV.UTF-8 UTF-8, mai_IN UTF-8, mg_MG ISO-8859-15, mg_MG.UTF-8 UTF-8, mi_NZ ISO-8859-13, mi_NZ.UTF-8 UTF-8, mk_MK ISO-8859-5, mk_MK.UTF-8 UTF-8, ml_IN UTF-8, mn_MN UTF-8, mr_IN UTF-8, ms_MY ISO-8859-1, ms_MY.UTF-8 UTF-8, mt_MT ISO-8859-3, mt_MT.UTF-8 UTF-8, nb_NO ISO-8859-1, nb_NO.UTF-8 UTF-8, nds_DE UTF-8, nds_NL UTF-8, ne_NP UTF-8, nl_BE ISO-8859-1, nl_BE.UTF-8 UTF-8, nl_BE@euro ISO-8859-15, nl_NL ISO-8859-1, nl_NL.UTF-8 UTF-8, nl_NL@euro ISO-8859-15, nn_NO ISO-8859-1, nn_NO.UTF-8 UTF-8, nr_ZA UTF-8, nso_ZA UTF-8, oc_FR ISO-8859-1, oc_FR.UTF-8 UTF-8, om_ET UTF-8, om_KE ISO-8859-1, om_KE.UTF-8 UTF-8, or_IN UTF-8, pa_IN UTF-8, pa_PK UTF-8, pap_AN UTF-8, pl_PL ISO-8859-2, pl_PL.UTF-8 UTF-8, pt_BR ISO-8859-1, pt_BR.UTF-8 UTF-8, pt_PT ISO-8859-1, pt_PT.UTF-8 UTF-8, pt_PT@euro ISO-8859-15, ro_RO ISO-8859-2, ro_RO.UTF-8 UTF-8, ru_RU ISO-8859-5, ru_RU.CP1251 CP1251, ru_RU.KOI8-R KOI8-R, ru_RU.UTF-8 UTF-8, ru_UA KOI8-U, ru_UA.UTF-8 UTF-8, rw_RW UTF-8, sa_IN UTF-8, sc_IT UTF-8, se_NO UTF-8, si_LK UTF-8, sid_ET UTF-8, sk_SK ISO-8859-2, sk_SK.UTF-8 UTF-8, sl_SI ISO-8859-2, sl_SI.UTF-8 UTF-8, so_DJ ISO-8859-1, so_DJ.UTF-8 UTF-8, so_ET UTF-8, so_KE ISO-8859-1, so_KE.UTF-8 UTF-8, so_SO ISO-8859-1, so_SO.UTF-8 UTF-8, sq_AL ISO-8859-1, sq_AL.UTF-8 UTF-8, sr_ME UTF-8, sr_RS UTF-8, sr_RS@latin UTF-8, ss_ZA UTF-8, st_ZA ISO-8859-1, st_ZA.UTF-8 UTF-8, sv_FI ISO-8859-1, sv_FI.UTF-8 UTF-8, sv_FI@euro ISO-8859-15, sv_SE ISO-8859-1, sv_SE.ISO-8859-15 ISO-8859-15, sv_SE.UTF-8 UTF-8, ta_IN UTF-8, te_IN UTF-8, tg_TJ KOI8-T, tg_TJ.UTF-8 UTF-8, th_TH TIS-620, th_TH.UTF-8 UTF-8, ti_ER UTF-8, ti_ET UTF-8, tig_ER UTF-8, tk_TM UTF-8, tl_PH ISO-8859-1, tl_PH.UTF-8 UTF-8, tn_ZA UTF-8, tr_CY ISO-8859-9, tr_CY.UTF-8 UTF-8, tr_TR ISO-8859-9, tr_TR.UTF-8 UTF-8, ts_ZA UTF-8, tt_RU.UTF-8 UTF-8, tt_RU@iqtelif.UTF-8 UTF-8, ug_CN UTF-8, uk_UA KOI8-U, uk_UA.UTF-8 UTF-8, ur_PK UTF-8, uz_UZ ISO-8859-1, uz_UZ.UTF-8 UTF-8, uz_UZ@cyrillic UTF-8, ve_ZA UTF-8, vi_VN UTF-8, vi_VN.TCVN TCVN5712-1, wa_BE ISO-8859-1, wa_BE.UTF-8 UTF-8, wa_BE@euro ISO-8859-15, wo_SN UTF-8, xh_ZA ISO-8859-1, xh_ZA.UTF-8 UTF-8, yi_US CP1255, yi_US.UTF-8 UTF-8, yo_NG UTF-8, zh_CN GB2312, zh_CN.GB18030 GB18030, zh_CN.GBK GBK, zh_CN.UTF-8 UTF-8, zh_HK BIG5-HKSCS, zh_HK.UTF-8 UTF-8, zh_SG GB2312, zh_SG.GBK GBK, zh_SG.UTF-8 UTF-8, zh_TW BIG5, zh_TW.EUC-TW EUC-TW, zh_TW.UTF-8 UTF-8, zu_ZA ISO-8859-1, zu_ZA.UTF-8 UTF-8
+
+Name: openswan/create_rsa_key
+Template: openswan/create_rsa_key
+Value: true
+Owners: openswan
+Flags: seen
+
+Name: openswan/enable-oe
+Template: openswan/enable-oe
+Value: false
+Owners: openswan
+Flags: seen
+
+Name: openswan/existing_x509_certificate
+Template: openswan/existing_x509_certificate
+Value: false
+Owners: openswan
+Flags: seen
+
+Name: openswan/existing_x509_certificate_filename
+Template: openswan/existing_x509_certificate_filename
+Owners: openswan
+
+Name: openswan/existing_x509_key_filename
+Template: openswan/existing_x509_key_filename
+Owners: openswan
+
+Name: openswan/restart
+Template: openswan/restart
+Value: true
+Owners: openswan
+
+Name: openswan/rsa_key_length
+Template: openswan/rsa_key_length
+Value: 2048
+Owners: openswan
+
+Name: openswan/rsa_key_type
+Template: openswan/rsa_key_type
+Value: x509
+Owners: openswan
+Flags: seen
+
+Name: openswan/start_level
+Template: openswan/start_level
+Value: earliest
+Owners: openswan
+
+Name: openswan/x509_common_name
+Template: openswan/x509_common_name
+Value: 
+Owners: openswan
+
+Name: openswan/x509_country_code
+Template: openswan/x509_country_code
+Value: AT
+Owners: openswan
+
+Name: openswan/x509_email_address
+Template: openswan/x509_email_address
+Value: 
+Owners: openswan
+
+Name: openswan/x509_locality_name
+Template: openswan/x509_locality_name
+Value: 
+Owners: openswan
+
+Name: openswan/x509_organization_name
+Template: openswan/x509_organization_name
+Value: 
+Owners: openswan
+
+Name: openswan/x509_organizational_unit
+Template: openswan/x509_organizational_unit
+Value: 
+Owners: openswan
+
+Name: openswan/x509_self_signed
+Template: openswan/x509_self_signed
+Value: true
+Owners: openswan
+Flags: seen
+
+Name: openswan/x509_state_name
+Template: openswan/x509_state_name
+Value: 
+Owners: openswan
+
+Name: portmap/loopback
+Template: portmap/loopback
+Value: false
+Owners: portmap
+
+Name: shared/accepted-sun-dlj-v1-1
+Template: shared/accepted-sun-dlj-v1-1
+Value: true
+Owners: sun-java6-bin, sun-java6-jre
+Flags: seen
+
+Name: shared/error-sun-dlj-v1-1
+Template: shared/error-sun-dlj-v1-1
+Owners: sun-java6-bin, sun-java6-jre
+
+Name: shared/kernel-image/really-run-bootloader
+Template: shared/kernel-image/really-run-bootloader
+Owners: linux-image-2.6.32-bpo.5-686, linux-image-2.6.32-bpo.5-xen-686
+
+Name: shared/present-sun-dlj-v1-1
+Template: shared/present-sun-dlj-v1-1
+Value: true
+Owners: sun-java6-bin, sun-java6-jre
+Flags: seen
+
+Name: ssh/disable_cr_auth
+Template: ssh/disable_cr_auth
+Owners: openssh-server
+
+Name: ssh/encrypted_host_key_but_no_keygen
+Template: ssh/encrypted_host_key_but_no_keygen
+Owners: openssh-server
+
+Name: ssh/new_config
+Template: ssh/new_config
+Owners: openssh-server
+
+Name: ssh/use_old_init_script
+Template: ssh/use_old_init_script
+Value: true
+Owners: openssh-server
+Flags: seen
+
+Name: ssh/vulnerable_host_keys
+Template: ssh/vulnerable_host_keys
+Owners: openssh-server
+
+Name: sun-java6-jre/jcepolicy
+Template: sun-java6-jre/jcepolicy
+Owners: sun-java6-jre
+
+Name: sun-java6-jre/stopthread
+Template: sun-java6-jre/stopthread
+Owners: sun-java6-jre
+
+Name: tzdata/Areas
+Template: tzdata/Areas
+Value: Etc
+Owners: tzdata
+Flags: seen
+
+Name: tzdata/Zones/Africa
+Template: tzdata/Zones/Africa
+Owners: tzdata
+
+Name: tzdata/Zones/America
+Template: tzdata/Zones/America
+Owners: tzdata
+
+Name: tzdata/Zones/Antarctica
+Template: tzdata/Zones/Antarctica
+Owners: tzdata
+
+Name: tzdata/Zones/Arctic
+Template: tzdata/Zones/Arctic
+Owners: tzdata
+
+Name: tzdata/Zones/Asia
+Template: tzdata/Zones/Asia
+Owners: tzdata
+
+Name: tzdata/Zones/Atlantic
+Template: tzdata/Zones/Atlantic
+Owners: tzdata
+
+Name: tzdata/Zones/Australia
+Template: tzdata/Zones/Australia
+Owners: tzdata
+
+Name: tzdata/Zones/Etc
+Template: tzdata/Zones/Etc
+Value: UTC
+Owners: tzdata
+Flags: seen
+
+Name: tzdata/Zones/Europe
+Template: tzdata/Zones/Europe
+Owners: tzdata
+
+Name: tzdata/Zones/Indian
+Template: tzdata/Zones/Indian
+Owners: tzdata
+
+Name: tzdata/Zones/Pacific
+Template: tzdata/Zones/Pacific
+Owners: tzdata
+
+Name: tzdata/Zones/SystemV
+Template: tzdata/Zones/SystemV
+Owners: tzdata
+
+Name: ucf/changeprompt
+Template: ucf/changeprompt
+Owners: ucf
+
+Name: ucf/changeprompt_threeway
+Template: ucf/changeprompt_threeway
+Owners: ucf
+
+Name: ucf/show_diff
+Template: ucf/show_diff
+Owners: ucf
+
+Name: ucf/title
+Template: ucf/title
+Owners: ucf
+
+Name: udev/new_kernel_needed
+Template: udev/new_kernel_needed
+Owners: udev
+
+Name: udev/reboot_needed
+Template: udev/reboot_needed
+Owners: udev
+

@@ -31,18 +31,9 @@ import com.cloud.uservm.UserVm;
 @PrimaryKeyJoinColumn(name="id")
 public class UserVmVO extends VMInstanceVO implements UserVm {
 
-    @Column(name="account_id", updatable=false, nullable=false)
-    private long accountId = -1;
-    
-    @Column(name="domain_id", updatable=false, nullable=false)
-    private long domainId = -1;
-    
     @Column(name="domain_router_id", updatable=true, nullable=true)
     Long domainRouterId;
 
-    @Column(name="service_offering_id", updatable=true, nullable=false)
-    long serviceOfferingId;
-    
     @Column(name="vnet", length=10, updatable=true, nullable=true)
     String vnet;
 
@@ -60,9 +51,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     
     @Column(name="external_ip_address")
 	String externalIpAddress;
-    
-    @Column(name="group", updatable=true, nullable=true)
-    private String group;
 
     @Column(name="external_mac_address")
 	String externalMacAddress;
@@ -77,15 +65,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     private String displayName;
 
     @Override
-    public long getAccountId() {
-        return accountId;
-    }
-
-    @Override
-    public long getDomainId() {
-        return domainId;
-    }
-
     public String getGuestIpAddress() {
 		return guestIpAddress;
 	}
@@ -95,7 +74,8 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
 		setPrivateIpAddress(guestIpAddress);
 	}
 
-	public String getGuestMacAddress() {
+	@Override
+    public String getGuestMacAddress() {
 		return guestMacAddress;
 	}
 
@@ -146,15 +126,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
         return vnet;
     }
     
-    @Override
-    public String getGroup() {
-        return group;
-    }
-    
-    public void setGroup(String group) {
-        this.group = group;
-    }
-    
     public UserVmVO(long id,
                     String instanceName,
                     String displayName,
@@ -164,10 +135,8 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
                     long domainId,
                     long accountId,
                     long serviceOfferingId,
-                    String group,
                     String userData) {
-        super(id, displayName, instanceName, Type.User, templateId, guestOsId, haEnabled);
-        this.group = group;
+        super(id, serviceOfferingId, displayName, instanceName, Type.User, templateId, guestOsId, domainId, accountId, haEnabled);
         this.userData = userData;
         this.displayName = displayName;
         
@@ -191,13 +160,9 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
                     long dcId,
                     boolean haEnabled,
                     String displayName,
-                    String group,
                     String userData) {
-        super(id, name, name, Type.User, templateId, guestOSId, guestMacAddress, guestIpAddress, guestNetMask, dcId, podId, haEnabled, null);
-        this.serviceOfferingId = serviceOfferingId;
+        super(id, serviceOfferingId, name, name, Type.User, templateId, guestOSId, guestMacAddress, guestIpAddress, guestNetMask, dcId, podId, domainId, accountId, haEnabled, null);
         this.domainRouterId = routerId;
-        this.accountId = accountId;
-        this.domainId = domainId;
         this.guestIpAddress = guestIpAddress;
         this.guestNetmask = guestNetMask;
         this.guestMacAddress = guestMacAddress;
@@ -205,10 +170,8 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
         this.externalMacAddress = externalMacAddress;
         this.setUserData(userData);
         this.setExternalVlanDbId(vlanDbId);
-        this.group = group;
         this.isoId = null;
         this.displayName = displayName;
-        this.group = group;
     }
 
     protected UserVmVO() {

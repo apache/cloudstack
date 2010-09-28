@@ -89,7 +89,7 @@ public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, 
     public NetworkGroupWorkVO findByVmId(long vmId, boolean taken) {
         SearchCriteria<NetworkGroupWorkVO> sc = taken?VmIdTakenSearch.create():VmIdUnTakenSearch.create();
         sc.setParameters("vmId", vmId);
-        return findOneBy(sc);
+        return findOneIncludingRemovedBy(sc);
     }
 
 	@Override
@@ -161,7 +161,7 @@ public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, 
         SearchCriteria<NetworkGroupWorkVO> sc = VmIdStepSearch.create();
         sc.setParameters("vmId", vmId);
         sc.setParameters("step", step);
-        return findOneBy(sc);
+        return findOneIncludingRemovedBy(sc);
 	}
 
 	@Override
@@ -187,7 +187,7 @@ public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, 
 		sc.setParameters("taken", timeBefore);
 		sc.setParameters("step", Step.Done);
 
-		return delete(sc);
+		return expunge(sc);
 	}
 
 	@Override
@@ -196,7 +196,7 @@ public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, 
 		sc.setParameters("taken", timeBefore);
 		sc.setParameters("step", Step.Processing);
 
-		List<NetworkGroupWorkVO> result = listBy(sc);
+		List<NetworkGroupWorkVO> result = listIncludingRemovedBy(sc);
 		
 		NetworkGroupWorkVO work = createForUpdate();
 		work.setStep(Step.Error);

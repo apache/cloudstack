@@ -76,7 +76,8 @@ public class Criteria {
     public static final String TARGET_IQN = "targetiqn";
     public static final String SCOPE = "scope";
     public static final String NETWORKGROUP = "networkGroup";
-
+    public static final String GROUP = "group";
+    public static final String EMPTY_GROUP = "emptyGroup";
 
 	public Criteria(String orderBy, Boolean ascending, Long offset, Long limit) {
 		this.offset = offset;

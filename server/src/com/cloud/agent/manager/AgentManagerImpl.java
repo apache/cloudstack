@@ -63,12 +63,10 @@ import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.UnsupportedAnswer;
-import com.cloud.agent.api.UpgradeCommand;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.agent.manager.allocator.PodAllocator;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
-import com.cloud.agent.transport.UpgradeResponse;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
@@ -83,9 +81,11 @@ import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.PodCluster;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -110,6 +110,7 @@ import com.cloud.host.Status.Event;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
 import com.cloud.maid.StackMaid;
 import com.cloud.maint.UpgradeManager;
 import com.cloud.network.IPAddressVO;
@@ -120,12 +121,11 @@ import com.cloud.resource.Discoverer;
 import com.cloud.resource.ServerResource;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VirtualMachineTemplate;
-import com.cloud.storage.Volume.StorageResourceType;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -133,6 +133,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.ActionDelegate;
@@ -154,7 +155,7 @@ import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
 import com.cloud.vm.State;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VmCharacteristics;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 
 /**
@@ -413,11 +414,11 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 	public Host findHost(final Host.Type type, final DataCenterVO dc, final HostPodVO pod, final StoragePoolVO sp,
     		final ServiceOffering offering, final VMTemplateVO template, VMInstanceVO vm,
     		Host currentHost, final Set<Host> avoid) {
-        VmCharacteristics vmc = new VmCharacteristics(vm.getType());
+        VirtualMachineProfile vmc = new VirtualMachineProfile(vm.getType());
         Enumeration<HostAllocator> en = _hostAllocators.enumeration();
         while (en.hasMoreElements()) {
             final HostAllocator allocator = en.nextElement();
-            final Host host = allocator.allocateTo(vmc, offering, type, dc, pod, sp, template, avoid);
+            final Host host = allocator.allocateTo(vmc, offering, type, dc, pod, sp.getClusterId(), template, avoid);
             if (host == null) {
                 continue;
             } else {
@@ -474,11 +475,15 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         if (server == null) {
             return null;
         }
-
+        
         long id = server.getId();
 
         AgentAttache attache = createAttache(id, server, resource);
-        notifyMonitorsOfConnection(attache, startup);
+        if (!resource.IsRemoteAgent())
+        	notifyMonitorsOfConnection(attache, startup);
+        else {
+        	 _hostDao.updateStatus(server, Event.AgentConnected, _nodeId);
+        }
         return attache;
     }
 
@@ -573,7 +578,13 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         Enumeration<Discoverer> en = _discoverers.enumeration();
         while (en.hasMoreElements()) {
             Discoverer discoverer = en.nextElement();
-            Map<? extends ServerResource, Map<String, String>> resources = discoverer.find(dcId, podId, clusterId, uri, username, password);
+            Map<? extends ServerResource, Map<String, String>> resources = null;
+            
+            try {
+            	resources = discoverer.find(dcId, podId, clusterId, uri, username, password);
+            } catch(Exception e) {
+            	s_logger.info("Exception in host discovery process with discoverer: " + discoverer.getName() + ", skip to another discoverer if there is any");
+            }
             if (resources != null) {
                 for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
                     ServerResource resource = entry.getKey();
@@ -594,6 +605,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         throw new DiscoveryException("Unable to add the host");
     }
     
+    @Override
     @DB
     public boolean deleteHost(long hostId) {
         Transaction txn = Transaction.currentTxn();
@@ -634,11 +646,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             _dcDao.releasePrivateIpAddress(host.getPrivateIpAddress(), host.getDataCenterId(), null);
             AgentAttache attache = _agents.get(hostId);
             handleDisconnect(attache, Status.Event.Remove, false);
-            /*
             host.setGuid(null);
             host.setClusterId(null);
             _hostDao.update(host.getId(), host);
-            */
+            
             _hostDao.remove(hostId);
             
             //delete the associated primary storage from db
@@ -715,6 +726,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             templateHostSC.addAnd("hostId", SearchCriteria.Op.EQ, secStorageHost.getId());
             _vmTemplateHostDao.remove(templateHostSC);
             
+            /*Disconnected agent needs special handling here*/
+    		secStorageHost.setGuid(null);
     		txn.commit();
     		return true;
     	}catch (Throwable t) {
@@ -788,11 +801,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             long seq = _hostDao.getNextSequence(hostId);
             Request req = new Request(seq, hostId, _nodeId, new Command[] { new CheckHealthCommand() }, true, true);
             Answer[] answers = agent.send(req, 50 * 1000);
-            if (answers[0].getResult()) {
+            if (answers != null && answers[0] != null ) {
+                Status status = answers[0].getResult() ? Status.Up : Status.Down;
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("agent (" + hostId + ") responded to checkHeathCommand, reporting that agent is up");
+                    s_logger.debug("agent (" + hostId + ") responded to checkHeathCommand, reporting that agent is " + status);
                 }
-                return answers[0].getResult() ? Status.Up : Status.Down;
+                return status;
             }
         } catch (AgentUnavailableException e) {
             s_logger.debug("Agent is unavailable so we move on.");
@@ -1030,7 +1044,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         	loadDirectlyConnectedHost(host, null);
         }
     }
-    
+
+    @SuppressWarnings("rawtypes")
     protected void loadDirectlyConnectedHost(HostVO host, ActionDelegate<Long> actionDelegate) {
         String resourceName = host.getResource();
         ServerResource resource = null;
@@ -1161,6 +1176,19 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
         return null;
     }
+    
+    public Pod findPod(VirtualMachineProfile vm, DataCenter dc, Set<? extends Pod> avoids) {
+        for (PodAllocator allocator : _podAllocators) {
+            Pod pod = allocator.allocateTo(vm, dc, avoids);
+            if (pod != null) {
+                s_logger.debug("Pod " + pod.getId() + " is found by " + allocator.getName());
+                return pod;
+            }
+        }
+        
+        s_logger.debug("Unable to find any pod for " + vm);
+        return null;
+    }
 
     @Override
     public HostStats getHostStatistics(long hostId) throws InternalErrorException
@@ -1187,6 +1215,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     	return null;
     }
     
+    @Override
     public Long getGuestOSCategoryId(long hostId) {
     	HostVO host = _hostDao.findById(hostId);
     	if (host == null) {
@@ -1218,6 +1247,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             _investigate = investigate;
         }
 
+        @Override
         public void run() {
             try {
                 handleDisconnect(_attache, _event, _investigate);
@@ -1228,11 +1258,16 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             }
         }
     }
+    
+    @Override
+    public Answer easySend(final Long hostId, final Command cmd) {   	
+    	return easySend(hostId, cmd, _wait);
+    }
 
     @Override
-    public Answer easySend(final Long hostId, final Command cmd) {
+    public Answer easySend(final Long hostId, final Command cmd, int timeout) { 
         try {
-            final Answer answer = send(hostId, cmd, _wait);
+            final Answer answer = send(hostId, cmd, timeout);
             if (answer == null) {
                 s_logger.warn("send returns null answer");
                 return null;
@@ -1572,7 +1607,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         if (startup instanceof StartupStorageCommand) {
 
             StartupStorageCommand ssCmd = ((StartupStorageCommand) startup);
-            if (ssCmd.getResourceType() == StorageResourceType.SECONDARY_STORAGE) {
+            if (ssCmd.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE) {
                 type = Host.Type.SecondaryStorage;
                 if (resource != null && resource instanceof DummySecondaryStorageResource){
                 	resource = null;
@@ -1719,7 +1754,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
     protected AgentAttache createAttache(long id, HostVO server, ServerResource resource) {
         s_logger.debug("Adding directly connect host for " + id);
-        if (resource instanceof DummySecondaryStorageResource) {
+        if (resource instanceof DummySecondaryStorageResource || resource instanceof KvmDummyResourceBase) {
         	return new DummyAttache(id, false);
         }
         final DirectAgentAttache attache = new DirectAgentAttache(id, resource, server.getStatus() == Status.Maintenance
@@ -1745,7 +1780,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             return _hostDao.updateStatus(host, Event.UnableToMigrate, _nodeId);
         }
     }
-    
+
+    @Override
     public HostVO updateHost(UpdateHostCmd cmd) throws InvalidParameterValueException{
     	Long hostId = cmd.getId();
     	Long guestOSCategoryId = cmd.getOsCategoryId();
@@ -1790,7 +1826,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         String cluster = startup.getCluster();
         
         if (pod != null && dataCenter != null && pod.equalsIgnoreCase("default") && dataCenter.equalsIgnoreCase("default")) {
-        	List<HostPodVO> pods = _podDao.listAll();
+        	List<HostPodVO> pods = _podDao.listAllIncludingRemoved();
         	for (HostPodVO hpv : pods) {
         		if (checkCIDR(type, hpv, startup.getPrivateIpAddress(), startup.getPrivateNetmask())) {
         			pod = hpv.getName();
@@ -1864,7 +1900,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
             // If this command is from a KVM agent, or from an agent that has a
             // null hypervisor type, don't do the CIDR check
-            if (hypervisorType == null || hypervisorType == Hypervisor.Type.KVM)
+            if (hypervisorType == null || hypervisorType == Hypervisor.Type.KVM || hypervisorType == Hypervisor.Type.VmWare)
                 doCidrCheck = false;
 
             if (doCidrCheck)
@@ -1927,6 +1963,11 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
 
     }
+    
+    @Override
+    public Host findHost(VirtualMachineProfile vm, Set<? extends Host> avoids) {
+        return null;
+    }
 
     // create capacity entries if none exist for this server
     private void createCapacityEntry(final StartupCommand startup, HostVO server) {
@@ -1945,7 +1986,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
         if (startup instanceof StartupStorageCommand) {
             StartupStorageCommand ssCmd = (StartupStorageCommand) startup;
-            if (ssCmd.getResourceType() == StorageResourceType.STORAGE_HOST) {
+            if (ssCmd.getResourceType() == Storage.StorageResourceType.STORAGE_HOST) {
                 CapacityVO capacity = new CapacityVO(server.getId(), server.getDataCenterId(), server.getPodId(), 0L, server.getTotalSize(),
                         CapacityVO.CAPACITY_TYPE_STORAGE);
                 _capacityDao.persist(capacity);
@@ -1966,28 +2007,28 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
     }
 
-    protected void upgradeAgent(final Link link, final byte[] request, final String reason) {
-
-        if (reason == UnsupportedVersionException.IncompatibleVersion) {
-            final UpgradeResponse response = new UpgradeResponse(request, _upgradeMgr.getAgentUrl());
-            try {
-                s_logger.info("Asking for the agent to update due to incompatible version: " + response.toString());
-                link.send(response.toBytes());
-            } catch (final ClosedChannelException e) {
-                s_logger.warn("Unable to send response due to connection closed: " + response.toString());
-            }
-            return;
-        }
-
-        assert (reason == UnsupportedVersionException.UnknownVersion) : "Unknown reason: " + reason;
-        final UpgradeResponse response = new UpgradeResponse(request, _upgradeMgr.getAgentUrl());
-        try {
-            s_logger.info("Asking for the agent to update due to unknown version: " + response.toString());
-            link.send(response.toBytes());
-        } catch (final ClosedChannelException e) {
-            s_logger.warn("Unable to send response due to connection closed: " + response.toString());
-        }
-    }
+//    protected void upgradeAgent(final Link link, final byte[] request, final String reason) {
+//
+//        if (reason == UnsupportedVersionException.IncompatibleVersion) {
+//            final UpgradeResponse response = new UpgradeResponse(request, _upgradeMgr.getAgentUrl());
+//            try {
+//                s_logger.info("Asking for the agent to update due to incompatible version: " + response.toString());
+//                link.send(response.toBytes());
+//            } catch (final ClosedChannelException e) {
+//                s_logger.warn("Unable to send response due to connection closed: " + response.toString());
+//            }
+//            return;
+//        }
+//
+//        assert (reason == UnsupportedVersionException.UnknownVersion) : "Unknown reason: " + reason;
+//        final UpgradeResponse response = new UpgradeResponse(request, _upgradeMgr.getAgentUrl());
+//        try {
+//            s_logger.info("Asking for the agent to update due to unknown version: " + response.toString());
+//            link.send(response.toBytes());
+//        } catch (final ClosedChannelException e) {
+//            s_logger.warn("Unable to send response due to connection closed: " + response.toString());
+//        }
+//    }
 
     protected class SimulateStartTask implements Runnable {
         ServerResource resource;
@@ -2002,6 +2043,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             this.actionDelegate = actionDelegate;
         }
 
+        @Override
         public void run() {
             try {
                 if (s_logger.isDebugEnabled()) {
@@ -2038,17 +2080,17 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
                     return;
                 }
                 StartupCommand startup = (StartupCommand) cmd;
-                if ((_upgradeMgr.registerForUpgrade(-1, startup.getVersion()) == UpgradeManager.State.RequiresUpdate) && (_upgradeMgr.getAgentUrl() != null)) {
-                    final UpgradeCommand upgrade = new UpgradeCommand(_upgradeMgr.getAgentUrl());
-                    final Request req = new Request(1, -1, -1, new Command[] { upgrade }, true, true);
-                    s_logger.info("Agent requires upgrade: " + req.toString());
-                    try {
-                        link.send(req.toBytes());
-                    } catch (ClosedChannelException e) {
-                        s_logger.warn("Unable to tell agent it should update.");
-                    }
-                    return;
-                }
+//                if ((_upgradeMgr.registerForUpgrade(-1, startup.getVersion()) == UpgradeManager.State.RequiresUpdate) && (_upgradeMgr.getAgentUrl() != null)) {
+//                    final UpgradeCommand upgrade = new UpgradeCommand(_upgradeMgr.getAgentUrl());
+//                    final Request req = new Request(1, -1, -1, new Command[] { upgrade }, true, true);
+//                    s_logger.info("Agent requires upgrade: " + req.toString());
+//                    try {
+//                        link.send(req.toBytes());
+//                    } catch (ClosedChannelException e) {
+//                        s_logger.warn("Unable to tell agent it should update.");
+//                    }
+//                    return;
+//                }
                 try {
                     StartupCommand[] startups = new StartupCommand[cmds.length];
                     for (int i = 0; i < cmds.length; i++)
@@ -2217,7 +2259,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 	                    }
 	                } catch (final UnsupportedVersionException e) {
 	                    s_logger.warn(e.getMessage());
-	                    upgradeAgent(task.getLink(), data, e.getReason());
+	                    //upgradeAgent(task.getLink(), data, e.getReason());
 	                }
 	            } else if (type == Task.Type.CONNECT) {
 	            } else if (type == Task.Type.DISCONNECT) {

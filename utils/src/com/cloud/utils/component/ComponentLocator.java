@@ -100,7 +100,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
     }
 
     @Override
-    public synchronized void run() {
+	public synchronized void run() {
         Iterator<Adapters<? extends Adapter>> itAdapters = _adapterMap.values().iterator();
         while (itAdapters.hasNext()) {
             Adapters adapters = itAdapters.next();
@@ -359,6 +359,8 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
                     instance = locator.getManager(fc);
                 } else if (GenericDao.class.isAssignableFrom(fc)) {
                     instance = locator.getDao(fc);
+                } else if (Adapters.class.isAssignableFrom(fc)) {
+                    instance = locator.getAdapters(inject.adapter());
                 }
         
                 if (instance == null) {
@@ -441,7 +443,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         Set<Map.Entry<String, List<Info<Adapter>>>> entries = map.entrySet();
         for (Map.Entry<String, List<Info<Adapter>>> entry : entries) {
             Adapters<Adapter> adapters = (Adapters<Adapter>)_adapterMap.get(entry.getKey());
-            List<Adapter> lst = adapters.get();
+            List<Adapter> lst = new ArrayList<Adapter>();
             for (Info<Adapter> info : entry.getValue()) {
                 s_logger.info("Instantiating Adapter: " + info.name);
                 info.instance = (Adapter)createInstance(info.clazz, true);
@@ -460,6 +462,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
                 lst.add(info.instance);
                 s_logger.info("Instantiated Adapter: " + info.name);
             }
+            adapters.set(lst);
         }
     }
 
@@ -487,6 +490,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         }
     }
 
+    @Override
     public String getParentName() {
         return _parentLocator != null ? _parentLocator.getName() : "None";
     }
@@ -499,6 +503,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         return (T)createInstance(clazz, true, args);
     }
     
+    @Override
     public Map<String, List<String>> getAdapters() {
         HashMap<String, List<String>> result = new HashMap<String, List<String>>();
         for (Map.Entry<String, Adapters<? extends Adapter>> entry : _adapterMap.entrySet()) {
@@ -522,6 +527,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         return parentResults;
     }
 
+    @Override
     public Collection<String> getManagers() {
         Collection<String> names = _parentLocator != null ? _parentLocator.getManagers() : new HashSet<String>();
         for (Map.Entry<String, Info<Manager>> entry : _managerMap.entrySet()) {
@@ -530,6 +536,7 @@ public class ComponentLocator extends Thread implements ComponentLocatorMBean {
         return names;
     }
 
+    @Override
     public Collection<String> getDaos() {
         Collection<String> names = _parentLocator != null ? _parentLocator.getDaos() : new HashSet<String>();
         for (Map.Entry<String, Info<GenericDao<?, ?>>> entry : _daoMap.entrySet()) {
