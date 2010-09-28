@@ -79,7 +79,6 @@ function afterLoadDomainJSP() {
 		}			
 	}					
 	
-	/*
 	function accountJSONToTemplate(json, template) {           
         if (index++ % 2 == 0) {
 		    template.addClass("smallrow_odd");
@@ -89,8 +88,7 @@ function afterLoadDomainJSP() {
 	    template.find("#grid_row_cell1").text(json.domain);
 	    template.find("#grid_row_cell2").text(json.name);		    	    
     }
-    */
-	
+ 	
 	function updateResourceLimit(domainId, type, max) {
 		$.ajax({
 		    data: createURL("command=updateResourceLimit&domainid="+domainId+"&resourceType="+type+"&max="+max),

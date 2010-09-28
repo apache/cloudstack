@@ -2737,3 +2737,172 @@ a:hover.search_button {
 	margin:14px 15px 0 0;
 	padding:0;
 }
+
+/* tree in middle menu */
+
+
+.tree_box {
+	width:400px;
+	height:618px;
+	float:left;
+	margin:0;
+	padding:0;	
+}
+
+
+.tree_boxleft {
+	width: 16px;
+	height:618px;
+	float:left;
+	background:url(../images/zonetree_left.gif) no-repeat top left;
+	margin:0;
+	padding:0;
+	overflow:hidden;
+}
+
+.tree_boxmid {
+	width: 368px;
+	height:618px;
+	float:left;
+	background:url(../images/zonetree_mid.gif) repeat-x top left;
+	margin:0;
+	padding:0;
+}
+
+.tree_boxright {
+	width: 16px;
+	height:618px;
+	float:left;
+	background:url(../images/tree_boxright.gif) no-repeat top left;
+	margin:0;
+	padding:0;
+}
+
+
+.tree_contentbox {
+	width:360px;
+	height:590px;
+	float:left;
+	margin:15px 0 0 0;
+	overflow-x:scroll;
+	overflow-x:auto;
+	overflow-y:scroll;
+	overflow-y:auto;
+}
+
+
+.tree_firstlevel {
+	width:360px;
+	height:25px;
+	float:left;
+	margin:0 0 0 0;
+	padding:0;
+}
+
+
+.tree_levelspanel {
+	width:360px;
+	height:auto;
+	float:left;
+	margin:0 0 0 0;
+	padding:0;
+}
+
+.tree_levelsbox{
+	width:auto;
+	height:auto;
+	float:left;
+	margin:0 0 0 0;
+	padding:0;
+	display:inline;
+}
+
+.tree_levels{
+	width:auto;
+	height:auto;
+	float:left;
+	margin:0 0 0 0;
+	padding:0;
+}
+
+
+
+.tree_eventlevels {
+	width:auto;
+	height:auto;
+	float:left;
+	margin:3px 0 0 39px;
+	padding:0;
+}
+
+
+.tree_eventlinks {
+	width:250px; 
+	float:left;
+	padding:0 0 5px 20px;
+	font-family:Verdana, Geneva, sans-serif;
+	color:#2c8bbc;
+	font-size:12px;
+	font-weight:normal;
+	background:url(../images/tree_eventicon.gif) no-repeat top left;
+	margin:3px 0 0 0;
+	cursor:pointer; 
+	cursor:hand;
+	text-decoration:none;
+}
+
+.tree_eventlinks:hover {
+	text-decoration:underline;
+}
+
+.tree_eventicon {
+	width:12px;
+	height:16px;
+	background:url(../images/tree_eventicon.gif) no-repeat top left;
+	float:left;
+	margin:0 5px 10px 8px;
+	padding:0;
+}
+
+
+.tree_links {
+	width:auto;
+	height:auto;
+	float:left;
+	color:#2c8bbc;
+	text-decoration:none;
+	font-size:12px;
+	text-align:left;
+	margin:5px 0 0 2px;
+	display:inline;
+	padding:0;
+	cursor:pointer;
+	cursor:hand;
+}
+.tree_links:hover {
+	text-decoration:underline;
+}
+
+.zonetree_closedarrows {
+	width:12px;
+	height:14px;
+	background:url(../images/zone_sidearrow.png) no-repeat top left;
+	float:left;
+	margin:5px 5px 0 8px;
+	display:inline;
+	padding:0;
+	cursor:pointer;
+	cursor:hand;
+}
+
+.zonetree_openarrows {
+	width:12px;
+	height:14px;
+	background:url(../images/zone_openarrow.png) no-repeat top left;
+	float:left;
+	margin:10px 5px 0 8px;
+	display:inline;
+	padding:0;
+	cursor:pointer;
+	cursor:hand;
+}
