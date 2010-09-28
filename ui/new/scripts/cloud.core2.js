@@ -591,7 +591,11 @@ function showMiddleMenu() {
     $("#middle_menu, #search_panel, #middle_menu_pagination").show();
     $("#right_panel").removeClass("main_contentarea_dashboard").addClass("main_contentarea");
 }    
-
+function showMiddleMenuWithoutSearch() {
+    $("#middle_menu").show();
+    $("#search_panel, #middle_menu_pagination").hide();
+    $("#right_panel").removeClass("main_contentarea_dashboard").addClass("main_contentarea");
+} 
 
 // adding middle menu item ***
 function beforeAddingMidMenuItem() {

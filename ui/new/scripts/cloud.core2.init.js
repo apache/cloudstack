@@ -25,7 +25,7 @@ $(document).ready(function() {
             $(this).addClass("selected");
             
             showMiddleMenu();
-            $("#midmenu_container").selectable("destroy" ); //Most pages don't need multiple selection in middle menu.
+            $("#midmenu_container").selectable("destroy"); //Most pages don't need multiple selection in middle menu.
             
             clearLeftMenu();
             clearMiddleMenu();
@@ -102,6 +102,23 @@ $(document).ready(function() {
         return false;
     });
     
+    $("#leftmenu_domain").bind("click", function(event) {  
+        if(selected_leftmenu_id != null && selected_leftmenu_id.length > 0)
+            $("#"+selected_leftmenu_id).removeClass("selected");
+        selected_leftmenu_id = "leftmenu_domain";
+        $(this).addClass("selected");
+        
+        showMiddleMenuWithoutSearch();
+        $("#midmenu_container").selectable("destroy"); //Most pages don't need multiple selection in middle menu.
+        
+        clearLeftMenu();
+        clearMiddleMenu();
+        
+        $("#right_panel").load("jsp/domain.jsp", function(){ 
+            afterLoadDomainJSP();       
+        });     
+        return false;
+    });
     
     
            
