@@ -140,7 +140,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         _sslCopy = Boolean.parseBoolean(configs.get("secstorage.encrypt.copy"));
         
         String cert = configs.get("secstorage.secure.copy.cert");
-        if ("realhostip.com".equalsIgnoreCase(cert)) {
+        if (!"realhostip.com".equalsIgnoreCase(cert)) {
         	s_logger.warn("Only realhostip.com ssl cert is supported, ignoring self-signed and other certs");
         }
         

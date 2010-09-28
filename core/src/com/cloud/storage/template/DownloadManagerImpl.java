@@ -853,7 +853,7 @@ public class DownloadManagerImpl implements DownloadManager {
     	
     	Script command = new Script("/bin/bash", s_logger);
 		command.add("-c");
-    	command.add("service httpd stop ");
+    	command.add("if [ -d /etc/apache2 ] ; then service apache2 stop; else service httpd stop; fi ");
     	String result = command.execute();
     	if (result != null) {
     		s_logger.warn("Error in stopping httpd service err=" + result );
@@ -883,7 +883,7 @@ public class DownloadManagerImpl implements DownloadManager {
     	
     	command = new Script("/bin/bash", s_logger);
 		command.add("-c");
-    	command.add("service httpd start ");
+    	command.add("if [ -d /etc/apache2 ] ; then service apache2 start; else service httpd start; fi ");
     	result = command.execute();
     	if (result != null) {
     		s_logger.warn("Error in starting httpd service err=" + result );

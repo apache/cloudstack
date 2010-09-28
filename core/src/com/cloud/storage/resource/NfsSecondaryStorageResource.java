@@ -431,7 +431,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private void startAdditionalServices() {
     	Script command = new Script("/bin/bash", s_logger);
 		command.add("-c");
-    	command.add("service sshd restart ");
+    	command.add("if [ -f /etc/init.d/ssh ]; then service ssh restart; else service sshd restart; fi ");
     	String result = command.execute();
     	if (result != null) {
     		s_logger.warn("Error in starting sshd service err=" + result );
