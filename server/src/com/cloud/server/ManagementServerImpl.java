@@ -50,7 +50,6 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
@@ -114,6 +113,7 @@ import com.cloud.async.executor.VolumeOperationParam;
 import com.cloud.async.executor.VolumeOperationParam.VolumeOp;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
@@ -364,6 +364,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final InstanceGroupVMMapDao _groupVMMapDao;
     private final UploadMonitor _uploadMonitor;
     private final UploadDao _uploadDao;
+    private final CertificateDao _certDao;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -443,7 +444,7 @@ public class ManagementServerImpl implements ManagementServer {
         _vmGroupDao = locator.getDao(InstanceGroupDao.class);
         _groupVMMapDao = locator.getDao(InstanceGroupVMMapDao.class);
         _uploadDao = locator.getDao(UploadDao.class);
-
+        _certDao = locator.getDao(CertificateDao.class);
         _configs = _configDao.getConfiguration();
         _userStatsDao = locator.getDao(UserStatisticsDao.class);
         _vmInstanceDao = locator.getDao(VMInstanceDao.class);
@@ -9114,8 +9115,7 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public boolean updateCertificate(String certificatePath)
     {
-    	
-    	return false;
+    	return _certDao.persistCustomCertToDb(certificatePath);
     }
 
 }
