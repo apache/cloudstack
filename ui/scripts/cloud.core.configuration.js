@@ -781,26 +781,22 @@ function showConfigurationTab() {
 				var isTagged = target.data("vlan") != "untagged";
 				if (isDirect) {
 					title = "<strong>Direct VLAN IP Range</strong>";
-				}
-				var rightPanelHtmlForDirect = "";
-				if (isDirect && isTagged) {
-					rightPanelHtmlForDirect = "<p><span>Domain ID:</span> "+target.data("domainId")+"</p><p><span>Account:</span> "+target.data("account")+"</p>"
-				} else if (isDirect && !isTagged) {
-					rightPanelHtmlForDirect = "<p><span>Pod:</span> "+target.data("podname")+"</p>";
-				}
-				
+				}				
 				rightPanel.html(title);
 				
 				var rightContentHtml = 
-					"<p><span>VLAN ID:</span> "+target.data("vlan")+"</p>"
-					+ rightPanelHtmlForDirect
+					"<p><span>VLAN ID:</span> "+target.data("vlan")+"</p>"				
 					+ "<p><span>Gateway:</span> "+target.data("gateway")+"</p>"
 					+ "<p><span>Netmask:</span> "+target.data("netmask")+"</p>"
 					+ "<p><span>IP Range:</span> "+target.data("name")+"</p>";
+				if(target.data("domainId")!=null) 
+					rightContentHtml += "<p><span>Domain ID:</span> "+target.data("domainId")+"</p>";	
 				if(target.data("domain")!=null) 
 					rightContentHtml += "<p><span>Domain:</span> "+target.data("domain")+"</p>";	
 		        if(target.data("account")!=null) 
-					rightContentHtml += "<p><span>Account:</span> "+target.data("account")+"</p>";						
+					rightContentHtml += "<p><span>Account:</span> "+target.data("account")+"</p>";	
+			    if(target.data("podname")!=null) 
+					rightContentHtml += "<p><span>Pod:</span> "+target.data("podname")+"</p>";						
 				rightContent.data("id", target.data("id")).html(rightContentHtml);
 				
 				$("#submenu_content_zones").find("#action_edit_zone, #action_add_pod, #action_edit_pod, #action_add_publicip_vlan, #action_add_directip_vlan").hide();
