@@ -2461,7 +2461,7 @@ public class UserVmManagerImpl implements UserVmManager {
             		if(freeIpCount>0)
             		{
             			forAccount = true;
-                    	guestVlan = vlan;//FIXME: iterate over all vlans
+                    	guestVlan = vlan;
                     	break;
             		}
             	}
@@ -2487,7 +2487,7 @@ public class UserVmManagerImpl implements UserVmManager {
 		          		if(freeIpCount>0)
 		          		{
 		          			forZone = true;
-		          			guestVlan = vlan;//FIXME: iterate over all vlans
+		          			guestVlan = vlan;
 		          			break;
 		          		}
 	          		}
