@@ -220,4 +220,4 @@ updateInstanceGroup=com.cloud.api.commands.UpdateVMGroupCmd;15
 listInstanceGroups=com.cloud.api.commands.ListVMGroupsCmd;15
 
 ### Certificate commands
-updateCustomCertificate=com.cloud.api.commands.UpdateCertificateCmd;15
+uploadCustomCertificate=com.cloud.api.commands.UploadCustomCertificateCmd;15

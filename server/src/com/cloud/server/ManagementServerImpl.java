@@ -9102,7 +9102,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public boolean updateCertificate(String certificatePath)
+    public boolean uploadCertificate(String certificatePath)
     {
     	return _certDao.persistCustomCertToDb(certificatePath);
     }

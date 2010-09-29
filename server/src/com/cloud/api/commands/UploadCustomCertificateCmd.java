@@ -27,10 +27,10 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.utils.Pair;
 
-public class UpdateCertificateCmd extends BaseCmd {
+public class UploadCustomCertificateCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddConfigCmd.class.getName());
 
-    private static final String s_name = "updatecertificateresponse";
+    private static final String s_name = "uploadcustomcertificateresponse";
     private static final List<Pair<Enum, Boolean>> s_properties = new ArrayList<Pair<Enum, Boolean>>();
 
     static {
@@ -52,7 +52,7 @@ public class UpdateCertificateCmd extends BaseCmd {
     	    	
 		try 
 		{
-			boolean status = getManagementServer().updateCertificate(certificatePath);
+			boolean status = getManagementServer().uploadCertificate(certificatePath);
 			List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
 			
 			returnValues.add(new Pair<String, Object>(BaseCmd.Properties.STATUS.getName(), status));
