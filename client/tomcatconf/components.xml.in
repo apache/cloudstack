@@ -102,7 +102,6 @@
         <dao name="Management Server Host" class="com.cloud.cluster.dao.ManagementServerHostDaoImpl"/>
         <dao name="Snapshot" class="com.cloud.storage.dao.SnapshotDaoImpl"/>
         <dao name="SnapshotPolicyDao" class="com.cloud.storage.dao.SnapshotPolicyDaoImpl"/>
-        <dao name="SnapshotPolicyRefDao" class="com.cloud.storage.dao.SnapshotPolicyRefDaoImpl"/>
         <dao name="SnapshotScheduleDao" class="com.cloud.storage.dao.SnapshotScheduleDaoImpl"/>
         <dao name="AsyncJobDao" class="com.cloud.async.dao.AsyncJobDaoImpl"/>
         <dao name="SyncQueueDao" class="com.cloud.async.dao.SyncQueueDaoImpl"/>
