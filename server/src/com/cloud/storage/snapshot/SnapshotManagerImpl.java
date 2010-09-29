@@ -606,8 +606,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
     
     private void postCreateRecurringSnapshotForPolicy(long userId, long volumeId, long snapshotId, long policyId) {
         //Use count query
-    	Filter searchFilter = new Filter(SnapshotVO.class, GenericDaoBase.CREATED_COLUMN, true, null, null);
-        List<SnapshotVO> snaps = listSnapsforPolicy(policyId, searchFilter);
+        List<SnapshotVO> snaps = listSnapsforVolumeType(volumeId, SnapshotType.RECURRING.name());
         SnapshotPolicyVO policy = _snapshotPolicyDao.findById(policyId);
         
         while(snaps.size() > policy.getMaxSnaps() && snaps.size() > 1) {
@@ -640,9 +639,8 @@ public class SnapshotManagerImpl implements SnapshotManager {
         while( lastSnapshot.getRemoved() != null ) {
             String BackupSnapshotId = lastSnapshot.getBackupSnapshotId();
             if( BackupSnapshotId != null ) {
-                if( destroySnapshotBackUp(userId, snapshotId, policyId) ) {
-                    lastSnapshot.setBackupSnapshotId(null);
-                    _snapshotDao.update(lastId, lastSnapshot);
+                if( destroySnapshotBackUp(userId, lastId, policyId) ) {
+
                 } else {
                     s_logger.debug("Destroying snapshot backup failed " + lastSnapshot);
                     break;
@@ -650,6 +648,9 @@ public class SnapshotManagerImpl implements SnapshotManager {
             }
             postDeleteSnapshot(userId, lastId, policyId);
             lastId = lastSnapshot.getPrevSnapshotId();
+            if( lastId == 0 ) {
+                break;
+            }
             lastSnapshot = _snapshotDao.findById(lastId);
         }
         return true;
@@ -699,8 +700,9 @@ public class SnapshotManagerImpl implements SnapshotManager {
                 _pauseInterval, _shouldBeSnapshotCapable, volume.getInstanceId());
 
         if ((answer != null) && answer.getResult()) {
+            snapshot.setBackupSnapshotId(null);
+            _snapshotDao.update(snapshotId, snapshot);
             // This is not the last snapshot.
-            postDeleteSnapshot(userId, snapshotId, policyId);
             success = true;
             details = "Successfully deleted snapshot " + snapshotId + " for volumeId: " + volumeId + " and policyId "
                     + policyId;
@@ -932,6 +934,10 @@ public class SnapshotManagerImpl implements SnapshotManager {
     @Override
     public List<SnapshotVO> listSnapsforVolume(long volumeId) {
         return _snapshotDao.listByVolumeId(volumeId);
+    }
+    
+    public List<SnapshotVO> listSnapsforVolumeType(long volumeId, String type) {
+        return _snapshotDao.listByVolumeIdType(volumeId, type);
     }
 
     @Override

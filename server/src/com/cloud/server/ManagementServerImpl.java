@@ -6875,7 +6875,7 @@ public class ManagementServerImpl implements ManagementServer {
     public long deleteSnapshotAsync(long userId, long snapshotId) {
     	Snapshot snapshot = findSnapshotById(snapshotId);
         long volumeId = snapshot.getVolumeId();
-        List<SnapshotPolicyVO> policies = _snapMgr.listPoliciesforSnapshot(snapshotId);
+        List<SnapshotPolicyVO> policies = _snapMgr.listPoliciesforVolume(volumeId);
         
         // Return the job id of the last destroySnapshotAsync job which actually destroys the snapshot.
         // The rest of the async jobs just update the db and don't really do any meaningful thing.
