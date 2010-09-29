@@ -3421,7 +3421,7 @@ public class ManagementServerImpl implements ManagementServer {
 	            	{
 	            		privateIpAndPortStr = pair.split(",");//split into 10.1.1.2 & 30
 	            	
-		                if (privateIpAndPortStr[0].equals(userVm.getGuestIpAddress()) && privateIpAndPortStr[1].equals(privatePort)) {
+		                if (privateIpAndPortStr[0].equals(userVm.getGuestIpAddress()) && privateIpAndPortStr[1].equals(privatePort) && publicPortProtocol.contains(protocol)) {
 		                    if (s_logger.isDebugEnabled()) {
 		                        s_logger.debug("skipping the creating of firewall rule " + ipAddress + ":" + publicPort + " to " + userVm.getGuestIpAddress() + ":" + privatePort + "; rule already exists.");
 		                    }
