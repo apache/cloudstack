@@ -89,6 +89,7 @@ public class ListAlertsCmd extends BaseCmd{
 	        
 	        for (AlertVO alert : alerts) {
 	        	List<Pair<String, Object>> alertData = new ArrayList<Pair<String, Object>>();
+	        	alertData.add(new Pair<String, Object>(BaseCmd.Properties.ID.getName(), alert.getId()));
 	        	alertData.add(new Pair<String, Object>(BaseCmd.Properties.TYPE.getName(), alert.getType()));
 	        	alertData.add(new Pair<String, Object>(BaseCmd.Properties.DESCRIPTION.getName(), alert.getSubject()));
 	            alertData.add(new Pair<String, Object>(BaseCmd.Properties.SENT.getName(), getDateString(alert.getLastSent())));
