@@ -8376,7 +8376,11 @@ public class ManagementServerImpl implements ManagementServer {
 	@Override
 	public String getSnapshotIntervalTypes(long snapshotId){
 	    String intervalTypes = "";
-	    List<SnapshotPolicyVO> policies = _snapMgr.listPoliciesforSnapshot(snapshotId);
+	    SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
+	    if(snapshot.getSnapshotType() == Snapshot.SnapshotType.MANUAL.ordinal() ) {
+	        return "MANUAL";
+	    }
+	    List<SnapshotPolicyVO> policies = _snapMgr.listPoliciesforVolume(snapshot.getVolumeId());
 	    for (SnapshotPolicyVO policy : policies){
 	        if(!intervalTypes.isEmpty()){
 	            intervalTypes += ",";
