@@ -21,6 +21,9 @@ function afterLoadDomainJSP() {
     //var breadcrumbPieceTemplate = $("#breadcrumb_piece_template");
     var childParentMap = {};  //map childDomainId to parentDomainId
     var domainIdNameMap = {}; //map domainId to domainName
+		
+	var $detailsTab = $("#right_panel_content #tab_content_details");   
+	var $resourceLimitsTab = $("#right_panel_content #tab_content_resource_limits");
 	
 	/*
 	activateDialog($("#dialog_resource_limits").dialog({ 
@@ -87,11 +90,12 @@ function afterLoadDomainJSP() {
 	    template.find("#grid_row_cell2").text(json.name);		    	    
     }
  	
-	function updateResourceLimit(domainId, type, max) {
+	function updateResourceLimit(domainId, type, max, $readonlyField) {
 		$.ajax({
 		    data: createURL("command=updateResourceLimit&domainid="+domainId+"&resourceType="+type+"&max="+max),
 			dataType: "json",
-			success: function(json) {								    												
+			success: function(json) {	
+			    $readonlyField.text(max);							    												
 			}
 		});
 	}
@@ -135,7 +139,6 @@ function afterLoadDomainJSP() {
 		    clickExpandIcon(domainId);					
 		}
 		else if(action.indexOf("domain_name")!=-1) {
-		    var $detailsTab = $("#right_panel_content #tab_content_details");   
             $detailsTab.data("jsonObj", jsonObj);  
             $detailsTab.find("#id").text(domainId);
             $detailsTab.find("#name").text(domainName);		   
@@ -204,13 +207,14 @@ function afterLoadDomainJSP() {
 		    });
 
 			if (isAdmin() || (isDomainAdmin() && (g_domainid != domainId))) {
-				$("#limits_container").show();
-				/*
-				$("#account_resource_limits").data("domainId", domainId).unbind("click").bind("click", function() {
-					var domainId = $(this).data("domainId");
+				$("#tab_resource_limits").show();
+			
+			    //???
+				//$("#account_resource_limits").data("domainId", domainId).unbind("click").bind("click", function() {
+					//debugger;
 					$.ajax({
 						cache: false,				
-						   data: createURL("command=listResourceLimits&domainid="+domainId+"&response=json"),
+						data: createURL("command=listResourceLimits&domainid="+domainId+"&response=json"),
 						dataType: "json",
 						success: function(json) {
 							var limits = json.listresourcelimitsresponse.resourcelimit;		
@@ -221,27 +225,34 @@ function afterLoadDomainJSP() {
 									switch (limit.resourcetype) {
 										case "0":
 											preInstanceLimit = limit.max;
-											$("#dialog_resource_limits #limits_vm").val(limit.max);
+											$resourceLimitsTab.find("#limits_vm").text(preInstanceLimit);
+											$resourceLimitsTab.find("#limits_vm_edit").val(preInstanceLimit);
 											break;
 										case "1":
 											preIpLimit = limit.max;
-											$("#dialog_resource_limits #limits_ip").val(limit.max);
+											$resourceLimitsTab.find("#limits_ip").text(preIpLimit);
+											$resourceLimitsTab.find("#limits_ip_edit").val(preIpLimit);
 											break;
 										case "2":
 											preDiskLimit = limit.max;
-											$("#dialog_resource_limits #limits_volume").val(limit.max);
+											$resourceLimitsTab.find("#limits_volume").text(preDiskLimit);
+											$resourceLimitsTab.find("#limits_volume_edit").val(preDiskLimit);
 											break;
 										case "3":
 											preSnapshotLimit = limit.max;
-											$("#dialog_resource_limits #limits_snapshot").val(limit.max);
+											$resourceLimitsTab.find("#limits_snapshot").text(preSnapshotLimit);
+											$resourceLimitsTab.find("#limits_snapshot_edit").val(preSnapshotLimit);
 											break;
 										case "4":
 											preTemplateLimit = limit.max;
-											$("#dialog_resource_limits #limits_template").val(limit.max);
+											$resourceLimitsTab.find("#limits_template").text(preTemplateLimit);
+											$resourceLimitsTab.find("#limits_template_edit").val(preTemplateLimit);
 											break;
 									}
 								}
 							}	
+							
+							/*
 							$("#dialog_resource_limits")
 							.dialog('option', 'buttons', { 									
 								"Save": function() { 	
@@ -281,13 +292,18 @@ function afterLoadDomainJSP() {
 									$(this).dialog("close"); 
 								} 
 							}).dialog("open");
+							*/
+							
+							
 						}
 					});
-					return false;
-				});
-				*/
+					//return false;
+				//});
+				//???
+				
+				
 			} else {
-				$("#limits_container").hide();
+				$("#tab_resource_limits").hide();
 			}
 		 
 		    rightPanelDetailContent.show();	
@@ -401,4 +417,62 @@ function afterLoadDomainJSP() {
 	}
 	
 	refreshWholeTree(defaultRootDomainId, defaultRootLevel);
+	
+	 //***** switch to different tab (begin) ********************************************************************
+    $("#tab_details").bind("click", function(event){
+        $(this).removeClass("off").addClass("on");
+        $("#tab_resource_limits").removeClass("on").addClass("off");  
+        $("#tab_content_details").show();     
+        $("#tab_content_resource_limits").hide();   
+        return false;
+    });
+    
+    $("#tab_resource_limits").bind("click", function(event){
+        $(this).removeClass("off").addClass("on");
+        $("#tab_details").removeClass("on").addClass("off");   
+        $("#tab_content_resource_limits").show();    
+        $("#tab_content_details").hide();    
+        return false;
+    });
+    //***** switch to different tab (end) ********************************************************************** 
+    
+    //edit button ***    
+    var $readonlyFields  =  $resourceLimitsTab.find("#limits_vm, #limits_ip, #limits_volume, #limits_snapshot, #limits_template");
+    var $editFields =  $resourceLimitsTab.find("#limits_vm_edit, #limits_ip_edit, #limits_volume_edit, #limits_snapshot_edit, #limits_template_edit");   
+    initializeEditFunction($readonlyFields, $editFields, doUpdateResourceLimits); 
+    
+    function doUpdateResourceLimits() {
+        var isValid = true;	        			
+		isValid &= validateNumber("Instance Limit", $resourceLimitsTab.find("#limits_vm_edit"), $resourceLimitsTab.find("#limits_vm_edit_errormsg"), -1, 32000, false);
+		isValid &= validateNumber("Public IP Limit", $resourceLimitsTab.find("#limits_ip_edit"), $resourceLimitsTab.find("#limits_ip_edit_errormsg"), -1, 32000, false);
+		isValid &= validateNumber("Disk Volume Limit", $resourceLimitsTab.find("#limits_volume_edit"), $resourceLimitsTab.find("#limits_volume_edit_errormsg"), -1, 32000, false);
+		isValid &= validateNumber("Snapshot Limit", $resourceLimitsTab.find("#limits_snapshot_edit"), $resourceLimitsTab.find("#limits_snapshot_edit_errormsg"), -1, 32000, false);
+		isValid &= validateNumber("Template Limit", $resourceLimitsTab.find("#limits_template_edit"), $resourceLimitsTab.find("#limits_template_edit_errormsg"), -1, 32000, false);
+		if (!isValid) return;
+									
+		var jsonObj = $detailsTab.data("jsonObj");
+		var domainId = jsonObj.id;
+		
+		var instanceLimit = trim($resourceLimitsTab.find("#limits_vm_edit").val());
+		var ipLimit = trim($resourceLimitsTab.find("#limits_ip_edit").val());
+		var diskLimit = trim($resourceLimitsTab.find("#limits_volume_edit").val());
+		var snapshotLimit = trim($resourceLimitsTab.find("#limits_snapshot_edit").val());
+		var templateLimit = trim($resourceLimitsTab.find("#limits_template_edit").val());
+					
+		if (instanceLimit != $resourceLimitsTab.find("#limits_vm").text()) {
+			updateResourceLimit(domainId, 0, instanceLimit, $resourceLimitsTab.find("#limits_vm"));
+		}
+		if (ipLimit != $resourceLimitsTab.find("#limits_ip").text()) {
+			updateResourceLimit(domainId, 1, ipLimit, $resourceLimitsTab.find("#limits_ip"));
+		}
+		if (diskLimit != $resourceLimitsTab.find("#limits_volume").text()) {
+			updateResourceLimit(domainId, 2, diskLimit, $resourceLimitsTab.find("#limits_volume"));
+		}
+		if (snapshotLimit != $resourceLimitsTab.find("#limits_snapshot").text()) {
+			updateResourceLimit(domainId, 3, snapshotLimit, $resourceLimitsTab.find("#limits_snapshot"));
+		}
+		if (templateLimit != $resourceLimitsTab.find("#limits_template").text()) {
+			updateResourceLimit(domainId, 4, templateLimit, $resourceLimitsTab.find("#limits_template"));
+		}    
+    }
 }

@@ -22,31 +22,12 @@
         </p>
     </div>
     <div class="tabbox" style="margin-top: 15px;">
-        <div class="content_tabs on">
+        <div class="content_tabs on" id="tab_details">
             <%=t.t("Details")%></div>
-    </div>    
+        <div class="content_tabs off" id="tab_resource_limits">
+            <%=t.t("Resource.Limits")%></div>
+    </div>  
     <div id="tab_content_details">
-        <div class="grid_actionpanel">
-            <div class="grid_actionbox" id="action_link">
-                <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
-                    <ul class="actionsdropdown_boxlist" id="action_list">
-                        <!--  
-                    	<li> <a href="#"> Delete </a> </li>
-                        <li> <a href="#"> Attach Disk </a> </li>
-                        -->
-                    </ul>
-                </div>
-            </div>
-            <div class="grid_editbox">
-            </div>
-            <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
-                display: none;">
-                <div class="gridheader_loader" id="icon">
-                </div>
-                <p id="description">
-                    Detaching Disk &hellip;</p>
-            </div>                  
-        </div>
         <div class="grid_container">
             <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
@@ -99,7 +80,88 @@
                 </div>
             </div>
         </div>
-    </div>        
+    </div>    
+    
+    <div id="tab_content_resource_limits" style="display:none">
+        <div class="grid_actionpanel">            
+            <div class="grid_editbox" id="edit_button">
+            </div>
+            <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
+                display: none;">
+                <div class="gridheader_loader" id="Div1">
+                </div>
+                <p id="description">
+                    Updating Resource Limits.... &hellip;</p>
+            </div>               
+        </div>    
+        <div class="grid_container">           
+            <div class="grid_rows even">
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles">
+                        <%=t.t("Instance.Limit")%>:</div>
+                </div>
+                <div class="grid_row_cell" style="width: 79%;">
+                    <div class="row_celltitles" id="limits_vm">
+                    </div>
+                    <input class="text" id="limits_vm_edit" value="-1" style="width: 200px; display: none;" type="text" />
+                    <div id="limits_vm_edit_errormsg" style="display:none"></div>
+                </div>
+            </div>            
+            <div class="grid_rows even">
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles">
+                        <%=t.t("Public.IP.Limit")%>:</div>
+                </div>
+                <div class="grid_row_cell" style="width: 79%;">
+                    <div class="row_celltitles" id="limits_ip">
+                    </div>
+                    <input class="text" id="limits_ip_edit" value="-1" style="width: 200px; display: none;" type="text" />
+                    <div id="limits_ip_edit_errormsg" style="display:none"></div>
+                </div>
+            </div>            
+            <div class="grid_rows even">
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles">
+                        <%=t.t("Disk.Volume.Limit")%>:</div>
+                </div>
+                <div class="grid_row_cell" style="width: 79%;">
+                    <div class="row_celltitles" id="limits_volume">
+                    </div>
+                    <input class="text" id="limits_volume_edit" value="-1" style="width: 200px; display: none;" type="text" />
+                    <div id="limits_volume_edit_errormsg" style="display:none"></div>
+                </div>
+            </div>            
+            <div class="grid_rows even">
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles">
+                        <%=t.t("Snapshot.Limit")%>:</div>
+                </div>
+                <div class="grid_row_cell" style="width: 79%;">
+                    <div class="row_celltitles" id="limits_snapshot">
+                    </div>
+                    <input class="text" id="limits_snapshot_edit" value="-1" style="width: 200px; display: none;" type="text" />
+                    <div id="limits_snapshot_edit_errormsg" style="display:none"></div>
+                </div>
+            </div>            
+            <div class="grid_rows even">
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles">
+                        <%=t.t("Template.Limit")%>:</div>
+                </div>
+                <div class="grid_row_cell" style="width: 79%;">
+                    <div class="row_celltitles" id="limits_template">
+                    </div>
+                    <input class="text" id="limits_template_edit" value="-1" style="width: 200px; display: none;" type="text" />
+                    <div id="limits_template_edit_errormsg" style="display:none"></div>
+                </div>
+            </div>
+        </div>
+        <div class="grid_botactionpanel">
+        	<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
+            <div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
+        </div>
+    </div>
+        
 </div>
 <!-- domain detail panel (end) -->
 

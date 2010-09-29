@@ -642,7 +642,27 @@ function bindClickToMidMenu($midmenuItem1, toRightPanel, getMidmenuId) {
     }); 
 }
 
-
+function initializeEditFunction($readonlyFields, $editFields, doUpdateFn) {
+    $("#edit_button").bind("click", function(event){    
+        $readonlyFields.hide();
+        $editFields.show();  
+        $("#cancel_button, #save_button").show()
+        return false;
+    });    
+    $("#cancel_button").bind("click", function(event){    
+        $editFields.hide();
+        $readonlyFields.show();   
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });
+    $("#save_button").bind("click", function(event){        
+        doUpdateFn();     
+        $editFields.hide();      
+        $readonlyFields.show();       
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });    
+}
 
 
 

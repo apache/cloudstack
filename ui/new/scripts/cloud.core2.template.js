@@ -82,27 +82,8 @@ function afterLoadTemplateJSP() {
     
     //edit button ***
     var $readonlyFields  = $detailsTab.find("#name, #displaytext, #passwordenabled, #ispublic, #isfeatured, #ostypename");
-    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit, #ispublic_edit, #isfeatured_edit, #ostypename_edit"); 
-    $("#edit_button").bind("click", function(event){    
-        $readonlyFields.hide();
-        $editFields.show();  
-        $("#cancel_button, #save_button").show()
-        return false;
-    });    
-    $("#cancel_button").bind("click", function(event){    
-        $editFields.hide();
-        $readonlyFields.show();   
-        $("#save_button, #cancel_button").hide();       
-        return false;
-    });
-    $("#save_button").bind("click", function(event){        
-        doUpdateTemplate();     
-        $editFields.hide();      
-        $readonlyFields.show();       
-        $("#save_button, #cancel_button").hide();       
-        return false;
-    });
-    
+    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit, #ispublic_edit, #isfeatured_edit, #ostypename_edit");     
+    initializeEditFunction($readonlyFields, $editFields, doUpdateTemplate);      
     
     //populate dropdown ***   			
 	var addTemplateZoneField = $("#dialog_add_template #add_template_zone");    	
