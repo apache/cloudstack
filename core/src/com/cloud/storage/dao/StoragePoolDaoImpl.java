@@ -351,8 +351,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 
 	        while (rs.next()) {
 	            tags.add(rs.getString("name"));
-	        }
-	        
+	        }	        
 	        return tags;
 	    } catch (SQLException e) {
 	        throw new CloudRuntimeException("Unable to execute " + pstmt.toString(), e);
