@@ -5433,7 +5433,7 @@ a:hover.add_newtemplatebutton {
 	left:10px;
 	background: #FFF repeat top left;
 	border:1px solid #CCC;
-	z-index:1000;
+	z-index:1005;
 }
 
 .vmactions_dropdownbox_closebutton {
