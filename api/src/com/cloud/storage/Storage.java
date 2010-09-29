@@ -79,6 +79,11 @@ public class Storage {
         hfsp
     }
     
+    public static enum TemplateType {
+    	SYSTEM,
+    	BUILTIN
+    }
+    
     public static enum StoragePoolType {
         Filesystem(false), //local directory
         NetworkFilesystem(true), //NFS or CIFS

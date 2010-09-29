@@ -172,6 +172,7 @@ public class ListTemplatesCmd extends BaseCmd {
                 templateData.add(new Pair<String, Object>(BaseCmd.Properties.PASSWORD_ENABLED.getName(), Boolean.valueOf(template.getEnablePassword()).toString()));
                 templateData.add(new Pair<String, Object>(BaseCmd.Properties.CROSS_ZONES.getName(), Boolean.valueOf(template.isCrossZones()).toString()));
                 templateData.add(new Pair<String, Object>(BaseCmd.Properties.FORMAT.getName(), template.getFormat()));
+                templateData.add(new Pair<String, Object>(BaseCmd.Properties.TEMPLATE_Type.getName(), template.getTemplateType()));
                 
                 GuestOS os = getManagementServer().findGuestOSById(template.getGuestOSId());
                 if (os != null) {

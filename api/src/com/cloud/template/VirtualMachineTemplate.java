@@ -37,10 +37,5 @@ public interface VirtualMachineTemplate  {
      * @return name
      */
     String getName();
-   
-    /**
-     * @return the file system for this template.
-     */
-    FileSystem getFileSystem();
     
 }

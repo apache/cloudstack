@@ -358,6 +358,7 @@ public abstract class BaseCmd {
         TEMPLATE_NAME("templatename", BaseCmd.TYPE_STRING, "templateName"),
         TEMPLATE_DISPLAY_TEXT("templatedisplaytext", BaseCmd.TYPE_STRING, "templateDisplayText"),
         TEMPLATE_STATUS("templatestatus", BaseCmd.TYPE_STRING, "templateStatus"),
+        TEMPLATE_Type("templatetype", BaseCmd.TYPE_STRING, "templateType"),
         TEMPLATE_TOTAL("templatetotal", BaseCmd.TYPE_INT, "templatetotal"),
         TIMEZONE("timezone", BaseCmd.TYPE_STRING, "timezone"),
         TIMEZONE_OFFSET("timezoneoffset", BaseCmd.TYPE_FLOAT, "timezoneOffset"),

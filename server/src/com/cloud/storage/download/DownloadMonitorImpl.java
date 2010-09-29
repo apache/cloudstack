@@ -420,16 +420,24 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		
 		Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
 		List<VMTemplateVO> allTemplates = _templateDao.listAllInZone(storageHost.getDataCenterId());
-		VMTemplateVO rtngTmplt = _templateDao.findRoutingTemplate();
-		VMTemplateVO defaultBuiltin = _templateDao.findDefaultBuiltinTemplate();
+		List<VMTemplateVO> rtngTmplts = _templateDao.listAllRoutingTemplates();
+		List<VMTemplateVO> defaultBuiltin = _templateDao.listDefaultBuiltinTemplates();
 
-		if (rtngTmplt != null && !allTemplates.contains(rtngTmplt))
-			allTemplates.add(rtngTmplt);
-
-		if (defaultBuiltin != null && !allTemplates.contains(defaultBuiltin)) {
-			allTemplates.add(defaultBuiltin);
+		if (rtngTmplts != null) {
+			for (VMTemplateVO rtngTmplt : rtngTmplts) {
+				if (!allTemplates.contains(rtngTmplt))
+					allTemplates.add(rtngTmplt);
+			}
 		}
 		
+		if (defaultBuiltin != null) {
+			for (VMTemplateVO builtinTmplt : defaultBuiltin) {
+				if (!allTemplates.contains(builtinTmplt)) {
+					allTemplates.add(builtinTmplt);
+				}
+			}
+		}
+
 		for (Iterator<VMTemplateVO> i = allTemplates.iterator();i.hasNext();) {
 			if (i.next().getName().startsWith("xs-tools")) {
 				i.remove();

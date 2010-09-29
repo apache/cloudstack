@@ -29,7 +29,7 @@ import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Storage.FileSystem;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.user.Account;
@@ -64,7 +64,7 @@ public interface TemplateManager extends Manager {
      * @param bootable true if this template will represent a bootable ISO
      * @return id of the template created.
      */
-    Long create(long userId, long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType);
+    Long create(long userId, long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, TemplateType type, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType);
 
     /**
      * Creates a Template
@@ -84,7 +84,7 @@ public interface TemplateManager extends Manager {
      * @param bootable true if this template will represent a bootable ISO
      * @return id of the template created.
      */
-    Long createInZone(long zoneId, long userId, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable);
+    Long createInZone(long zoneId, long userId, String displayText, boolean isPublic, boolean featured, ImageFormat format, TemplateType type, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable);
     
     /**
      * Prepares a template for vm creation for a certain storage pool.

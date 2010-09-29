@@ -56,7 +56,7 @@ import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Storage.FileSystem;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.SnapshotDao;
@@ -118,7 +118,7 @@ public class TemplateManagerImpl implements TemplateManager {
     
 
     @Override
-    public Long create(long userId, long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
+    public Long create(long userId, long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format,  TemplateType type, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
         Long id = _tmpltDao.getNextInSequence(Long.class, "id");
                 
         AccountVO account = _accountDao.findById(accountId);
@@ -126,7 +126,7 @@ public class TemplateManagerImpl implements TemplateManager {
         	throw new IllegalArgumentException("Only admins can create templates in all zones");
         }
         
-        VMTemplateVO template = new VMTemplateVO(id, name, format, isPublic, featured, fs, url.toString(), requiresHvm, bits, accountId, chksum, displayText, enablePassword, guestOSId, bootable, hyperType);
+        VMTemplateVO template = new VMTemplateVO(id, name, format, isPublic, featured, type, url.toString(), requiresHvm, bits, accountId, chksum, displayText, enablePassword, guestOSId, bootable, hyperType);
         if (zoneId == null) {
             List<DataCenterVO> dcs = _dcDao.listAllIncludingRemoved();
 
@@ -597,14 +597,14 @@ public class TemplateManagerImpl implements TemplateManager {
 	@Override
 	public Long createInZone(long zoneId, long userId, String displayText,
 			boolean isPublic, boolean featured, ImageFormat format,
-			FileSystem fs, URI url, String chksum, boolean requiresHvm,
+			TemplateType type, URI url, String chksum, boolean requiresHvm,
 			int bits, boolean enablePassword, long guestOSId, boolean bootable) {
 		Long id = _tmpltDao.getNextInSequence(Long.class, "id");
 
 		UserVO user = _userDao.findById(userId);
 		long accountId = user.getAccountId();
 
-		VMTemplateVO template = new VMTemplateVO(id, displayText, format, isPublic, featured, fs, url.toString(), requiresHvm, bits, accountId, chksum, displayText, enablePassword, guestOSId, bootable, null);
+		VMTemplateVO template = new VMTemplateVO(id, displayText, format, isPublic, featured, type, url.toString(), requiresHvm, bits, accountId, chksum, displayText, enablePassword, guestOSId, bootable, null);
 
 		Long templateId = _tmpltDao.addTemplateToZone(template, zoneId);
 		UserAccount userAccount = _userAccountDao.findById(userId);

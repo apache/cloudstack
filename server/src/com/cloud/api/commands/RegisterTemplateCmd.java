@@ -165,7 +165,7 @@ public class RegisterTemplateCmd extends BaseCmd {
 
         Long templateId;
         try {
-        	templateId = getManagementServer().createTemplate(userId, accountId, zoneId, name, displayText, isPublic, featured, format, "ext3", url, null, requiresHVM, bits, passwordEnabled, guestOSId, true, hyperType);
+        	templateId = getManagementServer().createTemplate(userId, accountId, zoneId, name, displayText, isPublic, featured, format, null, url, null, requiresHVM, bits, passwordEnabled, guestOSId, true, hyperType);
         } catch (InvalidParameterValueException ipve) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "Internal error registering template " + name + "; " + ipve.getMessage());
         } catch (IllegalArgumentException iae) {

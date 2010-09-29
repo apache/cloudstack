@@ -2510,15 +2510,9 @@ public class UserVmManagerImpl implements UserVmManager {
             }
 
             if ((origTemplate != null) && !Storage.ImageFormat.ISO.equals(origTemplate.getFormat())) {
-                // We made a template from a root volume that was cloned from a
-                // template
-                privateTemplate.setFileSystem(origTemplate.getFileSystem());
                 privateTemplate.setRequiresHvm(origTemplate.requiresHvm());
                 privateTemplate.setBits(origTemplate.getBits());
             } else {
-                // We made a template from a root volume that was not cloned
-                // from a template, or a data volume
-                privateTemplate.setFileSystem(Storage.FileSystem.Unknown);
                 privateTemplate.setRequiresHvm(true);
                 privateTemplate.setBits(64);
             }

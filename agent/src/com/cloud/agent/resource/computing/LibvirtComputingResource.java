@@ -3092,24 +3092,24 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private boolean isGuestPVEnabled(String guestOS) {
     	if (guestOS == null)
     		return false;
-    	if (guestOS.startsWith("Ubuntu 10.04") ||
-    		guestOS.startsWith("Ubuntu 9") ||
-    		guestOS.startsWith("Ubuntu 8.10") ||
-    		guestOS.startsWith("Fedora 13") ||
-    		guestOS.startsWith("Fedora 12") ||
-    		guestOS.startsWith("Fedora 11") ||
-    		guestOS.startsWith("Fedora 10") ||
-    		guestOS.startsWith("Fedora 9") ||
-    		guestOS.startsWith("CentOS 5.3") ||
-    		guestOS.startsWith("CentOS 5.4") ||
-    		guestOS.startsWith("CentOS 5.5") ||
-    		guestOS.startsWith("Red Hat Enterprise Linux 5.3") ||
-    		guestOS.startsWith("Red Hat Enterprise Linux 5.4") ||
-    		guestOS.startsWith("Red Hat Enterprise Linux 5.5") ||
-    		guestOS.startsWith("Red Hat Enterprise Linux 6") ||
-    		guestOS.startsWith("Debain Lenney") ||
-    		guestOS.startsWith("Debain Squeeze")
-    		)
+    	String guestOSName = KVMGuestOsMapper.getGuestOsName(guestOS);
+    	if (guestOSName.startsWith("Ubuntu 10.04") ||
+    			guestOSName.startsWith("Ubuntu 9") ||
+    			guestOSName.startsWith("Ubuntu 8.10") ||
+    			guestOSName.startsWith("Fedora 13") ||
+    			guestOSName.startsWith("Fedora 12") ||
+    			guestOSName.startsWith("Fedora 11") ||
+    			guestOSName.startsWith("Fedora 10") ||
+    			guestOSName.startsWith("Fedora 9") ||
+    			guestOSName.startsWith("CentOS 5.3") ||
+    			guestOSName.startsWith("CentOS 5.4") ||
+    			guestOSName.startsWith("CentOS 5.5") ||
+    			guestOSName.startsWith("Red Hat Enterprise Linux 5.3") ||
+    			guestOSName.startsWith("Red Hat Enterprise Linux 5.4") ||
+    			guestOSName.startsWith("Red Hat Enterprise Linux 5.5") ||
+    			guestOSName.startsWith("Red Hat Enterprise Linux 6") ||
+    			guestOSName.startsWith("Debian GNU/Linux")    			
+    	)
     		return true;
     	else
     		return false;

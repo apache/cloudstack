@@ -5010,12 +5010,7 @@ public class ManagementServerImpl implements ManagementServer {
             ImageFormat imgfmt = ImageFormat.valueOf(format.toUpperCase());
             if (imgfmt == null) {
                 throw new IllegalArgumentException("Image format is incorrect " + format + ". Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
-            }
-            
-            FileSystem fileSystem = FileSystem.valueOf(diskType);
-            if (fileSystem == null) {
-                throw new IllegalArgumentException("File system is incorrect " + diskType + ". Supported file systems are " + EnumUtils.listValues(FileSystem.values()));
-            }
+            }          
             
             URI uri = new URI(url);
             if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
@@ -5060,7 +5055,7 @@ public class ManagementServerImpl implements ManagementServer {
             	throw new IllegalArgumentException("Cannot use reserved names for templates");
             }
             
-            return _tmpltMgr.create(userId, accountId, zoneId, name, displayText, isPublic, featured, imgfmt, fileSystem, uri, chksum, requiresHvm, bits, enablePassword, guestOSId, bootable, hyperType);
+            return _tmpltMgr.create(userId, accountId, zoneId, name, displayText, isPublic, featured, imgfmt, null, uri, chksum, requiresHvm, bits, enablePassword, guestOSId, bootable, hyperType);
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Invalid URL " + url);
         }

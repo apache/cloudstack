@@ -30,7 +30,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Storage.FileSystem;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
@@ -120,7 +120,7 @@ public class LaunchPermissionDaoImpl extends GenericDaoBase<LaunchPermissionVO, 
                 boolean isPublic = rs.getBoolean(4);
                 String value = rs.getString(5);
                 ImageFormat format = ImageFormat.valueOf(value);
-                String filesystem = rs.getString(6);
+                String tmpltType = rs.getString(6);
                 boolean requiresHVM = rs.getBoolean(7);
                 int bits = rs.getInt(8);
                 String url = rs.getString(9);
@@ -140,7 +140,7 @@ public class LaunchPermissionDaoImpl extends GenericDaoBase<LaunchPermissionVO, 
                 if (isPublic) {
                     continue; // if it's public already, skip adding it to permitted templates as this for private templates only
                 }
-                VMTemplateVO template = new VMTemplateVO(id, uniqueName, name, format, isPublic, featured, FileSystem.valueOf(filesystem), url, createdDate, requiresHVM, bits, templateAccountId, checksum, displayText, enablePassword, guestOSId, true, null);
+                VMTemplateVO template = new VMTemplateVO(id, uniqueName, name, format, isPublic, featured, TemplateType.valueOf(tmpltType), url, createdDate, requiresHVM, bits, templateAccountId, checksum, displayText, enablePassword, guestOSId, true, null);
                 permittedTemplates.add(template);
             }
         } catch (Exception e) {

@@ -149,7 +149,7 @@ public class RegisterIsoCmd extends BaseCmd {
         
         Long templateId;
         try {
-        	templateId = getManagementServer().createTemplate(userId, accountId, zoneId, name, displayText, isPublic.booleanValue(), featured.booleanValue(), ImageFormat.ISO.toString(), FileSystem.cdfs.toString(), url, null, true, 64 /*bits*/, false, guestOSId, bootable, HypervisorType.None);
+        	templateId = getManagementServer().createTemplate(userId, accountId, zoneId, name, displayText, isPublic.booleanValue(), featured.booleanValue(), ImageFormat.ISO.toString(), null, url, null, true, 64 /*bits*/, false, guestOSId, bootable, HypervisorType.None);
         } catch (Exception ex) {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }
