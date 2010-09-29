@@ -490,7 +490,7 @@ public class StorageManagerImpl implements StorageManager {
     }
     
     @DB
-    protected Pair<VolumeVO, String> createVolumeFromSnapshot(long userId, long accountId, String userSpecifiedName, DataCenterVO dc, DiskOfferingVO diskOffering, SnapshotVO snapshot, String templatePath, Long originalVolumeSize, VMTemplateVO template) {
+    protected Pair<VolumeVO, String> createVolumeFromSnapshot(long userId, long accountId, String userSpecifiedName, DataCenterVO dc, SnapshotVO snapshot, long virtualsize) {
         
         VolumeVO createdVolume = null;
         Long volumeId = null;
@@ -506,10 +506,7 @@ public class StorageManagerImpl implements StorageManager {
         volume.setAccountId(accountId);
         volume.setDomainId(account.getDomainId());
         volume.setMirrorState(MirrorState.NOT_MIRRORED);
-        if (diskOffering != null) {
-            volume.setDiskOfferingId(diskOffering.getId());
-        }
-        volume.setSize(originalVolumeSize);
+        volume.setSize(virtualsize);
         volume.setStorageResourceType(Storage.StorageResourceType.STORAGE_POOL);
         volume.setInstanceId(null);
         volume.setUpdated(new Date());
@@ -538,8 +535,7 @@ public class StorageManagerImpl implements StorageManager {
         String volumeUUID = null;
         String details = null;
         
-        DiskProfile dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
-        
+        DiskProfile dskCh = new DiskProfile(volume.getId(), volume.getVolumeType(), volume.getName(), 0, virtualsize, null, false, false, null);
         
         // Determine what pod to store the volume in
         while ((pod = _agentMgr.findPod(null, null, dc, account.getId(), podsToAvoid)) != null) {
@@ -552,7 +548,7 @@ public class StorageManagerImpl implements StorageManager {
                 
                 // Get the newly created VDI from the snapshot.
                 // This will return a null volumePath if it could not be created
-                Pair<String, String> volumeDetails = createVDIFromSnapshot(userId, snapshot, pool, templatePath);
+                Pair<String, String> volumeDetails = createVDIFromSnapshot(userId, snapshot, pool);
                 volumeUUID = volumeDetails.first();
                 details = volumeDetails.second();
                 
@@ -621,69 +617,18 @@ public class StorageManagerImpl implements StorageManager {
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId); // Precondition: snapshot is not null and not removed.
         Long origVolumeId = snapshot.getVolumeId();
         VolumeVO originalVolume = _volsDao.findById(origVolumeId); // NOTE: Original volume could be destroyed and removed.
-        String templatePath = null;
-        VMTemplateVO template = null;
-        if(originalVolume.getVolumeType().equals(Volume.VolumeType.ROOT)){
-            if(originalVolume.getTemplateId() == null){
-                details = "Null Template Id for Root Volume Id: " + origVolumeId + ". Cannot create volume from snapshot of root disk.";
-                s_logger.error(details);
-            }
-            else {
-                Long templateId = originalVolume.getTemplateId();
-                template = _templateDao.findById(templateId);
-                if(template == null) {
-                    details = "Unable find template id: " + templateId + " to create volume from root disk";
-                    s_logger.error(details);
-                }
-                else if (template.getFormat() != ImageFormat.ISO) {
-                    // For ISOs there is no base template VHD file. The root disk itself is the base template.
-                    // Creating a volume from an ISO Root Disk is the same as creating a volume for a Data Disk.
-                    
-                    // Absolute crappy way of getting the template path on secondary storage.
-                    // Why is the secondary storage a host? It's just an NFS mount point. Why do we need to look into the templateHostVO?
-                    HostVO secondaryStorageHost = getSecondaryStorageHost(originalVolume.getDataCenterId());
-                    VMTemplateHostVO templateHostVO = _templateHostDao.findByHostTemplate(secondaryStorageHost.getId(), templateId);
-                    if (templateHostVO == null ||
-                        templateHostVO.getDownloadState() != VMTemplateStorageResourceAssoc.Status.DOWNLOADED ||
-                        (templatePath = templateHostVO.getInstallPath()) == null)
-                    {
-                        details = "Template id: " + templateId + " is not present on secondaryStorageHost Id: " + secondaryStorageHost.getId() + ". Can't create volume from ROOT DISK";
-                    }
-                }
-            }
-        }
-        if (details == null) {
-            // everything went well till now
-            DataCenterVO dc = _dcDao.findById(originalVolume.getDataCenterId());
-            DiskOfferingVO diskOffering = null;
 
-            if (originalVolume.getVolumeType() == VolumeType.DATADISK || originalVolume.getVolumeType() == VolumeType.ROOT) {
-                Long diskOfferingId = originalVolume.getDiskOfferingId();
-                if (diskOfferingId != null) {
-                    diskOffering = _diskOfferingDao.findById(diskOfferingId);
-                }
-            }
-//            else if (originalVolume.getVolumeType() == VolumeType.ROOT) {
-//                // Create a temporary disk offering with the same size as the ROOT DISK
-//                Long rootDiskSize = originalVolume.getSize();
-//                Long rootDiskSizeInMB = rootDiskSize/(1024*1024);
-//                Long sizeInGB = rootDiskSizeInMB/1024;
-//                String name = "Root Disk Offering";
-//                String displayText = "Temporary Disk Offering for Snapshot from Root Disk: " + originalVolume.getId() + "[" + sizeInGB + "GB Disk]";
-//                diskOffering = new DiskOfferingVO(originalVolume.getDomainId(), name, displayText, rootDiskSizeInMB, false, null);
-//            }
-            else {
-                // The code never reaches here.
-                s_logger.error("Original volume must have been a ROOT DISK or a DATA DISK");
-                return null;
-            }
-            Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(userId, accountId, volumeName, dc, diskOffering, snapshot, templatePath, originalVolume.getSize(), template);
-            createdVolume = volumeDetails.first();
-            if (createdVolume != null) {
-                volumeId = createdVolume.getId();
-            }
-            details = volumeDetails.second();
+        // everything went well till now
+        DataCenterVO dc = _dcDao.findById(originalVolume.getDataCenterId());
+
+        Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(userId, accountId, volumeName, dc,
+                snapshot, originalVolume.getSize());
+        createdVolume = volumeDetails.first();
+        if (createdVolume != null) {
+            volumeId = createdVolume.getId();
         }
+        details = volumeDetails.second();
+
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -719,7 +664,7 @@ public class StorageManagerImpl implements StorageManager {
         return createdVolume;
     }
     
-    protected Pair<String, String> createVDIFromSnapshot(long userId, SnapshotVO snapshot, StoragePoolVO pool, String templatePath) {
+    protected Pair<String, String> createVDIFromSnapshot(long userId, SnapshotVO snapshot, StoragePoolVO pool) {
         String vdiUUID = null;
         
         Long volumeId = snapshot.getVolumeId();
@@ -738,8 +683,7 @@ public class StorageManagerImpl implements StorageManager {
                                                 accountId,
                                                 volumeId,
                                                 backedUpSnapshotUuid,
-                                                snapshot.getName(),
-                                                templatePath);
+                                                snapshot.getName());
         
         String basicErrMsg = "Failed to create volume from " + snapshot.getName() + " for volume: " + volume.getId();
         CreateVolumeFromSnapshotAnswer answer = (CreateVolumeFromSnapshotAnswer) sendToHostsOnStoragePool(pool.getId(),

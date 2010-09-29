@@ -47,12 +47,12 @@ public interface SnapshotManager extends Manager {
      * @throws ResourceAllocationException 
      * @throws InvalidParameterValueException 
      */
-    SnapshotVO createSnapshot(long userId, long volumeId, List<Long> policies) throws InvalidParameterValueException, ResourceAllocationException;
+    SnapshotVO createSnapshot(long userId, long volumeId, long policyId) throws InvalidParameterValueException, ResourceAllocationException;
 
     /**
      * Creates a snapshot for the given volume
      */
-    long createSnapshotAsync(long userId, long volumeId, List<Long> policies);
+    long createSnapshotAsync(long userId, long volumeId, long policyId);
 
     /**
      * After successfully creating a snapshot of a volume, copy the snapshot to the secondary storage for 
@@ -75,7 +75,7 @@ public interface SnapshotManager extends Manager {
      * @param policyIds  The list of policyIds to which this snapshot belongs to
      * @param backedUp   If true, the snapshot has been successfully created.
      */
-    void postCreateSnapshot(long userId, long volumeId, long snapshotId, List<Long> policyIds, boolean backedUp);
+    void postCreateSnapshot(long userId, long volumeId, long snapshotId, long policyId, boolean backedUp);
     
     /**
      * Creates a volume from the specified snapshot. A new volume is returned which is not attached to any VM Instance
@@ -157,5 +157,9 @@ public interface SnapshotManager extends Manager {
     void validateSnapshot(Long userId, SnapshotVO snapshot);
 
 	ImageFormat getImageFormat(Long volumeId);
+
+    SnapshotPolicyVO getPolicyForVolume(long volumeId);
+
+    boolean destroySnapshotBackUp(long userId, long snapshotId, long policyId);
 
 }

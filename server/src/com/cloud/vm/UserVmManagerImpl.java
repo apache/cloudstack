@@ -20,7 +20,6 @@ package com.cloud.vm;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -48,6 +47,7 @@ import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
+import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.ManageSnapshotAnswer;
@@ -60,7 +60,6 @@ import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
-import com.cloud.agent.api.storage.CreatePrivateTemplateCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.async.AsyncJobExecutor;
@@ -2232,7 +2231,7 @@ public class UserVmManagerImpl implements UserVmManager {
         SnapshotVO snapshot = _snapshotDao.findById(Long.valueOf(snapshotId));
         if (snapshot != null) {
             VolumeVO volume = _volsDao.findById(snapshot.getVolumeId());
-            ManageSnapshotCommand cmd = new ManageSnapshotCommand(ManageSnapshotCommand.DESTROY_SNAPSHOT, snapshotId, snapshot.getPath(), snapshot.getName(), null);
+            ManageSnapshotCommand cmd = new ManageSnapshotCommand(snapshotId, snapshot.getPath());
 
             Answer answer = null;
             String basicErrMsg = "Failed to destroy template snapshot: " + snapshot.getName();
@@ -2252,60 +2251,6 @@ public class UserVmManagerImpl implements UserVmManager {
         return success;
     }
     
-    @Override @DB
-    public SnapshotVO createTemplateSnapshot(long userId, long volumeId) {
-        SnapshotVO createdSnapshot = null;
-        VolumeVO volume = _volsDao.lock(volumeId, true);
-        
-        Long id = null;
-        
-        // Determine the name for this snapshot
-        String timeString = DateUtil.getDateDisplayString(DateUtil.GMT_TIMEZONE, new Date(), DateUtil.YYYYMMDD_FORMAT);
-        String snapshotName = volume.getName() + "_" + timeString;
-        // Create the Snapshot object and save it so we can return it to the user
-        SnapshotType snapshotType = SnapshotType.TEMPLATE;
-        SnapshotVO snapshot = new SnapshotVO(volume.getAccountId(), volume.getId(), null, snapshotName, (short)snapshotType.ordinal(), snapshotType.name());
-        snapshot = _snapshotDao.persist(snapshot);
-        id = snapshot.getId();
-
-        // Send a ManageSnapshotCommand to the agent
-        ManageSnapshotCommand cmd = new ManageSnapshotCommand(ManageSnapshotCommand.CREATE_SNAPSHOT, id, volume.getPath(), snapshotName, null);
-        
-        String basicErrMsg = "Failed to create snapshot for volume: " + volume.getId();
-        // This can be sent to a KVM host too. We are only taking snapshots on primary storage, which doesn't require XenServer.
-        // So shouldBeSnapshotCapable is set to false.
-        ManageSnapshotAnswer answer = (ManageSnapshotAnswer) _storageMgr.sendToHostsOnStoragePool(volume.getPoolId(), cmd, basicErrMsg);
-        
-        // Update the snapshot in the database
-        if ((answer != null) && answer.getResult()) {
-            // The snapshot was successfully created
-            
-            Transaction txn = Transaction.currentTxn();
-            txn.start();
-            createdSnapshot = _snapshotDao.findById(id);
-            createdSnapshot.setPath(answer.getSnapshotPath());
-            createdSnapshot.setStatus(Snapshot.Status.CreatedOnPrimary);
-            _snapshotDao.update(id, createdSnapshot);
-            txn.commit();
-            
-            // Don't Create an event for Template Snapshots for now.
-        } else {
-        	if (answer != null) {
-        		s_logger.error(answer.getDetails());
-        	}
-            // The snapshot was not successfully created
-            Transaction txn = Transaction.currentTxn();
-            txn.start();
-            createdSnapshot = _snapshotDao.findById(id);
-            _snapshotDao.expunge(id);
-            txn.commit();
-            
-            createdSnapshot = null;
-        }
-
-        return createdSnapshot;
-    }
-
     
     @Override
     public void cleanNetworkRules(long userId, long instanceId) {
@@ -2467,133 +2412,137 @@ public class UserVmManagerImpl implements UserVmManager {
     }
 
     @Override @DB
-    public VMTemplateVO createPrivateTemplate(VMTemplateVO template, Long userId, long snapshotId, String name, String description) {
-    	VMTemplateVO privateTemplate = null;
-    	long templateId = template.getId();
-        SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
-        if (snapshot != null) {
-        	Long volumeId = snapshot.getVolumeId();
-            VolumeVO volume = _volsDao.findById(volumeId);
-            StringBuilder userFolder = new StringBuilder();
-            Formatter userFolderFormat = new Formatter(userFolder);
-            userFolderFormat.format("u%06d", snapshot.getAccountId());
-
-            String uniqueName = getRandomPrivateTemplateName();
-
-            long zoneId = volume.getDataCenterId();
-            HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
+    public VMTemplateVO createPrivateTemplate(VMTemplateVO template, Long userId, Long snapshotId, Long volumeId, String name, String description) {
+        String uniqueName = getRandomPrivateTemplateName();
+        VMTemplateVO privateTemplate = null;
+        long templateId = template.getId();
+        VolumeVO volume = null;
+        long zoneId;
+        HostVO secondaryStorageHost;
+        
+        Command cmd = null;
+        if( snapshotId != null ) {
+            SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
+            if( snapshot == null ) {
+                throw new CloudRuntimeException("Unable to find snapshot for Id " + snapshotId);
+            }
+            String backupSnapshotUUID = snapshot.getBackupSnapshotId();
+            if (backupSnapshotUUID == null) {
+                throw new CloudRuntimeException("Unable to create private template from snapshot " + snapshotId + " due to there is no backupSnapshotUUID for this snapshot");
+            }
+            Long origVolumeId = snapshot.getVolumeId();
+            volume = _volsDao.findById(volumeId);
+            zoneId = volume.getDataCenterId();
+            secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
             String secondaryStorageURL = _storageMgr.getSecondaryStorageURL(zoneId);
 
             if (secondaryStorageHost == null || secondaryStorageURL == null) {
-            	s_logger.warn("Did not find the secondary storage URL in the database.");
-            	return null;
+                throw new CloudRuntimeException("Did not find the secondary storage URL in the database for zoneId "
+                        + zoneId);
+            }
+
+            // We are creating a private template from a snapshot which has been
+            // backed up to secondary storage.
+            Long dcId = volume.getDataCenterId();
+            Long accountId = volume.getAccountId();
+
+            String origTemplateInstallPath = null;
+
+            cmd = new CreatePrivateTemplateFromSnapshotCommand(_storageMgr.getPrimaryStorageNameLabel(volume),
+                    secondaryStorageURL, dcId, accountId, origVolumeId, backupSnapshotUUID, snapshot.getName(),
+                    origTemplateInstallPath, templateId, name);
+        } else if( volumeId != null ) {
+            volume = _volsDao.findById(volumeId);
+            if( volume == null ) {
+                throw new CloudRuntimeException("Unable to find volume for Id " + volumeId);
+            }
+            long instanceId = volume.getInstanceId();
+            VMInstanceVO vm = _vmDao.findById(instanceId);
+            State vmState = vm.getState();
+            if( !vmState.equals(State.Stopped) && !vmState.equals(State.Destroyed)) {
+                throw new CloudRuntimeException("Please put VM " + vm.getName() + " into Stopped state first");
             }
             
-            Command cmd = null;
-            String backupSnapshotUUID = snapshot.getBackupSnapshotId();
-            if (backupSnapshotUUID != null) {
-                // We are creating a private template from a snapshot which has been backed up to secondary storage.
-                Long dcId = volume.getDataCenterId();
-                Long accountId = volume.getAccountId();
-                
-                String origTemplateInstallPath = null;
+            zoneId = volume.getDataCenterId();
+            secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
+            String secondaryStorageURL = _storageMgr.getSecondaryStorageURL(zoneId);
 
-                
-                if (ImageFormat.ISO != _snapshotMgr.getImageFormat(volumeId)) {
-                    Long origTemplateId = volume.getTemplateId();
-                    VMTemplateHostVO vmTemplateHostVO = _templateHostDao.findByHostTemplate(secondaryStorageHost.getId(), origTemplateId);
-                    origTemplateInstallPath = vmTemplateHostVO.getInstallPath();
-                }
-                
-                cmd = new CreatePrivateTemplateFromSnapshotCommand(_storageMgr.getPrimaryStorageNameLabel(volume),
-                                                                   secondaryStorageURL,
-                                                                   dcId,
-                                                                   accountId,
-                                                                   volumeId,
-                                                                   backupSnapshotUUID,
-                                                                   snapshot.getName(),
-                                                                   origTemplateInstallPath,
-                                                                   templateId,
-                                                                   name);
+            if (secondaryStorageHost == null || secondaryStorageURL == null) {
+                throw new CloudRuntimeException("Did not find the secondary storage URL in the database for zoneId " + zoneId);
             }
-            else {
-                cmd = new CreatePrivateTemplateCommand(secondaryStorageURL,
-                                                       templateId,
-                                                       volume.getAccountId(),
-                                                       name,
-                                                       uniqueName,
-                                                       _storageMgr.getPrimaryStorageNameLabel(volume),
-                                                       snapshot.getPath(),
-                                                       snapshot.getName(),
-                                                       userFolder.toString());
-            }
-            
-            // FIXME: before sending the command, check if there's enough capacity on the storage server to create the template
+            cmd = new CreatePrivateTemplateFromVolumeCommand(secondaryStorageURL, templateId, volume.getAccountId(),
+                    name, uniqueName, volume.getPath());
 
-            String basicErrMsg = "Failed to create template from snapshot: " + snapshot.getName();
-            // This can be sent to a KVM host too.
-            CreatePrivateTemplateAnswer answer = (CreatePrivateTemplateAnswer) _storageMgr.sendToHostsOnStoragePool(volume.getPoolId(), cmd, basicErrMsg);
-
-            if ((answer != null) && answer.getResult()) {
-                
-                privateTemplate = _templateDao.findById(templateId);
-                Long origTemplateId = volume.getTemplateId();
-                VMTemplateVO origTemplate = null;
-                if (origTemplateId != null) {
-                	origTemplate = _templateDao.findById(origTemplateId);
-                }
-
-                if ((origTemplate != null) && !Storage.ImageFormat.ISO.equals(origTemplate.getFormat())) {
-                	// We made a template from a root volume that was cloned from a template
-                	privateTemplate.setFileSystem(origTemplate.getFileSystem());
-                	privateTemplate.setRequiresHvm(origTemplate.requiresHvm());
-                	privateTemplate.setBits(origTemplate.getBits());
-                } else {
-                	// We made a template from a root volume that was not cloned from a template, or a data volume
-                	privateTemplate.setFileSystem(Storage.FileSystem.Unknown);
-                	privateTemplate.setRequiresHvm(true);
-                	privateTemplate.setBits(64);
-                }
-
-                String answerUniqueName = answer.getUniqueName();
-                if (answerUniqueName != null) {
-                	privateTemplate.setUniqueName(answerUniqueName);
-                } else {
-                	privateTemplate.setUniqueName(uniqueName);
-                }
-                ImageFormat format = answer.getImageFormat();
-                if (format != null) {
-                	privateTemplate.setFormat(format);
-                }
-                else {
-                	// This never occurs.
-                	// Specify RAW format makes it unusable for snapshots.
-                	privateTemplate.setFormat(ImageFormat.RAW);
-                }
-
-                _templateDao.update(templateId, privateTemplate);
-
-                // add template zone ref for this template
-                _templateDao.addTemplateToZone(privateTemplate, zoneId);
-                VMTemplateHostVO templateHostVO = new VMTemplateHostVO(secondaryStorageHost.getId(), templateId);
-                templateHostVO.setDownloadPercent(100);
-                templateHostVO.setDownloadState(Status.DOWNLOADED);
-                templateHostVO.setInstallPath(answer.getPath());
-                templateHostVO.setLastUpdated(new Date());
-                templateHostVO.setSize(answer.getVirtualSize());
-                _templateHostDao.persist(templateHostVO);                
-                
-                // Increment the number of templates
-                _accountMgr.incrementResourceCount(volume.getAccountId(), ResourceType.template);
-                
-            } else {                
-                
-                // Remove the template record
-                _templateDao.remove(templateId);
-            }
-
-            
+        } else {
+            throw new CloudRuntimeException("Creating private Template need to specify snapshotId or volumeId");
         }
+        // FIXME: before sending the command, check if there's enough capacity
+        // on the storage server to create the template
+
+        // This can be sent to a KVM host too.
+        CreatePrivateTemplateAnswer answer = (CreatePrivateTemplateAnswer) _storageMgr.sendToHostsOnStoragePool(volume
+                .getPoolId(), cmd, null);
+
+        if ((answer != null) && answer.getResult()) {
+
+            privateTemplate = _templateDao.findById(templateId);
+            Long origTemplateId = volume.getTemplateId();
+            VMTemplateVO origTemplate = null;
+            if (origTemplateId != null) {
+                origTemplate = _templateDao.findById(origTemplateId);
+            }
+
+            if ((origTemplate != null) && !Storage.ImageFormat.ISO.equals(origTemplate.getFormat())) {
+                // We made a template from a root volume that was cloned from a
+                // template
+                privateTemplate.setFileSystem(origTemplate.getFileSystem());
+                privateTemplate.setRequiresHvm(origTemplate.requiresHvm());
+                privateTemplate.setBits(origTemplate.getBits());
+            } else {
+                // We made a template from a root volume that was not cloned
+                // from a template, or a data volume
+                privateTemplate.setFileSystem(Storage.FileSystem.Unknown);
+                privateTemplate.setRequiresHvm(true);
+                privateTemplate.setBits(64);
+            }
+
+            String answerUniqueName = answer.getUniqueName();
+            if (answerUniqueName != null) {
+                privateTemplate.setUniqueName(answerUniqueName);
+            } else {
+                privateTemplate.setUniqueName(uniqueName);
+            }
+            ImageFormat format = answer.getImageFormat();
+            if (format != null) {
+                privateTemplate.setFormat(format);
+            } else {
+                // This never occurs.
+                // Specify RAW format makes it unusable for snapshots.
+                privateTemplate.setFormat(ImageFormat.RAW);
+            }
+
+            _templateDao.update(templateId, privateTemplate);
+
+            // add template zone ref for this template
+            _templateDao.addTemplateToZone(privateTemplate, zoneId);
+            VMTemplateHostVO templateHostVO = new VMTemplateHostVO(secondaryStorageHost.getId(), templateId);
+            templateHostVO.setDownloadPercent(100);
+            templateHostVO.setDownloadState(Status.DOWNLOADED);
+            templateHostVO.setInstallPath(answer.getPath());
+            templateHostVO.setLastUpdated(new Date());
+            templateHostVO.setSize(answer.getVirtualSize());
+            _templateHostDao.persist(templateHostVO);
+
+            // Increment the number of templates
+            _accountMgr.incrementResourceCount(volume.getAccountId(), ResourceType.template);
+
+        } else {
+
+            // Remove the template record
+            _templateDao.remove(templateId);
+            throw new CloudRuntimeException("Creating private Template failed due to " + answer.getDetails());
+        }
+
         return privateTemplate;
     }
     

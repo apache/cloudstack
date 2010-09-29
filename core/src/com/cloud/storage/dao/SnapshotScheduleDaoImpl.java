@@ -26,6 +26,7 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -36,6 +37,7 @@ import com.cloud.utils.db.SearchCriteria;
 public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, Long> implements SnapshotScheduleDao {
 	protected final SearchBuilder<SnapshotScheduleVO> executableSchedulesSearch;
 	protected final SearchBuilder<SnapshotScheduleVO> coincidingSchedulesSearch;
+    private final SearchBuilder<SnapshotScheduleVO> VolumeIdSearch;
 	// DB constraint: For a given volume and policyId, there will only be one entry in this table.
 	
 	
@@ -51,6 +53,10 @@ public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, 
         coincidingSchedulesSearch.and("scheduledTimestamp", coincidingSchedulesSearch.entity().getScheduledTimestamp(), SearchCriteria.Op.LT);
         coincidingSchedulesSearch.and("asyncJobId", coincidingSchedulesSearch.entity().getAsyncJobId(), SearchCriteria.Op.NULL);
         coincidingSchedulesSearch.done();
+        
+        VolumeIdSearch = createSearchBuilder();
+        VolumeIdSearch.and("volumeId", VolumeIdSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        VolumeIdSearch.done();
 		
 	}
 	
@@ -67,6 +73,13 @@ public class SnapshotScheduleDaoImpl extends GenericDaoBase<SnapshotScheduleVO, 
         return listBy(sc);
 	}
 
+	
+    @Override
+    public SnapshotScheduleVO findOneByVolume(long volumeId) {
+        SearchCriteria<SnapshotScheduleVO> sc = VolumeIdSearch.create();
+        sc.setParameters("volumeId", volumeId);
+        return findOneBy(sc);
+    }
 	/**
      * {@inheritDoc} 
      */

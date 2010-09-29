@@ -1716,12 +1716,6 @@ public interface ManagementServer {
            ResourceAllocationException,
            InternalErrorException;
 
-    /**
-     * @param userId    The Id of the user who invoked this operation.
-     * @param volumeId  The volume for which this snapshot is being taken
-     * @return          The properties of the snapshot taken
-     */
-    SnapshotVO createTemplateSnapshot(Long userId, long volumeId);
     
     /**
      * Destroy a snapshot
@@ -1761,7 +1755,7 @@ public interface ManagementServer {
      * @return valid template if success, null otherwise
      * @throws InvalidParameterValueException, ResourceAllocationException
      */
-    VMTemplateVO createPrivateTemplate(VMTemplateVO template, Long userId, long snapshotId, String name, String description) throws InvalidParameterValueException;
+    VMTemplateVO createPrivateTemplate(VMTemplateVO template, Long userId, Long snapshotId, Long volumeId, String name, String description) throws InvalidParameterValueException;
     long createPrivateTemplateAsync(Long userId, long vmId, String name, String description, long guestOSId, Boolean requiresHvm, Integer bits, Boolean passwordEnabled, boolean isPublic, boolean featured, Long snapshotId) throws InvalidParameterValueException, ResourceAllocationException, InternalErrorException;
     
     

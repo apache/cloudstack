@@ -55,7 +55,7 @@ public class SnapshotVO implements Snapshot {
     @Expose
     @Column(name="name")
     String name;
-
+    
     @Expose
     @Column(name="status", updatable = true, nullable=false)
     @Enumerated(value=EnumType.STRING)
@@ -157,7 +157,7 @@ public class SnapshotVO implements Snapshot {
 		return backupSnapshotId;
 	}
 	
-	public long getPrevSnapshotId(){
+    public long getPrevSnapshotId(){
 		return prevSnapshotId;
 	}
 	
@@ -169,13 +169,12 @@ public class SnapshotVO implements Snapshot {
 		this.prevSnapshotId = prevSnapshotId;
 	}
 
-    public static SnapshotType getSnapshotType(List<Long> policyIds) {
-        assert policyIds != null && !policyIds.isEmpty();
-        SnapshotType snapshotType = SnapshotType.RECURRING;
-        if (policyIds.contains(MANUAL_POLICY_ID)) {
-            snapshotType = SnapshotType.MANUAL;
+    public static SnapshotType getSnapshotType(Long policyId) {
+        if (policyId.equals(MANUAL_POLICY_ID)) {
+            return SnapshotType.MANUAL;
+        } else {
+        	return SnapshotType.RECURRING;
         }
-        return snapshotType;
     }
     
     public static SnapshotType getSnapshotType(String snapshotType) {

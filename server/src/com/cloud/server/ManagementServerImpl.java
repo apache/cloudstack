@@ -355,7 +355,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final AsyncJobManager _asyncMgr;
     private final TemplateManager _tmpltMgr;
     private final SnapshotManager _snapMgr;
-    private final SnapshotScheduler _snapshotScheduler;
     private final NetworkGroupManager _networkGroupMgr;
     private final int _purgeDelay;
     private final boolean _directAttachNetworkExternalIpAllocator;
@@ -454,7 +453,6 @@ public class ManagementServerImpl implements ManagementServer {
         _asyncMgr = locator.getManager(AsyncJobManager.class);
         _tmpltMgr = locator.getManager(TemplateManager.class);
         _snapMgr = locator.getManager(SnapshotManager.class);
-        _snapshotScheduler = locator.getManager(SnapshotScheduler.class);
         _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
         _uploadMonitor = locator.getManager(UploadMonitor.class);                
         
@@ -6862,21 +6860,12 @@ public class ManagementServerImpl implements ManagementServer {
                 throw new InvalidParameterValueException("Snapshots of volumes attached to System or router VM are not allowed");
             }
         }
-        
-    	Long jobId = _snapshotScheduler.scheduleManualSnapshot(userId, volumeId);
-    	if (jobId == null) {
-    	    throw new InternalErrorException("Snapshot could not be scheduled because there is another snapshot underway for the same volume. " +
-    	    		                         "Please wait for some time.");
-    	}
+        long policyId = Snapshot.MANUAL_POLICY_ID;
+        long jobId = _snapMgr.createSnapshotAsync(userId, volumeId, policyId);
         
     	return jobId;
     }
 
-    @Override
-    public SnapshotVO createTemplateSnapshot(Long userId, long volumeId) {
-        return _vmMgr.createTemplateSnapshot(userId, volumeId);
-    }
-    
     @Override
     public boolean destroyTemplateSnapshot(Long userId, long snapshotId) {
         return _vmMgr.destroyTemplateSnapshot(userId, snapshotId);
@@ -6963,7 +6952,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public Snapshot findSnapshotById(long snapshotId) {
+    public SnapshotVO findSnapshotById(long snapshotId) {
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
         if (snapshot != null && snapshot.getRemoved() == null && snapshot.getStatus() == Snapshot.Status.BackedUp) {
             return snapshot;
@@ -6974,9 +6963,9 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public VMTemplateVO createPrivateTemplate(VMTemplateVO template, Long userId, long snapshotId, String name, String description) throws InvalidParameterValueException {
+    public VMTemplateVO createPrivateTemplate(VMTemplateVO template, Long userId, Long snapshotId, Long volumeId, String name, String description) throws InvalidParameterValueException {
 
-        return _vmMgr.createPrivateTemplate(template, userId, snapshotId, name, description);
+        return _vmMgr.createPrivateTemplate(template, userId, snapshotId, volumeId, name, description);
     }
 
     @Override

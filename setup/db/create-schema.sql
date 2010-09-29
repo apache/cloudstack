@@ -998,7 +998,7 @@ CREATE TABLE  `cloud`.`launch_permission` (
 
 CREATE TABLE `cloud`.`snapshot_policy` (
   `id` bigint unsigned NOT NULL auto_increment,
-  `volume_id` bigint unsigned NOT NULL,
+  `volume_id` bigint unsigned NOT NULL unique,
   `schedule` varchar(100) NOT NULL COMMENT 'schedule time of execution',
   `timezone` varchar(100) NOT NULL COMMENT 'the timezone in which the schedule time is specified',
   `interval` int(4) NOT NULL default 4 COMMENT 'backup schedule, e.g. hourly, daily, etc.',
@@ -1016,12 +1016,11 @@ CREATE TABLE  `cloud`.`snapshot_policy_ref` (
 
 CREATE TABLE  `cloud`.`snapshot_schedule` (
   `id` bigint unsigned NOT NULL auto_increment,
-  `volume_id` bigint unsigned NOT NULL COMMENT 'The volume for which this snapshot is being taken',
+  `volume_id` bigint unsigned NOT NULL unique COMMENT 'The volume for which this snapshot is being taken',
   `policy_id` bigint unsigned NOT NULL COMMENT 'One of the policyIds for which this snapshot was taken',
   `scheduled_timestamp` datetime NOT NULL COMMENT 'Time at which the snapshot was scheduled for execution',
   `async_job_id` bigint unsigned COMMENT 'If this schedule is being executed, it is the id of the create aysnc_job. Before that it is null',
   `snapshot_id` bigint unsigned COMMENT 'If this schedule is being executed, then the corresponding snapshot has this id. Before that it is null',
-  UNIQUE (volume_id, policy_id),
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

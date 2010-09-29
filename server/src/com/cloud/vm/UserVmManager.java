@@ -197,14 +197,8 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
      * @param description the user give description (aka display text) for the template
      * @return a template if successfully created, null otherwise
      */
-    VMTemplateVO createPrivateTemplate(VMTemplateVO template, Long userId, long snapshotId, String name, String description);
+    VMTemplateVO createPrivateTemplate(VMTemplateVO template, Long userId, Long snapshotId, Long volumeId, String name, String description);
 
-    /**
-     * @param userId    The Id of the user who invoked this operation.
-     * @param volumeId  The volume for which this snapshot is being taken
-     * @return          The properties of the snapshot taken
-     */
-    SnapshotVO createTemplateSnapshot(long userId, long volumeId);
     boolean destroyTemplateSnapshot(Long userId, long snapshotId);
 
     /**

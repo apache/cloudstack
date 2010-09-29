@@ -27,7 +27,6 @@ package com.cloud.agent.api;
 public class BackupSnapshotCommand extends SnapshotCommand {
     private String prevSnapshotUuid;
     private String prevBackupUuid;
-    private boolean isFirstSnapshotOfRootVolume;
     private boolean isVolumeInactive;
     private String firstBackupUuid;
     private String vmName;
@@ -56,7 +55,6 @@ public class BackupSnapshotCommand extends SnapshotCommand {
                                  String prevSnapshotUuid,
                                  String prevBackupUuid,
                                  String firstBackupUuid,
-                                 boolean isFirstSnapshotOfRootVolume,
                                  boolean isVolumeInactive,
                                  String vmName) 
     {
@@ -64,7 +62,6 @@ public class BackupSnapshotCommand extends SnapshotCommand {
         this.prevSnapshotUuid = prevSnapshotUuid;
         this.prevBackupUuid = prevBackupUuid;
         this.firstBackupUuid = firstBackupUuid;
-        this.isFirstSnapshotOfRootVolume = isFirstSnapshotOfRootVolume;
         this.isVolumeInactive = isVolumeInactive;
         this.vmName = vmName;
     }
@@ -79,10 +76,6 @@ public class BackupSnapshotCommand extends SnapshotCommand {
     
     public String getFirstBackupUuid() {
         return firstBackupUuid;
-    }
-    
-    public boolean isFirstSnapshotOfRootVolume() {
-        return isFirstSnapshotOfRootVolume;
     }
     
     public boolean isVolumeInactive() {

@@ -10,19 +10,12 @@ from util import CommandException
 import vhdutil
 import shutil
 import lvhdutil
-import subprocess
-from lvmcache import LVMCache
-from journaler import Journaler
-from lock import Lock
 import errno
 import subprocess
 import xs_errors
 import cleanup
-import hostvmstats
-import socket
 import stat
 import random
-import tempfile
 
 VHD_UTIL = '/usr/sbin/vhd-util'
 VHD_PREFIX = 'VHD-'
@@ -106,86 +99,56 @@ def delete_secondary_storage_folder(session, args):
             os.system("rm -rf " + local_mount_path)
         
     return "1"
-    
-@echo
-def execute_script(session, args):
-    return ""
-    
+     
 @echo
 def post_create_private_template(session, args):
     local_mount_path = None
-
     try:
-        try:
-            # Mount the remote templates folder locally
-            remote_mount_path = args["remoteTemplateMountPath"]
-            local_mount_path = os.path.join(SR.MOUNT_BASE, "template" + str(int(random.random() * 10000)))
-            mount(remote_mount_path, local_mount_path)
-            util.SMlog("Mounted secondary storage template folder")
+        # get local template folder 
+        sruuid = args["tmpltSrUUID"]
+        local_mount_path = os.path.join(SR.MOUNT_BASE, sruuid)
 
-            # Retrieve args
-            filename = args["templateFilename"]
-            name = args["templateName"]
-            description = args["templateDescription"]
-            checksum = args["checksum"]
-            virtual_size = args["virtualSize"]
-            template_id = args["templateId"]
+        # Retrieve args
+        filename = args["templateFilename"]
+        name = args["templateName"]
+        description = args["templateDescription"]
+        checksum = args["checksum"]
+        size = args["size"]
+        virtual_size = args["virtualSize"]
+        template_id = args["templateId"]
+
+        # Determine the template size
+        template_install_path = local_mount_path + "/" + filename
+        file_size = os.path.getsize(template_install_path)
+        util.SMlog("Got template file_size: " + str(file_size))
             
-            # Determine the template size
-            template_download_folder = local_mount_path + "/" + args["templateDownloadFolder"]
-            template_download_path = template_download_folder + filename
-            file_size = os.path.getsize(template_download_path)
-            util.SMlog("Got template file_size: " + str(file_size))
+        # Create the template.properties file
+        template_properties_install_path = local_mount_path + "/template.properties"
+        f = open(template_properties_install_path, "w")
+        f.write("filename=" + filename + "\n")
+        f.write("name=" + filename + "\n")
+        f.write("vhd=true\n")
+        f.write("id=" + template_id + "\n")
+        f.write("vhd.filename=" + filename + "\n")
+        f.write("uniquename=" + name + "\n")
+        f.write("vhd.virtualsize=" + virtual_size + "\n")
+        f.write("vhd.size=" + str(file_size) + "\n")
+        f.write("virtualsize=" + virtual_size + "\n")
+        f.write("checksum=" + checksum + "\n")
+        f.write("hvm=true\n")
+        f.write("description=" + name + "\n")
+        f.close()
+        util.SMlog("Created template.properties file")
+           
+        # Set permissions
+        permissions = stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH
+        os.chmod(template_properties_install_path, permissions)
+        util.SMlog("Set permissions on template and template.properties")
 
-            # Create the template.properties file
-            template_properties_download_path = template_download_folder + "template.properties"
-            f = open(template_properties_download_path, "w")
-            f.write("filename=" + filename + "\n")
-            f.write("name=" + filename + "\n")
-            f.write("vhd=true\n")
-            f.write("id=" + template_id + "\n")
-            f.write("vhd.filename=" + filename + "\n")
-            f.write("uniquename=" + name + "\n")
-            f.write("vhd.virtualsize=" + virtual_size + "\n")
-            f.write("vhd.size=" + str(file_size) + "\n")
-            f.write("virtualsize=" + virtual_size + "\n")
-            f.write("checksum=" + checksum + "\n")
-            f.write("hvm=true\n")
-            f.write("description=" + name + "\n")
-            f.close()
-            util.SMlog("Created template.properties file")
-
-            # Create the template install folder if necessary
-            template_install_folder = local_mount_path + "/" + args["templateInstallFolder"]
-            if not os.path.isdir(template_install_folder):
-                current_umask = os.umask(0)
-                os.makedirs(template_install_folder)
-                os.umask(current_umask)
-            
-            # Move the template and the template.properties file to the install folder
-            os.system("mv " + template_download_folder + "/" + filename + " " + template_install_folder)
-            os.system("mv " + template_download_folder + "/template.properties " + template_install_folder)
-            template_install_path = template_install_folder + filename
-            template_properties_install_path = template_install_folder + "template.properties"
-            
-            # Set permissions
-            permissions = stat.S_IREAD | stat.S_IWRITE | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH
-            os.chmod(template_install_path, permissions)
-            os.chmod(template_properties_install_path, permissions)
-            util.SMlog("Set permissions on template and template.properties")
-
-            # Delete the template download folder
-            os.system("rm -rf " + template_download_folder)
-        except:
-            errMsg = "post_create_private_template failed."
-            util.SMlog(errMsg)
-            raise xs_errors.XenError(errMsg)
-    finally:
-        if local_mount_path != None:
-            # Unmount the local templates folder
-            umount(local_mount_path)
-            # Remove the local templates folder
-            os.system("rm -rf " + local_mount_path)
+    except:
+        errMsg = "post_create_private_template failed."
+        util.SMlog(errMsg)
+        raise xs_errors.XenError(errMsg)
 
     return "1" 
   
@@ -235,19 +198,6 @@ def chdir(path):
         util.SMlog(errMsg)
         raise xs_errors.XenError(errMsg)
     util.SMlog("Chdired to " + path)
-    return
-
-def coalesce(vhdPath):
-    util.SMlog("Starting to coalesce " + vhdPath + " with its parent")
-    try :
-        cmd = [VHD_UTIL, "coalesce", "-n", vhdPath]
-        txt = util.pread2(cmd)
-    except:
-        errMsg = "Unexpected error while trying to coalesce " + vhdPath + " to its parent"
-        util.SMlog(errMsg)
-        raise xs_errors.XenError(errMsg)
-    util.SMlog("Successfully coalesced " + vhdPath + " with its parent ")
-    
     return
 
 def scanParent(path):
@@ -313,30 +263,14 @@ def rename(originalVHD, newVHD):
         raise xs_errors.XenError(errMsg)
     return
 
-def coalesceToChild(backupVHD, childUUID, isISCSI):
-    # coalesce childVHD with its parent
-    childVHD = getVHD(childUUID, isISCSI)
-    util.SMlog("childVHD: " + childVHD)
-    # check for existence of childVHD
-    isfile(childVHD, False)
-    util.SMlog("childVHD " + childVHD + " exists")
-    # No exception thrown, file exists
-    coalesce(childVHD)
-    
-    # rename the existing backupVHD file to childVHD
-    # childVHD file automatically gets overwritten
-    rename(backupVHD, childVHD)
-
-    # parent of the newly coalesced file still remains the same.
-    # child of childVHD has it's parent name still set to childVHD.
-    # So the VHD chain hasn't been broken.
-    return
-
 def makedirs(path):
     if not os.path.isdir(path):
         try:
             os.makedirs(path)
         except OSError, (errno, strerror):
+            umount(path)
+            if os.path.isdir(path):
+                return
             errMsg = "OSError while creating " + path + " with errno: " + str(errno) + " and strerr: " + strerror
             util.SMlog(errMsg)
             raise xs_errors.XenError(errMsg)
@@ -358,41 +292,16 @@ def mount(remoteDir, localDir):
     return
 
 def umount(localDir):
-    success = False
-    if os.path.isdir(localDir) and os.path.ismount(localDir):
-        try: 
-            cmd = ['umount', localDir]
-            util.pread2(cmd)
-        except CommandException:
-            errMsg = "CommandException raised while trying to umount " + localDir 
-            util.SMlog(errMsg)
-            raise xs_errors.XenError(errMsg)
-        util.SMlog("Successfully unmounted " + localDir)
-        success = True
-    else:
-        util.SMlog("LocalDir: " + localDir + " doesn't exist or is not a mount point")
+    try: 
+        cmd = ['umount', localDir]
+        util.pread2(cmd)
+    except CommandException:
+        errMsg = "CommandException raised while trying to umount " + localDir 
+        util.SMlog(errMsg)
+        return
 
+    util.SMlog("Successfully unmounted " + localDir)
     return
-
-
-def mountTemplatesDir(secondaryStorageMountPath, templatePath):
-    # Aim is to mount <secondaryStorageMountPath>/<templatePath> on 
-    # SR.MOUNT_BASE/<random_uuid>
-    # It will be unmounted after createVolumeFromSnapshot finishes.
-    # It should be mounted read-only, but don't know how to do that
-    # The random-uuid saves us from conflicts while restoring two different root volumes
-    
-    absoluteTemplatePath = os.path.join(secondaryStorageMountPath, templatePath)
-    absoluteTemplateDir = os.path.dirname(absoluteTemplatePath)
-
-    randomUUID = util.gen_uuid()
-    localTemplateDir = os.path.join(SR.MOUNT_BASE, randomUUID)
-    # create the temp dir
-    makedirs(localTemplateDir)
-    # mount
-    mount(absoluteTemplateDir, localTemplateDir)
-
-    return localTemplateDir
 
 def mountSnapshotsDir(secondaryStorageMountPath, relativeDir, dcId, accountId, instanceId):
     # The aim is to mount secondaryStorageMountPath on 
@@ -444,6 +353,9 @@ def getPrimarySRPath(primaryStorageSRUuid, isISCSI):
         return os.path.join(lvhdutil.VG_LOCATION, primarySRDir)
     else:
         return os.path.join(SR.MOUNT_BASE, primaryStorageSRUuid)
+
+def getBackupVHD(UUID):
+    return UUID + '.' + SR.DEFAULT_TAP
 
 def getVHD(UUID, isISCSI):
     if isISCSI:
@@ -527,124 +439,22 @@ def isVolumeAvailable(path):
         util.SMlog(errMsg)
         raise xs_errors.XenError(errMsg)
 
-    return (status == "1")
+    return (status == "1")  
 
-def getLastSnapshotUuid(volumeUuid, expectedLastSnapshotUuid):
-    actualLastSnapshotUuid = ''
-    if volumeUuid:
-        cmd = ['xe', 'vdi-param-get', 'uuid=' + volumeUuid, 'param-name=snapshots']
-        stdout = ''
-        try:
-            stdout = util.pread2(cmd)
-        except: #CommandException, (rc, cmdListStr, stderr):
-            #errMsg = "CommandException thrown while executing: " + cmdListStr + " with return code: " + str(rc) + " and stderr: " + stderr
-            errMsg = "Unexpected error while executing cmd: " + str(cmd)
-            util.SMlog(errMsg)
-            raise xs_errors.XenError(errMsg)
-        if stdout:
-            snapshots = stdout.split(';')
-            if len(snapshots) == 1:
-                if snapshots[0] == expectedLastSnapshotUuid:
-                    actualLastSnapshotUuid = expectedLastSnapshotUuid
-            elif len(snapshots) == 2:
-                # We expect only 1 snapshot to be present. If there is another that is unexpected and the last one
-                if (expectedLastSnapshotUuid == snapshots[0].strip()):
-                    actualLastSnapshotUuid = snapshots[1].strip()
-                else:
-                    # it should be equal to snapshots[1]. Else I have no idea.
-                    actualLastSnapshotUuid = snapshots[0].strip()
-            else:
-                # len(snapshots) > 2:
-                errMsg = "Volume: " + volumeUuid + " has more than 2 snapshots: " + str(snapshots)
-                util.SMlog(errMsg)
-                raise xs_errors.XenError(errMsg)
-                
-    return actualLastSnapshotUuid
-    
-@echo
-def validateSnapshot(session, args):
-    util.SMlog("Called validateSnapshot with " + str(args))
-    primaryStorageSRUuid = args['primaryStorageSRUuid']
-    volumeUuid           = args['volumeUuid']
-    firstBackupUuid      = args['firstBackupUuid']
-    previousSnapshotUuid = args['previousSnapshotUuid']
-    templateUuid         = args['templateUuid']
-    isISCSI              = getIsTrueString(args['isISCSI'])
-   
+def getVhdParent(session, args):
+    util.SMlog("getParent with " + str(args))
+    primaryStorageSRUuid      = args['primaryStorageSRUuid']
+    snapshotUuid              = args['snapshotUuid']
+    isISCSI                   = getIsTrueString(args['isISCSI']) 
+
     primarySRPath = getPrimarySRPath(primaryStorageSRUuid, isISCSI)
     util.SMlog("primarySRPath: " + primarySRPath)
-    volumeVHD    = getVHD(volumeUuid, isISCSI)
-    volumePath   = os.path.join(primarySRPath, volumeVHD)
-    util.SMlog("volumePath: " + volumePath)
 
-    baseCopyUuid = ''
-    wasVolumeAvailable = True
-    if isISCSI:
-        wasVolumeAvailable = isVolumeAvailable(volumePath)
-        if not wasVolumeAvailable:
-            # make it available
-            checkVolumeAvailablility(volumePath)
-        baseCopyUuid = scanParent(volumePath)
-    else:
-        baseCopyUuid = getParent(volumePath, isISCSI)
+    baseCopyUuid = getParentOfSnapshot(snapshotUuid, primarySRPath, isISCSI)
 
-    if baseCopyUuid is None:
-        # Make it an empty string so that it can be used in the return value
-        baseCopyUuid = ''
+    return  baseCopyUuid
 
-    actualSnapshotUuid = getLastSnapshotUuid(volumeUuid, previousSnapshotUuid)
-    expectedActual = firstBackupUuid + "#" + baseCopyUuid + "#" + actualSnapshotUuid
-    if firstBackupUuid:
-        # This is not the first snapshot
-        if baseCopyUuid and (baseCopyUuid == firstBackupUuid):
-            retval = "1#"
-        else:
-            retval = "0#"
-    else: 
-        if templateUuid:
-            # The DB thinks this is the first snapshot of a ROOT DISK
-            # The parent of the volume should be the base template, which is also the parent of the given templateUuid.
-            templateVHD = getVHD(templateUuid, isISCSI)
-            templatePath = os.path.join(primarySRPath, templateVHD)
-            baseTemplateUuid = ''
-            wasTemplateAvailable = True
-            if isISCSI:
-                wasTemplateAvailable = isVolumeAvailable(templatePath)
-                if not wasVolumeAvailable:
-                    # make it available
-                    checkVolumeAvailablility(templatePath)
-                baseTemplateUuid = scanParent(templatePath)
-            else:
-                baseTemplateUuid = getParent(templatePath, isISCSI)
 
-            if baseTemplateUuid is None:
-                # This will never happen.
-                baseTemplateUuid = ''
-
-            expectedActual = baseTemplateUuid + "#" + baseCopyUuid + "#" + actualSnapshotUuid
-            if baseTemplateUuid and (baseCopyUuid == baseTemplateUuid):
-                retval = "1#"
-            else:
-                retval = "0#"
-
-            if isISCSI and not wasTemplateAvailable:
-                manageAvailability(templatePath, '-an')
-
-        else:
-            # The DB thinks this is the first snapshot of a DATA DISK. 
-            # The volume VDI should not have any parent.
-            if not baseCopyUuid:
-                retval = "1#"
-            else:
-                retval = "0#"
-
-    # Set the volume's visibility back to what it was.
-    if isISCSI and not wasVolumeAvailable:
-        manageAvailability(volumePath, '-an')
-
-    return retval + expectedActual
-
-@echo
 def backupSnapshot(session, args):
     util.SMlog("Called backupSnapshot with " + str(args))
     primaryStorageSRUuid      = args['primaryStorageSRUuid']
@@ -655,7 +465,6 @@ def backupSnapshot(session, args):
     snapshotUuid              = args['snapshotUuid']
     prevSnapshotUuid          = args['prevSnapshotUuid']
     prevBackupUuid            = args['prevBackupUuid']
-    isFirstSnapshotOfRootVolume =  getIsTrueString(args['isFirstSnapshotOfRootVolume'])
     isISCSI                   = getIsTrueString(args['isISCSI']) 
 
     primarySRPath = getPrimarySRPath(primaryStorageSRUuid, isISCSI)
@@ -675,28 +484,23 @@ def backupSnapshot(session, args):
     # on it.
     backupsDir = mountSnapshotsDir(secondaryStorageMountPath, "snapshots", dcId, accountId, volumeId)
     util.SMlog("Backups dir " + backupsDir)
-    # chdir to the backupsDir for convenience
-    chdir(backupsDir)
 
     if baseCopyUuid == prevBaseCopyUuid:
         # There has been no change since the last snapshot so no need to backup 
         util.SMlog("There has been no change since the last snapshot with backup: " + prevBaseCopyUuid) 
-        if isFirstSnapshotOfRootVolume:
-            # baseCopyUuid is template. That is *NOT* the backup of any
-            # snapshot. There is no backup. So create an empty dummyVHD representing the empty snapshot.
-            # This will prevent deleteSnapshotBackup and createVolumeFromSnapshot from breaking.
-            prevBaseCopyUuid = createDummyVHD(baseCopyPath, backupsDir, isISCSI)
-            # The backup snapshot is the new dummy VHD created. 
-
         # Set the uuid of the current backup to that of last backup
         txt = "1#" + prevBaseCopyUuid
         return txt
 
     # Check existence of snapshot on primary storage 
     isfile(baseCopyPath, isISCSI)
-    # copy baseCopyPath to backupsDir
-    backupFile = os.path.join(backupsDir, baseCopyVHD)
+    # copy baseCopyPath to backupsDir with new uuid
+    backupUuid = util.gen_uuid()
+    backupVHD = getBackupVHD(backupUuid)  
+    backupFile = os.path.join(backupsDir, backupVHD)
+    util.SMlog("Back up " + baseCopyUuid + " to Secondary Storage as " + backupUuid)
     copyfile(baseCopyPath, backupFile, isISCSI)
+    vhdutil.setHidden(backupFile, False)
     
     # Now set the availability of the snapshotPath and the baseCopyPath to false
     makeUnavailable(snapshotUuid, primarySRPath, isISCSI)
@@ -705,43 +509,17 @@ def backupSnapshot(session, args):
         makeUnavailable(prevSnapshotUuid, primarySRPath, isISCSI)
         makeUnavailable(prevBaseCopyUuid, primarySRPath, isISCSI)
 
-    if isFirstSnapshotOfRootVolume:
-        # First snapshot of the root volume.
-        # It's parent is not null, but the template vhd.
-        # Create a dummy empty vhd and set the parent of backupVHD to it.
-        # This will prevent deleteSnapshotBackup and createVolumeFromSnapshot from breaking
-        prevBackupUuid = createDummyVHD(baseCopyPath, backupsDir, isISCSI)
-
     # Because the primary storage is always scanned, the parent of this base copy is always the first base copy.
     # We don't want that, we want a chain of VHDs each of which is a delta from the previous.
     # So set the parent of the current baseCopyVHD to prevBackupVHD 
     if prevBackupUuid:
         # If there was a previous snapshot
-        prevBackupVHD = getVHD(prevBackupUuid, isISCSI)
-        setParent(prevBackupVHD, backupFile)
+        prevBackupVHD = getBackupVHD(prevBackupUuid)
+        prevBackupFile = os.path.join(backupsDir, prevBackupVHD)
+        setParent(prevBackupFile, backupFile)
 
-    txt = "1#" + baseCopyUuid
+    txt = "1#" + backupUuid
     return txt
-
-def createDummyVHD(baseCopyPath, backupsDir, isISCSI):
-    dummyUUID = ''
-    try:
-        dummyUUID = util.gen_uuid()
-        dummyVHD = getVHD(dummyUUID, isISCSI)
-        if isISCSI:
-            checkVolumeAvailablility(baseCopyPath)
-        cmd = [VHD_UTIL, 'query', '-v', '-n', baseCopyPath]
-        virtualSizeInMB = util.pread2(cmd)
-        util.SMlog("Virtual size of " + baseCopyPath + " is " + virtualSizeInMB)
-        cmd = [VHD_UTIL, 'create', '-n', dummyVHD, '-s', virtualSizeInMB]
-        util.pread2(cmd)
-    except CommandException:
-        errMsg = "Unexpected error while creating a dummy VHD " + dummyVHD + " on " + backupsDir
-        util.SMlog(errMsg)
-        raise xs_errors.XenError(errMsg)
-    util.SMlog("Successfully created a new dummy VHD: " + dummyVHD + " on " + backupsDir)
-
-    return dummyUUID
 
 @echo
 def deleteSnapshotBackup(session, args):
@@ -751,14 +529,12 @@ def deleteSnapshotBackup(session, args):
     volumeId                  = args['volumeId']
     secondaryStorageMountPath = args['secondaryStorageMountPath']
     backupUUID                = args['backupUUID']
-    childUUID                 = args['childUUID']
-    isISCSI                   = getIsTrueString(args['isISCSI'])
 
     backupsDir = mountSnapshotsDir(secondaryStorageMountPath, "snapshots", dcId, accountId, volumeId)
     # chdir to the backupsDir for convenience
     chdir(backupsDir)
 
-    backupVHD = getVHD(backupUUID, isISCSI)
+    backupVHD = getBackupVHD(backupUUID)
     util.SMlog("checking existence of " + backupVHD)
 
     # The backupVHD is on secondary which is NFS and not ISCSI.
@@ -767,211 +543,16 @@ def deleteSnapshotBackup(session, args):
         return "1"
     util.SMlog("backupVHD " + backupVHD + " exists.")
         
-    # Case 1) childUUID exists
-    if childUUID:
-        coalesceToChild(backupVHD, childUUID, isISCSI)
-    else:
-        # Just delete the backupVHD
-        try:
-            os.remove(backupVHD)
-        except OSError, (errno, strerror):
-            errMsg = "OSError while removing " + backupVHD + " with errno: " + str(errno) + " and strerr: " + strerror
-            util.SMlog(errMsg)
-            raise xs_errors.XenError(errMsg)
+    # Just delete the backupVHD
+    try:
+        os.remove(backupVHD)
+    except OSError, (errno, strerror):
+        errMsg = "OSError while removing " + backupVHD + " with errno: " + str(errno) + " and strerr: " + strerror
+        util.SMlog(errMsg)
+        raise xs_errors.XenError(errMsg)
 
     return "1"
-
-@echo
-def createVolumeFromSnapshot(session, args):
-    util.SMlog("Calling createVolumeFromSnapshot with " + str(args))
-    dcId                      = args['dcId']
-    accountId                 = args['accountId']
-    volumeId                  = args['volumeId']
-    secondaryStorageMountPath = args['secondaryStorageMountPath']
-    backedUpSnapshotUuid      = args['backedUpSnapshotUuid']
-    templatePath              = args['templatePath']
-    templateDownloadFolder    = args['templateDownloadFolder']
-    isISCSI                   = getIsTrueString(args['isISCSI'])
-
-    backupsDir = mountSnapshotsDir(secondaryStorageMountPath, "snapshots", dcId, accountId, volumeId)
-    util.SMlog("Backups dir " + backupsDir)
-
-    # chdir to the backupsDir for convenience
-    chdir(backupsDir)
-
-    # Get the parent VHD chain of the backupSnapshotVHD
-    vhdChain = []
-    uuid = backedUpSnapshotUuid
-    while uuid is not None:
-        util.SMlog("Current uuid in parent chain " + uuid)
-        vhd = getVHD(uuid, isISCSI)
-        vhdChain.append(vhd)
-        uuid = getParent(vhd, isISCSI)
-    util.SMlog("successfully created the parent chain " + str(vhdChain))
-
-    destDirParent = ''
-    destDir = ''
-    if templateDownloadFolder:
-        # Copy all the vhds to the final destination templates dir
-        # It is some random directory on the primary created for templates.
-        destDirParent = os.path.join(SR.MOUNT_BASE, "mount" + str(int(random.random() * 1000000)))
-        destDir = os.path.join(destDirParent, templateDownloadFolder)
-        # create the this directory, if it isn't there
-        makedirs(destDir)
-    else:
-        # Copy all the vhds to a temp directory
-        # Create a temp directory
-        destDir = backupsDir + '_temp'
-
-    # Delete the temp directory if it already exists (from a previous createVolumeFromSnapshot)
-    rmtree(destDir)
-    
-    if templateDownloadFolder:
-        # The destDir was created in create_secondary_storage_folder but is not mounted on the primary. Mount it again.
-        remoteMountPoint = os.path.join(secondaryStorageMountPath, "template");
-        remoteMountPoint = os.path.join(remoteMountPoint, templateDownloadFolder)
-        mount(remoteMountPoint, destDir)
-    else:
-        # The parent of the destDir is the snapshots dir and is mounted on the primary. Just create the directory structure.
-        makedirs(destDir)
-
-    # Copy
-    for vhd in vhdChain:
-        vhdPath = os.path.join(backupsDir, vhd)
-        tempFile = os.path.join(destDir, vhd)
-        # We are copying files on secondary storage which is NFS. Set isISCSI to false
-        copyfile(vhdPath, tempFile, False)
-    util.SMlog("Successfully copied all files")
-
-    # coalesce the vhd chains from bottom to top
-    # chdir to destDir for convenience
-    chdir(destDir)
-       
-    # coalesce
-    i = 0
-    finalVhd = vhdChain[0]
-    for vhd in vhdChain:
-        finalVhd = vhdChain[i]
-        last = len(vhdChain) - 1
-        if i == last:
-            # last vhd, has no parent. Don't coalesce
-            break
-        if templatePath and i == (last - 1):
-            # Hack for root disks, the first Vhd is a dummy one. 
-            # Do not coalesce the actual disk with the dummy one.
-            # Instead coalesce it with the templateVHD.
-            break
-
-        i = i + 1
-        # They are arranged from child to parent.
-        util.SMlog("Starting to coalesce " + vhd + " with its parent")
-        try:
-            cmd = [VHD_UTIL, "coalesce", "-n", vhd]
-            txt = util.pread2(cmd)
-        except:
-            errMsg = "Unexpected error while trying to coalesce " + vhd + " to its parent" 
-            util.SMlog(errMsg)
-            raise xs_errors.XenError(errMsg)
-        util.SMlog("Successfully coalesced " + vhd + " with its parent")
-
-        # Remove the child vhd
-        try:
-            os.remove(vhd)
-        except OSError, (errno, strerror):
-            errMsg = "OSError while removing " + vhd + " with errno: " + str(errno) + " and strerr: " + strerror
-            util.SMlog(errMsg)
-            raise xs_errors.XenError(errMsg)
-    
-    util.SMlog("successfully coalesced all vhds to the parent " + finalVhd)
-    finalVhdPath = os.path.join(destDir, finalVhd)
-
-    # This vhd has to be introduced with a new uuid because of the VDI UUID
-    # uniqueness constraint
-    newUUID = ''
-    try:
-        newUUID = util.gen_uuid()
-    except:
-        errMsg = "Unexpected error while trying to generate a uuid"
-        util.SMlog(errMsg)
-        raise xs_errors.XenError(errMsg)
-    util.SMlog("generated a uuid " + newUUID)
-
-    # Now, at the Java layer an NFS SR is created with mount point destDir and scanned. The vhd
-    # file is automatically introduced and a vdi.copy is done to move it to
-    # primary storage.
-    # new vhd file is created on NFS. So it should have NFS naming convention,
-    # set isISCSI to false
-    newVhd = getVHD(newUUID, False)
-    rename(finalVhd, newVhd)
-
-    # For root disk
-    if templatePath:
-        # This will create a vhd on secondary storage destDir with name newVhd
-        mergeTemplateAndSnapshot(secondaryStorageMountPath, templatePath, destDir, newVhd, isISCSI)
-
-    # set the hidden flag of the new VHD to false, so that it doesn't get deleted when the SR scan is done.
-    try:
-        vhdutil.setHidden(newVhd, False)
-    except:
-        errMsg = "Unexpected error while trying to set Hidden flag of " + newVhd
-        util.SMlog(errMsg)
-        raise xs_errors.XenError(errMsg)
-    util.SMlog("Successfully set hidden flag of " + newVhd)
-
-    virtualSizeInMB = 0
-    try:
-        cmd = [VHD_UTIL, 'query', '-v', '-n', newVhd]
-        virtualSizeInMB = util.pread2(cmd)
-        util.SMlog("Virtual size of " + newVhd + " is " + virtualSizeInMB)
-    except:
-        errMsg = "Unexpected error while trying to get the virtual size of " + newVhd
-        util.SMlog(errMsg)
-        raise xs_errors.XenError(errMsg)
-
-    if templateDownloadFolder:
-        # We are done with the destDir on the primary, unmount it and delete the random directory.
-        # Current dir is destDir
-        # cd to something else before unmounting
-        chdir(backupsDir) # as good as anything else
-        # unmount what was mounted.
-        umount(destDir)
-        # Remove the tree starting from the mountXXXX part, just the directories
-        rmtree(destDirParent)
-        # The coalesced data is still available on the secondary.
-
-    return "1#" + newUUID + "#" + virtualSizeInMB
-
-def mergeTemplateAndSnapshot(secondaryStorageMountPath, templatePath, destDir, newVhd, isISCSI):
-    # Mount the template directory present on the secondary to the primary
-    templateDirOnPrimary = mountTemplatesDir(secondaryStorageMountPath, templatePath)
-
-    # Current dir is destDir
-    templateVHD = os.path.basename(templatePath)
-    templatePathOnPrimary = os.path.join(templateDirOnPrimary, templateVHD)
-    templatePathOnTemp = os.path.join(destDir, templateVHD)
-    # Copying from secondary to secondary, so set ISCSI to False
-    copyfile(templatePathOnPrimary, templatePathOnTemp, False)
-    
-    # unmount the temporary directory created for copying the template
-    umount(templateDirOnPrimary)
-
-    # get the dummyVHD which is the parent of the new Vhd
-    dummyUUID = getParent(newVhd, isISCSI)
-    dummyVHD = getVHD(dummyUUID, isISCSI)
-    # set the parent of the newVhd to the templateVHD on secondary
-    setParent(templateVHD, newVhd)
-    # remove the dummyVHD as we don't have any use for it and it wil
-    # lie around after we do an SR scan
-    os.remove(dummyVHD)
-    
-    # coalesce the two VHDs into templateVHD
-    coalesce(newVhd)
-
-    # rename templateVHD to newVhd
-    rename(templateVHD, newVhd)
-
-    return
-    
+   
 def rmtree(path):
     if os.path.isdir(path):
         try:
@@ -1000,5 +581,5 @@ def deleteSnapshotsDir(session, args):
     return "1"
    
 if __name__ == "__main__":
-    XenAPIPlugin.dispatch({"create_secondary_storage_folder":create_secondary_storage_folder, "delete_secondary_storage_folder":delete_secondary_storage_folder, "post_create_private_template":post_create_private_template, "backupSnapshot": backupSnapshot, "deleteSnapshotBackup": deleteSnapshotBackup, "createVolumeFromSnapshot": createVolumeFromSnapshot, "unmountSnapshotsDir": unmountSnapshotsDir, "deleteSnapshotsDir": deleteSnapshotsDir, "validateSnapshot" : validateSnapshot})
+    XenAPIPlugin.dispatch({"getVhdParent":getVhdParent,  "create_secondary_storage_folder":create_secondary_storage_folder, "delete_secondary_storage_folder":delete_secondary_storage_folder, "post_create_private_template":post_create_private_template, "backupSnapshot": backupSnapshot, "deleteSnapshotBackup": deleteSnapshotBackup, "unmountSnapshotsDir": unmountSnapshotsDir, "deleteSnapshotsDir": deleteSnapshotsDir})
 

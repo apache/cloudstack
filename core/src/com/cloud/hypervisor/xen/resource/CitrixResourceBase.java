@@ -67,6 +67,7 @@ import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
+import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteSnapshotBackupAnswer;
@@ -138,7 +139,7 @@ import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
-import com.cloud.agent.api.storage.CreatePrivateTemplateCommand;
+
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
@@ -607,8 +608,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             return execute((AttachVolumeCommand) cmd);
         } else if (cmd instanceof AttachIsoCommand) {
             return execute((AttachIsoCommand) cmd);
-        } else if (cmd instanceof ValidateSnapshotCommand) {
-            return execute((ValidateSnapshotCommand) cmd);
         } else if (cmd instanceof ManageSnapshotCommand) {
             return execute((ManageSnapshotCommand) cmd);
         } else if (cmd instanceof BackupSnapshotCommand) {
@@ -619,8 +618,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             return execute((CreateVolumeFromSnapshotCommand) cmd);
         } else if (cmd instanceof DeleteSnapshotsDirCommand) {
             return execute((DeleteSnapshotsDirCommand) cmd);
-        } else if (cmd instanceof CreatePrivateTemplateCommand) {
-            return execute((CreatePrivateTemplateCommand) cmd);
+        } else if (cmd instanceof CreatePrivateTemplateFromVolumeCommand) {
+            return execute((CreatePrivateTemplateFromVolumeCommand) cmd);
         } else if (cmd instanceof CreatePrivateTemplateFromSnapshotCommand) {
             return execute((CreatePrivateTemplateFromSnapshotCommand) cmd);
         } else if (cmd instanceof GetStorageStatsCommand) {
@@ -891,7 +890,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             
             Pair<VM, String> v = createVmFromTemplate(conn, vmSpec, host);
             vm = v.first();
-            String vmUuid = v.second();
             
             for (VolumeTO disk : vmSpec.getDisks()) {
                 createVbd(conn, vmName, vm, disk, disk.getType() == VolumeType.ROOT && vmSpec.getType() != VirtualMachine.Type.User);
@@ -3943,7 +3941,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         try {
             Host myself = Host.getByUuid(conn, _host.uuid);
             
-            boolean findsystemvmiso = false;
             Set<SR> srs = SR.getByNameLabel(conn, "XenServer Tools");
             if( srs.size() != 1 ) {
             	throw new CloudRuntimeException("There are " + srs.size() + " SRs with name XenServer Tools");
@@ -4812,7 +4809,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 throw new Exception("no attached PBD");
             }   
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug(logX(sr, "Created a SR; UUID is " + sr.getUuid(conn)));
+                s_logger.debug(logX(sr, "Created a SR; UUID is " + sr.getUuid(conn) + " device config is " + deviceConfig));
             }
             sr.scan(conn);
             return sr;
@@ -5412,84 +5409,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
     }
 
-    protected ValidateSnapshotAnswer execute(final ValidateSnapshotCommand cmd) {
-        String primaryStoragePoolNameLabel = cmd.getPrimaryStoragePoolNameLabel();
-        String volumeUuid = cmd.getVolumeUuid(); // Precondition: not null
-        String firstBackupUuid = cmd.getFirstBackupUuid();
-        String previousSnapshotUuid = cmd.getPreviousSnapshotUuid();
-        String templateUuid = cmd.getTemplateUuid();
-
-        // By default assume failure
-        String details = "Could not validate previous snapshot backup UUID " + "because the primary Storage SR could not be created from the name label: "
-                + primaryStoragePoolNameLabel;
-        boolean success = false;
-        String expectedSnapshotBackupUuid = null;
-        String actualSnapshotBackupUuid = null;
-        String actualSnapshotUuid = null;
-
-        Boolean isISCSI = false;
-        String primaryStorageSRUuid = null;
-        Connection conn = getConnection();
-        try {
-            SR primaryStorageSR = getSRByNameLabelandHost(primaryStoragePoolNameLabel);
-
-            if (primaryStorageSR != null) {
-                primaryStorageSRUuid = primaryStorageSR.getUuid(conn);
-                isISCSI = SRType.LVMOISCSI.equals(primaryStorageSR.getType(conn));
-            }
-        } catch (BadServerResponse e) {
-            details += ", reason: " + e.getMessage();
-            s_logger.error(details, e);
-        } catch (XenAPIException e) {
-            details += ", reason: " + e.getMessage();
-            s_logger.error(details, e);
-        } catch (XmlRpcException e) {
-            details += ", reason: " + e.getMessage();
-            s_logger.error(details, e);
-        }
-
-        if (primaryStorageSRUuid != null) {
-            if (templateUuid == null) {
-                templateUuid = "";
-            }
-            if (firstBackupUuid == null) {
-                firstBackupUuid = "";
-            }
-            if (previousSnapshotUuid == null) {
-                previousSnapshotUuid = "";
-            }
-            String result = callHostPlugin("vmopsSnapshot", "validateSnapshot", "primaryStorageSRUuid", primaryStorageSRUuid, "volumeUuid", volumeUuid, "firstBackupUuid", firstBackupUuid,
-                    "previousSnapshotUuid", previousSnapshotUuid, "templateUuid", templateUuid, "isISCSI", isISCSI.toString());
-            if (result == null || result.isEmpty()) {
-                details = "Validating snapshot backup for volume with UUID: " + volumeUuid + " failed because there was an exception in the plugin";
-                // callHostPlugin exception which has been logged already
-            } else {
-                String[] uuids = result.split("#", -1);
-                if (uuids.length >= 3) {
-                    expectedSnapshotBackupUuid = uuids[1];
-                    actualSnapshotBackupUuid = uuids[2];
-                }
-                if (uuids.length >= 4) {
-                    actualSnapshotUuid = uuids[3];
-                } else {
-                    actualSnapshotUuid = "";
-                }
-                if (uuids[0].equals("1")) {
-                    success = true;
-                    details = null;
-                } else {
-                    details = "Previous snapshot backup on the primary storage is invalid. " + "Expected: " + expectedSnapshotBackupUuid + " Actual: " + actualSnapshotBackupUuid;
-                    // success is still false
-                }
-                s_logger.debug("ValidatePreviousSnapshotBackup returned " + " success: " + success + " details: " + details + " expectedSnapshotBackupUuid: "
-                        + expectedSnapshotBackupUuid + " actualSnapshotBackupUuid: " + actualSnapshotBackupUuid + " actualSnapshotUuid: " + actualSnapshotUuid);
-            }
-        }
-
-        return new ValidateSnapshotAnswer(cmd, success, details, expectedSnapshotBackupUuid, actualSnapshotBackupUuid, actualSnapshotUuid);
-    }
-
     protected ManageSnapshotAnswer execute(final ManageSnapshotCommand cmd) {
+      
         long snapshotId = cmd.getSnapshotId();
         String snapshotName = cmd.getSnapshotName();
 
@@ -5510,20 +5431,35 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             if (cmdSwitch.equals(ManageSnapshotCommand.CREATE_SNAPSHOT)) {
                 // Look up the volume
                 String volumeUUID = cmd.getVolumePath();
-
-                VDI volume = getVDIbyUuid(volumeUUID);
+                VDI volume = VDI.getByUuid(conn, volumeUUID);
 
                 // Create a snapshot
                 VDI snapshot = volume.snapshot(conn, new HashMap<String, String>());
-
+                
                 if (snapshotName != null) {
                     snapshot.setNameLabel(conn, snapshotName);
                 }
-
                 // Determine the UUID of the snapshot
-                VDI.Record vdir = snapshot.getRecord(conn);
-                snapshotUUID = vdir.uuid;
 
+                snapshotUUID = snapshot.getUuid(conn);
+                String preSnapshotUUID = cmd.getSnapshotPath();
+                //check if it is a empty snapshot
+                if( preSnapshotUUID != null) {
+                    SR sr = volume.getSR(conn);
+                    String srUUID = sr.getUuid(conn);
+                    String type = sr.getType(conn);
+                    Boolean isISCSI = SRType.LVMOISCSI.equals(type);
+                    String snapshotParentUUID = getVhdParent(srUUID, snapshotUUID, isISCSI);
+                    
+                    String preSnapshotParentUUID = getVhdParent(srUUID, preSnapshotUUID, isISCSI);
+                    if( snapshotParentUUID != null && snapshotParentUUID.equals(preSnapshotParentUUID)) {
+                        // this is empty snapshot, remove it
+                        snapshot.destroy(conn);
+                        snapshotUUID = preSnapshotUUID;
+                    }
+                    
+                }
+                
                 success = true;
                 details = null;
             } else if (cmd.getCommandSwitch().equals(ManageSnapshotCommand.DESTROY_SNAPSHOT)) {
@@ -5547,74 +5483,63 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return new ManageSnapshotAnswer(cmd, snapshotId, snapshotUUID, success, details);
     }
 
-    protected CreatePrivateTemplateAnswer execute(final CreatePrivateTemplateCommand cmd) {
-        String secondaryStorageURL = cmd.getSecondaryStorageURL();
-        String snapshotUUID = cmd.getSnapshotPath();
+    protected CreatePrivateTemplateAnswer execute(final CreatePrivateTemplateFromVolumeCommand cmd) {
+        String secondaryStoragePoolURL = cmd.getSecondaryStorageURL();
+        String volumeUUID = cmd.getVolumePath();
+        Long accountId = cmd.getAccountId();
         String userSpecifiedName = cmd.getTemplateName();
+        Long templateId = cmd.getTemplateId();
 
-        SR secondaryStorage = null;
-        VDI privateTemplate = null;
-        Connection conn = getConnection();
+        String details = null;
+        SR tmpltSR = null;
+        boolean result = false;
         try {
-            URI uri = new URI(secondaryStorageURL);
-            String remoteTemplateMountPath = uri.getHost() + ":" + uri.getPath() + "/template/";
-            String templateFolder = cmd.getAccountId() + "/" + cmd.getTemplateId() + "/";
-            String templateDownloadFolder = createTemplateDownloadFolder(remoteTemplateMountPath, templateFolder);
-            String templateInstallFolder = "tmpl/" + templateFolder;
+            
+            URI uri = new URI(secondaryStoragePoolURL);
+            String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
+            String installPath = "template/tmpl/" + accountId + "/" + templateId;
+            if( !createSecondaryStorageFolder(secondaryStorageMountPath, installPath)) {
+                details = " Filed to create folder " + installPath + " in secondary storage";
+                s_logger.warn(details);
+                return new CreatePrivateTemplateAnswer(cmd, false, details);
+            }
+            Connection conn = getConnection();
+            VDI volume = getVDIbyUuid(volumeUUID);
+            // create template SR
+            URI tmpltURI = new URI(secondaryStoragePoolURL + "/" + installPath);
+            tmpltSR = createNfsSRbyURI(tmpltURI, false);
 
-            // Create a SR for the secondary storage download folder
-            secondaryStorage = createNfsSRbyURI(new URI(secondaryStorageURL + "/template/" + templateDownloadFolder), false);
-
-            // Look up the snapshot and copy it to secondary storage
-            VDI snapshot = getVDIbyUuid(snapshotUUID);
-            privateTemplate = cloudVDIcopy(snapshot, secondaryStorage);
-
+            // copy volume to template SR
+            VDI tmpltVDI = cloudVDIcopy(volume, tmpltSR);
+            
             if (userSpecifiedName != null) {
-                privateTemplate.setNameLabel(conn, userSpecifiedName);
+                tmpltVDI.setNameLabel(conn, userSpecifiedName);
             }
 
-            // Determine the template file name and install path
-            VDI.Record vdir = privateTemplate.getRecord(conn);
-            String templateName = vdir.uuid;
-            String templateFilename = templateName + ".vhd";
-            String installPath = "template/" + templateInstallFolder + templateFilename;
-
-            // Determine the template's virtual size and then forget the VDI
-            long virtualSize = privateTemplate.getVirtualSize(conn);
-            // Create the template.properties file in the download folder, move
-            // the template and the template.properties file
-            // to the install folder, and then delete the download folder
-            if (!postCreatePrivateTemplate(remoteTemplateMountPath, templateDownloadFolder, templateInstallFolder, templateFilename, templateName, userSpecifiedName, null,
-                    virtualSize, cmd.getTemplateId())) {
-                throw new InternalErrorException("Failed to create the template.properties file.");
+            String tmpltSrUUID = tmpltSR.getUuid(conn);
+            String tmpltUUID = tmpltVDI.getUuid(conn);
+            String tmpltFilename = tmpltUUID + ".vhd";
+            long virtualSize = tmpltVDI.getVirtualSize(conn);
+            long size = tmpltVDI.getPhysicalUtilisation(conn);
+            // create the template.properties file
+            result = postCreatePrivateTemplate(tmpltSrUUID, tmpltFilename, tmpltUUID, userSpecifiedName, null, size, virtualSize, templateId);
+            if (!result) {
+                throw new CloudRuntimeException("Could not create the template.properties file on secondary storage dir: " + tmpltURI);
             }
-
-            return new CreatePrivateTemplateAnswer(cmd, true, null, installPath, virtualSize, templateName, ImageFormat.VHD);
+            return new CreatePrivateTemplateAnswer(cmd, true, null, installPath, virtualSize, tmpltUUID, ImageFormat.VHD);
         } catch (XenAPIException e) {
-            if (privateTemplate != null) {
-                destroyVDI(privateTemplate);
-            }
-
-            s_logger.warn("CreatePrivateTemplate Failed due to " + e.toString(), e);
-            return new CreatePrivateTemplateAnswer(cmd, false, e.toString(), null, 0, null, null);
+            details = "Creating template from volume " + volumeUUID + " failed due to " + e.getMessage();
+            s_logger.error(details, e);
         } catch (Exception e) {
-            s_logger.warn("CreatePrivateTemplate Failed due to " + e.getMessage(), e);
-            return new CreatePrivateTemplateAnswer(cmd, false, e.getMessage(), null, 0, null, null);
+            details = "Creating template from volume " + volumeUUID + " failed due to " + e.getMessage();
+            s_logger.error(details, e);
         } finally {
             // Remove the secondary storage SR
-            removeSR(secondaryStorage);
+            removeSR(tmpltSR);
         }
+        return new CreatePrivateTemplateAnswer(cmd, result, details);
     }
 
-    private String createTemplateDownloadFolder(String remoteTemplateMountPath, String templateFolder) throws InternalErrorException, URISyntaxException {
-        String templateDownloadFolder = "download/" + _host.uuid + "/" + templateFolder;
-
-        // Create the download folder
-        if (!createSecondaryStorageFolder(remoteTemplateMountPath, templateDownloadFolder)) {
-            throw new InternalErrorException("Failed to create the template download folder.");
-        }
-        return templateDownloadFolder;
-    }
 
     protected CreatePrivateTemplateAnswer execute(final CreatePrivateTemplateFromSnapshotCommand cmd) {
         String primaryStorageNameLabel = cmd.getPrimaryStoragePoolNameLabel();
@@ -5623,59 +5548,61 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         Long volumeId = cmd.getVolumeId();
         String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
         String backedUpSnapshotUuid = cmd.getSnapshotUuid();
-        String origTemplateInstallPath = cmd.getOrigTemplateInstallPath();
         Long newTemplateId = cmd.getNewTemplateId();
         String userSpecifiedName = cmd.getTemplateName();
 
         // By default, assume failure
-        String details = "Failed to create private template " + newTemplateId + " from snapshot for volume: " + volumeId + " with backupUuid: " + backedUpSnapshotUuid;
-        String newTemplatePath = null;
-        String templateName = null;
+        String details = null;
+        SR snapshotSR = null;
+        SR tmpltSR = null; 
         boolean result = false;
-        long virtualSize = 0;
         try {
             URI uri = new URI(secondaryStoragePoolURL);
-            String remoteTemplateMountPath = uri.getHost() + ":" + uri.getPath() + "/template/";
-            String templateFolder = cmd.getAccountId() + "/" + newTemplateId + "/";
-            String templateDownloadFolder = createTemplateDownloadFolder(remoteTemplateMountPath, templateFolder);
-            String templateInstallFolder = "tmpl/" + templateFolder;
-            // Yes, create a template vhd
-            Pair<VHDInfo, String> vhdDetails = createVHDFromSnapshot(primaryStorageNameLabel, dcId, accountId, volumeId, secondaryStoragePoolURL, backedUpSnapshotUuid,
-                    origTemplateInstallPath, templateDownloadFolder);
-
-            VHDInfo vhdInfo = vhdDetails.first();
-            String failureDetails = vhdDetails.second();
-            if (vhdInfo == null) {
-                if (failureDetails != null) {
-                    details += failureDetails;
-                }
-            } else {
-                templateName = vhdInfo.getUuid();
-                String templateFilename = templateName + ".vhd";
-                String templateInstallPath = templateInstallFolder + "/" + templateFilename;
-
-                newTemplatePath = "template" + "/" + templateInstallPath;
-
-                virtualSize = vhdInfo.getVirtualSize();
-                // create the template.properties file
-                result = postCreatePrivateTemplate(remoteTemplateMountPath, templateDownloadFolder, templateInstallFolder, templateFilename, templateName, userSpecifiedName, null,
-                        virtualSize, newTemplateId);
-                if (!result) {
-                    details += ", reason: Could not create the template.properties file on secondary storage dir: " + templateInstallFolder;
-                } else {
-                    // Aaah, success.
-                    details = null;
-                }
-
+            String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
+            String installPath = "template/tmpl/" + accountId + "/" + newTemplateId;
+            if( !createSecondaryStorageFolder(secondaryStorageMountPath, installPath)) {
+                details = " Filed to create folder " + installPath + " in secondary storage";
+                s_logger.warn(details);
+                return new CreatePrivateTemplateAnswer(cmd, false, details);
             }
+            Connection conn = getConnection();
+            // create snapshot SR
+            URI snapshotURI = new URI(secondaryStoragePoolURL + "/snapshots/" + accountId + "/" + volumeId );
+            snapshotSR = createNfsSRbyURI(snapshotURI, false);
+            snapshotSR.scan(conn);
+            VDI snapshotVDI = getVDIbyUuid(backedUpSnapshotUuid);
+            
+            // create template SR
+            URI tmpltURI = new URI(secondaryStoragePoolURL + "/" + installPath);
+            tmpltSR = createNfsSRbyURI(tmpltURI, false);
+            // copy snapshotVDI to template SR
+            VDI tmpltVDI = cloudVDIcopy(snapshotVDI, tmpltSR);
+            
+            String tmpltSrUUID = tmpltSR.getUuid(conn);
+            String tmpltUUID = tmpltVDI.getUuid(conn);
+            String tmpltFilename = tmpltUUID + ".vhd";
+            long virtualSize = tmpltVDI.getVirtualSize(conn);
+            long size = tmpltVDI.getPhysicalUtilisation(conn);
+
+            // create the template.properties file
+            result = postCreatePrivateTemplate(tmpltSrUUID, tmpltFilename, tmpltUUID, userSpecifiedName, null, size, virtualSize, newTemplateId);
+            if (!result) {
+                throw new CloudRuntimeException("Could not create the template.properties file on secondary storage dir: " + tmpltURI);
+            } 
+            
+            return new CreatePrivateTemplateAnswer(cmd, true, null, installPath, virtualSize, tmpltUUID, ImageFormat.VHD);
         } catch (XenAPIException e) {
-            details += ", reason: " + e.getMessage();
+            details = "Creating template from snapshot " + backedUpSnapshotUuid + " failed due to " + e.getMessage();
             s_logger.error(details, e);
         } catch (Exception e) {
-            details += ", reason: " + e.getMessage();
+            details = "Creating template from snapshot " + backedUpSnapshotUuid + " failed due to " + e.getMessage();
             s_logger.error(details, e);
+        } finally {
+            // Remove the secondary storage SR
+            removeSR(snapshotSR);
+            removeSR(tmpltSR);
         }
-        return new CreatePrivateTemplateAnswer(cmd, result, details, newTemplatePath, virtualSize, templateName, ImageFormat.VHD);
+        return new CreatePrivateTemplateAnswer(cmd, result, details);
     }
 
     protected BackupSnapshotAnswer execute(final BackupSnapshotCommand cmd) {
@@ -5687,7 +5614,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         String snapshotUuid = cmd.getSnapshotUuid(); // not null: Precondition.
         String prevSnapshotUuid = cmd.getPrevSnapshotUuid();
         String prevBackupUuid = cmd.getPrevBackupUuid();
-        boolean isFirstSnapshotOfRootVolume = cmd.isFirstSnapshotOfRootVolume();
         // By default assume failure
         String details = null;
         boolean success = false;
@@ -5703,28 +5629,46 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
             URI uri = new URI(secondaryStoragePoolURL);
             String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
+            
 
-            if (secondaryStorageMountPath == null) {
-                details = "Couldn't backup snapshot because the URL passed: " + secondaryStoragePoolURL + " is invalid.";
-            } else {
-                boolean gcHappened = true;
-                if (gcHappened) {
-                    snapshotBackupUuid = backupSnapshot(primaryStorageSRUuid, dcId, accountId, volumeId, secondaryStorageMountPath, snapshotUuid, prevSnapshotUuid, prevBackupUuid,
-                            isFirstSnapshotOfRootVolume, isISCSI);
-                    success = (snapshotBackupUuid != null);
-                } else {
-                    s_logger.warn("GC hasn't happened yet for previousSnapshotUuid: " + prevSnapshotUuid + ". Will retry again after 1 min");
+            if (prevBackupUuid == null) {
+                // the first snapshot is always a full snapshot
+                String folder = "snapshots/" + accountId + "/" + volumeId;
+                if( !createSecondaryStorageFolder(secondaryStorageMountPath, folder)) {
+                    details = " Filed to create folder " + folder + " in secondary storage";
+                    s_logger.warn(details);
+                    return new BackupSnapshotAnswer(cmd, success, details, snapshotBackupUuid);
                 }
+
+                String snapshotMountpoint = secondaryStoragePoolURL + "/" + folder;
+                SR snapshotSr = null;
+                try {
+                    snapshotSr = createNfsSRbyURI(new URI(snapshotMountpoint), false);
+                    VDI snapshotVdi = getVDIbyUuid(snapshotUuid);
+                    VDI backedVdi = snapshotVdi.copy(conn, snapshotSr);
+                    snapshotBackupUuid = backedVdi.getUuid(conn);
+                    success = true;
+                } finally {
+                    if( snapshotSr != null) {
+                        removeSR(snapshotSr);
+                    }
+                }
+            } else {
+                    snapshotBackupUuid = backupSnapshot(primaryStorageSRUuid, dcId, accountId, volumeId, secondaryStorageMountPath, 
+                            snapshotUuid, prevSnapshotUuid, prevBackupUuid, isISCSI);
+                    success = (snapshotBackupUuid != null);
             }
 
-            if (!success) {
+            if (success) {
+                details = "Successfully backedUp the snapshotUuid: " + snapshotUuid + " to secondary storage.";
+                
                 // Mark the snapshot as removed in the database.
                 // When the next snapshot is taken, it will be
                 // 1) deleted from the DB 2) The snapshotUuid will be deleted from the primary
                 // 3) the snapshotBackupUuid will be copied to secondary
                 // 4) if possible it will be coalesced with the next snapshot.
 
-            } else if (prevSnapshotUuid != null && !isFirstSnapshotOfRootVolume) {
+                if (prevSnapshotUuid != null) {
                 // Destroy the previous snapshot, if it exists.
                 // We destroy the previous snapshot only if the current snapshot
                 // backup succeeds.
@@ -5732,8 +5676,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 // so that it doesn't get merged with the
                 // new one
                 // and muddle the vhd chain on the secondary storage.
-                details = "Successfully backedUp the snapshotUuid: " + snapshotUuid + " to secondary storage.";
-                destroySnapshotOnPrimaryStorage(prevSnapshotUuid);
+
+                    destroySnapshotOnPrimaryStorage(prevSnapshotUuid);
+                }
             }
 
         } catch (XenAPIException e) {
@@ -5749,93 +5694,44 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
     protected CreateVolumeFromSnapshotAnswer execute(final CreateVolumeFromSnapshotCommand cmd) {
         String primaryStorageNameLabel = cmd.getPrimaryStoragePoolNameLabel();
-        Long dcId = cmd.getDataCenterId();
         Long accountId = cmd.getAccountId();
         Long volumeId = cmd.getVolumeId();
         String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
         String backedUpSnapshotUuid = cmd.getSnapshotUuid();
-        String templatePath = cmd.getTemplatePath();
 
         // By default, assume the command has failed and set the params to be
         // passed to CreateVolumeFromSnapshotAnswer appropriately
         boolean result = false;
         // Generic error message.
-        String details = "Failed to create volume from snapshot for volume: " + volumeId + " with backupUuid: " + backedUpSnapshotUuid;
-        String vhdUUID = null;
-        SR temporarySROnSecondaryStorage = null;
-        String mountPointOfTemporaryDirOnSecondaryStorage = null;
+        String details = null;
+        String volumeUUID = null;
+        SR snapshotSR = null;
+        
+        if (secondaryStoragePoolURL == null) {
+            details += " because the URL passed: " + secondaryStoragePoolURL + " is invalid.";
+            return new CreateVolumeFromSnapshotAnswer(cmd, result, details, volumeUUID);
+        }
         try {
-            VDI vdi = null;
             Connection conn = getConnection();
             SR primaryStorageSR = getSRByNameLabelandHost(primaryStorageNameLabel);
             if (primaryStorageSR == null) {
                 throw new InternalErrorException("Could not create volume from snapshot because the primary Storage SR could not be created from the name label: "
                         + primaryStorageNameLabel);
             }
+            // Get the absolute path of the snapshot on the secondary storage.
+            URI snapshotURI = new URI(secondaryStoragePoolURL + "/snapshots/" + accountId + "/" + volumeId );
+            
+            snapshotSR = createNfsSRbyURI(snapshotURI, false);
+            snapshotSR.scan(conn);
+            VDI snapshotVDI = getVDIbyUuid(backedUpSnapshotUuid);
 
-            Boolean isISCSI = SRType.LVMOISCSI.equals(primaryStorageSR.getType(conn));
+            VDI volumeVDI = cloudVDIcopy(snapshotVDI, primaryStorageSR);
+            
+            volumeUUID = volumeVDI.getUuid(conn);
+            
+            
+            result = true;
 
-            // Get the absolute path of the template on the secondary storage.
-            URI uri = new URI(secondaryStoragePoolURL);
-            String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
-
-            if (secondaryStorageMountPath == null) {
-                details += " because the URL passed: " + secondaryStoragePoolURL + " is invalid.";
-                return new CreateVolumeFromSnapshotAnswer(cmd, result, details, vhdUUID);
-            }
-
-            // Create a volume and not a template
-            String templateDownloadFolder = "";
-
-            VHDInfo vhdInfo = createVHDFromSnapshot(dcId, accountId, volumeId, secondaryStorageMountPath, backedUpSnapshotUuid, templatePath, templateDownloadFolder, isISCSI);
-            if (vhdInfo == null) {
-                details += " because the vmops plugin on XenServer failed at some point";
-            } else {
-                vhdUUID = vhdInfo.getUuid();
-                String tempDirRelativePath = "snapshots" + File.separator + accountId + File.separator + volumeId + "_temp";
-                mountPointOfTemporaryDirOnSecondaryStorage = secondaryStorageMountPath + File.separator + tempDirRelativePath;
-
-                uri = new URI("nfs://" + mountPointOfTemporaryDirOnSecondaryStorage);
-                // No need to check if the SR already exists. It's a temporary
-                // SR destroyed when this method exits.
-                // And two createVolumeFromSnapshot operations cannot proceed at
-                // the same time.
-                temporarySROnSecondaryStorage = createNfsSRbyURI(uri, false);
-                if (temporarySROnSecondaryStorage == null) {
-                    details += "because SR couldn't be created on " + mountPointOfTemporaryDirOnSecondaryStorage;
-                } else {
-                    s_logger.debug("Successfully created temporary SR on secondary storage " + temporarySROnSecondaryStorage.getNameLabel(conn) + "with uuid "
-                            + temporarySROnSecondaryStorage.getUuid(conn) + " and scanned it");
-                    // createNFSSRbyURI also scans the SR and introduces the VDI
-
-                    vdi = getVDIbyUuid(vhdUUID);
-
-                    if (vdi != null) {
-                        s_logger.debug("Successfully created VDI on secondary storage SR " + temporarySROnSecondaryStorage.getNameLabel(conn) + " with uuid " + vhdUUID);
-                        s_logger.debug("Copying VDI: " + vdi.getLocation(conn) + " from secondary to primary");
-                        VDI vdiOnPrimaryStorage = cloudVDIcopy(vdi, primaryStorageSR);
-                        // vdi.copy introduces the vdi into the database. Don't
-                        // need to do a scan on the primary
-                        // storage.
-
-                        if (vdiOnPrimaryStorage != null) {
-                            vhdUUID = vdiOnPrimaryStorage.getUuid(conn);
-                            s_logger.debug("Successfully copied and introduced VDI on primary storage with path " + vdiOnPrimaryStorage.getLocation(conn) + " and uuid " + vhdUUID);
-                            result = true;
-                            details = null;
-
-                        } else {
-                            details += ". Could not copy the vdi " + vhdUUID + " to primary storage";
-                        }
-
-                        // The VHD on temporary was scanned and introduced as a VDI
-                        // destroy it as we don't need it anymore.
-                        vdi.destroy(conn);
-                    } else {
-                        details += ". Could not scan and introduce vdi with uuid: " + vhdUUID;
-                    }
-                }
-            }
         } catch (XenAPIException e) {
             details += " due to " + e.toString();
             s_logger.warn(details, e);
@@ -5844,13 +5740,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             s_logger.warn(details, e);
         } finally {
             // In all cases, if the temporary SR was created, forget it.
-            if (temporarySROnSecondaryStorage != null) {
-                removeSR(temporarySROnSecondaryStorage);
-                // Delete the temporary directory created.
-                File folderPath = new File(mountPointOfTemporaryDirOnSecondaryStorage);
-                String remoteMountPath = folderPath.getParent();
-                String folder = folderPath.getName();
-                deleteSecondaryStorageFolder(remoteMountPath, folder);
+            if (snapshotSR != null) {
+                removeSR(snapshotSR);
             }
         }
         if (!result) {
@@ -5859,7 +5750,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
 
         // In all cases return something.
-        return new CreateVolumeFromSnapshotAnswer(cmd, result, details, vhdUUID);
+        return new CreateVolumeFromSnapshotAnswer(cmd, result, details, volumeUUID);
     }
 
     protected DeleteSnapshotBackupAnswer execute(final DeleteSnapshotBackupCommand cmd) {
@@ -5868,31 +5759,10 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         Long volumeId = cmd.getVolumeId();
         String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
         String backupUUID = cmd.getSnapshotUuid();
-        String childUUID = cmd.getChildUUID();
-        String primaryStorageNameLabel = cmd.getPrimaryStoragePoolNameLabel();
-
         String details = null;
         boolean success = false;
 
-        SR primaryStorageSR = null;
-        Boolean isISCSI = false;
-        try {
-            Connection conn = getConnection();
-            primaryStorageSR = getSRByNameLabelandHost(primaryStorageNameLabel);
-            if (primaryStorageSR == null) {
-                details = "Primary Storage SR could not be created from the name label: " + primaryStorageNameLabel;
-                throw new InternalErrorException(details);
-            }
-            isISCSI = SRType.LVMOISCSI.equals(primaryStorageSR.getType(conn));
-        } catch (XenAPIException e) {
-            details = "Couldn't determine primary SR type " + e.getMessage();
-            s_logger.error(details, e);
-        } catch (Exception e) {
-            details = "Couldn't determine primary SR type " + e.getMessage();
-            s_logger.error(details, e);
-        }
 
-        if (primaryStorageSR != null) {
             URI uri = null;
             try {
                 uri = new URI(secondaryStoragePoolURL);
@@ -5906,14 +5776,13 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 if (secondaryStorageMountPath == null) {
                     details = "Couldn't delete snapshot because the URL passed: " + secondaryStoragePoolURL + " is invalid.";
                 } else {
-                    details = deleteSnapshotBackup(dcId, accountId, volumeId, secondaryStorageMountPath, backupUUID, childUUID, isISCSI);
+                    details = deleteSnapshotBackup(dcId, accountId, volumeId, secondaryStorageMountPath, backupUUID);
                     success = (details != null && details.equals("1"));
                     if (success) {
                         s_logger.debug("Successfully deleted snapshot backup " + backupUUID);
                     }
                 }
             }
-        }
         return new DeleteSnapshotBackupAnswer(cmd, success, details);
     }
 
@@ -6134,8 +6003,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return (result != null);
     }
 
-    protected boolean postCreatePrivateTemplate(String remoteTemplateMountPath, String templateDownloadFolder, String templateInstallFolder, String templateFilename,
-            String templateName, String templateDescription, String checksum, long virtualSize, long templateId) {
+    protected boolean postCreatePrivateTemplate(String tmpltSrUUID,String tmpltFilename, String templateName, String templateDescription, String checksum, long size, long virtualSize, long templateId) {
 
         if (templateDescription == null) {
             templateDescription = "";
@@ -6145,23 +6013,18 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             checksum = "";
         }
 
-        String result = callHostPluginWithTimeOut("vmopsSnapshot", "post_create_private_template", 110*60, "remoteTemplateMountPath", remoteTemplateMountPath, "templateDownloadFolder", templateDownloadFolder,
-                "templateInstallFolder", templateInstallFolder, "templateFilename", templateFilename, "templateName", templateName, "templateDescription", templateDescription,
-                "checksum", checksum, "virtualSize", String.valueOf(virtualSize), "templateId", String.valueOf(templateId));
+        String result = callHostPluginWithTimeOut("vmopsSnapshot", "post_create_private_template", 110*60, "tmpltSrUUID", tmpltSrUUID, "templateFilename", tmpltFilename, "templateName", templateName, "templateDescription", templateDescription,
+                "checksum", checksum, "size", String.valueOf(size), "virtualSize", String.valueOf(virtualSize), "templateId", String.valueOf(templateId));
 
         boolean success = false;
         if (result != null && !result.isEmpty()) {
             // Else, command threw an exception which has already been logged.
 
-            String[] tmp = result.split("#");
-            String status = tmp[0];
-
-            if (status != null && status.equalsIgnoreCase("1")) {
-                s_logger.debug("Successfully created template.properties file on secondary storage dir: " + templateInstallFolder);
+            if (result.equalsIgnoreCase("1")) {
+                s_logger.debug("Successfully created template.properties file on secondary storage for " + tmpltFilename);
                 success = true;
             } else {
-                s_logger.warn("Could not create template.properties file on secondary storage dir: " + templateInstallFolder + " for templateId: " + templateId
-                        + ". Failed with status " + status);
+                s_logger.warn("Could not create template.properties file on secondary storage for " + tmpltFilename + " for templateId: " + templateId);
             }
         }
 
@@ -6170,8 +6033,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
     // Each argument is put in a separate line for readability.
     // Using more lines does not harm the environment.
-    protected String backupSnapshot(String primaryStorageSRUuid, Long dcId, Long accountId, Long volumeId, String secondaryStorageMountPath, String snapshotUuid,
-            String prevSnapshotUuid, String prevBackupUuid, Boolean isFirstSnapshotOfRootVolume, Boolean isISCSI) {
+    protected String backupSnapshot(String primaryStorageSRUuid, Long dcId, Long accountId, Long volumeId, String secondaryStorageMountPath,
+            String snapshotUuid, String prevSnapshotUuid, String prevBackupUuid, Boolean isISCSI) {
         String backupSnapshotUuid = null;
 
         if (prevSnapshotUuid == null) {
@@ -6185,7 +6048,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         // Using more lines does not harm the environment.
         String results = callHostPluginWithTimeOut("vmopsSnapshot", "backupSnapshot", 110*60, "primaryStorageSRUuid", primaryStorageSRUuid, "dcId", dcId.toString(), "accountId", accountId.toString(), "volumeId",
                 volumeId.toString(), "secondaryStorageMountPath", secondaryStorageMountPath, "snapshotUuid", snapshotUuid, "prevSnapshotUuid", prevSnapshotUuid, "prevBackupUuid",
-                prevBackupUuid, "isFirstSnapshotOfRootVolume", isFirstSnapshotOfRootVolume.toString(), "isISCSI", isISCSI.toString());
+                prevBackupUuid, "isISCSI", isISCSI.toString());
 
         if (results == null || results.isEmpty()) {
             // errString is already logged.
@@ -6208,6 +6071,19 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
 
         return backupSnapshotUuid;
+    }
+    
+    
+    protected String getVhdParent(String primaryStorageSRUuid, String snapshotUuid, Boolean isISCSI) {
+        String parentUuid = callHostPlugin("vmopsSnapshot", "getVhdParent", "primaryStorageSRUuid", primaryStorageSRUuid, 
+                "snapshotUuid", snapshotUuid, "isISCSI", isISCSI.toString());
+
+        if (parentUuid == null || parentUuid.isEmpty()) {
+            s_logger.debug("Unable to get parent of VHD " + snapshotUuid + " in SR " + primaryStorageSRUuid);
+            // errString is already logged.
+            return null;
+        }
+        return parentUuid;
     }
 
     protected boolean destroySnapshotOnPrimaryStorage(String snapshotUuid) {
@@ -6232,11 +6108,11 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return false;
     }
 
-    protected String deleteSnapshotBackup(Long dcId, Long accountId, Long volumeId, String secondaryStorageMountPath, String backupUUID, String childUUID, Boolean isISCSI) {
+    protected String deleteSnapshotBackup(Long dcId, Long accountId, Long volumeId, String secondaryStorageMountPath, String backupUUID) {
 
         // If anybody modifies the formatting below again, I'll skin them
-        String result = callHostPlugin("vmopsSnapshot", "deleteSnapshotBackup", "backupUUID", backupUUID, "childUUID", childUUID, "dcId", dcId.toString(), "accountId", accountId.toString(),
-                "volumeId", volumeId.toString(), "secondaryStorageMountPath", secondaryStorageMountPath, "isISCSI", isISCSI.toString());
+        String result = callHostPlugin("vmopsSnapshot", "deleteSnapshotBackup", "backupUUID", backupUUID, "dcId", dcId.toString(), "accountId", accountId.toString(),
+                "volumeId", volumeId.toString(), "secondaryStorageMountPath", secondaryStorageMountPath);
 
         return result;
     }
@@ -6249,70 +6125,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return result;
     }
 
-    // If anybody messes up with the formatting, I'll skin them
-    protected Pair<VHDInfo, String> createVHDFromSnapshot(String primaryStorageNameLabel, Long dcId, Long accountId, Long volumeId, String secondaryStoragePoolURL,
-            String backedUpSnapshotUuid, String templatePath, String templateDownloadFolder) throws XenAPIException, IOException, XmlRpcException, InternalErrorException,
-            URISyntaxException {
-        // Return values
-        String details = null;
-        Connection conn = getConnection();
-        SR primaryStorageSR = getSRByNameLabelandHost(primaryStorageNameLabel);
-        if (primaryStorageSR == null) {
-            throw new InternalErrorException("Could not create volume from snapshot " + "because the primary Storage SR could not be created from the name label: "
-                    + primaryStorageNameLabel);
-        }
-
-        Boolean isISCSI = SRType.LVMOISCSI.equals(primaryStorageSR.getType(conn));
-
-        // Get the absolute path of the template on the secondary storage.
-        URI uri = new URI(secondaryStoragePoolURL);
-        String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
-        VHDInfo vhdInfo = null;
-        if (secondaryStorageMountPath == null) {
-            details = " because the URL passed: " + secondaryStoragePoolURL + " is invalid.";
-        } else {
-            vhdInfo = createVHDFromSnapshot(dcId, accountId, volumeId, secondaryStorageMountPath, backedUpSnapshotUuid, templatePath, templateDownloadFolder, isISCSI);
-            if (vhdInfo == null) {
-                details = " because the vmops plugin on XenServer failed at some point";
-            }
-        }
-
-        return new Pair<VHDInfo, String>(vhdInfo, details);
-    }
-
-    protected VHDInfo createVHDFromSnapshot(Long dcId, Long accountId, Long volumeId, String secondaryStorageMountPath, String backedUpSnapshotUuid, String templatePath,
-            String templateDownloadFolder, Boolean isISCSI) {
-        String vdiUUID = null;
-
-        String failureString = "Could not create volume from " + backedUpSnapshotUuid;
-        templatePath = (templatePath == null) ? "" : templatePath;
-        String results = callHostPluginWithTimeOut("vmopsSnapshot","createVolumeFromSnapshot", 110*60, "dcId", dcId.toString(), "accountId", accountId.toString(), "volumeId", volumeId.toString(),
-                "secondaryStorageMountPath", secondaryStorageMountPath, "backedUpSnapshotUuid", backedUpSnapshotUuid, "templatePath", templatePath, "templateDownloadFolder",
-                templateDownloadFolder, "isISCSI", isISCSI.toString());
-
-        if (results == null || results.isEmpty()) {
-            // Command threw an exception which has already been logged.
-            return null;
-        }
-        String[] tmp = results.split("#");
-        String status = tmp[0];
-        vdiUUID = tmp[1];
-        Long virtualSizeInMB = 0L;
-        if (tmp.length == 3) {
-            virtualSizeInMB = Long.valueOf(tmp[2]);
-        }
-        // status == "1" if and only if vdiUUID != null
-        // So we don't rely on status value but return vdiUUID as an indicator
-        // of success.
-
-        if (status != null && status.equalsIgnoreCase("1") && vdiUUID != null) {
-            s_logger.debug("Successfully created vhd file with all data on secondary storage : " + vdiUUID);
-        } else {
-            s_logger.debug(failureString + ". Failed with status " + status + " with vdiUuid " + vdiUUID);
-        }
-        return new VHDInfo(vdiUUID, virtualSizeInMB * MB);
-
-    }
 
     @Override
     public boolean start() {
@@ -6415,30 +6227,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         public String storagePif1;
         public String storagePif2;
         public String pool;
-    }
-
-    private class VHDInfo {
-        private final String uuid;
-        private final Long virtualSize;
-
-        public VHDInfo(String uuid, Long virtualSize) {
-            this.uuid = uuid;
-            this.virtualSize = virtualSize;
-        }
-
-        /**
-         * @return the uuid
-         */
-        public String getUuid() {
-            return uuid;
-        }
-
-        /**
-         * @return the virtualSize
-         */
-        public Long getVirtualSize() {
-            return virtualSize;
-        }
     }
 
 	protected String getGuestOsType(String stdType) {

@@ -22,6 +22,7 @@ package com.cloud.storage.dao;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.utils.db.GenericDao;
 
@@ -35,5 +36,7 @@ public interface SnapshotScheduleDao extends GenericDao<SnapshotScheduleVO, Long
     List<SnapshotScheduleVO> getSchedulesToExecute(Date currentTimestamp);
 
     SnapshotScheduleVO getCurrentSchedule(Long volumeId, Long policyId, boolean executing);
+
+    SnapshotScheduleVO findOneByVolume(long volumeId);
 
 }
