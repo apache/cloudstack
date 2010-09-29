@@ -1202,7 +1202,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 											    // Succeeded												   
 											    afterAddingMidMenuItem($midmenuItem1, true);
 						                        if("virtualmachine" in result)	
-						                            vmToMidmenu(result.virtualmachine[0], $t);													   
+						                            vmToMidmenu(result.virtualmachine[0], $midmenuItem1);													   
 											    
 										    } else if (result.jobstatus == 2) {
 											    // Failed
