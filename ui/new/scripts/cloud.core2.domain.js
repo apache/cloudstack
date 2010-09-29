@@ -1,11 +1,8 @@
 function afterLoadDomainJSP() {
     var defaultRootDomainId = g_domainid;
     var defaultRootLevel = 0;	 
-    var index = 1;	   
-    
-    //var treeContentBox = $("#tree_contentbox");    	 //???
-    var treeContentBox = $("#midmenu_container");
-      
+    var index = 1;	       
+    var treeContentBox = $("#midmenu_container");      
     var treenodeTemplate = $("#treenode_template");	  	    
     var grid = $("#right_panel_grid");  
     var gridRowTemplate = $("#grid_row_template");  
@@ -40,7 +37,8 @@ function afterLoadDomainJSP() {
     
         var template = treenodeTemplate.clone(true);	            
         template.attr("id", "domain_"+json.id);	 
-        template.data("domainId", json.id).data("domainName", fromdb(json.name)).data("domainLevel", level); 	       
+        //template.data("domainId", json.id).data("domainName", fromdb(json.name)).data("domainLevel", level); 	   
+        template.data("jsonObj", json).data("domainLevel", level); 	      
         template.find("#domain_title_container").attr("id", "domain_title_container_"+json.id); 	        
         template.find("#domain_expand_icon").attr("id", "domain_expand_icon_"+json.id); 
         template.find("#domain_name").attr("id", "domain_name_"+json.id).text(json.name);        	              	
@@ -129,15 +127,19 @@ function afterLoadDomainJSP() {
 		var template = $(this);
 		var target = $(event.target);
 		var action = target.attr("id");
-		var id = template.attr("id");	
-		var domainId = template.data("domainId");	
-		var domainName = template.data("domainName");										
+		var id = template.attr("id");
+		var jsonObj = template.data("jsonObj");	
+		var domainId = jsonObj.id;	
+		var domainName = jsonObj.name;										
 		if (action.indexOf("domain_expand_icon")!=-1) {		
 		    clickExpandIcon(domainId);					
 		}
-		else if(action.indexOf("domain_name")!=-1) {			    			 
-		    domainDetail.find("#domain_name").text(domainName);
-		    domainDetail.find("#domain_id").text(domainId);			  	
+		else if(action.indexOf("domain_name")!=-1) {
+		    var $detailsTab = $("#right_panel_content #tab_content_details");   
+            $detailsTab.data("jsonObj", jsonObj);  
+            $detailsTab.find("#id").text(domainId);
+            $detailsTab.find("#name").text(domainName);		   
+					  	
 		  	$.ajax({
 			    cache: false,				
 			    data: createURL("command=listAccounts&domainid="+domainId+maxPageSize),
@@ -145,14 +147,16 @@ function afterLoadDomainJSP() {
 			    success: function(json) {				       
 				    var accounts = json.listaccountsresponse.account;					
 				    if (accounts != null) {	
-				        domainDetail.find("#redirect_to_account_page").text(accounts.length);	
-				        domainDetail.find("#redirect_to_account_page").bind("click", function() {
+				        $detailsTab.find("#redirect_to_account_page").text(accounts.length);	
+				        /*
+				        $detailsTab.find("#redirect_to_account_page").bind("click", function() {
 				            $("#menutab_role_root #menutab_accounts").data("domainId", domainId).click();
 				        });	
+				        */
 				    }
 				    else {
-				        domainDetail.find("#redirect_to_account_page").text("");
-				        domainDetail.find("#redirect_to_account_page").unbind("click");	
+				        $detailsTab.find("#redirect_to_account_page").text("");
+				        //$detailsTab.find("#redirect_to_account_page").unbind("click");	
 				    }						   		                 
 			    }		
 		    });		 
@@ -164,14 +168,16 @@ function afterLoadDomainJSP() {
 			    success: function(json) {
 				    var instances = json.listvirtualmachinesresponse.virtualmachine;					
 				    if (instances != null) {	
-				        domainDetail.find("#redirect_to_instance_page").text(instances.length);	
-				        domainDetail.find("#redirect_to_instance_page").bind("click", function() {
+				        $detailsTab.find("#redirect_to_instance_page").text(instances.length);	
+				        /*
+				        $detailsTab.find("#redirect_to_instance_page").bind("click", function() {
 				            $("#menutab_role_root #menutab_vm").data("domainId", domainId).click();
 				        });	
+				        */
 				    }
 				    else {
-				        domainDetail.find("#redirect_to_instance_page").text("");
-				        domainDetail.find("#redirect_to_instance_page").unbind("click");	
+				        $detailsTab.find("#redirect_to_instance_page").text("");
+				        //$detailsTab.find("#redirect_to_instance_page").unbind("click");	
 				    }						   		                 
 			    }		
 		    });		 
@@ -183,14 +189,16 @@ function afterLoadDomainJSP() {
 			    success: function(json) {
 				    var volumes = json.listvolumesresponse.volume;						
 				    if (volumes != null) {	
-				        domainDetail.find("#redirect_to_volume_page").text(volumes.length);	
-				        domainDetail.find("#redirect_to_volume_page").bind("click", function() {
+				        $detailsTab.find("#redirect_to_volume_page").text(volumes.length);	
+				        /*
+				        $detailsTab.find("#redirect_to_volume_page").bind("click", function() {
 				            $("#menutab_role_root #menutab_storage").data("domainId", domainId).data("targetTab", "submenu_volume").click();
 				        });	
+				        */
 				    }	
 				    else {
-				        domainDetail.find("#redirect_to_volume_page").text("");
-				        domainDetail.find("#redirect_to_volume_page").unbind("click");	
+				        $detailsTab.find("#redirect_to_volume_page").text("");
+				        //$detailsTab.find("#redirect_to_volume_page").unbind("click");	
 				    }							   		                 
 			    }		
 		    });
