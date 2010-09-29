@@ -369,9 +369,12 @@ function clickInstanceGroupHeader($arrowIcon) {
         $midmenuItem1.find("#first_row").text(vmName);        
         $midmenuItem1.find("#second_row").text(json.ipaddress);                                            
         updateVirtualMachineStateInMidMenu(json, $midmenuItem1);        
+        
+        $midmenuItem1.data("toRightPanelFn", vmToRightPanel);    
         $midmenuItem1.bind("click", function(event) {  
             var $t = $(this);     
-            vmToRightPanel($t);	 
+            var toRightPanelFn = $t.data("toRightPanelFn");
+            toRightPanelFn($t);	 
             return false;
         }); 
     }
@@ -575,8 +578,7 @@ function clickInstanceGroupHeader($arrowIcon) {
                     var instances = json.listvirtualmachinesresponse.virtualmachine;    
                     if (instances != null && instances.length > 0) {	                           
                         for(var i=0; i<instances.length;i++) {  
-                            var $midmenuItem1 = $midmenuItem.clone();
-                            $midmenuItem1.data("toRightPanelFn", vmToRightPanel);                                                                                                                               
+                            var $midmenuItem1 = $midmenuItem.clone();                                                                                                                                                       
                             vmToMidmenu(instances[i], $midmenuItem1);  
                             $("#midmenu_container").append($midmenuItem1.show());
                         }  
