@@ -19,7 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -27,7 +27,7 @@ import com.cloud.api.ResponseObject;
 import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="disableAccount", manager=Manager.ManagementServer)
-public class DisableAccountCmd extends BaseCmd {
+public class DisableAccountCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(DisableAccountCmd.class.getName());
     private static final String s_name = "disableaccountresponse";
 

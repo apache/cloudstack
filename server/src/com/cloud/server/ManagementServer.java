@@ -34,6 +34,7 @@ import com.cloud.api.commands.DeletePortForwardingServiceCmd;
 import com.cloud.api.commands.DeletePreallocatedLunCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
+import com.cloud.api.commands.DisableUserCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.ExtractVolumeCmd;
@@ -202,10 +203,10 @@ public interface ManagementServer {
 
     /**
      * Disables a user by userId
-     * @param userId
+     * @param cmd the command wrapping the userId parameter
      * @return true if disable was successful, false otherwise
      */
-    boolean disableUser(long userId);
+    boolean disableUser(DisableUserCmd cmd);
 
     /**
      * Disables an account by accountId

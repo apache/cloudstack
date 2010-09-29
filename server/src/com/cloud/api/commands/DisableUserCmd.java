@@ -19,12 +19,14 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ResponseObject;
 import com.cloud.api.response.SuccessResponse;
 
-public class DisableUserCmd extends BaseCmd {
+@Implementation(method="disableUser")
+public class DisableUserCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(DisableUserCmd.class.getName());
     private static final String s_name = "disableuserresponse";
 

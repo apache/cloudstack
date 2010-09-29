@@ -71,6 +71,7 @@ import com.cloud.api.commands.DeletePortForwardingServiceCmd;
 import com.cloud.api.commands.DeletePreallocatedLunCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
+import com.cloud.api.commands.DisableUserCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.ExtractVolumeCmd;
@@ -964,7 +965,8 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean disableUser(long userId) {
+    public boolean disableUser(DisableUserCmd cmd) {
+        Long userId = cmd.getId();
         if (userId <= 2) {
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("disableUser -- invalid user id: " + userId);
@@ -972,7 +974,21 @@ public class ManagementServerImpl implements ManagementServer {
             return false;
         }
 
-        return doSetUserStatus(userId, Account.ACCOUNT_STATE_DISABLED);
+        boolean success = doSetUserStatus(userId, Account.ACCOUNT_STATE_DISABLED);
+        if (success) {
+            User user = _userDao.findById(userId);
+            List<UserVO> allUsersByAccount = _userDao.listByAccount(user.getAccountId());
+            for (UserVO oneUser : allUsersByAccount) {
+                if (oneUser.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
+                    return true;
+                }
+            }
+
+            // there are no enabled users attached to this user's account, disable the account
+            return disableAccount(user.getAccountId());
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -3189,10 +3205,11 @@ public class ManagementServerImpl implements ManagementServer {
     public List<AccountVO> searchForAccounts(ListAccountsCmd cmd) {
         Account account = (Account)UserContext.current().getAccountObject();
         Long domainId = cmd.getDomainId();
-        String accountName = cmd.getAccountName();
         Long accountId = cmd.getId();
+        String accountName = null;
 
         if ((account == null) || isAdmin(account.getType())) {
+            accountName = cmd.getSearchName(); // admin's can specify a name to search for
             if (domainId == null) {
                 // default domainId to the admin's domain
                 domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
@@ -3203,6 +3220,7 @@ public class ManagementServerImpl implements ManagementServer {
             }
         } else {
             accountId = account.getId();
+            accountName = account.getAccountName(); // regular users must be constrained to their own account
         }
 
         Filter searchFilter = new Filter(AccountVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());

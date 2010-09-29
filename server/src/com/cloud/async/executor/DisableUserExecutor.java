@@ -46,7 +46,7 @@ public class DisableUserExecutor extends BaseAsyncJobExecutor {
 		AsyncJobVO job = getJob();
 		ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
 		Long param = gson.fromJson(job.getCmdInfo(), Long.class);
-		
+		/*
 		SyncQueueItemVO syncItem = getSyncSource();
 		if(syncItem == null) {
 			initialSchedule(managementServer, param.longValue());
@@ -76,6 +76,7 @@ public class DisableUserExecutor extends BaseAsyncJobExecutor {
 						+ " has ceased, still more to go to disable account for user " + param);
 			}
 		}
+		*/
 		return true;
 	}
 	
@@ -90,7 +91,7 @@ public class DisableUserExecutor extends BaseAsyncJobExecutor {
 				"User " + userId + " does not exist");
 			return;
 		}
-		
+		/*
 		if(managementServer.disableUser(userId)) {
 			if(needToDisableAccount(user)) {
 				if(s_logger.isInfoEnabled())
@@ -120,6 +121,7 @@ public class DisableUserExecutor extends BaseAsyncJobExecutor {
 			asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, 
 					"Unable to disable user " + userId);
 		}
+		*/
 	}
 	
 	private boolean needToDisableAccount(UserVO user) {
