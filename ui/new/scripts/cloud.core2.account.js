@@ -54,8 +54,8 @@ function accountJsonToDetailsTab(jsonObj) {
     $detailsTab.find("#domain").text(fromdb(jsonObj.domain));
     $detailsTab.find("#vm_total").text(jsonObj.vmtotal);
     $detailsTab.find("#ip_total").text(jsonObj.iptotal);
-    $detailsTab.find("#bytes_received").text(jsonObj.receivedbytes);
-    $detailsTab.find("#bytes_sent").text(jsonObj.sentbytes);
+    $detailsTab.find("#bytes_received").text(convertBytes(jsonObj.receivedbytes));
+    $detailsTab.find("#bytes_sent").text(convertBytes(jsonObj.sentbytes));
     $detailsTab.find("#state").text(jsonObj.state);
     
     //actions ***

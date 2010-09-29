@@ -24,9 +24,12 @@
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
             <%=t.t("Details")%></div>
+        <div class="content_tabs off" id="tab_admin_account">
+            <%=t.t("Admin.Accounts")%></div>
         <div class="content_tabs off" id="tab_resource_limits">
             <%=t.t("Resource.Limits")%></div>
     </div>  
+    <!-- Details tab (start)-->
     <div id="tab_content_details">
         <div class="grid_container">
             <div class="grid_rows odd">
@@ -81,7 +84,14 @@
             </div>
         </div>
     </div>    
+    <!-- Details tab (end)-->
     
+    <!-- Admin Account tab (start)-->
+    <div style="display: none;" id="tab_content_admin_account">
+    </div>
+    <!-- Admin Account tab (end)-->
+    
+    <!-- Resource Limits tab (start)-->
     <div id="tab_content_resource_limits" style="display:none">
         <div class="grid_actionpanel">            
             <div class="grid_editbox" id="edit_button">
@@ -161,7 +171,7 @@
             <div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
         </div>
     </div>
-        
+    <!-- Resource Limits tab (start)-->    
 </div>
 <!-- domain detail panel (end) -->
 
@@ -177,3 +187,103 @@
     </div>
 </div>
 <!-- treenode template (end) -->
+
+<!-- admin account tab template (begin) -->
+<div class="grid_container" id="admin_account_tab_template" style="display: none">
+    <div class="grid_header">
+        <div class="grid_header_title" id="name">
+        </div>       
+    </div> 
+        
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("ID")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="id">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Role")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="role">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Account")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="account">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Domain")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="domain">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("VMs")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="vm_total">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("IPs")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="ip_total">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Bytes.Received")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="bytes_received">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Bytes.Sent")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="bytes_sent">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("State")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="state">
+            </div>
+        </div>
+    </div> 
+</div>
+<!-- admin account tab template (end) -->

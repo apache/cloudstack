@@ -52,7 +52,7 @@ function afterLoadDomainJSP() {
     
     function drawTree(id, level, container) {		        
         $.ajax({
-		    data: createURL("command=listDomainChildren&id="+id+"&response=json&pageSize=-1"),
+		    data: createURL("command=listDomainChildren&id="+id+"&pageSize=-1"),
 		    dataType: "json",
 		    async: false,
 		    success: function(json) {					        
@@ -80,14 +80,17 @@ function afterLoadDomainJSP() {
 		}			
 	}					
 	
-	function accountJSONToTemplate(json, template) {           
-        if (index++ % 2 == 0) {
-		    template.addClass("smallrow_odd");
-	    } else {
-		    template.addClass("smallrow_even");
-	    }			    	        
-	    template.find("#grid_row_cell1").text(json.domain);
-	    template.find("#grid_row_cell2").text(json.name);		    	    
+	function accountJSONToTemplate(jsonObj, $template) {   
+        $template.data("jsonObj", jsonObj);  
+        $template.find("#id").text(jsonObj.id);
+        $template.find("#role").text(toRole(jsonObj.accounttype));
+        $template.find("#account").text(fromdb(jsonObj.name));
+        $template.find("#domain").text(fromdb(jsonObj.domain));
+        $template.find("#vm_total").text(jsonObj.vmtotal);
+        $template.find("#ip_total").text(jsonObj.iptotal);
+        $template.find("#bytes_received").text(convertBytes(jsonObj.receivedbytes));
+        $template.find("#bytes_sent").text(convertBytes(jsonObj.sentbytes));
+        $template.find("#state").text(jsonObj.state);
     }
  	
 	function updateResourceLimit(domainId, type, max, $readonlyField) {
@@ -101,29 +104,27 @@ function afterLoadDomainJSP() {
 	}
 	
 	function listAdminAccounts(domainId) {   
-	    gridContent.empty();
-	    index = 0;		    
-	    rightPanelDetailContent.find("#loading_gridtable").show(); 		
+	    //gridContent.empty();
+	    //index = 0;		    
+	    //rightPanelDetailContent.find("#loading_gridtable").show(); 		
 	    var accountType = (domainId==1)? 1: 2; 	    		
 	    $.ajax({
 			cache: false,				
-		       data: createURL("command=listAccounts&domainid="+domainId+"&accounttype="+accountType+"&response=json"+maxPageSize),
+		    data: createURL("command=listAccounts&domainid="+domainId+"&accounttype="+accountType+maxPageSize),
 			dataType: "json",
 			success: function(json) {
-				var accounts = json.listaccountsresponse.account;					
-				if (accounts != null && accounts.length > 0) {					    
-					for (var i = 0; i < accounts.length; i++) {
-						var template = gridRowTemplate.clone(true).attr("id","account"+accounts[i].id);
-						accountJSONToTemplate(accounts[i], template);							
-						gridContent.append(template.show());
-					}						
+				var items = json.listaccountsresponse.account;					
+				if (items != null && items.length > 0) {	
+				    var $container = $("#right_panel_content #tab_content_admin_account").empty();
+					var $template = $("#admin_account_tab_template");				
+					for (var i = 0; i < items.length; i++) {
+						var $newTemplate = $template.clone(true);
+		                accountJSONToTemplate(items[i], $newTemplate); 
+		                $container.append($newTemplate.show());	
+					}				    				
 				} 
-			    rightPanelDetailContent.find("#loading_gridtable").hide();                  
-			},
-			error: function(XMLHttpResponse) {									
-				handleError(XMLHttpResponse);
-				rightPanelDetailContent.find("#loading_gridtable").hide(); 
-			}			
+			    //rightPanelDetailContent.find("#loading_gridtable").hide();                  
+			}		
 		});		
 	}
 	
@@ -149,170 +150,89 @@ function afterLoadDomainJSP() {
 			    dataType: "json",
 			    success: function(json) {				       
 				    var accounts = json.listaccountsresponse.account;					
-				    if (accounts != null) {	
-				        $detailsTab.find("#redirect_to_account_page").text(accounts.length);	
-				        /*
-				        $detailsTab.find("#redirect_to_account_page").bind("click", function() {
-				            $("#menutab_role_root #menutab_accounts").data("domainId", domainId).click();
-				        });	
-				        */
-				    }
-				    else {
-				        $detailsTab.find("#redirect_to_account_page").text("");
-				        //$detailsTab.find("#redirect_to_account_page").unbind("click");	
-				    }						   		                 
+				    if (accounts != null) 	
+				        $detailsTab.find("#redirect_to_account_page").text(accounts.length);
+				    else 
+				        $detailsTab.find("#redirect_to_account_page").text("");		
 			    }		
 		    });		 
 		  			 				 			 
 		    $.ajax({
 			    cache: false,				
-			    data: createURL("command=listVirtualMachines&domainid="+domainId+"&response=json"),
+			    data: createURL("command=listVirtualMachines&domainid="+domainId),
 			    dataType: "json",
 			    success: function(json) {
 				    var instances = json.listvirtualmachinesresponse.virtualmachine;					
-				    if (instances != null) {	
+				    if (instances != null) 	
 				        $detailsTab.find("#redirect_to_instance_page").text(instances.length);	
-				        /*
-				        $detailsTab.find("#redirect_to_instance_page").bind("click", function() {
-				            $("#menutab_role_root #menutab_vm").data("domainId", domainId).click();
-				        });	
-				        */
-				    }
-				    else {
-				        $detailsTab.find("#redirect_to_instance_page").text("");
-				        //$detailsTab.find("#redirect_to_instance_page").unbind("click");	
-				    }						   		                 
+				    else 
+				        $detailsTab.find("#redirect_to_instance_page").text("");	
 			    }		
 		    });		 
 		    			    
 		    $.ajax({
 			    cache: false,				
-			    data: createURL("command=listVolumes&domainid="+domainId+"&response=json"),
+			    data: createURL("command=listVolumes&domainid="+domainId),
 			    dataType: "json",
 			    success: function(json) {
 				    var volumes = json.listvolumesresponse.volume;						
-				    if (volumes != null) {	
+				    if (volumes != null) 	
 				        $detailsTab.find("#redirect_to_volume_page").text(volumes.length);	
-				        /*
-				        $detailsTab.find("#redirect_to_volume_page").bind("click", function() {
-				            $("#menutab_role_root #menutab_storage").data("domainId", domainId).data("targetTab", "submenu_volume").click();
-				        });	
-				        */
-				    }	
-				    else {
-				        $detailsTab.find("#redirect_to_volume_page").text("");
-				        //$detailsTab.find("#redirect_to_volume_page").unbind("click");	
-				    }							   		                 
+				    else 
+				        $detailsTab.find("#redirect_to_volume_page").text("");		
 			    }		
 		    });
 
+            listAdminAccounts(domainId);  
+
 			if (isAdmin() || (isDomainAdmin() && (g_domainid != domainId))) {
-				$("#tab_resource_limits").show();
-			
-			    //???
-				//$("#account_resource_limits").data("domainId", domainId).unbind("click").bind("click", function() {
-					//debugger;
-					$.ajax({
-						cache: false,				
-						data: createURL("command=listResourceLimits&domainid="+domainId+"&response=json"),
-						dataType: "json",
-						success: function(json) {
-							var limits = json.listresourcelimitsresponse.resourcelimit;		
-							var preInstanceLimit, preIpLimit, preDiskLimit, preSnapshotLimit, preTemplateLimit = -1;
-							if (limits != null) {	
-								for (var i = 0; i < limits.length; i++) {
-									var limit = limits[i];
-									switch (limit.resourcetype) {
-										case "0":
-											preInstanceLimit = limit.max;
-											$resourceLimitsTab.find("#limits_vm").text(preInstanceLimit);
-											$resourceLimitsTab.find("#limits_vm_edit").val(preInstanceLimit);
-											break;
-										case "1":
-											preIpLimit = limit.max;
-											$resourceLimitsTab.find("#limits_ip").text(preIpLimit);
-											$resourceLimitsTab.find("#limits_ip_edit").val(preIpLimit);
-											break;
-										case "2":
-											preDiskLimit = limit.max;
-											$resourceLimitsTab.find("#limits_volume").text(preDiskLimit);
-											$resourceLimitsTab.find("#limits_volume_edit").val(preDiskLimit);
-											break;
-										case "3":
-											preSnapshotLimit = limit.max;
-											$resourceLimitsTab.find("#limits_snapshot").text(preSnapshotLimit);
-											$resourceLimitsTab.find("#limits_snapshot_edit").val(preSnapshotLimit);
-											break;
-										case "4":
-											preTemplateLimit = limit.max;
-											$resourceLimitsTab.find("#limits_template").text(preTemplateLimit);
-											$resourceLimitsTab.find("#limits_template_edit").val(preTemplateLimit);
-											break;
-									}
+				$("#tab_resource_limits").show();			
+				$.ajax({
+					cache: false,				
+					data: createURL("command=listResourceLimits&domainid="+domainId),
+					dataType: "json",
+					success: function(json) {
+						var limits = json.listresourcelimitsresponse.resourcelimit;		
+						var preInstanceLimit, preIpLimit, preDiskLimit, preSnapshotLimit, preTemplateLimit = -1;
+						if (limits != null) {	
+							for (var i = 0; i < limits.length; i++) {
+								var limit = limits[i];
+								switch (limit.resourcetype) {
+									case "0":
+										preInstanceLimit = limit.max;
+										$resourceLimitsTab.find("#limits_vm").text(preInstanceLimit);
+										$resourceLimitsTab.find("#limits_vm_edit").val(preInstanceLimit);
+										break;
+									case "1":
+										preIpLimit = limit.max;
+										$resourceLimitsTab.find("#limits_ip").text(preIpLimit);
+										$resourceLimitsTab.find("#limits_ip_edit").val(preIpLimit);
+										break;
+									case "2":
+										preDiskLimit = limit.max;
+										$resourceLimitsTab.find("#limits_volume").text(preDiskLimit);
+										$resourceLimitsTab.find("#limits_volume_edit").val(preDiskLimit);
+										break;
+									case "3":
+										preSnapshotLimit = limit.max;
+										$resourceLimitsTab.find("#limits_snapshot").text(preSnapshotLimit);
+										$resourceLimitsTab.find("#limits_snapshot_edit").val(preSnapshotLimit);
+										break;
+									case "4":
+										preTemplateLimit = limit.max;
+										$resourceLimitsTab.find("#limits_template").text(preTemplateLimit);
+										$resourceLimitsTab.find("#limits_template_edit").val(preTemplateLimit);
+										break;
 								}
-							}	
-							
-							/*
-							$("#dialog_resource_limits")
-							.dialog('option', 'buttons', { 									
-								"Save": function() { 	
-									// validate values
-									var isValid = true;					
-									isValid &= validateNumber("Instance Limit", $("#dialog_resource_limits #limits_vm"), $("#dialog_resource_limits #limits_vm_errormsg"), -1, 32000, false);
-									isValid &= validateNumber("Public IP Limit", $("#dialog_resource_limits #limits_ip"), $("#dialog_resource_limits #limits_ip_errormsg"), -1, 32000, false);
-									isValid &= validateNumber("Disk Volume Limit", $("#dialog_resource_limits #limits_volume"), $("#dialog_resource_limits #limits_volume_errormsg"), -1, 32000, false);
-									isValid &= validateNumber("Snapshot Limit", $("#dialog_resource_limits #limits_snapshot"), $("#dialog_resource_limits #limits_snapshot_errormsg"), -1, 32000, false);
-									isValid &= validateNumber("Template Limit", $("#dialog_resource_limits #limits_template"), $("#dialog_resource_limits #limits_template_errormsg"), -1, 32000, false);
-									if (!isValid) return;
-																
-									var instanceLimit = trim($("#dialog_resource_limits #limits_vm").val());
-									var ipLimit = trim($("#dialog_resource_limits #limits_ip").val());
-									var diskLimit = trim($("#dialog_resource_limits #limits_volume").val());
-									var snapshotLimit = trim($("#dialog_resource_limits #limits_snapshot").val());
-									var templateLimit = trim($("#dialog_resource_limits #limits_template").val());
-															
-									$(this).dialog("close"); 
-									if (instanceLimit != preInstanceLimit) {
-										updateResourceLimit(domainId, 0, instanceLimit);
-									}
-									if (ipLimit != preIpLimit) {
-										updateResourceLimit(domainId, 1, ipLimit);
-									}
-									if (diskLimit != preDiskLimit) {
-										updateResourceLimit(domainId, 2, diskLimit);
-									}
-									if (snapshotLimit != preSnapshotLimit) {
-										updateResourceLimit(domainId, 3, snapshotLimit);
-									}
-									if (templateLimit != preTemplateLimit) {
-										updateResourceLimit(domainId, 4, templateLimit);
-									}
-								}, 
-								"Cancel": function() { 
-									$(this).dialog("close"); 
-								} 
-							}).dialog("open");
-							*/
-							
-							
-						}
-					});
-					//return false;
-				//});
-				//???
-				
-				
-			} else {
+							}
+						}						
+					}
+				});				
+			} 
+			else {
 				$("#tab_resource_limits").hide();
-			}
-		 
-		    rightPanelDetailContent.show();	
-	        rightPanelSearchResult.hide();	 
-		    			    
-		    listAdminAccounts(domainId);  
-		    rightPanelGrid.show();		    
-		}
-					
+			}		 		   
+		}					
 		return false;
     });
 	
@@ -335,7 +255,7 @@ function afterLoadDomainJSP() {
 	    rightPanelSearchResult.show();	                	        	
         var keyword = searchInput.val();             
         $.ajax({
-	        data: createURL("command=listDomains&keyword="+keyword+"&response=json&pageSize=-1"), //pageSize=-1 will return all items (no limitation)
+	        data: createURL("command=listDomains&keyword="+keyword+"&pageSize=-1"), //pageSize=-1 will return all items (no limitation)
 	        dataType: "json",
 	        async: false,
 	        success: function(json) {					        
@@ -367,7 +287,7 @@ function afterLoadDomainJSP() {
 	function drawRootNode(rootDomainId) {
 	    treeContentBox.empty();
 	    $.ajax({
-	        data: createURL("command=listDomains&id="+rootDomainId+"&response=json&pageSize=-1"), //pageSize=-1 will return all items (no limitation)
+	        data: createURL("command=listDomains&id="+rootDomainId+"&pageSize=-1"), //pageSize=-1 will return all items (no limitation)
 	        dataType: "json",
 	        async: false,
 	        success: function(json) {					        
@@ -421,17 +341,25 @@ function afterLoadDomainJSP() {
 	 //***** switch to different tab (begin) ********************************************************************
     $("#tab_details").bind("click", function(event){
         $(this).removeClass("off").addClass("on");
-        $("#tab_resource_limits").removeClass("on").addClass("off");  
+        $("#tab_resource_limits, #tab_admin_account").removeClass("on").addClass("off");  
         $("#tab_content_details").show();     
-        $("#tab_content_resource_limits").hide();   
+        $("#tab_content_resource_limits, #tab_content_admin_account").hide();   
         return false;
     });
     
     $("#tab_resource_limits").bind("click", function(event){
         $(this).removeClass("off").addClass("on");
-        $("#tab_details").removeClass("on").addClass("off");   
+        $("#tab_details, #tab_admin_account").removeClass("on").addClass("off");   
         $("#tab_content_resource_limits").show();    
-        $("#tab_content_details").hide();    
+        $("#tab_content_details, #tab_content_admin_account").hide();    
+        return false;
+    });
+    
+    $("#tab_admin_account").bind("click", function(event){
+        $(this).removeClass("off").addClass("on");
+        $("#tab_details, #tab_resource_limits").removeClass("on").addClass("off");   
+        $("#tab_content_admin_account").show();    
+        $("#tab_content_details, #tab_content_resource_limits").hide();    
         return false;
     });
     //***** switch to different tab (end) ********************************************************************** 
