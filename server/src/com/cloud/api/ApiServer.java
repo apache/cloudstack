@@ -373,10 +373,10 @@ public class ApiServer implements HttpRequestHandler {
             if (objectId != null) {
                 return ((BaseAsyncCreateCmd)asyncCmd).getResponse(jobId, objectId);
             }
-            return ApiResponseSerializer.toSerializedString(asyncCmd.getResponse(jobId));
+            return ApiResponseSerializer.toSerializedString(asyncCmd.getResponse(jobId), asyncCmd.getResponseType());
         } else {
             _dispatcher.dispatch(cmdObj, params);
-            return ApiResponseSerializer.toSerializedString(cmdObj.getResponse());
+            return ApiResponseSerializer.toSerializedString(cmdObj.getResponse(), cmdObj.getResponseType());
         }
     }
 

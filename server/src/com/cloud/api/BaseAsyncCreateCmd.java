@@ -20,6 +20,6 @@ public abstract class BaseAsyncCreateCmd extends BaseAsyncCmd {
         response.setJobId(jobId);
         response.setId(objectId);
         response.setResponseName(getName());
-        return ApiResponseSerializer.toSerializedString(response);
+        return ApiResponseSerializer.toSerializedString(response, getResponseType());
     }
 }

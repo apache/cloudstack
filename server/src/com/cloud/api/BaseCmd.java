@@ -27,7 +27,6 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.server.ManagementServerImpl;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
@@ -94,6 +93,20 @@ public abstract class BaseCmd {
 
     private Object _responseObject = null;
 
+    @Parameter(name="response", type=CommandType.STRING)
+    private String responseType;
+
+    public String getResponseType() {
+        if (responseType == null) {
+            return RESPONSE_TYPE_XML;
+        }
+        return responseType;
+    }
+
+    public void setResponseType(String responseType) {
+        this.responseType = responseType;
+    }
+
     public abstract String getName();
     public abstract ResponseObject getResponse();
 
@@ -104,7 +117,6 @@ public abstract class BaseCmd {
     public void setResponseObject(Object responseObject) {
         _responseObject = responseObject;
     }
-
 
     public String getDateString(Date date) {
         if (date == null) {
