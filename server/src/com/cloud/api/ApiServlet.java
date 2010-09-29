@@ -154,12 +154,12 @@ public class ApiServlet extends HttpServlet {
             // we no longer rely on web-session here, verifyRequest will populate user/account information
             // if a API key exists
             UserContext.registerContext(null, null, null, null, null, null, false);
-            String userId = null;
+            Long userId = null;
 
             if (!isNew) {
-                userId = (String)session.getAttribute("userid");
+                userId = (Long)session.getAttribute("userid");
                 String account = (String)session.getAttribute("account");
-                String domainId = (String)session.getAttribute("domainid");
+                Long domainId = (Long)session.getAttribute("domainid");
                 Object accountObj = session.getAttribute("accountobj");
                 String sessionKey = (String)session.getAttribute("sessionkey");
                 String[] sessionKeyParam = (String[])params.get("sessionkey");
@@ -169,14 +169,14 @@ public class ApiServlet extends HttpServlet {
                 }
 
                 // Do a sanity check here to make sure the user hasn't already been deleted
-                if ((userId != null) && (account != null) && (accountObj != null) && _apiServer.verifyUser(Long.valueOf(userId))) {
+                if ((userId != null) && (account != null) && (accountObj != null) && _apiServer.verifyUser(userId)) {
                     String[] command = (String[])params.get("command");
                     if (command == null) {
                         s_logger.info("missing command, ignoring request...");
                         resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "no command specified");
                         return;
                     }
-                    UserContext.updateContext(Long.valueOf(userId), accountObj, account, ((Account)accountObj).getId(), Long.valueOf(domainId), session.getId());
+                    UserContext.updateContext(userId, accountObj, account, ((Account)accountObj).getId(), domainId, session.getId());
                 } else {
                     // Invalidate the session to ensure we won't allow a request across management server restarts if the userId was serialized to the
                     // stored session

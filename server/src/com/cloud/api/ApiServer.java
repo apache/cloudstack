@@ -380,7 +380,7 @@ public class ApiServer implements HttpRequestHandler {
         }
     }
 
-    public boolean verifyRequest(Map<String, Object[]> requestParameters, String userId) {
+    public boolean verifyRequest(Map<String, Object[]> requestParameters, Long userId) {
         try {
             String apiKey = null;
             String secretKey = null;
@@ -397,7 +397,7 @@ public class ApiServer implements HttpRequestHandler {
             
             //if userId not null, that mean that user is logged in
             if (userId != null) {
-            	Long accountId = _ms.findUserById(Long.valueOf(userId)).getAccountId();
+            	Long accountId = _ms.findUserById(userId).getAccountId();
             	Account userAccount = _ms.findAccountById(accountId);
             	short accountType = userAccount.getType();
             	
@@ -564,7 +564,7 @@ public class ApiServer implements HttpRequestHandler {
             	systemVmUseLocalStorage = "false";            
 
             // set the userId and account object for everyone
-            session.setAttribute("userid", userAcct.getId().toString());
+            session.setAttribute("userid", userAcct.getId());
             session.setAttribute("username", userAcct.getUsername());
             session.setAttribute("firstname", userAcct.getFirstname());
             session.setAttribute("lastname", userAcct.getLastname());
