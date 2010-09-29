@@ -59,7 +59,6 @@ import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.Snapshot;
-import com.cloud.storage.SnapshotPolicyRefVO;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
@@ -74,7 +73,6 @@ import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
-import com.cloud.storage.dao.SnapshotPolicyRefDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -116,7 +114,6 @@ public class SnapshotManagerImpl implements SnapshotManager {
     @Inject protected StoragePoolDao _storagePoolDao;
     @Inject protected EventDao _eventDao;
     @Inject protected SnapshotPolicyDao _snapshotPolicyDao =  null;
-    @Inject protected SnapshotPolicyRefDao _snapPolicyRefDao =  null;
     @Inject protected SnapshotScheduleDao _snapshotScheduleDao;
     @Inject protected DetailsDao _detailsDao;
     @Inject protected VMTemplateDao _templateDao;
@@ -915,7 +912,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
     public List<SnapshotPolicyVO> listPoliciesforVolume(long volumeId) {
         return _snapshotPolicyDao.listByVolumeId(volumeId);
     }
-    
+/*    
     @Override
     public List<SnapshotPolicyVO> listPoliciesforSnapshot(long snapshotId) {
         SearchCriteria<SnapshotPolicyVO> sc = PoliciesForSnapSearch.create();
@@ -929,7 +926,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
         sc.setJoinParameters("policy", "policyId", policyId);
         return _snapshotDao.search(sc, filter);
     }
-
+*/
 
     @Override
     public List<SnapshotVO> listSnapsforVolume(long volumeId) {
@@ -1009,22 +1006,6 @@ public class SnapshotManagerImpl implements SnapshotManager {
         _totalRetries = NumbersUtil.parseInt(configDao.getValue("total.retries"), 4);
         _pauseInterval = 2*NumbersUtil.parseInt(configDao.getValue("ping.interval"), 60);
         
-        SearchBuilder<SnapshotPolicyRefVO> policySearch = _snapPolicyRefDao.createSearchBuilder();
-        policySearch.and("policyId", policySearch.entity().getPolicyId(), SearchCriteria.Op.EQ);
-        
-        PolicySnapshotSearch = _snapshotDao.createSearchBuilder();
-        PolicySnapshotSearch.join("policy", policySearch, policySearch.entity().getSnapshotId(), PolicySnapshotSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        policySearch.done();
-        PolicySnapshotSearch.done();
-        
-        PoliciesForSnapSearch = _snapshotPolicyDao.createSearchBuilder();
-        
-        SearchBuilder<SnapshotPolicyRefVO> policyRefSearch = _snapPolicyRefDao.createSearchBuilder();
-        policyRefSearch.and("snapshotId", policyRefSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
-        
-        PoliciesForSnapSearch.join("policyRef", policyRefSearch, policyRefSearch.entity().getPolicyId(), PoliciesForSnapSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        policyRefSearch.done();
-        PoliciesForSnapSearch.done();
         s_logger.info("Snapshot Manager is configured.");
 
         return true;

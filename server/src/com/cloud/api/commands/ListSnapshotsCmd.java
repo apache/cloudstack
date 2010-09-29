@@ -122,7 +122,7 @@ public class ListSnapshotsCmd extends BaseCmd {
         
         List<SnapshotVO> snapshots = null;
 		try {
-			snapshots = getManagementServer().listSnapshots(c, interval);
+			snapshots = getManagementServer().listSnapshots(c);
 		} catch (InvalidParameterValueException e) {
 			throw new ServerApiException(SNAPSHOT_INVALID_PARAM_ERROR, e.getMessage());
 		}

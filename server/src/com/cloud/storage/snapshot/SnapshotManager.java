@@ -114,8 +114,9 @@ public interface SnapshotManager extends Manager {
     /**
      * Lists all snapshots for the volume which are created using schedule of the specified policy
      */
+    /*
     List<SnapshotVO> listSnapsforPolicy(long policyId, Filter filter);
-      
+      */
     /**
      * List all policies which are assigned to the specified volume
      */
@@ -125,8 +126,9 @@ public interface SnapshotManager extends Manager {
      * List all policies to which a specified snapshot belongs. For ex: A snapshot 
      * may belong to a hourly snapshot and a daily snapshot run at the same time
      */
+    /*
     List<SnapshotPolicyVO> listPoliciesforSnapshot(long snapshotId);
-    
+    */
     /**
      * List all snapshots for a specified volume irrespective of the policy which
      * created the snapshot

@@ -1733,7 +1733,7 @@ public interface ManagementServer {
      * @return list of snapshots
      * @throws InvalidParameterValueException
      */
-    List<SnapshotVO> listSnapshots(Criteria c, String interval) throws InvalidParameterValueException;
+    List<SnapshotVO> listSnapshots(Criteria c) throws InvalidParameterValueException;
 
     /**
      * find a single snapshot by id

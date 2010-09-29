@@ -6888,7 +6888,7 @@ public class ManagementServerImpl implements ManagementServer {
 
 
     @Override
-    public List<SnapshotVO> listSnapshots(Criteria c, String interval) throws InvalidParameterValueException {
+    public List<SnapshotVO> listSnapshots(Criteria c) throws InvalidParameterValueException {
         Filter searchFilter = new Filter(SnapshotVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
         SearchCriteria<SnapshotVO> sc = _snapshotDao.createSearchCriteria();
 
@@ -6934,18 +6934,6 @@ public class ManagementServerImpl implements ManagementServer {
         else {
             // Show only MANUAL and RECURRING snapshot types
             sc.addAnd("snapshotType", SearchCriteria.Op.NEQ, Snapshot.SnapshotType.TEMPLATE.ordinal());
-        }
-        if(interval != null && volumeId != null) {
-            IntervalType intervalType =  DateUtil.IntervalType.getIntervalType(interval);
-            if(intervalType == null) {
-                throw new InvalidParameterValueException("Unsupported interval type " + intervalType);
-            }
-            SnapshotPolicyVO snapPolicy = _snapMgr.getPolicyForVolumeByInterval((Long)volumeId, (short)intervalType.ordinal());
-            if (snapPolicy == null) {
-                s_logger.warn("Policy with interval "+ intervalType +" not assigned to volume: "+volumeId);
-                return new ArrayList<SnapshotVO>();
-            }
-            return _snapMgr.listSnapsforPolicy(snapPolicy.getId(), searchFilter);
         }
         
         return _snapshotDao.search(sc, searchFilter);

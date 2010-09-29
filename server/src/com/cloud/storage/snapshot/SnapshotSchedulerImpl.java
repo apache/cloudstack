@@ -17,33 +17,25 @@
  */
 package com.cloud.storage.snapshot;
 
-import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
-
 import org.apache.log4j.Logger;
-
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
-import com.cloud.storage.dao.SnapshotPolicyRefDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.DateUtil;
@@ -55,7 +47,6 @@ import com.cloud.utils.concurrency.TestClock;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 
 /**
  *
@@ -69,7 +60,6 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
     @Inject protected SnapshotDao             _snapshotDao;
     @Inject protected SnapshotScheduleDao     _snapshotScheduleDao;
     @Inject protected SnapshotPolicyDao       _snapshotPolicyDao;
-    @Inject protected SnapshotPolicyRefDao    _snapshotPolicyRefDao;
     @Inject protected SnapshotManager         _snapshotManager;
     @Inject protected StoragePoolHostDao      _poolHostDao; 
     
