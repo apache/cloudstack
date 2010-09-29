@@ -1,9 +1,10 @@
+<!-- new UI -->
+
 <%@ page import="java.util.Date" %>
 
 <%
 long milliseconds = new Date().getTime();
 %>
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -35,37 +36,96 @@ long milliseconds = new Date().getTime();
     <script type="text/javascript" src="scripts/cloud.core2.js?t=<%=milliseconds%>"></script>
 
     <script type="text/javascript" src="scripts/cloud.core2.init.js?t=<%=milliseconds%>"></script>
-    
+
     <script type="text/javascript" src="scripts/cloud.core2.instance.js?t=<%=milliseconds%>"></script>
-    
+
     <script type="text/javascript" src="scripts/cloud.core2.event.js?t=<%=milliseconds%>"></script>
-    
+
     <script type="text/javascript" src="scripts/cloud.core2.alert.js?t=<%=milliseconds%>"></script>
-  
+
     <script type="text/javascript" src="scripts/cloud.core2.account.js?t=<%=milliseconds%>"></script>
-    
+
     <script type="text/javascript" src="scripts/cloud.core2.volume.js?t=<%=milliseconds%>"></script>
-    
+
     <script type="text/javascript" src="scripts/cloud.core2.snapshot.js?t=<%=milliseconds%>"></script>
-    
+
     <script type="text/javascript" src="scripts/cloud.core2.ipaddress.js?t=<%=milliseconds%>"></script>
-  
+
     <script type="text/javascript" src="scripts/cloud.core2.template.js?t=<%=milliseconds%>"></script>
-  
+
     <script type="text/javascript" src="scripts/cloud.core2.iso.js?t=<%=milliseconds%>"></script>
-  
+
     <script type="text/javascript" src="scripts/cloud.core2.router.js?t=<%=milliseconds%>"></script>
-    
+
     <script type="text/javascript" src="scripts/cloud.core2.dashboard.js?t=<%=milliseconds%>"></script>
-  
+
     <script type="text/javascript" src="scripts/cloud.core2.domain.js?t=<%=milliseconds%>"></script>
-  
+
     <title>Cloud.com CloudStack</title>
 </head>
 <body>
+    <div id="login_wrapper" style="display: none">
+        <div class="login_main">
+            <div class="login_logopanel">
+                <div class="login_logobox">
+                </div>
+            </div>
+            <div class="main_loginbox">
+                <div class="main_loginbox_top">
+                </div>
+                <div class="main_loginbox_mid">
+                    <div class="login_contentbox">
+                        <div class="login_contentbox_title">
+                            <h1>
+                                Welcome to Management Console &hellip;</h1>
+                        </div>
+                        <div class="login_formbox">
+                            <form id="loginForm" action="#" method="post" name="loginForm">
+                            <ol>
+                                <li>
+                                    <label for="user_name">
+                                        Username:
+                                    </label>
+                                    <div class="login_formbox_textbg">
+                                        <input id="account_username" class="text" type="text" name="account_username" />
+                                    </div>
+                                </li>
+                                <li>
+                                    <label for="user_name">
+                                        Password:
+                                    </label>
+                                    <div class="login_formbox_textbg">
+                                        <input id="account_username" class="text" type="text" name="account_password" />
+                                    </div>
+                                </li>
+                                <li>
+                                    <label for="user_name">
+                                        Domain:
+                                    </label>
+                                    <div class="login_formbox_textbg">
+                                        <input id="account_domain" class="text" type="text" name="account_domain" />
+                                    </div>
+                                </li>
+                            </ol>
+                            <div class="loginbutton_box">
+                                <div class="login_button">
+                                    Login</div>
+                            </div>
+                            </form>
+                            <div class="error_box" style="display: block;">
+                                <p>
+                                    Your username/password does not match our records.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="main_loginbox_bot">
+                </div>
+            </div>
+        </div>
+    </div>
     <div id="overlay_black" style="display: none">
     </div>
-    
     <div id="main">
         <div id="header">
             <div class="header_left">
@@ -93,7 +153,8 @@ long milliseconds = new Date().getTime();
                                 <li>
                                     <div class="search_textbg">
                                         <input class="text" type="text" name="search_input" />
-                                        <div class="search_closebutton" style="display:block;"></div>
+                                        <div class="search_closebutton" style="display: block;">
+                                        </div>
                                     </div>
                                 </li>
                             </ol>
@@ -104,50 +165,48 @@ long milliseconds = new Date().getTime();
                                     <h3>
                                         Advance Search</h3>
                                     <a id="advanced_search_close" href="#">Close </a>
-                                    <form action="#"method="post">
-                                        <ol style="margin-top:8px;">
-                                            <li>
-                                                <label for="filter">
-                                                    Name:</label>
-                                                <input class="text" type="text" name="adv_search_name" id="adv_search_name" />
-                                            </li>
-                                            <li>
-                                                <label for="filter">
-                                                    Status:</label>
-                                                <select class="select" id="adv_search_state">
-                                                    <option value=""></option>
-                                                    <option value="Creating">Creating</option>
-                                                    <option value="Starting">Starting</option>
-                                                    <option value="Running">Running</option>
-                                                    <option value="Stopping">Stopping</option>
-                                                    <option value="Stopped">Stopped</option>
-                                                    <option value="Destroyed">Destroyed</option>
-                                                    <option value="Expunging">Expunging</option>
-                                                    <option value="Migrating">Migrating</option>
-                                                    <option value="Error">Error</option>
-                                                    <option value="Unknown">Unknown</option>
-                                                </select>
-                                            </li>
-                                            <li>
-                                                <label for="filter">
-                                                    Zone:</label>
-                                                <select class="select" id="adv_search_zone">
-                                                </select>
-                                            </li>
-                                           
-                                        </ol>
+                                    <form action="#" method="post">
+                                    <ol style="margin-top: 8px;">
+                                        <li>
+                                            <label for="filter">
+                                                Name:</label>
+                                            <input class="text" type="text" name="adv_search_name" id="adv_search_name" />
+                                        </li>
+                                        <li>
+                                            <label for="filter">
+                                                Status:</label>
+                                            <select class="select" id="adv_search_state">
+                                                <option value=""></option>
+                                                <option value="Creating">Creating</option>
+                                                <option value="Starting">Starting</option>
+                                                <option value="Running">Running</option>
+                                                <option value="Stopping">Stopping</option>
+                                                <option value="Stopped">Stopped</option>
+                                                <option value="Destroyed">Destroyed</option>
+                                                <option value="Expunging">Expunging</option>
+                                                <option value="Migrating">Migrating</option>
+                                                <option value="Error">Error</option>
+                                                <option value="Unknown">Unknown</option>
+                                            </select>
+                                        </li>
+                                        <li>
+                                            <label for="filter">
+                                                Zone:</label>
+                                            <select class="select" id="adv_search_zone">
+                                            </select>
+                                        </li>
+                                    </ol>
                                     </form>
                                     <div class="adv_search_actionbox">
                                         <div class="adv_searchpopup_button" id="adv_search_button">
                                         </div>
                                     </div>
                                 </div>
-                        	</div>
+                            </div>
                         </div>
-                        
                         <div class="actionpanel_button_wrapper" id="midmenu_action_link" style="position: relative;
                             display: none">
-                          <div class="actionpanel_button">
+                            <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
                                     <img src="images/actions_actionicon.png" alt="Add" /></div>
                                 <div class="actionpanel_button_links">
@@ -156,8 +215,7 @@ long milliseconds = new Date().getTime();
                                 </div>
                             </div>
                             <div class="actionsdropdown_box" id="action_menu" style="display: none;">
-                                <ul class="actionsdropdown_boxlist" style="width:97px;"id="action_list">
-                                	
+                                <ul class="actionsdropdown_boxlist" style="width: 97px;" id="action_list">
                                 </ul>
                             </div>
                         </div>
@@ -169,8 +227,8 @@ long milliseconds = new Date().getTime();
                                     Add</div>
                             </div>
                         </div>
-                        
-                        <div class="actionpanel_button_wrapper" id="add_link" style="display: block; float:right; background:none; ">
+                        <div class="actionpanel_button_wrapper" id="add_link" style="display: block; float: right;
+                            background: none;">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
                                     <img src="images/help_actionicon.png" alt="Add" /></div>
@@ -178,7 +236,6 @@ long milliseconds = new Date().getTime();
                                     Help</div>
                             </div>
                         </div>
-                        
                     </div>
                     <!-- Action Panel ends here-->
                     <!-- Right Panel starts here-->
@@ -313,7 +370,6 @@ long milliseconds = new Date().getTime();
                 <!-- Mid Menu starts here-->
                 <div class="midmenu_panel" id="middle_menu">
                     <div class="midmenu_box" id="midmenu_container">
-                    	
                         <!--  
                         	<div class="midmenu_list">
                             	<div class="midmenu_content">
@@ -326,7 +382,7 @@ long milliseconds = new Date().getTime();
                                 </div>
                             </div>
                        -->
-                       <!--
+                        <!--
                             <div class="midmenu_list">
                             	<div class="midmenu_content">
                                 	<div class="midmenu_icons"><img src="images/status_red.png" alt="Running" /></div>
@@ -402,14 +458,14 @@ long milliseconds = new Date().getTime();
                         </div>
                     </div>
                     <div class="leftmenu_content" id="leftmenu_router">
-                        <div class="leftmenu_secondindent">                           
+                        <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/routers_leftmenuicon.png" alt="Routers" /></div>
                             Routers
                         </div>
                     </div>
                     <div class="leftmenu_content" id="leftmenu_system">
-                        <div class="leftmenu_secondindent">                           
+                        <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/storage_leftmenuicon.png" alt="Storage" /></div>
                             System
@@ -516,74 +572,74 @@ long milliseconds = new Date().getTime();
                     </div>
                 </div>
                 <div class="leftmenu_list">
-                    <div id="leftmenu_itemplate_filter">    
+                    <div id="leftmenu_itemplate_filter">
                         <div class="leftmenu_content" id="leftmenu_template_filter_header">
-                            <div class="leftmenu_secondindent">                                
+                            <div class="leftmenu_secondindent">
                                 <div class="leftmenu_list_icons">
                                     <img src="images/templates_leftmenuicon.png" alt="Templates" /></div>
                                 Template
                             </div>
                         </div>
-                        <div id="leftmenu_template_filter_container">                        
+                        <div id="leftmenu_template_filter_container">
                             <div class="leftmenu_content" id="leftmenu_submenu_my_template">
-						        <div class="leftmenu_thirdindent">
-						            <div class="leftmenu_list_icons">
-						                <img src="images/templates_leftmenuicon.png" /></div>
-						            <div>
-						                My Templates</div>
-						        </div>
-						    </div>                        
+                                <div class="leftmenu_thirdindent">
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/templates_leftmenuicon.png" /></div>
+                                    <div>
+                                        My Templates</div>
+                                </div>
+                            </div>
                             <div class="leftmenu_content" id="leftmenu_submenu_featured_template">
-						        <div class="leftmenu_thirdindent">
-						            <div class="leftmenu_list_icons">
-						                <img src="images/templates_leftmenuicon.png" /></div>
-						            <div>
-						                Featured</div>
-						        </div>
-						    </div>                        
+                                <div class="leftmenu_thirdindent">
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/templates_leftmenuicon.png" /></div>
+                                    <div>
+                                        Featured</div>
+                                </div>
+                            </div>
                             <div class="leftmenu_content" id="leftmenu_submenu_community_template">
-						        <div class="leftmenu_thirdindent">
-						            <div class="leftmenu_list_icons">
-						                <img src="images/templates_leftmenuicon.png" /></div>
-						            <div>
-						                Community</div>
-						        </div>
-						    </div>                        
+                                <div class="leftmenu_thirdindent">
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/templates_leftmenuicon.png" /></div>
+                                    <div>
+                                        Community</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div id="leftmenu_iso_filter">    
+                    <div id="leftmenu_iso_filter">
                         <div class="leftmenu_content" id="leftmenu_iso_filter_header">
-                            <div class="leftmenu_secondindent">                                
+                            <div class="leftmenu_secondindent">
                                 <div class="leftmenu_list_icons">
                                     <img src="images/templates_leftmenuicon.png" alt="Templates" /></div>
                                 ISO
                             </div>
                         </div>
                         <div id="leftmenu_iso_filter_container">
-                             <div class="leftmenu_content" id="leftmenu_submenu_my_iso">
-						        <div class="leftmenu_thirdindent">
-						            <div class="leftmenu_list_icons">
-						                <img src="images/templates_leftmenuicon.png" /></div>
-						            <div>
-						                My ISOs</div>
-						        </div>
-						    </div>                        
+                            <div class="leftmenu_content" id="leftmenu_submenu_my_iso">
+                                <div class="leftmenu_thirdindent">
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/templates_leftmenuicon.png" /></div>
+                                    <div>
+                                        My ISOs</div>
+                                </div>
+                            </div>
                             <div class="leftmenu_content" id="leftmenu_submenu_featured_iso">
-						        <div class="leftmenu_thirdindent">
-						            <div class="leftmenu_list_icons">
-						                <img src="images/templates_leftmenuicon.png" /></div>
-						            <div>
-						                Featured</div>
-						        </div>
-						    </div>                        
+                                <div class="leftmenu_thirdindent">
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/templates_leftmenuicon.png" /></div>
+                                    <div>
+                                        Featured</div>
+                                </div>
+                            </div>
                             <div class="leftmenu_content" id="leftmenu_submenu_community_iso">
-						        <div class="leftmenu_thirdindent">
-						            <div class="leftmenu_list_icons">
-						                <img src="images/templates_leftmenuicon.png" /></div>
-						            <div>
-						                Community</div>
-						        </div>
-						    </div>                                         
+                                <div class="leftmenu_thirdindent">
+                                    <div class="leftmenu_list_icons">
+                                        <img src="images/templates_leftmenuicon.png" /></div>
+                                    <div>
+                                        Community</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -706,35 +762,37 @@ long milliseconds = new Date().getTime();
         <div class="poweredby_box">
         </div>
     </div>
-   
     <!-- Dialogs -->
-	<div id="dialog_confirmation" title="Confirmation" style="display:none"></div>
-	<div id="dialog_info" title="Info" style="display:none"></div>
-	<div id="dialog_alert" title="Alert" style="display:none"></div>
-	<div id="dialog_error" title="Error" style="display:none"></div>
-	<div id="dialog_session_expired" title="Session Expired" style="display:none">
-		<p>Your session has expired.  Please click 'OK' to return to the login screen.</p>
-	</div>
-	
+    <div id="dialog_confirmation" title="Confirmation" style="display: none">
+    </div>
+    <div id="dialog_info" title="Info" style="display: none">
+    </div>
+    <div id="dialog_alert" title="Alert" style="display: none">
+    </div>
+    <div id="dialog_error" title="Error" style="display: none">
+    </div>
+    <div id="dialog_session_expired" title="Session Expired" style="display: none">
+        <p>
+            Your session has expired. Please click 'OK' to return to the login screen.</p>
+    </div>
     <!-- templates starts here-->
     <div class="leftmenu_content" id="leftmenu_submenu_template" style="display: none">
         <div class="leftmenu_thirdindent">
             <div class="leftmenu_list_icons">
-                <img id="icon" style="display:none"/></div>
+                <img id="icon" style="display: none" /></div>
             <div id="submenu_name">
                 (submenu)</div>
         </div>
     </div>
-    
     <div class="midmenu_list" id="midmenu_item" style="display: none;">
         <div class="midmenu_content" id="content">
-            <div class="midmenu_icons" id="icon_container" style="display:none">
-                <img id="icon"/></div>
+            <div class="midmenu_icons" id="icon_container" style="display: none">
+                <img id="icon" /></div>
             <div class="midmenu_textbox">
                 <p>
                     <strong id="first_row">&nbsp;</strong>
                 </p>
-                <p id="second_row_container">                    
+                <p id="second_row_container">
                     <span id="second_row">&nbsp;</span>
                 </p>
             </div>
@@ -744,13 +802,11 @@ long milliseconds = new Date().getTime();
             </div>
         </div>
     </div>
-   
     <!-- action list item for middle menu -->
-    <li id="action_list_item_middle_menu" style="display:none; width:94px;"><a id="link" href="#">(middle menu action)</a></li>
-    
+    <li id="action_list_item_middle_menu" style="display: none; width: 94px;"><a id="link"
+        href="#">(middle menu action)</a></li>
     <!-- action list item for details tab, subgrid item-->
-    <li id="action_list_item" style="display:none;"><a id="link" href="#">(action)</a></li>
-    
+    <li id="action_list_item" style="display: none;"><a id="link" href="#">(action)</a></li>
     <!-- templates ends here-->
 </body>
 </html>
