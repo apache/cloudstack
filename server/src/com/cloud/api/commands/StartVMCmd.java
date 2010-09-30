@@ -78,7 +78,7 @@ public class StartVMCmd extends BaseAsyncCmd {
 	    response.setCreated(vm.getCreated());
 	    response.setZoneId(vm.getDataCenterId());
 	    response.setZoneName(ApiDBUtils.findZoneById(vm.getDataCenterId()).getName());
-	    response.setPrivateIp(vm.getPrivateIpAddress());
+	    response.setIpAddress(vm.getPrivateIpAddress());
 	    response.setServiceOfferingId(vm.getServiceOfferingId());
 	    response.setHaEnable(vm.isHaEnabled());
         if (vm.getDisplayName() == null || vm.getDisplayName().length() == 0) {

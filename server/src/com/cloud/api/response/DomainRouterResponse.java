@@ -83,10 +83,10 @@ public class DomainRouterResponse extends BaseResponse {
     @SerializedName("guestipaddress")
     private String guestIpAddress;
 
-    @SerializedName("guestMacAddress")
+    @SerializedName("guestmacaddress")
     private String guestMacAddress;
 
-    @SerializedName("guestNetmask")
+    @SerializedName("guestnetmask")
     private String guestNetmask;
 
     @SerializedName("templateid")

@@ -135,7 +135,7 @@ public class ListVMsCmd extends BaseListCmd {
 
             userVmResponse.setName(userVm.getName());
             userVmResponse.setCreated(userVm.getCreated());
-            userVmResponse.setPrivateIp(userVm.getPrivateIpAddress());
+            userVmResponse.setIpAddress(userVm.getPrivateIpAddress());
             if (userVm.getState() != null) {
                 userVmResponse.setState(userVm.getState().toString());
             }

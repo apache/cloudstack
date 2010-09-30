@@ -31,8 +31,8 @@ public class UserVmResponse extends BaseResponse {
     @SerializedName("displayname")
     private String displayName;
 
-    @SerializedName("privateip")
-    private String privateIp;
+    @SerializedName("ipaddress")
+    private String ipAddress;
 
     @SerializedName("account")
     private String accountName;
@@ -154,12 +154,12 @@ public class UserVmResponse extends BaseResponse {
         this.displayName = displayName;
     }
 
-    public String getPrivateIp() {
-        return privateIp;
+    public String getIpAddress() {
+        return ipAddress;
     }
 
-    public void setPrivateIp(String privateIp) {
-        this.privateIp = privateIp;
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
     }
 
     public String getAccountName() {

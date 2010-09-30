@@ -164,7 +164,7 @@ public class DeployVMCmd extends BaseAsyncCmd {
         response.setCreated(userVm.getCreated());
         response.setZoneId(userVm.getDataCenterId());
         response.setZoneName(ApiDBUtils.findZoneById(userVm.getDataCenterId()).getName());
-        response.setPrivateIp(userVm.getPrivateIpAddress());
+        response.setIpAddress(userVm.getPrivateIpAddress());
         response.setServiceOfferingId(userVm.getServiceOfferingId());
         response.setHaEnable(userVm.isHaEnabled());
 
