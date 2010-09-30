@@ -9,7 +9,7 @@
 <!-- event detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
-        <img src="images/title_dashboardicon.gif" alt="Event" /></div>
+        <img src="images/title_dashboardicon.gif" alt="Dashboard" /></div>
     <h1>
         Dashboard
     </h1>
@@ -20,7 +20,10 @@
         <p id="after_action_info">
         </p>
     </div>
-    <div class="grid_container" id="system_wide_capacity_container">
+    
+
+    <!--Dashboard Admin starts here-->
+ <div class="grid_container" id="system_wide_capacity_container">
         <div class="grid_header">
             <div class="grid_header_cell" style="width: 60%; border: none;">
                 <div class="grid_header_title">
@@ -177,7 +180,7 @@
         </div>
     </div>
     <!--General Alerts-->
-    <div class="grid_container" style="width: 49%; margin-top: 15px;">
+   <div class="grid_container" style="width: 49%; margin-top: 15px;">
         <div class="grid_header">
             <div class="grid_header_cell" style="width: 60%; border: none;">
                 <div class="grid_header_title">
@@ -197,7 +200,7 @@
         </div>      
     </div>
     <!--Hosts Alerts-->
-    <div class="grid_container" style="width: 48%; margin-top: 15px; float: right;">
+	<div class="grid_container" style="width: 48%; margin-top: 15px; float: right;">
         <div class="grid_header">
             <div class="grid_header_cell" style="width: 60%; border: none;">
                 <div class="grid_header_title">
@@ -231,3 +234,197 @@
         <div class="row_celltitles" id="date"></div>
     </div>
 </div>
+    <!--Dashboard Admin ends here-->
+
+
+
+
+
+
+<!--Dashboard User starts here-->
+ <div class="grid_container" style="display:none;" >
+        <div class="grid_header">
+            <div class="grid_header_cell" style="width: 60%; border: none;">
+                <div class="grid_header_title">
+                    Resources</div>
+            </div>
+        </div>
+        <div class="grid_rows" style="padding:0; border:none;">
+            <div class="dbrow_cell" style="width: 33%; height: 137px; background:url(images/db_runningbg.gif) repeat-x top left;border: none;">
+                	<div class="db_resourcebox">
+                    	<div class="db_resourcebox_top">
+                        	<div class="db_resourcebox_iconbox">
+                            	<div class="db_resourcebox_icons"><img src="images/db_runninicon.gif" alt="Running" /></div>
+                            </div>
+                            <div class="db_resourcebox_textbox"><p>Running VMs:</div>
+                        </div>
+                        <div class="db_resourcebox_bot">
+                        	<div class="db_resourcebox_VMnumber running"><span>24</span> VM(s)</div>
+                        </div>
+                    </div>
+                    
+            </div>
+            <div class="dbrow_cell" style="width: 33%; height: 137px; background:url(images/db_stoppedbg.gif) repeat-x top left; border: none;">
+              		<div class="db_resourcebox">
+                    	<div class="db_resourcebox_top">
+                        	<div class="db_resourcebox_iconbox">
+                            	<div class="db_resourcebox_icons"><img src="images/db_stoppedicon.gif" alt="Running" /></div>
+                            </div>
+                            <div class="db_resourcebox_textbox"><p>Stopped VMs:</div>
+                        </div>
+                        <div class="db_resourcebox_bot">
+                        	<div class="db_resourcebox_VMnumber stopped"><span>24</span> VM(s)</div>
+                        </div>
+                    </div>
+            </div>
+            <div class="dbrow_cell" style="width: 34%; height: 137px; background:url(images/db_totalbg.gif) repeat-x top left; border: none;">
+                	<div class="db_resourcebox">
+                    	<div class="db_resourcebox_top">
+                        	<div class="db_resourcebox_iconbox">
+                            	<div class="db_resourcebox_icons"><img src="images/db_totalicon.gif" alt="Running" /></div>
+                            </div>
+                            <div class="db_resourcebox_textbox"><p>Total VMs:</div>
+                        </div>
+                        <div class="db_resourcebox_bot">
+                        	<div class="db_resourcebox_VMnumber total"><span>48</span> VM(s)</div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+ </div>
+ 
+<!--Public Ips-->
+ 
+<div class="grid_container" style="margin-top:15px; style="display:none;"" >
+        <div class="grid_header">
+            <div class="grid_header_cell" style="width: 60%; border: none;">
+                <div class="grid_header_title">
+                    Public IPs</div>
+            </div>
+        </div>
+        <div class="grid_rows even" style="width:50%;">
+        	<div class="grid_row_cell" style="width:40%; border:none;">
+            	<div class="row_celltitles"> Available Public IPs: </div>
+            </div>
+            <div class="grid_row_cell" style="width:59%; border:none;">
+            	<div class="row_celltitles"> <strong> Unlimited</strong></div>
+            </div>
+        </div>
+        <div class="grid_rows odd" style="width:50%;">
+        	<div class="grid_row_cell" style="width:40%; border:none;">
+            	<div class="row_celltitles"> Owned Public IPs: </div>
+            </div>
+            <div class="grid_row_cell" style="width:59%; border:none;">
+            	<div class="row_celltitles"> <strong> 5</strong></div>
+            </div>
+        </div>
+        
+</div>
+
+<!--Recent errors-->
+<div class="grid_container" style="width: 49%; margin-top: 15px; style="display:none;"">
+        <div class="grid_header">
+            <div class="grid_header_cell" style="width: 60%; border: none;">
+                <div class="grid_header_title">
+                    Recent Errors</div>
+            </div>
+            <div class="grid_header_cell" style="width: 40%; border: none;">
+              
+            </div>
+        </div>        
+        <div class="grid_rows even">
+        	<div class="grid_row_cell" style="width: 10%;">
+                 <div class="row_celltitles"><img src="images/alert_icon.png" /></div>
+            </div>
+            <div class="grid_row_cell" style="width: 70%;">
+                 <div class="row_celltitles alert" id="type">Error's Name</div>
+                 <div class="row_celltitles alertdetails" id="description">Error Description will appear here</div>
+            </div>
+            <div class="grid_row_cell" style="width: 19%;">
+                 <div class="row_celltitles" id="date">09/29/2010 15:20:10</div>
+            </div>
+        </div>
+        
+        <div class="grid_rows odd">
+        	<div class="grid_row_cell" style="width: 10%;">
+                 <div class="row_celltitles"><img src="images/alert_icon.png" /></div>
+            </div>
+            <div class="grid_row_cell" style="width: 70%;">
+                 <div class="row_celltitles alert" id="type">Error's Name</div>
+                 <div class="row_celltitles alertdetails" id="description">Error Description will appear here</div>
+            </div>
+            <div class="grid_row_cell" style="width: 19%;">
+                 <div class="row_celltitles" id="date">09/29/2010 15:20:10</div>
+            </div>
+        </div>
+        
+        <div class="grid_rows even">
+        	<div class="grid_row_cell" style="width: 10%;">
+                 <div class="row_celltitles"><img src="images/alert_icon.png" /></div>
+            </div>
+            <div class="grid_row_cell" style="width: 70%;">
+                 <div class="row_celltitles alert" id="type">Error's Name</div>
+                 <div class="row_celltitles alertdetails" id="description">Error Description will appear here</div>
+            </div>
+            <div class="grid_row_cell" style="width: 19%;">
+                 <div class="row_celltitles" id="date">09/29/2010 15:20:10</div>
+            </div>
+        </div>
+ </div>
+
+
+<!--Accounts-->
+<div class="grid_container" style="width: 49%; margin-top: 15px; float:right; background:#fff8c8 repeat top left; style="display:none;"">
+   	<div class="grid_header" style="background:url(images/dbaccounts_headerbg.gif) repeat-x top left;">
+    		<div class="grid_header_cell" style="width: 5%; border: none;">
+                <div class="grid_header_title">
+                  <img src="images/db_accounticon.png" alt="Account" /></div>
+            </div>
+            <div class="grid_header_cell" style="width: 60%; border: none;">
+                <div class="grid_header_title" style="color:#FFF;">
+                    My Account</div>
+            </div>
+            
+   </div> 
+   
+   <div class="dbaccounts_rows">
+        	<div class="grid_row_cell" style="width: 30%;">
+                 <div class="row_celltitles">Account ID</div>
+            </div>
+            <div class="grid_row_cell" style="width: 60%; border:none;">
+                 <div class="row_celltitles"><strong>3</strong></div>
+		    </div>
+   </div>
+   
+   <div class="dbaccounts_rows">
+        	<div class="grid_row_cell" style="width: 30%;">
+                 <div class="row_celltitles">Account</div>
+            </div>
+            <div class="grid_row_cell" style="width: 60%;border:none;">
+                 <div class="row_celltitles"><strong>Niki</strong></div>
+		    </div>
+   </div>
+   
+    <div class="dbaccounts_rows">
+        	<div class="grid_row_cell" style="width: 30%;">
+                 <div class="row_celltitles">Type</div>
+            </div>
+            <div class="grid_row_cell" style="width: 60%;border:none;">
+                 <div class="row_celltitles"><strong>User</strong></div>
+		    </div>
+   </div>
+   
+   <div class="dbaccounts_rows">
+        	<div class="grid_row_cell" style="width: 30%;">
+                 <div class="row_celltitles">Domain</div>
+            </div>
+            <div class="grid_row_cell" style="width: 60%;border:none;">
+                 <div class="row_celltitles"><strong>Root</strong></div>
+		    </div>
+   </div>
+   
+        
+     
+</div>    
+    
+<!--Dashboard User ends here-->   
