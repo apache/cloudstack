@@ -67,6 +67,7 @@ import com.cloud.storage.template.TemplateInfo;
 import com.cloud.user.Account;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Pool;
@@ -365,14 +366,12 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 }
                 hostConn.dispose();
                 hostConn = null;
-                poolMaster = null;
-                poolUuid1 = null;
             }
         }
         
         if (poolMaster == null) {
             s_logger.warn("Unable to reach the pool master of the existing cluster");
-            throw new DiscoveryException("Unable to reach the pool master of the existing cluster");
+            throw new CloudRuntimeException("Unable to reach the pool master of the existing cluster");
         }
         
         Set<Pool> pools = Pool.getAll(conn);
