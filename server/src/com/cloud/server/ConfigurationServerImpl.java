@@ -119,14 +119,14 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 				_configDao.update("hypervisor.type", "xenserver");
 				s_logger.debug("ConfigurationServer changed the hypervisor type to \"xenserver\".");
 				
-				//_configDao.update("secondary.storage.vm", "true");
-				//s_logger.debug("ConfigurationServer made secondary storage vm required.");
+				_configDao.update("secondary.storage.vm", "true");
+				s_logger.debug("ConfigurationServer made secondary storage vm required.");
 				
-				//_configDao.update("secstorage.encrypt.copy", "true");
-				//s_logger.debug("ConfigurationServer made secondary storage copy encrypted.");
+				_configDao.update("secstorage.encrypt.copy", "true");
+				s_logger.debug("ConfigurationServer made secondary storage copy encrypted.");
 				
-				//_configDao.update("secstorage.secure.copy.cert", "realhostip");
-				//s_logger.debug("ConfigurationServer made secondary storage copy use realhostip.");					          	         
+				_configDao.update("secstorage.secure.copy.cert", "realhostip");
+				s_logger.debug("ConfigurationServer made secondary storage copy use realhostip.");					          	         
 			}
 			
 			boolean externalIpAlloator = Boolean.parseBoolean(_configDao.getValue("direct.attach.network.externalIpAllocator.enabled"));
@@ -142,8 +142,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 			_configMgr.createDiskOffering(User.UID_SYSTEM, DomainVO.ROOT_DOMAIN, "Medium", "Medium Disk, 20 GB", 20, null);
 			_configMgr.createDiskOffering(User.UID_SYSTEM, DomainVO.ROOT_DOMAIN, "Large", "Large Disk, 100 GB", 100, null);
 			//_configMgr.createDiskOffering(User.UID_SYSTEM, DomainVO.ROOT_DOMAIN, "Private", "Private Disk", 0, null);
-			
-			_configDao.update("xen.guest.network.device", "cloud-guest");
 			
 			   //Add default manual snapshot policy
             SnapshotPolicyVO snapPolicy = new SnapshotPolicyVO(0L, "00", "GMT", (short)4, 0);

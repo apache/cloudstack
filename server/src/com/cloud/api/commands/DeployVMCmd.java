@@ -110,7 +110,7 @@ public class DeployVMCmd extends BaseCmd {
         
         if (template.getFormat().equals(ImageFormat.ISO)) {
         	/*TODO:Hack here*/
-        	template.setHypervisorType(HypervisorType.VmWare);
+        	template.setHypervisorType(HypervisorType.XenServer);
         }
 
     	if (diskOfferingId != null) {
