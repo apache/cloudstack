@@ -146,7 +146,7 @@
     <!--Details tab (end)-->
     <!--Volume tab (start)-->
     <div style="display: none;" id="tab_content_volume">
-        <div class="grid_container" id="volume_tab_template" style="display: block">
+        <div class="grid_container" id="volume_tab_template" style="display: none">
             <div class="grid_header">
                 <div class="grid_header_title" id="name">
                 </div>
@@ -803,7 +803,7 @@
 <!--  volume tab template -->
 <div class="grid_container" id="volume_tab_template" style="display: none">
     <div class="grid_header">
-        <div class="grid_header_title" id="name">
+        <div class="grid_header_title" id="title">
         </div>
         <div class="grid_actionbox" id="volume_action_link">
             <div class="grid_actionsdropdown_box" id="volume_action_menu" style="display: none;">
@@ -837,7 +837,17 @@
             </div>
         </div>
     </div>
-    <div class="grid_rows odd">
+     <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Name:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="name">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 Type:</div>
@@ -847,7 +857,7 @@
             </div>
         </div>
     </div>
-    <div class="grid_rows even">
+    <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 Size:</div>
@@ -857,7 +867,7 @@
             </div>
         </div>
     </div>
-    <div class="grid_rows odd">
+    <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 Created:</div>

@@ -594,7 +594,7 @@
 <!--  Snapshot tab template (begin) -->
 <div class="grid_container" id="snapshot_tab_template" style="display: none">
     <div class="grid_header">
-        <div class="grid_header_title" id="name">
+        <div class="grid_header_title" id="title">
         </div>
         <div class="grid_actionbox" id="snapshot_action_link">
             <div class="grid_actionsdropdown_box" id="snapshot_action_menu" style="display: none;">

@@ -362,24 +362,12 @@ function afterLoadVolumeJSP() {
 	    }		    
 	});	
 	// *** recurring snapshot dialog - event binding (end) ******************************	    
-     
-    //***** switch to different tab (begin) ********************************************************************
-    $("#tab_details").bind("click", function(event){
-        $(this).removeClass("off").addClass("on");
-        $("#tab_snapshot").removeClass("on").addClass("off");  
-        $("#tab_content_details").show();     
-        $("#tab_content_snapshot").hide();   
-        return false;
-    });
-    
-    $("#tab_snapshot").bind("click", function(event){
-        $(this).removeClass("off").addClass("on");
-        $("#tab_details").removeClass("on").addClass("off");   
-        $("#tab_content_snapshot").show();    
-        $("#tab_content_details").hide();    
-        return false;
-    });
-    //***** switch to different tab (end) ********************************************************************** 
+         
+    //***** switch between different tabs (begin) ********************************************************************
+    var tabArray = ["tab_details", "tab_snapshot"];
+    var tabContentArray = ["tab_content_details", "tab_content_snapshot"];
+    switchBetweenDifferentTabs(tabArray, tabContentArray);       
+    //***** switch between different tabs (end) **********************************************************************    
 }
 
 function volumeAfterDetailsTabAction(jsonObj) {
@@ -476,9 +464,9 @@ function  volumeJsonToVolumeTab(jsonObj) {
 } 
  
 function volumeSnapshotJSONToTemplate(jsonObj, template) {
-    template.data("jsonObj", jsonObj);       
-    
-    template.attr("id", "volume_snapshot_"+jsonObj.id).data("volumeSnapshotId", jsonObj.id);	   
+    template.data("jsonObj", jsonObj);     
+    template.attr("id", "volume_snapshot_"+jsonObj.id).data("volumeSnapshotId", jsonObj.id);    
+    template.find("#title").text(jsonObj.name);			   
     template.find("#id").text(jsonObj.id);
     template.find("#name").text(jsonObj.name);			      
     template.find("#volumename").text(jsonObj.volumename);	

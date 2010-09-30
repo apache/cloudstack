@@ -486,9 +486,9 @@ function clickInstanceGroupHeader($arrowIcon) {
     }     
     
     function vmVolumeJSONToTemplate(json, template) {
-        template.attr("id","vm_volume_"+json.id);	
-        //template.data("id", json.id);	
-        template.data("jsonObj", json);        
+        template.attr("id","vm_volume_"+json.id);	        
+        template.data("jsonObj", json);    
+        template.find("#title").text(json.name);    
 		template.find("#id").text(json.id);	
 		template.find("#name").text(json.name);
 		if (json.storagetype == "shared") 

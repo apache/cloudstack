@@ -55,8 +55,9 @@ function afterLoadDomainJSP() {
 		}			
 	}					
 	
-	function accountJSONToTemplate(jsonObj, $template) {   
+	function domainAccountJSONToTemplate(jsonObj, $template) {   
         $template.data("jsonObj", jsonObj);  
+        $template.find("#title").text(fromdb(jsonObj.name));
         $template.find("#id").text(jsonObj.id);
         $template.find("#role").text(toRole(jsonObj.accounttype));
         $template.find("#account").text(fromdb(jsonObj.name));
@@ -91,7 +92,7 @@ function afterLoadDomainJSP() {
 					var $template = $("#admin_account_tab_template");				
 					for (var i = 0; i < items.length; i++) {
 						var $newTemplate = $template.clone(true);
-		                accountJSONToTemplate(items[i], $newTemplate); 
+		                domainAccountJSONToTemplate(items[i], $newTemplate); 
 		                $container.append($newTemplate.show());	
 					}				    				
 				} 			         
@@ -235,33 +236,13 @@ function afterLoadDomainJSP() {
 	}
 	
 	refreshWholeTree(defaultRootDomainId, defaultRootLevel);
-	
-	 //***** switch to different tab (begin) ********************************************************************
-    $("#tab_details").bind("click", function(event){
-        $(this).removeClass("off").addClass("on");
-        $("#tab_resource_limits, #tab_admin_account").removeClass("on").addClass("off");  
-        $("#tab_content_details").show();     
-        $("#tab_content_resource_limits, #tab_content_admin_account").hide();   
-        return false;
-    });
-    
-    $("#tab_resource_limits").bind("click", function(event){
-        $(this).removeClass("off").addClass("on");
-        $("#tab_details, #tab_admin_account").removeClass("on").addClass("off");   
-        $("#tab_content_resource_limits").show();    
-        $("#tab_content_details, #tab_content_admin_account").hide();    
-        return false;
-    });
-    
-    $("#tab_admin_account").bind("click", function(event){
-        $(this).removeClass("off").addClass("on");
-        $("#tab_details, #tab_resource_limits").removeClass("on").addClass("off");   
-        $("#tab_content_admin_account").show();    
-        $("#tab_content_details, #tab_content_resource_limits").hide();    
-        return false;
-    });
-    //***** switch to different tab (end) ********************************************************************** 
-    
+		
+	//***** switch between different tabs (begin) ********************************************************************
+    var tabArray = ["tab_details", "tab_resource_limits", "tab_admin_account"];
+    var tabContentArray = ["tab_content_details", "tab_content_resource_limits", "tab_content_admin_account"];
+    switchBetweenDifferentTabs(tabArray, tabContentArray);       
+    //***** switch between different tabs (end) **********************************************************************
+	    
     //edit button ***    
     var $readonlyFields  =  $resourceLimitsTab.find("#limits_vm, #limits_ip, #limits_volume, #limits_snapshot, #limits_template");
     var $editFields =  $resourceLimitsTab.find("#limits_vm_edit, #limits_ip_edit, #limits_volume_edit, #limits_snapshot_edit, #limits_template_edit");   
