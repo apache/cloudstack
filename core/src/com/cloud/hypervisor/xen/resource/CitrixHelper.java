@@ -21,11 +21,14 @@ package com.cloud.hypervisor.xen.resource;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.apache.log4j.Logger;
+
 /**
  * Reduce bloat inside CitrixResourceBase
  *
  */
 public class CitrixHelper {
+	 private static final Logger s_logger = Logger.getLogger(CitrixHelper.class);
 	private static final HashMap<String, String> _guestOsMap = new HashMap<String, String>(70);
 	private static final ArrayList<String> _guestOsList = new ArrayList<String>(70);
 
@@ -45,7 +48,7 @@ public class CitrixHelper {
         _guestOsMap.put("CentOS 5.3 (64-bit)", "CentOS 5.3 x64");
         _guestOsMap.put("CentOS 5.4 (32-bit)", "CentOS 5.4");
         _guestOsMap.put("CentOS 5.4 (64-bit)", "CentOS 5.4 x64");
-        _guestOsMap.put("Debian Lenny 5.0 (32-bit)", "Debian Lenny 5.0 (32-bit)");
+        _guestOsMap.put("Debian GNU/Linux 5.0 (32-bit)", "Debian Lenny 5.0 (32-bit)");
         _guestOsMap.put("Oracle Enterprise Linux 5.0 (32-bit)", "Oracle Enterprise Linux 5.0");
         _guestOsMap.put("Oracle Enterprise Linux 5.0 (64-bit)", "Oracle Enterprise Linux 5.0 x64");
         _guestOsMap.put("Oracle Enterprise Linux 5.1 (32-bit)", "Oracle Enterprise Linux 5.1");
@@ -93,6 +96,11 @@ public class CitrixHelper {
     }
     
     public static String getGuestOsType(String stdType) {
-        return _guestOsMap.get(stdType);
+        String guestOS =  _guestOsMap.get(stdType);
+        if (guestOS == null) {
+        	s_logger.debug("Can't find the guest os: " + stdType + " mapping into xenserver's guestOS type, start it as HVM guest");
+        	guestOS = "Other install media";
+        }
+        return guestOS;
     }
 }

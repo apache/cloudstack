@@ -385,7 +385,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		                s_logger.debug(msg); 
 		                throw new CloudRuntimeException(msg);
 		            } else {
-		                guestOSDescription = guestOS.getName();
+		                guestOSDescription = guestOS.getDisplayName();
 		            }
 		            
 					// carry the secondary storage vm port info over so that we don't

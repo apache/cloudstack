@@ -186,7 +186,7 @@ public class RegisterIsoCmd extends BaseCmd {
         		listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.IS_FEATURED.getName(), Boolean.valueOf(template.isFeatured()).toString()));
         		listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.BOOTABLE.getName(), Boolean.valueOf(template.isBootable()).toString()));
         		listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_ID.getName(), template.getGuestOSId()));
-        		listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_NAME.getName(), getManagementServer().findGuestOSById(template.getGuestOSId()).getName()));
+        		listForEmbeddedObject.add(new Pair<String, Object>(BaseCmd.Properties.OS_TYPE_NAME.getName(), getManagementServer().findGuestOSById(template.getGuestOSId()).getDisplayName()));
         				
         		Account owner = getManagementServer().findAccountById(template.getAccountId());
         		if (owner != null) {

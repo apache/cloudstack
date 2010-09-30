@@ -654,7 +654,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
                         s_logger.debug(msg); 
                         throw new CloudRuntimeException(msg);
                     } else {
-                        guestOSDescription = guestOS.getName();
+                        guestOSDescription = guestOS.getDisplayName();
                     }
                     // _storageMgr.share(proxy, vols, null, true);
 

@@ -58,7 +58,7 @@ public class CopyTemplateExecutor extends BaseAsyncJobExecutor {
 				long guestOsId = template.getGuestOSId();
 		        Account owner = managementServer.findAccountById(template.getAccountId());
 		        Domain domain = managementServer.findDomainIdById(owner.getDomainId());
-		        String guestOSName = managementServer.findGuestOSById(guestOsId).getName();
+		        String guestOSName = managementServer.findGuestOSById(guestOsId).getDisplayName();
 				asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, composeResultObject(template, templateHostRef, destZone,guestOSName, owner, domain));
 			} else {
 				asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, "Failed to copy template.");

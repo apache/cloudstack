@@ -997,7 +997,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 	                        s_logger.debug(msg); 
 	                        throw new CloudRuntimeException(msg);
 	                    } else {
-	                        guestOSDescription = guestOS.getName();
+	                        guestOSDescription = guestOS.getDisplayName();
 	                    }
 	                    
 	                    final StartRouterCommand cmdStartRouter = new StartRouterCommand(router, _networkRate,
