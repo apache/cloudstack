@@ -950,6 +950,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
         HashMap<String, Object> params = new HashMap<String, Object>(host.getDetails().size() + 5);
         params.putAll(host.getDetails());
+        // private.network.device may change when reconnect
+        params.remove("private.network.device");
         params.put("guid", host.getGuid());
         params.put("zone", Long.toString(host.getDataCenterId()));
         if (host.getPodId() != null) {
