@@ -45,4 +45,5 @@ public interface FirewallRulesDao extends GenericDao<FirewallRuleVO, Long> {
     public List<FirewallRuleVO> listByLoadBalancerId(long loadBalancerId);
     public List<FirewallRuleVO> listForwardingByPubAndPrivIp(boolean forwarding, String publicIPAddress, String privateIp);
     public FirewallRuleVO findByGroupAndPrivateIp(long groupId, String privateIp, boolean forwarding);
+    public List<FirewallRuleVO> listByPrivateIp(String privateIp);
 }

@@ -184,6 +184,8 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     AsyncJobManager _asyncMgr;
     StoragePoolDao _storagePoolDao = null;
     ServiceOfferingDao _serviceOfferingDao = null;
+    FirewallRulesDao _firewallRulesDao;
+    IPAddressDao _publicIpAddressDao;
 
     long _routerTemplateId = -1;
     int _routerRamSize;
@@ -1731,6 +1733,16 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             throw new ConfigurationException("Unable to get the configuration dao.");
         }
         
+        _firewallRulesDao = locator.getDao(FirewallRulesDao.class);
+        if (_firewallRulesDao == null) {
+            throw new ConfigurationException("Unable to get the firewall rules dao.");
+        }
+        
+        _publicIpAddressDao = locator.getDao(IPAddressDao.class);
+        if (_publicIpAddressDao == null) {
+            throw new ConfigurationException("Unable to get the ip address dao.");
+        }
+        
         _configMgr = locator.getManager(ConfigurationManager.class);
         if (_configMgr == null) {
         	throw new ConfigurationException("Unable to get the configuration manager.");
@@ -2415,6 +2427,245 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     	ipAddressSC.setJoinParameters("virtualNetworkVlanSB", "vlanType", VlanType.VirtualNetwork);
 		
 		return _ipAddressDao.search(ipAddressSC, null);
+    }
+
+	@Override
+	public void deleteRule(long ruleId, long userId, long accountId)throws InvalidParameterValueException, PermissionDeniedException,InternalErrorException 
+	{
+        Exception e = null;
+        try {
+            FirewallRuleVO rule = _firewallRulesDao.findById(ruleId);
+            if (rule != null) {
+                boolean success = false;
+
+                try {
+                    if (rule.isForwarding()) {
+                        success = deleteIpForwardingRule(userId, accountId, rule.getPublicIpAddress(), rule.getPublicPort(), rule.getPrivateIpAddress(), rule.getPrivatePort(),
+                                rule.getProtocol());
+                    } else {
+                        success = deleteLoadBalancingRule(userId, accountId, rule.getPublicIpAddress(), rule.getPublicPort(), rule.getPrivateIpAddress(), rule.getPrivatePort(),
+                                rule.getAlgorithm());
+                    }
+                } catch (Exception ex) {
+                    e = ex;
+                }
+
+                String description;
+                String type = EventTypes.EVENT_NET_RULE_DELETE;
+                String level = EventVO.LEVEL_INFO;
+                String ruleName = rule.isForwarding() ? "ip forwarding" : "load balancer";
+
+                if (success) {
+                    String desc = "deleted " + ruleName + " rule [" + rule.getPublicIpAddress() + ":" + rule.getPublicPort() + "]->[" + rule.getPrivateIpAddress() + ":"
+                            + rule.getPrivatePort() + "] " + rule.getProtocol();
+                    if (!rule.isForwarding()) {
+                        desc = desc + ", algorithm = " + rule.getAlgorithm();
+                    }
+                    description = desc;
+                } else {
+                    level = EventVO.LEVEL_ERROR;
+                    String desc = "deleted " + ruleName + " rule [" + rule.getPublicIpAddress() + ":" + rule.getPublicPort() + "]->[" + rule.getPrivateIpAddress() + ":"
+                            + rule.getPrivatePort() + "] " + rule.getProtocol();
+                    if (!rule.isForwarding()) {
+                        desc = desc + ", algorithm = " + rule.getAlgorithm();
+                    }
+                    description = desc;
+                }
+
+                saveEvent(userId, accountId, level, type, description);
+            }
+        } finally {
+            if (e != null) {
+                if (e instanceof InvalidParameterValueException) {
+                    throw (InvalidParameterValueException) e;
+                } else if (e instanceof PermissionDeniedException) {
+                    throw (PermissionDeniedException) e;
+                } else if (e instanceof InternalErrorException) {
+                    throw (InternalErrorException) e;
+                }
+            }
+        }
+	}
+	
+    @DB
+    protected boolean deleteIpForwardingRule(long userId, long accountId, String publicIp, String publicPort, String privateIp, String privatePort, String proto)
+            throws PermissionDeniedException, InvalidParameterValueException, InternalErrorException {
+
+        Transaction txn = Transaction.currentTxn();
+        boolean locked = false;
+        try {
+            AccountVO accountVO = _accountDao.findById(accountId);
+            if (accountVO == null) {
+                // throw this exception because hackers can use the api to probe
+                // for existing user ids
+                throw new PermissionDeniedException("Account does not own supplied address");
+            }
+            // although we are not writing these values to the DB, we will check
+            // them out of an abundance
+            // of caution (may not be warranted)
+            if (!NetUtils.isValidPort(publicPort) || !NetUtils.isValidPort(privatePort)) {
+                throw new InvalidParameterValueException("Invalid value for port");
+            }
+//            if (!NetUtils.isValidPrivateIp(privateIp, _configs.get("guest.ip.network"))) {
+//                throw new InvalidParameterValueException("Invalid private ip address");
+//            }
+            if (!NetUtils.isValidProto(proto)) {
+                throw new InvalidParameterValueException("Invalid protocol");
+            }
+            IPAddressVO ipVO = _publicIpAddressDao.acquire(publicIp);
+            if (ipVO == null) {
+                // throw this exception because hackers can use the api to probe for allocated ips
+                throw new PermissionDeniedException("User does not own supplied address");
+            }
+
+            locked = true;
+            if ((ipVO.getAllocated() == null) || (ipVO.getAccountId() == null) || (ipVO.getAccountId().longValue() != accountId)) {
+                // FIXME: if admin account, make sure the user is visible in the
+                // admin's domain, or has that checking been done by this point?
+                if (!BaseCmd.isAdmin(accountVO.getType())) {
+                    throw new PermissionDeniedException("User/account does not own supplied address");
+                }
+            }
+
+            txn.start();
+
+            List<FirewallRuleVO> fwdings = _firewallRulesDao.listIPForwardingForUpdate(publicIp, publicPort, proto);
+            FirewallRuleVO fwRule = null;
+            if (fwdings.size() == 0) {
+                throw new InvalidParameterValueException("No such rule");
+            } else if (fwdings.size() == 1) {
+                fwRule = fwdings.get(0);
+                if (fwRule.getPrivateIpAddress().equalsIgnoreCase(privateIp) && fwRule.getPrivatePort().equals(privatePort)) {
+                    _firewallRulesDao.delete(fwRule.getId());
+                } else {
+                    throw new InvalidParameterValueException("No such rule");
+                }
+            } else {
+                throw new InternalErrorException("Multiple matches. Please contact support");
+            }
+            fwRule.setEnabled(false);
+            boolean success = updateFirewallRule(fwRule, null, null);
+            if (!success) {
+                throw new InternalErrorException("Failed to update router");
+            }
+            txn.commit();
+            return success;
+        } catch (Throwable e) {
+            if (e instanceof InvalidParameterValueException) {
+                throw (InvalidParameterValueException) e;
+            } else if (e instanceof PermissionDeniedException) {
+                throw (PermissionDeniedException) e;
+            } else if (e instanceof InternalErrorException) {
+                s_logger.warn("ManagementServer error", e);
+                throw (InternalErrorException) e;
+            }
+            s_logger.warn("ManagementServer error", e);
+        } finally {
+            if (locked) {
+                _publicIpAddressDao.release(publicIp);
+            }
+        }
+        return false;
+    }
+
+    @DB
+    private boolean deleteLoadBalancingRule(long userId, long accountId, String publicIp, String publicPort, String privateIp, String privatePort, String algo)
+            throws PermissionDeniedException, InvalidParameterValueException, InternalErrorException {
+        Transaction txn = Transaction.currentTxn();
+        boolean locked = false;
+        try {
+            AccountVO accountVO = _accountDao.findById(accountId);
+            if (accountVO == null) {
+                // throw this exception because hackers can use the api to probe
+                // for existing user ids
+                throw new PermissionDeniedException("Account does not own supplied address");
+            }
+            // although we are not writing these values to the DB, we will check
+            // them out of an abundance
+            // of caution (may not be warranted)
+            if (!NetUtils.isValidPort(publicPort) || !NetUtils.isValidPort(privatePort)) {
+                throw new InvalidParameterValueException("Invalid value for port");
+            }
+//            if (!NetUtils.isValidPrivateIp(privateIp, _configs.get("guest.ip.network"))) {
+//                throw new InvalidParameterValueException("Invalid private ip address");
+//            }
+            if (!NetUtils.isValidAlgorithm(algo)) {
+                throw new InvalidParameterValueException("Invalid protocol");
+            }
+
+            IPAddressVO ipVO = _publicIpAddressDao.acquire(publicIp);
+
+            if (ipVO == null) {
+                // throw this exception because hackers can use the api to probe
+                // for allocated ips
+                throw new PermissionDeniedException("User does not own supplied address");
+            }
+
+            locked = true;
+            if ((ipVO.getAllocated() == null) || (ipVO.getAccountId() == null) || (ipVO.getAccountId().longValue() != accountId)) {
+                // FIXME: the user visible from the admin account's domain? has
+                // that check been done already?
+                if (!BaseCmd.isAdmin(accountVO.getType())) {
+                    throw new PermissionDeniedException("User does not own supplied address");
+                }
+            }
+
+            List<FirewallRuleVO> fwdings = _firewallRulesDao.listLoadBalanceRulesForUpdate(publicIp, publicPort, algo);
+            FirewallRuleVO fwRule = null;
+            if (fwdings.size() == 0) {
+                throw new InvalidParameterValueException("No such rule");
+            }
+            for (FirewallRuleVO frv : fwdings) {
+                if (frv.getPrivateIpAddress().equalsIgnoreCase(privateIp) && frv.getPrivatePort().equals(privatePort)) {
+                    fwRule = frv;
+                    break;
+                }
+            }
+
+            if (fwRule == null) {
+                throw new InvalidParameterValueException("No such rule");
+            }
+
+            txn.start();
+
+            fwRule.setEnabled(false);
+            _firewallRulesDao.update(fwRule.getId(), fwRule);
+
+            boolean success = updateFirewallRule(fwRule, null, null);
+            if (!success) {
+                throw new InternalErrorException("Failed to update router");
+            }
+            _firewallRulesDao.delete(fwRule.getId());
+
+            txn.commit();
+            return success;
+        } catch (Throwable e) {
+            if (e instanceof InvalidParameterValueException) {
+                throw (InvalidParameterValueException) e;
+            } else if (e instanceof PermissionDeniedException) {
+                throw (PermissionDeniedException) e;
+            } else if (e instanceof InternalErrorException) {
+                s_logger.warn("ManagementServer error", e);
+                throw (InternalErrorException) e;
+            }
+            s_logger.warn("ManagementServer error", e);
+        } finally {
+            if (locked) {
+                _publicIpAddressDao.release(publicIp);
+            }
+        }
+        return false;
+    }
+
+    private Long saveEvent(Long userId, Long accountId, String level, String type, String description) {
+        EventVO event = new EventVO();
+        event.setUserId(userId);
+        event.setAccountId(accountId);
+        event.setType(type);
+        event.setDescription(description);
+        event.setLevel(level);
+        event = _eventDao.persist(event);
+        return event.getId();
     }
 
 }

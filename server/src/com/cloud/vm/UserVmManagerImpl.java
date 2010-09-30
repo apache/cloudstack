@@ -119,6 +119,7 @@ import com.cloud.network.dao.SecurityGroupVMMapDao;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.pricing.dao.PricingDao;
+import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.ServiceOffering.GuestIpType;
@@ -153,6 +154,7 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
+import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
@@ -224,7 +226,6 @@ public class UserVmManagerImpl implements UserVmManager {
     @Inject NetworkGroupManager _networkGroupManager;
     @Inject ServiceOfferingDao _serviceOfferingDao;
     @Inject EventDao _eventDao = null;
-
     private IpAddrAllocator _IpAllocator;
     ScheduledExecutorService _executor = null;
     int _expungeInterval;
@@ -1938,7 +1939,9 @@ public class UserVmManagerImpl implements UserVmManager {
     public void expunge() {
     	List<UserVmVO> vms = _vmDao.findDestroyedVms(new Date(System.currentTimeMillis() - ((long)_expungeDelay << 10)));
     	s_logger.info("Found " + vms.size() + " vms to expunge.");
-    	for (UserVmVO vm : vms) {
+    	for (UserVmVO vm : vms) 
+    	{
+    		String privateIpAddress = vm.getPrivateIpAddress();
     		long vmId = vm.getId();
     		releaseGuestIpAddress(vm);
             vm.setGuestNetmask(null);
@@ -1947,6 +1950,23 @@ public class UserVmManagerImpl implements UserVmManager {
     			s_logger.info("vm " + vmId + " is skipped because it is no longer in Destroyed state");
     			continue;
     		}
+
+    		List<FirewallRuleVO> forwardingRules = null;
+    		try 
+    		{
+    			forwardingRules = _rulesDao.listByPrivateIp(privateIpAddress);
+    			
+    			for(FirewallRuleVO rule: forwardingRules)
+    			{
+    				_networkMgr.deleteRule(rule.getId(), Long.valueOf(User.UID_SYSTEM), vm.getAccountId());
+    				if(s_logger.isDebugEnabled())
+    					s_logger.debug("Rule "+rule.getId()+" for vm:"+vm.getId()+" is deleted successfully during expunge operation");
+    			}
+                
+            } catch (Exception e) {
+            	s_logger.info("VM " + vmId +" expunge failed due to " + e.getMessage());
+			}
+    		
     		
             List<VolumeVO> vols = null;
             try {

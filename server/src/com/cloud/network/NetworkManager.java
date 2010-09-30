@@ -27,7 +27,9 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.HostVO;
 import com.cloud.network.FirewallRuleVO;
@@ -211,4 +213,5 @@ public interface NetworkManager extends Manager {
      */
     List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat);	
 	
+    public void deleteRule(long ruleId, long userId, long accountId) throws InvalidParameterValueException, PermissionDeniedException, InternalErrorException;
 }
