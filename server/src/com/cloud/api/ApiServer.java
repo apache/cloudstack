@@ -324,6 +324,7 @@ public class ApiServer implements HttpRequestHandler {
                     Class<?> cmdClass = Class.forName(cmdClassName);
                     BaseCmd cmdObj = (BaseCmd)cmdClass.newInstance();
 
+                    cmdObj.setResponseType(responseType);
                     // This is where the command is either serialized, or directly dispatched
                     response = queueCommand(cmdObj, paramMap);
                 } else {

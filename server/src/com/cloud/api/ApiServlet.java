@@ -285,8 +285,8 @@ public class ApiServlet extends HttpServlet {
                 while (attrNames.hasMoreElements()) {
                     String attrName = (String)attrNames.nextElement();
                     Object attrObj = session.getAttribute(attrName);
-                    if (attrObj instanceof String) {
-                        sb.append(", \"" + attrName + "\" : \"" + (String)attrObj + "\"");
+                    if ((attrObj instanceof String) || (attrObj instanceof Long)) {
+                        sb.append(", \"" + attrName + "\" : \"" + attrObj.toString() + "\"");
                     }
                 }
             }

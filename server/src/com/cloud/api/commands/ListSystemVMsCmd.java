@@ -35,7 +35,7 @@ import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.SystemVm;
 import com.cloud.vm.VMInstanceVO;
 
-@Implementation(method="searchForSystemVms")
+@Implementation(method="searchForSystemVm")
 public class ListSystemVMsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSystemVMsCmd.class.getName());
 
