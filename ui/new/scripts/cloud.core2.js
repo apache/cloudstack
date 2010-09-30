@@ -664,6 +664,28 @@ function initializeEditFunction($readonlyFields, $editFields, doUpdateFn) {
     });    
 }
 
+function switchBetweenDifferentTabs(tabArray, tabContentArray) {        
+    for(var tabIndex=0; tabIndex<tabArray.length; tabIndex++) {  
+        switchToTab(tabIndex, tabArray, tabContentArray);
+    }
+}
+
+function switchToTab(tabIndex, tabArray, tabContentArray) {
+  $("#"+tabArray[tabIndex]).bind("click", function(event){               
+        $("#"+tabArray[tabIndex]).removeClass("off").addClass("on"); //current tab turns on
+        for(var k=0; k<tabArray.length; k++) { 
+            if(k != tabIndex)
+                $("#"+tabArray[k]).removeClass("on").addClass("off");  //other tabs turns off
+        }                    
+                        
+        $("#"+tabContentArray[tabIndex]).show();    //current tab content shows             
+        for(var k=0; k<tabContentArray.length; k++) {
+            if(k != tabIndex)
+                $("#"+tabContentArray[k]).hide();   //other tab content hide
+        }   
+        return false;
+    });   
+}
 
 
 

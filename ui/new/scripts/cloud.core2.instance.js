@@ -632,31 +632,11 @@ function clickInstanceGroupHeader($arrowIcon) {
 	        zIndex: 2000
         }));
 	
-        //***** switch to different tab (begin) ********************************************************************
-        $("#tab_details").bind("click", function(event){
-            $(this).removeClass("off").addClass("on");
-            $("#tab_volume, #tab_statistics").removeClass("on").addClass("off");  
-            $("#tab_content_details").show();     
-            $("#tab_content_volume, #tab_content_statistics").hide();   
-            return false;
-        });
-        
-        $("#tab_volume").bind("click", function(event){
-            $(this).removeClass("off").addClass("on");
-            $("#tab_details, #tab_statistics").removeClass("on").addClass("off");   
-            $("#tab_content_volume").show();    
-            $("#tab_content_details, #tab_content_statistics").hide();    
-            return false;
-        });
-        
-        $("#tab_statistics").bind("click", function(event){
-            $(this).removeClass("off").addClass("on");
-            $("#tab_details, #tab_volume").removeClass("on").addClass("off");  
-            $("#tab_content_statistics").show();   
-            $("#tab_content_details, #tab_content_volume").hide();      
-            return false;
-        });        
-        //***** switch to different tab (end) **********************************************************************
+        //***** switch between different tabs (begin) ********************************************************************
+        var tabArray = ["tab_details", "tab_volume", "tab_statistics"];
+        var tabContentArray = ["tab_content_details", "tab_content_volume", "tab_content_statistics"];
+        switchBetweenDifferentTabs(tabArray, tabContentArray);       
+        //***** switch between different tabs (end) **********************************************************************
         
         //***** VM Wizard (begin) ******************************************************************************
         $vmPopup = $("#vm_popup");
