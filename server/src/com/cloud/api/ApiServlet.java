@@ -166,6 +166,7 @@ public class ApiServlet extends HttpServlet {
                 if ((sessionKeyParam == null) || (sessionKey == null) || !sessionKey.equals(sessionKeyParam[0])) {
                     session.invalidate();
                     resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials");
+                    return;
                 }
 
                 // Do a sanity check here to make sure the user hasn't already been deleted
