@@ -719,6 +719,7 @@ public class StorageManagerImpl implements StorageManager {
         return new Pair<String, String>(vdiUUID, basicErrMsg);
     }
     
+    @Override
     @DB
 	public VolumeVO createVolume(VolumeVO volume, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, Long clusterId,
                                     ServiceOfferingVO offering, DiskOfferingVO diskOffering, List<StoragePoolVO> avoids, long size, HypervisorType hyperType) {
@@ -734,8 +735,6 @@ public class StorageManagerImpl implements StorageManager {
         dskCh.setHyperType(hyperType);
         
         Transaction txn = Transaction.currentTxn();
-        
-        VolumeType volType = volume.getVolumeType();
         
         VolumeTO created = null;
         int retry = _retry;
@@ -811,7 +810,7 @@ public class StorageManagerImpl implements StorageManager {
         volume.setSize(created.getSize());
         volume.setPoolType(pool.getPoolType());
         volume.setPodId(pod.getId());
-        volume.setState(Volume.State.Created);
+        volume.setState(Volume.State.Ready);
         _volsDao.persist(volume);
         return volume;
     }
@@ -1575,106 +1574,15 @@ public class StorageManagerImpl implements StorageManager {
 
         return _volsDao.findById(volume.getId());
     }
-
-    @Override
-    @DB
-    public VolumeVO createVolume(long volumeId, HypervisorType hyperType) 
-    {
-    	String volumeName = "";
-        VolumeVO createdVolume = null;
-        
-        try 
-        {
-	        // Determine the volume's name
-	        volumeName = getRandomVolumeName();
-	
-	        // Create the Volume object and save it so that we can return it to the user
-	        Account account = _accountDao.findById(accountId);
-	        VolumeVO volume = new VolumeVO(userSpecifiedName, -1, -1, -1, -1, new Long(-1), null, null, 0, Volume.VolumeType.DATADISK);
-	        volume.setPoolId(null);
-	        volume.setDataCenterId(dc.getId());
-	        volume.setPodId(null);
-	        volume.setAccountId(accountId);
-	        volume.setDomainId(account.getDomainId());
-	        volume.setMirrorState(MirrorState.NOT_MIRRORED);
-	        volume.setDiskOfferingId(diskOffering.getId());
-	        volume.setStorageResourceType(Storage.StorageResourceType.STORAGE_POOL);
-	        volume.setInstanceId(null);
-	        volume.setUpdated(new Date());
-	        volume.setStatus(AsyncInstanceCreateStatus.Creating);
-	        volume.setDomainId(account.getDomainId());
-	        volume.setSourceId(diskOffering.getId());
-	        volume.setSourceType(SourceType.DiskOffering);
-	        volume = _volsDao.persist(volume);
-	
-	        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-	        if (asyncExecutor != null) {
-	            AsyncJobVO job = asyncExecutor.getJob();
-	
-	            if (s_logger.isInfoEnabled())
-	                s_logger.info("CreateVolume created a new instance " + volume.getId() + ", update async job-" + job.getId() + " progress status");
-	
-	            _asyncMgr.updateAsyncJobAttachment(job.getId(), "volume", volume.getId());
-	            _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, volume.getId());
-	        }
-	        
-	        List<StoragePoolVO> poolsToAvoid = new ArrayList<StoragePoolVO>();
-	        Set<Long> podsToAvoid = new HashSet<Long>();
-	        Pair<HostPodVO, Long> pod = null;
-	        DataCenterVO dc = _dcDao.findById(volume.getDataCenterId());
-	        DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
-	        long accountId = volume.getAccountId();
-	       
-	        while ((pod = _agentMgr.findPod(null, null, dc, volume.getAccountId(), podsToAvoid)) != null) {
-	            if ((createdVolume = createVolume(volume, null, null, dc, pod.first(), null, null, diskOffering, poolsToAvoid, volume.getSize(), hyperType)) != null) {
-	            	break;
-	            } else {
-	                podsToAvoid.add(pod.first().getId());
-	            }
-	        }
-	
-	        // Create an event
-	        EventVO event = new EventVO();
-	        event.setAccountId(accountId);
-	        event.setType(EventTypes.EVENT_VOLUME_CREATE);	      
-	
-	        Transaction txn = Transaction.currentTxn();
-
-            txn.start();
-
-            if (createdVolume != null) {
-                // Increment the number of volumes
-                _accountMgr.incrementResourceCount(accountId, ResourceType.volume);
-                
-                // Set event parameters
-                long sizeMB = createdVolume.getSize() / (1024 * 1024);
-                StoragePoolVO pool = _storagePoolDao.findById(createdVolume.getPoolId());
-                String eventParams = "id=" + createdVolume.getId() + "\ndoId=" + diskOffering.getId() + "\ntId=" + -1 + "\ndcId=" + dc.getId() + "\nsize=" + sizeMB;
-                event.setLevel(EventVO.LEVEL_INFO);
-                event.setDescription("Created volume: " + createdVolume.getName() + " with size: " + sizeMB + " MB in pool: " + pool.getName());
-                event.setParameters(eventParams);
-                _eventDao.persist(event);
-            } else {
-            	// Mark the existing volume record as corrupted
-                volume.setStatus(AsyncInstanceCreateStatus.Corrupted);
-                volume.setDestroyed(true);
-                _volsDao.update(volume.getId(), volume);
-            }            
-
-            txn.commit();
-        } catch (Exception e) {
-            s_logger.error("Unhandled exception while saving volume " + volumeName, e);
-        }
-        
-        return createdVolume;
-    }
     
+    
+    /*Just allocate a volume in the database, don't send the createvolume cmd to hypervisor. The volume will be finally created only when it's attached to a VM.*/
     @Override
     @DB
     public VolumeVO allocVolume(long accountId, long userId, String userSpecifiedName, DataCenterVO dc, DiskOfferingVO diskOffering, long startEventId, long size) {
 
     	String volumeName = "";
-        VolumeVO createdVolume = null;
+        VolumeVO allocatedVolume = null;
         
         try 
         {
@@ -1701,6 +1609,8 @@ public class StorageManagerImpl implements StorageManager {
 	        volume.setState(Volume.State.Allocated);
 	        volume = _volsDao.persist(volume);
 	
+	        allocatedVolume = volume;
+	        
 	        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
 	        if (asyncExecutor != null) {
 	            AsyncJobVO job = asyncExecutor.getJob();
@@ -1710,13 +1620,41 @@ public class StorageManagerImpl implements StorageManager {
 	
 	            _asyncMgr.updateAsyncJobAttachment(job.getId(), "volume", volume.getId());
 	            _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, volume.getId());
-	        }
-	        createdVolume = volume;
+	        }	        
+	        
+	        // Create an event
+	        EventVO event = new EventVO();
+	        event.setAccountId(accountId);
+	        event.setType(EventTypes.EVENT_VOLUME_CREATE);        
+     
+	        Transaction txn = Transaction.currentTxn();
+
+	        txn.start();
+
+	        if (allocatedVolume != null) {
+	        	// Increment the number of volumes
+	        	_accountMgr.incrementResourceCount(accountId, ResourceType.volume);
+
+	        	// Set event parameters
+	        	long sizeMB = allocatedVolume.getSize() / (1024 * 1024);	    
+	        	String eventParams = "id=" + allocatedVolume.getId() + "\ndoId=" + diskOffering.getId() + "\ntId=" + -1 + "\ndcId=" + dc.getId() + "\nsize=" + sizeMB;
+	        	event.setLevel(EventVO.LEVEL_INFO);
+	        	event.setDescription("Allocated volume: " + allocatedVolume.getName() + " with size: " + sizeMB + " MB.");
+	        	event.setParameters(eventParams);
+	        	_eventDao.persist(event);
+	        } else {
+	        	// Mark the existing volume record as corrupted
+	        	volume.setStatus(AsyncInstanceCreateStatus.Corrupted);
+	        	volume.setDestroyed(true);
+	        	_volsDao.update(volume.getId(), volume);
+	        }            
+
+	        txn.commit();	       
         } catch (Exception e) {
             s_logger.error("Unhandled exception while saving volume " + volumeName, e);
         }
         
-        return createdVolume;
+        return allocatedVolume;
     }
 
     @Override

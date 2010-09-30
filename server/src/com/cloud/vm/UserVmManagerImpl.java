@@ -314,10 +314,21 @@ public class UserVmManagerImpl implements UserVmManager {
         
         if (volume.getState().equals(Volume.State.Allocated)) {
     		/*Need to create the volume*/
+        	VMTemplateVO rootDiskTmplt = _templateDao.findById(vm.getTemplateId());
+        	DataCenterVO dcVO = _dcDao.findById(vm.getDataCenterId());
+        	HostPodVO pod = _podDao.findById(vm.getPodId());
+        	StoragePoolVO rootDiskPool = _storagePoolDao.findById(rootVolumeOfVm.getPoolId());
+        	ServiceOfferingVO svo = _serviceOfferingDao.findById(vm.getServiceOfferingId());
+        	DiskOfferingVO diskVO = _diskOfferingDao.findById(volume.getDiskOfferingId());
+        	HypervisorType rootDiskHyperType = _volsDao.getHypervisorType(rootVolumeOfVm.getId());
         	
-        	volume = _storageMgr.createVolume(volumeId, _volsDao.getHypervisorType(rootVolumeOfVm.getId()));
+        	volume = _storageMgr.createVolume(volume, vm, rootDiskTmplt, dcVO, pod, rootDiskPool.getClusterId(), svo, diskVO, new ArrayList<StoragePoolVO>(), volume.getSize(), rootDiskHyperType);
         	
+        	if (volume == null) {
+        		throw new InternalErrorException("Failed to create volume when attaching it to VM: " + vm.getName());
+        	}       	
     	}
+        
         List<VolumeVO> vols = _volsDao.findByInstance(vmId);
         if( deviceId != null ) {
             if( deviceId.longValue() > 15 || deviceId.longValue() == 0 || deviceId.longValue() == 3) {

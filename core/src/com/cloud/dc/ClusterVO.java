@@ -25,6 +25,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.org.Cluster;
 import com.cloud.utils.NumbersUtil;
 
 @Entity

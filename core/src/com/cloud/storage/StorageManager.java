@@ -213,7 +213,8 @@ public interface StorageManager extends Manager {
 	 * @param size
 	 * @return VolumeVO
 	 */
-	VolumeVO createVolume(long volumeId, HypervisorType hyperType);
+	public VolumeVO createVolume(VolumeVO volume, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, Long clusterId,
+            ServiceOfferingVO offering, DiskOfferingVO diskOffering, List<StoragePoolVO> avoids, long size, HypervisorType hyperType);
 	
 	VolumeVO allocVolume(long accountId, long userId, String name, DataCenterVO dc, DiskOfferingVO diskOffering, long startEventId, long size);
 	

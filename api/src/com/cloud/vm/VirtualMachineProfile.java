@@ -20,7 +20,7 @@ package com.cloud.vm;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 
 public class VirtualMachineProfile {
@@ -28,7 +28,7 @@ public class VirtualMachineProfile {
     int _cpus;
     int _speed; // in mhz
     long _ram; // in bytes
-    Hypervisor.Type _hypervisorType;
+    HypervisorType _hypervisorType;
     VirtualMachine.Type _type;
     Map<String, String> _params;
     Long _templateId;
@@ -79,7 +79,7 @@ public class VirtualMachineProfile {
         return _disks;
     }
     
-    public Hypervisor.Type getHypervisorType() {
+    public HypervisorType getHypervisorType() {
         return _hypervisorType;
     }
     
@@ -87,7 +87,7 @@ public class VirtualMachineProfile {
         return _vm;
     }
     
-    public VirtualMachineProfile(long id, int core, int speed, long ram, Long templateId, Hypervisor.Type type, Map<String, String> params) {
+    public VirtualMachineProfile(long id, int core, int speed, long ram, Long templateId, HypervisorType type, Map<String, String> params) {
         this._cpus = core;
         this._speed = speed;
         this._ram = ram;

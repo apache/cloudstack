@@ -769,7 +769,7 @@ public class DownloadManagerImpl implements DownloadManager {
         s_logger.info("createtmplt.sh found in " + createTmpltScr);
 
         List<Processor> processors = new ArrayList<Processor>();
-        _processors = new Adapters<Processor>("processors", processors);
+       
         Processor processor = new VhdProcessor();
         
         processor.configure("VHD Processor", params);
@@ -787,6 +787,7 @@ public class DownloadManagerImpl implements DownloadManager {
         processor.configure("VMDK Processor", params);
         processors.add(processor);
         
+        _processors = new Adapters<Processor>("processors", processors);
         // Add more processors here.
         threadPool = Executors.newFixedThreadPool(numInstallThreads);
         return true;

@@ -237,9 +237,7 @@ public class VolumeVO implements Volume {
         this.recreatable = false;
     }
 
-    public void setState(State state) {
-        this.state = state;
-    }
+    
     
     public boolean isRecreatable() {
         return recreatable;
@@ -472,9 +470,9 @@ public class VolumeVO implements Volume {
 	    return state;
 	}
 	
-	public void setState(State st) {
-		this.state = st;
-	}
+	public void setState(State state) {
+        this.state = state;
+    }
 
     public void setUpdated(Date updated) {
         this.updated = updated;

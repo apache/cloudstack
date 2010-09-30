@@ -206,14 +206,6 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 				return null;
 			}
 			
-			/*Is a KVM host?*/
-			sshSession = sshConnection.openSession();
-			sshSession.execCommand("lsmod|grep kvm >& /dev/null");
-			if (sshSession.getExitStatus() != 0) {
-				s_logger.debug("It's not a KVM enabled machine");
-				return null;
-			}
-			
 			if (!sshExecuteCmd(sshConnection, "lsmod|grep kvm >& /dev/null", 3)) {
 				s_logger.debug("It's not a KVM enabled machine");
 				return null;
