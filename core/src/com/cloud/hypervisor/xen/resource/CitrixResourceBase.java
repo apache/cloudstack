@@ -5079,6 +5079,20 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return new ValidateSnapshotAnswer(cmd, success, details, expectedSnapshotBackupUuid, actualSnapshotBackupUuid, actualSnapshotUuid);
     }
 
+
+    protected String getVhdParent(String primaryStorageSRUuid, String snapshotUuid, Boolean isISCSI) {
+        String parentUuid = callHostPlugin("vmopsSnapshot", "getVhdParent", "primaryStorageSRUuid", primaryStorageSRUuid,
+                "snapshotUuid", snapshotUuid, "isISCSI", isISCSI.toString());
+
+        if (parentUuid == null || parentUuid.isEmpty()) {
+            s_logger.debug("Unable to get parent of VHD " + snapshotUuid + " in SR " + primaryStorageSRUuid);
+            // errString is already logged.
+            return null;
+        }
+        return parentUuid;
+    }
+    
+    
     protected ManageSnapshotAnswer execute(final ManageSnapshotCommand cmd) {
         long snapshotId = cmd.getSnapshotId();
         String snapshotName = cmd.getSnapshotName();
@@ -5111,6 +5125,25 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 }
 
                 // Determine the UUID of the snapshot
+                snapshotUUID = snapshot.getUuid(conn);
+                String preSnapshotUUID = cmd.getSnapshotPath();
+                //check if it is a empty snapshot
+                if( preSnapshotUUID != null) {
+                    SR sr = volume.getSR(conn);
+                    String srUUID = sr.getUuid(conn);
+                    String type = sr.getType(conn);
+                    Boolean isISCSI = SRType.LVMOISCSI.equals(type);
+                    String snapshotParentUUID = getVhdParent(srUUID, snapshotUUID, isISCSI);
+
+                    String preSnapshotParentUUID = getVhdParent(srUUID, preSnapshotUUID, isISCSI);
+                    if( snapshotParentUUID != null && snapshotParentUUID.equals(preSnapshotParentUUID)) {
+                        // this is empty snapshot, remove it
+                        snapshot.destroy(conn);
+                        snapshotUUID = preSnapshotUUID;
+                    }
+
+                }                
+                
                 VDI.Record vdir = snapshot.getRecord(conn);
                 snapshotUUID = vdir.uuid;
 

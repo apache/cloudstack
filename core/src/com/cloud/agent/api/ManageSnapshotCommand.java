@@ -37,10 +37,11 @@ public class ManageSnapshotCommand extends Command {
 
     public ManageSnapshotCommand() {}
 
-    public ManageSnapshotCommand(String commandSwitch, long snapshotId, String path, String snapshotName) {
+    public ManageSnapshotCommand(String commandSwitch, long snapshotId, String path, String preSnapshot, String snapshotName) {
         _commandSwitch = commandSwitch;
         if (commandSwitch.equals(ManageSnapshotCommand.CREATE_SNAPSHOT)) {
             _volumePath = path;
+            _snapshotPath = preSnapshot;
         }
         else if (commandSwitch.equals(ManageSnapshotCommand.DESTROY_SNAPSHOT)) {
             _snapshotPath = path;

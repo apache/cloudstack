@@ -1734,19 +1734,7 @@ public interface ManagementServer {
            ResourceAllocationException,
            InternalErrorException;
 
-    /**
-     * @param userId    The Id of the user who invoked this operation.
-     * @param volumeId  The volume for which this snapshot is being taken
-     * @return          The properties of the snapshot taken
-     */
-    SnapshotVO createTemplateSnapshot(Long userId, long volumeId);
     
-    /**
-     * Destroy a snapshot
-     * @param snapshotId the id of the snapshot to destroy
-     * @return true if snapshot successfully destroyed, false otherwise
-     */
-    boolean destroyTemplateSnapshot(Long userId, long snapshotId);
     long deleteSnapshotAsync(long userId, long snapshotId);
 
     long createVolumeFromSnapshotAsync(long userId, long accountId, long snapshotId, String volumeName) throws InternalErrorException, ResourceAllocationException;

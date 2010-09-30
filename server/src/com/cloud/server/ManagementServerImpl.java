@@ -6326,16 +6326,6 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public SnapshotVO createTemplateSnapshot(Long userId, long volumeId) {
-        return _vmMgr.createTemplateSnapshot(userId, volumeId);
-    }
-    
-    @Override
-    public boolean destroyTemplateSnapshot(Long userId, long snapshotId) {
-        return _vmMgr.destroyTemplateSnapshot(userId, snapshotId);
-    }
-
-    @Override
     public long deleteSnapshotAsync(long userId, long snapshotId) {
     	Snapshot snapshot = findSnapshotById(snapshotId);
         long volumeId = snapshot.getVolumeId();

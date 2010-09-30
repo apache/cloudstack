@@ -115,6 +115,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.gson.Gson;
@@ -362,9 +363,19 @@ public class SnapshotManagerImpl implements SnapshotManager {
          
         }
         txn.commit();
+        
+        // get previous snapshot Path
+        long  preId = _snapshotDao.getLastSnapshot(volumeId, id);
+        String preSnapshotPath = null;
+        SnapshotVO preSnapshotVO = null;
+        if( preId != 0) {
+            preSnapshotVO = _snapshotDao.findById(preId);
+            preSnapshotPath = preSnapshotVO.getPath();
+
+        }
 
         // Send a ManageSnapshotCommand to the agent
-        ManageSnapshotCommand cmd = new ManageSnapshotCommand(ManageSnapshotCommand.CREATE_SNAPSHOT, id, volume.getPath(), snapshotName);
+        ManageSnapshotCommand cmd = new ManageSnapshotCommand(ManageSnapshotCommand.CREATE_SNAPSHOT, id, volume.getPath(), preSnapshotPath, snapshotName);
         String basicErrMsg = "Failed to create snapshot for volume: " + volume.getId();
         ManageSnapshotAnswer answer = (ManageSnapshotAnswer) _storageMgr.sendToHostsOnStoragePool(volume.getPoolId(), cmd, basicErrMsg, _totalRetries, _pauseInterval, _shouldBeSnapshotCapable);
 
@@ -374,7 +385,16 @@ public class SnapshotManagerImpl implements SnapshotManager {
         // Update the snapshot in the database
         if ((answer != null) && answer.getResult()) {
             // The snapshot was successfully created
-            createdSnapshot = updateDBOnCreate(id, answer.getSnapshotPath());
+            if( preSnapshotPath != null && preSnapshotPath == answer.getSnapshotPath() ){
+                //empty snapshot
+                s_logger.debug("CreateSnapshot: this is empty snapshot, remove it ");
+                // delete from the snapshots table
+                _snapshotDao.delete(id);
+                throw new CloudRuntimeException(" There is no change since last snapshot, please use last snapshot " + preSnapshotPath);
+
+            } else {
+            	createdSnapshot = updateDBOnCreate(id, answer.getSnapshotPath());
+            }
         } else {
             if (answer != null) {
                 s_logger.error(answer.getDetails());

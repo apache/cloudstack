@@ -40,6 +40,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmManager;
 import com.google.gson.Gson;
 
@@ -118,7 +119,8 @@ public class CreatePrivateTemplateExecutor extends VolumeOperationExecutor {
             	        if (snapshotId == null) {
             	            // We are create private template from volume. Create a snapshot, copy the vhd chain of the disk to secondary storage. 
             	            // For template snapshot, we use a separate snapshot method.
-            	            snapshot = vmMgr.createTemplateSnapshot(param.getUserId(), param.getVolumeId());
+            	            //snapshot = vmMgr.createTemplateSnapshot(param.getUserId(), param.getVolumeId());
+            		        throw new CloudRuntimeException("Do not support create template from volume at this moment");
             	        }
             	        else {
             	            // We are creating a private template from an already present snapshot. 
@@ -145,13 +147,6 @@ public class CreatePrivateTemplateExecutor extends VolumeOperationExecutor {
             				    resultObject = composeResultObject(template, templateHostRef, volume.getDataCenterId());
             				} 
             				
-            				// Irrespective of whether the template was created or not, 
-            				// cleanup the snapshot taken for this template. (If this template is created from a volume and not a snapshot) 
-            				if(snapshotId == null) {
-            				    // Template was created from volume
-            				    // and snapshot is not null.
-            				    managerServer.destroyTemplateSnapshot(param.getUserId(), snapshot.getId());
-            				}
                         }
     		    	}
 		        }

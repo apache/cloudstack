@@ -197,14 +197,6 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
     VMTemplateVO createPrivateTemplate(VMTemplateVO template, Long userId, long snapshotId, String name, String description);
 
     /**
-     * @param userId    The Id of the user who invoked this operation.
-     * @param volumeId  The volume for which this snapshot is being taken
-     * @return          The properties of the snapshot taken
-     */
-    SnapshotVO createTemplateSnapshot(long userId, long volumeId);
-    boolean destroyTemplateSnapshot(Long userId, long snapshotId);
-
-    /**
      * Clean the network rules for the given VM
      * @param userId
      * @param instanceId the id of the instance for which the network rules should be cleaned
