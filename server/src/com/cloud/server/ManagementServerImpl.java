@@ -9101,7 +9101,24 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public boolean uploadCertificate(String certificatePath)
     {
-    	return _certDao.persistCustomCertToDb(certificatePath);
+    	boolean uploadStatus = _certDao.persistCustomCertToDb(certificatePath);
+    	
+    	if(uploadStatus)
+    	{
+    		//certficate uploaded to db successfully
+    		//send the certificate to the dom0
+    		
+    		//get a list of all hosts from host table
+    		List<HostVO> hosts = _hostDao.listAll();
+    		
+    		//find the console proxies, and send the command to them
+    		for(HostVO host : hosts)
+    		{
+    			
+    		}
+    	}
+    	
+    	return false;
     }
 
 }
