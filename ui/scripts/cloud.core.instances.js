@@ -1062,6 +1062,15 @@ function showInstancesTab(p_domainId, p_account) {
 				}
 				break;			    
 			case "vm_actions" :
+			    //fix for zIndex bug of IE7                 
+                vmInstance.find('#vm_rows').each(function() {
+                    $(this).css("z-index", "1");
+                });
+
+                vmInstance.find('#vm_actions_container').each(function() {
+                    $(this).css("z-ndex", "2");
+                });
+			
 				vmInstance.find("#vm_actions_container").slideDown("fast");
 				break;
 			case "vm_actions_close" :

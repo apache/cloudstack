@@ -139,7 +139,7 @@ long milliseconds = new Date().getTime();
 <!-- VM Instance Template -->
 <div id="vm_instance_template" style="width: 100%; height: auto; float: left; padding: 0;
     margin: 0; display: none">
-    <div class="vm_rows">
+    <div class="vm_rows" id="vm_rows">
         <div class="vm_rows_top">
             <div class="vm_genrows_cell" style="width: 7%;">
                 <div class="admin_vmstatus">
