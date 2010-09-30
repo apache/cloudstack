@@ -700,9 +700,9 @@ def rename(originalVHD, newVHD):
         raise xs_errors.XenError(errMsg)
     return
 
-def coalesceToChild(backupVHD, childUUID, isISCSI):
+def coalesceToChild(backupVHD, childUUID):
     # coalesce childVHD with its parent
-    childVHD = getVHD(childUUID, isISCSI)
+    childVHD = getVHD(childUUID, False)
     util.SMlog("childVHD: " + childVHD)
     # check for existence of childVHD
     isfile(childVHD, False)
@@ -1114,13 +1114,6 @@ def backupSnapshot(session, args):
     if baseCopyUuid == prevBaseCopyUuid:
         # There has been no change since the last snapshot so no need to backup 
         util.SMlog("There has been no change since the last snapshot with backup: " + prevBaseCopyUuid) 
-        if isFirstSnapshotOfRootVolume:
-            # baseCopyUuid is template. That is *NOT* the backup of any
-            # snapshot. There is no backup. So create an empty dummyVHD representing the empty snapshot.
-            # This will prevent deleteSnapshotBackup and createVolumeFromSnapshot from breaking.
-            prevBaseCopyUuid = createDummyVHD(baseCopyPath, backupsDir, isISCSI)
-            # The backup snapshot is the new dummy VHD created. 
-
         # Set the uuid of the current backup to that of last backup
         txt = "1#" + prevBaseCopyUuid
         return txt
@@ -1128,7 +1121,8 @@ def backupSnapshot(session, args):
     # Check existence of snapshot on primary storage 
     isfile(baseCopyPath, isISCSI)
     # copy baseCopyPath to backupsDir
-    backupFile = os.path.join(backupsDir, baseCopyVHD)
+    backupVHD = getVHD(baseCopyUuid, False)
+    backupFile = os.path.join(backupsDir, backupVHD)
     copyfile(baseCopyPath, backupFile, isISCSI)
     
     # Now set the availability of the snapshotPath and the baseCopyPath to false
@@ -1143,26 +1137,24 @@ def backupSnapshot(session, args):
         # It's parent is not null, but the template vhd.
         # Create a dummy empty vhd and set the parent of backupVHD to it.
         # This will prevent deleteSnapshotBackup and createVolumeFromSnapshot from breaking
-        prevBackupUuid = createDummyVHD(baseCopyPath, backupsDir, isISCSI)
+        prevBackupUuid = createDummyVHD(baseCopyPath, backupsDir)
 
     # Because the primary storage is always scanned, the parent of this base copy is always the first base copy.
     # We don't want that, we want a chain of VHDs each of which is a delta from the previous.
     # So set the parent of the current baseCopyVHD to prevBackupVHD 
     if prevBackupUuid:
         # If there was a previous snapshot
-        prevBackupVHD = getVHD(prevBackupUuid, isISCSI)
+        prevBackupVHD = getVHD(prevBackupUuid, False)
         setParent(prevBackupVHD, backupFile)
 
     txt = "1#" + baseCopyUuid
     return txt
 
-def createDummyVHD(baseCopyPath, backupsDir, isISCSI):
+def createDummyVHD(baseCopyPath, backupsDir):
     dummyUUID = ''
     try:
         dummyUUID = util.gen_uuid()
-        dummyVHD = getVHD(dummyUUID, isISCSI)
-        if isISCSI:
-            checkVolumeAvailablility(baseCopyPath)
+        dummyVHD = getVHD(dummyUUID, False)
         cmd = [VHD_UTIL, 'query', '-v', '-n', baseCopyPath]
         virtualSizeInMB = util.pread2(cmd)
         util.SMlog("Virtual size of " + baseCopyPath + " is " + virtualSizeInMB)
@@ -1185,13 +1177,12 @@ def deleteSnapshotBackup(session, args):
     secondaryStorageMountPath = args['secondaryStorageMountPath']
     backupUUID                = args['backupUUID']
     childUUID                 = args['childUUID']
-    isISCSI                   = getIsTrueString(args['isISCSI'])
 
     backupsDir = mountSnapshotsDir(secondaryStorageMountPath, "snapshots", dcId, accountId, volumeId)
     # chdir to the backupsDir for convenience
     chdir(backupsDir)
 
-    backupVHD = getVHD(backupUUID, isISCSI)
+    backupVHD = getVHD(backupUUID, False)
     util.SMlog("checking existence of " + backupVHD)
 
     # The backupVHD is on secondary which is NFS and not ISCSI.
@@ -1202,7 +1193,7 @@ def deleteSnapshotBackup(session, args):
         
     # Case 1) childUUID exists
     if childUUID:
-        coalesceToChild(backupVHD, childUUID, isISCSI)
+        coalesceToChild(backupVHD, childUUID)
     else:
         # Just delete the backupVHD
         try:
@@ -1224,7 +1215,6 @@ def createVolumeFromSnapshot(session, args):
     backedUpSnapshotUuid      = args['backedUpSnapshotUuid']
     templatePath              = args['templatePath']
     templateDownloadFolder    = args['templateDownloadFolder']
-    isISCSI                   = getIsTrueString(args['isISCSI'])
 
     backupsDir = mountSnapshotsDir(secondaryStorageMountPath, "snapshots", dcId, accountId, volumeId)
     util.SMlog("Backups dir " + backupsDir)
@@ -1237,9 +1227,9 @@ def createVolumeFromSnapshot(session, args):
     uuid = backedUpSnapshotUuid
     while uuid is not None:
         util.SMlog("Current uuid in parent chain " + uuid)
-        vhd = getVHD(uuid, isISCSI)
+        vhd = getVHD(uuid, False)
         vhdChain.append(vhd)
-        uuid = getParent(vhd, isISCSI)
+        uuid = getParent(vhd, False)
     util.SMlog("successfully created the parent chain " + str(vhdChain))
 
     destDirParent = ''
@@ -1340,7 +1330,7 @@ def createVolumeFromSnapshot(session, args):
     # For root disk
     if templatePath:
         # This will create a vhd on secondary storage destDir with name newVhd
-        mergeTemplateAndSnapshot(secondaryStorageMountPath, templatePath, destDir, newVhd, isISCSI)
+        mergeTemplateAndSnapshot(secondaryStorageMountPath, templatePath, destDir, newVhd)
 
     # set the hidden flag of the new VHD to false, so that it doesn't get deleted when the SR scan is done.
     try:
@@ -1374,7 +1364,7 @@ def createVolumeFromSnapshot(session, args):
 
     return "1#" + newUUID + "#" + virtualSizeInMB
 
-def mergeTemplateAndSnapshot(secondaryStorageMountPath, templatePath, destDir, newVhd, isISCSI):
+def mergeTemplateAndSnapshot(secondaryStorageMountPath, templatePath, destDir, newVhd):
     # Mount the template directory present on the secondary to the primary
     templateDirOnPrimary = mountTemplatesDir(secondaryStorageMountPath, templatePath)
 
@@ -1389,8 +1379,8 @@ def mergeTemplateAndSnapshot(secondaryStorageMountPath, templatePath, destDir, n
     umount(templateDirOnPrimary)
 
     # get the dummyVHD which is the parent of the new Vhd
-    dummyUUID = getParent(newVhd, isISCSI)
-    dummyVHD = getVHD(dummyUUID, isISCSI)
+    dummyUUID = getParent(newVhd, False)
+    dummyVHD = getVHD(dummyUUID, False)
     # set the parent of the newVhd to the templateVHD on secondary
     setParent(templateVHD, newVhd)
     # remove the dummyVHD as we don't have any use for it and it wil
