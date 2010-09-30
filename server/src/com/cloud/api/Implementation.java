@@ -14,4 +14,5 @@ public @interface Implementation {
     String createMethod() default "";
     String method() default "";
     Manager manager() default Manager.ManagementServer;
+    String description() default "";
 }

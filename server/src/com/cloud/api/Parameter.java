@@ -30,6 +30,7 @@ import com.cloud.api.BaseCmd.CommandType;
 @Target({FIELD})
 public @interface Parameter {
     String name() default "";
+    String description() default "";
     boolean required() default false;
     CommandType type() default CommandType.OBJECT;
     CommandType collectionType() default CommandType.OBJECT;
