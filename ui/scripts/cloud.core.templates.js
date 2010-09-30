@@ -198,7 +198,7 @@ function showTemplatesTab() {
 			    submenuContent.find("#grid_content").prepend(template.fadeIn("slow"));	 				
 												
 				$.ajax({
-				        data: createURL("command=registerTemplate&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&url="+encodeURIComponent(url)+"&zoneid="+zoneId+"&ispublic="+isPublic+moreCriteria.join("")+"&format="+format+"&passwordEnabled="+password+"&osTypeId="+osType+"&hypervisor="+hypervisor+"&response=json"),
+				        data: createURL("command=registerTemplate&name="+todb(name)+"&displayText="+todb(desc)+"&url="+encodeURIComponent(url)+"&zoneid="+zoneId+"&ispublic="+isPublic+moreCriteria.join("")+"&format="+format+"&passwordEnabled="+password+"&osTypeId="+osType+"&hypervisor="+hypervisor+"&response=json"),
 					dataType: "json",
 					success: function(json) {						  
 						var result = json.registertemplateresponse;								
@@ -244,10 +244,10 @@ function showTemplatesTab() {
 		template.data("name", fromdb(json.name));			
 					
 		template.find("#template_id").text(json.id);
-		template.find("#template_zone").text(json.zonename);
-		template.find("#template_name").text(json.name);
-		template.find("#template_display_text").text(json.displaytext);
-		template.find("#template_account").text(json.account);
+		template.find("#template_zone").text(fromdb(json.zonename));
+		template.find("#template_name").text(fromdb(json.name));
+		template.find("#template_display_text").text(fromdb(json.displaytext));
+		template.find("#template_account").text(fromdb(json.account));
 		if(json.size != null)
 		    template.find("#template_size").text(convertBytes(parseInt(json.size)));
 		
@@ -326,13 +326,13 @@ function showTemplatesTab() {
 					
 					var array1 = [];
 					if(newName!=oldName)
-					    array1.push("&name="+encodeURIComponent(newName));
+					    array1.push("&name="+todb(newName));
 					if(newDesc!=oldDesc)
-					    array1.push("&displaytext="+encodeURIComponent(newDesc));
+					    array1.push("&displaytext="+todb(newDesc));
 					if(newPasswordEnabled!=oldPasswordEnabled)
 					    array1.push("&passwordenabled="+newPasswordEnabled);						
 					if(newOsTypeId!=oldOsTypeId)
-					    array1.push("&ostypeid="+encodeURIComponent(newOsTypeId));
+					    array1.push("&ostypeid="+todb(newOsTypeId));
 								
 					if(array1.length > 0) {	
 					    $.ajax({
@@ -573,10 +573,10 @@ function showTemplatesTab() {
 		          
 		        var array1 = [];      
 		        var name = trim(thisDialog.find("#name").val());	
-		        array1.push("&displayname="+encodeURIComponent(name));
+		        array1.push("&displayname="+todb(name));
 		        	
 		        var group = trim(thisDialog.find("#group").val());	
-		        array1.push("&group="+encodeURIComponent(group));
+		        array1.push("&group="+todb(group));
 		        	
 		        var serviceOfferingId = thisDialog.find("#service_offering").val();		
 		        array1.push("&serviceOfferingId="+serviceOfferingId);
@@ -664,7 +664,7 @@ function showTemplatesTab() {
 		    var name = submenuContent.find("#advanced_search #adv_search_name").val();				 
 		    var moreCriteria = [];								
 			if (name!=null && trim(name).length > 0) 
-				moreCriteria.push("&name="+encodeURIComponent(trim(name)));				
+				moreCriteria.push("&name="+todb(trim(name)));				
 			commandString = "command=listTemplates&page="+currentPage+moreCriteria.join("")+"&templatefilter="+type+"&response=json";    
 		} else {          
             var searchInput = $("#submenu_content_template #search_input").val();  //search button          
@@ -763,7 +763,7 @@ function showTemplatesTab() {
 			    thisDialog.dialog("close");									    
 			    				
 				$.ajax({
-				        data: createURL("command=registerIso&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&url="+encodeURIComponent(url)+"&zoneId="+zoneId+"&isPublic="+isPublic+"&osTypeId="+osType+"&bootable="+bootable+"&hypervisor="+hypervisor+"&response=json"),
+				        data: createURL("command=registerIso&name="+todb(name)+"&displayText="+todb(desc)+"&url="+encodeURIComponent(url)+"&zoneId="+zoneId+"&isPublic="+isPublic+"&osTypeId="+osType+"&bootable="+bootable+"&hypervisor="+hypervisor+"&response=json"),
 					dataType: "json",
 					success: function(json) {					
 					    var result = json.registerisoresponse;					
@@ -816,9 +816,9 @@ function showTemplatesTab() {
 		template.data("isPublic", json.ispublic);
 		
 		template.find("#iso_id").text(json.id);
-		template.find("#iso_zone").text(json.zonename);
-		template.find("#iso_name").text(json.name);
-		template.find("#iso_display_text").text(json.displaytext);
+		template.find("#iso_zone").text(fromdb(json.zonename));
+		template.find("#iso_name").text(fromdb(json.name));
+		template.find("#iso_display_text").text(fromdb(json.displaytext));
 					
 		if(json.size != null)
 		    template.find("#iso_size").text(convertBytes(parseInt(json.size)));
@@ -877,7 +877,7 @@ function showTemplatesTab() {
 					var dialogBox = $(this);
 					dialogBox.dialog("close");
 					$.ajax({
-					        data: createURL("command=updateIso&id="+id+"&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&response=json"),
+					        data: createURL("command=updateIso&id="+id+"&name="+todb(name)+"&displayText="+todb(desc)+"&response=json"),
 						dataType: "json",
 						success: function(json) {								    					    	
 						    isoJSONToTemplate(json.updateisoresponse, template);										    
@@ -1071,7 +1071,7 @@ function showTemplatesTab() {
 		    var name = submenuContent.find("#advanced_search #adv_search_name").val();				  
 		    var moreCriteria = [];								
 			if (name!=null && trim(name).length > 0) 
-				moreCriteria.push("&name="+encodeURIComponent(trim(name)));			
+				moreCriteria.push("&name="+todb(trim(name)));			
 			commandString = "command=listIsos&page="+currentPage+moreCriteria.join("")+"&isofilter="+type+"&response=json";    
 		} else {          
 		    var searchInput = $("#submenu_content_iso #search_input").val(); //keyword  				    
