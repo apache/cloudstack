@@ -537,10 +537,13 @@ public class StorageManagerImpl implements StorageManager {
         
         DiskProfile dskCh = new DiskProfile(volume.getId(), volume.getVolumeType(), volume.getName(), 0, virtualsize, null, false, false, null);
         
+        int retry = 0;
         // Determine what pod to store the volume in
         while ((pod = _agentMgr.findPod(null, null, dc, account.getId(), podsToAvoid)) != null) {
+            podsToAvoid.add(pod.first().getId());
             // Determine what storage pool to store the volume in
             while ((pool = findStoragePool(dskCh, dc, pod.first(), null, null, null, null, poolsToAvoid)) != null) {
+                poolsToAvoid.add(pool);
                 volumeFolder = pool.getPath();
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Attempting to create volume from snapshotId: " + snapshot.getId() + " on storage pool " + pool.getName());
@@ -558,6 +561,15 @@ public class StorageManagerImpl implements StorageManager {
                     }
                     success = true;
                     break; // break out of the "find storage pool" loop
+                } else {
+                	retry++;
+                	if( retry >= 3 ) {
+                		_volsDao.expunge(volumeId);
+                		String msg = "Unable to create volume from snapshot " + snapshot.getId() + " after retrying 3 times, due to " + details;
+                		s_logger.debug(msg);
+                        throw new CloudRuntimeException(msg);
+                		
+                	}
                 }
 
                 s_logger.warn("Unable to create volume on pool " + pool.getName() + ", reason: " + details);
@@ -566,11 +578,16 @@ public class StorageManagerImpl implements StorageManager {
             
             if (success) {
                 break; // break out of the "find pod" loop
-            } else {
-                podsToAvoid.add(pod.first().getId());
-            }
+            } 
         }
         
+        if( !success ) {       	
+    		_volsDao.expunge(volumeId);
+    		String msg = "Unable to create volume from snapshot " + snapshot.getId() + " due to " + details;
+    		s_logger.debug(msg);
+            throw new CloudRuntimeException(msg);
+    		
+        }
         // Update the volume in the database
         Transaction txn = Transaction.currentTxn();
         txn.start();
