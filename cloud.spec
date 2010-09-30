@@ -525,11 +525,6 @@ fi
 %attr(0755,root,root) %{_bindir}/cloud-external-ipallocator.py
 %attr(0755,root,root) %{_initrddir}/cloud-ipallocator
 %dir %attr(770,root,root) %{_localstatedir}/log/%{name}/ipallocator
-%doc README
-%doc INSTALL
-%doc HACKING
-%doc README.html
-%doc debian/copyright
 
 %files setup
 %attr(0755,root,root) %{_bindir}/%{name}-setup-databases
