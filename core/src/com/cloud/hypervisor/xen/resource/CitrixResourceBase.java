@@ -1118,7 +1118,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             bootArgs += " pod=" + _pod;
             bootArgs += " localgw=" + _localGateway;
             String result = startSystemVM(vmName, storage.getVlanId(), network, cmd.getVolumes(), bootArgs, storage.getGuestMacAddress(), storage.getGuestIpAddress(), storage
-                    .getPrivateMacAddress(), storage.getPublicMacAddress(), cmd.getProxyCmdPort(), storage.getRamSize(), storage.getGuestOSId(), cmd.getNetworkRateMbps());
+                    .getPrivateMacAddress(), storage.getPublicMacAddress(), cmd.getProxyCmdPort(), storage.getRamSize(), cmd.getGuestOSDescription(), cmd.getNetworkRateMbps());
             if (result == null) {
                 return new StartSecStorageVmAnswer(cmd);
             }
@@ -3103,7 +3103,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             String bootArgs = cmd.getBootArgs();
 
             String result = startSystemVM(vmName, router.getVlanId(), network, cmd.getVolumes(), bootArgs, router.getGuestMacAddress(), router.getPrivateIpAddress(), router
-                    .getPrivateMacAddress(), router.getPublicMacAddress(), 3922, router.getRamSize(), router.getGuestOSId(), cmd.getNetworkRateMbps());
+                    .getPrivateMacAddress(), router.getPublicMacAddress(), 3922, router.getRamSize(), cmd.getGuestOSDescription(), cmd.getNetworkRateMbps());
             if (result == null) {
                 networkUsage(router.getPrivateIpAddress(), "create", null);
                 return new StartRouterAnswer(cmd);
@@ -3118,7 +3118,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
 
     protected String startSystemVM(String vmName, String vlanId, Network nw0, List<VolumeVO> vols, String bootArgs, String guestMacAddr, String privateIp, String privateMacAddr,
-            String publicMacAddr, int cmdPort, long ramSize, long guestOsId, int networkRateMbps) {
+            String publicMacAddr, int cmdPort, long ramSize, String getGuestOSDescription, int networkRateMbps) {
 
     	setupLinkLocalNetwork();
         VM vm = null;
@@ -3136,9 +3136,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
             Ternary<SR, VDI, VolumeVO> mount = mounts.get(0);
 
-            Set<VM> templates = VM.getByNameLabel(conn, CitrixHelper.getGuestOsType(guestOsId));
+            Set<VM> templates = VM.getByNameLabel(conn, getGuestOsType(getGuestOSDescription));
             if (templates.size() == 0) {
-            	String msg = " can not find systemvm template " + CitrixHelper.getGuestOsType(guestOsId) ;
+            	String msg = " can not find systemvm template " + getGuestOsType(getGuestOSDescription) ;
             	s_logger.warn(msg);
             	return msg;
 
@@ -3293,7 +3293,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             bootArgs += " localgw=" + _localGateway;
 
             String result = startSystemVM(vmName, proxy.getVlanId(), network, cmd.getVolumes(), bootArgs, proxy.getGuestMacAddress(), proxy.getGuestIpAddress(), proxy
-                    .getPrivateMacAddress(), proxy.getPublicMacAddress(), cmd.getProxyCmdPort(), proxy.getRamSize(), proxy.getGuestOSId(), cmd.getNetworkRateMbps());
+                    .getPrivateMacAddress(), proxy.getPublicMacAddress(), cmd.getProxyCmdPort(), proxy.getRamSize(), cmd.getGuestOSDescription(), cmd.getNetworkRateMbps());
             if (result == null) {
                 return new StartConsoleProxyAnswer(cmd);
             }

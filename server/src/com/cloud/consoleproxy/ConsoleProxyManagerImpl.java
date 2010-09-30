@@ -107,12 +107,14 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -218,24 +220,16 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     @Inject
     private AccountDao _accountDao;
 
-    @Inject
-    private VMTemplateHostDao _vmTemplateHostDao;
-
-    @Inject
-    private AgentManager _agentMgr;
-    @Inject
-    private StorageManager _storageMgr;
-    @Inject
-    private HighAvailabilityManager _haMgr;
+    @Inject private VMTemplateHostDao _vmTemplateHostDao;
+    @Inject private AgentManager _agentMgr;
+    @Inject private StorageManager _storageMgr;
+    @Inject private HighAvailabilityManager _haMgr;
     @Inject NetworkManager _networkMgr;
-    
     @Inject AccountManager _accountMgr;
-    @Inject
-    private EventDao _eventDao;
-    @Inject
-    ServiceOfferingDao _offeringDao;
-    @Inject
-    NetworkOfferingDao _networkOfferingDao;
+    @Inject private EventDao _eventDao;
+    @Inject GuestOSDao _guestOSDao = null;
+    @Inject ServiceOfferingDao _offeringDao;
+    @Inject NetworkOfferingDao _networkOfferingDao;
     private IpAddrAllocator _IpAllocator;
 
     private ConsoleProxyListener _listener;
@@ -651,13 +645,24 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
                         throw new CloudRuntimeException(msg);
                     }
 
+                    // Determine the VM's OS description
+                    String guestOSDescription;
+                    GuestOSVO guestOS = _guestOSDao.findById(proxy.getGuestOSId());
+                    if (guestOS == null) {
+                        String msg = "Could not find guest OS description for OSId " 
+                            + proxy.getGuestOSId() + " for vm: " + proxy.getName();
+                        s_logger.debug(msg); 
+                        throw new CloudRuntimeException(msg);
+                    } else {
+                        guestOSDescription = guestOS.getName();
+                    }
                     // _storageMgr.share(proxy, vols, null, true);
 
                     // carry the console proxy port info over so that we don't
                     // need to configure agent on this
                     StartConsoleProxyCommand cmdStart = new StartConsoleProxyCommand(_networkRate, _multicastRate,
                             _proxyCmdPort, proxy, proxy.getName(), "", vols, Integer.toString(_consoleProxyPort),
-                            Integer.toString(_consoleProxyUrlPort), _mgmt_host, _mgmt_port, _sslEnabled);
+                            Integer.toString(_consoleProxyUrlPort), _mgmt_host, _mgmt_port, _sslEnabled, guestOSDescription);
                     if (s_logger.isDebugEnabled())
                         s_logger.debug("Sending start command for console proxy " + proxy.getName() + " to " + routingHost.getName());
                     try {

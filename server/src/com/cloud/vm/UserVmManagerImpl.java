@@ -678,14 +678,12 @@ public class UserVmManagerImpl implements UserVmManager {
         String guestOSDescription;
         GuestOSVO guestOS = _guestOSDao.findById(vm.getGuestOSId());
         if (guestOS == null) {
-        	String description = "Could not find guest OS description for vm: " + vm.getName();
-        	s_logger.debug(description);        	        
-        	event.setDescription(description);
-    		event.setLevel(EventVO.LEVEL_ERROR);
-    		_eventDao.persist(event);
-        	return null;
+            String msg = "Could not find guest OS description for OSId " 
+                + vm.getGuestOSId() + " for vm: " + vm.getName();
+            s_logger.debug(msg); 
+            throw new CloudRuntimeException(msg);
         } else {
-        	guestOSDescription = guestOS.getName();
+            guestOSDescription = guestOS.getName();
         }
 
         HashSet<Host> avoid = new HashSet<Host>();
