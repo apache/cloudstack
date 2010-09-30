@@ -1447,7 +1447,7 @@ def get_private_nic( args):
         pifrec = session.xenapi.PIF.get_record(pif)
         network = pifrec.get('network')
         nwrec = session.xenapi.network.get_record(network)
-        if nwrec.get('name_label') == 'cloud-private':
+        if nwrec.get('name_label') == 'cloud-guest':
             return pifrec.get('device')
         if pifrec.get('management'):
             mgmtnic = pifrec.get('device')
