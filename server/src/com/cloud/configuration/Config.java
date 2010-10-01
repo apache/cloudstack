@@ -134,7 +134,7 @@ public enum Config {
 	CPUOverprovisioningFactor("Advanced", ManagementServer.class, String.class, "cpu.overprovisioning.factor", "1", "Used for CPU overprovisioning calculation; available CPU will be (actualCpuCapacity * cpu.overprovisioning.factor)", null),
 	NetworkType("Advanced", ManagementServer.class, String.class, "network.type", "vlan", "The type of network that this deployment will use.", "vlan,direct"),
 	LinkLocalIpNums("Advanced", ManagementServer.class, Integer.class, "linkLocalIp.nums", "10", "The number of link local ip that needed by domR(in power of 2)", null),
-	HypervisorDefaultType("Advanced", ManagementServer.class, String.class, "hypervisor.type", HypervisorType.KVM.toString(), "The type of hypervisor that this deployment will use.", "kvm|xenserver"),
+	HypervisorDefaultType("Advanced", ManagementServer.class, String.class, "hypervisor.type", HypervisorType.KVM.toString(), "The type of hypervisor that this deployment will use.", "kvm,xenserver"),
 	HypervisorList("Advanced", ManagementServer.class, String.class, "hypervisor.list", HypervisorType.KVM + "," + HypervisorType.XenServer + "," + HypervisorType.VmWare, "The list of hypervisors that this deployment will use.", "kvm,xenserver,vmware"),
 	ManagementHostIPAdr("Advanced", ManagementServer.class, String.class, "host", "localhost", "The ip address of management server", null),
 	UseSecondaryStorageVm("Advanced", ManagementServer.class, Boolean.class, "secondary.storage.vm", "false", "Deploys a VM per zone to manage secondary storage if true, otherwise secondary storage is mounted on management server", null),

@@ -18,7 +18,9 @@
 
 package com.cloud.storage.resource;
 
+import java.io.File;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
@@ -38,13 +40,20 @@ import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
+import com.cloud.server.ManagementServer;
 import com.cloud.storage.Storage;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateInfo;
+import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.Inject;
 
 public class DummySecondaryStorageResource extends ServerResourceBase implements ServerResource {
     private static final Logger s_logger = Logger.getLogger(DummySecondaryStorageResource.class);
@@ -53,8 +62,9 @@ public class DummySecondaryStorageResource extends ServerResourceBase implements
     String _pod;
     String _guid;
     String _dummyPath;
-
+    VMTemplateDao _tmpltDao;
 	private boolean _useServiceVm;
+	
     
 	public DummySecondaryStorageResource(boolean useServiceVM) {
 		setUseServiceVm(useServiceVM);
@@ -114,9 +124,7 @@ public class DummySecondaryStorageResource extends ServerResourceBase implements
         cmd.setName(_guid);
         cmd.setVersion(DummySecondaryStorageResource.class.getPackage().getImplementationVersion());
         /* gather TemplateInfo in second storage */
-        final Map<String, TemplateInfo> tInfo = new HashMap<String, TemplateInfo>();
-        tInfo.put("routing", TemplateInfo.getDefaultSystemVmTemplateInfo());
-        cmd.setTemplateInfo(tInfo);
+        cmd.setTemplateInfo(getDefaultSystemVmTemplateInfo());
         cmd.getHostDetails().put("mount.parent", "dummy");
         cmd.getHostDetails().put("mount.path", "dummy");
         cmd.getHostDetails().put("orig.url", _guid);
@@ -150,6 +158,12 @@ public class DummySecondaryStorageResource extends ServerResourceBase implements
         if (_dummyPath == null) {
             throw new ConfigurationException("Unable to find mount.path");
         }
+        
+    	ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
+    	_tmpltDao = locator.getDao(VMTemplateDao.class);
+    	if (_tmpltDao == null) {
+    		throw new ConfigurationException("Unable to find VMTemplate dao");
+    	}
         return true;
     }
 
@@ -160,4 +174,16 @@ public class DummySecondaryStorageResource extends ServerResourceBase implements
 	public boolean useServiceVm() {
 		return _useServiceVm;
 	}
+	
+	 public Map<String, TemplateInfo> getDefaultSystemVmTemplateInfo() {	        
+	        List<VMTemplateVO> tmplts = _tmpltDao.listAllRoutingTemplates();
+	        Map<String, TemplateInfo> tmpltInfo = new HashMap<String, TemplateInfo>();
+	        if (tmplts != null) {
+	        	for (VMTemplateVO tmplt : tmplts) {
+	        		TemplateInfo routingInfo = new TemplateInfo(tmplt.getUniqueName(), TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + File.separator, false);
+	        		tmpltInfo.put(tmplt.getUniqueName(), routingInfo);
+	        	}
+	        }
+	        return tmpltInfo;
+	    }
 }

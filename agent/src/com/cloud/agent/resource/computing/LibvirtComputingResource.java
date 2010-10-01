@@ -1635,6 +1635,23 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	 if (secondaryPool == null) {
         		 return new Answer(cmd, false, " Failed to create storage pool");
         	 }
+        	 if (tmpltname == null) {
+        		 /*Hack: server just pass the directory of system vm template, need to scan the folder */
+        		 secondaryPool.refresh(0);
+        		 String[] volumes = secondaryPool.listVolumes();
+        		 if (volumes == null) {
+        			 return new Answer(cmd, false, "Failed to get volumes from pool: " + secondaryPool.getName());
+        		 }
+        		 for (String volumeName : volumes) {
+        			 if (volumeName.endsWith("qcow2")) {
+        				 tmpltname = volumeName;
+        				 break;
+        			 }
+        		 }
+        		 if (tmpltname == null) {
+        			 return new Answer(cmd, false, "Failed to get template from pool: " + secondaryPool.getName());
+        		 }
+        	 }
         	 tmplVol = getVolume(secondaryPool, getPathOfStoragePool(secondaryPool) + tmpltname);
         	 if (tmplVol == null) {
         		 return new Answer(cmd, false, " Can't find volume");

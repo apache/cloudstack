@@ -196,6 +196,7 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
         Map<ServerResource, Map<String, String>> srs = new HashMap<ServerResource, Map<String, String>>();
         
         DummySecondaryStorageResource storage = new DummySecondaryStorageResource(_useServiceVM);
+        
         Map<String, String> details = new HashMap<String, String>();
         
         details.put("mount.path", uri.toString());
