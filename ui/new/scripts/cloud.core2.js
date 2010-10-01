@@ -698,49 +698,40 @@ function updateStateInMidMenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#icon_container").show();
 }
   
-function setViewConsoleAction(jsonObj, $detailsTab) {
-    var timerKey = "viewConsoleProxyTimerKey";
-    $detailsTab.stopTime(timerKey); //stop previous timer    
-    //$("#vm_action_view_console #box0").css("background", "url(../images/consoletb_box.gif)");	//restore to default image
-    $("#vm_action_view_console #box0").css("background", "url(http://localhost:8080/client/new/images/consoletb_box.gif)"); //***** temporary hack. This line will be removed after new UI code (/ui/new/*) moves to /ui/*
+function resetViewConsoleAction(jsonObj, $detailsTab) {
+    var $viewConsoleContainer = $detailsTab.find("#view_console_container").empty(); //reset view console panel
+    var $viewConsoleTemplate = $("#view_console_template").clone();
+    $viewConsoleContainer.append($viewConsoleTemplate.show());    
     
-    if (jsonObj.state == 'Destroyed') {			
-		//$detailsTab.find("#vm_action_view_console").unbind("mouseover");
-		$detailsTab.find("#vm_action_view_console").unbind("click");
-	} 
-	else if (jsonObj.state == 'Running') {			
+	if (jsonObj.state == 'Running') {			
 		//console proxy image
 		var imgUrl = "console?cmd=thumbnail&vm=" + jsonObj.id + "&w=144&h=110";	
 		imgUrl = "http://localhost:8080/client/" + imgUrl;  //***** temporary hack. This line will be removed after new UI code (/ui/new/*) moves to /ui/*
-		var time = new Date();	
-		$("#vm_action_view_console #box0").css("background", "url("+imgUrl+"&t="+time.getTime()+")");	
+		
+		var time = new Date();							
+		$viewConsoleTemplate.find("#box1").hide().css("background", "url("+imgUrl+"&t="+time.getTime()+")");				
 		var index = 0;
-		$detailsTab.everyTime(2000, timerKey, function() {
+		$detailsTab.everyTime(2000, function() {
 			var time = new Date();	
 			if ((index % 2) == 0) {
-				$("#vm_action_view_console #box0").hide().css("background", "url("+imgUrl+"&t="+time.getTime()+")");
-				$("#vm_action_view_console #box1").show();
+				$viewConsoleTemplate.find("#box0").hide().css("background", "url("+imgUrl+"&t="+time.getTime()+")");
+				$viewConsoleTemplate.find("#box1").show();
 			} else {
-				$("#vm_action_view_console #box1").hide().css("background", "url("+imgUrl+"&t="+time.getTime()+")");
-				$("#vm_action_view_console #box0").show();
+				$viewConsoleTemplate.find("#box1").hide().css("background", "url("+imgUrl+"&t="+time.getTime()+")");
+				$viewConsoleTemplate.find("#box0").show();
 			}
 			index++;
-		}, 0);		
-		
+		}, 0);	
 
 		//console proxy popup
-		$detailsTab.find("#vm_action_view_console").data("proxyUrl", "console?cmd=access&vm=" + jsonObj.id).data("vmId",jsonObj.id).click(function(event) {				
+		$viewConsoleTemplate.data("proxyUrl", "console?cmd=access&vm=" + jsonObj.id).data("vmId",jsonObj.id).click(function(event) {				
 			var proxyUrl = $(this).data("proxyUrl");				
 			proxyUrl = "http://localhost:8080/client/" + proxyUrl;  //***** temporary hack. This line will be removed after new UI code (/ui/new/*) moves to /ui/*
 			var viewer = window.open(proxyUrl, $(this).data("vmId"),"width=820,height=640,resizable=yes,menubar=no,status=no,scrollbars=no,toolbar=no,location=no");
 			viewer.focus();
 			return false;
 		});	
-	} 
-	else {			
-		//$detailsTab.find("#vm_action_view_console").unbind("mouseover");
-		$detailsTab.find("#vm_action_view_console").unbind("click");
-	}
+	} 	
 }    
 
 

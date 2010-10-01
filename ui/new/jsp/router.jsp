@@ -50,11 +50,7 @@
         <div class="grid_container">            
             <div class="grid_rows odd">
                 <div class="vm_statusbox">   
-                    <div id="vm_action_view_console">                
-                        <div class="vm_consolebox" id="box0">
-                        </div>
-                        <div class="vm_consolebox" id="box1" style="display: none">
-                        </div>                
+                    <div id="view_console_container">      
                     </div>
                     <div class="vm_status_textbox">
                         <div class="vm_status_textline green" id="state">
@@ -159,3 +155,13 @@
     </div>   
 </div>
 <!-- router detail panel (end) -->
+
+<!-- view console template (begin)  -->
+<div id="view_console_template" style="display:none">
+    <div class="vm_consolebox" id="box0">
+    </div>
+    <div class="vm_consolebox" id="box1" style="display: none">
+    </div>
+</div>
+<!-- view console template (end)  -->
+

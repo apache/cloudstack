@@ -415,7 +415,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         setBooleanField(jsonObj.haenable, $detailsTab.find("#haenable"));	
         setBooleanField((jsonObj.isoid != null && jsonObj.isoid.length > 0), $detailsTab.find("#iso"));	   
          
-        setViewConsoleAction(jsonObj, $detailsTab);   
+        resetViewConsoleAction(jsonObj, $detailsTab);   
     }
     
     function vmJsonToVolumeTab(jsonObj) {

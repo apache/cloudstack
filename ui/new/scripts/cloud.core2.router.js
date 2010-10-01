@@ -51,7 +51,7 @@ function routerJsonToDetailsTab(jsonObj) {
         buildActionLinkForDetailsTab("Start Router", routerActionMap, $actionMenu, routerListAPIMap);	
     }  
     
-    setViewConsoleAction(jsonObj, $detailsTab);   
+    resetViewConsoleAction(jsonObj, $detailsTab);   
 }
 
 var routerListAPIMap = {
