@@ -1019,18 +1019,6 @@ function doDisableHA($t, selectedItemsInMidMenu, vmListAPIMap) {
 	}).dialog("open");
 }
 
-
-
-function updateVirtualMachineStateInRightPanel(state) {
-    var $rightPanelContent = $("#right_panel_content");
-    if(state == "Running")
-        $rightPanelContent.find("#state").text(state).removeClass("red gray").addClass("green");
-    else if(state == "Stopped")
-        $rightPanelContent.find("#state").text(state).removeClass("green gray").addClass("red");
-    else  //Destroyed, Creating, ~                                  
-        $rightPanelContent.find("#state").text(state).removeClass("green red").addClass("gray");            			       
-}
-
 function vmToMidmenu(jsonObj, $midmenuItem1) {  
     $midmenuItem1.data("jsonObj", jsonObj);
     $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));   
@@ -1079,7 +1067,7 @@ function vmJsonToDetailsTab(jsonObj, $midmenuItem){
     $detailsTab.data("jsonObj", jsonObj);  
 
     //details tab         
-    updateVirtualMachineStateInRightPanel(jsonObj.state);	
+    setVmStateInRightPanel(jsonObj.state, $detailsTab.find("#state"));		
     $detailsTab.find("#ipAddress").text(jsonObj.ipaddress);
     $detailsTab.find("#zoneName").text(fromdb(jsonObj.zonename));
            
@@ -1147,7 +1135,7 @@ function vmJsonToRouterTab(jsonObj) {
     
 function vmClearRightPanel(jsonObj) {       
     $("#right_panel_header").find("#vm_name").text("");	
-    updateVirtualMachineStateInRightPanel("");	
+    setVmStateInRightPanel("");	
     
     var $rightPanelContent = $("#right_panel_content"); 
     $rightPanelContent.find("#ipAddress").text("");
@@ -1224,8 +1212,8 @@ function vmVolumeJSONToTemplate(json, $template) {
 	
 function vmRouterJSONToTemplate(jsonObj, $template) {	
     $template.data("jsonObj", jsonObj);            
-    $template.find("#title").text(fromdb(jsonObj.name)); 
-    $template.find("#state").text(fromdb(jsonObj.state));
+    $template.find("#title").text(fromdb(jsonObj.name));     
+    setVmStateInRightPanel(jsonObj.state, $template.find("#state"));
     $template.find("#ipAddress").text(jsonObj.publicip);
     $template.find("#zonename").text(fromdb(jsonObj.zonename));
     $template.find("#name").text(fromdb(jsonObj.name));

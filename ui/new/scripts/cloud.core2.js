@@ -734,6 +734,15 @@ function resetViewConsoleAction(jsonObj, $detailsTab) {
 	} 	
 }    
 
+function setVmStateInRightPanel(stateValue, $stateField) {    
+    if(stateValue == "Running")
+        $stateField.text(stateValue).removeClass("red gray").addClass("green");
+    else if(stateValue == "Stopped")
+        $stateField.text(stateValue).removeClass("green gray").addClass("red");
+    else  //Destroyed, Creating, ~                                  
+        $stateField.text(stateValue).removeClass("green red").addClass("gray");            			       
+}
+
 
 
 
