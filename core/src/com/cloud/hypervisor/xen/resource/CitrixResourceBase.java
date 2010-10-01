@@ -2165,21 +2165,18 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
 
     protected Answer execute(RebootRouterCommand cmd) {
-        Long bytesSent = 0L;
-        Long bytesRcvd = 0L;
-        if (VirtualMachineName.isValidRouterName(cmd.getVmName())) {
-            long[] stats = getNetworkStats(cmd.getVmName());
-            bytesSent = stats[0];
-            bytesRcvd = stats[1];
-        }
+        long[] stats = getNetworkStats(cmd.getVmName());
+        Long bytesSent = stats[0];
+        Long bytesRcvd = stats[1];
+        _domrIPMap.remove(cmd.getVmName());
         RebootAnswer answer = (RebootAnswer) execute((RebootCommand) cmd);
         answer.setBytesSent(bytesSent);
         answer.setBytesReceived(bytesRcvd);
+        _domrIPMap.put(cmd.getVmName(), cmd.getPrivateIpAddress());
         if (answer.getResult()) {
             String cnct = connect(cmd.getVmName(), cmd.getPrivateIpAddress());
             networkUsage(cmd.getPrivateIpAddress(), "create", null);
             if (cnct == null) {
-                _domrIPMap.put(cmd.getVmName(), cmd.getPrivateIpAddress());
                 return answer;
             } else {
                 return new Answer(cmd, false, cnct);
