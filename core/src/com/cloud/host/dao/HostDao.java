@@ -35,7 +35,7 @@ import com.cloud.utils.db.GenericDao;
 public interface HostDao extends GenericDao<HostVO, Long> {
     List<HostVO> listBy(Host.Type type, Long clusterId, Long podId, long dcId);
     
-    long countBy(long podId, Status... statuses);
+    long countBy(long clusterId,  Status... statuses);
  
     List<HostVO> listByDataCenter(long dcId);
 	List<HostVO> listByHostPod(long podId);
