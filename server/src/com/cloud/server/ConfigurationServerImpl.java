@@ -136,7 +136,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 			// Save Direct Networking service offerings
 			_configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Direct Networking", 1, 512, 500, "Small Instance, Direct Networking, $0.05 per hour", false, false, false, null);			
 			_configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Direct Networking", 1, 1024, 1000, "Medium Instance, Direct Networking, $0.10 per hour", false, false, false, null);
-			 
+			 // Save Virtual Networking service offerings
+			_configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Virtual Networking", 1, 512, 500, "Small Instance, Virtual Networking, $0.05 per hour", false, false, true, null);
+			_configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Virtual Networking", 1, 1024, 1000, "Medium Instance, Virtual Networking, $0.10 per hour", false, false, true, null);
 			// Save default disk offerings
 			_configMgr.createDiskOffering(User.UID_SYSTEM, DomainVO.ROOT_DOMAIN, "Small", "Small Disk, 5 GB", 5, null);
 			_configMgr.createDiskOffering(User.UID_SYSTEM, DomainVO.ROOT_DOMAIN, "Medium", "Medium Disk, 20 GB", 20, null);
