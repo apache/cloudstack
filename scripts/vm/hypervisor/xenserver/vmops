@@ -272,28 +272,12 @@ def preparemigration(session, args):
 @echo
 def setIptables(session, args):
     try:
-        try:
-            shutil.move("/etc/cron.daily/logrotate", "/etc/cron.hourly")
-        except:
-            txt = ''
-
-        f = open("/proc/sys/fs/aio-max-nr", 'w')
-        f.write("1048576")
-        f.close()
-        try:
-            cmd = ["iptables", "-D", "RH-Firewall-1-INPUT", "-p", "tcp", "-m", "tcp", "--dport", "5900:6099", "-j", "ACCEPT"]
-            txt = util.pread2(cmd)
-        except:
-            txt = ''
-
-        cmd = ["iptables", "-I", "RH-Firewall-1-INPUT", "-p", "tcp", "-m", "tcp", "--dport", "5900:6099", "-j", "ACCEPT"]
+        cmd = ["/bin/bash", "/opt/xensource/bin/setupxenserver.sh"]
         txt = util.pread2(cmd)
-               
         txt = 'success'
     except:
         util.SMlog("  setIptables execution failed "  )
         txt = ''
-    util.SMlog("execute setIptables command result (%s), ignoring" % txt)
 
     return txt
  
