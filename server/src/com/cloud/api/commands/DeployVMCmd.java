@@ -59,7 +59,7 @@ public class DeployVMCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NETWORK_GROUP_LIST, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SIZE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HYPERVISOR, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HYPERVISOR, Boolean.TRUE));
     }
 
     @Override
