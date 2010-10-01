@@ -350,6 +350,7 @@ public class ApiServer implements HttpRequestHandler {
                 BaseAsyncCreateCmd createCmd = (BaseAsyncCreateCmd)cmdObj;
                 objectId = _dispatcher.dispatchCreateCmd(createCmd, params);
                 createCmd.setId(objectId);
+                params.put("id", objectId.toString());
             }
             BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmdObj;
 
@@ -366,8 +367,15 @@ public class ApiServer implements HttpRequestHandler {
             }
 
             AsyncJobVO job = new AsyncJobVO();
-            job.setUserId(UserContext.current().getUserId());
-            job.setAccountId(ctx.getAccountId());
+            job.setUserId(userId);
+            if (account != null) {
+                job.setAccountId(ctx.getAccountId());
+            } else {
+                // Just have SYSTEM own the job for now.  Users won't be able to see this job,
+                // but in an admin case (like domain admin) they won't be able to see it anyway
+                // so no loss of service.
+                job.setAccountId(1L);
+            }
             job.setCmd(cmdObj.getClass().getName());
             job.setCmdInfo(gson.toJson(params));
             long jobId = _asyncMgr.submitAsyncJob(job);

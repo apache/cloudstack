@@ -43,7 +43,7 @@ public class CreatePortForwardingServiceRuleCmd extends BaseAsyncCreateCmd {
     @Parameter(name="privateport", type=CommandType.STRING, required=true)
     private String privatePort;
 
-    @Parameter(name="protocol", type=CommandType.STRING, required=true)
+    @Parameter(name="protocol", type=CommandType.STRING)
     private String protocol;
 
     @Parameter(name="publicport", type=CommandType.STRING, required=true)

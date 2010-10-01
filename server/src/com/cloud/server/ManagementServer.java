@@ -773,10 +773,10 @@ public interface ManagementServer {
 
     /**
      * Apply a port forwarding service rule to all VMs that have the port forwarding service applied
-     * @param ruleId the id of the created rule to apply
+     * @param cmd the command object that wraps the id of the created rule to apply
      * @return the updated rule if successful, null otherwise
      */
-    NetworkRuleConfigVO applyPortForwardingServiceRule(Long ruleId) throws NetworkRuleConflictException;
+    NetworkRuleConfigVO applyPortForwardingServiceRule(CreatePortForwardingServiceRuleCmd cmd) throws NetworkRuleConflictException;
 
 	ConsoleProxyInfo getConsoleProxy(long dataCenterId, long userVmId);
 	ConsoleProxyVO startConsoleProxy(long instanceId, long startEventId) throws InternalErrorException;

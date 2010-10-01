@@ -31,6 +31,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.manager.AgentManager;
 import com.cloud.api.BaseCmd.CommandType;
+import com.cloud.async.AsyncCommandQueued;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.exception.InvalidParameterValueException;
@@ -156,9 +157,6 @@ public class ApiDispatcher {
         } catch (IllegalArgumentException iArgEx) {
             s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), iArgEx);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
-        } catch (Exception ex) {
-            s_logger.error("Unhandled exception invoking method " + methodName + " for command " + cmd.getClass().getSimpleName(), ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
         }
     }
 
@@ -213,8 +211,11 @@ public class ApiDispatcher {
             s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), nsme);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", unable to find implementation.");
         } catch (InvocationTargetException ite) {
-            s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), ite);
             Throwable cause = ite.getCause();
+            if (cause instanceof AsyncCommandQueued) {
+                throw (AsyncCommandQueued)cause;
+            }
+            s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), ite);
             if (cause instanceof InvalidParameterValueException) {
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, cause.getMessage());
             } else if (cause instanceof PermissionDeniedException) {
@@ -226,9 +227,6 @@ public class ApiDispatcher {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
         } catch (IllegalArgumentException iArgEx) {
             s_logger.warn("Exception executing method " + methodName + " for command " + cmd.getClass().getSimpleName(), iArgEx);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
-        } catch (Exception ex) {
-            s_logger.error("Unhandled exception invoking method " + methodName + " for command " + cmd.getClass().getSimpleName(), ex);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to execute method " + methodName + " for command " + cmd.getClass().getSimpleName() + ", internal error in the implementation.");
         }
     }

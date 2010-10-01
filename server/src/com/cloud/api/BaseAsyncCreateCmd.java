@@ -4,7 +4,7 @@ import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.CreateCmdResponse;
 
 public abstract class BaseAsyncCreateCmd extends BaseAsyncCmd {
-    @Parameter(name="id")
+    @Parameter(name="id", type=CommandType.LONG)
     private Long id;
 
     public Long getId() {

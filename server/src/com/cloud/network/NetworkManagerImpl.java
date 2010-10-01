@@ -1503,7 +1503,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     }
     
     
-    @Override
+    @Override @DB
     public IPAddressVO associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, InvalidParameterValueException, InternalErrorException, PermissionDeniedException  {
     	String accountName = cmd.getAccountName();
     	Long domainId = cmd.getDomainId();
@@ -1962,7 +1962,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         return _rulesDao.listIPForwarding(cmd.getIpAddress(), true);
     }
 
-    @Override
+    @Override @DB
     public void assignToLoadBalancer(AssignToLoadBalancerRuleCmd cmd)  throws NetworkRuleConflictException, InternalErrorException,
                                                                               PermissionDeniedException, InvalidParameterValueException {
         Long loadBalancerId = cmd.getLoadBalancerId();
@@ -2195,7 +2195,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         }
     }
 
-    @Override
+    @Override @DB
     public LoadBalancerVO createLoadBalancerRule(CreateLoadBalancerRuleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         String publicIp = cmd.getPublicIp();
 
@@ -3304,6 +3304,12 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "No virtual machine id specified.");
         }
 
+        // if a single instanceId was given, add it to the list so we can always just process the list if instanceIds
+        if (instanceIds == null) {
+            instanceIds = new ArrayList<Long>();
+            instanceIds.add(vmInstanceId);
+        }
+
         if (userId == null) {
             userId = Long.valueOf(1);
         }
@@ -3381,7 +3387,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                     description = "deleted load balancer rule [" + updatedRule.getPublicIpAddress() + ":" + updatedRule.getPublicPort() + "]->["
                             + updatedRule.getPrivateIpAddress() + ":" + updatedRule.getPrivatePort() + "]" + " " + updatedRule.getProtocol();
 
-                    EventUtils.saveEvent(userId, account.getId(), level, type, description);
+                    EventUtils.saveEvent(userId, loadBalancer.getAccountId(), level, type, description);
                 }
             }
             txn.commit();

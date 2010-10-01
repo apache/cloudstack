@@ -4549,7 +4549,8 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public NetworkRuleConfigVO applyPortForwardingServiceRule(Long ruleId) throws NetworkRuleConflictException {
+    public NetworkRuleConfigVO applyPortForwardingServiceRule(CreatePortForwardingServiceRuleCmd cmd) throws NetworkRuleConflictException {
+        Long ruleId = cmd.getId();
         NetworkRuleConfigVO netRule = null;
         if (ruleId != null) {
             Long userId = UserContext.current().getUserId();
@@ -5476,30 +5477,28 @@ public class ManagementServerImpl implements ManagementServer {
         Long accountId = null;
         String portForwardingServiceName = cmd.getPortForwardingServiceName();
 
-        if (account != null) {
-            if (isAdmin(account.getType())) {
-                if ((accountName != null) && (domainId != null)) {
-                    if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                        throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to create port forwarding service in domain " + domainId + ", permission denied.");
-                    }
+        if ((account == null) || isAdmin(account.getType())) {
+            if ((accountName != null) && (domainId != null)) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to create port forwarding service in domain " + domainId + ", permission denied.");
+                }
 
-                    Account userAccount = findActiveAccount(accountName, domainId);
-                    if (userAccount != null) {
-                        accountId = userAccount.getId();
-                    } else {
-                        throw new InvalidParameterValueException("Unable to create port forwarding service " + portForwardingServiceName + ", could not find account " + accountName + " in domain " + domainId);
-                    }
+                Account userAccount = findActiveAccount(accountName, domainId);
+                if (userAccount != null) {
+                    accountId = userAccount.getId();
                 } else {
-                    // the admin must be creating the security group
-                    if (account != null) {
-                        accountId = account.getId();
-                        domainId = account.getDomainId();
-                    }
+                    throw new InvalidParameterValueException("Unable to create port forwarding service " + portForwardingServiceName + ", could not find account " + accountName + " in domain " + domainId);
                 }
             } else {
-                accountId = account.getId();
-                domainId = account.getDomainId();
+                // the admin must be creating the security group
+                if (account != null) {
+                    accountId = account.getId();
+                    domainId = account.getDomainId();
+                }
             }
+        } else {
+            accountId = account.getId();
+            domainId = account.getDomainId();
         }
 
         if (accountId == null) {
