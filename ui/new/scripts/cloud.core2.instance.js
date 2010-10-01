@@ -349,26 +349,14 @@ function clickInstanceGroupHeader($arrowIcon) {
             $rightPanelContent.find("#state").text(state).removeClass("green red").addClass("gray");            			       
     }
     
-    function updateVirtualMachineStateInMidMenu(jsonObj, midmenuItem) {         
-        if(jsonObj.state == "Running")
-            midmenuItem.find("#icon").attr("src", "images/status_green.png");
-        else if(jsonObj.state == "Stopped")
-            midmenuItem.find("#icon").attr("src", "images/status_red.png");
-        else  //Destroyed, Creating, ~                                  
-            midmenuItem.find("#icon").attr("src", "images/status_gray.png");
-    }
-      
-    function vmToMidmenu(json, $midmenuItem1) {  
-        $midmenuItem1.data("jsonObj", json);
-        $midmenuItem1.attr("id", ("midmenuItem_"+json.id));   
-        
-        var $iconContainer = $midmenuItem1.find("#icon_container").show();   
-        $iconContainer.find("#icon").attr("src", "images/status_gray.png");	        
+    function vmToMidmenu(jsonObj, $midmenuItem1) {  
+        $midmenuItem1.data("jsonObj", jsonObj);
+        $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));   
           
-        var vmName = getVmName(json.name, json.displayname);
+        var vmName = getVmName(jsonObj.name, jsonObj.displayname);
         $midmenuItem1.find("#first_row").text(vmName);        
-        $midmenuItem1.find("#second_row").text(json.ipaddress);                                            
-        updateVirtualMachineStateInMidMenu(json, $midmenuItem1);        
+        $midmenuItem1.find("#second_row").text(jsonObj.ipaddress); 
+        updateStateInMidMenu(jsonObj, $midmenuItem1);     
         
         $midmenuItem1.data("toRightPanelFn", vmToRightPanel);    
         $midmenuItem1.bind("click", function(event) {  

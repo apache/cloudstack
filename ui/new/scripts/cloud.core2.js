@@ -687,6 +687,34 @@ function switchToTab(tabIndex, tabArray, tabContentArray) {
     });   
 }
 
+function updateStateInMidMenu(jsonObj, $midmenuItem1) {         
+    if(jsonObj.state == "Running")
+        $midmenuItem1.find("#icon").attr("src", "images/status_green.png");
+    else if(jsonObj.state == "Stopped")
+        $midmenuItem1.find("#icon").attr("src", "images/status_red.png");
+    else  //Destroyed, Creating, ~                                  
+        $midmenuItem1.find("#icon").attr("src", "images/status_gray.png");
+    
+    $midmenuItem1.find("#icon_container").show();
+}
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
