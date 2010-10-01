@@ -699,24 +699,24 @@ function updateStateInMidMenu(jsonObj, $midmenuItem1) {
 }
   
 function setViewConsoleAction(jsonObj, $detailsTab) {
+    var timerKey = "viewConsoleProxyTimerKey";
+    $detailsTab.stopTime(timerKey); //stop previous timer    
+    //$("#vm_action_view_console #box0").css("background", "url(../images/consoletb_box.gif)");	//restore to default image
+    $("#vm_action_view_console #box0").css("background", "url(http://localhost:8080/client/new/images/consoletb_box.gif)"); //***** temporary hack. This line will be removed after new UI code (/ui/new/*) moves to /ui/*
+    
     if (jsonObj.state == 'Destroyed') {			
 		//$detailsTab.find("#vm_action_view_console").unbind("mouseover");
 		$detailsTab.find("#vm_action_view_console").unbind("click");
 	} 
-	else if (jsonObj.state == 'Running') {
-			
+	else if (jsonObj.state == 'Running') {			
+		//console proxy image
 		var imgUrl = "console?cmd=thumbnail&vm=" + jsonObj.id + "&w=144&h=110";	
-		imgUrl = "http://localhost:8080/client/" + imgUrl;  //temporary hack. This line will be removed after new UI code (/ui/new/*) moves to /ui/*
-		var time = new Date();					
-		
-		$("#vm_action_view_console #box0").css("background", "url("+imgUrl+"&t="+time.getTime()+")");		
-		
-		//???
+		imgUrl = "http://localhost:8080/client/" + imgUrl;  //***** temporary hack. This line will be removed after new UI code (/ui/new/*) moves to /ui/*
+		var time = new Date();	
+		$("#vm_action_view_console #box0").css("background", "url("+imgUrl+"&t="+time.getTime()+")");	
 		var index = 0;
-		$detailsTab.everyTime(2000, function() {
-			var time = new Date();			
-			//$("#vm_action_view_console").css("background", "url("+imgUrl+"&t="+time.getTime()+")");		
-			
+		$detailsTab.everyTime(2000, timerKey, function() {
+			var time = new Date();	
 			if ((index % 2) == 0) {
 				$("#vm_action_view_console #box0").hide().css("background", "url("+imgUrl+"&t="+time.getTime()+")");
 				$("#vm_action_view_console #box1").show();
@@ -725,14 +725,13 @@ function setViewConsoleAction(jsonObj, $detailsTab) {
 				$("#vm_action_view_console #box0").show();
 			}
 			index++;
-			
 		}, 0);		
-		//???	
+		
 
-		// Console Proxy UI
+		//console proxy popup
 		$detailsTab.find("#vm_action_view_console").data("proxyUrl", "console?cmd=access&vm=" + jsonObj.id).data("vmId",jsonObj.id).click(function(event) {				
 			var proxyUrl = $(this).data("proxyUrl");				
-			proxyUrl = "http://localhost:8080/client/" + proxyUrl;  //temporary hack. This line will be removed after new UI code (/ui/new/*) moves to /ui/*
+			proxyUrl = "http://localhost:8080/client/" + proxyUrl;  //***** temporary hack. This line will be removed after new UI code (/ui/new/*) moves to /ui/*
 			var viewer = window.open(proxyUrl, $(this).data("vmId"),"width=820,height=640,resizable=yes,menubar=no,status=no,scrollbars=no,toolbar=no,location=no");
 			viewer.focus();
 			return false;
