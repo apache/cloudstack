@@ -37,7 +37,7 @@
                     </ul>
                 </div>
             </div>
-            <div class="grid_editbox">
+            <div class="grid_editbox" style="display:none">
             </div>
             <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
                 display: none;">
