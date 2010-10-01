@@ -49,7 +49,9 @@ function routerJsonToDetailsTab(jsonObj) {
     else if (jsonObj.state == 'Stopped') {
         //template.find(".grid_links").find("#router_action_start_container").show();
         buildActionLinkForDetailsTab("Start Router", routerActionMap, $actionMenu, routerListAPIMap);	
-    }   
+    }  
+    
+    setViewConsoleAction(jsonObj, $detailsTab);   
 }
 
 var routerListAPIMap = {

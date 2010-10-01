@@ -414,30 +414,8 @@ function clickInstanceGroupHeader($arrowIcon) {
         
         setBooleanField(jsonObj.haenable, $detailsTab.find("#haenable"));	
         setBooleanField((jsonObj.isoid != null && jsonObj.isoid.length > 0), $detailsTab.find("#iso"));	   
-               
-		if (jsonObj.state == 'Destroyed') {			
-			//$detailsTab.find("#vm_action_view_console").unbind("mouseover");
-			$detailsTab.find("#vm_action_view_console").unbind("click");
-		} 
-		else if (jsonObj.state == 'Running') {
-//			$detailsTab.find("#vm_action_view_console").data("imgUrl", "console?cmd=thumbnail&vm=" + jsonObj.id + "&w=144&h=110");				
-//			var imgUrl = "console?cmd=thumbnail&vm=" + jsonObj.id + "&w=144&h=110";	
-//			var time = new Date();					
-//			$("#vm_action_view_console").css("background", "url("+imgUrl+"&t="+time.getTime()+")");		
-
-			// Console Proxy UI
-			$detailsTab.find("#vm_action_view_console").data("proxyUrl", "console?cmd=access&vm=" + jsonObj.id).data("vmId",jsonObj.id).click(function(event) {				
-				var proxyUrl = $(this).data("proxyUrl");				
-				proxyUrl = "http://localhost:8080/client/" + proxyUrl;  //temporary hack. This line will be removed after new UI code (/ui/new/*) moves to /ui/*
-				var viewer = window.open(proxyUrl, $(this).data("vmId"),"width=820,height=640,resizable=yes,menubar=no,status=no,scrollbars=no,toolbar=no,location=no");
-				viewer.focus();
-				return false;
-			});	
-		} 
-		else {			
-			//$detailsTab.find("#vm_action_view_console").unbind("mouseover");
-			$detailsTab.find("#vm_action_view_console").unbind("click");
-		}
+         
+        setViewConsoleAction(jsonObj, $detailsTab);   
     }
     
     function vmJsonToVolumeTab(jsonObj) {
