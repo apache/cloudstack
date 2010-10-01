@@ -39,7 +39,7 @@ public class XenServerResource extends CitrixResourceBase {
     
     @Override
     protected String getGuestOsType(String stdType) {
-        return stdType;
+    	return CitrixHelper.getXenServerGuestOsType(stdType);
     }
 
     @Override

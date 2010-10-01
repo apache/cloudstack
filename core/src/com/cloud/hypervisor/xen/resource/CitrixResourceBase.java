@@ -6229,7 +6229,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         public String pool;
     }
 
+    /*Override by subclass*/
 	protected String getGuestOsType(String stdType) {
-		return CitrixHelper.getGuestOsType(stdType);
+		return stdType;
 	}
 }
