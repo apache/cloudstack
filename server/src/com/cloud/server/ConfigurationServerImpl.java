@@ -49,6 +49,7 @@ import com.cloud.domain.DomainVO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.user.User;
@@ -127,11 +128,10 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 				
 				_configDao.update("secstorage.secure.copy.cert", "realhostip");
 				s_logger.debug("ConfigurationServer made secondary storage copy use realhostip.");					          	         
+			} else {
+				/*FOSS release, make external DHCP mode as default*/
+				_configDao.update("direct.attach.network.externalIpAllocator.enabled", "true");
 			}
-			
-			boolean externalIpAlloator = Boolean.parseBoolean(_configDao.getValue("direct.attach.network.externalIpAllocator.enabled"));
-			_configDao.update("direct.attach.network.externalIpAllocator.enabled", "true");
-
 			
 			// Save Direct Networking service offerings
 			_configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Direct Networking", 1, 512, 500, "Small Instance, Direct Networking, $0.05 per hour", false, false, false, null);			
