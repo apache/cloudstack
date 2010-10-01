@@ -50,7 +50,13 @@
         <div class="grid_container">            
             <div class="grid_rows odd">
                 <div class="vm_statusbox">   
-                    <div id="view_console_container">      
+                    <div id="view_console_container">                       
+                    	<div id="view_console_template" style="display:block">
+    						<div class="vm_consolebox" id="box0">
+    						</div>
+   							<div class="vm_consolebox" id="box1" style="display: none">
+    						</div>
+						</div>   
                     </div>
                     <div class="vm_status_textbox">
                         <div class="vm_status_textline green" id="state">

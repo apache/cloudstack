@@ -26,12 +26,20 @@
             <%=t.t("Volume")%></div>
         <div class="content_tabs off" id="tab_statistics">
             <%=t.t("Statistics")%></div>
+        <div class="content_tabs off" id="tab_router">
+            <%=t.t("Routers")%></div>
     </div>
     <!--Details tab (start)-->
     <div class="grid_container" style="display: block;" id="tab_content_details">
         <div class="grid_rows odd">
             <div class="vm_statusbox">
-                <div id="view_console_container">                             
+                <div id="view_console_container">  
+                	<div id="view_console_template" style="display:block">
+    					<div class="vm_consolebox" id="box0">
+    					</div>
+   						<div class="vm_consolebox" id="box1" style="display: none">
+    					</div>
+					</div>           
                 </div>
                 <div class="vm_status_textbox">
                     <div class="vm_status_textline green" id="state">
@@ -165,87 +173,19 @@
     </div>
     <!--Details tab (end)-->
     <!--Volume tab (start)-->
-    <div style="display: none;" id="tab_content_volume">
-        <div class="grid_container" id="volume_tab_template" style="display: none">
-            <div class="grid_header">
-                <div class="grid_header_title" id="name">
-                </div>
-                <div class="grid_actionbox" id="volume_action_link" style="display: block;">
-                    <div class="grid_actionsdropdown_box" id="volume_action_menu" style="display: none;">
-                        <ul class="actionsdropdown_boxlist" id="action_list">
-                            <li><a href="#">Delete </a></li>
-                            <li><a href="#">Attach Disk </a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="gridheader_loaderbox" style="height: 18px;">
-                    <div class="gridheader_loader">
-                    </div>
-                    <p>
-                        Creating Template &hellip;
-                    </p>
-                </div>
-            </div>
-            
-            <div class="grid_rows success">
-                <div class="grid_row_cell" style="width: 90%; border:none;">
-                    <div class="row_celltitles"><strong>Message will appear here</strong></div>
-                </div>
-            </div>
-            
-            <div class="grid_rows error">
-                <div class="grid_row_cell" style="width: 90%; border:none;">
-                    <div class="row_celltitles alert" style="margin-left:10px;"><strong>Error Message will appear here</strong></div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        ID:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="id">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        Type:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="type">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        Size:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="size">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        Created:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="created">
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div style="display: none;" id="tab_content_volume">        
     </div>
     <!--Volume tab (end)-->
     <!--Statistics tab (start)-->
-    <div class="grid_container" style="display: none;" id="tab_content_statistics">
-        statistics....
+    <div style="display: none;" id="tab_content_statistics">
+        statistics
     </div>
     <!--Statistics tab (start)-->
+    <!--Routers tab (start)-->
+    <div style="display: none;" id="tab_content_router">
+        Routers
+    </div>
+    <!--Routers tab (start)-->
 </div>
 <!-- VM detail panel (end) -->
 <!-- VM wizard (begin)-->
@@ -820,7 +760,7 @@
         </form>
     </div>
 </div>
-<!--  volume tab template -->
+<!--  volume tab template (begin) -->
 <div class="grid_container" id="volume_tab_template" style="display: none">
     <div class="grid_header">
         <div class="grid_header_title" id="title">
@@ -898,7 +838,9 @@
         </div>
     </div>
 </div>
-<!-- Create Template Dialog -->
+<!--  volume tab template (end) -->
+
+<!-- Create Template Dialog (begin) -->
 <div id="dialog_create_template" title="Create Template" style="display: none">
     <p>
         Please specify the following information before creating a template of your disk
@@ -947,6 +889,7 @@
         </form>
     </div>
 </div>
+<!-- Create Template Dialog (end) -->
 
 <!-- view console template (begin)  -->
 <div id="view_console_template" style="display:none">
@@ -956,3 +899,140 @@
     </div>
 </div>
 <!-- view console template (end)  -->
+
+<!--  router tab template (begin) -->
+<div class="grid_container" id="router_tab_template" style="display: none">
+    <div class="grid_header">
+        <div class="grid_header_title" id="title">
+        </div>
+        <div class="grid_actionbox" id="router_action_link">
+            <div class="grid_actionsdropdown_box" id="router_action_menu" style="display: none;">
+                <ul class="actionsdropdown_boxlist" id="action_list">
+                </ul>
+            </div>
+        </div>
+        <div class="gridheader_loaderbox" id="spinning_wheel" style="display: none; height: 18px;">
+            <div class="gridheader_loader" id="icon">
+            </div>
+            <p id="description">
+                Waiting &hellip;
+            </p>
+        </div>
+    </div>
+    <div class="grid_rows" id="after_action_info_container" style="display: none">
+        <div class="grid_row_cell" style="width: 90%; border: none;">
+            <div class="row_celltitles">
+                <strong id="after_action_info">Message will appear here</strong></div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="vm_statusbox">
+            <div id="view_console_container">
+                <div id="view_console_template" style="display: block">
+                    <div class="vm_consolebox" id="box0">
+                    </div>
+                    <div class="vm_consolebox" id="box1" style="display: none">
+                    </div>
+                </div>
+            </div>
+            <div class="vm_status_textbox">
+                <div class="vm_status_textline green" id="state">
+                </div>
+                <br />
+                <p id="ipAddress">
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Zone")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="zonename">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Name")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="name">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Public IP")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="publicip">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Private IP")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="privateip">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Guest IP")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="guestipaddress">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Host")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="hostname">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Network Domain")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="networkdomain">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Account")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="account">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Created")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="created">
+            </div>
+        </div>
+    </div>
+</div>
+<!--  router tab template (end) -->

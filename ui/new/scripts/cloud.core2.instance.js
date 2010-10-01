@@ -389,6 +389,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         
         vmJsonToDetailsTab(jsonObj, $midmenuItem);   
         vmJsonToVolumeTab(jsonObj);
+        vmJsonToRouterTab(jsonObj);
     }
      
     function vmJsonToDetailsTab(jsonObj, $midmenuItem){
@@ -441,6 +442,28 @@ function clickInstanceGroupHeader($arrowIcon) {
 			}
 		});          
     }
+        
+    function vmJsonToRouterTab(jsonObj) {
+        //debugger;   
+        $.ajax({
+			cache: false,
+			data: createURL("command=listRouters"+maxPageSize),
+			dataType: "json",
+			success: function(json) {	
+			    //debugger;		    
+				var items = json.listroutersresponse.router;
+				if (items != null && items.length > 0) {
+					var container = $("#right_panel_content #tab_content_router").empty();
+					var template = $("#router_tab_template");				
+					for (var i = 0; i < items.length; i++) {
+						var newTemplate = template.clone(true);
+		                vmRouterJSONToTemplate(items[i], newTemplate); 
+		                container.append(newTemplate.show());	
+					}
+				}						
+			}
+		});          
+    }    
         
     function vmClearRightPanel(jsonObj) {       
         $rightPanelHeader.find("#vm_name").text("");	
@@ -514,6 +537,39 @@ function clickInstanceGroupHeader($arrowIcon) {
 			buildActionLinkForSubgridItem("Detach Disk", vmVolumeActionMap, $actionMenu, volumeListAPIMap, template);				
 		}			
 	}
+		
+	function vmRouterJSONToTemplate(jsonObj, $template) {	
+        $template.data("jsonObj", jsonObj);    
+         
+        $template.find("#state").text(fromdb(jsonObj.state));
+        $template.find("#ipAddress").text(jsonObj.publicip);
+        $template.find("#zonename").text(fromdb(jsonObj.zonename));
+        $template.find("#name").text(fromdb(jsonObj.name));
+        $template.find("#publicip").text(fromdb(jsonObj.publicip));
+        $template.find("#privateip").text(fromdb(jsonObj.privateip));
+        $template.find("#guestipaddress").text(fromdb(jsonObj.guestipaddress));
+        $template.find("#hostname").text(fromdb(jsonObj.hostname));
+        $template.find("#networkdomain").text(fromdb(jsonObj.networkdomain));
+        $template.find("#account").text(fromdb(jsonObj.account));  
+        setDateField(jsonObj.created, $template.find("#created"));	 
+        
+        var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
+        $actionMenu.find("#action_list").empty();
+        
+        if (jsonObj.state == 'Running') {
+            //template.find(".grid_links").find("#router_action_stop_container, #router_action_reboot_container, #router_action_view_console_container").show();	
+            buildActionLinkForDetailsTab("Stop Router", routerActionMap, $actionMenu, routerListAPIMap);	
+            buildActionLinkForDetailsTab("Reboot Router", routerActionMap, $actionMenu, routerListAPIMap);	
+            //buildActionLinkForDetailsTab("View Console", routerActionMap, $actionMenu, routerListAPIMap);	
+        }
+        else if (jsonObj.state == 'Stopped') {
+            //template.find(".grid_links").find("#router_action_start_container").show();
+            buildActionLinkForDetailsTab("Start Router", routerActionMap, $actionMenu, routerListAPIMap);	
+        }  
+        
+        resetViewConsoleAction(jsonObj, $template);     
+	}	
+	
     //***** declaration for volume tab (end) *********************************************************
     
        
@@ -628,8 +684,8 @@ function clickInstanceGroupHeader($arrowIcon) {
         }));
 	
         //***** switch between different tabs (begin) ********************************************************************
-        var tabArray = ["tab_details", "tab_volume", "tab_statistics"];
-        var tabContentArray = ["tab_content_details", "tab_content_volume", "tab_content_statistics"];
+        var tabArray = ["tab_details", "tab_volume", "tab_statistics", "tab_router"];
+        var tabContentArray = ["tab_content_details", "tab_content_volume", "tab_content_statistics", "tab_content_router"];
         switchBetweenDifferentTabs(tabArray, tabContentArray);       
         //***** switch between different tabs (end) **********************************************************************
         
