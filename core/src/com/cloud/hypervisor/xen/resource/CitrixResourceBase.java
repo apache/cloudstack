@@ -3530,7 +3530,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
     
     protected boolean can_bridge_firewall() {
-        return false;
+        return Boolean.valueOf(callHostPlugin("can_bridge_firewall", "host_uuid", _host.uuid));
     }
 
     protected boolean getHostInfo() throws IllegalArgumentException{
