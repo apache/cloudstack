@@ -191,7 +191,7 @@ function templateToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function templateAfterDetailsTabAction(jsonObj) {
-    var $midmenuItem1 = $("#midmenuItem_"+jsonObj.id);
+    var $midmenuItem1 = $("#"+templateGetMidmenuId(jsonObj));
     $midmenuItem1.data("jsonObj", jsonObj);   
     templateToMidmenu(jsonObj, $midmenuItem1);
     templateJsonToDetailsTab(jsonObj);       

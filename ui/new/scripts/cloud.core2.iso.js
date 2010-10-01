@@ -187,6 +187,11 @@ function isoToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(fromdb(jsonObj.zonename).substring(0,25));  
 }
 
+function isoAfterDetailsTabAction(jsonObj) {
+    isoToMidmenu(jsonObj, $("#"+isoGetMidmenuId(jsonObj))); 
+    isoJsonToDetailsTab(jsonObj);	
+}
+
 function isoToRigntPanel($midmenuItem) {       
     var jsonObj = $midmenuItem.data("jsonObj");
     isoJsonToDetailsTab(jsonObj);   
@@ -327,9 +332,7 @@ function doUpdateIso() {
 	    data: createURL("command=updateIso&id="+id+"&name="+todb(name)+"&displayText="+todb(displaytext)),
 		dataType: "json",
 		success: function(json) {	
-		    var jsonObj = json.updateisoresponse;
-		    isoToMidmenu(jsonObj, $("#midmenuItem_"+jsonObj.id)); 
-		    isoJsonToDetailsTab(jsonObj);						
+		    isoAfterDetailsTabAction(json.updateisoresponse);		    					
 		}
 	});
 }
