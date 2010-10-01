@@ -704,10 +704,30 @@ function setViewConsoleAction(jsonObj, $detailsTab) {
 		$detailsTab.find("#vm_action_view_console").unbind("click");
 	} 
 	else if (jsonObj.state == 'Running') {
-//			$detailsTab.find("#vm_action_view_console").data("imgUrl", "console?cmd=thumbnail&vm=" + jsonObj.id + "&w=144&h=110");				
-//			var imgUrl = "console?cmd=thumbnail&vm=" + jsonObj.id + "&w=144&h=110";	
-//			var time = new Date();					
-//			$("#vm_action_view_console").css("background", "url("+imgUrl+"&t="+time.getTime()+")");		
+			
+		var imgUrl = "console?cmd=thumbnail&vm=" + jsonObj.id + "&w=144&h=110";	
+		imgUrl = "http://localhost:8080/client/" + imgUrl;  //temporary hack. This line will be removed after new UI code (/ui/new/*) moves to /ui/*
+		var time = new Date();					
+		
+		$("#vm_action_view_console #box0").css("background", "url("+imgUrl+"&t="+time.getTime()+")");		
+		
+		//???
+		var index = 0;
+		$detailsTab.everyTime(2000, function() {
+			var time = new Date();			
+			//$("#vm_action_view_console").css("background", "url("+imgUrl+"&t="+time.getTime()+")");		
+			
+			if ((index % 2) == 0) {
+				$("#vm_action_view_console #box0").hide().css("background", "url("+imgUrl+"&t="+time.getTime()+")");
+				$("#vm_action_view_console #box1").show();
+			} else {
+				$("#vm_action_view_console #box1").hide().css("background", "url("+imgUrl+"&t="+time.getTime()+")");
+				$("#vm_action_view_console #box0").show();
+			}
+			index++;
+			
+		}, 0);		
+		//???	
 
 		// Console Proxy UI
 		$detailsTab.find("#vm_action_view_console").data("proxyUrl", "console?cmd=access&vm=" + jsonObj.id).data("vmId",jsonObj.id).click(function(event) {				

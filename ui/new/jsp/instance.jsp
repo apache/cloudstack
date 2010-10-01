@@ -31,7 +31,11 @@
     <div class="grid_container" style="display: block;" id="tab_content_details">
         <div class="grid_rows odd">
             <div class="vm_statusbox">
-                <div class="vm_consolebox" id="vm_action_view_console">
+                <div id="vm_action_view_console">                
+                    <div class="vm_consolebox" id="box0">
+                    </div>
+                    <div class="vm_consolebox" id="box1" style="display: none">
+                    </div>                
                 </div>
                 <div class="vm_status_textbox">
                     <div class="vm_status_textline green" id="state">
