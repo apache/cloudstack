@@ -3736,11 +3736,43 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         src.reconfigureIp(conn, IpConfigurationMode.NONE, null, null, null, null);
         return true;
     }
+    
+    private String getRealPoolUuid() {
+    	Connection conn = null;
+    	conn = _connPool.masterConnect(_host.ip, _username, _password);
+    	if (conn == null) {
+    		String msg = "Unable to get a connection to " + _host.ip;
+    		s_logger.debug(msg);
+    		throw new RuntimeException(msg);
+    	}
+    	Set<Pool> pools;
+    	try {
+    		pools = Pool.getAll(conn);
+    		Pool pool = pools.iterator().next();
+    		Pool.Record pr = pool.getRecord(conn);
+    		return pr.uuid;
+    	} catch (BadServerResponse e) {
+    		throw new RuntimeException(e.toString());
+    	} catch (XenAPIException e) {
+    		throw new RuntimeException(e.toString());
+    	} catch (XmlRpcException e) {
+    		throw new RuntimeException(e.toString());
+    	} finally {
+    		if( conn != null) {
+    			try{
+    				Session.logout(conn);
+    			} catch (Exception e) {
+    			}
+    			conn.dispose();
+    		}
+    	}
+
+    }
 
     @Override
-    public StartupCommand[] initialize() throws IllegalArgumentException{
+    public StartupCommand[] initialize() throws IllegalArgumentException {
+    	_host.pool = getRealPoolUuid();
         disconnected();
-
         setupServer();
 
         if (!getHostInfo()) {
@@ -4263,30 +4295,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             throw new ConfigurationException("Unable to get the uuid");
         }
         
-        if (_host.pool == null) {
-        	Connection conn = null;
-        	conn = _connPool.masterConnect(_host.ip, _username, _password);
-        	if (conn == null) {
-        		String msg = "Unable to get a connection to " + _host.ip;
-        		s_logger.debug(msg);
-        		throw new ConfigurationException(msg);
-        	}
-        	Set<Pool> pools;
-        	try {
-        		pools = Pool.getAll(conn);
-        		Pool pool = pools.iterator().next();
-        		Pool.Record pr = pool.getRecord(conn);
-        		_host.pool = pr.uuid;
-        	} catch (BadServerResponse e) {
-        		throw new ConfigurationException(e.toString());
-        	} catch (XenAPIException e) {
-        		throw new ConfigurationException(e.toString());
-        	} catch (XmlRpcException e) {
-        		throw new ConfigurationException(e.toString());
-        	}
-
-        }
-
         String patchPath = getPatchPath();
 
         _patchPath = Script.findScript(patchPath, "patch");
