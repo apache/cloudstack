@@ -37,21 +37,20 @@ function routerJsonToDetailsTab(jsonObj) {
     $detailsTab.find("#account").text(fromdb(jsonObj.account));  
     setDateField(jsonObj.created, $detailsTab.find("#created"));	 
     
+    resetViewConsoleAction(jsonObj, $detailsTab);   
+    
+    //***** actions (begin) *****    
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
     
-    if (jsonObj.state == 'Running') {
-        //template.find(".grid_links").find("#router_action_stop_container, #router_action_reboot_container, #router_action_view_console_container").show();	
+    if (jsonObj.state == 'Running') {   
         buildActionLinkForDetailsTab("Stop Router", routerActionMap, $actionMenu, routerListAPIMap);	
-        buildActionLinkForDetailsTab("Reboot Router", routerActionMap, $actionMenu, routerListAPIMap);	
-        //buildActionLinkForDetailsTab("View Console", routerActionMap, $actionMenu, routerListAPIMap);	
+        buildActionLinkForDetailsTab("Reboot Router", routerActionMap, $actionMenu, routerListAPIMap);	        
     }
-    else if (jsonObj.state == 'Stopped') {
-        //template.find(".grid_links").find("#router_action_start_container").show();
+    else if (jsonObj.state == 'Stopped') {        
         buildActionLinkForDetailsTab("Start Router", routerActionMap, $actionMenu, routerListAPIMap);	
     }  
-    
-    resetViewConsoleAction(jsonObj, $detailsTab);   
+    //***** actions (end) *****		    
 }
 
 var routerListAPIMap = {

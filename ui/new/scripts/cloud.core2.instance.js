@@ -443,14 +443,12 @@ function clickInstanceGroupHeader($arrowIcon) {
 		});          
     }
         
-    function vmJsonToRouterTab(jsonObj) {
-        //debugger;   
+    function vmJsonToRouterTab(jsonObj) {   
         $.ajax({
 			cache: false,
-			data: createURL("command=listRouters"+maxPageSize),
+			data: createURL("command=listRouters&domainid="+jsonObj.domainid+"&account="+jsonObj.account+maxPageSize),
 			dataType: "json",
-			success: function(json) {	
-			    //debugger;		    
+			success: function(json) {				      
 				var items = json.listroutersresponse.router;
 				if (items != null && items.length > 0) {
 					var container = $("#right_panel_content #tab_content_router").empty();
@@ -503,21 +501,22 @@ function clickInstanceGroupHeader($arrowIcon) {
         }  
     }     
     
-    function vmVolumeJSONToTemplate(json, template) {
-        template.attr("id","vm_volume_"+json.id);	        
-        template.data("jsonObj", json);    
-        template.find("#title").text(json.name);    
-		template.find("#id").text(json.id);	
-		template.find("#name").text(json.name);
+    function vmVolumeJSONToTemplate(json, $template) {
+        $template.attr("id","vm_volume_"+json.id);	        
+        $template.data("jsonObj", json);    
+        $template.find("#title").text(json.name);    
+		$template.find("#id").text(json.id);	
+		$template.find("#name").text(json.name);
 		if (json.storagetype == "shared") 
-			template.find("#type").text(json.type + " (shared storage)");
+			$template.find("#type").text(json.type + " (shared storage)");
 		else 
-			template.find("#type").text(json.type + " (local storage)");
+			$template.find("#type").text(json.type + " (local storage)");
 				
-		template.find("#size").text((json.size == "0") ? "" : convertBytes(json.size));										
-		setDateField(json.created, template.find("#created"));
+		$template.find("#size").text((json.size == "0") ? "" : convertBytes(json.size));										
+		setDateField(json.created, $template.find("#created"));
 		
-		var $actionLink = template.find("#volume_action_link");		
+		//***** actions (begin) *****
+		var $actionLink = $template.find("#volume_action_link");		
 		$actionLink.bind("mouseover", function(event) {
             $(this).find("#volume_action_menu").show();    
             return false;
@@ -531,16 +530,17 @@ function clickInstanceGroupHeader($arrowIcon) {
         $actionMenu.find("#action_list").empty();
 		if(json.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
 			if (json.vmstate == "Stopped") 
-			    buildActionLinkForSubgridItem("Create Template", vmVolumeActionMap, $actionMenu, volumeListAPIMap, template);	
+			    buildActionLinkForSubgridItem("Create Template", vmVolumeActionMap, $actionMenu, volumeListAPIMap, $template);	
 		} 
 		else { //json.type=="DATADISK": "detach disk" is allowed, "create template" is disallowed.			
-			buildActionLinkForSubgridItem("Detach Disk", vmVolumeActionMap, $actionMenu, volumeListAPIMap, template);				
-		}			
+			buildActionLinkForSubgridItem("Detach Disk", vmVolumeActionMap, $actionMenu, volumeListAPIMap, $template);				
+		}	
+		//***** actions (end) *****		
 	}
 		
 	function vmRouterJSONToTemplate(jsonObj, $template) {	
-        $template.data("jsonObj", jsonObj);    
-         
+        $template.data("jsonObj", jsonObj);            
+        $template.find("#title").text(fromdb(jsonObj.name)); 
         $template.find("#state").text(fromdb(jsonObj.state));
         $template.find("#ipAddress").text(jsonObj.publicip);
         $template.find("#zonename").text(fromdb(jsonObj.zonename));
@@ -551,23 +551,30 @@ function clickInstanceGroupHeader($arrowIcon) {
         $template.find("#hostname").text(fromdb(jsonObj.hostname));
         $template.find("#networkdomain").text(fromdb(jsonObj.networkdomain));
         $template.find("#account").text(fromdb(jsonObj.account));  
-        setDateField(jsonObj.created, $template.find("#created"));	 
+        setDateField(jsonObj.created, $template.find("#created"));	         
+        resetViewConsoleAction(jsonObj, $template);  
         
-        var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
+        //***** actions (begin) *****
+		var $actionLink = $template.find("#router_action_link");		
+		$actionLink.bind("mouseover", function(event) {
+            $(this).find("#router_action_menu").show();    
+            return false;
+        });
+        $actionLink.bind("mouseout", function(event) {
+            $(this).find("#router_action_menu").hide();    
+            return false;
+        });		
+		
+		var $actionMenu = $actionLink.find("#router_action_menu");
         $actionMenu.find("#action_list").empty();
-        
-        if (jsonObj.state == 'Running') {
-            //template.find(".grid_links").find("#router_action_stop_container, #router_action_reboot_container, #router_action_view_console_container").show();	
-            buildActionLinkForDetailsTab("Stop Router", routerActionMap, $actionMenu, routerListAPIMap);	
-            buildActionLinkForDetailsTab("Reboot Router", routerActionMap, $actionMenu, routerListAPIMap);	
-            //buildActionLinkForDetailsTab("View Console", routerActionMap, $actionMenu, routerListAPIMap);	
+		 if (jsonObj.state == 'Running') {
+		    buildActionLinkForSubgridItem("Stop Router", vmRouterActionMap, $actionMenu, routerListAPIMap, $template);
+		    buildActionLinkForSubgridItem("Reboot Router", vmRouterActionMap, $actionMenu, routerListAPIMap, $template);
         }
-        else if (jsonObj.state == 'Stopped') {
-            //template.find(".grid_links").find("#router_action_start_container").show();
-            buildActionLinkForDetailsTab("Start Router", routerActionMap, $actionMenu, routerListAPIMap);	
-        }  
-        
-        resetViewConsoleAction(jsonObj, $template);     
+        else if (jsonObj.state == 'Stopped') {     
+            buildActionLinkForSubgridItem("Start Router", vmRouterActionMap, $actionMenu, routerListAPIMap, $template);   
+        }                
+		//***** actions (end) *****		
 	}	
 	
     //***** declaration for volume tab (end) *********************************************************
@@ -591,7 +598,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 		            }
 		        }
 		        
-		        //action menu	???		        
+		        //action menu	        
 		        $("#midmenu_action_link").show();
 		        $("#action_menu #action_list").empty();		        
 		        for(var label in vmActionMap) 				            
@@ -1326,3 +1333,35 @@ function doCreateTemplateFromVmVolume($actionLink, listAPIMap, $subgridItem) {
 		} 
 	}).dialog("open");
 }   
+
+//***** Routers tab (begin) ***************************************************************************************
+var routerListAPIMap = {
+    listAPI: "listRouters",
+    listAPIResponse: "listroutersresponse",
+    listAPIResponseObj: "router"
+};           
+  
+var vmRouterActionMap = {  
+    "Stop Router": {
+        api: "stopRouter",            
+        isAsyncJob: true,
+        asyncJobResponse: "stoprouterresponse",
+        inProcessText: "Stopping Router....",
+        afterActionSeccessFn: function(){} //routerAfterDetailsTabAction
+    },
+    "Start Router": {
+        api: "startRouter",            
+        isAsyncJob: true,
+        asyncJobResponse: "startrouterresponse",
+        inProcessText: "Starting Router....",
+        afterActionSeccessFn: function(){} //routerAfterDetailsTabAction
+    },
+    "Reboot Router": {
+        api: "rebootRouter",           
+        isAsyncJob: true,
+        asyncJobResponse: "rebootrouterresponse",
+        inProcessText: "Rebooting Router....",
+        afterActionSeccessFn: function(){} //routerAfterDetailsTabAction
+    }
+}   
+//***** Routers tab (end) ***************************************************************************************
