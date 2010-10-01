@@ -23,8 +23,10 @@ function routerToRigntPanel($midmenuItem) {
 
 function routerJsonToDetailsTab(jsonObj) {    
     var $detailsTab = $("#right_panel_content #tab_content_details");    
-    $detailsTab.data("jsonObj", jsonObj);     
+    $detailsTab.data("jsonObj", jsonObj);    
+     
     $detailsTab.find("#state").text(fromdb(jsonObj.state));
+    $detailsTab.find("#ipAddress").text(jsonObj.publicip);
     $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
     $detailsTab.find("#publicip").text(fromdb(jsonObj.publicip));

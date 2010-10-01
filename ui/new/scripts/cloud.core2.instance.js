@@ -371,7 +371,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         var jsonObj = $midmenuItem.data("jsonObj");          
         
         var vmName = getVmName(jsonObj.name, jsonObj.displayname);        
-        $("right_panel_header").find("#vm_name").text(fromdb(vmName));	
+        $("right_panel_header").find("#vm_name").text(vmName);	
         
         var $rightPanelContent = $("#right_panel_content");        
         if($midmenuItem.find("#info_icon").css("display") != "none") {                
@@ -399,6 +399,11 @@ function clickInstanceGroupHeader($arrowIcon) {
         updateVirtualMachineStateInRightPanel(jsonObj.state);	
         $detailsTab.find("#ipAddress").text(jsonObj.ipaddress);
         $detailsTab.find("#zoneName").text(fromdb(jsonObj.zonename));
+               
+        var vmName = getVmName(jsonObj.name, jsonObj.displayname);        
+        $detailsTab.find("#vmname").text(vmName);
+        $detailsTab.find("#ipaddress").text(fromdb(jsonObj.ipaddress));
+        
         $detailsTab.find("#templateName").text(fromdb(jsonObj.templatename));
         $detailsTab.find("#serviceOfferingName").text(fromdb(jsonObj.serviceofferingname));		
         $detailsTab.find("#created").text(jsonObj.created);
