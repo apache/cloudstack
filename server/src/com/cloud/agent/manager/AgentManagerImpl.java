@@ -517,39 +517,43 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             if (host.getType() == Type.Routing && host.getHypervisorType() == Hypervisor.Type.XenServer ) {
                 if (host.getClusterId() != null) {
                     List<HostVO> hosts = _hostDao.listBy(Type.Routing, host.getClusterId(), host.getPodId(), host.getDataCenterId());
+                    boolean success = false;
                     for( HostVO thost: hosts ) {
                         long thostId = thost.getId();
                         if( thostId == hostId ) continue;
                        
                         PoolEjectCommand eject = new PoolEjectCommand(host.getGuid());
                         Answer answer = easySend(thostId, eject);
-                        if( answer == null || !answer.getResult()) {
+                        if( answer != null  && answer.getResult()) {
+                            s_logger.debug("Eject Host: " + hostId + " from " + thostId + " Succeed");
+                            success = true;
+                            break;
+
+                        } else {
                             s_logger.debug("Eject Host: " + hostId + " from " + thostId + " failed due to " + (answer != null ? answer.getDetails() : "no answer"));
-                            continue;
                         }
-                        break;
+
                     }
+                    if( !success ){
+                        throw new CloudRuntimeException("Unable to delete host " + hostId + " due to unable to eject it from pool");	
+                    }                  
                 }
             }
             txn.start();
-            
+                       
             _dcDao.releasePrivateIpAddress(host.getPrivateIpAddress(), host.getDataCenterId(), null);
             AgentAttache attache = _agents.get(hostId);
             handleDisconnect(attache, Status.Event.Remove, false);
             
             /*Disconnected agent needs special handling here*/
-            host.setGuid(null);
-            host.setClusterId(null);
-            _hostDao.update(host.getId(), host);
             
+            //delete host details
+            _hostDetailsDao.deleteDetails(hostId);
+            host.setGuid(null);
+            host.setClusterId(null);           
+            _hostDao.update(host.getId(), host);
             _hostDao.remove(hostId);
             
-            //delete the associated primary storage from db
-            ComponentLocator locator = ComponentLocator.getLocator("management-server");
-            _storagePoolHostDao = locator.getDao(StoragePoolHostDao.class);
-            if (_storagePoolHostDao == null) {
-                throw new ConfigurationException("Unable to get storage pool host dao: " + StoragePoolHostDao.class);
-            }
             //1. Get the pool_ids from the host ref table
             ArrayList<Long> pool_ids = _storagePoolHostDao.getPoolIds(hostId);
             
@@ -557,8 +561,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             _storagePoolHostDao.deletePrimaryRecordsForHost(hostId);
             
             //3.For pool ids you got, delete entries in pool table where type='FileSystem' || 'LVM'
-            if(!pool_ids.isEmpty()) {
-                _storagePoolDao.deleteStoragePoolRecords(pool_ids);
+            for( Long poolId : pool_ids) {
+            	StoragePoolVO storagePool = _storagePoolDao.findById(poolId);
+            	if( storagePool.isLocal()) {
+            		storagePool.setUuid(null);
+            		storagePool.setClusterId(null);
+            		_storagePoolDao.update(poolId, storagePool);
+            		_storagePoolDao.remove(poolId);           		
+            	}
             }
             txn.commit();
             return true;

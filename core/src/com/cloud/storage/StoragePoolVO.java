@@ -48,7 +48,7 @@ public class StoragePoolVO implements StoragePool {
     @Column(name="name", updatable=false, nullable=false, length=255)
 	private String name = null;
 
-    @Column(name="uuid", updatable=false, nullable=false, length=255)
+    @Column(name="uuid", length=255)
 	private String uuid = null;
     
     @Column(name="pool_type", updatable=false, nullable=false, length=32)

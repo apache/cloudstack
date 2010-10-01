@@ -91,8 +91,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         _vmHostDao = ComponentLocator.inject(VmHostDaoImpl.class);
     
         MaintenanceCountSearch = createSearchBuilder();
-        MaintenanceCountSearch.and("pod", MaintenanceCountSearch.entity().getPodId(), SearchCriteria.Op.EQ);
-        MaintenanceCountSearch.select(Func.COUNT);
+        MaintenanceCountSearch.and("cluster", MaintenanceCountSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
         MaintenanceCountSearch.and("status", MaintenanceCountSearch.entity().getStatus(), SearchCriteria.Op.IN);
         MaintenanceCountSearch.done();
         
@@ -203,18 +202,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
     
     @Override
-    public long countBy(long podId, Status... statuses) {
+    public long countBy(long clusterId, Status... statuses) {
         SearchCriteria sc = MaintenanceCountSearch.create();
         
         sc.setParameters("status", (Object[])statuses);
-        sc.setParameters("pod", podId);
+        sc.setParameters("cluster", clusterId);
         
-        List<Object[]> rs = searchAll(sc, null);
-        if (rs.size() == 0) {
-            return 0;
-        }
-        
-        return (Long)(rs.get(0)[0]);
+        List<HostVO> hosts = listActiveBy(sc);
+        return hosts.size();
     }
     
     @Override

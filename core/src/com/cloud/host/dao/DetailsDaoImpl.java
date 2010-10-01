@@ -66,6 +66,17 @@ public class DetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implements De
         }
         return details;
     }
+    
+    @Override
+    public void deleteDetails(long hostId) {
+        SearchCriteria sc = HostSearch.create();
+        sc.setParameters("hostId", hostId);
+        
+        List<DetailVO> results = search(sc, null);
+        for (DetailVO result : results) {
+        	delete(result.getId());
+        }
+    }
 
     @Override
     public void persist(long hostId, Map<String, String> details) {

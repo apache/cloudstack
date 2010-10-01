@@ -173,7 +173,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
         sc.setParameters("datacenterId", datacenterId);
         sc.setParameters("podId", podId);
         
-        return findOneBy(sc);
+        return findOneActiveBy(sc);
     }
 
 	@Override

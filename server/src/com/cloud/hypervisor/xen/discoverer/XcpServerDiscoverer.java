@@ -102,14 +102,38 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, String username, String password) throws DiscoveryException {
         Map<CitrixResourceBase, Map<String, String>> resources = new HashMap<CitrixResourceBase, Map<String, String>>();
         Connection conn = null;
-        Connection slaveConn = null;
         if (!url.getScheme().equals("http")) {
             String msg = "urlString is not http so we're not taking care of the discovery for this: " + url;
             s_logger.debug(msg);
             return null;
         }
-        try {
+        String cluster = null;
+        if (clusterId == null) {
+            String msg = "must specify cluster Id when add host";
+            s_logger.debug(msg);
+            throw new RuntimeException(msg);
+        } else {
+            cluster = Long.toString(clusterId);
+        }
+        
+        String pod;
+		if (podId == null) {
+			String msg = "must specify pod Id when add host";
+			s_logger.debug(msg);
+			throw new RuntimeException(msg);
+		} else {
+			pod = Long.toString(podId);
+		}
 
+        try {
+        	String poolUuid = null;
+            List<HostVO> eHosts = _hostDao.listByCluster(clusterId);
+            if( eHosts.size() > 0 ) {
+            	HostVO eHost = eHosts.get(0);
+            	_hostDao.loadDetails(eHost);
+                poolUuid = eHost.getDetail("pool");
+            }         
+            
             String hostname = url.getHost();
             InetAddress ia = InetAddress.getByName(hostname);
             String addr = ia.getHostAddress();
@@ -121,26 +145,14 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 s_logger.debug(msg);
                 throw new RuntimeException(msg);
             }
-            
-            String pod;
-            if (podId == null) {
-                Map<Pool, Pool.Record> pools = Pool.getAllRecords(conn);
-                assert pools.size() == 1 : "Pools are not one....where on earth have i been? " + pools.size();
-                
-                pod = pools.values().iterator().next().uuid;
-            } else {
-                pod = Long.toString(podId);
+            if( poolUuid == null ) {
+            	Set<Pool> pools = Pool.getAll(conn);
+            	Pool pool = pools.iterator().next();
+            	Pool.Record pr = pool.getRecord(conn);
+            	poolUuid = pr.uuid;
             }
-            String cluster = null;
-            if (clusterId != null) {
-                cluster = Long.toString(clusterId);
-            }
-            Set<Pool> pools = Pool.getAll(conn);
-            Pool pool = pools.iterator().next();
-            Pool.Record pr = pool.getRecord(conn);
-            String poolUuid = pr.uuid;
+
             Map<Host, Host.Record> hosts = Host.getAllRecords(conn);
-            Host master = pr.master;
            
             if (_checkHvm) {
                 for (Map.Entry<Host, Host.Record> entry : hosts.entrySet()) {
@@ -192,6 +204,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 params.put("zone", Long.toString(dcId));
                 params.put("guid", record.uuid);
                 params.put("pod", pod);
+
                 params.put("cluster", cluster);
                 if (_increase != null) {
                     params.put(Config.XenPreallocatedLunSizeRange.name(), _increase);
@@ -392,6 +405,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             s_logger.warn("Unable to join the pool");
             throw new DiscoveryException("Unable to join the pool");
         }
+        
         
         return true;
     }

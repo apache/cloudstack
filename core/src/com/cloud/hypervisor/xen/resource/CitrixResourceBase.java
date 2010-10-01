@@ -2210,15 +2210,19 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
 
     public boolean joinPool(String masterIp, String username, String password) {
-        Connection slaveConn = null;
+        Connection hostConn = null;
         Connection poolConn = null;
-        Session slaveSession = null;
-        URL slaveUrl = null;
+        Session hostSession = null;
+        URL hostUrl = null;
         
         try {
 
             // Connect and find out about the new connection to the new pool.
             poolConn = _connPool.masterConnect(masterIp, username, password);
+            Set<Pool> pools = Pool.getAll(poolConn);
+            Pool pool = pools.iterator().next();
+            String poolUUID = pool.getUuid(poolConn);
+            
             //check if this host is already in pool
             Set<Host> hosts = Host.getAll(poolConn);
             for( Host host : hosts ) {
@@ -2227,13 +2231,13 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 }
             }
             
-            slaveUrl = new URL("http://" + _host.ip);
-            slaveConn = new Connection(slaveUrl, 100);
-            slaveSession = Session.slaveLocalLoginWithPassword(slaveConn, _username, _password);
+            hostUrl = new URL("http://" + _host.ip);
+            hostConn = new Connection(hostUrl, 100);
+            hostSession = Session.loginWithPassword(hostConn, _username, _password, APIVersion.latest().toString());
             
             // Now join it.
 
-            Pool.join(slaveConn, masterIp, username, password);
+            Pool.join(hostConn, masterIp, username, password);
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Joined the pool at " + masterIp);
             }
@@ -2245,12 +2249,13 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             }
 
             // check if the master of this host is set correctly.
-            Connection c = new Connection(slaveUrl, 100);
-            for (int i = 0; i < 15; i++) {
+            Connection c = new Connection(hostUrl, 100);
+            int i;
+            for (i = 0 ; i < 15; i++) {
 
                 try {
                     Session.loginWithPassword(c, _username, _password, APIVersion.latest().toString());
-                    s_logger.debug("Still waiting for the conversion to the master");
+                    s_logger.debug(_host.ip + " is still master, waiting for the conversion to the slave");
                     Session.logout(c);
                     c.dispose();
                 } catch (Types.HostIsSlave e) {
@@ -2273,7 +2278,10 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 } catch (InterruptedException e) {
                 }
             }
-
+            if( i >= 15 ) {
+                throw new CloudRuntimeException(_host.ip + " didn't change to slave after waiting 30 secondary");          	
+            }
+            _host.pool = poolUUID;
             return true;
         } catch (MalformedURLException e) {
             throw new CloudRuntimeException("Problem with url " + _host.ip);
@@ -2295,9 +2303,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 }
                 poolConn.dispose();
             }
-            if(slaveSession != null) {
+            if(hostSession != null) {
                 try {
-                    Session.localLogout(slaveConn);
+                    Session.logout(hostConn);
                 } catch (Exception e) {
                 }
             }
@@ -6052,7 +6060,19 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     private Answer execute(PoolEjectCommand cmd) {
         Connection conn = getConnection();
         String hostuuid = cmd.getHostuuid();
+
         try {
+            Map<Host, Host.Record> hostrs = Host.getAllRecords(conn);
+            boolean found = false;
+            for( Host.Record hr : hostrs.values() ) {
+            	if( hr.uuid.equals(hostuuid)) {
+            		found = true;
+            	}
+            }
+            if( ! found) {
+                s_logger.debug("host " + hostuuid + " has already been ejected from pool " + _host.pool);
+                return new Answer(cmd);
+            }
             Host host = Host.getByUuid(conn, hostuuid);
             Pool.eject(conn, host);
             return new Answer(cmd);
