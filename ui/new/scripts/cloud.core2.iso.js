@@ -35,7 +35,7 @@ function afterLoadIsoJSP() {
 		        var $midmenuItem1 = beforeAddingMidMenuItem() ;				    
     		       		    				
 			    $.ajax({
-			        data: createURL("command=registerIso&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&url="+encodeURIComponent(url)+"&zoneId="+zoneId+"&isPublic="+isPublic+"&osTypeId="+osType+"&bootable="+bootable+"&response=json"),
+			        data: createURL("command=registerIso&name="+todb(name)+"&displayText="+todb(desc)+"&url="+encodeURIComponent(url)+"&zoneId="+zoneId+"&isPublic="+isPublic+"&osTypeId="+osType+"&bootable="+bootable+"&response=json"),
 				    dataType: "json",
 				    success: function(json) {					
 				        var items = json.registerisoresponse.iso;				       
@@ -436,7 +436,7 @@ function doCreateVMFromIso($actionLink, listAPIMap, $detailsTab) {
 	        var serviceOfferingId = thisDialog.find("#service_offering").val();				        
 	        var diskOfferingId = thisDialog.find("#disk_offering").val();	        		        
 	                         
-		    var apiCommand = "command=deployVirtualMachine&zoneId="+zoneId+"&serviceOfferingId="+serviceOfferingId+"&diskOfferingId="+diskOfferingId+"&templateId="+id+"&group="+encodeURIComponent(group)+"&displayname="+encodeURIComponent(name);
+		    var apiCommand = "command=deployVirtualMachine&zoneId="+zoneId+"&serviceOfferingId="+serviceOfferingId+"&diskOfferingId="+diskOfferingId+"&templateId="+id+"&group="+todb(group)+"&displayname="+todb(name);
     	    doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);		
 	    }, 
 	    "Cancel": function() {

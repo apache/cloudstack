@@ -51,7 +51,7 @@ function afterLoadTemplateJSP() {
 				var $midmenuItem1 = beforeAddingMidMenuItem() ;
 												
 				$.ajax({
-				    data: createURL("command=registerTemplate&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&url="+encodeURIComponent(url)+"&zoneid="+zoneId+"&ispublic="+isPublic+moreCriteria.join("")+"&format="+format+"&passwordEnabled="+password+"&osTypeId="+osType+"&response=json"),
+				    data: createURL("command=registerTemplate&name="+todb(name)+"&displayText="+todb(desc)+"&url="+encodeURIComponent(url)+"&zoneid="+zoneId+"&ispublic="+isPublic+moreCriteria.join("")+"&format="+format+"&passwordEnabled="+password+"&osTypeId="+osType+"&response=json"),
 					dataType: "json",
 					success: function(json) {	
 						var items = json.registertemplateresponse.template;				       
@@ -526,10 +526,10 @@ function doCreateVMFromTemplate($actionLink, listAPIMap, $detailsTab) {
 	        
 	        var array1 = [];      
 	        var name = trim(thisDialog.find("#name").val());	
-	        array1.push("&displayname="+encodeURIComponent(name));
+	        array1.push("&displayname="+todb(name));
 	        	
 	        var group = trim(thisDialog.find("#group").val());	
-	        array1.push("&group="+encodeURIComponent(group));
+	        array1.push("&group="+todb(group));
 	        	
 	        var serviceOfferingId = thisDialog.find("#service_offering").val();		
 	        array1.push("&serviceOfferingId="+serviceOfferingId);
