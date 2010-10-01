@@ -33,7 +33,7 @@ import java.util.Set;
  */
 public class HAProxyConfigurator implements LoadBalancerConfigurator {
 	private static String [] globalSection = {"global",
-			"\tlog 127.0.0.1:3914   local0 info",
+			"\tlog 127.0.0.1:3914   local0 notice notice",
 			"\tmaxconn 4096",
 			"\tchroot /var/lib/haproxy",
 			"\tuser haproxy",
