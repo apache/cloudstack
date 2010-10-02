@@ -1,5 +1,7 @@
 function afterLoadDashboardJSP() {
     if (isAdmin()) {
+        showDashboard("dashboard_admin");
+                
 		var sessionExpired = false;
 		var zones = null;
 		var noZones = false;
@@ -204,17 +206,28 @@ function afterLoadDashboardJSP() {
 		
 	} 
 	else if (isDomainAdmin()) {
-	
+	    showDashboard("dashboard_domainadmin");
 	} 
 	else if(isUser()) {	
-	
+	    showDashboard("dashboard_user");
 	} 
 	else { //no role 
-	    logout(false);
-	    return;
+	    logout(false);	    
 	}
 }
 
+function showDashboard(dashboardToShow) {
+    var allDashboards = ["dashboard_admin", "dashboard_domainadmin", "dashboard_user"];
+    for(var i=0; i < allDashboards.length; i++) {
+        dashboard = allDashboards[i];
+        if(dashboard == dashboardToShow)
+            $("#"+dashboard).show();
+        else
+            $("#"+dashboard).hide();        
+    }    
+}
+
+//*** dashboard admin (begin) ***
 function capacityBarChart($capacity, percentused) {
     var percentused2 = (percentused + "%");
     $capacity.find("#percentused").text(percentused2);
@@ -226,3 +239,5 @@ function capacityBarChart($capacity, percentused) {
     else if (percentused > 80 )
         $capacity.find("#bar_chart").removeClass().addClass("db_barbox high").css("width", percentused2);
 }
+//*** dashboard admin (end) ***
+

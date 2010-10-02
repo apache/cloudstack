@@ -836,12 +836,12 @@ function isAdmin() {
 	return (g_role == 1);
 }
 
-function isUser() {
-	return (g_role == 0);
-}
-
 function isDomainAdmin() {
 	return (g_role == 2);
+}
+
+function isUser() {
+	return (g_role == 0);
 }
 
 function setDateField(dateValue, dateField, htmlMarkup) {
