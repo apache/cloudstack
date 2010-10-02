@@ -618,10 +618,6 @@ function showStorageTab(domainId, targetTab) {
 			listSnapshots();
 		});  
 		
-		if (getHypervisorType() == "kvm") {
-		    $("#dialog_add_pool #pool_cluster_container").hide();
-		}
-			
 	    activateDialog($("#dialog_detach_volume").dialog({ 
 		    autoOpen: false,
 		    modal: true,
@@ -1879,8 +1875,7 @@ function showStorageTab(domainId, targetTab) {
 					var protocol = thisDialog.find("#add_pool_protocol").val();
 					
 				    var isValid = true;						    
-				    if($("#dialog_add_pool #pool_cluster_container").css("display") != "none")	//if HypervisorType is "kvm", cluster field is hidden. Then, shouldn't validate it.				    
-				        isValid &= validateDropDownBox("Cluster", thisDialog.find("#pool_cluster"), thisDialog.find("#pool_cluster_errormsg"), false);  //required, reset error text					    				
+				    isValid &= validateDropDownBox("Cluster", thisDialog.find("#pool_cluster"), thisDialog.find("#pool_cluster_errormsg"), false);  //required, reset error text					    				
 				    isValid &= validateString("Name", thisDialog.find("#add_pool_name"), thisDialog.find("#add_pool_name_errormsg"));
 				    isValid &= validateString("Server", thisDialog.find("#add_pool_nfs_server"), thisDialog.find("#add_pool_nfs_server_errormsg"));	
 					if (protocol == "nfs") {
@@ -1909,12 +1904,9 @@ function showStorageTab(domainId, targetTab) {
 				    	
 				    var zoneId = thisDialog.find("#pool_zone").val();	
 				    array1.push("&zoneId="+zoneId);
-				    
-				    //if HypervisorType is "kvm", cluster field is hidden.				    
-				    if($("#dialog_add_pool #pool_cluster_container").css("display") != "none") { 
-				        var clusterId = thisDialog.find("#pool_cluster").val();
-				        array1.push("&clusterid="+clusterId);
-				    }
+				    				    
+				    var clusterId = thisDialog.find("#pool_cluster").val();
+				    array1.push("&clusterid="+clusterId);				    
 				    
 					var podId = thisDialog.find("#pool_pod").val();
 					array1.push("&podId="+podId);
