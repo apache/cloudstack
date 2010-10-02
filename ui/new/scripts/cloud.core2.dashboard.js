@@ -240,9 +240,9 @@ function afterLoadDashboardJSP() {
 				    rec = Math.round(rec / 1024);
 				    $("#db_sent").text(sent + "KB");
 				    $("#db_received").text(rec + "KB");
-				    $("#db_available_public_ips").text(statJSON.ipavailable);
-				    $("#db_owned_public_ips").text(statJSON.iptotal);
 				    */
+				    $("#db_available_public_ips").text(statJSON.ipavailable);
+				    $("#db_owned_public_ips").text(statJSON.iptotal);				    
 				    $("#db_running_vms").text(statJSON.vmrunning);
 				    $("#db_stopped_vms").text(statJSON.vmstopped);
 				    $("#db_total_vms").text(statJSON.vmtotal);

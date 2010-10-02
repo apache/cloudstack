@@ -327,7 +327,7 @@
             </div>
             <div class="grid_row_cell" style="width: 59%; border: none;">
                 <div class="row_celltitles">
-                    <strong>Unlimited</strong></div>
+                    <strong id="db_available_public_ips"></strong></div>
             </div>
         </div>
         <div class="grid_rows odd" style="width: 50%;">
@@ -338,7 +338,7 @@
             </div>
             <div class="grid_row_cell" style="width: 59%; border: none;">
                 <div class="row_celltitles">
-                    <strong>5</strong></div>
+                    <strong id="db_owned_public_ips"></strong></div>
             </div>
         </div>
     </div>
