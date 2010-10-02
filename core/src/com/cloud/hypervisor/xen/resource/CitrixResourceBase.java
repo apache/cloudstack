@@ -2558,6 +2558,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             Set<Host> hosts = Host.getAll(poolConn);
             for( Host host : hosts ) {
                 if(host.getAddress(poolConn).equals(_host.ip)) {
+                    _host.pool = poolUUID;
                     return true;
                 }
             }
