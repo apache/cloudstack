@@ -269,7 +269,7 @@
                     </div>
                     <div class="db_resourcebox_bot">
                         <div class="db_resourcebox_VMnumber running">
-                            <span>24</span> VM(s)</div>
+                            <span id="db_running_vms">?</span> VM(s)</div>
                     </div>
                 </div>
             </div>
@@ -287,7 +287,7 @@
                     </div>
                     <div class="db_resourcebox_bot">
                         <div class="db_resourcebox_VMnumber stopped">
-                            <span>24</span> VM(s)</div>
+                            <span id="db_stopped_vms">?</span> VM(s)</div>
                     </div>
                 </div>
             </div>
@@ -305,7 +305,7 @@
                     </div>
                     <div class="db_resourcebox_bot">
                         <div class="db_resourcebox_VMnumber total">
-                            <span>48</span> VM(s)</div>
+                            <span id="db_total_vms">?</span> VM(s)</div>
                     </div>
                 </div>
             </div>
@@ -422,7 +422,7 @@
             </div>
             <div class="grid_row_cell" style="width: 60%; border: none;">
                 <div class="row_celltitles">
-                    <strong>3</strong></div>
+                    <strong id="db_account_id"></strong></div>
             </div>
         </div>
         <div class="dbaccounts_rows">
@@ -432,7 +432,7 @@
             </div>
             <div class="grid_row_cell" style="width: 60%; border: none;">
                 <div class="row_celltitles">
-                    <strong>Niki</strong></div>
+                    <strong id="db_account"></strong></div>
             </div>
         </div>
         <div class="dbaccounts_rows">
@@ -442,7 +442,7 @@
             </div>
             <div class="grid_row_cell" style="width: 60%; border: none;">
                 <div class="row_celltitles">
-                    <strong>User</strong></div>
+                    <strong id="db_type"></strong></div>
             </div>
         </div>
         <div class="dbaccounts_rows">
@@ -452,7 +452,7 @@
             </div>
             <div class="grid_row_cell" style="width: 60%; border: none;">
                 <div class="row_celltitles">
-                    <strong>Root</strong></div>
+                    <strong id="db_domain"></strong></div>
             </div>
         </div>
     </div>

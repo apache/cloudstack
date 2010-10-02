@@ -210,6 +210,73 @@ function afterLoadDashboardJSP() {
 	} 
 	else if(isUser()) {	
 	    showDashboard("dashboard_user");
+	    	    
+	    //$("#launch_test").hide();
+		$.ajax({
+			cache: false,
+			data: createURL("command=listAccounts"),
+			dataType: "json",
+			success: function(json) {
+			    var accounts = json.listaccountsresponse.account;						
+				if (accounts != null && accounts.length > 0) {
+				    var statJSON = accounts[0];
+				    /*
+				    var sent = parseInt(statJSON.sentbytes);
+				    var rec = parseInt(statJSON.receivedbytes);
+					
+					if(sent==0 && rec==0)
+					    $("#network_bandwidth_panel").hide();
+					else
+					    $("#network_bandwidth_panel").show();
+					
+				    $("#menutab_role_user").show();
+				    $("#menutab_role_root").hide();
+					$("#menutab_role_domain").hide();
+				    $("#tab_dashboard_user").show();
+				    $("#tab_dashboard_root, #tab_dashboard_domain, #loading_gridtable").hide();
+					
+				    // This is in bytes, so let's change to KB
+				    sent = Math.round(sent / 1024);
+				    rec = Math.round(rec / 1024);
+				    $("#db_sent").text(sent + "KB");
+				    $("#db_received").text(rec + "KB");
+				    $("#db_available_public_ips").text(statJSON.ipavailable);
+				    $("#db_owned_public_ips").text(statJSON.iptotal);
+				    */
+				    $("#db_running_vms").text(statJSON.vmrunning);
+				    $("#db_stopped_vms").text(statJSON.vmstopped);
+				    $("#db_total_vms").text(statJSON.vmtotal);
+				    //$("#db_avail_vms").text(statJSON.vmavailable);						   
+				    $("#db_account_id").text(statJSON.id);
+				    $("#db_account").text(statJSON.name);						    
+				    $("#db_type").text(toRole(statJSON.accounttype));
+				    $("#db_domain").text(statJSON.domain);						    			   
+				}
+				
+				// Events
+				$.ajax({
+				    data: createURL("command=listEvents&level=ERROR"),
+					dataType: "json",
+					success: function(json) {
+						var events = json.listeventsresponse.event;
+						if (events != null && events.length > 0) {
+							var errorGrid = $("#error_grid_content").empty();
+							var length = (events.length>=3) ? 3 : events.length;
+							for (var i = 0; i < length; i++) {
+								var errorTemplate = $("#recent_error_template").clone(true);
+								errorTemplate.find("#db_error_type").text(events[i].type);
+								errorTemplate.find("#db_error_msg").text(fromdb(events[i].description));										
+								setDateField(events[i].created, errorTemplate.find("#db_error_date"));									
+								errorGrid.append(errorTemplate.show());
+							}
+						}
+					}
+				});
+			},					
+			beforeSend: function(XMLHttpRequest) {
+				return true;
+			}	
+		});	      
 	} 
 	else { //no role 
 	    logout(false);	    
