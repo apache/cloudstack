@@ -14,7 +14,7 @@
     </h1>
 </div>
 
-<!--Dashboard Admin (start)-->
+<!--Dashboard Admin (begin)-->
 <div id="dashboard_admin" style="display: none">
     <div class="contentbox">
         <div class="grid_container" id="system_wide_capacity_container">
@@ -220,32 +220,16 @@
                 </div>
             </div>
         </div>
-    </div>
-    <div class="grid_rows" id="alert_template" style="display: none">
-        <div class="grid_row_cell" style="width: 10%;">
-            <div class="row_celltitles">
-                <img src="images/alert_icon.png" /></div>
-        </div>
-        <div class="grid_row_cell" style="width: 70%;">
-            <div class="row_celltitles alert" id="type">
-            </div>
-            <div class="row_celltitles alertdetails" id="description">
-            </div>
-        </div>
-        <div class="grid_row_cell" style="width: 19%;">
-            <div class="row_celltitles" id="date">
-            </div>
-        </div>
-    </div>
+    </div>    
 </div>
 <!--Dashboard Admin (end)-->
 
-<!--Dashboard DomainAdmin (start)-->
+<!--Dashboard DomainAdmin (begin)-->
 <div id="dashboard_domainadmin" style="display: none">
 </div>
 <!--Dashboard DomainAdmin (end) here-->
 
-<!--Dashboard User (start)-->
+<!--Dashboard User (begin)-->
 <div id="dashboard_user" style="display: none">
     <div class="grid_container">
         <div class="grid_header">
@@ -312,7 +296,7 @@
         </div>
     </div>
     <!--Public Ips-->
-    <div class="grid_container" style="margin-top: 15px;" style="display: none; "">
+    <div class="grid_container" style="margin-top: 15px;">
         <div class="grid_header">
             <div class="grid_header_cell" style="width: 60%; border: none;">
                 <div class="grid_header_title">
@@ -341,10 +325,9 @@
                     <strong id="db_owned_public_ips"></strong></div>
             </div>
         </div>
-    </div>
+    </div>      
     <!--Recent errors-->
-    <div class="grid_container" style="width: 49%; margin-top: 15px;" style="display: none;
-        "">
+    <div class="grid_container" style="width: 49%; margin-top: 15px;">
         <div class="grid_header">
             <div class="grid_header_cell" style="width: 60%; border: none;">
                 <div class="grid_header_title">
@@ -353,58 +336,14 @@
             <div class="grid_header_cell" style="width: 40%; border: none;">
             </div>
         </div>
-        <div class="grid_rows even">
-            <div class="grid_row_cell" style="width: 10%;">
-                <div class="row_celltitles">
-                    <img src="images/alert_icon.png" /></div>
-            </div>
-            <div class="grid_row_cell" style="width: 70%;">
-                <div class="row_celltitles alert" id="type">
-                    Error's Name</div>
-                <div class="row_celltitles alertdetails" id="description">
-                    Error Description will appear here</div>
-            </div>
-            <div class="grid_row_cell" style="width: 19%;">
-                <div class="row_celltitles" id="date">
-                    09/29/2010 15:20:10</div>
+        <div id="alert_grid_content">
+            <div style="height: 310px; text-align: center;">
+                <i>No Recent Alerts</i>
             </div>
         </div>
-        <div class="grid_rows odd">
-            <div class="grid_row_cell" style="width: 10%;">
-                <div class="row_celltitles">
-                    <img src="images/alert_icon.png" /></div>
-            </div>
-            <div class="grid_row_cell" style="width: 70%;">
-                <div class="row_celltitles alert" id="type">
-                    Error's Name</div>
-                <div class="row_celltitles alertdetails" id="description">
-                    Error Description will appear here</div>
-            </div>
-            <div class="grid_row_cell" style="width: 19%;">
-                <div class="row_celltitles" id="date">
-                    09/29/2010 15:20:10</div>
-            </div>
-        </div>
-        <div class="grid_rows even">
-            <div class="grid_row_cell" style="width: 10%;">
-                <div class="row_celltitles">
-                    <img src="images/alert_icon.png" /></div>
-            </div>
-            <div class="grid_row_cell" style="width: 70%;">
-                <div class="row_celltitles alert" id="type">
-                    Error's Name</div>
-                <div class="row_celltitles alertdetails" id="description">
-                    Error Description will appear here</div>
-            </div>
-            <div class="grid_row_cell" style="width: 19%;">
-                <div class="row_celltitles" id="date">
-                    09/29/2010 15:20:10</div>
-            </div>
-        </div>
-    </div>
+    </div>  
     <!--Accounts-->
-    <div class="grid_container" style="width: 49%; margin-top: 15px; float: right; background: #fff8c8 repeat top left;"
-        style="display: none; "">
+    <div class="grid_container" style="width: 49%; margin-top: 15px; float: right; background: #fff8c8 repeat top left;">
         <div class="grid_header" style="background: url(images/dbaccounts_headerbg.gif) repeat-x top left;">
             <div class="grid_header_cell" style="width: 5%; border: none;">
                 <div class="grid_header_title">
@@ -458,3 +397,22 @@
     </div>
 </div>
 <!--Dashboard User (end)-->
+
+<!-- alert template (begin) -->
+<div class="grid_rows" id="alert_template" style="display: none">
+    <div class="grid_row_cell" style="width: 10%;">
+        <div class="row_celltitles">
+            <img src="images/alert_icon.png" /></div>
+    </div>
+    <div class="grid_row_cell" style="width: 70%;">
+        <div class="row_celltitles alert" id="type">
+        </div>
+        <div class="row_celltitles alertdetails" id="description">
+        </div>
+    </div>
+    <div class="grid_row_cell" style="width: 19%;">
+        <div class="row_celltitles" id="date">
+        </div>
+    </div>
+</div>
+<!-- alert template (end) -->
