@@ -18,6 +18,9 @@
 
 // Version: @VERSION@
 
+var rowZIndexGlobal = 300;
+var rowZIndex = 299;
+var currentVMAction = null;
 function showInstancesTab(p_domainId, p_account) {
 	// Manage VM Tab
 	// Submenus change based on role
@@ -112,7 +115,6 @@ function showInstancesTab(p_domainId, p_account) {
 		if (imgUrl != null) {
 			var time = new Date();
 			$("#spopup .console_box0").css("background", "url("+imgUrl+"&t="+time.getTime()+")");
-			$("#spopup .console_box1").css("background", "url("+imgUrl+"&t="+time.getTime()+")");
 			vmTemplate.everyTime(2000, function() {
 				var time = new Date();
 				if ((index % 2) == 0) {
@@ -1062,16 +1064,8 @@ function showInstancesTab(p_domainId, p_account) {
 				}
 				break;			    
 			case "vm_actions" :
-			    //fix for zIndex bug of IE7                 
-                vmInstance.find('#vm_rows').each(function() {
-                    $(this).css("z-index", "1");
-                });
-
-                vmInstance.find('#vm_actions_container').each(function() {
-                    $(this).css("z-ndex", "2");
-                });
-			
-				vmInstance.find("#vm_actions_container").slideDown("fast");
+				if (currentVMAction != null) currentVMAction.hide();
+				currentVMAction = vmInstance.find("#vm_actions_container").slideDown("fast");
 				break;
 			case "vm_actions_close" :
 				vmInstance.find("#vm_actions_container").hide();
@@ -1091,8 +1085,13 @@ function showInstancesTab(p_domainId, p_account) {
 	});	
 	
 	// FUNCTION: Parses the JSON object for VM Instances and applies it to the vm template
-	function vmJSONToTemplate(instanceJSON, instanceTemplate) {
+	function vmJSONToTemplate(instanceJSON, instanceTemplate, isNew) {
 	    instanceTemplate.attr("id","vm"+instanceJSON.id);  
+		if (isNew != undefined && isNew) {
+			instanceTemplate.find("#vm_rows").attr("style", "z-index: "+(rowZIndexGlobal++));
+		} else {
+			instanceTemplate.find("#vm_rows").attr("style", "z-index: "+(rowZIndex--));
+		}
 	    
 		// Setup			
 		var vmName = getVmName(instanceJSON.name, instanceJSON.displayname);
@@ -1702,7 +1701,7 @@ function showInstancesTab(p_domainId, p_account) {
 										vmInstance.find("#vm_loading_container").hide();
 										if (result.jobstatus == 1) {
 											// Succeeded
-											vmJSONToTemplate(result.virtualmachine[0], vmInstance);
+											vmJSONToTemplate(result.virtualmachine[0], vmInstance, true);
 											if (result.virtualmachine[0].passwordenabled == 'true') {
 												vmInstance.find(".loadingmessage_container .loadingmessage_top p").html("Your instance has been successfully created.  Your new password is : <b>" + result.virtualmachine[0].password + "</b> .  Please change it as soon as you log into your new instance");
 											} else {

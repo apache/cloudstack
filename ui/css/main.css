@@ -5407,7 +5407,7 @@ a:hover.add_newtemplatebutton {
 	cursor:hand;
 }
 .vmactions_dropdownbox {
-	width:auto;
+	width:375px;
 	height:auto;
 	margin:0;
 	padding:0;
