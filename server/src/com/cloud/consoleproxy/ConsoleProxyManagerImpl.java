@@ -20,6 +20,7 @@ package com.cloud.consoleproxy;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.URLDecoder;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.util.Date;
@@ -102,6 +103,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.ServiceOffering.GuestIpType;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.servlet.ConsoleProxyServlet;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
@@ -1244,19 +1246,24 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager,
 	public AgentControlAnswer onConsoleAccessAuthentication(
 			ConsoleAccessAuthenticationCommand cmd) {
 		long vmId = 0;
+		
+		String ticket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId());
+		String ticketInUrl = cmd.getTicket();
+		if(!ticket.startsWith(ticketInUrl)) {
+			s_logger.error("Access ticket expired or has been modified. vmId: " + cmd.getVmId());
+			return new ConsoleAccessAuthenticationAnswer(cmd, false);
+		}
 
 		if (cmd.getVmId() != null && cmd.getVmId().isEmpty()) {
 			if (s_logger.isTraceEnabled())
-				s_logger
-						.trace("Invalid vm id sent from proxy(happens when proxy session has terminated)");
+				s_logger.trace("Invalid vm id sent from proxy(happens when proxy session has terminated)");
 			return new ConsoleAccessAuthenticationAnswer(cmd, false);
 		}
 
 		try {
 			vmId = Long.parseLong(cmd.getVmId());
 		} catch (NumberFormatException e) {
-			s_logger.error("Invalid vm id " + cmd.getVmId()
-					+ " sent from console access authentication", e);
+			s_logger.error("Invalid vm id " + cmd.getVmId() + " sent from console access authentication", e);
 			return new ConsoleAccessAuthenticationAnswer(cmd, false);
 		}
 
@@ -1270,22 +1277,19 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager,
 		}
 
 		if (vm.getHostId() == null) {
-			s_logger.warn("VM " + vmId
-					+ " lost host info, failed authentication request");
+			s_logger.warn("VM " + vmId + " lost host info, failed authentication request");
 			return new ConsoleAccessAuthenticationAnswer(cmd, false);
 		}
 
 		HostVO host = _hostDao.findById(vm.getHostId());
 		if (host == null) {
-			s_logger.warn("VM " + vmId
-					+ "'s host does not exist, fail authentication request");
+			s_logger.warn("VM " + vmId + "'s host does not exist, fail authentication request");
 			return new ConsoleAccessAuthenticationAnswer(cmd, false);
 		}
 
 		String sid = cmd.getSid();
 		if (sid == null || !sid.equals(vm.getVncPassword())) {
-			s_logger.warn("sid " + sid + " in url does not match stored sid "
-					+ vm.getVncPassword());
+			s_logger.warn("sid " + sid + " in url does not match stored sid " + vm.getVncPassword());
 			return new ConsoleAccessAuthenticationAnswer(cmd, false);
 		}
 

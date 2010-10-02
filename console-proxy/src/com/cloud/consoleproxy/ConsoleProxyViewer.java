@@ -315,7 +315,7 @@ public class ConsoleProxyViewer implements java.lang.Runnable, RfbViewer, RfbPro
 		}
 	}
 	
-	static void authenticationExternally(String tag, String sid) throws AuthenticationException {
+	static void authenticationExternally(String host, String port, String tag, String sid, String ticket) throws AuthenticationException {
 /*		
 		if(ConsoleProxy.management_host != null) {
 			try {
@@ -352,7 +352,7 @@ public class ConsoleProxyViewer implements java.lang.Runnable, RfbViewer, RfbPro
 			s_logger.warn("No external authentication source being setup.");
 		}
 */
-		if(!ConsoleProxy.authenticateConsoleAccess(tag, sid)) {
+		if(!ConsoleProxy.authenticateConsoleAccess(host, port, tag, sid, ticket)) {
     		s_logger.warn("External authenticator failed authencation request for vm " + tag + " with sid " + sid);
         	
 			throw new AuthenticationException("External authenticator failed request for vm " + tag + " with sid " + sid);

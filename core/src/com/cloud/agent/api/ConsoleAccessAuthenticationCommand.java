@@ -20,15 +20,29 @@ package com.cloud.agent.api;
 
 public class ConsoleAccessAuthenticationCommand extends AgentControlCommand {
 	
+	private String _host;
+	private String _port;
 	private String _vmId;
 	private String _sid;
+	private String _ticket;
 	
 	public ConsoleAccessAuthenticationCommand() {
 	}
 	
-	public ConsoleAccessAuthenticationCommand(String vmId, String sid) {
+	public ConsoleAccessAuthenticationCommand(String host, String port, String vmId, String sid, String ticket) {
+		_host = host;
+		_port = port;
 		_vmId = vmId;
 		_sid = sid;
+		_ticket = ticket;
+	}
+	
+	public String getHost() {
+		return _host;
+	}
+	
+	public String getPort() {
+		return _port;
 	}
 	
 	public String getVmId() {
@@ -37,5 +51,9 @@ public class ConsoleAccessAuthenticationCommand extends AgentControlCommand {
 	
 	public String getSid() {
 		return _sid;
+	}
+	
+	public String getTicket() {
+		return _ticket;
 	}
 }

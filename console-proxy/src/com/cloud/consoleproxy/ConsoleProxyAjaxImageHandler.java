@@ -63,6 +63,7 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
 		String portStr = queryMap.get("port");
 		String sid = queryMap.get("sid");
 		String tag = queryMap.get("tag");
+		String ticket = queryMap.get("ticket");
 		String keyStr = queryMap.get("key");
 		int key = 0;
 		
@@ -87,7 +88,7 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
 			throw new IllegalArgumentException(e);
 		}
 
-		ConsoleProxyViewer viewer = ConsoleProxy.getVncViewer(host, port, sid, tag);
+		ConsoleProxyViewer viewer = ConsoleProxy.getVncViewer(host, port, sid, tag, ticket);
 		byte[] img = viewer.getAjaxImageCache().getImage(key);
 		if(img != null) {
 			Headers hds = t.getResponseHeaders();
