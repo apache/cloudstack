@@ -309,8 +309,8 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
 		_consoleProxyMain.start();
     }
 
-    public boolean authenticateConsoleAccess(String vmId, String sid) {
-    	ConsoleAccessAuthenticationCommand cmd = new ConsoleAccessAuthenticationCommand(vmId, sid);
+    public boolean authenticateConsoleAccess(String host, String port, String vmId, String sid, String ticket) {
+    	ConsoleAccessAuthenticationCommand cmd = new ConsoleAccessAuthenticationCommand(host, port, vmId, sid, ticket);
     	
     	try {
 			AgentControlAnswer answer = getAgentControl().sendRequest(cmd, 10000);
