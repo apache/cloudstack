@@ -765,57 +765,6 @@
 </div>
 <!--  volume tab template (end) -->
 
-<!-- Create Template Dialog (begin) -->
-<div id="dialog_create_template" title="Create Template" style="display: none">
-    <p>
-        Please specify the following information before creating a template of your disk
-        volume: <b><span id="volume_name"></span></b>. Creating a template could take up
-        to several hours depending on the size of your disk volume.</p>
-    <div class="dialog_formcontent">
-        <form action="#" method="post" id="form_acquire">
-        <ol>
-            <li>
-                <label for="user_name">
-                    Name:</label>
-                <input class="text" type="text" name="create_template_name" id="create_template_name" />
-                <div id="create_template_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-                </div>
-            </li>
-            <li>
-                <label for="user_name">
-                    Display Text:</label>
-                <input class="text" type="text" name="create_template_desc" id="create_template_desc" />
-                <div id="create_template_desc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-                </div>
-            </li>
-            <li>
-                <label for="create_template_os_type">
-                    OS Type:</label>
-                <select class="select" name="create_template_os_type" id="create_template_os_type">
-                </select>
-            </li>
-            <li>
-                <label for="create_template_public">
-                    Public:</label>
-                <select class="select" name="create_template_public" id="create_template_public">
-                    <option value="false">No</option>
-                    <option value="true">Yes</option>
-                </select>
-            </li>
-            <li>
-                <label for="user_name">
-                    Password Enabled?:</label>
-                <select class="select" name="create_template_password" id="create_template_password">
-                    <option value="false">No</option>
-                    <option value="true">Yes</option>
-                </select>
-            </li>
-        </ol>
-        </form>
-    </div>
-</div>
-<!-- Create Template Dialog (end) -->
-
 <!-- view console template (begin)  -->
 <div id="view_console_template" style="display:none">
     <div class="vm_consolebox" id="box0">
@@ -997,7 +946,7 @@
         <form action="#" method="post" id="form_acquire">
         <ol>
             <li>
-                <label for="user_name">
+                <label>
                     <%=t.t("instance.name")%>:</label>
                 <input class="text" type="text" id="change_instance_name" />
                 <div id="change_instance_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
@@ -1047,4 +996,55 @@
         </form>
     </div>
 </div>
+
+<!-- Create template of disk volume dialog (begin) -->
+<div id="dialog_create_template" title="Create template of disk volume" style="display: none">
+    <p> 
+        <%=t.t("creating.a.template.of.disk.volume.could.take.up.to.several.hours.depending.on.the.size.of.the.disk.volume")%>
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+                <label>
+                    <%=t.t("name")%>:</label>
+                <input class="text" type="text" name="create_template_name" id="create_template_name" />
+                <div id="create_template_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label>
+                    <%=t.t("display.text")%>:</label>
+                <input class="text" type="text" name="create_template_desc" id="create_template_desc" />
+                <div id="create_template_desc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label for="create_template_os_type">
+                    <%=t.t("os.type")%>:</label>
+                <select class="select" name="create_template_os_type" id="create_template_os_type">
+                </select>
+            </li>
+            <li>
+                <label for="create_template_public">
+                    <%=t.t("public")%>:</label>
+                <select class="select" name="create_template_public" id="create_template_public">
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                </select>
+            </li>
+            <li>
+                <label>
+                    <%=t.t("password.enabled")%>?:</label>
+                <select class="select" name="create_template_password" id="create_template_password">
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                </select>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+<!-- Create template of disk volume dialog (end) -->
+
 <!--  ***** Dialogs (end) ***** -->

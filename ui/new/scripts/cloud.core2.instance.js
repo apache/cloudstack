@@ -1272,7 +1272,6 @@ function appendInstanceGroup(groupId, groupName) {
 
 function doCreateTemplateFromVmVolume($actionLink, listAPIMap, $subgridItem) {       
     var jsonObj = $subgridItem.data("jsonObj");
-    $("#dialog_create_template").find("#volume_name").text(jsonObj.name);
     
 	$("#dialog_create_template")
 	.dialog('option', 'buttons', { 						
