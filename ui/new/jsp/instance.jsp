@@ -685,26 +685,6 @@
 </div>
 <!-- VM Wizard - disk Offering template (end)-->
 
-<!-- Change Service Offering Dialog -->
-<div id="dialog_change_service_offering" title="Change Service Offering" style="display: none">
-    <p>
-        After changing service offering, you must restart virtual instance for the new service
-        offering to take effect.
-    </p>
-    <div class="dialog_formcontent">
-        <form action="#" method="post" id="form_acquire">
-        <ol>
-            <li>
-                <label for="user_name">
-                    Service Offering:</label>
-                <select class="select" name="change_service_offerings" id="change_service_offerings">
-                </select>
-            </li>
-        </ol>
-        </form>
-    </div>
-</div>
-
 <!--  volume tab template (begin) -->
 <div class="grid_container" id="volume_tab_template" style="display: none">
     <div class="grid_header">
@@ -997,9 +977,9 @@
         <form action="#" method="post" id="form_acquire">
         <ol>
             <li>
-                <label for="user_name">
+                <label>
                     <%=t.t("iso")%>:</label>
-                <select class="select" name="attach_iso_select" id="attach_iso_select">
+                <select class="select" id="attach_iso_select">
                     <option value="none"><%=t.t("no.available.iso")%></option>
                 </select>
             </li>
@@ -1019,7 +999,7 @@
             <li>
                 <label for="user_name">
                     <%=t.t("instance.name")%>:</label>
-                <input class="text" type="text" name="change_instance_name" id="change_instance_name" />
+                <input class="text" type="text" id="change_instance_name" />
                 <div id="change_instance_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
@@ -1037,11 +1017,31 @@
         <form action="#" method="post" id="form_acquire">
         <ol>
             <li>
-                <label for="change_group_name">
+                <label>
                     <%=t.t("group.name")%>:</label>
-                <input class="text" type="text" name="change_group_name" id="change_group_name" />
+                <input class="text" type="text" id="change_group_name" />
                 <div id="change_group_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+
+
+<!-- Change Service Offering Dialog -->
+<div id="dialog_change_service_offering" title="Change Service Offering" style="display: none">
+    <p> 
+        <%=t.t("after.changing.service.offering.you.must.restart.the.virtual.machine.for.new.service.offering.to.take.effect")%>
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+                <label>
+                    <%=t.t("service.offering")%>:</label>
+                <select class="select" id="change_service_offerings">
+                </select>
             </li>
         </ol>
         </form>

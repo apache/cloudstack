@@ -69,14 +69,8 @@ function clickInstanceGroupHeader($arrowIcon) {
        	initDialog("dialog_attach_iso");  
         initDialog("dialog_change_name"); 
         initDialog("dialog_change_group"); 
-        
-        activateDialog($("#dialog_change_service_offering").dialog({ 
-		    width: 600,
-		    autoOpen: false,
-		    modal: true,
-		    zIndex: 2000
-	    }));
-              
+        initDialog("dialog_change_service_offering"); 
+                      
         activateDialog($("#dialog_create_template").dialog({
 	        width: 400,
 	        autoOpen: false,
@@ -914,7 +908,7 @@ function doChangeService($t, selectedItemsInMidMenu, vmListAPIMap) {
 	
 	$("#dialog_change_service_offering")
 	.dialog('option', 'buttons', { 						
-		"Change": function() { 
+		"OK": function() { 
 		    var thisDialog = $(this);
 			thisDialog.dialog("close"); 
 			
@@ -1282,7 +1276,7 @@ function doCreateTemplateFromVmVolume($actionLink, listAPIMap, $subgridItem) {
     
 	$("#dialog_create_template")
 	.dialog('option', 'buttons', { 						
-		"Create": function() { 		
+		"OK": function() { 		
 		    var thisDialog = $(this);
 		    thisDialog.dialog("close"); 
 									
