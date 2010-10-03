@@ -66,13 +66,9 @@ function clickInstanceGroupHeader($arrowIcon) {
         var $existingDiskOfferingTemplate = $("#vm_popup_disk_offering_template_existing");
        	   
        	initDialog("dialog_detach_iso_from_vm");       	
-       	initDialog("dialog_attach_iso");      
-                
-        activateDialog($("#dialog_change_name").dialog({ 
-		    autoOpen: false,
-		    modal: true,
-		    zIndex: 2000
-	    }));
+       	initDialog("dialog_attach_iso");  
+        initDialog("dialog_change_name"); 
+        initDialog("dialog_change_group"); 
         
         activateDialog($("#dialog_change_service_offering").dialog({ 
 		    width: 600,
@@ -80,13 +76,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 		    modal: true,
 		    zIndex: 2000
 	    }));
-        
-        activateDialog($("#dialog_change_group").dialog({ 
-		    autoOpen: false,
-		    modal: true,
-		    zIndex: 2000
-	    }));
-        
+              
         activateDialog($("#dialog_create_template").dialog({
 	        width: 400,
 	        autoOpen: false,
@@ -815,7 +805,7 @@ function doAttachISO($t, selectedItemsInMidMenu, vmListAPIMap) {
 	
 	$("#dialog_attach_iso")
 	.dialog('option', 'buttons', { 						
-		"Confirm": function() { 			    
+		"OK": function() { 			    
 			$(this).dialog("close");
 			var isoId = $("#dialog_attach_iso #attach_iso_select").val();
 			if (isoId == "none") {
@@ -837,14 +827,14 @@ function doAttachISO($t, selectedItemsInMidMenu, vmListAPIMap) {
 function doDetachISO($t, selectedItemsInMidMenu, vmListAPIMap) {    
     $("#dialog_detach_iso_from_vm")	
 	.dialog('option', 'buttons', { 						
-		"Yes": function() { 
+		"OK": function() { 
 			$(this).dialog("close");				
 			for(var id in selectedItemsInMidMenu) {
 			   var apiCommand = "command=detachIso&virtualmachineid="+id;
 			   doActionForMidMenu(id, $t, apiCommand, vmListAPIMap);	
 			}					
 		}, 
-		"No": function() { 
+		"Cancel": function() { 
 			$(this).dialog("close"); 
 		} 
 	}).dialog("open");
@@ -882,7 +872,7 @@ function doResetPassword($t, selectedItemsInMidMenu, vmListAPIMap) {
 function doChangeName($t, selectedItemsInMidMenu, vmListAPIMap) { 
 	$("#dialog_change_name")
 	.dialog('option', 'buttons', { 						
-		"Confirm": function() { 			    
+		"OK": function() { 			    
 		    var thisDialog = $(this);	
 		    thisDialog.dialog("close"); 
 		    											
@@ -949,7 +939,7 @@ function doChangeService($t, selectedItemsInMidMenu, vmListAPIMap) {
 function doChangeGroup($t, selectedItemsInMidMenu, vmListAPIMap) { 
 	$("#dialog_change_group")
 	.dialog('option', 'buttons', { 						
-		"Confirm": function() { 	
+		"OK": function() { 	
 		    var thisDialog = $(this);
 	        thisDialog.dialog("close"); 
 													

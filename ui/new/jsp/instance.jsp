@@ -684,25 +684,7 @@
     </div>
 </div>
 <!-- VM Wizard - disk Offering template (end)-->
-<!-- Change Name Dialog -->
-<div id="dialog_change_name" title="Change Name" style="display: none">
-    <p>
-        Please specify the new name you want to change for virtual instance.
-    </p>
-    <div class="dialog_formcontent">
-        <form action="#" method="post" id="form_acquire">
-        <ol>
-            <li>
-                <label for="user_name">
-                    Instance Name:</label>
-                <input class="text" type="text" name="change_instance_name" id="change_instance_name" />
-                <div id="change_instance_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-                </div>
-            </li>
-        </ol>
-        </form>
-    </div>
-</div>
+
 <!-- Change Service Offering Dialog -->
 <div id="dialog_change_service_offering" title="Change Service Offering" style="display: none">
     <p>
@@ -722,25 +704,7 @@
         </form>
     </div>
 </div>
-<!-- Change Group Dialog -->
-<div id="dialog_change_group" title="Change Group" style="display: none">
-    <p>
-        Please specify the new group you want to assign to your Virtual Instance. If no
-        such group exists, a new one will be created for you.</p>
-    <div class="dialog_formcontent">
-        <form action="#" method="post" id="form_acquire">
-        <ol>
-            <li>
-                <label for="change_group_name">
-                    Group Name:</label>
-                <input class="text" type="text" name="change_group_name" id="change_group_name" />
-                <div id="change_group_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-                </div>
-            </li>
-        </ol>
-        </form>
-    </div>
-</div>
+
 <!--  volume tab template (begin) -->
 <div class="grid_container" id="volume_tab_template" style="display: none">
     <div class="grid_header">
@@ -1038,6 +1002,46 @@
                 <select class="select" name="attach_iso_select" id="attach_iso_select">
                     <option value="none"><%=t.t("no.available.iso")%></option>
                 </select>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+
+<!-- Change Name Dialog -->
+<div id="dialog_change_name" title="Change Name" style="display: none">
+    <p> 
+        <%=t.t("please.specify.the.new.name.you.want.to.change.for.the.virtual.machine")%>        
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+                <label for="user_name">
+                    <%=t.t("instance.name")%>:</label>
+                <input class="text" type="text" name="change_instance_name" id="change_instance_name" />
+                <div id="change_instance_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+
+<!-- Change Group Dialog -->
+<div id="dialog_change_group" title="Change Group" style="display: none">
+    <p>
+        <%=t.t("please.specify.the.new.group.you.want.to.assign.the.virtual.machine.to")%>        
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+                <label for="change_group_name">
+                    <%=t.t("group.name")%>:</label>
+                <input class="text" type="text" name="change_group_name" id="change_group_name" />
+                <div id="change_group_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
             </li>
         </ol>
         </form>
