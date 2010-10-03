@@ -64,6 +64,8 @@ function clickInstanceGroupHeader($arrowIcon) {
 	    var $noDiskOfferingTemplate = $("#vm_popup_disk_offering_template_no");
         var $customDiskOfferingTemplate = $("#vm_popup_disk_offering_template_custom");
         var $existingDiskOfferingTemplate = $("#vm_popup_disk_offering_template_existing");
+       	   
+       	initDialog("dialog_detach_iso_from_vm");
        	    	    
         activateDialog($("#dialog_attach_iso").dialog({ 
 		    width: 600,
@@ -839,17 +841,16 @@ function doAttachISO($t, selectedItemsInMidMenu, vmListAPIMap) {
 }
 
 function doDetachISO($t, selectedItemsInMidMenu, vmListAPIMap) {    
-    $("#dialog_confirmation")
-	.html("<p>Please confirm you want to detach an ISO from the virtual machine(s)</p>")
+    $("#dialog_detach_iso_from_vm")	
 	.dialog('option', 'buttons', { 						
-		"Confirm": function() { 
+		"Yes": function() { 
 			$(this).dialog("close");				
 			for(var id in selectedItemsInMidMenu) {
 			   var apiCommand = "command=detachIso&virtualmachineid="+id;
 			   doActionForMidMenu(id, $t, apiCommand, vmListAPIMap);	
 			}					
 		}, 
-		"Cancel": function() { 
+		"No": function() { 
 			$(this).dialog("close"); 
 		} 
 	}).dialog("open");

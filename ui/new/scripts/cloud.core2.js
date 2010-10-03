@@ -743,7 +743,14 @@ function setVmStateInRightPanel(stateValue, $stateField) {
         $stateField.text(stateValue).removeClass("green red").addClass("gray");            			       
 }
 
-
+function initDialog(elementId) {
+	$("#"+elementId).dialog({ 
+   	    width: 600,
+	    autoOpen: false,
+	    modal: true,
+	    zIndex: 2000
+    }); 
+} 
 
 
 

@@ -1036,3 +1036,9 @@
     </div>
 </div>
 <!--  router tab template (end) -->
+
+<!--  dialogs (begin) -->
+<div id="dialog_detach_iso_from_vm" title="Confirmation" style="display:none">
+    <p><%=t.t("please.confirm.you.want.to.detach.an.iso.from.the.virtual.machine")%></p>   
+</div>
+<!--  dialogs (end) -->
