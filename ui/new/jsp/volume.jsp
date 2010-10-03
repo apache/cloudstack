@@ -582,8 +582,8 @@
                 <label for="volume_vm">
                     Virtual Machine:</label>
                 <select class="select" name="volume_vm" id="volume_vm">
-                    <option value="default">Please wait...</option>
                 </select>
+                <div id="volume_vm_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
             </li>
         </ol>
         </form>

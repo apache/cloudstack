@@ -809,16 +809,18 @@ function doAttachDisk($actionLink, listAPIMap, $detailsTab) {
 	    
     $("#dialog_attach_volume")					
     .dialog('option', 'buttons', { 					    
-	    "Confirm": function() { 	       
-	        var thisDialog = $(this);
-	        thisDialog.dialog("close"); 	
+	    "OK": function() { 	
+	        var $thisDialog = $(this);
+		    				
+			var isValid = true;				
+			isValid &= validateDropDownBox("Virtual Machine", $thisDialog.find("#volume_vm"), $thisDialog.find("#volume_vm_errormsg"));	
+			if (!isValid) 
+			    return;
+			    
+			$thisDialog.dialog("close");	     
 	        
-	        var virtualMachineId = thisDialog.find("#volume_vm").val();		
-	        if(virtualMachineId == null)  {	           
-	            $("#dialog_alert").html("<p>Please attach volume to a valid virtual machine</p>").dialog("open");
-	            return;					            
-	        }	
-	    	
+	        var virtualMachineId = $thisDialog.find("#volume_vm").val();		
+	        	    	
 	    	var id = jsonObj.id;			
 			var apiCommand = "command=attachVolume&id="+id+'&virtualMachineId='+virtualMachineId;
 	    	doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);		
