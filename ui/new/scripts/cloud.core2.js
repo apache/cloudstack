@@ -1419,10 +1419,10 @@ function handleError(xmlHttp, handleErrorCallback) {
 		$("#dialog_session_expired").dialog("open");
 	} 	
 	else if (xmlHttp.status == ERROR_INTERNET_NAME_NOT_RESOLVED) {
-		$("#dialog_error").text("Internet name can not be resolved").dialog("open");
+		$("#dialog_error_internet_not_resolved").dialog("open");
 	} 
 	else if (xmlHttp.status == ERROR_INTERNET_CANNOT_CONNECT) {
-		$("#dialog_error").text("Management server is not accessible").dialog("open");
+		$("#dialog_error_management_server_not_accessible").dialog("open");
 	} 
 	else if (xmlHttp.status == ERROR_VMOPS_ACCOUNT_ERROR && handleErrorCallback != undefined) {
 		handleErrorCallback();
@@ -1434,7 +1434,7 @@ function handleError(xmlHttp, handleErrorCallback) {
 		var start = xmlHttp.responseText.indexOf("h1") + 3;
 		var end = xmlHttp.responseText.indexOf("</h1");
 		var errorMsg = xmlHttp.responseText.substring(start, end);		
-		$("#dialog_error").html("<p><b>Encountered an error:</b></p><br/><p>"+sanitizeXSS(errorMsg)+"</p>").dialog("open");
+		$("#dialog_error").text(fromdb(errorMsg)).dialog("open");
 	}
 }
 

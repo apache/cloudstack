@@ -711,10 +711,19 @@ long milliseconds = new Date().getTime();
 	<div id="dialog_confirmation" title="Confirmation" style="display:none"></div>
 	<div id="dialog_info" title="Info" style="display:none"></div>
 	<div id="dialog_alert" title="Alert" style="display:none"></div>
-	<div id="dialog_error" title="Error" style="display:none"></div>
+	<div id="dialog_error" title="Error" style="display:none;color:red"></div>
 	<div id="dialog_session_expired" title="Session Expired" style="display:none">
 		<p>Your session has expired.  Please click 'OK' to return to the login screen.</p>
 	</div>
+	
+	<div id="dialog_error_internet_not_resolved" title="Error" style="display:none;color:red">
+	    <p style="color:red">Internet name can not be resolved</p>
+	</div>
+	
+	<div id="dialog_error_management_server_not_accessible" title="Error" style="display:none">
+	    <p style="color:red">Management server is not accessible</p>
+	</div>
+	
 	
     <!-- templates starts here-->
     <div class="leftmenu_content" id="leftmenu_submenu_template" style="display: none">

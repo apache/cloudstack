@@ -350,7 +350,7 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
                                     $rowContainer.show();                                                      
 							    } else if (result.jobstatus == 2) { //Fail
 							        $spinningWheel.hide(); 		
-						            $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");											    					    
+						            $("#dialog_alert").text(fromdb(result.jobresult)).dialog("open");											    					    
 							    }
 						    }
 					    },
@@ -587,7 +587,7 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 							        $spinningWheel.hide();                                   
                                     $rowContainerEdit.hide();  
                                     $rowContainer.show(); 
-								    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");											    					    
+								    $("#dialog_alert").text(fromdb(result.jobresult)).dialog("open");											    					    
 							    }
 						    }
 					    },
@@ -651,7 +651,7 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 									    refreshLbVmSelect($template, loadBalancerId);											    
 		                                $spinningWheel.hide();   
 									} else if (result.jobstatus == 2) { // Failed
-										$("#dialog_error").html("<p style='color:red'><b>Operation error:</b></p><br/><p style='color:red'>"+ sanitizeXSS(result.jobresult)+"</p>").dialog("open");
+										$("#dialog_error").text(fromdb(result.jobresult)).dialog("open");
 										$spinningWheel.hide();   
 									}
 								}
@@ -717,7 +717,7 @@ function lbVmObjToTemplate(obj, $template) {
 											$(this).remove();
 										});
 									} else if (result.jobstatus == 2) { // Failed													
-										$("#dialog_error").html("<p style='color:red'>We were unable to remove the Virtual Instance: "+vmName + " from your load balancer policy.  Please try again.").dialog("open");
+										$("#dialog_error").text(fromdb(result.jobresult)).dialog("open");
 										$spinningWheel.hide();   										
 									}
 								}
