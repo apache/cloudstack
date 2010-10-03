@@ -1,4 +1,11 @@
-<%@ page import="java.util.Date" %>
+<%@ page import="java.util.*" %>
+
+<%@ page import="com.cloud.utils.*" %>
+
+<%
+    Locale browserLocale = request.getLocale();
+    CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
+%>
 
 <%
 long milliseconds = new Date().getTime();
@@ -713,15 +720,21 @@ long milliseconds = new Date().getTime();
 	<div id="dialog_alert" title="Alert" style="display:none"></div>
 	<div id="dialog_error" title="Error" style="display:none;color:red"></div>
 	<div id="dialog_session_expired" title="Session Expired" style="display:none">
-		<p>Your session has expired.  Please click 'OK' to return to the login screen.</p>
+		<p>
+		    <%=t.t("your.session.has.expired")%>		    
+		</p>
 	</div>
 	
-	<div id="dialog_error_internet_not_resolved" title="Error" style="display:none;color:red">
-	    <p style="color:red">Internet name can not be resolved</p>
+	<div id="dialog_error_internet_not_resolved" title="Error" style="display:none">
+	    <p style="color:red">
+	        <%=t.t("internet.name.can.not.be.resolved")%>	        
+	    </p>
 	</div>
 	
 	<div id="dialog_error_management_server_not_accessible" title="Error" style="display:none">
-	    <p style="color:red">Management server is not accessible</p>
+	    <p style="color:red">
+	        <%=t.t("management.server.is.not.accessible")%>	        
+	     </p>
 	</div>
 	
 	

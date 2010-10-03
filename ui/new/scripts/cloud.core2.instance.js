@@ -70,6 +70,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         initDialog("dialog_change_name"); 
         initDialog("dialog_change_group"); 
         initDialog("dialog_change_service_offering"); 
+        initDialog("dialog_confirmation_change_root_password"); 
                       
         activateDialog($("#dialog_create_template").dialog({
 	        width: 400, //this dialog box has dropdown fields, so need to fix width as 400 instead of 600.
@@ -839,10 +840,9 @@ function doDetachISO($t, selectedItemsInMidMenu, vmListAPIMap) {
 }
 
 function doResetPassword($t, selectedItemsInMidMenu, vmListAPIMap) {   		
-	$("#dialog_confirmation")
-	.html("<p>Please confirm you want to change the ROOT password for your virtual machine(s)</p>")
+	$("#dialog_confirmation_change_root_password")	
 	.dialog('option', 'buttons', { 						
-		"Confirm": function() { 
+		"Yes": function() { 
 			$(this).dialog("close"); 
 			for(var id in selectedItemsInMidMenu) {	
 			    var $midMenuItem = selectedItemsInMidMenu[id];
@@ -861,7 +861,7 @@ function doResetPassword($t, selectedItemsInMidMenu, vmListAPIMap) {
 	            doActionForMidMenu(id, $t, apiCommand, vmListAPIMap);	
 	        }		
 		}, 
-		"Cancel": function() { 
+		"No": function() { 
 			$(this).dialog("close"); 
 		} 
 	}).dialog("open");

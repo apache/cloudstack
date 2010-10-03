@@ -1048,4 +1048,10 @@
 </div>
 <!-- Create template of disk volume dialog (end) -->
 
+<div id="dialog_confirmation_change_root_password" title="Confirmation" style="display:none">
+    <p>
+        <%=t.t("please.confirm.you.want.to.change.the.root.password.for.the.virtual.machine")%>        
+    </p>
+</div>
+
 <!--  ***** Dialogs (end) ***** -->
