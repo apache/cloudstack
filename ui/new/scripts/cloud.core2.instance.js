@@ -65,15 +65,9 @@ function clickInstanceGroupHeader($arrowIcon) {
         var $customDiskOfferingTemplate = $("#vm_popup_disk_offering_template_custom");
         var $existingDiskOfferingTemplate = $("#vm_popup_disk_offering_template_existing");
        	   
-       	initDialog("dialog_detach_iso_from_vm");
-       	    	    
-        activateDialog($("#dialog_attach_iso").dialog({ 
-		    width: 600,
-		    autoOpen: false,
-		    modal: true,
-		    zIndex: 2000
-	    }));   
-        
+       	initDialog("dialog_detach_iso_from_vm");       	
+       	initDialog("dialog_attach_iso");      
+                
         activateDialog($("#dialog_change_name").dialog({ 
 		    autoOpen: false,
 		    modal: true,

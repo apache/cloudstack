@@ -684,25 +684,6 @@
     </div>
 </div>
 <!-- VM Wizard - disk Offering template (end)-->
-<!-- Attach ISO Dialog -->
-<div id="dialog_attach_iso" title="Attach ISO" style="display: none">
-    <p>
-        Please specify the ISO you wish to attach to virtual instance.
-    </p>
-    <div class="dialog_formcontent">
-        <form action="#" method="post" id="form_acquire">
-        <ol>
-            <li>
-                <label for="user_name">
-                    Available ISO:</label>
-                <select class="select" name="attach_iso_select" id="attach_iso_select">
-                    <option value="none">No Available ISO</option>
-                </select>
-            </li>
-        </ol>
-        </form>
-    </div>
-</div>
 <!-- Change Name Dialog -->
 <div id="dialog_change_name" title="Change Name" style="display: none">
     <p>
@@ -1037,8 +1018,29 @@
 </div>
 <!--  router tab template (end) -->
 
-<!--  dialogs (begin) -->
+<!--  ***** Dialogs (begin) ***** -->
+<!-- Detach ISO Dialog -->
 <div id="dialog_detach_iso_from_vm" title="Confirmation" style="display:none">
     <p><%=t.t("please.confirm.you.want.to.detach.an.iso.from.the.virtual.machine")%></p>   
 </div>
-<!--  dialogs (end) -->
+
+<!-- Attach ISO Dialog -->
+<div id="dialog_attach_iso" title="Attach ISO" style="display: none">
+    <p> 
+        <%=t.t("please.specify.the.iso.you.wish.to.attach.to.virtual.machine")%>        
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+                <label for="user_name">
+                    <%=t.t("iso")%>:</label>
+                <select class="select" name="attach_iso_select" id="attach_iso_select">
+                    <option value="none"><%=t.t("no.available.iso")%></option>
+                </select>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+<!--  ***** Dialogs (end) ***** -->
