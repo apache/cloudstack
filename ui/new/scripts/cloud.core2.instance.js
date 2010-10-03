@@ -72,7 +72,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         initDialog("dialog_change_service_offering"); 
                       
         activateDialog($("#dialog_create_template").dialog({
-	        width: 400,
+	        width: 400, //this dialog box has dropdown fields, so need to fix width as 400 instead of 600.
 	        autoOpen: false,
 	        modal: true,
 	        zIndex: 2000
@@ -799,14 +799,18 @@ function doAttachISO($t, selectedItemsInMidMenu, vmListAPIMap) {
 	
 	$("#dialog_attach_iso")
 	.dialog('option', 'buttons', { 						
-		"OK": function() { 			    
-			$(this).dialog("close");
-			var isoId = $("#dialog_attach_iso #attach_iso_select").val();
-			if (isoId == "none") {
-				$("#dialog_alert").html("<p>There is no ISO file to attach to the virtual machine.</p>");
-				$("#dialog_alert").dialog("open");
-				return false;
-			}	
+		"OK": function() { 	
+		    var $thisDialog = $(this);
+		    				
+			var isValid = true;				
+			isValid &= validateDropDownBox("ISO", $thisDialog.find("#attach_iso_select"), $thisDialog.find("#attach_iso_select_errormsg"));	
+			if (!isValid) 
+			    return;
+			    
+			$thisDialog.dialog("close");		
+				
+			var isoId = $("#dialog_attach_iso #attach_iso_select").val();	
+			
 			for(var id in selectedItemsInMidMenu) {
 			   var apiCommand = "command=attachIso&virtualmachineid="+id+"&id="+isoId;
 			   doActionForMidMenu(id, $t, apiCommand, vmListAPIMap);	

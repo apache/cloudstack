@@ -931,6 +931,7 @@
                 <select class="select" id="attach_iso_select">
                     <option value="none"><%=t.t("no.available.iso")%></option>
                 </select>
+                <div id="attach_iso_select_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
             </li>
         </ol>
         </form>
