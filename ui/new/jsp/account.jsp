@@ -142,32 +142,34 @@
 
 
 <div id="dialog_resource_limits" title="Resource Limits" style="display:none">
-	<p>Please specify limits to the various resources.  A "-1" means the resource has no limits.</p>
+	<p>
+	    <%=t.t("please.specify.limits.to.the.various.resources.-1.means.the.resource.has.no.limits")%>	    
+	</p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form_acquire">
 			<ol>
 				<li>
-					<label for="user_name">Instance Limit:</label>
+					<label><%=t.t("instance.limit")%>:</label>
 					<input class="text" type="text" name="limits_vm" id="limits_vm" value="-1" />
 					<div id="limits_vm_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div> 
 				</li>
 				<li>
-					<label for="user_name">Public IP Limit:</label>
+					<label><%=t.t("public.ip.limit")%>:</label>
 					<input class="text" type="text" name="limits_ip" id="limits_ip" value="-1" />
 					<div id="limits_ip_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div> 
 				</li>
 				<li>
-					<label for="user_name">Disk Volume Limit:</label>
+					<label><%=t.t("disk.volume.limit")%>:</label>
 					<input class="text" type="text" name="limits_volume" id="limits_volume" value="-1" />
 					<div id="limits_volume_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div> 
 				</li>
 				<li>
-					<label for="user_name">Snapshot Limit:</label>
+					<label><%=t.t("snapshot.limit")%>:</label>
 					<input class="text" type="text" name="limits_snapshot" id="limits_snapshot" value="-1" />
 					<div id="limits_snapshot_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div> 
 				</li>
 				<li>
-					<label for="user_name">Template Limit:</label>
+					<label><%=t.t("template.limit")%>:</label>
 					<input class="text" type="text" name="limits_template" id="limits_template" value="-1" />
 					<div id="limits_template_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div> 
 				</li>
@@ -177,13 +179,19 @@
 </div>
 
 <div id="dialog_disable_account" title="Disable account" style="display:none">
-    <p>Please confirm you want to disable account that will prevent account access to the cloud and shut down all existing virtual instances.</p>
+    <p>
+        <%=t.t("please.confirm.you.want.to.disable.account.that.will.prevent.account.access.to.the.cloud.and.shut.down.all.existing.virtual.machines")%>        
+    </p>
 </div>
 
 <div id="dialog_lock_account" title="Lock account" style="display:none">
-    <p>Please confirm you want to lock account that will prevent account access to the cloud.</p>
+    <p>
+        <%=t.t("please.confirm.you.want.to.lock.account.that.will.prevent.account.access.to.the.cloud")%>        
+    </p>
 </div>
 
 <div id="dialog_enable_account" title="Enable account" style="display:none">
-    <p>Please confirm you want to enable account.</p>
+    <p>
+        <%=t.t("please.confirm.you.want.to.enable.account")%>        
+    </p>
 </div>

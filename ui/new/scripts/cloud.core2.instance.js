@@ -72,14 +72,8 @@ function clickInstanceGroupHeader($arrowIcon) {
         initDialog("dialog_change_service_offering"); 
         initDialog("dialog_confirmation_change_root_password");
         initDialog("dialog_confirmation_enable_ha");  
-        initDialog("dialog_confirmation_disable_ha");
-                      
-        activateDialog($("#dialog_create_template").dialog({
-	        width: 400, //this dialog box has dropdown fields, so need to fix width as 400 instead of 600.
-	        autoOpen: false,
-	        modal: true,
-	        zIndex: 2000
-        }));
+        initDialog("dialog_confirmation_disable_ha");            
+        initDialog("dialog_create_template", 400);  
 	
         //***** switch between different tabs (begin) ********************************************************************
         var tabArray = ["tab_details", "tab_volume", "tab_statistics", "tab_router"];

@@ -2,26 +2,10 @@ var systemAccountId = 1;
 var adminAccountId = 2;
 
 function afterLoadAccountJSP() {
-    activateDialog($("#dialog_resource_limits").dialog({ 
-		autoOpen: false,
-		modal: true,
-		zIndex: 2000
-	}));	
-	activateDialog($("#dialog_disable_account").dialog({ 
-		autoOpen: false,
-		modal: true,
-		zIndex: 2000
-	}));
-	activateDialog($("#dialog_lock_account").dialog({ 
-		autoOpen: false,
-		modal: true,
-		zIndex: 2000
-	}));
-	activateDialog($("#dialog_enable_account").dialog({ 
-		autoOpen: false,
-		modal: true,
-		zIndex: 2000
-	}));
+    initDialog("dialog_resource_limits");
+    initDialog("dialog_disable_account");
+    initDialog("dialog_lock_account");
+    initDialog("dialog_enable_account");      
 }
 
 function accountToMidmenu(jsonObj, $midmenuItem1) {  
