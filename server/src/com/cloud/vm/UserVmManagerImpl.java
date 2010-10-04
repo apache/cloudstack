@@ -1952,21 +1952,22 @@ public class UserVmManagerImpl implements UserVmManager {
     		}
 
     		List<FirewallRuleVO> forwardingRules = null;
-    		try 
-    		{
-    			forwardingRules = _rulesDao.listByPrivateIp(privateIpAddress);
-    			
-    			for(FirewallRuleVO rule: forwardingRules)
-    			{
-    				_networkMgr.deleteRule(rule.getId(), Long.valueOf(User.UID_SYSTEM), vm.getAccountId());
-    				if(s_logger.isDebugEnabled())
-    					s_logger.debug("Rule "+rule.getId()+" for vm:"+vm.getId()+" is deleted successfully during expunge operation");
-    			}
-                
-            } catch (Exception e) {
-            	s_logger.info("VM " + vmId +" expunge failed due to " + e.getMessage());
+			forwardingRules = _rulesDao.listByPrivateIp(privateIpAddress);
+			
+			for(FirewallRuleVO rule: forwardingRules)
+			{
+				try
+				{
+					_networkMgr.deleteRule(rule.getId(), Long.valueOf(User.UID_SYSTEM), Long.valueOf(User.UID_SYSTEM));
+					if(s_logger.isDebugEnabled())
+						s_logger.debug("Rule "+rule.getId()+" for vm:"+vm.getName()+" is deleted successfully during expunge operation");
+				}
+				catch(Exception e)
+				{
+					s_logger.warn("Failed to delete rule:"+rule.getId()+" for vm:"+vm.getName());
+				}
 			}
-    		
+                    		
     		
             List<VolumeVO> vols = null;
             try {
