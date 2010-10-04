@@ -140,6 +140,16 @@
                     </div>
                 </div>
             </div> 
+            <div class="grid_rows odd">
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles">
+                        <%=t.t("crossZones")%>:</div>
+                </div>
+                <div class="grid_row_cell" style="width: 79%;">
+                    <div class="row_celltitles" id="crossZones">
+                    </div>
+                </div>
+            </div>
         </div>        
         <div class="grid_botactionpanel">
         	<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
@@ -252,3 +262,16 @@
 	</div>
 </div>
 <!-- Create VM from template/ISO (end) -->
+
+<div id="dialog_confirmation_delete_iso_all_zones" title="Confirmation" style="display:none">
+    <p>
+        <%=t.t("the.ISO.is.used.by.all.zones.please.confirm.you.want.to.delete.it.from.all.zones")%>
+    </p>
+</div>
+
+<div id="dialog_confirmation_delete_iso" title="Confirmation" style="display:none">
+    <p>
+        <%=t.t("please.confirm.you.want.to.delete.the.ISO")%>
+    </p>
+</div>
+

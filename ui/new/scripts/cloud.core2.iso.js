@@ -151,6 +151,9 @@ function afterLoadIsoJSP() {
 	});		
     
     //initialize dialog box ***
+    initDialog("dialog_confirmation_delete_iso_all_zones");
+    initDialog("dialog_confirmation_delete_iso");
+    
 	activateDialog($("#dialog_copy_iso").dialog({ 
 		width:300,
 		autoOpen: false,
@@ -213,13 +216,14 @@ function isoJsonToDetailsTab(jsonObj) {
     
     if(jsonObj.size != null)
 	    $detailsTab.find("#size").text(convertBytes(parseInt(jsonObj.size)));       
-    
+              
     var status = "Ready";
 	if (jsonObj.isready == "false")
 		status = jsonObj.isostatus;	
 	$detailsTab.find("#status").text(status); 
-       
-    setBooleanField(jsonObj.bootable, $detailsTab.find("#bootable"));	     
+              
+    setBooleanField(jsonObj.bootable, $detailsTab.find("#bootable"));	
+    setBooleanField(jsonObj.crossZones, $detailsTab.find("#crossZones"));	     
     setDateField(jsonObj.created, $detailsTab.find("#created"));	  
     
     
@@ -348,14 +352,13 @@ function doDeleteIso($actionLink, listAPIMap, $detailsTab) {
 	if (zoneId != null) 
 		moreCriteria.push("&zoneid="+zoneId);	
 	
-	var htmlMsg; 
+	var $dialog1;
 	if(jsonObj.crossZones == "true")
-	    htmlMsg = "<p>ISO <b>"+name+"</b> is used by all zones. Please confirm you want to delete it from all zones.</p>";
+	    $dialog1 = $("#dialog_confirmation_delete_iso_all_zones");
 	else
-	    htmlMsg = "<p>Please confirm you want to delete ISO <b>"+name+"</b>.</p>";
-					
-	$("#dialog_confirmation")
-	.html(htmlMsg)
+	    $dialog1 = $("#dialog_confirmation_delete_iso");	
+	
+	$dialog1	
 	.dialog('option', 'buttons', { 					
 		"Confirm": function() { 			
 			$(this).dialog("close");			
