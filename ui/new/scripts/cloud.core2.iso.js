@@ -98,7 +98,7 @@ function afterLoadIsoJSP() {
 		    var zones = json.listzonesresponse.zone;	 			     			    	
 		    if (zones != null && zones.length > 0) {
 		        for (var i = 0; i < zones.length; i++) {
-			        addIsoZoneField.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 			        
+			        addIsoZoneField.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 			        
 			        g_zoneIds.push(zones[i].id);
 			        g_zoneNames.push(zones[i].name);			       
 		        }
@@ -115,7 +115,7 @@ function afterLoadIsoJSP() {
 				var osTypeDropDownAdd = $("#dialog_add_iso #add_iso_os_type").empty();
 				var osTypeDropdownEdit = $detailsTab.find("#ostypename_edit").empty();
 				for (var i = 0; i < types.length; i++) {
-					var html = "<option value='" + types[i].id + "'>" + types[i].description + "</option>";
+					var html = "<option value='" + types[i].id + "'>" + fromdb(types[i].description) + "</option>";
 					osTypeDropDownAdd.append(html);			
 					osTypeDropdownEdit.append(html);					
 				}
@@ -131,7 +131,7 @@ function afterLoadIsoJSP() {
 	        if(items != null && items.length > 0 ) {
 	            var serviceOfferingField = $("#dialog_create_vm_from_iso #service_offering").empty();
 	            for(var i = 0; i < items.length; i++)		        
-	                serviceOfferingField.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>");
+	                serviceOfferingField.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
 	        }		        
 	    }
 	});		
@@ -144,7 +144,7 @@ function afterLoadIsoJSP() {
 	        if(items != null && items.length > 0 ) {
 	            var diskOfferingField = $("#dialog_create_vm_from_iso #disk_offering").empty();
 	            for(var i = 0; i < items.length; i++)		        
-	                diskOfferingField.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>");
+	                diskOfferingField.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
 	        }		  
 	        
 	    }
@@ -153,25 +153,9 @@ function afterLoadIsoJSP() {
     //initialize dialog box ***
     initDialog("dialog_confirmation_delete_iso_all_zones");
     initDialog("dialog_confirmation_delete_iso");
-    
-	activateDialog($("#dialog_copy_iso").dialog({ 
-		width:300,
-		autoOpen: false,
-		modal: true,
-		zIndex: 2000
-	}));	
-	activateDialog($("#dialog_create_vm_from_iso").dialog({ 
-		width:300,
-		autoOpen: false,
-		modal: true,
-		zIndex: 2000
-	}));	
-	activateDialog($("#dialog_add_iso").dialog({ 
-		width:450,
-		autoOpen: false,
-		modal: true,
-		zIndex: 2000
-	}));
+    initDialog("dialog_copy_iso", 300);
+    initDialog("dialog_create_vm_from_iso", 450);
+    initDialog("dialog_add_iso", 450);   
 }
 
 function isoGetMidmenuId(jsonObj) {
@@ -385,15 +369,9 @@ function doCopyIso($actionLink, listAPIMap, $detailsTab) {
 	var jsonObj = $detailsTab.data("jsonObj");
 	var id = jsonObj.id;
 	var name = jsonObj.name;			
-	var sourceZoneId = jsonObj.zoneid;
-				
-	populateZoneFieldExcludeSourceZone($("#dialog_copy_iso #copy_iso_zone"), sourceZoneId);
-	
-	$("#dialog_copy_iso #copy_iso_name_text").text(name);  //ISO name
-	
-	var sourceZoneName = jsonObj.zonename;
-	$("#dialog_copy_iso #copy_iso_source_zone_text").text(sourceZoneName); // source zone
-		
+	var sourceZoneId = jsonObj.zoneid;				
+	populateZoneFieldExcludeSourceZone($("#dialog_copy_iso #copy_iso_zone"), sourceZoneId);		
+			
 	$("#dialog_copy_iso")
 	.dialog('option', 'buttons', {				    
 	    "OK": function() {				       
@@ -419,11 +397,9 @@ function doCreateVMFromIso($actionLink, listAPIMap, $detailsTab) {
     var jsonObj = $detailsTab.data("jsonObj");	
 	var id = jsonObj.id;		
 	var name = jsonObj.name;				
-	var zoneId = jsonObj.zoneid;		
-					
+	var zoneId = jsonObj.zoneid;
 	var createVmDialog = $("#dialog_create_vm_from_iso");				
-	createVmDialog.find("#p_name").text(name);
-		
+			
 	createVmDialog
 	.dialog('option', 'buttons', {			    
 	    "Create": function() {
