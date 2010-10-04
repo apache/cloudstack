@@ -498,7 +498,7 @@ $(document).ready(function() {
 						var zoneSelect = $("#capacity_zone_select").empty();	
 						if (zones != null && zones.length > 0) {
 							for (var i = 0; i < zones.length; i++) {
-								zoneSelect.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 								
+								zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 								
 								if(noPods) {
 								    $.ajax({
 								data: createURL("command=listPods&zoneId="+zones[i].id+"&response=json"),
@@ -683,7 +683,7 @@ $(document).ready(function() {
 							if (pods != null && pods.length > 0) {
 								podSelect.append("<option value='All'>All</option>"); 
 							    for (var i = 0; i < pods.length; i++) {
-								    podSelect.append("<option value='" + pods[i].name + "'>" + sanitizeXSS(pods[i].name) + "</option>"); 
+								    podSelect.append("<option value='" + pods[i].name + "'>" + fromdb(pods[i].name) + "</option>"); 
 							    }
 							}
 							$("#capacity_pod_select").change();
@@ -704,7 +704,7 @@ $(document).ready(function() {
 							for (var i = 0; i < length; i++) {
 								var errorTemplate = $("#recent_error_template").clone(true);
 								errorTemplate.find("#db_error_type").text(toAlertType(alerts[i].type));
-								errorTemplate.find("#db_error_msg").append(sanitizeXSS(alerts[i].description));											
+								errorTemplate.find("#db_error_msg").append(fromdb(alerts[i].description));											
 								setDateField(alerts[i].sent, errorTemplate.find("#db_error_date"));															
 								alertGrid.append(errorTemplate.show());
 							}
@@ -724,7 +724,7 @@ $(document).ready(function() {
 							for (var i = 0; i < length; i++) {
 								var errorTemplate = $("#recent_error_template").clone(true);
 								errorTemplate.find("#db_error_type").text("Host - Alert State");
-								errorTemplate.find("#db_error_msg").append("Host - <b>" + sanitizeXSS(alerts[i].name) + "</b> has been detected in Alert state.");								
+								errorTemplate.find("#db_error_msg").append("Host - <b>" + fromdb(alerts[i].name) + "</b> has been detected in Alert state.");								
 								setDateField(alerts[i].disconnected, errorTemplate.find("#db_error_date"));											
 								alertGrid.append(errorTemplate.show());
 							}
@@ -802,7 +802,7 @@ $(document).ready(function() {
 							for (var i = 0; i < length; i++) {
 								var errorTemplate = $("#recent_error_template").clone(true);
 								errorTemplate.find("#db_error_type").text(events[i].type);
-								errorTemplate.find("#db_error_msg").text(sanitizeXSS(events[i].description));								
+								errorTemplate.find("#db_error_msg").text(fromdb(events[i].description));								
 								setDateField(events[i].created, errorTemplate.find("#db_error_date"));																
 								errorGrid.append(errorTemplate.show());
 							}
@@ -862,7 +862,7 @@ $(document).ready(function() {
 									for (var i = 0; i < length; i++) {
 										var errorTemplate = $("#recent_error_template").clone(true);
 										errorTemplate.find("#db_error_type").text(events[i].type);
-										errorTemplate.find("#db_error_msg").text(sanitizeXSS(events[i].description));										
+										errorTemplate.find("#db_error_msg").text(fromdb(events[i].description));										
 										setDateField(events[i].created, errorTemplate.find("#db_error_date"));									
 										errorGrid.append(errorTemplate.show());
 									}

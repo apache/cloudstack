@@ -373,7 +373,7 @@ function submenuContentEventBinder(submenuContent, listFunction) {
 			    zoneSelect.append("<option value=''></option>"); 
 			    if (zones != null && zones.length > 0) {
 			        for (var i = 0; i < zones.length; i++) {
-				        zoneSelect.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 
+				        zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
 			        }
 			    }
 		    }
@@ -400,7 +400,7 @@ function submenuContentEventBinder(submenuContent, listFunction) {
 				            podSelect.empty();			            
 				            if (pods != null && pods.length > 0) {
 				                for (var i = 0; i < pods.length; i++) {
-					                podSelect.append("<option value='" + pods[i].id + "'>" + sanitizeXSS(pods[i].name) + "</option>"); 
+					                podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 
 				                }
 				            }
 			            }
@@ -423,7 +423,7 @@ function submenuContentEventBinder(submenuContent, listFunction) {
 			    var domains = json.listdomainsresponse.domain;			 
 			    if (domains != null && domains.length > 0) {
 			        for (var i = 0; i < domains.length; i++) {
-				        domainSelect.append("<option value='" + domains[i].id + "'>" + sanitizeXSS(domains[i].name) + "</option>"); 
+				        domainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 
 			        }
 			    }
 		    }
@@ -441,7 +441,7 @@ function submenuContentEventBinder(submenuContent, listFunction) {
 			    var items = json.listvirtualmachinesresponse.virtualmachine;		 
 			    if (items != null && items.length > 0) {
 			        for (var i = 0; i < items.length; i++) {
-				        vmSelect.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>"); 
+				        vmSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>"); 
 			        }
 			    }
 		    }
@@ -632,7 +632,7 @@ function noNull(val) {
 }
 
 // Prevent cross-site-script(XSS) attack. 
-// used right before adding user input to the DOM tree. e.g. DOM_element.html(sanitizeXSS(user_input));  
+// used right before adding user input to the DOM tree. e.g. DOM_element.html(fromdb(user_input));  
 function sanitizeXSS(val) {     
     if(val == null || typeof(val) != "string")
         return val; 
@@ -643,16 +643,16 @@ function sanitizeXSS(val) {
 
 function getVmName(p_vmName, p_vmDisplayname) {
     if(p_vmDisplayname == null)
-        return sanitizeXSS(p_vmName);
+        return fromdb(p_vmName);
     var vmName = null;
 	if (isAdmin()) {
 		if (p_vmDisplayname != p_vmName) {
-			vmName = p_vmName + "(" + sanitizeXSS(p_vmDisplayname) + ")";
+			vmName = p_vmName + "(" + fromdb(p_vmDisplayname) + ")";
 		} else {
 			vmName = p_vmName;
 		}
 	} else {
-		vmName = sanitizeXSS(p_vmDisplayname);
+		vmName = fromdb(p_vmDisplayname);
 	}
 	return vmName;
 }
@@ -680,7 +680,7 @@ function handleError(xmlHttp, handleErrorCallback) {
 		var start = xmlHttp.responseText.indexOf("h1") + 3;
 		var end = xmlHttp.responseText.indexOf("</h1");
 		var errorMsg = xmlHttp.responseText.substring(start, end);		
-		$("#dialog_error").html("<p><b>Encountered an error:</b></p><br/><p>"+sanitizeXSS(errorMsg)+"</p>").dialog("open");
+		$("#dialog_error").html("<p><b>Encountered an error:</b></p><br/><p>"+fromdb(errorMsg)+"</p>").dialog("open");
 	}
 }
 

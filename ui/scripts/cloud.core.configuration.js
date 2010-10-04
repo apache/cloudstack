@@ -69,11 +69,11 @@ function showConfigurationTab() {
 	});
 	
 	function globalJSONToTemplate(json, template) {
-	    template.data("name", fromdb(json.name)).attr("id", "global_"+noNull(json.name));
+	    template.data("name", fromdb(json.name)).attr("id", "global_"+fromdb(json.name));
 	    (index++ % 2 == 0)? template.addClass("smallrow_even"): template.addClass("smallrow_odd");		
-		template.find("#global_name").text(noNull(json.name));
-		template.find("#global_value").text(noNull(json.value));
-		template.find("#global_desc").text(noNull(json.description));
+		template.find("#global_name").text(fromdb(json.name));
+		template.find("#global_value").text(fromdb(json.value));
+		template.find("#global_desc").text(fromdb(json.description));
 	}
 		
 	$("#submenu_content_global .grid_container .grid_header .grid_genheader_cell").bind("click", function(event) {  	

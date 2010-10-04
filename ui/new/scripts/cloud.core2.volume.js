@@ -62,7 +62,7 @@ function afterLoadVolumeJSP() {
 		    var volumeZoneSelect = $("#dialog_add_volume").find("#volume_zone").empty();			
 		    if (zones != null && zones.length > 0) {
 		        for (var i = 0; i < zones.length; i++) {
-			        volumeZoneSelect.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 
+			        volumeZoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
 		        }
 		    }				
 	    }
@@ -77,7 +77,7 @@ function afterLoadVolumeJSP() {
 		    if (offerings != null && offerings.length > 0) {								
 		        if (offerings != null && offerings.length > 0) {
 		            for (var i = 0; i < offerings.length; i++) 				
-			            volumeDiskOfferingSelect.append("<option value='" + offerings[i].id + "'>" + sanitizeXSS(offerings[i].displaytext) + "</option>"); 		
+			            volumeDiskOfferingSelect.append("<option value='" + offerings[i].id + "'>" + fromdb(offerings[i].displaytext) + "</option>"); 		
 			    }	
 			}	
 	    }

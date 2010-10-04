@@ -360,7 +360,7 @@ function populateZoneFieldExcludeSourceZone(zoneField, excludeZoneId) {
     if (g_zoneIds != null && g_zoneIds.length > 0) {
         for (var i = 0; i < g_zoneIds.length; i++) {
             if(g_zoneIds[i]	!= excludeZoneId)			            
-	            zoneField.append("<option value='" + g_zoneIds[i] + "'>" + sanitizeXSS(g_zoneNames[i]) + "</option>"); 			        			       
+	            zoneField.append("<option value='" + g_zoneIds[i] + "'>" + fromdb(g_zoneNames[i]) + "</option>"); 			        			       
         }
     }			    
 }

@@ -96,7 +96,7 @@ function afterLoadTemplateJSP() {
 		    var zones = json.listzonesresponse.zone;	 			     			    	
 		    if (zones != null && zones.length > 0) {
 		        for (var i = 0; i < zones.length; i++) {
-			        addTemplateZoneField.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 			        
+			        addTemplateZoneField.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 			        
 			        g_zoneIds.push(zones[i].id);
 			        g_zoneNames.push(zones[i].name);			       
 		        }
@@ -131,7 +131,7 @@ function afterLoadTemplateJSP() {
 	        if(items != null && items.length > 0 ) {
 	            var serviceOfferingField = $("#dialog_create_vm_from_template #service_offering").empty();
 	            for(var i = 0; i < items.length; i++)		        
-	                serviceOfferingField.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>");
+	                serviceOfferingField.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
 	        }		        
 	    }
 	});		
@@ -145,7 +145,7 @@ function afterLoadTemplateJSP() {
 	            var diskOfferingField = $("#dialog_create_vm_from_template #disk_offering").empty();
 	            diskOfferingField.append("<option value=''>No disk offering</option>");
 	            for(var i = 0; i < items.length; i++)		        
-	                diskOfferingField.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>");
+	                diskOfferingField.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
 	        }		  
 	        
 	    }
@@ -465,7 +465,7 @@ function populateZoneFieldExcludeSourceZone(zoneField, excludeZoneId) {
     if (g_zoneIds != null && g_zoneIds.length > 0) {
         for (var i = 0; i < g_zoneIds.length; i++) {
             if(g_zoneIds[i]	!= excludeZoneId)			            
-	            zoneField.append("<option value='" + g_zoneIds[i] + "'>" + sanitizeXSS(g_zoneNames[i]) + "</option>"); 			        			       
+	            zoneField.append("<option value='" + g_zoneIds[i] + "'>" + fromdb(g_zoneNames[i]) + "</option>"); 			        			       
         }
     }			    
 }

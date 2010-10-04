@@ -254,17 +254,17 @@ function showStorageTab(domainId, targetTab) {
 			template.data("vmid", json.virtualmachineid);
 			template.data("zoneId", json.zoneid);
 		    
-		    template.find("#volume_id").text(noNull(json.id));
-		    template.find("#volume_name").text(noNull(json.name));
-			template.find("#volume_zone").text(noNull(json.zonename));
-		    template.find("#volume_account").text(noNull(json.account));
-		    template.find("#volume_deviceid").text(noNull(json.deviceid));
-		    template.find("#volume_domain").text(noNull(json.domain));
-		    template.find("#volume_hostname").text(noNull(json.storage));
-		    template.find("#volume_path").text(noNull(json.path));
-		    template.find("#volume_state").text(noNull(json.state));
+		    template.find("#volume_id").text(fromdb(json.id));
+		    template.find("#volume_name").text(fromdb(json.name));
+			template.find("#volume_zone").text(fromdb(json.zonename));
+		    template.find("#volume_account").text(fromdb(json.account));
+		    template.find("#volume_deviceid").text(fromdb(json.deviceid));
+		    template.find("#volume_domain").text(fromdb(json.domain));
+		    template.find("#volume_hostname").text(fromdb(json.storage));
+		    template.find("#volume_path").text(fromdb(json.path));
+		    template.find("#volume_state").text(fromdb(json.state));
 		    template.find("#volume_size").text((json.size == "0") ? "" : convertBytes(json.size));		    
-		    template.find("#volume_type").text(noNull(json.type) + " (" + noNull(json.storagetype) + " storage)");
+		    template.find("#volume_type").text(fromdb(json.type) + " (" + fromdb(json.storagetype) + " storage)");
 			if (json.virtualmachineid == null) {
 				template.find("#volume_vmname").text("detached");
 			} else {

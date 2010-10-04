@@ -167,7 +167,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 				        for (var i = 0; i < offerings.length; i++) {	
 					        var $t = $existingDiskOfferingTemplate.clone(); 
 					        $t.find("input:radio").attr("name","data_disk_offering_radio").val(offerings[i].id).removeAttr("checked");	 	
-					        $t.find("#name").text(fromdb(noNull(offerings[i].name)));
+					        $t.find("#name").text(fromdb(offerings[i].name));
 					        $t.find("#description").text(fromdb(offerings[i].displaytext)); 	 
 					        $dataDiskOfferingContainer.append($t.show());	
 				        }

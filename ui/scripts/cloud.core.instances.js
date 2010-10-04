@@ -2351,15 +2351,15 @@ function showInstancesTab(p_domainId, p_account) {
 			template.addClass("row_odd");
 		else 
 			template.addClass("row_even");			
-		template.data("routerId", json.id).data("routerName", noNull(json.name)).attr("id", "router"+json.id);		
-        template.find("#router_zonename").text(noNull(json.zonename));
-		template.find("#router_name").text(noNull(json.name));
-		template.find("#router_public_ip").text(noNull(json.publicip));			
-		template.find("#router_private_ip").text(noNull(json.privateip));
-		template.find("#router_guest_ip").text(noNull(json.guestipaddress));			
-		template.find("#router_host").text(noNull(json.hostname));			
-		template.find("#router_domain").text(noNull(json.networkdomain));
-		template.find("#router_owner").text(noNull(json.account));			
+		template.data("routerId", json.id).data("routerName", fromdb(json.name)).attr("id", "router"+json.id);		
+        template.find("#router_zonename").text(fromdb(json.zonename));
+		template.find("#router_name").text(fromdb(json.name));
+		template.find("#router_public_ip").text(fromdb(json.publicip));			
+		template.find("#router_private_ip").text(fromdb(json.privateip));
+		template.find("#router_guest_ip").text(fromdb(json.guestipaddress));			
+		template.find("#router_host").text(fromdb(json.hostname));			
+		template.find("#router_domain").text(fromdb(json.networkdomain));
+		template.find("#router_owner").text(fromdb(json.account));			
 		setDateField(json.created, template.find("#router_created"));
 					
 		// State
@@ -2447,15 +2447,15 @@ function showInstancesTab(p_domainId, p_account) {
 			template.addClass("row_odd");
 		else 
 			template.addClass("row_even");   
-	    template.data("consoleId", json.id).data("consoleName", noNull(json.name)).attr("id", "console"+json.id);	
-		template.find("#console_type").text(noNull(json.systemvmtype));	  
-	    template.find("#console_name").text(noNull(json.name));	  
-		template.find("#console_zone").text(noNull(json.zonename));
-	    template.find("#console_active_session").text(noNull(json.activeviewersessions));	 
-	    template.find("#console_public_ip").text(noNull(json.publicip));		    
-	    template.find("#console_private_ip").text(noNull(json.privateip));   
-	    template.find("#console_host").text(noNull(json.hostname));		   
-	    template.find("#console_gateway").text(noNull(json.gateway)); 		    
+	    template.data("consoleId", json.id).data("consoleName", fromdb(json.name)).attr("id", "console"+json.id);	
+		template.find("#console_type").text(fromdb(json.systemvmtype));	  
+	    template.find("#console_name").text(fromdb(json.name));	  
+		template.find("#console_zone").text(fromdb(json.zonename));
+	    template.find("#console_active_session").text(fromdb(json.activeviewersessions));	 
+	    template.find("#console_public_ip").text(fromdb(json.publicip));		    
+	    template.find("#console_private_ip").text(fromdb(json.privateip));   
+	    template.find("#console_host").text(fromdb(json.hostname));		   
+	    template.find("#console_gateway").text(fromdb(json.gateway)); 		    
 	    setDateField(json.created, template.find("#console_created"));
 	   			
 		// State			
