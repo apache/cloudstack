@@ -52,7 +52,6 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import com.cloud.host.Status;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.storage.DiskOfferingVO;
@@ -422,7 +421,6 @@ public class DatabaseConfig {
             // Check pod CIDRs against each other, and against the guest ip network/netmask
             pzc.checkAllPodCidrSubnets();
             
-            txn.commit();
         } catch (Exception ex) {
         	System.out.print("ERROR IS"+ex);
             s_logger.error("error", ex);
