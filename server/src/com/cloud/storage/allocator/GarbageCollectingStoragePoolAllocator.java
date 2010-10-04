@@ -38,7 +38,7 @@ import com.cloud.vm.VMInstanceVO;
 
 @Local(value=StoragePoolAllocator.class)
 public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAllocator {
-    private static final Logger s_logger = Logger.getLogger(LocalStoragePoolAllocator.class);
+    private static final Logger s_logger = Logger.getLogger(GarbageCollectingStoragePoolAllocator.class);
     
     StoragePoolAllocator _firstFitStoragePoolAllocator;
     StoragePoolAllocator _localStoragePoolAllocator;

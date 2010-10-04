@@ -77,6 +77,9 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     @Enumerated(value=EnumType.STRING)
     State state;
     
+    @Column(name="dns")
+    String dns;
+    
     public NetworkConfigurationVO() {
     }
     
@@ -183,6 +186,14 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     @Override
     public long getDataCenterId() {
         return dataCenterId;
+    }
+    
+    public String getDns() {
+        return dns;
+    }
+    
+    public void setDns(String dns) {
+        this.dns = dns;
     }
     
     @Override

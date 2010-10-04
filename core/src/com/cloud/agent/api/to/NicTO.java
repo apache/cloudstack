@@ -8,6 +8,8 @@ public class NicTO extends NetworkTO {
     Integer controlPort;
     Integer networkRateMbps;
     Integer networkRateMulticastMbps;
+    String bootParams;
+    boolean defaultNic;
 
     public NicTO() {
         super();
@@ -32,5 +34,26 @@ public class NicTO extends NetworkTO {
     
     public Integer getNetworkRateMulticastMbps() {
         return networkRateMulticastMbps;
+    }
+    
+    public String getBootParams() {
+        return bootParams;
+    }
+    
+    public void setBootParams(String bootParams) {
+        this.bootParams = bootParams;
+    }
+    
+    public boolean isDefaultNic() {
+        return defaultNic;
+    }
+    
+    public void setDefaultNic(boolean defaultNic) {
+        this.defaultNic = defaultNic;
+    }
+    
+    @Override
+    public String toString() {
+        return new StringBuilder("[Nic:").append(type).append("-").append(ip).append("-").append(broadcastUri).append("]").toString();
     }
 }

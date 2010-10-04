@@ -122,8 +122,6 @@ import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.StoragePoolInfo;
-import com.cloud.agent.api.ValidateSnapshotAnswer;
-import com.cloud.agent.api.ValidateSnapshotCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
@@ -139,7 +137,6 @@ import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
-
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
@@ -235,6 +232,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     protected IAgentControl _agentControl;
     protected boolean _isRemoteAgent = false;
     
+    int _userVMCap = 0;
+    final int _maxWeight = 256;
 
     protected final XenServerHost _host = new XenServerHost();
 
@@ -670,6 +669,10 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
     
     protected VIF createVif(Connection conn, String vmName, VM vm, NicTO nic) throws XmlRpcException, XenAPIException {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Creating VIF for " + vmName + " on nic " + nic);
+        }
+        
         VIF.Record vifr = new VIF.Record();
         vifr.VM = vm;
         vifr.device = Integer.toString(nic.getDeviceId());
@@ -677,10 +680,13 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         
         Pair<Network, String> network = getNetworkForTraffic(conn, nic.getType());
         if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
-            vifr.network = enableVlanNetwork(conn, nic.getVlan(), network.first(), network.second());
-        } else {
+            URI broadcastUri = nic.getBroadcastUri();
+            assert broadcastUri.getScheme().equals(BroadcastDomainType.Vlan.scheme());
+            long vlan = Long.parseLong(broadcastUri.getHost());
+            vifr.network = enableVlanNetwork(conn, vlan, network.first(), network.second());
+        } else if (nic.getBroadcastType() == BroadcastDomainType.Native || nic.getBroadcastType() == BroadcastDomainType.LinkLocal) {
             vifr.network = network.first();
-        }
+        } 
         
         if (nic.getNetworkRateMbps() != null) {
             vifr.qosAlgorithmType = "ratelimit";
@@ -725,16 +731,10 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
     }
     
-    protected VBD createVbd(Connection conn, String vmName, VM vm, VolumeTO volume, boolean patch) throws XmlRpcException, XenAPIException {
+    protected VBD createVbd(Connection conn, VolumeTO volume, String vmName, VM vm) throws XmlRpcException, XenAPIException {
         VolumeType type = volume.getType();
         
         VDI vdi = mount(conn, vmName, volume);
-        
-        if (patch) {
-            if (!patchSystemVm(vdi, vmName)) {
-                throw new CloudRuntimeException("Unable to patch system vm");
-            }
-        }
         
         VBD.Record vbdr = new VBD.Record();
         vbdr.VM = vm;
@@ -761,7 +761,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return vbd;
     }
     
-    protected Pair<VM, String> createVmFromTemplate(Connection conn, VirtualMachineTO vmSpec, Host host) throws XenAPIException, XmlRpcException {
+    protected VM createVmFromTemplate(Connection conn, VirtualMachineTO vmSpec, Host host) throws XenAPIException, XmlRpcException {
         String guestOsTypeName = getGuestOsType(vmSpec.getOs());
         Set<VM> templates = VM.getByNameLabel(conn, guestOsTypeName);
         assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
@@ -785,16 +785,27 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         setMemory(conn, vm, vmSpec.getMinRam());
         vm.setVCPUsAtStartup(conn, (long)vmSpec.getCpus());
         vm.setVCPUsMax(conn, (long)vmSpec.getCpus());
-        vm.setVCPUsNumberLive(conn, (long)vmSpec.getCpus());
         
         Map<String, String> vcpuParams = new HashMap<String, String>();
 
-        if (vmSpec.getWeight() != null) {
-            vcpuParams.put("weight", Integer.toString(vmSpec.getWeight()));
+        Integer speed = vmSpec.getSpeed();
+        if (speed != null) {
+            int utilization = _userVMCap; //cpu_cap
+            //Configuration cpu.uservm.cap is not available in default installation. Using this parameter is not encouraged
+            
+            int cpuWeight = _maxWeight; //cpu_weight
+            
+            // weight based allocation
+            cpuWeight = (int)((speed*0.99) / _host.speed * _maxWeight);
+            if (cpuWeight > _maxWeight) {
+                cpuWeight = _maxWeight;
+            }
+            
+            vcpuParams.put("weight", Integer.toString(cpuWeight));
+            vcpuParams.put("cap", Integer.toString(utilization));
+            
         }
-        if (vmSpec.getUtilization() != null) {
-            vcpuParams.put("cap", Integer.toString(vmSpec.getUtilization()));
-        }
+        
         if (vcpuParams.size() > 0) {
             vm.setVCPUsParams(conn, vcpuParams);
         }
@@ -824,7 +835,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             }
         }
         
-        return new Pair<VM, String>(vm, vmr.uuid);
+        return vm;
     }
     
     protected String handleVmStartFailure(String vmName, VM vm, String message, Throwable th) {
@@ -875,6 +886,20 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return msg;
     }
     
+    protected VBD createPatchVbd(Connection conn, String vmName, VM vm) throws XmlRpcException, XenAPIException {
+        VBD.Record cdromVBDR = new VBD.Record();
+        cdromVBDR.VM = vm;
+        cdromVBDR.empty = true;
+        cdromVBDR.bootable = false;
+        cdromVBDR.userdevice = "3";
+        cdromVBDR.mode = Types.VbdMode.RO;
+        cdromVBDR.type = Types.VbdType.CD;
+        VBD cdromVBD = VBD.create(conn, cdromVBDR);
+        cdromVBD.insert(conn, VDI.getByUuid(conn, _host.systemvmisouuid));
+        
+        return cdromVBD;
+    }
+    
     protected Start2Answer execute(Start2Command cmd) {
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
         String vmName = vmSpec.getName(); 
@@ -888,78 +913,23 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 _vms.put(vmName, State.Starting);
             }
             
-            Pair<VM, String> v = createVmFromTemplate(conn, vmSpec, host);
-            vm = v.first();
+            vm = createVmFromTemplate(conn, vmSpec, host);
             
             for (VolumeTO disk : vmSpec.getDisks()) {
-                createVbd(conn, vmName, vm, disk, disk.getType() == VolumeType.ROOT && vmSpec.getType() != VirtualMachine.Type.User);
+                createVbd(conn, disk, vmName, vm);
+            }
+            
+            if (vmSpec.getType() != VirtualMachine.Type.User) {
+                createPatchVbd(conn, vmName, vm);
             }
             
             NicTO controlNic = null;
-            for (NicTO nic : vmSpec.getNetworks()) {
-                if (nic.getControlPort() != null) {
+            for (NicTO nic : vmSpec.getNics()) {
+                if (nic.getType() == TrafficType.Control) {
                     controlNic = nic;
                 }
                 createVif(conn, vmName, vm, nic);
             }
-            
-            /*
-             *             
-                VBD.Record vbdr = new VBD.Record();
-                Ternary<SR, VDI, VolumeVO> mount = mounts.get(0);
-                vbdr.VM = vm;
-                vbdr.VDI = mount.second();
-                vbdr.bootable = !bootFromISO;
-                vbdr.userdevice = "0";
-                vbdr.mode = Types.VbdMode.RW;
-                vbdr.type = Types.VbdType.DISK;
-                VBD.create(conn, vbdr);
-
-                for (int i = 1; i < mounts.size(); i++) {
-                    mount = mounts.get(i);
-                    // vdi.setNameLabel(conn, cmd.getVmName() + "-DATA");
-                    vbdr.VM = vm;
-                    vbdr.VDI = mount.second();
-                    vbdr.bootable = false;
-                    vbdr.userdevice = Long.toString(mount.third().getDeviceId());
-                    vbdr.mode = Types.VbdMode.RW;
-                    vbdr.type = Types.VbdType.DISK;
-                    vbdr.unpluggable = true;
-                    VBD.create(conn, vbdr);
-
-                }
-
-                VBD.Record cdromVBDR = new VBD.Record();
-                cdromVBDR.VM = vm;
-                cdromVBDR.empty = true;
-                cdromVBDR.bootable = bootFromISO;
-                cdromVBDR.userdevice = "3";
-                cdromVBDR.mode = Types.VbdMode.RO;
-                cdromVBDR.type = Types.VbdType.CD;
-                VBD cdromVBD = VBD.create(conn, cdromVBDR);
-
-                String isopath = cmd.getISOPath();
-                if (isopath != null) {
-                    int index = isopath.lastIndexOf("/");
-
-                    String mountpoint = isopath.substring(0, index);
-                    URI uri = new URI(mountpoint);
-                    isosr = createIsoSRbyURI(uri, cmd.getVmName(), false);
-
-                    String isoname = isopath.substring(index + 1);
-
-                    VDI isovdi = getVDIbyLocationandSR(isoname, isosr);
-
-                    if (isovdi == null) {
-                        String msg = " can not find ISO " + cmd.getISOPath();
-                        s_logger.warn(msg);
-                        return new StartAnswer(cmd, msg);
-                    } else {
-                        cdromVBD.insert(conn, isovdi);
-                    }
-
-                }
-             */
             
             vm.startOn(conn, host, false, true);
             
@@ -997,12 +967,15 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             state = State.Running;
             return new Start2Answer(cmd);
         } catch (XmlRpcException e) {
+            s_logger.warn("Exception ", e);
             String msg = handleVmStartFailure(vmName, vm, "", e);
             return new Start2Answer(cmd, msg);
         } catch (XenAPIException e) {
+            s_logger.warn("Exception ", e);
             String msg = handleVmStartFailure(vmName, vm, "", e);
             return new Start2Answer(cmd, msg);
         } catch (Exception e) {
+            s_logger.warn("Exception ", e);
             String msg = handleVmStartFailure(vmName, vm, "", e);
             return new Start2Answer(cmd, msg);
         } finally {
@@ -3314,19 +3287,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             return new StartConsoleProxyAnswer(cmd, msg);
         }
     }
-
-    protected boolean patchSystemVm(VDI vdi, String vmName) {
-        if (vmName.startsWith("r-")) {
-            return patchSpecialVM(vdi, vmName, "router");
-        } else if (vmName.startsWith("v-")) {
-            return patchSpecialVM(vdi, vmName, "consoleproxy");
-        } else if (vmName.startsWith("s-")) {
-            return patchSpecialVM(vdi, vmName, "secstorage");
-        } else {
-            throw new CloudRuntimeException("Tried to patch unknown type of system vm");
-        }
-    }
-
+    
     protected boolean isDeviceUsed(VM vm, Long deviceId) {
         // Figure out the disk number to attach the VM to
 
@@ -3367,79 +3328,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         throw new CloudRuntimeException("Could not find an available slot in VM with name to attach a new disk.");
     }
 
-    protected boolean patchSpecialVM(VDI vdi, String vmname, String vmtype) {
-        // patch special vm here, domr, domp
-        VBD vbd = null;
-        Connection conn = getConnection();
-        try {
-            Host host = Host.getByUuid(conn, _host.uuid);
-
-            Set<VM> vms = host.getResidentVMs(conn);
-
-            for (VM vm : vms) {
-                VM.Record vmrec = null;
-                try {
-                    vmrec = vm.getRecord(conn);
-                } catch (Exception e) {
-                    String msg = "VM.getRecord failed due to " + e.toString() + " " + e.getMessage();
-                    s_logger.warn(msg);
-                    continue;
-                }
-                if (vmrec.isControlDomain) {
-
-                    /* create VBD */
-                    VBD.Record vbdr = new VBD.Record();
-                    vbdr.VM = vm;
-                    vbdr.VDI = vdi;
-                    vbdr.bootable = false;
-                    vbdr.userdevice = getUnusedDeviceNum(vm);
-                    vbdr.unpluggable = true;
-                    vbdr.mode = Types.VbdMode.RW;
-                    vbdr.type = Types.VbdType.DISK;
-
-                    vbd = VBD.create(conn, vbdr);
-
-                    vbd.plug(conn);
-
-                    String device = vbd.getDevice(conn);
-
-                    return patchspecialvm(vmname, device, vmtype);
-                }
-            }
-
-        } catch (XenAPIException e) {
-            String msg = "patchSpecialVM faile on " + _host.uuid + " due to " + e.toString();
-            s_logger.warn(msg, e);
-        } catch (Exception e) {
-            String msg = "patchSpecialVM faile on " + _host.uuid + " due to " + e.getMessage();
-            s_logger.warn(msg, e);
-        } finally {
-            if (vbd != null) {
-                try {
-                    if (vbd.getCurrentlyAttached(conn)) {
-                        vbd.unplug(conn);
-                    }
-                    vbd.destroy(conn);
-                } catch (XmlRpcException e) {
-                    String msg = "Catch XmlRpcException due to " + e.getMessage();
-                    s_logger.warn(msg, e);
-                } catch (XenAPIException e) {
-                    String msg = "Catch XenAPIException due to " + e.toString();
-                    s_logger.warn(msg, e);
-                }
-
-            }
-        }
-        return false;
-    }
-
-    protected boolean patchspecialvm(String vmname, String device, String vmtype) {
-        String result = callHostPlugin("vmops", "patchdomr", "vmname", vmname, "vmtype", vmtype, "device", "/dev/" + device);
-        if (result == null || result.isEmpty())
-            return false;
-        return true;
-    }
-    
     protected String callHostPlugin(String plugin, String cmd, String... params) {
         //default time out is 300 s
         return callHostPluginWithTimeOut(plugin, cmd, 300, params);
@@ -3949,6 +3837,13 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
         try {
             Host myself = Host.getByUuid(conn, _host.uuid);
+            
+            Set<HostCpu> hcs = myself.getHostCPUs(conn);
+            _host.cpus = hcs.size();
+            for (final HostCpu hc : hcs) {
+                _host.speed = hc.getSpeed(conn).intValue();
+                break;
+            }
             
             Set<SR> srs = SR.getByNameLabel(conn, "XenServer Tools");
             if( srs.size() != 1 ) {
@@ -4551,13 +4446,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             }
             cmd.setCaps(caps.toString());
 
-            Set<HostCpu> hcs = host.getHostCPUs(conn);
-            cpus = hcs.size();
-            for (final HostCpu hc : hcs) {
-                speed = hc.getSpeed(conn);
-            }
-            cmd.setSpeed(speed);
-            cmd.setCpus(cpus);
+            cmd.setSpeed(_host.speed);
+            cmd.setCpus(_host.cpus);
 
             long free = 0;
 
@@ -6248,10 +6138,111 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         public String storagePif1;
         public String storagePif2;
         public String pool;
+        public int speed;
+        public int cpus;
     }
 
     /*Override by subclass*/
 	protected String getGuestOsType(String stdType) {
 		return stdType;
 	}
+
+/*
+    protected boolean patchSystemVm(VDI vdi, String vmName, VirtualMachine.Type type) {
+        if (type == VirtualMachine.Type.DomainRouter) {
+            return patchSpecialVM(vdi, vmName, "router");
+        } else if (type == VirtualMachine.Type.ConsoleProxy) {
+            return patchSpecialVM(vdi, vmName, "consoleproxy");
+        } else if (type == VirtualMachine.Type.SecondaryStorageVm) {
+            return patchSpecialVM(vdi, vmName, "secstorage");
+        } else {
+            throw new CloudRuntimeException("Tried to patch unknown type of system vm");
+        }
+    }
+
+    protected boolean patchSystemVm(VDI vdi, String vmName) {
+        if (vmName.startsWith("r-")) {
+            return patchSpecialVM(vdi, vmName, "router");
+        } else if (vmName.startsWith("v-")) {
+            return patchSpecialVM(vdi, vmName, "consoleproxy");
+        } else if (vmName.startsWith("s-")) {
+            return patchSpecialVM(vdi, vmName, "secstorage");
+        } else {
+            throw new CloudRuntimeException("Tried to patch unknown type of system vm");
+        }
+    }
+    
+    protected boolean patchSpecialVM(VDI vdi, String vmname, String vmtype) {
+        // patch special vm here, domr, domp
+        VBD vbd = null;
+        Connection conn = getConnection();
+        try {
+            Host host = Host.getByUuid(conn, _host.uuid);
+
+            Set<VM> vms = host.getResidentVMs(conn);
+
+            for (VM vm : vms) {
+                VM.Record vmrec = null;
+                try {
+                    vmrec = vm.getRecord(conn);
+                } catch (Exception e) {
+                    String msg = "VM.getRecord failed due to " + e.toString() + " " + e.getMessage();
+                    s_logger.warn(msg);
+                    continue;
+                }
+                if (vmrec.isControlDomain) {
+
+                    VBD.Record vbdr = new VBD.Record();
+                    vbdr.VM = vm;
+                    vbdr.VDI = vdi;
+                    vbdr.bootable = false;
+                    vbdr.userdevice = getUnusedDeviceNum(vm);
+                    vbdr.unpluggable = true;
+                    vbdr.mode = Types.VbdMode.RW;
+                    vbdr.type = Types.VbdType.DISK;
+
+                    vbd = VBD.create(conn, vbdr);
+
+                    vbd.plug(conn);
+
+                    String device = vbd.getDevice(conn);
+
+                    return patchspecialvm(vmname, device, vmtype);
+                }
+            }
+
+        } catch (XenAPIException e) {
+            String msg = "patchSpecialVM faile on " + _host.uuid + " due to " + e.toString();
+            s_logger.warn(msg, e);
+        } catch (Exception e) {
+            String msg = "patchSpecialVM faile on " + _host.uuid + " due to " + e.getMessage();
+            s_logger.warn(msg, e);
+        } finally {
+            if (vbd != null) {
+                try {
+                    if (vbd.getCurrentlyAttached(conn)) {
+                        vbd.unplug(conn);
+                    }
+                    vbd.destroy(conn);
+                } catch (XmlRpcException e) {
+                    String msg = "Catch XmlRpcException due to " + e.getMessage();
+                    s_logger.warn(msg, e);
+                } catch (XenAPIException e) {
+                    String msg = "Catch XenAPIException due to " + e.toString();
+                    s_logger.warn(msg, e);
+                }
+
+            }
+        }
+        return false;
+    }
+
+    protected boolean patchspecialvm(String vmname, String device, String vmtype) {
+        String result = callHostPlugin("vmops", "patchdomr", "vmname", vmname, "vmtype", vmtype, "device", "/dev/" + device);
+        if (result == null || result.isEmpty())
+            return false;
+        return true;
+    }
+*/
+	
 }

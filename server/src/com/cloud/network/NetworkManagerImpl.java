@@ -18,6 +18,7 @@
 package com.cloud.network;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -2465,34 +2466,85 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         
         int deviceId = 0;
         
+        boolean[] deviceIds = new boolean[networks.size()];
+        Arrays.fill(deviceIds, false);
+        
+        List<NicVO> nics = new ArrayList<NicVO>(networks.size());
+        NicVO defaultNic = null;
+        
         for (Pair<NetworkConfigurationVO, NicProfile> network : networks) {
-            NetworkGuru concierge = _networkGurus.get(network.first().getGuruName());
-            NicProfile profile = concierge.allocate(network.first(), network.second(), vm);
+            NetworkConfigurationVO config = network.first();
+            NetworkGuru concierge = _networkGurus.get(config.getGuruName());
+            NicProfile requested = network.second();
+            NicProfile profile = concierge.allocate(config, requested, vm);
             if (profile == null) {
                 continue;
             }
-            NicVO vo = new NicVO(concierge.getName(), vm.getId(), network.first().getId());
-            vo.setDeviceId(deviceId++);
+            NicVO vo = new NicVO(concierge.getName(), vm.getId(), config.getId());
             vo.setMode(network.first().getMode());
-            if (profile.getIp4Address() != null) {
-                vo.setIp4Address(profile.getIp4Address());
-                vo.setState(NicVO.State.Reserved);
+            
+            while (deviceIds[deviceId] && deviceId < deviceIds.length) {
+                deviceId++;
             }
             
-            if (profile.getMacAddress() != null) {
-                vo.setMacAddress(profile.getMacAddress());
-            }
+            deviceId = applyProfileToNic(vo, profile, deviceId);
             
-            if (profile.getMode() != null) {
-                vo.setMode(profile.getMode());
-            }
-    
             vo = _nicDao.persist(vo);
-            nicProfiles.add(new NicProfile(vo, network.first()));
+            
+            if (vo.isDefaultNic()) {
+                if (defaultNic != null) {
+                    throw new IllegalArgumentException("You cannot specify two nics as default nics: nic 1 = " + defaultNic + "; nic 2 = " + vo);
+                }
+                defaultNic = vo;
+            }
+            
+            int devId = vo.getDeviceId();
+            if (devId > deviceIds.length) {
+                throw new IllegalArgumentException("Device id for nic is too large: " + vo);
+            }
+            if (deviceIds[devId]) {
+                throw new IllegalArgumentException("Conflicting device id for two different nics: " + devId);
+            }
+            
+            deviceIds[devId] = true;
+            nics.add(vo);
+            nicProfiles.add(new NicProfile(vo, network.first(), vo.getBroadcastUri(), vo.getIsolationUri()));
         }
+        
+        if (defaultNic == null && nics.size() > 2) {
+            throw new IllegalArgumentException("Default Nic was not set.");
+        } else if (nics.size() == 1) {
+            nics.get(0).setDefaultNic(true);
+        }
+        
         txn.commit();
         
         return nicProfiles;
+    }
+    
+    protected Integer applyProfileToNic(NicVO vo, NicProfile profile, Integer deviceId) {
+        if (profile.getDeviceId() != null) {
+            vo.setDeviceId(profile.getDeviceId());
+        } else if (deviceId != null ) {
+            vo.setDeviceId(deviceId++);
+        }
+        
+        vo.setDefaultNic(profile.isDefaultNic());
+        
+        if (profile.getIp4Address() != null) {
+            vo.setIp4Address(profile.getIp4Address());
+            vo.setState(NicVO.State.Reserved);
+        }
+        
+        if (profile.getMacAddress() != null) {
+            vo.setMacAddress(profile.getMacAddress());
+        }
+        
+        vo.setMode(profile.getMode());
+        vo.setNetmask(profile.getNetmask());
+        vo.setGateway(profile.getGateway());
+        
+        return deviceId;
     }
     
     protected NicTO toNicTO(NicVO nic, NetworkConfigurationVO config) {
@@ -2503,6 +2555,17 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         to.setIp(nic.getIp4Address());
         to.setNetmask(nic.getNetmask());
         to.setMac(nic.getMacAddress());
+        if (config.getDns() != null) {
+            String[] tokens = config.getDns().split(",");
+            to.setDns1(tokens[0]);
+            if (tokens.length > 2) {
+                to.setDns2(tokens[1]);
+            }
+        }
+        to.setGateway(config.getGateway());
+        to.setDefaultNic(nic.isDefaultNic());
+        to.setBroadcastUri(nic.getBroadcastUri());
+        to.setIsolationuri(nic.getIsolationUri());
         
         return to;
     }
@@ -2548,7 +2611,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     
     NicProfile toNicProfile(NicVO nic) {
         NetworkConfiguration config = _networkProfileDao.findById(nic.getNetworkConfigurationId());
-        NicProfile profile = new NicProfile(nic, config);
+        NicProfile profile = new NicProfile(nic, config, nic.getBroadcastUri(), nic.getIsolationUri());
         return profile;
     }
     

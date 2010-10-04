@@ -103,7 +103,8 @@ CREATE TABLE `cloud`.`network_configurations` (
   `network_offering_id` bigint unsigned NOT NULL COMMENT 'network offering id that this configuration is created from',
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id that this configuration is used in',
   `guru_name` varchar(255) NOT NULL COMMENT 'who is responsible for this type of network configuration',
-  `state` varchar(32) NOT NULL COMMENT 'what state is this configuration in', 
+  `state` varchar(32) NOT NULL COMMENT 'what state is this configuration in',
+  `dns` varchar(255) COMMENT 'comma separated DNS list',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -137,7 +138,8 @@ CREATE TABLE `cloud`.`nics` (
   `device_id` int(10) COMMENT 'device id for the network when plugged into the virtual machine',
   `update_time` timestamp NOT NULL COMMENT 'time the state was changed',
   `isolation_uri` varchar(255) COMMENT 'id for isolation',
-  `ip6_address` varchar(32) COMMENT 'ip6 address', 
+  `ip6_address` varchar(32) COMMENT 'ip6 address',
+  `default_nic` tinyint NOT NULL COMMENT "None", 
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

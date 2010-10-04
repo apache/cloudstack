@@ -25,8 +25,8 @@ import com.cloud.offering.ServiceOffering;
 
 public class VirtualMachineProfile {
     VirtualMachine _vm;
-    int _cpus;
-    int _speed; // in mhz
+    Integer _cpus;
+    Integer _speed; // in mhz
     long _ram; // in bytes
     HypervisorType _hypervisorType;
     VirtualMachine.Type _type;
@@ -34,9 +34,18 @@ public class VirtualMachineProfile {
     Long _templateId;
     List<DiskProfile> _disks;
     List<NicProfile> _nics;
+    String _os;
     
     public VirtualMachineProfile(VirtualMachine.Type type) {
         this._type = type;
+    }
+    
+    public String getName() {
+        return _vm.getInstanceName();
+    }
+    
+    public String getOs() {
+        return _os;
     }
     
     public long getId() {
@@ -51,11 +60,11 @@ public class VirtualMachineProfile {
         return _templateId;
     }
     
-    public int getCpus() {
+    public Integer getCpus() {
         return _cpus;
     }
     
-    public int getSpeed() {
+    public Integer getSpeed() {
         return _speed;
     }
     
@@ -96,13 +105,14 @@ public class VirtualMachineProfile {
         this._templateId = templateId;
     }
     
-    public VirtualMachineProfile(VirtualMachine vm, ServiceOffering offering) {
+    public VirtualMachineProfile(VirtualMachine vm, ServiceOffering offering, String os) {
         this._cpus = offering.getCpu();
         this._speed = offering.getSpeed();
         this._ram = offering.getRamSize();
         this._templateId = vm.getTemplateId();
         this._type = vm.getType();
         this._vm = vm;
+        this._os = os;
     }
     
     protected VirtualMachineProfile() {
