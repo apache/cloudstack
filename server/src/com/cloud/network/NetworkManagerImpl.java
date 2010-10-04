@@ -711,6 +711,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 
     @Override
     public boolean destroyRouter(final long routerId) {
+        
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Attempting to destroy router " + routerId);
         }
@@ -721,6 +722,15 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             s_logger.debug("Unable to acquire lock on router " + routerId);
             return false;
         }
+        
+        EventVO event = new EventVO();
+        event.setUserId(User.UID_SYSTEM);
+        event.setAccountId(router.getAccountId());
+        event.setType(EventTypes.EVENT_ROUTER_DESTROY);
+        event.setState(EventState.Started);
+        event.setParameters("id=" + routerId);
+        event.setDescription("Starting to destroy router : " + router.getName());
+        event = _eventDao.persist(event);
 
         try {
             if (router.getState() == State.Destroyed || router.getState() == State.Expunging || router.getRemoved() != null) {
@@ -757,13 +767,14 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             s_logger.debug("Successfully destroyed router: " + routerId);
         }
         
-        final EventVO event = new EventVO();
-        event.setUserId(User.UID_SYSTEM);
-        event.setAccountId(router.getAccountId());
-        event.setType(EventTypes.EVENT_ROUTER_DESTROY);
-        event.setParameters("id=" + router.getId());
-        event.setDescription("successfully destroyed router : " + router.getName());
-        _eventDao.persist(event);
+        EventVO completedEvent = new EventVO();
+        completedEvent.setUserId(User.UID_SYSTEM);
+        completedEvent.setAccountId(router.getAccountId());
+        completedEvent.setType(EventTypes.EVENT_ROUTER_DESTROY);
+        completedEvent.setStartId(event.getId());
+        completedEvent.setParameters("id=" + routerId);        
+        completedEvent.setDescription("successfully destroyed router : " + router.getName());
+        _eventDao.persist(completedEvent);
 
         return true;
     }
