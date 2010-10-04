@@ -72,6 +72,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         initDialog("dialog_change_service_offering"); 
         initDialog("dialog_confirmation_change_root_password");
         initDialog("dialog_confirmation_enable_ha");  
+        initDialog("dialog_confirmation_disable_ha");
                       
         activateDialog($("#dialog_create_template").dialog({
 	        width: 400, //this dialog box has dropdown fields, so need to fix width as 400 instead of 600.
@@ -979,11 +980,8 @@ function doEnableHA($t, selectedItemsInMidMenu, vmListAPIMap) {
 	}).dialog("open");
 }
 
-function doDisableHA($t, selectedItemsInMidMenu, vmListAPIMap) {            
-	var message = "<p>Please confirm you want to disable HA for your virtual machine. Once HA is disabled, your Virtual Instance will no longer be be automatically restarted in the event of a failure.</p>";
-		
-    $("#dialog_confirmation")
-	.html(message)
+function doDisableHA($t, selectedItemsInMidMenu, vmListAPIMap) {       
+    $("#dialog_confirmation_disable_ha")	
 	.dialog('option', 'buttons', { 						
 		"Confirm": function() { 
 			$(this).dialog("close"); 
