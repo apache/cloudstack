@@ -1054,4 +1054,9 @@
     </p>
 </div>
 
+<div id="dialog_confirmation_enable_ha" title="Confirmation" style="display:none">
+    <p>
+        <%=t.t("please.confirm.you.want.to.enable.HA.for.your.virtual.machine.once.HA.is.enabled.your.virtual.machine.will.be.automatically.restarted.in.the.event.it.is.detected.to.have.failed")%>
+    </p>
+</div>
 <!--  ***** Dialogs (end) ***** -->
