@@ -60,9 +60,10 @@ public interface SnapshotManager extends Manager {
      * 2) So that storage space on Primary is conserved. 
      * @param userId The user who invoked this command.
      * @param snapshot Info about the created snapshot on primary storage.
+     * @param startEventId event id of the scheduled event for this snapshot
      * @return True if the snapshot was successfully backed up. 
      */
-    public boolean backupSnapshotToSecondaryStorage(long userId, SnapshotVO snapshot);
+    public boolean backupSnapshotToSecondaryStorage(long userId, SnapshotVO snapshot, long startEventId);
     
     /**
      * Once a snapshot has completed, 

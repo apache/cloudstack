@@ -27,6 +27,7 @@ import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
+import com.cloud.event.EventTypes;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.Snapshot;
@@ -55,9 +56,11 @@ public class CreateSnapshotExecutor extends BaseAsyncJobExecutor {
 		} else {
 	    	SnapshotOperationParam param = gson.fromJson(job.getCmdInfo(), SnapshotOperationParam.class);
 	    	SnapshotManager snapshotManager = asyncMgr.getExecutorContext().getSnapshotMgr();
+	    	ManagementServer managementServer = getAsyncJobMgr().getExecutorContext().getManagementServer();
 	    	VolumeDao volumeDao = asyncMgr.getExecutorContext().getVolumeDao();
 	    	long volumeId = param.getVolumeId();
 	    	long policyId = param.getPolicyId();
+	    	long startEventId = param.getEventId();
 	    	
 	    	long snapshotId = 0;
 	    	long userId = param.getUserId();
@@ -73,12 +76,13 @@ public class CreateSnapshotExecutor extends BaseAsyncJobExecutor {
 	    	try {
 	    		vol = volumeDao.acquire(volumeId, 10);
 	    		if( vol != null) {
+	    		    managementServer.saveStartedEvent(userId, vol.getAccountId(), EventTypes.EVENT_SNAPSHOT_CREATE, "Start creating snapshot for volume:"+volumeId, startEventId);
 		    	    SnapshotVO snapshot = snapshotManager.createSnapshot(userId, volumeId, policyId);
 	
 			    	if (snapshot != null && snapshot.getStatus() == Snapshot.Status.CreatedOnPrimary) {
 					    snapshotId = snapshot.getId();
 					    asyncMgr.updateAsyncJobStatus(jobId, BaseCmd.PROGRESS_INSTANCE_CREATED, snapshotId);
-					    backedUp = snapshotManager.backupSnapshotToSecondaryStorage(userId, snapshot);
+					    backedUp = snapshotManager.backupSnapshotToSecondaryStorage(userId, snapshot, startEventId);
 					    if (backedUp) {
 					        result = AsyncJobResult.STATUS_SUCCEEDED;
 					        errorCode = 0; // Success

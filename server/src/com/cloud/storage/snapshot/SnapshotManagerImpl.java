@@ -137,7 +137,17 @@ public class SnapshotManagerImpl implements SnapshotManager {
     @Override @DB
     public long createSnapshotAsync(long userId, long volumeId, long policyId) {
         VolumeVO volume = _volsDao.findById(volumeId);
+        
+        EventVO event = new EventVO();
+        event.setUserId(userId);
+        event.setAccountId(volume.getAccountId());
+        event.setType(EventTypes.EVENT_SNAPSHOT_CREATE);
+        event.setState(EventState.Scheduled);
+        event.setDescription("Scheduled async job of snapshot creation for volume:"+volumeId);
+        event = _eventDao.persist(event);
+        
         SnapshotOperationParam param = new SnapshotOperationParam(userId, volume.getAccountId(), volumeId, policyId);
+        param.setEventId(event.getId());
         Gson gson = GsonHelper.getBuilder().create();
 
         AsyncJobVO job = new AsyncJobVO();
@@ -409,7 +419,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
             // It has entered backupSnapshotToSecondaryStorage.
             // But we have no idea whether it was backed up or not.
             // So call backupSnapshotToSecondaryStorage again.
-            backupSnapshotToSecondaryStorage(userId, snapshot);
+            backupSnapshotToSecondaryStorage(userId, snapshot, 0);
             break;
         case BackedUp:
             // No need to do anything as snapshot has already been backed up.
@@ -418,7 +428,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
 
     @Override
     @DB
-    public boolean backupSnapshotToSecondaryStorage(long userId, SnapshotVO ss) {
+    public boolean backupSnapshotToSecondaryStorage(long userId, SnapshotVO ss, long startEventId) {
         long snapshotId = ss.getId();
         SnapshotVO snapshot = null;
         try {
@@ -546,6 +556,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
                 String eventParams = "id=" + snapshotId + "\nssName=" + snapshotName +"\nsize=" + volume.getSize()+"\ndcId=" + volume.getDataCenterId();
                 event.setDescription("Backed up snapshot id: " + snapshotId + " to secondary for volume " + volumeId);
                 event.setLevel(EventVO.LEVEL_INFO);
+                event.setStartId(startEventId);
                 event.setParameters(eventParams);
                 _snapshotDao.update(snapshotId, snapshotVO);
             }
