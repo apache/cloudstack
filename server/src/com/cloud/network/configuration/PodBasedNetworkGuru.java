@@ -25,7 +25,6 @@ import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
@@ -61,11 +60,12 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         
         if (nic != null) {
-            throw new CloudRuntimeException("Does not support nic configuration");
-        }
+            nic.setStrategy(ReservationStrategy.Start);
+        } else {
+            nic  = new NicProfile(ReservationStrategy.Start, null, null, null, null);
+        } 
         
-        NicProfile profile = new NicProfile(ReservationStrategy.Start, null, null, null, null);
-        return profile;
+        return nic;
     }
 
     @Override

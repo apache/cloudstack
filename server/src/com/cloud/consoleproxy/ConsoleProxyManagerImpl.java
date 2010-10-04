@@ -138,6 +138,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.State;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -1035,16 +1036,21 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         AccountVO systemAcct = _accountMgr.getSystemAccount();
         
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId, 1);
-        
-        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmControlNetwork, NetworkOfferingVO.SystemVmManagementNetwork, NetworkOfferingVO.SystemVmPublicNetwork);
-        List<NetworkConfigurationVO> profiles = new ArrayList<NetworkConfigurationVO>(offerings.size());
+
+        List<NetworkOfferingVO> defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmPublicNetwork);
+        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmControlNetwork, NetworkOfferingVO.SystemVmManagementNetwork);
+        List<Pair<NetworkConfigurationVO, NicProfile>> networks = new ArrayList<Pair<NetworkConfigurationVO, NicProfile>>(offerings.size() + 1);
+        NicProfile defaultNic = new NicProfile();
+        defaultNic.setDefaultNic(true);
+        defaultNic.setDeviceId(2);
+        networks.add(new Pair<NetworkConfigurationVO, NicProfile>(_networkMgr.setupNetworkConfiguration(systemAcct, defaultOffering.get(0), plan), defaultNic));
         for (NetworkOfferingVO offering : offerings) {
-            profiles.add(_networkMgr.setupNetworkConfiguration(_accountMgr.getSystemAccount(), offering, plan));
+            networks.add(new Pair<NetworkConfigurationVO, NicProfile>(_networkMgr.setupNetworkConfiguration(systemAcct, offering, plan), null));
         }
         ConsoleProxyVO proxy = new ConsoleProxyVO(id, _serviceOffering.getId(), name, _template.getId(), _template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId(), 0);
         proxy = _consoleProxyDao.persist(proxy);
         try {
-            VirtualMachineProfile vmProfile = _vmMgr.allocate(proxy, _template, _serviceOffering, profiles, plan, _accountMgr.getSystemAccount());
+            VirtualMachineProfile vmProfile = _vmMgr.allocate(proxy, _template, _serviceOffering, networks, plan, systemAcct);
         } catch (InsufficientCapacityException e) {
             s_logger.warn("InsufficientCapacity", e);
             throw new CloudRuntimeException("Insufficient capacity exception", e);

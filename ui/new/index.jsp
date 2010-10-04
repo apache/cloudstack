@@ -105,7 +105,7 @@ long milliseconds = new Date().getTime();
                                 </li>
                             </ol>
                             </form>
-                            <a href="#">Advanced</a>
+                            <a href="#"><%=t.t("advanced")%></a>
                             <div class="adv_searchpopup" id="adv_search_dialog" style="display: none;">
                                 <div class="adv_searchformbox">
                                     <h3>
@@ -158,7 +158,7 @@ long milliseconds = new Date().getTime();
                                 <div class="actionpanel_button_icons">
                                     <img src="images/actions_actionicon.png" alt="Add" /></div>
                                 <div class="actionpanel_button_links">
-                                    Actions</div>
+                                    <%=t.t("actions")%></div>
                                 <div class="action_ddarrow">
                                 </div>
                             </div>
@@ -173,7 +173,7 @@ long milliseconds = new Date().getTime();
                                 <div class="actionpanel_button_icons">
                                     <img src="images/addvm_actionicon.png" alt="Add" /></div>
                                 <div class="actionpanel_button_links">
-                                    Add</div>
+                                    <%=t.t("add")%></div>
                             </div>
                         </div>
                         
@@ -182,132 +182,14 @@ long milliseconds = new Date().getTime();
                                 <div class="actionpanel_button_icons">
                                     <img src="images/help_actionicon.png" alt="Add" /></div>
                                 <div class="actionpanel_button_links">
-                                    Help</div>
+                                    <%=t.t("help")%></div>
                             </div>
                         </div>
                         
                     </div>
                     <!-- Action Panel ends here-->
                     <!-- Right Panel starts here-->
-                    <div class="main_contentarea" id="right_panel">
-                        <!--
-						<div class="main_title">
-                            <div class="main_titleicon"><img src="images/instancetitle_icons.gif" alt="Instance" /></div>
-                             <h1>Name of the Instance Selected.. </h1>
-                        </div>
-                        <div class="contentbox">
-                        	<div class="tabbox">
-                            	<div class="content_tabs on">Details</div>
-                                <div class="content_tabs off">Volume</div>
-                                <div class="content_tabs off">Statistics</div>
-                            </div>
-                            
-                            <div class="grid_container">
-                            	<div class="grid_rows odd">
-                                	<div class="vm_statusbox">
-                                    	<div class="vm_consolebox">
-                                        	<div class="vm_liveconsole"></div>
-                                        </div>
-                                        <div class="vm_status_textbox">
-                                        	<div class="vm_status_textline green">Running</div><br />
-                                            <p>10.1.1.200</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="grid_rows even">
-                                	<div class="grid_row_cell" style="width:20%;">
-                                    	<div class="row_celltitles">Zone:</div>
-                                    </div>
-                                    
-                                    <div class="grid_row_cell" style="width:79%;">
-                                    	<div class="row_celltitles">JW</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="grid_rows odd">
-                                	<div class="grid_row_cell" style="width:20%;">
-                                    	<div class="row_celltitles">Template:</div>
-                                    </div>
-                                    
-                                    <div class="grid_row_cell" style="width:79%;">
-                                    	<div class="row_celltitles">Centos 5.3(x36.4) no GUI</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="grid_rows even">
-                                	<div class="grid_row_cell" style="width:20%;">
-                                    	<div class="row_celltitles">Service:</div>
-                                    </div>
-                                    
-                                    <div class="grid_row_cell" style="width:79%;">
-                                    	<div class="row_celltitles">Small Instance</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="grid_rows odd">
-                                	<div class="grid_row_cell" style="width:20%;">
-                                    	<div class="row_celltitles">HA:</div>
-                                    </div>
-                                    
-                                    <div class="grid_row_cell" style="width:79%;">
-                                    	<div class="row_celltitles"><div class="tick_icon"></div></div>
-                                    </div>
-                                </div>
-                                
-                                 <div class="grid_rows even">
-                                	<div class="grid_row_cell" style="width:20%;">
-                                    	<div class="row_celltitles">Created:</div>
-                                    </div>
-                                    
-                                    <div class="grid_row_cell" style="width:79%;">
-                                    	<div class="row_celltitles">07/20/2010 11:29:04  </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="grid_rows odd">
-                                	<div class="grid_row_cell" style="width:20%;">
-                                    	<div class="row_celltitles">Account:</div>
-                                    </div>
-                                    
-                                    <div class="grid_row_cell" style="width:79%;">
-                                    	<div class="row_celltitles">Admin</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="grid_rows odd">
-                                	<div class="grid_row_cell" style="width:20%;">
-                                    	<div class="row_celltitles">Domain:</div>
-                                    </div>
-                                    
-                                    <div class="grid_row_cell" style="width:79%;">
-                                    	<div class="row_celltitles">ROOT</div>
-                                    </div>
-                                </div>
-                                
-                                 <div class="grid_rows even">
-                                	<div class="grid_row_cell" style="width:20%;">
-                                    	<div class="row_celltitles">Host:</div>
-                                    </div>
-                                    
-                                    <div class="grid_row_cell" style="width:79%;">
-                                    	<div class="row_celltitles">Xenserver-test5 </div>
-                                    </div>
-                                </div>
-                                
-                                   <div class="grid_rows odd">
-                                	<div class="grid_row_cell" style="width:20%;">
-                                    	<div class="row_celltitles">ISO:</div>
-                                    </div>
-                                    
-                                    <div class="grid_row_cell" style="width:79%;">
-                                    	<div class="row_celltitles"><div class="cross_icon"></div></div>
-                                    </div>
-                                </div>
-                                
-                            </div>
-                        </div>
-                        -->
+                    <div class="main_contentarea" id="right_panel">                        
                     </div>
                     <div class="midmenu_navigationbox" id="middle_menu_pagination">
                         <div class="midmenu_prevbutton">
@@ -319,42 +201,7 @@ long milliseconds = new Date().getTime();
                 </div>
                 <!-- Mid Menu starts here-->
                 <div class="midmenu_panel" id="middle_menu">
-                    <div class="midmenu_box" id="midmenu_container">
-                    	
-                        <!--  
-                        	<div class="midmenu_list">
-                            	<div class="midmenu_content">
-                                	<div class="midmenu_icons"><img src="images/status_green.png" alt="Running" /></div>
-                                    <div class="midmenu_textbox">
-                                    	<p><strong>Instance 1</strong></p>
-                                        <p>IP Address: 10.1.1.2</p>
-                                    </div>
-                                    <div class="midmenu_defaultloader"></div>
-                                </div>
-                            </div>
-                       -->
-                       <!--
-                            <div class="midmenu_list">
-                            	<div class="midmenu_content">
-                                	<div class="midmenu_icons"><img src="images/status_red.png" alt="Running" /></div>
-                                    <div class="midmenu_textbox">
-                                    	<p><strong>Instance 2</strong></p>
-                                        <p>IP Address: 10.1.1.2</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="midmenu_list">
-                            	<div class="midmenu_content selected">
-                                	<div class="midmenu_icons"><img src="images/status_gray.png" alt="Running" /></div>
-                                    <div class="midmenu_textbox">
-                                    	<p><strong>Instance 3</strong></p>
-                                        <p>IP Address: 10.1.1.2</p>
-                                    </div>
-                                    <div class="midmenu_infoicon"></div>
-                                </div>
-                            </div>
-                            -->
+                    <div class="midmenu_box" id="midmenu_container">                    	
                     </div>
                 </div>
                 <!-- Mid Menu ends here-->
@@ -370,7 +217,7 @@ long milliseconds = new Date().getTime();
                             </div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/leftmenu_dashboardicon.png" alt="Dashboard" /></div>
-                            Dashboard
+                            <%=t.t("dashboard")%>
                         </div>
                     </div>
                 </div>
@@ -379,7 +226,7 @@ long milliseconds = new Date().getTime();
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/leftmenu_dashboardicon.png" alt="Dashboard" /></div>
-                            Dashboard
+                            <%=t.t("dashboard")%>
                         </div>
                     </div>
                 </div>
@@ -389,8 +236,8 @@ long milliseconds = new Date().getTime();
                             <div class="leftmenu_arrows close" id="arrowIcon">
                             </div>
                             <div class="leftmenu_list_icons">
-                                <img src="images/instance_leftmenuicon.png" alt="Instances" /></div>
-                            Instances
+                                <img src="images/instance_leftmenuicon.png" alt="Instance" /></div>
+                            <%=t.t("instance")%>
                         </div>
                     </div>
                 </div>
@@ -401,8 +248,8 @@ long milliseconds = new Date().getTime();
                                 <div class="leftmenu_arrows close" id="arrow_icon">
                                 </div>
                                 <div class="leftmenu_list_icons">
-                                    <img src="images/instance_leftmenuicon.png" alt="Instances" /></div>
-                                Instances
+                                    <img src="images/instance_leftmenuicon.png" alt="Instance" /></div>
+                                <%=t.t("instance")%>
                             </div>
                         </div>
                         <div id="leftmenu_instance_group_container">
@@ -411,14 +258,14 @@ long milliseconds = new Date().getTime();
                     <div class="leftmenu_content" id="leftmenu_router">
                         <div class="leftmenu_secondindent">                           
                             <div class="leftmenu_list_icons">
-                                <img src="images/routers_leftmenuicon.png" alt="Routers" /></div>
-                            Routers
+                                <img src="images/routers_leftmenuicon.png" alt="Router" /></div>
+                            <%=t.t("router")%>
                         </div>
                     </div>
                     <div class="leftmenu_content" id="leftmenu_system">
                         <div class="leftmenu_secondindent">                           
                             <div class="leftmenu_list_icons">
-                                <img src="images/storage_leftmenuicon.png" alt="Storage" /></div>
+                                <img src="images/storage_leftmenuicon.png" alt="System" /></div>
                             System
                         </div>
                     </div>
@@ -430,7 +277,7 @@ long milliseconds = new Date().getTime();
                             </div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/leftmenu_hosticon.png" alt="Host" /></div>
-                            Hosts
+                            Host
                         </div>
                     </div>
                 </div>
@@ -439,7 +286,7 @@ long milliseconds = new Date().getTime();
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/leftmenu_hosticon.png" alt="Host" /></div>
-                            Hosts
+                            Host
                         </div>
                     </div>
                 </div>
@@ -449,8 +296,8 @@ long milliseconds = new Date().getTime();
                             <div class="leftmenu_arrows close" id="arrowIcon">
                             </div>
                             <div class="leftmenu_list_icons">
-                                <img src="images/storage_leftmenuicon.png" alt="storage" /></div>
-                            Storage
+                                <img src="images/storage_leftmenuicon.png" alt="Storage" /></div>
+                            <%=t.t("storage")%>
                         </div>
                     </div>
                 </div>
@@ -458,29 +305,29 @@ long milliseconds = new Date().getTime();
                     <div class="leftmenu_content" id="leftmenu_primary_storage">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
-                                <img src="images/storage_leftmenuicon.png" alt="storage" /></div>
+                                <img src="images/storage_leftmenuicon.png" alt="Primary Storage" /></div>
                             Primary Storage
                         </div>
                     </div>
                     <div class="leftmenu_content" id="leftmenu_secondary_storage">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
-                                <img src="images/storage_leftmenuicon.png" alt="storage" /></div>
+                                <img src="images/storage_leftmenuicon.png" alt="secondary Storage" /></div>
                             secondary Storage
                         </div>
                     </div>
                     <div class="leftmenu_content" id="leftmenu_volume">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
-                                <img src="images/leftmenu_volumeicon.png" alt="storage" /></div>
-                            Volumes
+                                <img src="images/leftmenu_volumeicon.png" alt="Volume" /></div>
+                            <%=t.t("volume")%>
                         </div>
                     </div>
                     <div class="leftmenu_content" id="leftmenu_snapshot">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
-                                <img src="images/leftmenu_snapshotsicon.png" alt="storage" /></div>
-                            Snapshots
+                                <img src="images/leftmenu_snapshotsicon.png" alt="Snapshot" /></div>
+                            <%=t.t("snapshot")%>
                         </div>
                     </div>
                 </div>
@@ -490,8 +337,8 @@ long milliseconds = new Date().getTime();
                             <div class="leftmenu_arrows close" id="arrowIcon">
                             </div>
                             <div class="leftmenu_list_icons">
-                                <img src="images/leftmenu_networkgroupicon.png" alt="Network" /></div>
-                            Network
+                                <img src="images/leftmenu_networkgroupicon.png" alt="IP Address" /></div>
+                            <%=t.t("ip.address")%>
                         </div>
                     </div>
                 </div>
@@ -499,17 +346,10 @@ long milliseconds = new Date().getTime();
                     <div class="leftmenu_content" id="leftmenu_ip">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
-                                <img src="images/leftmenu_ipaddressicon.png" alt="Network" /></div>
-                            IP Addresses
+                                <img src="images/leftmenu_ipaddressicon.png" alt="IP Address" /></div>
+                            <%=t.t("ip.address")%>
                         </div>
-                    </div>
-                    <div class="leftmenu_content" id="leftmenu_network_group">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_list_icons">
-                                <img src="images/leftmenu_networkgroupicon.png" alt="Network" /></div>
-                            Network Groups
-                        </div>
-                    </div>
+                    </div>                    
                 </div>
                 <div class="leftmenu_list">
                     <div class="leftmenu_content">
@@ -517,8 +357,8 @@ long milliseconds = new Date().getTime();
                             <div class="leftmenu_arrows close" id="arrowIcon">
                             </div>
                             <div class="leftmenu_list_icons">
-                                <img src="images/templates_leftmenuicon.png" alt="Templates" /></div>
-                            Templates
+                                <img src="images/templates_leftmenuicon.png" alt="Template" /></div>
+                             <%=t.t("template")%>
                         </div>
                     </div>
                 </div>
@@ -527,33 +367,33 @@ long milliseconds = new Date().getTime();
                         <div class="leftmenu_content" id="leftmenu_template_filter_header">
                             <div class="leftmenu_secondindent">                                
                                 <div class="leftmenu_list_icons">
-                                    <img src="images/templates_leftmenuicon.png" alt="Templates" /></div>
-                                Template
+                                    <img src="images/templates_leftmenuicon.png" alt="Template" /></div>
+                                 <%=t.t("template")%>
                             </div>
                         </div>
                         <div id="leftmenu_template_filter_container">                        
                             <div class="leftmenu_content" id="leftmenu_submenu_my_template">
 						        <div class="leftmenu_thirdindent">
 						            <div class="leftmenu_list_icons">
-						                <img src="images/templates_leftmenuicon.png" /></div>
+						                <img src="images/templates_leftmenuicon.png" alt="My Template" /></div>
 						            <div>
-						                My Templates</div>
+						                 <%=t.t("my.template")%></div>
 						        </div>
 						    </div>                        
                             <div class="leftmenu_content" id="leftmenu_submenu_featured_template">
 						        <div class="leftmenu_thirdindent">
 						            <div class="leftmenu_list_icons">
-						                <img src="images/templates_leftmenuicon.png" /></div>
+						                <img src="images/templates_leftmenuicon.png" alt="Featured Template" /></div>
 						            <div>
-						                Featured</div>
+						                 <%=t.t("featured.template")%></div>
 						        </div>
 						    </div>                        
                             <div class="leftmenu_content" id="leftmenu_submenu_community_template">
 						        <div class="leftmenu_thirdindent">
 						            <div class="leftmenu_list_icons">
-						                <img src="images/templates_leftmenuicon.png" /></div>
+						                <img src="images/templates_leftmenuicon.png" alt="Community Template" /></div>
 						            <div>
-						                Community</div>
+						                 <%=t.t("community.template")%></div>
 						        </div>
 						    </div>                        
                         </div>
@@ -563,7 +403,7 @@ long milliseconds = new Date().getTime();
                             <div class="leftmenu_secondindent">                                
                                 <div class="leftmenu_list_icons">
                                     <img src="images/templates_leftmenuicon.png" alt="Templates" /></div>
-                                ISO
+                                 <%=t.t("iso")%>
                             </div>
                         </div>
                         <div id="leftmenu_iso_filter_container">
@@ -572,7 +412,7 @@ long milliseconds = new Date().getTime();
 						            <div class="leftmenu_list_icons">
 						                <img src="images/templates_leftmenuicon.png" /></div>
 						            <div>
-						                My ISOs</div>
+						                 <%=t.t("my.iso")%></div>
 						        </div>
 						    </div>                        
                             <div class="leftmenu_content" id="leftmenu_submenu_featured_iso">
@@ -580,7 +420,7 @@ long milliseconds = new Date().getTime();
 						            <div class="leftmenu_list_icons">
 						                <img src="images/templates_leftmenuicon.png" /></div>
 						            <div>
-						                Featured</div>
+						                 <%=t.t("featured.iso")%></div>
 						        </div>
 						    </div>                        
                             <div class="leftmenu_content" id="leftmenu_submenu_community_iso">
@@ -588,7 +428,7 @@ long milliseconds = new Date().getTime();
 						            <div class="leftmenu_list_icons">
 						                <img src="images/templates_leftmenuicon.png" /></div>
 						            <div>
-						                Community</div>
+						                 <%=t.t("community.iso")%></div>
 						        </div>
 						    </div>                                         
                         </div>
@@ -600,8 +440,8 @@ long milliseconds = new Date().getTime();
                             <div class="leftmenu_arrows close" id="arrowIcon">
                             </div>
                             <div class="leftmenu_list_icons">
-                                <img src="images/accounts_leftmenuicon.png" alt="Accounts" /></div>
-                            Accounts
+                                <img src="images/accounts_leftmenuicon.png" alt="Account" /></div>
+                             <%=t.t("account")%>
                         </div>
                     </div>
                 </div>
@@ -609,8 +449,8 @@ long milliseconds = new Date().getTime();
                     <div class="leftmenu_content" id="leftmenu_account">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
-                                <img src="images/accounts_leftmenuicon.png" alt="Accounts" /></div>
-                            Accounts
+                                <img src="images/accounts_leftmenuicon.png" alt="Account" /></div>
+                             <%=t.t("account")%>
                         </div>
                     </div>
                 </div>
@@ -621,7 +461,7 @@ long milliseconds = new Date().getTime();
                             </div>
                             <div class="leftmenu_list_icons">
                                 <img src="images/domain_leftmenuicon.png" alt="Domain" /></div>
-                            Domain
+                             <%=t.t("domain")%>
                         </div>
                     </div>
                 </div>
@@ -630,7 +470,7 @@ long milliseconds = new Date().getTime();
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
                                 <img src="images/domain_leftmenuicon.png" alt="Domain" /></div>
-                            Domain
+                             <%=t.t("domain")%>
                         </div>
                     </div>
                 </div>
@@ -640,8 +480,8 @@ long milliseconds = new Date().getTime();
                             <div class="leftmenu_arrows close" id="arrowIcon">
                             </div>
                             <div class="leftmenu_list_icons">
-                                <img src="images/events_leftmenuicon.png" alt="Events" /></div>
-                            Events
+                                <img src="images/events_leftmenuicon.png" alt="Event" /></div>
+                             <%=t.t("event")%>
                         </div>
                     </div>
                 </div>
@@ -649,15 +489,15 @@ long milliseconds = new Date().getTime();
                     <div class="leftmenu_content" id="leftmenu_event">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
-                                <img src="images/events_leftmenuicon.png" alt="Events" /></div>
-                            Events
+                                <img src="images/events_leftmenuicon.png" alt="Event" /></div>
+                             <%=t.t("event")%>
                         </div>
                     </div>
                     <div class="leftmenu_content" id="leftmenu_alert">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
-                                <img src="images/events_leftmenuicon.png" alt="Events" /></div>
-                            Alerts
+                                <img src="images/events_leftmenuicon.png" alt="Alert" /></div>
+                             <%=t.t("alert")%>
                         </div>
                     </div>
                 </div>
@@ -708,7 +548,7 @@ long milliseconds = new Date().getTime();
     </div>
     <div id="footer">
         <p>
-            Version: <span>2.2</span>
+            <%=t.t("version")%>: <span>2.2</span>
         </p>
         <div class="poweredby_box">
         </div>

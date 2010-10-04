@@ -21,6 +21,7 @@ import java.util.Map;
 
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VirtualMachineProfile;
 
 public class VirtualMachineTO {
     private long id;
@@ -28,8 +29,7 @@ public class VirtualMachineTO {
     private BootloaderType bootloader;
     Type type;
     int cpus;
-    Integer weight;
-    Integer utilization;
+    Integer speed;
     long minRam;
     long maxRam;
     String hostName;
@@ -42,7 +42,19 @@ public class VirtualMachineTO {
     VolumeTO[] disks;
     NicTO[] nics;
     
-    public VirtualMachineTO() {
+    public VirtualMachineTO(VirtualMachineProfile profile, BootloaderType bootloader) {
+        this.id = profile.getId();
+        this.type = profile.getType();
+        this.cpus = profile.getCpus();
+        this.minRam = profile.getRam();
+        this.maxRam = profile.getRam();
+        this.speed = profile.getSpeed();
+        this.os = profile.getOs();
+        this.name = profile.getName();
+        this.bootloader = bootloader;
+    }
+
+    protected VirtualMachineTO() {
     }
     
     public long getId() {
@@ -81,22 +93,10 @@ public class VirtualMachineTO {
         this.cpus = cpus;
     }
     
-    public Integer getWeight() {
-        return weight;
+    public Integer getSpeed() {
+        return speed;
     }
     
-    public void setWeight(Integer weight) {
-        this.weight = weight;
-    }
-    
-    public Integer getUtilization() {
-        return utilization;
-    }
-    
-    public void setUtiliziation(Integer utilization) {
-        this.utilization = utilization;
-    }
-
     public long getMinRam() {
         return minRam;
     }
@@ -133,8 +133,13 @@ public class VirtualMachineTO {
     public void setOs(String os) {
         this.os = os;
     }
-
+    
     public String getBootArgs() {
+        StringBuilder buf = new StringBuilder(bootArgs != null ? bootArgs : "");
+        buf.append(" ");
+        for (NicTO nic : nics) {
+            buf.append("");
+        }
         return bootArgs;
     }
 
@@ -162,12 +167,11 @@ public class VirtualMachineTO {
         this.disks = disks;
     }
 
-    public NicTO[] getNetworks() {
+    public NicTO[] getNics() {
         return nics;
     }
 
     public void setNics(NicTO[] nics) {
         this.nics = nics;
     }
-
 }

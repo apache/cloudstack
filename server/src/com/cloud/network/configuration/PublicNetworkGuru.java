@@ -28,7 +28,6 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
 
@@ -59,11 +58,13 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
             return null;
         }
         
-        if (nic != null) {
-            throw new CloudRuntimeException("Unsupported nic settings");
+        if (nic == null) {
+            nic = new NicProfile(ReservationStrategy.Create, null, null, null, null);
+        } else {
+            nic.setStrategy(ReservationStrategy.Create);
         }
-
-        return new NicProfile(ReservationStrategy.Create, null, null, null, null);
+        
+        return nic;
     }
 
     @Override

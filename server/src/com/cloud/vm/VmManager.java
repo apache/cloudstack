@@ -58,7 +58,7 @@ public interface VmManager extends Manager {
     <T extends VMInstanceVO> VirtualMachineProfile allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
-            List<NetworkConfigurationVO> networkProfiles,
+            List<Pair<NetworkConfigurationVO, NicProfile>> networkProfiles,
             DeploymentPlan plan,
             AccountVO owner) throws InsufficientCapacityException, StorageUnavailableException;
     

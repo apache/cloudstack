@@ -17,6 +17,8 @@
  */
 package com.cloud.agent.api.to;
 
+import java.net.URI;
+
 import com.cloud.network.Network.BroadcastDomainType;
 import com.cloud.network.Network.TrafficType;
 
@@ -24,16 +26,18 @@ import com.cloud.network.Network.TrafficType;
  * Transfer object to transfer network settings.
  */
 public class NetworkTO {
-    private String uuid;
-    private String ip;
-    private String netmask;
-    private String gateway;
-    private String mac;
-    private String dns1;
-    private String dns2;
-    private Long vlan;
-    private BroadcastDomainType broadcastType;
-    private TrafficType type;
+    protected String uuid;
+    protected String ip;
+    protected String netmask;
+    protected String gateway;
+    protected String mac;
+    protected String dns1;
+    protected String dns2;
+    protected Long vlan;
+    protected BroadcastDomainType broadcastType;
+    protected TrafficType type;
+    protected URI broadcastUri;
+    protected URI isolationUri;
     
     public NetworkTO() {
     }
@@ -149,5 +153,21 @@ public class NetworkTO {
     
     public TrafficType getType() {
         return type;
+    }
+    
+    public URI getBroadcastUri() {
+        return broadcastUri;
+    }
+    
+    public void setBroadcastUri(URI broadcastUri) {
+        this.broadcastUri = broadcastUri;
+    }
+    
+    public URI getIsolationUri() {
+        return isolationUri;
+    }
+    
+    public void setIsolationuri(URI isolationUri) {
+        this.isolationUri = isolationUri;
     }
 }
