@@ -6664,17 +6664,44 @@ public class ManagementServerImpl implements ManagementServer {
                 	+ jobId + ", job owner account: " + job.getAccountId() + ", accound id in current context: " + UserContext.current().getAccountId());
         	
         	Account account = _accountDao.findById(UserContext.current().getAccountId());
-        	if(account == null || account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-	            if (s_logger.isDebugEnabled()) {
-	            	if(account == null)
-		                s_logger.debug("queryAsyncJobResult error: Permission denied, account no long exist for account id in context, job id: " + jobId
+        	if(account == null) {
+        		if(s_logger.isDebugEnabled())
+	                s_logger.debug("queryAsyncJobResult error: Permission denied, account no long exist for account id in context, job id: " + jobId
 		                	+ ", accountId  " + UserContext.current().getAccountId());
-	            	else
-	            		s_logger.debug("queryAsyncJobResult error: Permission denied, invalid ownership for job " + jobId + ", job account owner: "
-	            			+ job.getAccountId() + ", account id in context: " + UserContext.current().getAccountId());
-	            }
-	
+        		
 	            throw new PermissionDeniedException("Permission denied, invalid job ownership, job id: " + jobId);
+        	}
+        	
+        	if(account.getType() == Account.ACCOUNT_TYPE_ADMIN || account.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) {
+	            if (s_logger.isDebugEnabled()) 
+            		s_logger.debug("Grant access to query job result to admin for job " + jobId + ", job account owner: "
+            			+ job.getAccountId() + ", account id in context: " + UserContext.current().getAccountId());
+        	} else if(account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+        		long jobOwnerAccountId = job.getAccountId();
+        		Account jobOwnerAccount = _accountDao.findById(jobOwnerAccountId);
+        		if(jobOwnerAccount == null) {
+    	            throw new PermissionDeniedException("Permission denied, can not determine job owner, job id: " + jobId);
+        		}
+        		
+        		if(account.getDomainId() == jobOwnerAccount.getDomainId() || 
+        			_domainDao.isChildDomain(account.getDomainId(), jobOwnerAccount.getDomainId())) {
+    	            if (s_logger.isDebugEnabled()) 
+                		s_logger.debug("Grant access to query job result to domain admin for job " + jobId + ", job account owner: "
+                			+ job.getAccountId() + ", account id in context: " + UserContext.current().getAccountId());
+        		} else {
+            		if(s_logger.isDebugEnabled())
+    	                s_logger.debug("queryAsyncJobResult error: Permission denied, invalid job ownership, job id: " + jobId
+    		                	+ ", accountId  " + UserContext.current().getAccountId());
+    	            throw new PermissionDeniedException("Permission denied, invalid job ownership, job id: " + jobId);
+        		}
+        	} else if(account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+	            if (s_logger.isDebugEnabled()) 
+            		s_logger.debug("queryAsyncJobResult error: Permission denied, invalid ownership for job " + jobId + ", job account owner: "
+            			+ job.getAccountId() + ", account id in context: " + UserContext.current().getAccountId());
+	            throw new PermissionDeniedException("Permission denied, invalid job ownership, job id: " + jobId);
+        	} else {
+        		assert(false);
+	            throw new PermissionDeniedException("Permission denied, internal error. job id: " + jobId);
         	}
         }
         return _asyncMgr.queryAsyncJobResult(jobId);
