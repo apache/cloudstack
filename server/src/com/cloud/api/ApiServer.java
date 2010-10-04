@@ -46,6 +46,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
@@ -73,6 +74,7 @@ import org.apache.http.protocol.ResponseContent;
 import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
 
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -235,9 +237,8 @@ public class ApiServer implements HttpRequestHandler {
             try {
             	// always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM
             	UserContext.registerContext(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, null, true);
-            	
-                String responseText = handleRequest(parameterMap, true, responseType);
-                sb.append(" 200 " + ((responseText == null) ? 0 : responseText.length()));
+            	NDC.push("userId="+User.UID_SYSTEM+ " accountId="+Account.ACCOUNT_ID_SYSTEM+ " sessionId="+null );
+                String responseText = handleRequest(parameterMap, true, responseType, sb);
                 writeResponse(response, responseText, false, responseType);
             } catch (ServerApiException se) {
                 try {
@@ -260,12 +261,12 @@ public class ApiServer implements HttpRequestHandler {
             }
         } finally {
             s_accessLogger.info(sb.toString());
-            
+            NDC.remove();
             UserContext.unregisterContext();
         }
     }
 
-    public String handleRequest(Map params, boolean decode, String responseType) throws ServerApiException {
+    public String handleRequest(Map params, boolean decode, String responseType, StringBuffer auditTrailSb) throws ServerApiException {
         String response = null;
         try {
             String[] command = (String[])params.get("command");
@@ -300,10 +301,13 @@ public class ApiServer implements HttpRequestHandler {
                     Map<String, Object> validatedParams = cmdObj.validateParams(paramMap, decode);
                     
                     List<Pair<String, Object>> resultValues = cmdObj.execute(validatedParams);
+                    buildAuditTrail(auditTrailSb, command[0], resultValues);
                     response = cmdObj.buildResponse(resultValues, responseType);
                 } else {
-                    s_logger.warn("unknown API command: " + ((command == null) ? "null" : command[0]));
-                    response = buildErrorResponse("unknown API command: " + ((command == null) ? "null" : command[0]), responseType);
+                    String errorString = " unknown API command: " + ((command == null) ? "null" : command[0]);
+                    s_logger.warn(errorString);
+                    auditTrailSb.append(" " +errorString);
+                    response = buildErrorResponse(errorString, responseType);
                 }
             }
         } catch (Exception ex) {
@@ -316,7 +320,39 @@ public class ApiServer implements HttpRequestHandler {
         }
         return response;
     }
-
+     
+   private void buildAuditTrail(StringBuffer auditTrailSb, String command, List<Pair<String, Object>> resultValues){
+        
+        if (resultValues == null) return;
+        auditTrailSb.append(" " + HttpServletResponse.SC_OK);
+        if (command.equals("queryAsyncJobResult")){ //For this command we need to also log job status and job resultcode
+            for (Pair<String,Object> pair : resultValues){
+                String key = pair.first();
+                if (key.equals(BaseCmd.Properties.JOB_STATUS.getName())){
+                    auditTrailSb.append(" ");
+                    auditTrailSb.append(key);
+                    auditTrailSb.append("=");
+                    auditTrailSb.append(pair.second());
+                }else if (key.equals(BaseCmd.Properties.JOB_RESULT_CODE.getName())){
+                    auditTrailSb.append(" ");
+                    auditTrailSb.append(key);
+                    auditTrailSb.append("=");
+                    auditTrailSb.append(pair.second());
+                }
+            }
+        }else {
+            for (Pair<String,Object> pair : resultValues){
+                if (pair.first().equals(BaseCmd.Properties.JOB_ID.getName())){ // Its an async job so report the jobid
+                    auditTrailSb.append(" ");
+                    auditTrailSb.append(pair.first());
+                    auditTrailSb.append("=");
+                    auditTrailSb.append(pair.second());
+                }
+            }
+        }
+        
+    }
+    
     public boolean verifyRequest(Map<String, Object[]> requestParameters, String userId) {
         try {
             String apiKey = null;
