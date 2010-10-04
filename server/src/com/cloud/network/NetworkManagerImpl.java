@@ -778,6 +778,15 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 
         return true;
     }
+    
+    @Override
+    @DB
+    public boolean upgradeRouter(long routerId, long serviceOfferingId) {
+    	 DomainRouterVO router = _routerDao.acquire(routerId);
+    	 
+    	 router.setServiceOfferingId(serviceOfferingId);
+    	 return _routerDao.update(routerId, router);
+    }
 
     private String rot13(final String password) {
         final StringBuffer newPassword = new StringBuffer("");
@@ -888,10 +897,11 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             final HashSet<Host> avoid = new HashSet<Host>();
             final VMTemplateVO template = _templateDao.findById(router.getTemplateId());
             final DataCenterVO dc = _dcDao.findById(router.getDataCenterId());
+            ServiceOfferingVO offering = _serviceOfferingDao.findById(router.getServiceOfferingId());
             List<StoragePoolVO> sps = _storageMgr.getStoragePoolsForVm(router.getId());
             StoragePoolVO sp = sps.get(0); // FIXME
             
-	        HostVO routingHost = (HostVO)_agentMgr.findHost(Host.Type.Routing, dc, pod, sp, _offering, template, router, null, avoid);
+	        HostVO routingHost = (HostVO)_agentMgr.findHost(Host.Type.Routing, dc, pod, sp, offering, template, router, null, avoid);
 
 	        if (routingHost == null) {
 	        	s_logger.error("Unable to find a host to start " + router.toString());
@@ -1053,7 +1063,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 	                _dcDao.releaseLinkLocalPrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
 	
 	                _storageMgr.unshare(router, vols, routingHost);
-	            } while (--retry > 0 && (routingHost = (HostVO)_agentMgr.findHost(Host.Type.Routing, dc, pod, sp,  _offering, template, router, null, avoid)) != null);
+	            } while (--retry > 0 && (routingHost = (HostVO)_agentMgr.findHost(Host.Type.Routing, dc, pod, sp,  offering, template, router, null, avoid)) != null);
 
 	
 	            if (routingHost == null || retry <= 0) {
@@ -2134,6 +2144,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         final boolean mirroredVols = router.isMirroredVols();
         final DataCenterVO dc = _dcDao.findById(router.getDataCenterId());
         final HostPodVO pod = _podDao.findById(router.getPodId());
+        final ServiceOfferingVO offering = _serviceOfferingDao.findById(router.getServiceOfferingId());
         List<StoragePoolVO> sps = _storageMgr.getStoragePoolsForVm(router.getId());
         StoragePoolVO sp = sps.get(0); // FIXME
 
@@ -2158,7 +2169,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         }
         avoid.add(fromHost);
 
-        while ((routingHost = (HostVO)_agentMgr.findHost(Host.Type.Routing, dc, pod, sp, _offering, _template, router, fromHost, avoid)) != null) {
+        while ((routingHost = (HostVO)_agentMgr.findHost(Host.Type.Routing, dc, pod, sp, offering, _template, router, fromHost, avoid)) != null) {
             avoid.add(routingHost);
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Trying to migrate router to host " + routingHost.getName());

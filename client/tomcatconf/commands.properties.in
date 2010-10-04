@@ -129,6 +129,7 @@ listLoadBalancerRuleInstances=com.cloud.api.commands.ListLoadBalancerRuleInstanc
 startRouter=com.cloud.api.commands.StartRouterCmd;3
 rebootRouter=com.cloud.api.commands.RebootRouterCmd;3
 stopRouter=com.cloud.api.commands.StopRouterCmd;3
+changeServiceForRouter=com.cloud.api.commands.UpgradeRouterCmd;3
 listRouters=com.cloud.api.commands.ListRoutersCmd;7
 
 #### system vm commands

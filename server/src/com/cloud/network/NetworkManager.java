@@ -234,4 +234,5 @@ public interface NetworkManager extends Manager {
     <K extends VMInstanceVO> void create(K vm);
     
     <K extends VMInstanceVO> List<NicVO> getNics(K vm);
+	boolean upgradeRouter(long routerId, long serviceOfferingId);
 }

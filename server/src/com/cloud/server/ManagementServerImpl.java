@@ -2903,6 +2903,37 @@ public class ManagementServerImpl implements ManagementServer {
     public boolean destroyRouter(long routerId) {
         return _networkMgr.destroyRouter(routerId);
     }
+    
+    @Override
+    public boolean upgradeRouter(long routerId, long serviceOfferingId) throws InvalidParameterValueException {
+    	DomainRouterVO router = _routerDao.findById(routerId);
+    	if (router == null) {
+    		throw new InvalidParameterValueException("Unable to find router with id " + routerId);
+    	}
+
+    	if (router.getServiceOfferingId() == serviceOfferingId) {
+    		s_logger.debug("Router: " + routerId + "already has service offering: " + serviceOfferingId);
+    		return true;
+    	}
+
+    	ServiceOfferingVO newServiceOffering = _offeringsDao.findById(serviceOfferingId);
+    	if (newServiceOffering == null) {
+    		throw new InvalidParameterValueException("Unable to find service offering with id " + serviceOfferingId);
+    	}
+
+    	ServiceOfferingVO currentServiceOffering = _offeringsDao.findById(router.getServiceOfferingId());
+
+    	if (!currentServiceOffering.getGuestIpType().equals(newServiceOffering.getGuestIpType())) {
+    		throw new InvalidParameterValueException("Can't upgrade, due to new newtowrk type: " + newServiceOffering.getGuestIpType() + " is different from " +
+    				"curruent network type: " + currentServiceOffering.getGuestIpType());
+    	}
+    	if (currentServiceOffering.getUseLocalStorage() != newServiceOffering.getUseLocalStorage()) {
+    		throw new InvalidParameterValueException("Can't upgrade, due to new local storage status : " + newServiceOffering.getGuestIpType() + " is different from " +
+    				"curruent local storage status: " + currentServiceOffering.getUseLocalStorage());
+    	}
+
+    	return _networkMgr.upgradeRouter(routerId, serviceOfferingId);
+    }
 
     @Override
     public DomainRouterVO findDomainRouterBy(long accountId, long dataCenterId) {
