@@ -20,8 +20,10 @@ package com.cloud.servlet;
 
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.security.InvalidKeyException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -255,29 +257,68 @@ public class ConsoleProxyServlet extends HttpServlet {
 		sendResponse(resp, "success");
 	}
 	
-	private String composeThumbnailUrl(String rootUrl, VMInstanceVO vm, HostVO host, int w, int h) {
+	private String composeThumbnailUrl(String rootUrl, VMInstanceVO vm, HostVO hostVo, int w, int h) {
 		StringBuffer sb = new StringBuffer(rootUrl);
-		sb.append("/getscreen?host=").append(host.getPrivateIpAddress());
-		sb.append("&port=").append(_ms.getVncPort(vm));
-		sb.append("&sid=").append(vm.getVncPassword());
+
+		String host = hostVo.getPrivateIpAddress();
+		int port = _ms.getVncPort(vm);
+		String sid = vm.getVncPassword();
+		long tag = vm.getId();
+		String ticket = URLEncoder.encode(genAccessTicket(host, String.valueOf(port), sid, String.valueOf(tag)));
+		
+		sb.append("/getscreen?host=").append(host);
+		sb.append("&port=").append(port);
+		sb.append("&sid=").append(sid);
 		sb.append("&w=").append(w).append("&h=").append(h);
-		sb.append("&tag=").append(vm.getId());
+		sb.append("&tag=").append(tag);
+		sb.append("&ticket=").append(ticket);
 
 		if(s_logger.isInfoEnabled())
 			s_logger.info("Compose thumbnail url: " + sb.toString());
 		return sb.toString();
 	}
 	
-	private String composeConsoleAccessUrl(String rootUrl, VMInstanceVO vm, HostVO host) {
+	private String composeConsoleAccessUrl(String rootUrl, VMInstanceVO vm, HostVO hostVo) {
 		StringBuffer sb = new StringBuffer(rootUrl);
-		sb.append("/ajax?host=").append(host.getPrivateIpAddress());
-		sb.append("&port=").append(_ms.getVncPort(vm));
-		sb.append("&sid=").append(vm.getVncPassword());
-		sb.append("&tag=").append(vm.getId());
+		
+		String host = hostVo.getPrivateIpAddress();
+		int port = _ms.getVncPort(vm);
+		String sid = vm.getVncPassword();
+		long tag = vm.getId();
+		String ticket = URLEncoder.encode(genAccessTicket(host, String.valueOf(port), sid, String.valueOf(tag)));
+		
+		sb.append("/ajax?host=").append(host);
+		sb.append("&port=").append(port);
+		sb.append("&sid=").append(sid);
+		sb.append("&tag=").append(tag);
+		sb.append("&ticket=").append(ticket);
 		
 		if(s_logger.isInfoEnabled())
 			s_logger.info("Compose console url: " + sb.toString());
 		return sb.toString();
+	}
+	
+	public static String genAccessTicket(String host, String port, String sid, String tag) {
+		String params = "host=" + host + "&port=" + port + "&sid=" + sid + "&tag=" + tag;
+		
+		try {
+	        Mac mac = Mac.getInstance("HmacSHA1");
+	        
+	        long ts = (new Date()).getTime();
+	        ts = ts/60000;		// round up to 1 minute
+	        String secretKey = "cloud.com";
+	        
+	        SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA1");
+	        mac.init(keySpec);
+	        mac.update(params.getBytes());
+	        mac.update(String.valueOf(ts).getBytes());
+	        
+	        byte[] encryptedBytes = mac.doFinal();
+	        return Base64.encodeBytes(encryptedBytes);
+		} catch(Exception e) {
+			s_logger.error("Unexpected exception ", e);
+		}
+		return "";
 	}
 	
 	private void sendResponse(HttpServletResponse resp, String content) {

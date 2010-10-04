@@ -107,6 +107,7 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.servlet.ConsoleProxyServlet;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
@@ -1268,6 +1269,13 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     @Override
     public AgentControlAnswer onConsoleAccessAuthentication(ConsoleAccessAuthenticationCommand cmd) {
         long vmId = 0;
+        
+		String ticket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId());
+		String ticketInUrl = cmd.getTicket();
+		if(!ticket.startsWith(ticketInUrl)) {
+			s_logger.error("Access ticket expired or has been modified. vmId: " + cmd.getVmId());
+			return new ConsoleAccessAuthenticationAnswer(cmd, false);
+		}
 
         if (cmd.getVmId() != null && cmd.getVmId().isEmpty()) {
             if (s_logger.isTraceEnabled())

@@ -73,6 +73,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 		String portStr = queryMap.get("port");
 		String sid = queryMap.get("sid");
 		String tag = queryMap.get("tag");
+		String ticket = queryMap.get("ticket");
 		String ajaxSessionIdStr = queryMap.get("sess");
 		String eventStr = queryMap.get("event");
 		if(tag == null)
@@ -113,7 +114,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 		
 		ConsoleProxyViewer viewer = null;
 		try {
-			viewer = ConsoleProxy.getAjaxVncViewer(host, port, sid, tag);
+			viewer = ConsoleProxy.getAjaxVncViewer(host, port, sid, tag, ticket, ajaxSessionIdStr);
 		} catch(Exception e) {
 
 /*

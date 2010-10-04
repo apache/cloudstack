@@ -88,7 +88,7 @@ public class ConsoleProxyClientHandler extends Thread {
 			String host = stk.nextToken();
 			int port = Integer.parseInt(stk.nextToken());
 			String sid = stk.nextToken();
-			ConsoleProxyViewer viewer = ConsoleProxy.getVncViewer(host, port, sid, "");
+			ConsoleProxyViewer viewer = ConsoleProxy.getVncViewer(host, port, sid, "", "");
 			
 			ConsoleProxy.waitForViewerToStart(viewer);
 			

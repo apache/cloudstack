@@ -30,6 +30,9 @@ public abstract class AbstractDownloadCommand extends StorageCommand {
     }
     
     protected AbstractDownloadCommand(String name, String url, ImageFormat format, long accountId) {
+    	assert(url != null);
+    	url = url.replace('\\', '/');
+    	
         this.url = url;
         this.format = format;
         this.accountId = accountId;
@@ -62,6 +65,8 @@ public abstract class AbstractDownloadCommand extends StorageCommand {
     }
 
 	public void setUrl(String url) {
+		assert(url != null);
+		url = url.replace('\\', '/');
 		this.url = url;
 	}
 
