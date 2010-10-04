@@ -29,7 +29,7 @@ $(document).ready(function() {
 	mainContainer = $("#maincontentarea");
 
 	// Tab Links, dashboard is the initial active tab
-	mainContainer.load("jsp/tab_dashboard.jsp");
+	//mainContainer.load("jsp/tab_dashboard.jsp");
 	
 	// Default AJAX Setup
 	$.ajaxSetup({
@@ -400,7 +400,7 @@ $(document).ready(function() {
 				$("#capacity_pod_select").bind("change", function(event) {
 					// Reset to Defaults
 					$("#public_ip_total, #storage_total, #storage_alloc_total, #sec_storage_total, #memory_total, #cpu_total, #private_ip_total").text("N/A");
-					$("#public_ip_used, #storage_used, #storage_alloc, #sec_storage_used, #memory_used, #cpu_used, #private_ip_used,").attr("style", "width:50%").text("N/A");
+					$("#public_ip_used, #storage_used, #storage_alloc, #sec_storage_used, #memory_used, #cpu_used, #private_ip_used").attr("style", "width:50%").text("N/A");
 					$(".db_bargraph_barbox_safezone").attr("style", "width:0%");
 					$(".db_bargraph_barbox_unsafezone").attr("style", "width:0%");
 					
