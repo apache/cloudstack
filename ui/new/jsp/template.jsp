@@ -333,3 +333,15 @@
 	</div>
 </div>
 <!-- Add Template Dialog (end) -->
+
+<div id="dialog_confirmation_delete_template_all_zones" title="Confirmation" style="display:none">
+    <p>
+        <%=t.t("the.template.is.used.by.all.zones.please.confirm.you.want.to.delete.it.from.all.zones")%>
+    </p>
+</div>
+
+<div id="dialog_confirmation_delete_template" title="Confirmation" style="display:none">
+    <p>
+        <%=t.t("please.confirm.you.want.to.delete.the.template")%>
+    </p>
+</div>

@@ -152,6 +152,9 @@ function afterLoadTemplateJSP() {
 	});		
 	
 	//initialize dialog box ***
+	initDialog("dialog_confirmation_delete_template_all_zones");
+    initDialog("dialog_confirmation_delete_template");
+    
 	activateDialog($("#dialog_add_template").dialog({ 
 		width:450,
 		autoOpen: false,
@@ -438,14 +441,13 @@ function doDeleteTemplate($actionLink, listAPIMap, $detailsTab) {
 	if (zoneId != null) 
 		moreCriteria.push("&zoneid="+zoneId);	
 	
-	var htmlMsg; 
+	var $dialog1;
 	if(jsonObj.crossZones == "true")
-	    htmlMsg = "<p>Template <b>"+name+"</b> is used by all zones. Please confirm you want to delete it from all zones.</p>";
+	    $dialog1 = $("#dialog_confirmation_delete_template_all_zones");
 	else
-	    htmlMsg = "<p>Please confirm you want to delete template <b>"+name+"</b>.</p>";
-					
-	$("#dialog_confirmation")
-	.html(htmlMsg)
+	    $dialog1 = $("#dialog_confirmation_delete_template");	
+	
+	$dialog1		
 	.dialog('option', 'buttons', { 					
 		"Confirm": function() { 			
 			$(this).dialog("close");			
