@@ -51,6 +51,7 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.service.ServiceOfferingVO;
@@ -196,7 +197,18 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 					s_logger.error("netmask " + value + " is not a valid net mask for configuration variable " + name);
 					return "Please enter a valid netmask.";
 				}
-			} else {
+			} else if (range.equals("hypervisorList")) {
+				String [] hypervisors = value.split(",");
+				if (hypervisors == null) {
+					return "Please enter hypervisor list, seperated by comma";
+				}
+				for (String hypervisor : hypervisors) {
+					if (HypervisorType.getType(hypervisor) == HypervisorType.Any || 
+						HypervisorType.getType(hypervisor) == HypervisorType.None) {
+						return "Please enter valid hypervisor type";
+					}
+				}
+    		} else {
 				String [] options = range.split(",");
 				for( String option : options) {
 					if( option.trim().equals(value) ) {

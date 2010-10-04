@@ -2262,5 +2262,6 @@ public interface ManagementServer {
     String getVersion();
 	boolean uploadCertificate(String certificatePath);
 	boolean upgradeRouter(long routerId, long serviceOfferingId) throws InvalidParameterValueException;
+	String[] getHypervisors();
 
 }

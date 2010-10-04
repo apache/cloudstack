@@ -114,6 +114,7 @@ import com.cloud.async.executor.VolumeOperationParam.VolumeOp;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.certificate.dao.CertificateDao;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
@@ -9177,6 +9178,15 @@ public class ManagementServerImpl implements ManagementServer {
     	}
     	
     	return false;
+    }
+    
+    @Override
+    public String[] getHypervisors() {
+    	String hypers = _configDao.getValue(Config.HypervisorList.key());
+    	if (hypers == "" || hypers == null) {
+    		return null;
+    	}
+    	return hypers.split(",");
     }
 
 }

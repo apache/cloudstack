@@ -222,3 +222,6 @@ listInstanceGroups=com.cloud.api.commands.ListVMGroupsCmd;15
 
 ### Certificate commands
 uploadCustomCertificate=com.cloud.api.commands.UploadCustomCertificateCmd;15
+
+### other commands
+listHypervisors=com.cloud.api.commands.ListHypervisorsCmd;15
