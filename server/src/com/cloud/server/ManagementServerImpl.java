@@ -2302,6 +2302,8 @@ public class ManagementServerImpl implements ManagementServer {
             			created = _vmMgr.createVirtualMachine(vmId, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, startEventId);
             		} catch (ResourceAllocationException rae) {
             			throw rae;
+            		} catch (InternalErrorException iee){
+            			throw iee;
             		}
             	} else {
             		try {

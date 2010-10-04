@@ -1114,7 +1114,7 @@ public class UserVmManagerImpl implements UserVmManager {
     		txn.start();
         	router = _routerDao.acquire(routerId);
         	if (router == null) {
-        		throw new InternalErrorException("Unable to lock up the router:" + routerId);
+        		throw new InternalErrorException("Unable to lock up the router:" + routerId+" please try again");
         	}
         	routerLock = true;
         	List<UserVmVO> userVms = _vmDao.listByAccountAndDataCenter(accountId, dcId);

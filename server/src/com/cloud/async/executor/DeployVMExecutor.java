@@ -19,9 +19,6 @@
 package com.cloud.async.executor;
 
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -34,7 +31,6 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
