@@ -16,14 +16,38 @@
  * 
  */
 
-package com.cloud.serializer;
+package com.cloud.api.doc;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Param {
-	String name() default "";
-	String propName() default "";
-	String description() default "";
+public class Argument implements Comparable<Argument>{
+	private String name;
+	private String description;
+	private Boolean required;
+	
+	public Argument(String name) {
+		this.name = name;
+	}
+	
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+	public String getDescription() {
+		return description;
+	}
+	public void setDescription(String description) {
+		this.description = description;
+	}
+	public Boolean isRequired() {
+		return required;
+	}
+	public void setRequired(Boolean required) {
+		this.required = required;
+	}
+	
+	public int compareTo(Argument arg) {
+		return required.compareTo(arg.isRequired());
+	}
+	
 }

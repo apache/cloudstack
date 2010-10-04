@@ -26,13 +26,12 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
-import com.cloud.api.response.HostResponse;
-import com.cloud.api.ApiDBUtils;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
+import com.cloud.api.response.HostResponse;
 import com.cloud.dc.HostPodVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
@@ -77,8 +76,8 @@ public class CancelMaintenanceCmd extends BaseAsyncCmd  {
     	return "host";
     }
 
-	@Override
-	public ResponseObject getResponse() {
+	@Override @SuppressWarnings("unchecked")
+	public HostResponse getResponse() {
         HostVO host = (HostVO)getResponseObject();
 
         HostResponse response = new HostResponse();

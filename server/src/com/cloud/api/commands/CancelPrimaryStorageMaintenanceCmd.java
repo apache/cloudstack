@@ -20,12 +20,11 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
-import com.cloud.api.ApiDBUtils;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.dc.ClusterVO;
 import com.cloud.storage.StoragePoolVO;
@@ -66,8 +65,8 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
     	return "primarystorage";
     }
 
-	@Override
-	public ResponseObject getResponse() {
+	@Override @SuppressWarnings("unchecked")
+	public StoragePoolResponse getResponse() {
 	    StoragePoolVO primaryStorage = (StoragePoolVO)getResponseObject();
 
 	    StoragePoolResponse response = new StoragePoolResponse();

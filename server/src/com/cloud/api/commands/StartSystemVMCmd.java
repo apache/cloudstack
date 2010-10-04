@@ -20,13 +20,12 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
-import com.cloud.api.response.SystemVmResponse;
-import com.cloud.api.ApiDBUtils;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
+import com.cloud.api.response.SystemVmResponse;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -65,8 +64,8 @@ public class StartSystemVMCmd extends BaseAsyncCmd {
     	return "systemvm"; 
     }
 
-	@Override
-	public ResponseObject getResponse() {
+	@Override @SuppressWarnings("unchecked")
+	public SystemVmResponse getResponse() {
 	    VMInstanceVO instance = (VMInstanceVO)getResponseObject();
 
 	    SystemVmResponse response = new SystemVmResponse();

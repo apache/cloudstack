@@ -27,7 +27,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ClusterResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.dc.ClusterVO;
@@ -87,10 +86,10 @@ public class ListClustersCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<ClusterResponse> getResponse() {
         List<ClusterVO> clusters = (List<ClusterVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<ClusterResponse> response = new ListResponse<ClusterResponse>();
         List<ClusterResponse> clusterResponses = new ArrayList<ClusterResponse>();
         for (ClusterVO cluster : clusters) {
             ClusterResponse clusterResponse = new ClusterResponse();

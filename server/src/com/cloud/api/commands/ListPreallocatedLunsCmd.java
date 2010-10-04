@@ -26,7 +26,6 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.PreallocatedLunResponse;
 import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
@@ -69,10 +68,10 @@ public class ListPreallocatedLunsCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<PreallocatedLunResponse> getResponse() {
         List<PreallocatedLunVO> preallocatedLuns = (List<PreallocatedLunVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<PreallocatedLunResponse> response = new ListResponse<PreallocatedLunResponse>();
         List<PreallocatedLunResponse> lunResponses = new ArrayList<PreallocatedLunResponse>();
         for (PreallocatedLunVO preallocatedLun : preallocatedLuns) {
             PreallocatedLunResponse preallocLunResponse = new PreallocatedLunResponse();

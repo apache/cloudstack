@@ -26,7 +26,6 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ConfigurationResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.configuration.ConfigurationVO;
@@ -71,10 +70,10 @@ public class ListCfgsByCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<ConfigurationResponse> getResponse() {
         List<ConfigurationVO> configurations = (List<ConfigurationVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<ConfigurationResponse> response = new ListResponse<ConfigurationResponse>();
         List<ConfigurationResponse> configResponses = new ArrayList<ConfigurationResponse>();
         for (ConfigurationVO cfg : configurations) {
             ConfigurationResponse cfgResponse = new ConfigurationResponse();

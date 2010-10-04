@@ -26,7 +26,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.CloudIdentifierResponse;
 
@@ -61,7 +60,7 @@ public class GetCloudIdentifierCmd extends BaseCmd {
     }
     
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public CloudIdentifierResponse getResponse() {
         CloudIdentifierResponse response = new CloudIdentifierResponse();
         ArrayList<String> responseObject = (ArrayList<String>)getResponseObject();
         if (responseObject != null) {

@@ -24,7 +24,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UpgradeVmResponse;
 import com.cloud.offering.ServiceOffering;
@@ -74,8 +73,8 @@ public class UpgradeVMCmd extends BaseCmd {
     	return "virtualmachine";
     }
     
-    @Override
-    public ResponseObject getResponse() {
+    @Override @SuppressWarnings("unchecked")
+    public UpgradeVmResponse getResponse() {
         UserVmVO userVm = (UserVmVO)getResponseObject();
 
         UpgradeVmResponse response = new UpgradeVmResponse();

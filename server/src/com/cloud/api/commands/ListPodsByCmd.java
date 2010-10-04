@@ -26,7 +26,6 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.PodResponse;
 import com.cloud.dc.HostPodVO;
@@ -78,10 +77,10 @@ public class ListPodsByCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<PodResponse> getResponse() {
         List<HostPodVO> pods = (List<HostPodVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<PodResponse> response = new ListResponse<PodResponse>();
         List<PodResponse> podResponses = new ArrayList<PodResponse>();
         for (HostPodVO pod : pods) {
             String[] ipRange = new String[2];

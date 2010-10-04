@@ -24,7 +24,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.NetworkGroupResponse;
 import com.cloud.network.security.NetworkGroupVO;
 
@@ -80,8 +79,8 @@ public class CreateNetworkGroupCmd extends BaseCmd {
         return s_name;
     }
 
-    @Override
-    public ResponseObject getResponse() {
+    @Override @SuppressWarnings("unchecked")
+    public NetworkGroupResponse getResponse() {
         NetworkGroupVO group = (NetworkGroupVO)getResponseObject();
 
         NetworkGroupResponse response = new NetworkGroupResponse();

@@ -60,8 +60,8 @@ public class QueryAsyncJobResultCmd extends BaseCmd {
         return s_name;
     }
     
-    @Override
-    public ResponseObject getResponse() {
+    @Override @SuppressWarnings("unchecked")
+    public AsyncJobResponse getResponse() {
         AsyncJobResult result = (AsyncJobResult)getResponseObject();
 
         AsyncJobResponse response = new AsyncJobResponse();

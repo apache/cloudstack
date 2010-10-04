@@ -74,10 +74,10 @@ public class ListAsyncJobsCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<AsyncJobResponse> getResponse() {
         List<AsyncJobVO> jobs = (List<AsyncJobVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<AsyncJobResponse> response = new ListResponse<AsyncJobResponse>();
         List<AsyncJobResponse> jobResponses = new ArrayList<AsyncJobResponse>();
         for (AsyncJobVO job : jobs) {
             AsyncJobResponse jobResponse = new AsyncJobResponse();

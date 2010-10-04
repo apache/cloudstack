@@ -25,7 +25,6 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.offering.NetworkOffering.GuestIpType;
@@ -76,10 +75,10 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<ServiceOfferingResponse> getResponse() {
         List<ServiceOfferingVO> offerings = (List<ServiceOfferingVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<ServiceOfferingResponse> response = new ListResponse<ServiceOfferingResponse>();
         List<ServiceOfferingResponse> offeringResponses = new ArrayList<ServiceOfferingResponse>();
         for (ServiceOfferingVO offering : offerings) {
             ServiceOfferingResponse offeringResponse = new ServiceOfferingResponse();

@@ -67,9 +67,9 @@ public class StartVMCmd extends BaseAsyncCmd {
     public static String getResultObjectName() {
     	return "virtualmachine";
     }
-
-	@Override
-	public ResponseObject getResponse() {
+ 
+	@Override @SuppressWarnings("unchecked")
+	public UserVmResponse getResponse() {
 	    UserVm vm = (UserVm)getResponseObject();
 
 	    UserVmResponse response = new UserVmResponse();

@@ -25,7 +25,6 @@ import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotVO;
@@ -79,8 +78,8 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     	return "snapshot";
     }
 
-    @Override
-    public ResponseObject getResponse() {
+    @Override @SuppressWarnings("unchecked")
+    public SnapshotResponse getResponse() {
         SnapshotVO snapshot = (SnapshotVO)getResponseObject();
 
         SnapshotResponse response = new SnapshotResponse();

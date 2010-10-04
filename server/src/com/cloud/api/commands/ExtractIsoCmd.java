@@ -23,7 +23,6 @@ import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ExtractResponse;
 
 @Implementation(method="extract", manager=Manager.TemplateManager)
@@ -70,8 +69,8 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
         return s_name;
     }
 
-    @Override
-    public ResponseObject getResponse() {
+    @Override @SuppressWarnings("unchecked")
+    public ExtractResponse getResponse() {
         ExtractResponse response = (ExtractResponse)getResponseObject();
         response.setResponseName(getName());
         return response;

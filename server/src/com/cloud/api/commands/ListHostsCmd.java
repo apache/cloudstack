@@ -31,7 +31,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.dc.ClusterVO;
@@ -118,10 +117,10 @@ public class ListHostsCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<HostResponse> getResponse() {
         List<HostVO> hosts = (List<HostVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<HostResponse> response = new ListResponse<HostResponse>();
         List<HostResponse> hostResponses = new ArrayList<HostResponse>();
         for (HostVO host : hosts) {
             HostResponse hostResponse = new HostResponse();

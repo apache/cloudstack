@@ -23,7 +23,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="updateVirtualMachine", manager=Manager.UserVmManager)
@@ -80,8 +79,8 @@ public class UpdateVMCmd extends BaseCmd{
     	return "virtualmachine";
     }    
 
-    @Override
-    public ResponseObject getResponse() {
+    @Override @SuppressWarnings("unchecked")
+    public SuccessResponse getResponse() {
         SuccessResponse response = new SuccessResponse();
         response.setSuccess(Boolean.TRUE);
         response.setResponseName(getName());

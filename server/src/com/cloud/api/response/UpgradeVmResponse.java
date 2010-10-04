@@ -20,9 +20,10 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 public class UpgradeVmResponse extends BaseResponse {
-    @Param(name = "id")
+	@SerializedName("id")
     private long id;
 
     public String getName() {
@@ -221,75 +222,75 @@ public class UpgradeVmResponse extends BaseResponse {
         return id;
     }
 
-    @Param(name = "name")
+    @SerializedName("name")
     private String name;
 
-    @Param(name = "created")
+    @SerializedName("created")
     private Date created;
 
-    @Param(name = "ipaddress")
+    @SerializedName("ipaddress")
     private String ipAddress;
 
-    @Param(name = "state")
+    @SerializedName("state")
     private String state;
 
-    @Param(name = "account")
+    @SerializedName("account")
     private String account;
 
-    @Param(name = "domainid")
+    @SerializedName("domainid")
     private long domainId;
 
-    @Param(name = "domain")
+    @SerializedName("domain")
     private String domain;
 
-    @Param(name = "haenable")
+    @SerializedName("haenable")
     private boolean haEnable;
 
-    @Param(name = "zoneid")
+    @SerializedName("zoneid")
     private long zoneId;
 
-    @Param(name = "displayname")
+    @SerializedName("displayname")
     private String displayName;
 
-    @Param(name = "zonename")
+    @SerializedName("zonename")
     private String zoneName;
 
-    @Param(name = "hostid")
+    @SerializedName("hostid")
     private long hostId;
 
-    @Param(name = "hostname")
+    @SerializedName("hostname")
     private String hostName;
 
-    @Param(name = "templateid")
+    @SerializedName("templateid")
     private long templateId;
 
-    @Param(name = "templatename")
+    @SerializedName("templatename")
     private String templateName;
 
-    @Param(name = "templatedisplaytext")
+    @SerializedName("templatedisplaytext")
     private String templateDisplayText;
 
-    @Param(name = "passwordenabled")
+    @SerializedName("passwordenabled")
     private boolean passwordEnabled;
 
-    @Param(name = "serviceofferingid")
+    @SerializedName("serviceofferingid")
     private long serviceOfferingId;
 
-    @Param(name = "serviceofferingname")
+    @SerializedName("serviceofferingname")
     private String serviceOfferingName;
 
-    @Param(name = "cpunumber")
+    @SerializedName("cpunumber")
     private long cpuSpeed;
 
-    @Param(name = "memory")
+    @SerializedName("memory")
     private long memory;
 
-    @Param(name = "cpuused")
+    @SerializedName("cpuused")
     private long cpuUsed;
 
-    @Param(name = "networkkbsread")
+    @SerializedName("networkkbsread")
     private long networkKbsRead;
 
-    @Param(name = "networkkbswrite")
+    @SerializedName("networkkbswrite")
     private long networkKbsWrite;
 }

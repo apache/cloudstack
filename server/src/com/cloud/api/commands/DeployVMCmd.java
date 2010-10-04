@@ -154,8 +154,8 @@ public class DeployVMCmd extends BaseAsyncCmd {
     	return "virtualmachine";
     }
     
-    @Override
-    public ResponseObject getResponse() {
+    @Override @SuppressWarnings("unchecked")
+    public UserVmResponse getResponse() {
         UserVm userVm = (UserVm)getResponseObject();
 
         UserVmResponse response = new UserVmResponse();

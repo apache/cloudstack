@@ -55,8 +55,8 @@ public class DestroyVMCmd extends BaseAsyncCmd {
         return s_name;
     }
 
-	@Override
-	public ResponseObject getResponse() {
+	@Override @SuppressWarnings("unchecked")
+	public SuccessResponse getResponse() {
 	    Boolean success = (Boolean)getResponseObject();
 
 	    SuccessResponse response = new SuccessResponse();

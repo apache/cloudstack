@@ -65,8 +65,8 @@ public class UpdateVMGroupCmd extends BaseCmd{
         return s_name;
     }
 
-    @Override
-    public ResponseObject getResponse() {
+    @Override @SuppressWarnings("unchecked")
+    public InstanceGroupResponse getResponse() {
         InstanceGroupVO group = (InstanceGroupVO)getResponseObject();
 
         InstanceGroupResponse response = new InstanceGroupResponse();

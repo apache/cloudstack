@@ -26,7 +26,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.DomainResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.domain.DomainVO;
@@ -76,10 +75,10 @@ public class ListDomainsCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<DomainResponse> getResponse() {
         List<DomainVO> domains = (List<DomainVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<DomainResponse> response = new ListResponse<DomainResponse>();
         List<DomainResponse> domainResponses = new ArrayList<DomainResponse>();
         for (DomainVO domain : domains) {
             DomainResponse domainResponse = new DomainResponse();

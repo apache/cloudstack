@@ -26,7 +26,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.dc.HostPodVO;
@@ -100,10 +99,10 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<VlanIpRangeResponse> getResponse() {
         List<VlanVO> vlans = (List<VlanVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<VlanIpRangeResponse> response = new ListResponse<VlanIpRangeResponse>();
         List<VlanIpRangeResponse> vlanResponses = new ArrayList<VlanIpRangeResponse>();
         for (VlanVO vlan : vlans) {
             Long accountId = ApiDBUtils.getAccountIdForVlan(vlan.getId());

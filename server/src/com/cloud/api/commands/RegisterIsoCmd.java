@@ -27,7 +27,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.dc.DataCenterVO;
@@ -115,12 +114,12 @@ public class RegisterIsoCmd extends BaseCmd {
         return s_name;
     }
 
-	@Override
-	public ResponseObject getResponse() {
+	@Override @SuppressWarnings("unchecked")
+	public ListResponse<TemplateResponse> getResponse() {
 	    VMTemplateVO template = (VMTemplateVO)getResponseObject();
 
-	    ListResponse response = new ListResponse();
-	    List<ResponseObject> responses = new ArrayList<ResponseObject>();
+	    ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
+	    List<TemplateResponse> responses = new ArrayList<TemplateResponse>();
 	    List<DataCenterVO> zones = null;
 
 	    if (zoneId != null) {

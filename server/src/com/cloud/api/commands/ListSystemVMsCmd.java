@@ -26,7 +26,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SystemVmResponse;
 import com.cloud.async.AsyncJobVO;
@@ -108,10 +107,10 @@ public class ListSystemVMsCmd extends BaseListCmd {
     }
     
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<SystemVmResponse> getResponse() {
         List<? extends VMInstanceVO> systemVMs = (List<? extends VMInstanceVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<SystemVmResponse> response = new ListResponse<SystemVmResponse>();
         List<SystemVmResponse> vmResponses = new ArrayList<SystemVmResponse>();
         for (VMInstanceVO systemVM : systemVMs) {
             SystemVmResponse vmResponse = new SystemVmResponse();

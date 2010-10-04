@@ -25,7 +25,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.TemplatePermissionsResponse;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
@@ -75,7 +74,7 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public TemplatePermissionsResponse getResponse() {
         List<String> accountNames = (List<String>)getResponseObject();
         Account account = (Account)UserContext.current().getAccountObject();
         boolean isAdmin = ((account == null) || isAdmin(account.getType()));

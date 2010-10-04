@@ -25,7 +25,6 @@ import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.VolumeResponse;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VolumeVO;
@@ -107,8 +106,8 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     	return "volume";
     }
     
-    @Override
-    public ResponseObject getResponse() {
+    @Override @SuppressWarnings("unchecked")
+    public VolumeResponse getResponse() {
         VolumeVO volume = (VolumeVO)getResponseObject();
 
         VolumeResponse response = new VolumeResponse();

@@ -26,7 +26,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.user.Account;
@@ -70,10 +69,10 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<UserVmResponse> getResponse() {
         List<UserVmVO> instances = (List<UserVmVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
         List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
         for (UserVmVO instance : instances) {
             UserVmResponse userVmResponse = new UserVmResponse();

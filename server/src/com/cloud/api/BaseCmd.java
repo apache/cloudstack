@@ -108,7 +108,7 @@ public abstract class BaseCmd {
     }
 
     public abstract String getName();
-    public abstract ResponseObject getResponse();
+    public abstract <T extends ResponseObject> T getResponse();
 
     public Object getResponseObject() {
         return _responseObject;

@@ -25,7 +25,6 @@ import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.storage.GuestOS;
@@ -132,8 +131,8 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     	return "template";  
     }
 
-    @Override
-    public ResponseObject getResponse() {
+    @Override @SuppressWarnings("unchecked")
+    public TemplateResponse getResponse() {
         VMTemplateVO template = (VMTemplateVO)getResponseObject();
 
         TemplateResponse response = new TemplateResponse();

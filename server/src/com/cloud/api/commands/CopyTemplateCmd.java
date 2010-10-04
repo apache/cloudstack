@@ -26,7 +26,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.storage.GuestOS;
@@ -85,8 +84,8 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
         return s_name;
     }
 
-	@Override
-	public ResponseObject getResponse() {
+	@Override @SuppressWarnings("unchecked")
+	public TemplateResponse getResponse() {
         TemplateResponse templateResponse = new TemplateResponse();
         VMTemplateVO template = (VMTemplateVO)getResponseObject();
         

@@ -28,7 +28,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.ListResponse;
@@ -114,10 +113,10 @@ public class ListAccountsCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<AccountResponse> getResponse() {
         List<AccountVO> accounts = (List<AccountVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<AccountResponse> response = new ListResponse<AccountResponse>();
 
         List<AccountResponse> accountResponses = new ArrayList<AccountResponse>();
         for (AccountVO account : accounts) {

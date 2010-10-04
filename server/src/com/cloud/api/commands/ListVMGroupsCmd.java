@@ -26,7 +26,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.InstanceGroupResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.user.Account;
@@ -84,10 +83,10 @@ public class ListVMGroupsCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-	public ResponseObject getResponse() {
+	public ListResponse<InstanceGroupResponse> getResponse() {
         List<InstanceGroupVO> groups = (List<InstanceGroupVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<InstanceGroupResponse> response = new ListResponse<InstanceGroupResponse>();
         List<InstanceGroupResponse> responses = new ArrayList<InstanceGroupResponse>();
         for (InstanceGroupVO group : groups) {
             InstanceGroupResponse groupResponse = new InstanceGroupResponse();

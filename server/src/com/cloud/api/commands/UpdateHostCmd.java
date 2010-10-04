@@ -31,7 +31,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.HostResponse;
 import com.cloud.dc.ClusterVO;
@@ -83,8 +82,8 @@ public class UpdateHostCmd extends BaseCmd {
     	return "updatehost";
     }
     
-    @Override
-    public ResponseObject getResponse() {
+    @Override @SuppressWarnings("unchecked")
+    public HostResponse getResponse() {
         HostResponse hostResponse = new HostResponse();
         HostVO host = (HostVO)getResponseObject();
         if (host != null) {

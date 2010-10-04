@@ -25,7 +25,6 @@ import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
@@ -64,8 +63,8 @@ public class StartRouterCmd extends BaseAsyncCmd {
     	return "router"; 
     }
     
-	@Override
-	public ResponseObject getResponse() {
+	@Override @SuppressWarnings("unchecked")
+	public DomainRouterResponse getResponse() {
         DomainRouterResponse routerResponse = new DomainRouterResponse();
         DomainRouterVO router = (DomainRouterVO)getResponseObject();
         

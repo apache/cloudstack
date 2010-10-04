@@ -24,7 +24,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.network.SecurityGroupVO;
 
@@ -81,8 +80,8 @@ public class CreatePortForwardingServiceCmd extends BaseCmd {
         return s_name;
     }
 
-    @Override
-    public ResponseObject getResponse() {
+    @Override @SuppressWarnings("unchecked")
+    public SecurityGroupResponse getResponse() {
         SecurityGroupVO group = (SecurityGroupVO)getResponseObject();
 
         SecurityGroupResponse response = new SecurityGroupResponse();

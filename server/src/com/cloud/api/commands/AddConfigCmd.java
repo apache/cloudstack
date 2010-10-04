@@ -23,7 +23,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ConfigurationResponse;
 import com.cloud.configuration.ConfigurationVO;
@@ -95,8 +94,8 @@ public class AddConfigCmd extends BaseCmd {
         return s_name;
     }
     
-    @Override
-    public ResponseObject getResponse() {
+    @Override @SuppressWarnings("unchecked")
+    public ConfigurationResponse getResponse() {
         ConfigurationResponse response = new ConfigurationResponse();
         ConfigurationVO responseObject = (ConfigurationVO)getResponseObject();
         if (responseObject != null) {

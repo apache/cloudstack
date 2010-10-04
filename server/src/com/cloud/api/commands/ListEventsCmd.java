@@ -27,7 +27,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.EventResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.event.EventVO;
@@ -113,10 +112,10 @@ public class ListEventsCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<EventResponse> getResponse() {
         List<EventVO> events = (List<EventVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<EventResponse> response = new ListResponse<EventResponse>();
         List<EventResponse> eventResponses = new ArrayList<EventResponse>();
         for (EventVO event : events) {
             EventResponse responseEvent = new EventResponse();

@@ -25,7 +25,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.VMTemplateVO;
@@ -63,8 +62,8 @@ public class StopVMCmd extends BaseAsyncCmd {
         return s_name;
     }
 
-	@Override
-	public ResponseObject getResponse() {
+	@Override @SuppressWarnings("unchecked")
+	public UserVmResponse getResponse() {
         UserVm vm = (UserVm)getResponseObject();
 
         UserVmResponse response = new UserVmResponse();

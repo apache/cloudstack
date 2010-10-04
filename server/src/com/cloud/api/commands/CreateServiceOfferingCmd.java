@@ -24,7 +24,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.service.ServiceOfferingVO;
 
@@ -113,8 +112,8 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 		return _name;
 	}
 
-	@Override
-    public ResponseObject getResponse() {
+	@Override @SuppressWarnings("unchecked")
+    public ServiceOfferingResponse getResponse() {
 	    ServiceOfferingVO offering = (ServiceOfferingVO)getResponseObject();
 
 	    ServiceOfferingResponse response = new ServiceOfferingResponse();

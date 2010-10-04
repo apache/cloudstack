@@ -29,7 +29,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.async.AsyncJobVO;
@@ -131,7 +130,7 @@ public class ListIsosCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<TemplateResponse> getResponse() {
         TemplateFilter isoFilterObj = null;
         try {
             if (isoFilter == null) {
@@ -184,7 +183,7 @@ public class ListIsosCmd extends BaseListCmd {
             }
         }
 
-        ListResponse response = new ListResponse();
+        ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
         List<TemplateResponse> isoResponses = new ArrayList<TemplateResponse>();
         for (VMTemplateVO iso : isos) {
             List<VMTemplateHostVO> isoHosts = isoHostsMap.get(iso.getId());

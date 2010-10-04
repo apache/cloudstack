@@ -24,7 +24,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.IPAddressResponse;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
@@ -80,7 +79,8 @@ public class AssociateIPAddrCmd extends BaseCmd {
     	return "addressinfo";
     }
     
-    public ResponseObject getResponse() {
+    @SuppressWarnings("unchecked")
+    public IPAddressResponse getResponse() {
     	IPAddressVO ipAddress = (IPAddressVO)getResponseObject();
 
         VlanVO vlan  = ApiDBUtils.findVlanById(ipAddress.getVlanDbId());

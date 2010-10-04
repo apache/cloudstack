@@ -27,7 +27,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.dc.ClusterVO;
@@ -100,10 +99,10 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<StoragePoolResponse> getResponse() {
         List<? extends StoragePoolVO> pools = (List<? extends StoragePoolVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<StoragePoolResponse> response = new ListResponse<StoragePoolResponse>();
         List<StoragePoolResponse> poolResponses = new ArrayList<StoragePoolResponse>();
         for (StoragePoolVO pool : pools) {
             StoragePoolResponse poolResponse = new StoragePoolResponse();

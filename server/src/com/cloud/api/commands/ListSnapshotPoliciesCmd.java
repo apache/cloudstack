@@ -27,7 +27,6 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.storage.SnapshotPolicyVO;
@@ -77,10 +76,10 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<SnapshotPolicyResponse> getResponse() {
         List<SnapshotPolicyVO> policies = (List<SnapshotPolicyVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<SnapshotPolicyResponse> response = new ListResponse<SnapshotPolicyResponse>();
         List<SnapshotPolicyResponse> policyResponses = new ArrayList<SnapshotPolicyResponse>();
         for (SnapshotPolicyVO policy : policies) {
             SnapshotPolicyResponse policyResponse = new SnapshotPolicyResponse();

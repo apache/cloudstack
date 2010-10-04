@@ -27,7 +27,6 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.IngressRuleResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.NetworkGroupResponse;
@@ -87,11 +86,11 @@ public class ListNetworkGroupsCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<NetworkGroupResponse> getResponse() {
         List<NetworkGroupRulesVO> networkGroups = (List<NetworkGroupRulesVO>)getResponseObject();
         List<NetworkGroupResultObject> groupResultObjs = NetworkGroupResultObject.transposeNetworkGroups(networkGroups);
 
-        ListResponse response = new ListResponse();
+        ListResponse<NetworkGroupResponse> response = new ListResponse<NetworkGroupResponse>();
         List<NetworkGroupResponse> netGrpResponses = new ArrayList<NetworkGroupResponse>();
         for (NetworkGroupResultObject networkGroup : groupResultObjs) {
             NetworkGroupResponse netGrpResponse = new NetworkGroupResponse();

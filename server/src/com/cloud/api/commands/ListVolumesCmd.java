@@ -27,7 +27,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.VolumeResponse;
@@ -125,10 +124,10 @@ public class ListVolumesCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<VolumeResponse> getResponse() {
         List<VolumeVO> volumes = (List<VolumeVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<VolumeResponse> response = new ListResponse<VolumeResponse>();
         List<VolumeResponse> volResponses = new ArrayList<VolumeResponse>();
         for (VolumeVO volume : volumes) {
             VolumeResponse volResponse = new VolumeResponse();

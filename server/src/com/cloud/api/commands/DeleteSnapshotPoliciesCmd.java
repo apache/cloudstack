@@ -26,7 +26,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="deleteSnapshotPolicies", manager=Manager.SnapshotManager)
@@ -82,8 +81,8 @@ public class DeleteSnapshotPoliciesCmd extends BaseCmd {
         return s_name;
     }
 
-	@Override
-	public ResponseObject getResponse() {
+	@Override @SuppressWarnings("unchecked")
+	public SuccessResponse getResponse() {
         Boolean success = (Boolean)getResponseObject();
         SuccessResponse response = new SuccessResponse();
         response.setSuccess(success);

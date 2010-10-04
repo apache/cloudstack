@@ -28,7 +28,6 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.configuration.ResourceLimitVO;
@@ -86,10 +85,10 @@ public class ListResourceLimitsCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<ResourceLimitResponse> getResponse() {
         List<ResourceLimitVO> limits = (List<ResourceLimitVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<ResourceLimitResponse> response = new ListResponse<ResourceLimitResponse>();
         List<ResourceLimitResponse> limitResponses = new ArrayList<ResourceLimitResponse>();
         for (ResourceLimitVO limit : limits) {
             ResourceLimitResponse resourceLimitResponse = new ResourceLimitResponse();

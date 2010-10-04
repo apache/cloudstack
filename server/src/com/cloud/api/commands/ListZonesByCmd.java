@@ -25,7 +25,6 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.dc.DataCenterVO;
@@ -63,11 +62,11 @@ public class ListZonesByCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<ZoneResponse> getResponse() {
         List<DataCenterVO> dataCenters = (List<DataCenterVO>)getResponseObject();
         Account account = (Account)UserContext.current().getAccountObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<ZoneResponse> response = new ListResponse<ZoneResponse>();
         List<ZoneResponse> zoneResponses = new ArrayList<ZoneResponse>();
         for (DataCenterVO dataCenter : dataCenters) {
             ZoneResponse zoneResponse = new ZoneResponse();

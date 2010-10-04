@@ -24,7 +24,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 
@@ -58,8 +57,8 @@ public class DeletePodCmd extends BaseCmd {
         return s_name;
     }
     
-    @Override
-    public ResponseObject getResponse() {
+    @Override @SuppressWarnings("unchecked")
+    public SuccessResponse getResponse() {
         SuccessResponse response = new SuccessResponse();
         Boolean responseObject = (Boolean)getResponseObject();
       

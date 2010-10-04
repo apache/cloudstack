@@ -25,7 +25,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.user.Account;
@@ -82,8 +81,8 @@ public class UpdateResourceLimitCmd extends BaseCmd {
         return s_name;
     }
 
-    @Override
-    public ResponseObject getResponse() {
+    @Override @SuppressWarnings("unchecked")
+    public ResourceLimitResponse getResponse() {
         ResourceLimitVO limit = (ResourceLimitVO) getResponseObject();
 
         ResourceLimitResponse response = new ResourceLimitResponse();

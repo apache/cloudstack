@@ -25,7 +25,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.PodResponse;
 import com.cloud.dc.HostPodVO;
 
@@ -95,8 +94,8 @@ public class CreatePodCmd extends BaseCmd {
         return s_name;
     }
 
-    @Override
-    public ResponseObject getResponse() {
+    @Override @SuppressWarnings("unchecked")
+    public PodResponse getResponse() {
         HostPodVO pod = (HostPodVO)getResponseObject();
 
         PodResponse response = new PodResponse();

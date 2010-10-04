@@ -25,7 +25,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.uservm.UserVm;
@@ -90,8 +89,8 @@ public class CreateIPForwardingRuleCmd extends BaseCmd {
         return s_name;
     }
 
-    @Override
-    public ResponseObject getResponse() {
+    @Override @SuppressWarnings("unchecked")
+    public FirewallRuleResponse getResponse() {
         FirewallRuleVO fwRule = (FirewallRuleVO)getResponseObject();
 
         FirewallRuleResponse fwResponse = new FirewallRuleResponse();

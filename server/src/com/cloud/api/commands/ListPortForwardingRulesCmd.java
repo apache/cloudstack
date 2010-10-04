@@ -29,7 +29,6 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.network.FirewallRuleVO;
@@ -68,12 +67,12 @@ public class ListPortForwardingRulesCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<FirewallRuleResponse> getResponse() {
         List<FirewallRuleVO> firewallRules = (List<FirewallRuleVO>)getResponseObject();
         Map<String, UserVmVO> userVmCache = new HashMap<String, UserVmVO>();
         IPAddressVO ipAddr = ApiDBUtils.findIpAddressById(ipAddress);
 
-        ListResponse response = new ListResponse();
+        ListResponse<FirewallRuleResponse> response = new ListResponse<FirewallRuleResponse>();
         List<FirewallRuleResponse> fwResponses = new ArrayList<FirewallRuleResponse>();
         for (FirewallRuleVO fwRule : firewallRules) {
             FirewallRuleResponse ruleData = new FirewallRuleResponse();

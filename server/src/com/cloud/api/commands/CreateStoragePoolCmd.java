@@ -27,7 +27,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
@@ -105,8 +104,8 @@ public class CreateStoragePoolCmd extends BaseCmd {
         return s_name;
     }
 
-    @Override
-    public ResponseObject getResponse() {
+    @Override @SuppressWarnings("unchecked")
+    public StoragePoolResponse getResponse() {
         StoragePoolVO pool = (StoragePoolVO)getResponseObject();
 
         StoragePoolResponse response = new StoragePoolResponse();

@@ -24,7 +24,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.RegisterResponse;
 
 @Implementation(method="createApiKeyAndSecretKey", manager=Manager.ManagementServer)
@@ -56,8 +55,8 @@ public class RegisterCmd extends BaseCmd {
         return s_name;
     }
 
-	@Override
-	public ResponseObject getResponse() {
+	@Override @SuppressWarnings("unchecked")
+	public RegisterResponse getResponse() {
 	    String[] keys = (String[])getResponseObject();
 
 	    RegisterResponse response = new RegisterResponse();

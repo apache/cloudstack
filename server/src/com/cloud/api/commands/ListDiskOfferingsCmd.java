@@ -26,7 +26,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.DiskOfferingResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.domain.DomainVO;
@@ -77,10 +76,10 @@ public class ListDiskOfferingsCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<DiskOfferingResponse> getResponse() {
         List<DiskOfferingVO> offerings = (List<DiskOfferingVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<DiskOfferingResponse> response = new ListResponse<DiskOfferingResponse>();
         List<DiskOfferingResponse> diskOfferingResponses = new ArrayList<DiskOfferingResponse>();
         for (DiskOfferingVO offering : offerings) {
             DiskOfferingResponse diskOffResp = new DiskOfferingResponse();

@@ -24,7 +24,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.storage.SnapshotPolicyVO;
 
@@ -102,8 +101,8 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
         return s_name;
     }
 
-    @Override
-    public ResponseObject getResponse() {
+    @Override @SuppressWarnings("unchecked")
+    public SnapshotPolicyResponse getResponse() {
         SnapshotPolicyVO snapshotPolicy = (SnapshotPolicyVO)getResponseObject();
 
         SnapshotPolicyResponse response = new SnapshotPolicyResponse();

@@ -24,7 +24,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.dc.DataCenterVO;
 
@@ -101,8 +100,8 @@ public class CreateZoneCmd extends BaseCmd {
         return s_name;
     }
 
-    @Override
-    public ResponseObject getResponse() {
+    @Override @SuppressWarnings("unchecked")
+    public ZoneResponse getResponse() {
         DataCenterVO zone = (DataCenterVO)getResponseObject();
 
         ZoneResponse response = new ZoneResponse();

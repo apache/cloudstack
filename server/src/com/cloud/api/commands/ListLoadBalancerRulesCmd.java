@@ -27,7 +27,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.network.LoadBalancerVO;
@@ -100,10 +99,10 @@ public class ListLoadBalancerRulesCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<LoadBalancerResponse> getResponse() {
         List<LoadBalancerVO> loadBalancers = (List<LoadBalancerVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<LoadBalancerResponse> response = new ListResponse<LoadBalancerResponse>();
         List<LoadBalancerResponse> lbResponses = new ArrayList<LoadBalancerResponse>();
         for (LoadBalancerVO loadBalancer : loadBalancers) {
             LoadBalancerResponse lbResponse = new LoadBalancerResponse();

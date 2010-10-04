@@ -26,7 +26,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.async.AsyncJobVO;
@@ -109,10 +108,10 @@ public class ListSnapshotsCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<SnapshotResponse> getResponse() {
         List<SnapshotVO> snapshots = (List<SnapshotVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<SnapshotResponse> response = new ListResponse<SnapshotResponse>();
         List<SnapshotResponse> snapshotResponses = new ArrayList<SnapshotResponse>();
         for (Snapshot snapshot : snapshots) {
             SnapshotResponse snapshotResponse = new SnapshotResponse();

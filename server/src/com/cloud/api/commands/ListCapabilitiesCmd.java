@@ -23,7 +23,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.CapabilitiesResponse;
 
 @Implementation(method="listCapabilities")
@@ -38,7 +37,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public CapabilitiesResponse getResponse() {
         Map<String, String> capabilities = (Map<String, String>)getResponseObject();
 
         CapabilitiesResponse response = new CapabilitiesResponse();

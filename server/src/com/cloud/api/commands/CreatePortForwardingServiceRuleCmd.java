@@ -23,7 +23,6 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.PortForwardingServiceRuleResponse;
 import com.cloud.network.NetworkRuleConfigVO;
 
@@ -84,8 +83,8 @@ public class CreatePortForwardingServiceRuleCmd extends BaseAsyncCreateCmd {
     	return "portforwardingservicerule";
     }
 
-    @Override
-    public ResponseObject getResponse() {
+    @Override @SuppressWarnings("unchecked")
+    public PortForwardingServiceRuleResponse getResponse() {
         NetworkRuleConfigVO netRule = (NetworkRuleConfigVO)getResponseObject();
 
         PortForwardingServiceRuleResponse response = new PortForwardingServiceRuleResponse();

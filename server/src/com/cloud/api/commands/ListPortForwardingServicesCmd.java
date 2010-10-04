@@ -27,7 +27,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.network.SecurityGroupVO;
@@ -86,10 +85,10 @@ public class ListPortForwardingServicesCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<SecurityGroupResponse> getResponse() {
         List<SecurityGroupVO> groups = (List<SecurityGroupVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<SecurityGroupResponse> response = new ListResponse<SecurityGroupResponse>();
         List<SecurityGroupResponse> pfsResponses = new ArrayList<SecurityGroupResponse>();
         for (SecurityGroupVO group : groups) {
             SecurityGroupResponse pfsData = new SecurityGroupResponse();

@@ -33,7 +33,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.CapacityResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.capacity.CapacityVO;
@@ -106,10 +105,10 @@ public class ListCapacityCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<CapacityResponse> getResponse() {
         List<CapacityVO> capacities = (List<CapacityVO>)getResponseObject();
 
-        ListResponse response = new ListResponse();
+        ListResponse<CapacityResponse> response = new ListResponse<CapacityResponse>();
         List<CapacityResponse> capacityResponses = new ArrayList<CapacityResponse>();
         List<CapacityVO> summedCapacities = sumCapacities(capacities);
         for (CapacityVO summedCapacity : summedCapacities) {

@@ -27,7 +27,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.async.AsyncJobVO;
@@ -108,7 +107,7 @@ public class ListTemplatesCmd extends BaseListCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<TemplateResponse> getResponse() {
         TemplateFilter templateFilterObj;
         try {
             templateFilterObj = TemplateFilter.valueOf(templateFilter);
@@ -137,7 +136,7 @@ public class ListTemplatesCmd extends BaseListCmd {
 
         // get the response
         List<VMTemplateVO> templates = (List<VMTemplateVO>)getResponseObject();
-        ListResponse response = new ListResponse();
+        ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
         List<TemplateResponse> templateResponses = new ArrayList<TemplateResponse>();
 
         for (VMTemplateVO template : templates) {

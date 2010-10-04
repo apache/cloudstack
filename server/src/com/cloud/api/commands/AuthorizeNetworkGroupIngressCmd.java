@@ -28,7 +28,6 @@ import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.IngressRuleResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.network.security.IngressRuleVO;
@@ -136,10 +135,10 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
     }
 
 	@Override @SuppressWarnings("unchecked")
-	public ResponseObject getResponse() {
+	public ListResponse<IngressRuleResponse> getResponse() {
 	    List<IngressRuleVO> ingressRules = (List<IngressRuleVO>)getResponseObject();
 
-	    ListResponse response = new ListResponse();
+	    ListResponse<IngressRuleResponse> response = new ListResponse<IngressRuleResponse>();
         if ((ingressRules != null) && !ingressRules.isEmpty()) {
             List<IngressRuleResponse> responses = new ArrayList<IngressRuleResponse>();
             for (IngressRuleVO ingressRule : ingressRules) {

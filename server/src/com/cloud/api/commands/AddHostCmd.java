@@ -31,7 +31,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.ListResponse;
@@ -118,10 +117,10 @@ public class AddHostCmd extends BaseCmd {
     }
 
     @Override @SuppressWarnings("unchecked")
-    public ResponseObject getResponse() {
+    public ListResponse<HostResponse> getResponse() {
     	List<HostVO> hosts = (List<HostVO>)getResponseObject();
 
-    	ListResponse response = new ListResponse();
+    	ListResponse<HostResponse> response = new ListResponse<HostResponse>();
         List<HostResponse> hostResponses = new ArrayList<HostResponse>();
         if (hosts != null) {
             for (HostVO host : hosts) {

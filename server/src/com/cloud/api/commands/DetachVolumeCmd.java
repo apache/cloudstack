@@ -23,7 +23,6 @@ import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.SuccessResponse;
 
 @Implementation(method="detachVolumeFromVM", manager=Manager.UserVmManager)
@@ -73,8 +72,8 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
     	return "volume";
     }
 
-	@Override
-	public ResponseObject getResponse() {
+	@Override @SuppressWarnings("unchecked")
+	public SuccessResponse getResponse() {
         Boolean success = (Boolean)getResponseObject();
         SuccessResponse response = new SuccessResponse();
         response.setSuccess(success);
