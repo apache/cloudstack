@@ -2472,9 +2472,9 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                     description = desc;
                 }
                 
-                IPAddressVO ipAdd = _ipAddressDao.findById(rule.getPublicIpAddress());
-
-                saveEvent(userId, ipAdd.getAccountId(), level, type, description);
+                IPAddressVO ipAddr = _ipAddressDao.findById(rule.getPublicIpAddress());
+                
+                saveEvent(userId, ipAddr!=null?ipAddr.getAccountId():null, level, type, description);
             }
         } finally {
             if (e != null) {
