@@ -2210,7 +2210,7 @@ public class ManagementServerImpl implements ManagementServer {
                     String description = "created new ip forwarding rule [" + newFwRule.getPublicIpAddress() + ":" + newFwRule.getPublicPort() + "]->["
                             + newFwRule.getPrivateIpAddress() + ":" + newFwRule.getPrivatePort() + "]" + " " + newFwRule.getProtocol();
 
-                    EventUtils.saveEvent(userId, account.getId(), EventVO.LEVEL_INFO, EventTypes.EVENT_NET_RULE_ADD, description);
+                    EventUtils.saveEvent(userId, userVm.getId(), EventVO.LEVEL_INFO, EventTypes.EVENT_NET_RULE_ADD, description);
                 }
 
                 // now that individual rules have been created from the security group, save the security group mapping for this ip/vm instance

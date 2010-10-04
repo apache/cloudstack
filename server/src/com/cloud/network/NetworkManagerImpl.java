@@ -3624,13 +3624,13 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         NetworkRuleConfigVO netRule = _networkRuleConfigDao.findById(netRuleId);
         if (netRule != null) {
             SecurityGroupVO sg = _securityGroupDao.findById(netRule.getSecurityGroupId());
-            if (account != null) {
-                if (!BaseCmd.isAdmin(account.getType())) {
-                    if (sg.getAccountId() != account.getId()) {
-                        throw new PermissionDeniedException("Unable to delete port forwarding service rule " + netRuleId + "; account: " + account.getAccountName() + " is not the owner");
-                    }
-                } else if (!_domainDao.isChildDomain(account.getDomainId(), sg.getDomainId())) {
+            if ((account == null) || BaseCmd.isAdmin(account.getType())) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), sg.getDomainId())) {
                     throw new PermissionDeniedException("Unable to delete port forwarding service rule " + netRuleId + "; account: " + account.getAccountName() + " is not an admin in the domain hierarchy.");
+                }
+            } else {
+                if (sg.getAccountId() != account.getId()) {
+                    throw new PermissionDeniedException("Unable to delete port forwarding service rule " + netRuleId + "; account: " + account.getAccountName() + " is not the owner");
                 }
             }
         } else {

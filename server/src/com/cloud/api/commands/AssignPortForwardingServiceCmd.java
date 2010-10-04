@@ -37,7 +37,7 @@ public class AssignPortForwardingServiceCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.STRING)
+    @Parameter(name="id", type=CommandType.LONG)
     private Long id;
 
     @Parameter(name="ids", type=CommandType.LIST, collectionType=CommandType.LONG)
