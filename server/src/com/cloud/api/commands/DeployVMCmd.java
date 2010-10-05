@@ -59,7 +59,7 @@ public class DeployVMCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.NETWORK_GROUP_LIST, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.SIZE, Boolean.FALSE));
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HYPERVISOR, Boolean.TRUE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HYPERVISOR, Boolean.FALSE));
     }
 
     @Override
@@ -110,7 +110,10 @@ public class DeployVMCmd extends BaseCmd {
         
         if (template.getFormat().equals(ImageFormat.ISO)) {
         	/*TODO:Hack here*/
-        	template.setHypervisorType(HypervisorType.XenServer);
+        	if (hyperType == HypervisorType.None) {
+        		throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "Need hypervisorType to deploy blankvm");
+        	}
+        	template.setHypervisorType(hyperType);
         }
 
     	if (diskOfferingId != null) {
