@@ -1706,14 +1706,14 @@ function showStorageTab(domainId, targetTab) {
 	
 		    template.data("id", json.id).data("name", fromdb(json.name));
 		    template.find("#pool_id").text(json.id);
-		    template.find("#pool_name").text(json.name);
-		    template.find("#pool_zone").text(json.zonename);
+		    template.find("#pool_name").text(fromdb(json.name));
+		    template.find("#pool_zone").text(fromdb(json.zonename));
 		    template.find("#pool_pod").text(json.podname);
-		    template.find("#pool_cluster").text(json.clustername);
+		    template.find("#pool_cluster").text(fromdb(json.clustername));
 		    template.find("#pool_type").text(json.type);
 		    template.find("#pool_ip").text(json.ipaddress);
 		    template.find("#pool_path").text(json.path);
-		    template.find("#pool_tags").text(json.tags);
+		    template.find("#pool_tags").text(fromdb(json.tags));
 		    
 		    var statHtml = "<strong> Disk Total:</strong> " +convertBytes(json.disksizetotal)+" | <strong>Disk Allocated:</strong> " + convertBytes(json.disksizeallocated);
 		    template.find("#pool_statistics").html(statHtml); 			
@@ -1797,7 +1797,7 @@ function showStorageTab(domainId, targetTab) {
 		            var items = json.listclustersresponse.cluster;
 		            if(items != null && items.length > 0) {				                		                
 		                for(var i=0; i<items.length; i++) 			                    
-		                    clusterSelect.append("<option value='" + items[i].id + "'>" + items[i].name + "</option>");		                
+		                    clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");		                
 		            }			            
 		        }
 		    });		    
@@ -1928,7 +1928,7 @@ function showStorageTab(domainId, targetTab) {
 					
 				    var tags = trim(thisDialog.find("#add_pool_tags").val());
 					if(tags != null && tags.length > 0)
-					    array1.push("&tags="+encodeURIComponent(tags));						
+					    array1.push("&tags="+todb(tags));						
 										    
 				    thisDialog.dialog("close");
 				    

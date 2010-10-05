@@ -78,7 +78,7 @@ function showHostsTab() {
 	            var items = json.listclustersresponse.cluster;
 	            if(items != null && items.length > 0) {			                
 	                for(var i=0; i<items.length; i++) 			                    
-	                    clusterSelect.append("<option value='" + items[i].id + "'>" + items[i].name + "</option>");		      
+	                    clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");		      
                     dialogAddRouting.find("input[value=existing_cluster_radio]").attr("checked", true);
 	            }
 	            else {
@@ -95,7 +95,7 @@ function showHostsTab() {
 		zIndex: 2000
 	}));
 	$.ajax({
-	       data: createURL("command=listOsCategories&response=json"+maxPageSize),
+	    data: createURL("command=listOsCategories&response=json"+maxPageSize),
 		dataType: "json",
 		success: function(json) {
 			var categories = json.listoscategoriesresponse.oscategory;
@@ -515,11 +515,11 @@ function showHostsTab() {
 		}
 		template.data("hostId", json.id).data("hostName", fromdb(json.name));
 				
-		template.find("#routing_zone").text(json.zonename);
-		template.find("#routing_pod").text(json.podname);
-		template.find("#routing_cluster").text(json.clustername);
+		template.find("#routing_zone").text(fromdb(json.zonename));
+		template.find("#routing_pod").text(fromdb(json.podname));
+		template.find("#routing_cluster").text(fromdb(json.clustername));
 		
-		template.find("#routing_name").text(json.name);
+		template.find("#routing_name").text(fromdb(json.name));
 		template.find("#routing_ipaddress").text(json.ipaddress);
 		template.find("#routing_version").text(json.version);
 		template.find("#routing_os").text(json.oscategoryname);
@@ -608,7 +608,7 @@ function showHostsTab() {
 											
 				if(clusterRadio == "new_cluster_radio") {
 			        var newClusterName = trim(dialogBox.find("#new_cluster_name").val());
-			        array1.push("&clustername="+encodeURIComponent(newClusterName));				    
+			        array1.push("&clustername="+todb(newClusterName));				    
 			    }
 			    else if(clusterRadio == "existing_cluster_radio") {
 			        var clusterId = dialogBox.find("#cluster_select").val();
