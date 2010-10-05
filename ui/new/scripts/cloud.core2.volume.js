@@ -105,7 +105,7 @@ function afterLoadVolumeJSP() {
 				var $midmenuItem1 = beforeAddingMidMenuItem() ;
 				    					
 			    $.ajax({
-				    data: createURL("command=createVolume&zoneId="+zoneId+"&name="+encodeURIComponent(name)+"&diskOfferingId="+diskofferingId+"&accountId="+"1"), 
+				    data: createURL("command=createVolume&zoneId="+zoneId+"&name="+todb(name)+"&diskOfferingId="+diskofferingId+"&accountId="+"1"), 
 				    dataType: "json",
 				    success: function(json) {						        
 				        var jobId = json.createvolumeresponse.jobid;				        
@@ -466,13 +466,13 @@ function  volumeJsonToVolumeTab(jsonObj) {
 function volumeSnapshotJSONToTemplate(jsonObj, template) {
     template.data("jsonObj", jsonObj);     
     template.attr("id", "volume_snapshot_"+jsonObj.id).data("volumeSnapshotId", jsonObj.id);    
-    template.find("#title").text(jsonObj.name);			   
+    template.find("#title").text(fromdb(jsonObj.name));			   
     template.find("#id").text(jsonObj.id);
-    template.find("#name").text(jsonObj.name);			      
-    template.find("#volumename").text(jsonObj.volumename);	
+    template.find("#name").text(fromdb(jsonObj.name));			      
+    template.find("#volumename").text(fromdb(jsonObj.volumename));	
     template.find("#intervaltype").text(jsonObj.intervaltype);	    		   
-    template.find("#account").text(jsonObj.account);
-    template.find("#domain").text(jsonObj.domain);    
+    template.find("#account").text(fromdb(jsonObj.account));
+    template.find("#domain").text(fromdb(jsonObj.domain));    
     setDateField(jsonObj.created, template.find("#created"));	 
 	
 	var $actionLink = template.find("#snapshot_action_link");		
@@ -582,7 +582,7 @@ function doCreateTemplateFromVolume($actionLink, listAPIMap, $detailsTab) {
             var password = thisDialog.find("#create_template_password").val();				
 			
 			var id = $detailsTab.data("jsonObj").id;			
-			var apiCommand = "command=createTemplate&volumeId="+id+"&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
+			var apiCommand = "command=createTemplate&volumeId="+id+"&name="+todb(name)+"&displayText="+todb(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
 	    	doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);					
 		}, 
 		"Cancel": function() { 
@@ -884,7 +884,7 @@ function doCreateVolumeFromSnapshotInVolumePage($actionLink, listAPIMap, $subgri
          var name = thisDialog.find("#name").val();	                
          
          var id = jsonObj.id;
-         var apiCommand = "command=createVolume&snapshotid="+id+"&name="+name;    	
+         var apiCommand = "command=createVolume&snapshotid="+id+"&name="+fromdb(name);    	
     	 doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgridItem);			
      },
      "Cancel": function() {	                         
@@ -913,7 +913,7 @@ function doCreateTemplateFromSnapshotInVolumePage($actionLink, listAPIMap, $subg
          var password = thisDialog.find("#password").val();	                                         
        
          var id = jsonObj.id;
-         var apiCommand = "command=createTemplate&snapshotid="+id+"&name="+name+"&displaytext="+displayText+"&ostypeid="+osTypeId+"&passwordEnabled="+password;    	 
+         var apiCommand = "command=createTemplate&snapshotid="+id+"&name="+todb(name)+"&displaytext="+todb(displayText)+"&ostypeid="+osTypeId+"&passwordEnabled="+password;    	 
     	 doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgridItem);				
      },
      "Cancel": function() {	                         
