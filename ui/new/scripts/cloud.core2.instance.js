@@ -1149,9 +1149,9 @@ var vmVolumeActionMap = {
 function vmVolumeJSONToTemplate(json, $template) {
     $template.attr("id","vm_volume_"+json.id);	        
     $template.data("jsonObj", json);    
-    $template.find("#title").text(json.name);    
+    $template.find("#title").text(fromdb(json.name));    
 	$template.find("#id").text(json.id);	
-	$template.find("#name").text(json.name);
+	$template.find("#name").text(fromdb(json.name));
 	if (json.storagetype == "shared") 
 		$template.find("#type").text(json.type + " (shared storage)");
 	else 
@@ -1173,13 +1173,23 @@ function vmVolumeJSONToTemplate(json, $template) {
 	
 	var $actionMenu = $actionLink.find("#volume_action_menu");
     $actionMenu.find("#action_list").empty();
+    var noAvailableActions = true;
+    
 	if(json.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
-		if (json.vmstate == "Stopped") 
+		if (json.vmstate == "Stopped") {
 		    buildActionLinkForSubgridItem("Create Template", vmVolumeActionMap, $actionMenu, volumeListAPIMap, $template);	
+		    noAvailableActions = false;		
+		}
 	} 
 	else { //json.type=="DATADISK": "detach disk" is allowed, "create template" is disallowed.			
-		buildActionLinkForSubgridItem("Detach Disk", vmVolumeActionMap, $actionMenu, volumeListAPIMap, $template);				
+		buildActionLinkForSubgridItem("Detach Disk", vmVolumeActionMap, $actionMenu, volumeListAPIMap, $template);		
+		noAvailableActions = false;				
 	}	
+	
+	// no available actions 
+	if(noAvailableActions == true) {	    
+	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
+	}	  
 	//***** actions (end) *****		
 }
 	
@@ -1212,13 +1222,22 @@ function vmRouterJSONToTemplate(jsonObj, $template) {
 	
 	var $actionMenu = $actionLink.find("#router_action_menu");
     $actionMenu.find("#action_list").empty();
+    var noAvailableActions = true;
+    
 	 if (jsonObj.state == 'Running') {
 	    buildActionLinkForSubgridItem("Stop Router", vmRouterActionMap, $actionMenu, routerListAPIMap, $template);
 	    buildActionLinkForSubgridItem("Reboot Router", vmRouterActionMap, $actionMenu, routerListAPIMap, $template);
+	    noAvailableActions = false;		
     }
     else if (jsonObj.state == 'Stopped') {     
-        buildActionLinkForSubgridItem("Start Router", vmRouterActionMap, $actionMenu, routerListAPIMap, $template);   
-    }                
+        buildActionLinkForSubgridItem("Start Router", vmRouterActionMap, $actionMenu, routerListAPIMap, $template);  
+        noAvailableActions = false;		 
+    }          
+    
+    // no available actions 
+	if(noAvailableActions == true) {
+	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
+	}	        
 	//***** actions (end) *****		
 }	
 
