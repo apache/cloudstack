@@ -33,15 +33,10 @@
             <div class="grid_actionbox" id="action_link">
                 <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                     <ul class="actionsdropdown_boxlist" id="action_list">
-                        <!--  
-                    	<li> <a href="#"> Delete </a> </li>
-                        <li> <a href="#"> Attach Disk </a> </li>
-                        -->
+                       <li><%=t.t("no.available.actions")%></li>
                     </ul>
                 </div>
-            </div>
-            <div class="grid_editbox">
-            </div>
+            </div>            
             <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
                 display: none;">
                 <div class="gridheader_loader" id="icon">

@@ -337,7 +337,7 @@ long milliseconds = new Date().getTime();
                             <div class="leftmenu_arrows close" id="arrowIcon">
                             </div>
                             <div class="leftmenu_list_icons">
-                                <img src="images/leftmenu_networkgroupicon.png" alt="IP Address" /></div>
+                                <img src="images/leftmenu_ipaddressicon.png" alt="IP Address" /></div>
                             <%=t.t("ip.address")%>
                         </div>
                     </div>
