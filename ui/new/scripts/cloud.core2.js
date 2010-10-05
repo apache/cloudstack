@@ -577,6 +577,7 @@ function clearMiddleMenu() {
 
 function clearRightPanel() {
     $("#right_panel_content #tab_content_details #action_link #action_menu #action_list").empty();    
+    $("#right_panel_content #tab_content_details #spinning_wheel").hide();
     $("#right_panel_content #after_action_info_container").hide(); 
 }
     
