@@ -5094,7 +5094,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
 
     protected String getVhdParent(String primaryStorageSRUuid, String snapshotUuid, Boolean isISCSI) {
-        String parentUuid = callHostPlugin("vmopsSnapshot", "getVhdParent", "primaryStorageSRUuid", primaryStorageSRUuid,
+        String parentUuid = callHostPlugin("getVhdParent", "primaryStorageSRUuid", primaryStorageSRUuid,
                 "snapshotUuid", snapshotUuid, "isISCSI", isISCSI.toString());
 
         if (parentUuid == null || parentUuid.isEmpty()) {
