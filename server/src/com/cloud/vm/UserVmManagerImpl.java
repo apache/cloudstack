@@ -2213,8 +2213,8 @@ public class UserVmManagerImpl implements UserVmManager {
                 
                 String origTemplateInstallPath = null;
 
-                
-                if (ImageFormat.ISO != _snapshotMgr.getImageFormat(volumeId)) {
+                ImageFormat format =  _snapshotMgr.getImageFormat(volumeId);
+                if (format != null && format != ImageFormat.ISO) {
                     Long origTemplateId = volume.getTemplateId();
                     VMTemplateHostVO vmTemplateHostVO = _templateHostDao.findByHostTemplate(secondaryStorageHost.getId(), origTemplateId);
                     origTemplateInstallPath = vmTemplateHostVO.getInstallPath();
