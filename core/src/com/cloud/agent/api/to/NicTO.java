@@ -5,7 +5,6 @@ package com.cloud.agent.api.to;
 
 public class NicTO extends NetworkTO {
     int deviceId;
-    Integer controlPort;
     Integer networkRateMbps;
     Integer networkRateMulticastMbps;
     String bootParams;
@@ -13,7 +12,6 @@ public class NicTO extends NetworkTO {
 
     public NicTO() {
         super();
-        controlPort = null;
     }
     
     public void setDeviceId(int deviceId) {
@@ -22,10 +20,6 @@ public class NicTO extends NetworkTO {
     
     public int getDeviceId() {
         return deviceId;
-    }
-    
-    public Integer getControlPort() {
-        return controlPort;
     }
     
     public Integer getNetworkRateMbps() {

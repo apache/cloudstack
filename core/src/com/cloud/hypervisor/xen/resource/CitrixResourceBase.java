@@ -145,6 +145,8 @@ import com.cloud.agent.api.storage.ShareCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.api.to.VirtualMachineTO.Monitor;
+import com.cloud.agent.api.to.VirtualMachineTO.SshMonitor;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
@@ -654,6 +656,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         if (type == TrafficType.Guest) {
             return new Pair<Network, String>(Network.getByUuid(conn, _host.guestNetwork), _host.guestPif);
         } else if (type == TrafficType.Control) {
+            setupLinkLocalNetwork();            
             return new Pair<Network, String>(Network.getByUuid(conn, _host.linkLocalNetwork), null);
         } else if (type == TrafficType.Management) {
             return new Pair<Network, String>(Network.getByUuid(conn, _host.privateNetwork), _host.privatePif);
@@ -923,11 +926,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 createPatchVbd(conn, vmName, vm);
             }
             
-            NicTO controlNic = null;
             for (NicTO nic : vmSpec.getNics()) {
-                if (nic.getType() == TrafficType.Control) {
-                    controlNic = nic;
-                }
                 createVif(conn, vmName, vm, nic);
             }
             
@@ -947,9 +946,11 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 }
             }
 
-            if (controlNic != null) {
-                String privateIp = controlNic.getIp();
-                int cmdPort = controlNic.getControlPort();
+            Monitor monitor = vmSpec.getMonitor();
+            if (monitor != null && monitor instanceof SshMonitor) {
+                SshMonitor sshMon = (SshMonitor)monitor;
+                String privateIp = sshMon.getIp();
+                int cmdPort = sshMon.getPort();
                 
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Ping command port, " + privateIp + ":" + cmdPort);

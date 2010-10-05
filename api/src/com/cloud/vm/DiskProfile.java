@@ -17,8 +17,8 @@
  */
 package com.cloud.vm;
 
-import com.cloud.offering.DiskOffering;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.DiskOffering;
 import com.cloud.storage.Volume;
 
 /**
@@ -56,10 +56,11 @@ public class DiskProfile {
         this.volumeId = volumeId;
     }
     
-    public DiskProfile(Volume vol, DiskOffering offering) {
+    public DiskProfile(Volume vol, DiskOffering offering, HypervisorType hyperType) {
         this(vol.getId(), vol.getVolumeType(), vol.getName(), offering.getId(), vol.getSize(), offering.getTagsArray(), offering.getUseLocalStorage(), offering.getUseLocalStorage(), vol.getSize());
         this.vol = vol;
         this.offering = offering;
+        this.hyperType = hyperType;
     }
     
     /**

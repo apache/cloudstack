@@ -58,6 +58,9 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.api.to.VirtualMachineTO.SshMonitor;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -73,6 +76,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventState;
@@ -99,6 +103,7 @@ import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.maid.StackMaid;
 import com.cloud.network.IpAddrAllocator;
 import com.cloud.network.IpAddrAllocator.networkInfo;
+import com.cloud.network.Network.TrafficType;
 import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.IPAddressDao;
@@ -144,6 +149,7 @@ import com.cloud.vm.State;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
+import com.cloud.vm.VirtualMachineChecker;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
@@ -172,7 +178,7 @@ import com.google.gson.GsonBuilder;
 // because sooner or later, it will be driven into Running state
 //
 @Local(value = { ConsoleProxyManager.class })
-public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMachineManager<ConsoleProxyVO>, AgentHook {
+public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMachineManager<ConsoleProxyVO>, AgentHook, VirtualMachineChecker {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyManagerImpl.class);
 
     private static final int DEFAULT_FIND_HOST_RETRY_COUNT = 2;
@@ -512,7 +518,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     @Override
     public ConsoleProxyVO startProxy(long proxyVmId, long startEventId) {
         try {
-            return start(proxyVmId, startEventId);
+            return start2(proxyVmId, startEventId);
         } catch (StorageUnavailableException e) {
             s_logger.warn("Exception while trying to start console proxy", e);
             return null;
@@ -528,7 +534,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     public ConsoleProxyVO start2(long proxyVmId, long startEventId) throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
         ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
         DeploymentPlan plan = new DataCenterDeployment(proxy.getDataCenterId(), 1);
-        return _vmMgr.start(proxy, plan);
+        return _vmMgr.start(proxy, plan, this);
     }
 
     @Override
@@ -859,7 +865,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         if (s_logger.isDebugEnabled())
             s_logger.debug("Assign console proxy from a newly started instance for request from data center : " + dataCenterId);
 
-        Map<String, Object> context = createProxyInstance(dataCenterId);
+        Map<String, Object> context = createProxyInstance2(dataCenterId);
 
         long proxyVmId = (Long) context.get("proxyVmId");
         if (proxyVmId == 0) {
@@ -899,7 +905,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         if (s_logger.isDebugEnabled())
             s_logger.debug("Assign console proxy from a newly started instance for request from data center : " + dataCenterId);
 
-        Map<String, Object> context = createProxyInstance(dataCenterId);
+        Map<String, Object> context = createProxyInstance2(dataCenterId);
 
         long proxyVmId = (Long) context.get("proxyVmId");
         if (proxyVmId == 0) {
@@ -1436,7 +1442,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
                                 try {
                                     if (proxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
                                         try {
-                                            readyProxy = start(readyProxy.getId(), 0);
+                                            readyProxy = start2(readyProxy.getId(), 0);
                                         } finally {
                                             proxyLock.unlock();
                                         }
@@ -2333,5 +2339,61 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     }
 
     protected ConsoleProxyManagerImpl() {
+    }
+
+    @Override
+    public boolean finalizeDeployment(VirtualMachineTO vm, VirtualMachineProfile profile, DeployDestination dest) {
+        StringBuilder buf = new StringBuilder();
+        buf.append(" template=domP type=consoleproxy bootproto=dhcp");
+        buf.append(" host=").append(_mgmt_host);
+        buf.append(" port=").append(_mgmt_port);
+        buf.append(" name=").append(vm.getName());
+        if (_sslEnabled) {
+            buf.append(" premium=true");
+        }
+        buf.append(" zone=").append(dest.getDataCenter().getId());
+        buf.append(" pod=").append(dest.getPod().getId());
+        buf.append(" guid=Proxy.").append(vm.getId());
+        buf.append(" proxy_vm=").append(vm.getId());
+        NicTO controlNic = null;
+        for (NicTO nic : vm.getNics()) {
+            int deviceId = nic.getDeviceId();
+            buf.append("eth").append(deviceId).append("ip=").append(nic.getIp());
+            buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
+            if (nic.isDefaultNic()) {
+                buf.append(" gateway=").append(nic.getGateway());
+                buf.append(" dns1=").append(nic.getDns1());
+                if (nic.getDns2() != null) {
+                    buf.append(" dns2=").append(nic.getDns2());
+                }
+            }
+//            buf.append(" bootproto=dhcp");  //FIXME: Not sure what the private ip address is suppose to be.
+            if (nic.getType() == TrafficType.Management) {
+                buf.append(" localgw=").append(dest.getPod().getGateway());
+            } else if (nic.getType() == TrafficType.Control) {
+                controlNic = nic;
+            }
+            
+        }
+  
+        String bootArgs = buf.toString();
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Boot Args for " + vm + ": " + bootArgs);
+        }
+        vm.setBootArgs(bootArgs);
+        
+        if (controlNic == null) {
+            throw new CloudRuntimeException("Didn't start a control port");
+        }
+        
+        SshMonitor monitor = new SshMonitor(controlNic.getIp(), 3922);
+        vm.setMonitor(monitor);
+        
+        return true;
+    }
+
+    @Override
+    public boolean finalizeDeployments(List<Pair<VirtualMachineProfile, DeployDestination>> deployments) {
+        return false;
     }
 }

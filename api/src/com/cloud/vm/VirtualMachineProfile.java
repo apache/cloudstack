@@ -105,14 +105,15 @@ public class VirtualMachineProfile {
         this._templateId = templateId;
     }
     
-    public VirtualMachineProfile(VirtualMachine vm, ServiceOffering offering, String os) {
+    public VirtualMachineProfile(VirtualMachine vm, ServiceOffering offering, String os, HypervisorType hypervisorType) {
         this._cpus = offering.getCpu();
         this._speed = offering.getSpeed();
-        this._ram = offering.getRamSize();
+        this._ram = offering.getRamSize() * 1024l * 1024l;
         this._templateId = vm.getTemplateId();
         this._type = vm.getType();
         this._vm = vm;
         this._os = os;
+        this._hypervisorType = hypervisorType;
     }
     
     protected VirtualMachineProfile() {

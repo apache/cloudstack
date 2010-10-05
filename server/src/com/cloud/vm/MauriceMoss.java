@@ -110,7 +110,7 @@ public class MauriceMoss implements VmManager {
         }
         
         //VMInstanceVO vm = _vmDao.findById(vm.getId());
-        VirtualMachineProfile vmProfile = new VirtualMachineProfile(vm, serviceOffering, guestOS.getName());
+        VirtualMachineProfile vmProfile = new VirtualMachineProfile(vm, serviceOffering, guestOS.getName(), template.getHypervisorType());
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -250,7 +250,7 @@ public class MauriceMoss implements VmManager {
     }
 
     @Override
-    public <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan) throws InsufficientCapacityException, ConcurrentOperationException {
+    public <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan, VirtualMachineChecker checker) throws InsufficientCapacityException, ConcurrentOperationException {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating actual resources for VM " + vm);
         }
@@ -258,13 +258,19 @@ public class MauriceMoss implements VmManager {
         Journal journal = new Journal.LogJournal("Creating " + vm, s_logger);
         
         ServiceOffering offering = _offeringDao.findById(vm.getServiceOfferingId());
+        VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
+        
+        BootloaderType bt = BootloaderType.PyGrub;
+        if (template.getFormat() == Storage.ImageFormat.ISO || template.isRequiresHvm()) {
+            bt = BootloaderType.HVM;
+        }
         
         // Determine the VM's OS description
         GuestOSVO guestOS = _guestOsDao.findById(vm.getGuestOSId());
         if (guestOS == null) {
             throw new CloudRuntimeException("Guest OS is not set");
         }
-        VirtualMachineProfile vmProfile = new VirtualMachineProfile(vm, offering, guestOS.getName());
+        VirtualMachineProfile vmProfile = new VirtualMachineProfile(vm, offering, guestOS.getName(), template.getHypervisorType());
         _vmDao.updateIf(vm, Event.StartRequested, null);
 
         Set<DeployDestination> avoids = new HashSet<DeployDestination>();
@@ -288,12 +294,6 @@ public class MauriceMoss implements VmManager {
             vm.setPodId(dest.getPod().getId());
             _vmDao.updateIf(vm, Event.OperationRetry, dest.getHost().getId());
             
-            VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
-            
-            BootloaderType bt = BootloaderType.PyGrub;
-            if (template.getFormat() == Storage.ImageFormat.ISO || template.isRequiresHvm()) {
-                bt = BootloaderType.HVM;
-            }
 
             VirtualMachineTO vmTO = new VirtualMachineTO(vmProfile, bt);
             VolumeTO[] volumes = null;
@@ -309,6 +309,10 @@ public class MauriceMoss implements VmManager {
             
             vmTO.setNics(nics);
             vmTO.setDisks(volumes);
+            
+            if (checker != null) {
+                checker.finalizeDeployment(vmTO, vmProfile, dest);
+            }
             
             Start2Command cmd = new Start2Command(vmTO);
             try {

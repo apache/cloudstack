@@ -62,7 +62,7 @@ public interface VmManager extends Manager {
             DeploymentPlan plan,
             AccountVO owner) throws InsufficientCapacityException, StorageUnavailableException;
     
-    <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException;
+    <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan, VirtualMachineChecker checker) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException;
     
     <T extends VMInstanceVO> T stop(T vm) throws AgentUnavailableException, ConcurrentOperationException;
     

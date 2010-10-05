@@ -19,10 +19,11 @@ package com.cloud.vm;
 
 import java.util.List;
 
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.utils.Pair;
 
 public interface VirtualMachineChecker {
-    boolean finalizeDeployment(VirtualMachineProfile vm, DeployDestination dest);
+    boolean finalizeDeployment(VirtualMachineTO vm, VirtualMachineProfile profile, DeployDestination dest);
     boolean finalizeDeployments(List<Pair<VirtualMachineProfile, DeployDestination>> deployments);
 }

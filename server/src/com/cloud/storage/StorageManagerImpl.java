@@ -92,7 +92,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
-import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.DetailsDao;
@@ -1169,6 +1168,7 @@ public class StorageManagerImpl implements StorageManager {
          return null;
     }
 
+    @Override
     public Pair<String, String> getAbsoluteIsoPath(long templateId, long dataCenterId) {
         String isoPath = null;
 
@@ -2414,7 +2414,7 @@ public class StorageManagerImpl implements StorageManager {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating volume: " + toBeCreated);
         }
-        DiskProfile diskProfile = new DiskProfile(toBeCreated, offering);
+        DiskProfile diskProfile = new DiskProfile(toBeCreated, offering, vm.getHypervisorType());
 
         Set<StoragePool> avoids = new HashSet<StoragePool>();
         StoragePool pool = null;
