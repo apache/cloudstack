@@ -2770,7 +2770,9 @@ public class ManagementServerImpl implements ManagementServer {
 
         AsyncJobVO job = new AsyncJobVO();
         job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
+        
+        DomainRouterVO router = findDomainRouterById(routerId);
+        job.setAccountId(router.getAccountId());
         job.setCmd("StartRouter");
         job.setCmdInfo(gson.toJson(param));
         job.setCmdOriginator(StartRouterCmd.getResultObjectName());
@@ -2790,7 +2792,9 @@ public class ManagementServerImpl implements ManagementServer {
 
         AsyncJobVO job = new AsyncJobVO();
         job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
+        
+        DomainRouterVO router = findDomainRouterById(routerId);
+        job.setAccountId(router.getAccountId());
         job.setCmd("StopRouter");
         job.setCmdInfo(gson.toJson(param));
         // use the same result object name as StartRouterCmd
@@ -2812,7 +2816,8 @@ public class ManagementServerImpl implements ManagementServer {
 
         AsyncJobVO job = new AsyncJobVO();
         job.setUserId(UserContext.current().getUserId());
-        job.setAccountId(Account.ACCOUNT_ID_SYSTEM);
+        DomainRouterVO router = findDomainRouterById(routerId);
+        job.setAccountId(router.getAccountId());
         job.setCmd("RebootRouter");
         job.setCmdInfo(gson.toJson(param));
         // use the same result object name as StartRouterCmd
