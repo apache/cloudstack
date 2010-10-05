@@ -3445,7 +3445,7 @@ a:hover.add_publicipbutton {
 
 .loadingmessage_container {
 	width:30%;
-	height:56px;
+	height:66px;
 	margin:0 auto;
 	padding:0;
 	z-index:1000;
@@ -3461,7 +3461,7 @@ a:hover.add_publicipbutton {
 
 .loadingmessage_top {
 	width:99%;
-	height:29px;
+	height:45px;
 	float:left;
 	margin:0;
 	padding:2px 5px 0 5px;
@@ -3470,7 +3470,7 @@ a:hover.add_publicipbutton {
 
 .loadingmessage_top p {
 	width:auto;
-	height:25px;
+	height:45px;
 	margin:0;
 	padding:0;
 	color:#333;
@@ -3482,7 +3482,7 @@ a:hover.add_publicipbutton {
 
 .loadingmessage_bottom {
 	width:100%;
-	height:20px;
+	height:25px;
 	float:left;
 	margin:0;
 	padding:0;
