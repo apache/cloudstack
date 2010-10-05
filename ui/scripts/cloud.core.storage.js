@@ -240,7 +240,7 @@ function showStorageTab(domainId, targetTab) {
         // FUNCTION: volume JSON to Template
 	    function volumeJSONToTemplate(json, template) {		
 			if (getHypervisorType() == "kvm") {
-				template.find("#volume_action_create_template_span").show();
+				//template.find("#volume_action_create_template_span").show();  //create template from volume doesn't work. Hide it from UI on 2.1.x 
 			}
 	        template.attr("id", "volume"+json.id);   
 		    if (index++ % 2 == 0) {
@@ -277,7 +277,7 @@ function showStorageTab(domainId, targetTab) {
 		   		    		
 			if(json.type=="ROOT") {
 				if (json.virtualmachineid != undefined && json.vmstate == "Stopped" && getHypervisorType() == "kvm") {
-					template.find("#volume_action_create_template_span").show();
+					//template.find("#volume_action_create_template_span").show();  //create template from volume doesn't work. Hide it from UI on 2.1.x
 				}
 			} else {
 				// DataDisk
@@ -286,12 +286,12 @@ function showStorageTab(domainId, targetTab) {
 						template.find("#volume_action_detach_span").show();
 					}
 					if (json.vmstate == "Stopped" && getHypervisorType() == "kvm") {
-						template.find("#volume_action_create_template_span").show();
+						//template.find("#volume_action_create_template_span").show();  //create template from volume doesn't work. Hide it from UI on 2.1.x
 					}
 				} else {
 					// Disk not attached
 					if (getHypervisorType() == "kvm") {
-						template.find("#volume_action_create_template_span").show();
+						//template.find("#volume_action_create_template_span").show();  //create template from volume doesn't work. Hide it from UI on 2.1.x
 					}
 					if (json.storagetype == "shared") {
 						template.find("#volume_action_attach_span, #volume_action_delete_span").show();
@@ -1042,7 +1042,9 @@ function showStorageTab(domainId, targetTab) {
 													$("body").stopTime(timerKey);
 													if (result.jobstatus == 1) {
 														// Succeeded		
-														template.find("#volume_action_attach_span, #volume_action_delete_span, #volume_action_create_template_span").show();	
+														//template.find("#volume_action_attach_span, #volume_action_delete_span, #volume_action_create_template_span").show();  //create template from volume doesn't work. Hide it from UI on 2.1.x
+														template.find("#volume_action_attach_span, #volume_action_delete_span").show();  //delete line after createTemplateFromVolume API is fixed.
+														
 														template.find("#volume_action_detach_span").hide();																
 														template.find("#volume_vmname").text("detached");
 														template.data("vmid", null).data("vmname", null);
@@ -1119,7 +1121,8 @@ function showStorageTab(domainId, targetTab) {
 														// Succeeded
 														if (result.virtualmachine[0].vmstate == "Stopped") {
 															template.find("#volume_action_attach_span, #volume_action_delete_span").hide();	
-															template.find("#volume_action_detach_span, #volume_action_create_template_span").show();
+															//template.find("#volume_action_detach_span, #volume_action_create_template_span").show();  //create template from volume doesn't work. Hide it from UI on 2.1.x
+															template.find("#volume_action_detach_span").show();  //delete line after createTemplateFromVolume API is fixed.
 														} else {
 															template.find("#volume_action_attach_span, #volume_action_delete_span, #volume_action_create_template_span").hide();
 															template.find("#volume_action_detach_span").show();
