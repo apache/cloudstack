@@ -619,10 +619,11 @@ function afterAddingMidMenuItem($midmenuItem1, isSuccessful, extraMessage) {
 	}
 	else {	
 	    $midmenuItem1.find("#info_icon").addClass("error").show();			
-	    $midmenuItem1.find("#first_row").text("Adding failed");	
-	    if(extraMessage != null)
-	        $midmenuItem1.find("#second_row").text(extraMessage);  
+	    $midmenuItem1.find("#first_row").text("Adding failed");		    
 	}
+	
+	if(extraMessage != null)
+	    $midmenuItem1.find("#second_row").text(extraMessage);  
 }
 
 function bindClickToMidMenu($midmenuItem1, toRightPanel, getMidmenuId) {

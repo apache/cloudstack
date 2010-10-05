@@ -325,6 +325,7 @@ function clickInstanceGroupHeader($arrowIcon) {
                 else
                     commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&page="+currentPageInTemplateGridInVmPopup;  
 		    }
+    		commandString += "&hypervisor=XenServer"; //This line is temporary. will change it later.
     		
 		    var loading = $vmPopup.find("#wiz_template_loading").show();				
 		    if(currentPageInTemplateGridInVmPopup==1)
@@ -597,11 +598,17 @@ function clickInstanceGroupHeader($arrowIcon) {
 									    } else {
 										    $("body").stopTime(timerKey);										    
 										    if (result.jobstatus == 1) {
-											    // Succeeded												   
-											    afterAddingMidMenuItem($midmenuItem1, true);
-						                        if("virtualmachine" in result)	
-						                            vmToMidmenu(result.virtualmachine[0], $midmenuItem1);													   
-											    
+											    // Succeeded
+						                        //if("virtualmachine" in result) {	
+						                            vmToMidmenu(result.virtualmachine[0], $midmenuItem1);	
+						                            if (result.virtualmachine[0].passwordenabled == 'true') {												        
+												        var extraMessage = "New password:" + result.virtualmachine[0].password;
+												        afterAddingMidMenuItem($midmenuItem1, true, extraMessage);
+											        } 	
+											        else {
+											            afterAddingMidMenuItem($midmenuItem1, true);
+											        }	
+						                        //}	
 										    } else if (result.jobstatus == 2) {
 											    // Failed
 											    afterAddingMidMenuItem($midmenuItem1, false, fromdb(result.jobresult));		
