@@ -111,6 +111,7 @@ public abstract class BaseCmd {
         ACCOUNT_OBJ("accountobj", BaseCmd.TYPE_OBJECT, "accountobj"),
         ADD("add", BaseCmd.TYPE_BOOLEAN, "add"),
         ALGORITHM("algorithm", BaseCmd.TYPE_STRING, "algorithm"),
+        AGGREGATE_NAME("aggregatename",BaseCmd.TYPE_STRING,"aggregatename"),
         ALLOCATED("allocated", BaseCmd.TYPE_DATE, "allocated"),
         ALLOCATED_ONLY("allocatedonly", BaseCmd.TYPE_BOOLEAN, "allocatedOnly"),
         API_KEY("apikey", BaseCmd.TYPE_STRING, "apiKey"),
