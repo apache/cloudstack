@@ -25,7 +25,7 @@ $(document).ready(function() {
             $(this).addClass("selected");
             
             showMiddleMenu();
-            $("#midmenu_container").selectable("destroy"); //Most pages don't need multiple selection in middle menu.
+            disableMultipleSelectionInMidMenu();
             
             clearLeftMenu();
             clearMiddleMenu();
@@ -88,7 +88,8 @@ $(document).ready(function() {
         
     $("#leftmenu_instance_group_header").bind("click", function(event) {  
         showMiddleMenu();
-        clearMiddleMenu(); 
+        clearMiddleMenu();          
+        enableMultipleSelectionInMiddleMenu();  //multiple-selection is needeed for actions like start VM, stop VM, reboot VM.
         var $arrowIcon = $(this).find("#arrow_icon");        
         clickInstanceGroupHeader($arrowIcon);
         return false;
@@ -109,7 +110,7 @@ $(document).ready(function() {
         $(this).addClass("selected");
         
         showMiddleMenuWithoutSearch();
-        $("#midmenu_container").selectable("destroy"); //Most pages don't need multiple selection in middle menu.
+        disableMultipleSelectionInMidMenu();
         
         clearLeftMenu();
         clearMiddleMenu();
