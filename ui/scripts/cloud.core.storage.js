@@ -147,7 +147,7 @@ function showStorageTab(domainId, targetTab) {
                     template.fadeIn("slow");	           									
 					    					
 				    $.ajax({
- 					    data: createURL("command=createVolume&zoneId="+zoneId+"&name="+encodeURIComponent(name)+"&diskOfferingId="+diskofferingId+"&accountId="+"1"+"&response=json"), 
+ 					    data: createURL("command=createVolume&zoneId="+zoneId+"&name="+todb(name)+"&diskOfferingId="+diskofferingId+"&accountId="+"1"+"&response=json"), 
 					    dataType: "json",
 					    success: function(json) {						        
 					        var jobId = json.createvolumeresponse.jobid;
@@ -309,7 +309,7 @@ function showStorageTab(domainId, targetTab) {
 			    var account = submenuContent.find("#advanced_search #adv_search_account").val();
 			    var moreCriteria = [];								
 				if (name!=null && trim(name).length > 0) 
-					moreCriteria.push("&name="+encodeURIComponent(trim(name)));	
+					moreCriteria.push("&name="+todb(name));	
 			    if (zone!=null && zone.length > 0) 
 					moreCriteria.push("&zoneId="+zone);		
 			    if (pod!=null && pod.length > 0) 
@@ -1174,7 +1174,7 @@ function showStorageTab(domainId, targetTab) {
 							template.find("#row_container").hide();
 							
 							$.ajax({
-							        data: createURL("command=createTemplate&volumeId="+volumeId+"&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password+"&response=json"),
+							        data: createURL("command=createTemplate&volumeId="+volumeId+"&name="+todb(name)+"&displayText="+todb(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password+"&response=json"),
 								dataType: "json",
 								success: function(json) {
 									$("body").everyTime(
@@ -1467,7 +1467,7 @@ function showStorageTab(domainId, targetTab) {
                              template.fadeIn("slow");	                                  
 	                                                
 	                         $.ajax({
-					                 data: createURL("command=createVolume&snapshotid="+snapshotId+"&name="+name+"&response=json"),
+					                 data: createURL("command=createVolume&snapshotid="+snapshotId+"&name="+todb(name)+"&response=json"),
 						         dataType: "json",
 						         success: function(json) {							           								 
 							        var jobId = json.createvolumeresponse.jobid;					        
@@ -1607,7 +1607,7 @@ function showStorageTab(domainId, targetTab) {
 				             rowContainer.hide(); 	                                  
 	                                                    
 	                         $.ajax({
-					                 data: createURL("command=createTemplate&snapshotid="+snapshotId+"&name="+name+"&displaytext="+displayText+"&ostypeid="+osTypeId+"&passwordEnabled="+password+"&response=json"),
+					             data: createURL("command=createTemplate&snapshotid="+snapshotId+"&name="+todb(name)+"&displaytext="+todb(displayText)+"&ostypeid="+osTypeId+"&passwordEnabled="+password+"&response=json"),
 						         dataType: "json",
 						         success: function(json) {							            					           								 
 							        var jobId = json.createtemplateresponse.jobid;					        
@@ -1664,11 +1664,11 @@ function showStorageTab(domainId, targetTab) {
 			      		    	    		    
 		    template.attr("id", "volume_snapshot_"+json.id).data("snapshotId", json.id).data("volumeId", json.volumeid);	   
 		    template.find("#id").text(json.id);
-		    template.find("#name").text(json.name);
-		    template.find("#volume").text(json.volumename);	
+		    template.find("#name").text(fromdb(json.name));
+		    template.find("#volume").text(fromdb(json.volumename));	
 		    template.find("#interval_type").text(json.intervaltype);
-		    template.find("#account").text(json.account);
-		    template.find("#domain").text(json.domain);		   		    
+		    template.find("#account").text(fromdb(json.account));
+		    template.find("#domain").text(fromdb(json.domain));		   		    
 		       
 		    setDateField(json.created, template.find("#created"));  		   
 		}	
@@ -1678,11 +1678,11 @@ function showStorageTab(domainId, targetTab) {
 		   			      		    	    		    
 		    template.attr("id", "snapshot_"+json.id).data("snapshotId", json.id);	   
 		    template.find("#id").text(json.id);
-		    template.find("#name").text(json.name);			      
-		    template.find("#volume").text(json.volumename);	
+		    template.find("#name").text(fromdb(json.name));			      
+		    template.find("#volume").text(fromdb(json.volumename));	
 		    template.find("#interval_type").text(json.intervaltype);	    		   
-		    template.find("#account").text(json.account);
-		    template.find("#domain").text(json.domain);
+		    template.find("#account").text(fromdb(json.account));
+		    template.find("#domain").text(fromdb(json.domain));
 		    
 		    setDateField(json.created, template.find("#created"));		    
 	    }	
@@ -1898,7 +1898,7 @@ function showStorageTab(domainId, targetTab) {
 					
 					var array1 = [];
 				    var name = trim(thisDialog.find("#add_pool_name").val());
-				    array1.push("&name="+encodeURIComponent(name));
+				    array1.push("&name="+todb(name));
 				    
 				    var server = trim(thisDialog.find("#add_pool_nfs_server").val());	
 				    	
@@ -1968,15 +1968,15 @@ function showStorageTab(domainId, targetTab) {
 		        var path = submenuContent.find("#advanced_search #adv_search_path").val();				      
 		        var moreCriteria = [];								
 			    if (name!=null && trim(name).length > 0) 
-				    moreCriteria.push("&name="+encodeURIComponent(trim(name)));					   
+				    moreCriteria.push("&name="+todb(name));					   
 		        if (zone!=null && zone.length > 0) 
 				    moreCriteria.push("&zoneId="+zone);	
 				if (pod!=null && pod.length > 0) 
 				    moreCriteria.push("&podId="+pod);	
 				if (ip!=null && trim(ip).length > 0) 
-				    moreCriteria.push("&ipaddress="+encodeURIComponent(trim(ip)));		
+				    moreCriteria.push("&ipaddress="+encodeURIComponent(ip));		
 				if (path!=null && trim(path).length > 0) 
-				    moreCriteria.push("&path="+encodeURIComponent(trim(path)));						       	
+				    moreCriteria.push("&path="+encodeURIComponent(path));						       	
 			    commandString = "command=listStoragePools&page="+currentPage+moreCriteria.join("")+"&response=json";
 		    } else {          			
                 var searchInput = submenuContent.find("#search_input").val();            
@@ -2106,7 +2106,7 @@ function showStorageTab(domainId, targetTab) {
 		        var domainId = submenuContent.find("#advanced_search #adv_search_domain").val();
 		        var moreCriteria = [];								
 			    if (name!=null && trim(name).length > 0) 
-				    moreCriteria.push("&name="+encodeURIComponent(trim(name)));				
+				    moreCriteria.push("&name="+todb(name));				
 			    if (state!=null && state.length > 0) 
 				    moreCriteria.push("&state="+state);		
 		        if (zone!=null && zone.length > 0) 
