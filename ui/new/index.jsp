@@ -613,6 +613,8 @@ long milliseconds = new Date().getTime();
     <!-- action list item for details tab, subgrid item-->
     <li id="action_list_item" style="display:none;"><a id="link" href="#">(action)</a></li>
     
+    <li id="no_available_actions" style="display:none"><%=t.t("no.available.actions")%></li>
+    
     <!-- templates ends here-->
 </body>
 </html>

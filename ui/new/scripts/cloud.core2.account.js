@@ -44,19 +44,30 @@ function accountJsonToDetailsTab(jsonObj) {
     
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
-    $actionMenu.find("#action_list").empty();  
+    $actionMenu.find("#action_list").empty(); 
+    var noAvailableActions = true;
+     
     if(jsonObj.id != systemAccountId && jsonObj.id != adminAccountId) {
-        if (jsonObj.accounttype == roleTypeUser || jsonObj.accounttype == roleTypeDomainAdmin)
+        if (jsonObj.accounttype == roleTypeUser || jsonObj.accounttype == roleTypeDomainAdmin) {
             buildActionLinkForDetailsTab("Resource limits", accountActionMap, $actionMenu, accountListAPIMap);	
+            noAvailableActions = false;	
+        }
         
         if(jsonObj.state == "enabled") {
             buildActionLinkForDetailsTab("Disable account", accountActionMap, $actionMenu, accountListAPIMap);  
             buildActionLinkForDetailsTab("Lock account", accountActionMap, $actionMenu, accountListAPIMap);
+            noAvailableActions = false;	
         }          	        
         else if(jsonObj.state == "disabled" || jsonObj.state == "locked") {
             buildActionLinkForDetailsTab("Enable account", accountActionMap, $actionMenu, accountListAPIMap);   
+            noAvailableActions = false;	
         }           
-    }    
+    }  
+    
+    // no available actions 
+	if(noAvailableActions == true) {
+	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
+	}	  
 }
 
 var accountActionMap = {  

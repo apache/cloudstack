@@ -214,35 +214,38 @@ function isoJsonToDetailsTab(jsonObj) {
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
+    var noAvailableActions = true;
     
     // "Edit", "Copy", "Create VM" 
-	if ((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.isready == "false") {
-		//template.find("#iso_edit_container, #iso_copy_container").hide();
+	if ((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.isready == "false") {		
 		$("#edit_button").hide();
     }
-    else {
-        //template.find("#iso_edit_container, #iso_copy_container").show();
+    else {        
         $("#edit_button").show();
         buildActionLinkForDetailsTab("Copy ISO", isoActionMap, $actionMenu, isoListAPIMap);		
+        noAvailableActions = false;
     }
 		
 	// "Create VM" 
 	if (((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.isready == "false") || (jsonObj.bootable == "false")) {
-		//template.find("#iso_create_vm_container").hide();
-    }
-    else {
-        //template.find("#iso_create_vm_container").show();
+	}
+    else {        
         buildActionLinkForDetailsTab("Create VM", isoActionMap, $actionMenu, isoListAPIMap);	
+        noAvailableActions = false;
     }
     
 	// "Delete" 
 	if (((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) || (jsonObj.isready == "false" && jsonObj.isostatus != null && jsonObj.isostatus.indexOf("% Downloaded") != -1)) {
-		//template.find("#iso_delete_container").hide();	
 	}
-	else {
-	    //template.find("#iso_delete_container").show();	
-	     buildActionLinkForDetailsTab("Delete ISO", isoActionMap, $actionMenu, isoListAPIMap);	
+	else {	    
+	    buildActionLinkForDetailsTab("Delete ISO", isoActionMap, $actionMenu, isoListAPIMap);	
+	    noAvailableActions = false;
 	}    
+	
+	// no available actions 
+	if(noAvailableActions == true) {
+	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
+	}	    
 }
 
 function isoClearRightPanel() {

@@ -41,14 +41,22 @@ function routerJsonToDetailsTab(jsonObj) {
     //***** actions (begin) *****    
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
+    var noAvailableActions = true;
     
     if (jsonObj.state == 'Running') {   
         buildActionLinkForDetailsTab("Stop Router", routerActionMap, $actionMenu, routerListAPIMap);	
-        buildActionLinkForDetailsTab("Reboot Router", routerActionMap, $actionMenu, routerListAPIMap);	        
+        buildActionLinkForDetailsTab("Reboot Router", routerActionMap, $actionMenu, routerListAPIMap);	  
+        noAvailableActions = false;      
     }
     else if (jsonObj.state == 'Stopped') {        
         buildActionLinkForDetailsTab("Start Router", routerActionMap, $actionMenu, routerListAPIMap);	
+        noAvailableActions = false;
     }  
+    
+    // no available actions 
+	if(noAvailableActions == true) {
+	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
+	}	   
     //***** actions (end) *****		    
 }
 

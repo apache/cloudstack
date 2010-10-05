@@ -246,6 +246,7 @@ function templateJsonToDetailsTab(jsonObj) {
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
+    var noAvailableActions = true;
     
     // action Edit, Copy, Create VM 			
 	if ((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.id==DomRTemplateId || jsonObj.isready == "false") {
@@ -255,7 +256,8 @@ function templateJsonToDetailsTab(jsonObj) {
     else {
         $("#edit_button").show();
         buildActionLinkForDetailsTab("Copy Template", templateActionMap, $actionMenu, templateListAPIMap);			
-        buildActionLinkForDetailsTab("Create VM", templateActionMap, $actionMenu, templateListAPIMap);			
+        buildActionLinkForDetailsTab("Create VM", templateActionMap, $actionMenu, templateListAPIMap);	
+        noAvailableActions = false;		
     }
 	
 	// action Delete 			
@@ -263,8 +265,14 @@ function templateJsonToDetailsTab(jsonObj) {
 		//template.find("#template_delete_container").hide();
     }
     else {
-        buildActionLinkForDetailsTab("Delete Template", templateActionMap, $actionMenu, templateListAPIMap);	
+        buildActionLinkForDetailsTab("Delete Template", templateActionMap, $actionMenu, templateListAPIMap);
+        noAvailableActions = false;	
     }
+    
+    // no available actions 
+	if(noAvailableActions == true) {
+	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
+	}	  
 }
 
 //setIconByOsType() is shared by template page and ISO page
