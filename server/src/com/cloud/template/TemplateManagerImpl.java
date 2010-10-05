@@ -48,17 +48,18 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -151,7 +152,7 @@ public class TemplateManagerImpl implements TemplateManager {
     }
     
     @Override @DB
-    public VMTemplateStoragePoolVO prepareTemplateForCreate(VMTemplateVO template, StoragePoolVO pool) {
+    public VMTemplateStoragePoolVO prepareTemplateForCreate(VMTemplateVO template, StoragePool pool) {
     	template = _tmpltDao.findById(template.getId(), true);
     	
         long poolId = pool.getId();
@@ -473,6 +474,7 @@ public class TemplateManagerImpl implements TemplateManager {
 		return success;
     }
     
+    @Override
     public List<VMTemplateStoragePoolVO> getUnusedTemplatesInPool(StoragePoolVO pool) {
 		List<VMTemplateStoragePoolVO> unusedTemplatesInPool = new ArrayList<VMTemplateStoragePoolVO>();
 		List<VMTemplateStoragePoolVO> allTemplatesInPool = _tmpltPoolDao.listByPoolId(pool.getId());
@@ -498,6 +500,7 @@ public class TemplateManagerImpl implements TemplateManager {
 		return unusedTemplatesInPool;
 	}
     
+    @Override
     public void evictTemplateFromStoragePool(VMTemplateStoragePoolVO templatePoolVO) {
 		StoragePoolVO pool = _poolDao.findById(templatePoolVO.getPoolId());
 		VMTemplateVO template = _tmpltDao.findById(templatePoolVO.getTemplateId());
@@ -618,7 +621,8 @@ public class TemplateManagerImpl implements TemplateManager {
 		return templateId;
 	}
 	
-	public boolean templateIsDeleteable(VMTemplateHostVO templateHostRef) {
+	@Override
+    public boolean templateIsDeleteable(VMTemplateHostVO templateHostRef) {
 		VMTemplateVO template = _tmpltDao.findById(templateHostRef.getTemplateId());
 		long templateId = template.getId();
 		HostVO secondaryStorageHost = _hostDao.findById(templateHostRef.getHostId());

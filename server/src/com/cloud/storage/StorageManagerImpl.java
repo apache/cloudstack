@@ -2415,6 +2415,11 @@ public class StorageManagerImpl implements StorageManager {
             s_logger.debug("Creating volume: " + toBeCreated);
         }
         DiskProfile diskProfile = new DiskProfile(toBeCreated, offering, vm.getHypervisorType());
+        
+        VMTemplateVO template = null;
+        if (toBeCreated.getTemplateId() != null) {
+            template = _templateDao.findById(toBeCreated.getTemplateId());
+        }
 
         Set<StoragePool> avoids = new HashSet<StoragePool>();
         StoragePool pool = null;
@@ -2429,7 +2434,19 @@ public class StorageManagerImpl implements StorageManager {
             } catch (ConcurrentOperationException e) {
                 throw new CloudRuntimeException("Unable to retry a create operation on volume " + toBeCreated);
             }
-            CreateCommand cmd = new CreateCommand(diskProfile, new StorageFilerTO(pool), diskProfile.getSize());
+            
+            CreateCommand cmd = null;
+            if (template != null && template.getFormat() != Storage.ImageFormat.ISO) {
+                VMTemplateStoragePoolVO tmpltStoredOn = null;
+                tmpltStoredOn = _tmpltMgr.prepareTemplateForCreate(template, pool);
+                if (tmpltStoredOn == null) {
+                    s_logger.debug("Skipping " + pool + " because we can't propragate template " + template);
+                    continue;
+                }
+                cmd = new CreateCommand(diskProfile, tmpltStoredOn.getLocalDownloadPath(), new StorageFilerTO(pool));
+            } else {
+                cmd = new CreateCommand(diskProfile, new StorageFilerTO(pool), diskProfile.getSize());
+            }
             Answer answer = sendToPool(pool, cmd);
             if (answer.getResult()) {
                 CreateAnswer createAnswer = (CreateAnswer)answer;

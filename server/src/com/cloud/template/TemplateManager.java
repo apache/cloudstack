@@ -25,14 +25,13 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
-import com.cloud.user.Account;
 import com.cloud.utils.component.Manager;
 
 /**
@@ -93,7 +92,7 @@ public interface TemplateManager extends Manager {
      * @param pool pool to make sure the template is ready in.
      * @return VMTemplateStoragePoolVO if preparation is complete; null if not.
      */
-    VMTemplateStoragePoolVO prepareTemplateForCreate(VMTemplateVO template, StoragePoolVO pool);
+    VMTemplateStoragePoolVO prepareTemplateForCreate(VMTemplateVO template, StoragePool pool);
     
     /**
      * Copies a template from its current secondary storage server to the secondary storage server in the specified zone.
