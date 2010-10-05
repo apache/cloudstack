@@ -40,7 +40,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 	            var instancegroups = json.listinstancegroupsresponse.instancegroup;	        	
 	        	if(instancegroups!=null && instancegroups.length>0) {           
 		            for(var i=0; i < instancegroups.length; i++) {		            
-		        	    appendInstanceGroup(instancegroups[i].id, instancegroups[i].name);
+		        	    appendInstanceGroup(instancegroups[i].id, fromdb(instancegroups[i].name));
 		            }
 		        }
 		        
@@ -1286,7 +1286,7 @@ function doCreateTemplateFromVmVolume($actionLink, listAPIMap, $subgridItem) {
             var password = thisDialog.find("#create_template_password").val();				
 			
 			var id = $subgridItem.data("jsonObj").id;			
-			var apiCommand = "command=createTemplate&volumeId="+id+"&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
+			var apiCommand = "command=createTemplate&volumeId="+id+"&name="+todb(name)+"&displayText="+todb(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
 	    	doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgridItem);					
 		}, 
 		"Cancel": function() { 

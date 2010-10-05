@@ -52,7 +52,7 @@ function showConfigurationTab() {
 						
 					    thisDialog.dialog("close");
 					    $.ajax({
-					      data: createURL("command=updateConfiguration&name="+encodeURIComponent(name)+"&value="+encodeURIComponent(value)+"&response=json"),
+					      data: createURL("command=updateConfiguration&name="+todb(name)+"&value="+todb(value)+"&response=json"),
 						    dataType: "json",
 						    success: function(json) {
 							    template.find("#global_value").text(value);
@@ -119,7 +119,7 @@ function showConfigurationTab() {
 		    var name = submenuContent.find("#advanced_search #adv_search_name").val();				   
 		    var moreCriteria = [];								
 			if (name!=null && trim(name).length > 0) 
-				moreCriteria.push("&name="+encodeURIComponent(trim(name)));					
+				moreCriteria.push("&name="+todb(name));					
 			commandString = "command=listConfigurations&page="+currentPage+moreCriteria.join("")+"&response=json";  
 		} else {          
             var searchInput = submenuContent.find("#search_input").val();            
@@ -316,7 +316,7 @@ function showConfigurationTab() {
 				var moreCriteria = [];	
 				
 				var name = trim(thisDialog.find("#edit_zone_name").val());
-				moreCriteria.push("&name="+encodeURIComponent(name));
+				moreCriteria.push("&name="+todb(name));
 				
 				var dns1 = trim(thisDialog.find("#edit_zone_dns1").val());
 				moreCriteria.push("&dns1="+encodeURIComponent(dns1));
@@ -414,7 +414,7 @@ function showConfigurationTab() {
 
                 var array1 = [];
                 array1.push("&zoneId="+id);
-                array1.push("&name="+encodeURIComponent(name));
+                array1.push("&name="+todb(name));
                 array1.push("&cidr="+encodeURIComponent(cidr));
                 array1.push("&startIp="+encodeURIComponent(startip));
                 if (endip != null && endip.length > 0)
@@ -591,7 +591,7 @@ function showConfigurationTab() {
                 var array1 = [];	
                 array1.push("&id="+id);
                 if(newName != oldName)
-                    array1.push("&name="+encodeURIComponent(newName));
+                    array1.push("&name="+todb(newName));
                 if(newCidr != oldCidr)
                     array1.push("&cidr="+encodeURIComponent(newCidr));
                 if(newStartip != oldStartip)
@@ -931,7 +931,7 @@ function showConfigurationTab() {
 	    var zoneid = json.id;
 		template.data("id", zoneid).data("name", fromdb(json.name));
 		template.find("#zone_name")
-			.text(json.name)
+			.text(fromdb(json.name))
 			.data("id", zoneid)
 			.data("name", fromdb(json.name))
 			.data("dns1", json.dns1)
@@ -1117,7 +1117,7 @@ function showConfigurationTab() {
 				var moreCriteria = [];	
 				
 				var name = trim(thisDialog.find("#add_zone_name").val());
-				moreCriteria.push("&name="+encodeURIComponent(name));
+				moreCriteria.push("&name="+todb(name));
 				
 				var dns1 = trim(thisDialog.find("#add_zone_dns1").val());
 				moreCriteria.push("&dns1="+encodeURIComponent(dns1));
@@ -1571,7 +1571,7 @@ function showConfigurationTab() {
 		    var name = submenuContent.find("#advanced_search #adv_search_name").val();				   
 		    var moreCriteria = [];								
 			if (name!=null && trim(name).length > 0) 
-				moreCriteria.push("&name="+encodeURIComponent(trim(name)));				
+				moreCriteria.push("&name="+todb(name));				
 			commandString = "command=listServiceOfferings&page="+currentPage+moreCriteria.join("")+"&response=json";    
 		} else {              
     	    var searchInput = submenuContent.find("#search_input").val();           	   
@@ -1700,7 +1700,7 @@ function showConfigurationTab() {
 		    var name = submenuContent.find("#advanced_search #adv_search_name").val();				   
 		    var moreCriteria = [];								
 			if (name!=null && trim(name).length > 0) 
-				moreCriteria.push("&name="+encodeURIComponent(trim(name)));						
+				moreCriteria.push("&name="+todb(name));						
 			commandString = "command=listDiskOfferings&page="+currentPage+moreCriteria.join("")+"&response=json";      //moreCriteria.join("")
 		} else {              
     	    var searchInput = submenuContent.find("#search_input").val();            

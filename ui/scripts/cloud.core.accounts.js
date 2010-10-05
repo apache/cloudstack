@@ -295,7 +295,7 @@ function showAccountsTab(domainId) {
 		    var role = submenuContent.find("#advanced_search #adv_search_role").val();
 		    var moreCriteria = [];								
 			if (name!=null && trim(name).length > 0) 
-				moreCriteria.push("&name="+encodeURIComponent(trim(name)));				
+				moreCriteria.push("&name="+todb(name));				
 			if (trim(role).length > 0) 
 				moreCriteria.push("&accounttype="+role);	
 			commandString = "command=listAccounts&page="+currentPage+moreCriteria.join("")+"&response=json";  

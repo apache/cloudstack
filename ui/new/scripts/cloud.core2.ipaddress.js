@@ -102,7 +102,7 @@ function afterLoadIpJSP() {
 	    		   
 	    var array1 = [];
         array1.push("&publicip="+ipAddress);    
-        array1.push("&name="+name);              
+        array1.push("&name="+todb(name));              
         array1.push("&publicport="+publicPort);
         array1.push("&privateport="+privatePort);
         array1.push("&algorithm="+algorithm);
@@ -429,8 +429,8 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
     var loadBalancerId = jsonObj.id;	    
     $template.attr("id", "loadBalancer_" + loadBalancerId).data("loadBalancerId", loadBalancerId);		    
     
-    $template.find("#row_container #name").text(jsonObj.name);
-    $template.find("#row_container_edit #name").val(jsonObj.name);
+    $template.find("#row_container #name").text(fromdb(jsonObj.name));
+    $template.find("#row_container_edit #name").val(fromdb(jsonObj.name));
     
     $template.find("#row_container #public_port").text(jsonObj.publicport);
     $template.find("#row_container_edit #public_port").text(jsonObj.publicport);

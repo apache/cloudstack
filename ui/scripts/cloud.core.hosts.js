@@ -621,7 +621,7 @@ function showHostsTab() {
 			    var hostname = trim(dialogBox.find("#host_hostname").val());
 			    var url;					
 			    if(hostname.indexOf("http://")==-1)
-			        url = "http://" + hostname;
+			        url = "http://" + todb(hostname);
 			    else
 			        url = hostname;
 			    array1.push("&url="+encodeURIComponent(url));
@@ -682,7 +682,7 @@ function showHostsTab() {
 		    var pod = submenuContent.find("#advanced_search #adv_search_pod").val();			    
 		    var moreCriteria = [];								
 			if (name!=null && trim(name).length > 0) 
-				moreCriteria.push("&name="+encodeURIComponent(trim(name)));				
+				moreCriteria.push("&name="+todb(name));				
 			if (state!=null && state.length > 0) 
 				moreCriteria.push("&state="+state);		
 		    if (zone!=null && zone.length > 0) 

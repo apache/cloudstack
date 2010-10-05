@@ -712,7 +712,7 @@ function showInstancesTab(p_domainId, p_account) {
 						var group = trim($("#change_group_name").val());
 						var vmInstance = $("#vm"+vmId);
 						$.ajax({
-						       data: createURL("command=updateVirtualMachine&id="+vmId+"&group="+encodeURIComponent(group)+"&response=json"),
+						       data: createURL("command=updateVirtualMachine&id="+vmId+"&group="+todb(group)+"&response=json"),
 							dataType: "json",
 							success: function(json) {
 								vmInstance.find("#vm_group").text(group);
@@ -741,7 +741,7 @@ function showInstancesTab(p_domainId, p_account) {
 						var name = trim($("#change_instance_name").val());
 						
 						$.ajax({
-						       data: createURL("command=updateVirtualMachine&id="+vmId+"&displayName="+encodeURIComponent(name)+"&response=json"),
+						       data: createURL("command=updateVirtualMachine&id="+vmId+"&displayName="+todb(name)+"&response=json"),
 							dataType: "json",
 							success: function(json) {
 								if (isAdmin()) {
@@ -1656,11 +1656,11 @@ function showInstancesTab(p_domainId, p_account) {
 			
 			var name = trim(thisPopup.find("#wizard_vm_name").val());
 			if (name != null && name.length > 0) 
-				moreCriteria.push("&displayname="+encodeURIComponent(name));	
+				moreCriteria.push("&displayname="+todb(name));	
 			
 			var group = trim(thisPopup.find("#wizard_vm_group").val());
 			if (group != null && group.length > 0) 
-				moreCriteria.push("&group="+encodeURIComponent(group));			
+				moreCriteria.push("&group="+todb(group));			
 										
 			if(thisPopup.find("#wizard_network_groups_container").css("display") != "none" && thisPopup.find("#wizard_network_groups").val() != null) {
 			    var networkGroupList = thisPopup.find("#wizard_network_groups").val().join(",");
@@ -1811,7 +1811,7 @@ function showInstancesTab(p_domainId, p_account) {
 		    var account = submenuContent.find("#advanced_search #adv_search_account").val();
 		    var moreCriteria = [];								
 			if (name!=null && trim(name).length > 0) 
-				moreCriteria.push("&name="+encodeURIComponent(trim(name)));				
+				moreCriteria.push("&name="+todb(name));				
 			if (state!=null && state.length > 0) 
 				moreCriteria.push("&state="+state);		
 		    if (zone!=null && zone.length > 0) 
@@ -2322,7 +2322,7 @@ function showInstancesTab(p_domainId, p_account) {
 		    var account = submenuContent.find("#advanced_search #adv_search_account").val();
 		    var moreCriteria = [];								
 			if (name!=null && trim(name).length > 0) 
-				moreCriteria.push("&name="+encodeURIComponent(trim(name)));				
+				moreCriteria.push("&name="+todb(name));				
 			if (state!=null && state.length > 0) 
 				moreCriteria.push("&state="+state);		
 		    if (zone!=null && zone.length > 0) 
@@ -2420,7 +2420,7 @@ function showInstancesTab(p_domainId, p_account) {
 		    var domainId = submenuContent.find("#advanced_search #adv_search_domain").val();
 		    var moreCriteria = [];								
 			if (name!=null && trim(name).length > 0) 
-				moreCriteria.push("&name="+encodeURIComponent(trim(name)));				
+				moreCriteria.push("&name="+todb(name));				
 			if (state!=null && state.length > 0) 
 				moreCriteria.push("&state="+state);		
 		    if (zone!=null && zone.length > 0) 
@@ -2596,7 +2596,7 @@ function showInstancesTab(p_domainId, p_account) {
 						template.find(".adding_loading").show();
 						template.find("#volume_body").hide();
 						$.ajax({
-						       data: createURL("command=createTemplate&volumeId="+volumeId+"&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password+"&response=json"),
+						       data: createURL("command=createTemplate&volumeId="+volumeId+"&name="+todb(name)+"&displayText="+todb(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password+"&response=json"),
 							dataType: "json",
 							success: function(json) {
 								$("body").everyTime(
