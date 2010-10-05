@@ -1131,7 +1131,7 @@ function showInstancesTab(p_domainId, p_account) {
 			}				
 		}
 		if (instanceJSON.group != undefined) {
-			instanceTemplate.find("#vm_group").text(instanceJSON.group);
+			instanceTemplate.find("#vm_group").text(fromdb(instanceJSON.group));
 		} else {
 		    instanceTemplate.find("#vm_group").text("No Group");
 		}

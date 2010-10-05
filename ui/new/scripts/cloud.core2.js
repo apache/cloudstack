@@ -276,11 +276,11 @@ function doActionForMidMenu(id, $actionLink, apiCommand, listAPIMap) {
                                             data: createURL("command="+listAPI+"&id="+id),
                                             dataType: "json",                                            
                                             success: function(json) {		                                                                                  
-                                                afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem, $midmenuItem.data("toRightPanelFn"));	                        
+                                                afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem);	                        
                                             }
                                         });										
 				                        //After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
-			                            //afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem, $midmenuItem.data("toRightPanelFn"));	   
+			                            //afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem);	   
 			                            
 			                        } else if (result.jobstatus == 2) { // Failed	
 			                            $midmenuItem.find("#info_icon").addClass("error").show();
@@ -324,11 +324,11 @@ function doActionForMidMenu(id, $actionLink, apiCommand, listAPIMap) {
                     success: function(json) {	
                         $midmenuItem.find("#info_icon").removeClass("error").show();
 			            $midmenuItem.data("afterActionInfo", (label + " action succeeded.")); 	                                                                                  
-                        afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem, $midmenuItem.data("toRightPanelFn"));	                           
+                        afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem);	                           
                     }
                 });										
 				//After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
-				//afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem, $midmenuItem.data("toRightPanelFn"));	   
+				//afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem);	   
 	        },
             error: function(XMLHttpResponse) {	
 		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem);    

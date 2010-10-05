@@ -601,9 +601,11 @@ function clickInstanceGroupHeader($arrowIcon) {
 											    // Succeeded
 						                        //if("virtualmachine" in result) {	
 						                            vmToMidmenu(result.virtualmachine[0], $midmenuItem1);	
-						                            if (result.virtualmachine[0].passwordenabled == 'true') {												        
-												        var extraMessage = "New password:" + result.virtualmachine[0].password;
+						                            if (result.virtualmachine[0].passwordenabled == 'true') {							                                									        
+												        var extraMessage = "New password: " + result.virtualmachine[0].password;
 												        afterAddingMidMenuItem($midmenuItem1, true, extraMessage);
+												        var afterActionInfo = "Your instance has been successfully created.  Your new password is : " + result.virtualmachine[0].password;
+												        $midmenuItem1.data("afterActionInfo", afterActionInfo); 
 											        } 	
 											        else {
 											            afterAddingMidMenuItem($midmenuItem1, true);
@@ -723,11 +725,8 @@ var vmActionMap = {
         dialogBeforeActionFn : doDetachISO,
         afterActionSeccessFn: vmToMidmenu   
     },
-    "Reset Password": {
-        isAsyncJob: true,
-        asyncJobResponse: "resetpasswordforvirtualmachineresponse",            
-        dialogBeforeActionFn : doResetPassword,
-        afterActionSeccessFn: function(){}   
+    "Reset Password": {                
+        dialogBeforeActionFn : doResetPassword
     },
     "Change Name": {
         isAsyncJob: false,            
@@ -828,13 +827,65 @@ function doResetPassword($t, selectedItemsInMidMenu, vmListAPIMap) {
                     $midMenuItem.data("afterActionInfo", ($t.data("label") + " action failed. Reason: This instance needs to be stopped before you can reset password"));  
 		            continue;
 	            }
-	            if(jsonObj.passwordEnabled != "true") {
+	            if(jsonObj.passwordenabled != "true") {
 	                $midMenuItem.find("#info_icon").addClass("error").show();
                     $midMenuItem.data("afterActionInfo", ($t.data("label") + " action failed. Reason: This instance is not using a template that has the password reset feature enabled.  If you have forgotten your root password, please contact support."));  
 		            continue;
 	            }	
 	            var apiCommand = "command=resetPasswordForVirtualMachine&id="+id;
-	            doActionForMidMenu(id, $t, apiCommand, vmListAPIMap);	
+	            
+	            var $midmenuItem = $("#midmenuItem_"+id);	
+                $midmenuItem.find("#content").removeClass("selected").addClass("inaction");                          
+                $midmenuItem.find("#spinning_wheel").addClass("midmenu_addingloader").show();	
+                $midmenuItem.find("#info_icon").hide();	
+	            
+	            //???
+                $.ajax({
+                    data: createURL(apiCommand),
+                    dataType: "json",           
+                    success: function(json) {	                	                        
+                        var jobId = json.resetpasswordforvirtualmachineresponse.jobid;                  			                        
+                        var timerKey = "asyncJob_" + jobId;					                       
+                        $("body").everyTime(
+                            10000,
+                            timerKey,
+                            function() {
+                                $.ajax({
+                                    data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+	                                dataType: "json",									                    					                    
+	                                success: function(json) {		                            							                       
+		                                var result = json.queryasyncjobresultresponse;										                   
+		                                if (result.jobstatus == 0) {
+			                                return; //Job has not completed
+		                                } else {											                    
+			                                $("body").stopTime(timerKey);	
+			                                $midmenuItem.find("#content").removeClass("inaction");
+			                                $midmenuItem.find("#spinning_wheel").hide();			                       
+			                                if (result.jobstatus == 1) { // Succeeded  
+			                                    $midmenuItem.find("#info_icon").removeClass("error").show();			                                		                                    
+			                                    $midmenuItem.find("#second_row").text("New password: " + result.virtualmachine[0].password);  			                                   
+												var afterActionInfo = "Your password has been successfully resetted.  Your new password is : " + result.virtualmachine[0].password;
+												$midmenuItem.data("afterActionInfo", afterActionInfo); 
+			                                } else if (result.jobstatus == 2) { // Failed	
+			                                    $midmenuItem.find("#info_icon").addClass("error").show();
+			                                    $midmenuItem.data("afterActionInfo", (label + " action failed. Reason: " + fromdb(result.jobresult)));    
+			                                }											                    
+		                                }
+	                                },
+	                                error: function(XMLHttpResponse) {
+		                                $("body").stopTime(timerKey);		                       		                        
+		                                handleErrorInMidMenu(XMLHttpResponse, $midmenuItem); 		                        
+	                                }
+                                });
+                            },
+                            0
+                        );
+                    },
+                    error: function(XMLHttpResponse) {	
+		                handleErrorInMidMenu(XMLHttpResponse, $midmenuItem);    
+                    }
+                });     
+	            //???	            
 	        }		
 		}, 
 		"No": function() { 
