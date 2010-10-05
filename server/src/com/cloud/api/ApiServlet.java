@@ -31,7 +31,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
 
 import com.cloud.maid.StackMaid;
 import com.cloud.user.Account;
@@ -73,7 +72,7 @@ public class ApiServlet extends HttpServlet {
     @SuppressWarnings("unchecked")
     private void processRequest(HttpServletRequest req, HttpServletResponse resp) {
         StringBuffer auditTrailSb = new StringBuffer();
-        auditTrailSb.append(req.getRemoteAddr());
+        auditTrailSb.append(" " +req.getRemoteAddr());
         auditTrailSb.append(" -- " + req.getMethod() + " " );        
         try {
             Map<String, Object[]> params = new HashMap<String, Object[]>();
@@ -95,9 +94,9 @@ public class ApiServlet extends HttpServlet {
                     if (session != null) {  
                         String userIdStr = (String)session.getAttribute(BaseCmd.Properties.USER_ID.getName());
                         Account account = (Account)session.getAttribute(BaseCmd.Properties.ACCOUNT_OBJ.getName());
-                        NDC.push("userId="+userIdStr+ 
+                        auditTrailSb.insert(0, "(userId="+userIdStr+ 
                                 " accountId="+ account==null ? null:account.getId()+ 
-                                " sessionId="+session.getId() );
+                                " sessionId="+session.getId() +")" );
                         if (userIdStr != null) {
                             _apiServer.logoutUser(Long.parseLong(userIdStr));
                         }
@@ -156,9 +155,9 @@ public class ApiServlet extends HttpServlet {
                             for (Pair<String, Object> sessionParam : sessionParams) {
                                 session.setAttribute(sessionParam.first(), sessionParam.second());
                             }
-                            NDC.push("userId="+session.getAttribute(BaseCmd.Properties.USER_ID.getName())+ 
+                            auditTrailSb.insert(0,"(userId="+session.getAttribute(BaseCmd.Properties.USER_ID.getName())+ 
                                     " accountId="+ ((Account)session.getAttribute(BaseCmd.Properties.ACCOUNT_OBJ.getName())).getId()+ 
-                                    " sessionId="+session.getId() );
+                                    " sessionId="+session.getId()+ ")" );
                             String loginResponse = getLoginSuccessResponse(session, responseType);
                             auditTrailSb.append(" " +HttpServletResponse.SC_OK);
                             writeResponse(resp, loginResponse, false, responseType);
@@ -239,6 +238,7 @@ public class ApiServlet extends HttpServlet {
             	// update user context info here so that we can take information if the request is authenticated
             	// via api key mechanism
             	updateUserContext(params, session != null ? session.getId() : null);
+            	auditTrailSb.insert(0, "(userId="+UserContext.current().getUserId()+ " accountId="+UserContext.current().getAccountId()+ " sessionId="+(session != null ? session.getId() : null)+ ")" );
             	try {
             		String response = _apiServer.handleRequest(params, false, responseType, auditTrailSb);            		
             		writeResponse(resp, response != null ? response : "", false, responseType);
@@ -265,7 +265,6 @@ public class ApiServlet extends HttpServlet {
             s_accessLogger.info(auditTrailSb.toString());            
             // cleanup user context to prevent from being peeked in other request context
             UserContext.unregisterContext();
-            NDC.remove();
         }
     }
     
@@ -279,8 +278,7 @@ public class ApiServlet extends HttpServlet {
     		userId = Long.parseLong(userIdStr);
     	
     	if(accountObj != null)
-    		accountId = accountObj.getId();
-    	NDC.push("userId="+userId+ " accountId="+accountId+ " sessionId="+sessionId );
+    		accountId = accountObj.getId();    	
     	UserContext.updateContext(userId, accountId, sessionId);
     }
 

@@ -74,7 +74,6 @@ import org.apache.http.protocol.ResponseContent;
 import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
 
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -237,7 +236,7 @@ public class ApiServer implements HttpRequestHandler {
             try {
             	// always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM
             	UserContext.registerContext(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, null, true);
-            	NDC.push("userId="+User.UID_SYSTEM+ " accountId="+Account.ACCOUNT_ID_SYSTEM+ " sessionId="+null );
+            	sb.insert(0,"(userId="+User.UID_SYSTEM+ " accountId="+Account.ACCOUNT_ID_SYSTEM+ " sessionId="+null+ ") " );
                 String responseText = handleRequest(parameterMap, true, responseType, sb);
                 writeResponse(response, responseText, false, responseType);
             } catch (ServerApiException se) {
@@ -261,7 +260,6 @@ public class ApiServer implements HttpRequestHandler {
             }
         } finally {
             s_accessLogger.info(sb.toString());
-            NDC.remove();
             UserContext.unregisterContext();
         }
     }
