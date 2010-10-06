@@ -73,6 +73,20 @@ DROP TABLE IF EXISTS `cloud`.`ext_lun_alloc`;
 DROP TABLE IF EXISTS `cloud`.`storage_pool_details`;
 DROP TABLE IF EXISTS `cloud`.`ext_lun_details`;
 DROP TABLE IF EXISTS `cloud`.`cluster`;
+DROP TABLE IF EXISTS `cloud`.`netapp_storage_pool`;
+
+/*
+CREATE TABLE `cloud`.`netapp_storage_pool` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
+  `ip_address` varchar(15) NOT NULL COMMENT 'ip address of the pool/volume',
+  `aggregate_name` varchar(255) NOT NULL COMMENT 'name for the aggregate',
+  `pool_name` varchar(255) NOT NULL COMMENT 'name for the pool/volume',
+  `snapshot_policy` varchar(255) NOT NULL COMMENT 'snapshot policy',  
+  `pool_size` bigint unsigned COMMENT 'size of the pool',
+  `round_robin_marker` bigint unsigned COMMENT 'this is set to 1 to indicate the vol/pool to use for allocation',  
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+*/
 
 CREATE TABLE `cloud`.`cluster` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
