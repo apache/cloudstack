@@ -531,11 +531,9 @@ public class StorageManagerImpl implements StorageManager {
         String templatePath = null;
         VMTemplateVO template = null;
         if(originalVolume.getVolumeType().equals(Volume.VolumeType.ROOT)){
-            if(originalVolume.getTemplateId() == null){
-                details = "Null Template Id for Root Volume Id: " + origVolumeId + ". Cannot create volume from snapshot of root disk.";
-                s_logger.error(details);
-            }
-            else {
+
+            ImageFormat format =  _snapshotMgr.getImageFormat(origVolumeId);
+            if (format != null && format != ImageFormat.ISO) {           	
                 Long templateId = originalVolume.getTemplateId();
                 template = _templateDao.findById(templateId);
                 if(template == null) {
@@ -555,43 +553,40 @@ public class StorageManagerImpl implements StorageManager {
                         (templatePath = templateHostVO.getInstallPath()) == null)
                     {
                         details = "Template id: " + templateId + " is not present on secondaryStorageHost Id: " + secondaryStorageHost.getId() + ". Can't create volume from ROOT DISK";
+                        s_logger.warn(details);
+                        throw new CloudRuntimeException(details);
                     }
                 }
             }
-        }
-        if (details == null) {
-            // everything went well till now
-            DataCenterVO dc = _dcDao.findById(originalVolume.getDataCenterId());
-            DiskOfferingVO diskOffering = null;
+		}
+		// everything went well till now
+		DataCenterVO dc = _dcDao.findById(originalVolume.getDataCenterId());
+		DiskOfferingVO diskOffering = null;
 
-            if (originalVolume.getVolumeType() == VolumeType.DATADISK || originalVolume.getVolumeType() == VolumeType.ROOT) {
-                Long diskOfferingId = originalVolume.getDiskOfferingId();
-                if (diskOfferingId != null) {
-                    diskOffering = _diskOfferingDao.findById(diskOfferingId);
-                }
-            }
-//            else if (originalVolume.getVolumeType() == VolumeType.ROOT) {
-//                // Create a temporary disk offering with the same size as the ROOT DISK
-//                Long rootDiskSize = originalVolume.getSize();
-//                Long rootDiskSizeInMB = rootDiskSize/(1024*1024);
-//                Long sizeInGB = rootDiskSizeInMB/1024;
-//                String name = "Root Disk Offering";
-//                String displayText = "Temporary Disk Offering for Snapshot from Root Disk: " + originalVolume.getId() + "[" + sizeInGB + "GB Disk]";
-//                diskOffering = new DiskOfferingVO(originalVolume.getDomainId(), name, displayText, rootDiskSizeInMB, false, null);
-//            }
-            else {
-                // The code never reaches here.
-                s_logger.error("Original volume must have been a ROOT DISK or a DATA DISK");
-                return null;
-            }
-            Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(userId, accountId, volumeName, dc, diskOffering, snapshot, templatePath, originalVolume.getSize(), template);
-            createdVolume = volumeDetails.first();
-            if (createdVolume != null) {
-                volumeId = createdVolume.getId();
-            }
-            details = volumeDetails.second();
-        }
-        
+		if (originalVolume.getVolumeType() == VolumeType.DATADISK
+				|| originalVolume.getVolumeType() == VolumeType.ROOT) {
+			Long diskOfferingId = originalVolume.getDiskOfferingId();
+			if (diskOfferingId != null) {
+				diskOffering = _diskOfferingDao.findById(diskOfferingId);
+			}
+		} else {
+			// The code never reaches here.
+			s_logger
+					.error("Original volume must have been a ROOT DISK or a DATA DISK");
+			return null;
+		}
+		Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(userId,
+				accountId, volumeName, dc, diskOffering, snapshot,
+				templatePath, originalVolume.getSize(), template);
+		createdVolume = volumeDetails.first();
+		if (createdVolume != null) {
+			volumeId = createdVolume.getId();
+		} else {
+			details = "Creating volue failed due to " + volumeDetails.second();
+			s_logger.warn(details);
+			throw new CloudRuntimeException(details);
+		}
+
         Transaction txn = Transaction.currentTxn();
         txn.start();
         // Create an event
