@@ -265,7 +265,7 @@ if bld.env.DISTRO not in ["Windows","Mac"]:
 	# systemvm.zip cannot be built on Windows or Mac because system deps do not exist there
 	tgen = bld(
 		rule = iso_up,
-		source = "patches/systemvm-patch.tgz target/oss/systemvm.zip patches/systemvm/root/.ssh/authorized_keys",
+		source = "patches/cloud-scripts.tgz target/oss/systemvm.zip patches/systemvm/debian/config/root/.ssh/authorized_keys",
 		target = 'target/oss/systemvm.iso',
 		name   = 'systemvm_iso',
 		rename = lambda x: x.split(sep)[-1].replace('systemvm-',''),
@@ -275,7 +275,7 @@ if bld.env.DISTRO not in ["Windows","Mac"]:
 if buildpremium:
 	tgen = bld(
 		rule = iso_up,
-		source = "patches/systemvm-patch.tgz target/premium/systemvm.zip patches/systemvm/root/.ssh/authorized_keys",
+		source = "patches/cloud-scripts.tgz target/premium/systemvm.zip patches/systemvm/debian/config/root/.ssh/authorized_keys",
 		target = 'target/premium/systemvm.iso',
 		name   = 'systemvm-premium_iso',
 		rename = lambda x: x.split(sep)[-1].replace('systemvm-',''),

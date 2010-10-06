@@ -15,12 +15,7 @@
 ENABLED=0
 [ -e /etc/default/cloud ] && . /etc/default/cloud
 
-if [ -f /mnt/cmdline ]
-then
-    CMDLINE=$(cat /mnt/cmdline)
-else
-    CMDLINE=$(cat /proc/cmdline)
-fi
+CMDLINE=$(cat /var/cache/cloud/cmdline)
 
 TYPE="router"
 for i in $CMDLINE

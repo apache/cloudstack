@@ -36,6 +36,8 @@ secstorage_svcs() {
    chkconfig cloud-passwd-srvr off
    chkconfig haproxy off ;
    chkconfig dnsmasq off
+   chkconfig portmap on
+   chkconfig nfs-common on
    chkconfig ssh on
    chkconfig apache2 off
    echo "cloud postinit ssh nfs-common portmap" > /var/cache/cloud/enabled_svcs

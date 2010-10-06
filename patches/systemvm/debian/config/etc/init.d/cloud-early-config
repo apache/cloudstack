@@ -26,13 +26,35 @@ EOF
 
 patch() {
   local PATCH_MOUNT=/media/cdrom
+  local EXTRA_MOUNT=/media/extra
   local patchfile=$PATCH_MOUNT/cloud-scripts.tgz
   local md5file=/var/cache/cloud/cloud-scripts-signature
   local privkey=$PATCH_MOUNT/authorized_keys
   local shouldpatch=false
+  local cdrom_dev=
   mkdir -p $PATCH_MOUNT
+
+  if [ -e /dev/vdb ]; then
+	# KVM needs to mount another disk, to get cmdline
+  	mkdir -p $EXTRA_MOUNT
+	mount /dev/vdb $EXTRA_MOUNT
+	cp -f $EXTRA_MOUNT/cmdline  /var/cache/cloud/cmdline
+    cp -f $EXTRA_MOUNT/authorized_keys /var/cache/cloud/authorized_keys
+    privkey=/var/cache/cloud/authorized_keys
+  	umount $EXTRA_MOUNT
+  else
+    	cat /proc/cmdline > /var/cache/cloud/cmdline
+  fi
+
   if [ -e /dev/xvdd ]; then
-    mount -o ro /dev/xvdd $PATCH_MOUNT
+	cdrom_dev=/dev/xvdd
+  elif [ -e /dev/cdrom ]; then
+	# For KVM
+	cdrom_dev=/dev/cdrom
+  fi
+
+  if [ -n "$cdrom_dev" ]; then
+    mount -o ro $cdrom_dev $PATCH_MOUNT
     [ -f $privkey ] && cp -f $privkey /root/.ssh/ && chmod go-rwx /root/.ssh/authorized_keys
     local oldmd5=
     [ -f ${md5file} ] && oldmd5=$(cat ${md5file})
@@ -43,10 +65,9 @@ patch() {
     then
       shouldpatch=true
       logger -t cloud "Patching  scripts"
-      tar xzf $patchfile -C ${path}
+      tar xzf $patchfile -C /
       echo ${newmd5} > ${md5file}
     fi
-    cat /proc/cmdline > /var/cache/cloud/cmdline
     logger -t cloud "Patching  cloud service"
     /opt/cloud/bin/patchsystemvm.sh $PATCH_MOUNT 
     umount $PATCH_MOUNT
@@ -56,9 +77,6 @@ patch() {
       sleep 2
       reboot
     fi
-  fi
-  if [ -f /mnt/cmdline ]; then
-    cat /mnt/cmdline > /var/cache/cloud/cmdline
   fi
   return 0
 }
@@ -256,6 +274,7 @@ EOF
 
 start() {
   patch
+  parse_cmd_line
   case $TYPE in 
      router)
          [ "$NAME" == "" ] && NAME=router
@@ -282,14 +301,9 @@ start() {
 }
 
 disable_hvc
-if [ -f /mnt/cmdline ]
-then
-    CMDLINE=$(cat /mnt/cmdline)
-else
-    CMDLINE=$(cat /proc/cmdline)
-fi
 
-
+parse_cmd_line() {
+CMDLINE=$(cat /var/cache/cloud/cmdline)
 TYPE="unknown"
 BOOTPROTO="static"
 
@@ -352,6 +366,7 @@ for i in $CMDLINE
 	;;
     esac
 done
+}
 
 
 case "$1" in

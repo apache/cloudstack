@@ -491,7 +491,7 @@ public class VirtualRoutingResource implements Manager {
         _startTimeout = NumbersUtil.parseInt(value, 360) * 1000;
         
         value = (String)params.get("ssh.sleep");
-        _sleep = NumbersUtil.parseInt(value, 5) * 1000;
+        _sleep = NumbersUtil.parseInt(value, 10) * 1000;
         
         value = (String)params.get("ssh.retry");
         _retry = NumbersUtil.parseInt(value, 24);
