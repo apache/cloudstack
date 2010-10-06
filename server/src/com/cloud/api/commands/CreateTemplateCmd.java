@@ -27,6 +27,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.event.EventTypes;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.VMTemplateHostVO;
@@ -129,6 +130,36 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     
     public static String getResultObjectName() {
     	return "template";  
+    }
+
+    @Override
+    public long getAccountId() {
+        Long volumeId = getVolumeId();
+        Long snapshotId = getSnapshotId();
+        if (volumeId != null) {
+            VolumeVO volume = ApiDBUtils.findVolumeById(volumeId);
+            if (volume != null) {
+                return volume.getAccountId();
+            }
+        } else {
+            Snapshot snapshot = ApiDBUtils.findSnapshotById(snapshotId);
+            if (snapshot != null) {
+                return snapshot.getAccountId();
+            }
+        }
+
+        // bad id given, parent this command to SYSTEM so ERROR events are tracked
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_TEMPLATE_CREATE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "creating template: " + getTemplateName();
     }
 
     @Override @SuppressWarnings("unchecked")

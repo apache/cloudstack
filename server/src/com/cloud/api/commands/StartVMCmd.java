@@ -26,8 +26,8 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.UserVmResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
@@ -63,11 +63,31 @@ public class StartVMCmd extends BaseAsyncCmd {
     public String getName() {
         return s_name;
     }
-    
+
     public static String getResultObjectName() {
     	return "virtualmachine";
     }
- 
+
+    @Override
+    public long getAccountId() {
+        UserVm vm = ApiDBUtils.findUserVmById(getId());
+        if (vm != null) {
+            return vm.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_VM_START;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "starting user vm: " + getId();
+    }
+
 	@Override @SuppressWarnings("unchecked")
 	public UserVmResponse getResponse() {
 	    UserVm vm = (UserVm)getResponseObject();

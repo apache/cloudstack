@@ -26,6 +26,9 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SystemVmResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -62,6 +65,26 @@ public class StartSystemVMCmd extends BaseAsyncCmd {
     
     public static String getResultObjectName() {
     	return "systemvm"; 
+    }
+
+    @Override
+    public long getAccountId() {
+        Account account = (Account)UserContext.current().getAccountObject();
+        if (account != null) {
+            return account.getId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_SSVM_START;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "starting system vm: " + getId();
     }
 
 	@Override @SuppressWarnings("unchecked")

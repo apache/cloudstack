@@ -1950,7 +1950,7 @@ function showInstancesTab(p_domainId, p_account) {
 												    $("body").stopTime(timerKey);
 												    if (result.jobstatus == 1) {
 													    // Succeeded														    
-													    routerJSONToTemplate(result.router[0], template);
+													    routerJSONToTemplate(result.jobresult.stoprouterresponse, template);
 													    template.find(".loadingmessage_container .loadingmessage_top p").html("Your router has been successfully stopped.");
 													    template.find(".loadingmessage_container").fadeIn("slow");														    
 												    } else if (result.jobstatus == 2) {

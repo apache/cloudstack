@@ -21,11 +21,15 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.network.SecurityGroupVO;
+import com.cloud.user.Account;
 
 @Implementation(method="assignSecurityGroup", manager=Manager.ManagementServer)
 public class AssignPortForwardingServiceCmd extends BaseAsyncCmd {
@@ -78,6 +82,25 @@ public class AssignPortForwardingServiceCmd extends BaseAsyncCmd {
     @Override
     public String getName() {
         return s_name;
+    }
+
+    @Override
+    public long getAccountId() {
+        SecurityGroupVO sg = ApiDBUtils.findPortForwardingServiceById(getId());
+        if (sg == null) {
+            return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked
+        }
+        return sg.getAccountId();
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_PORT_FORWARDING_SERVICE_APPLY;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "applying port forwarding service for vm with id: " + getVirtualMachineId();
     }
 
 	@Override @SuppressWarnings("unchecked")

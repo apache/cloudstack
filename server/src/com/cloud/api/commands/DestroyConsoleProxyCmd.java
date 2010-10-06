@@ -24,8 +24,10 @@ import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(method="destroyConsoleProxy", manager=Manager.ConsoleProxyManager)
 public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
@@ -59,8 +61,28 @@ public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
         return s_name;
     }
 
-	@Override
-	public ResponseObject getResponse() {
+    @Override
+    public long getAccountId() {
+        Account account = (Account)UserContext.current().getAccountObject();
+        if (account != null) {
+            return account.getId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_PROXY_DESTROY;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "destroying console proxy: " + getId();
+    }
+
+	@Override @SuppressWarnings("unchecked")
+	public SuccessResponse getResponse() {
         Boolean success = (Boolean)getResponseObject();
         SuccessResponse response = new SuccessResponse();
         response.setSuccess(success);

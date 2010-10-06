@@ -231,7 +231,7 @@ public class ApiDispatcher {
         }
     }
 
-    private void setupParameters(BaseCmd cmd, Map<String, String> params) {
+    public static void setupParameters(BaseCmd cmd, Map<String, String> params) {
         Map<String, Object> unpackedParams = cmd.unpackParams(params);
         Field[] fields = cmd.getClass().getDeclaredFields();
         Class<?> superClass = cmd.getClass().getSuperclass();
@@ -282,7 +282,7 @@ public class ApiDispatcher {
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private void setFieldValue(Field field, BaseCmd cmdObj, Object paramObj, Parameter annotation) throws IllegalArgumentException, ParseException {
+    private static void setFieldValue(Field field, BaseCmd cmdObj, Object paramObj, Parameter annotation) throws IllegalArgumentException, ParseException {
         try {
             field.setAccessible(true);
             CommandType fieldType = annotation.type();

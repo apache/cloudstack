@@ -140,10 +140,10 @@ public interface NetworkManager extends Manager {
     /**
      * Stops domain router
      * @param cmd the command specifying router's id
-     * @return success or failure
+     * @return router if successful, null otherwise
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    boolean stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    DomainRouterVO stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     
     boolean getRouterStatistics(long vmId, Map<String, long[]> netStats, Map<String, long[]> diskStats);
 

@@ -20,11 +20,15 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.storage.Snapshot;
+import com.cloud.user.Account;
 
 @Implementation(method="deleteSnapshot", manager=Manager.SnapshotManager)
 public class DeleteSnapshotCmd extends BaseAsyncCmd {
@@ -61,7 +65,6 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
         return id;
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -69,6 +72,26 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
     @Override
     public String getName() {
         return s_name;
+    }
+
+    @Override
+    public long getAccountId() {
+        Snapshot snapshot = ApiDBUtils.findSnapshotById(getId());
+        if (snapshot != null) {
+            return snapshot.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_SNAPSHOT_DELETE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "deleting snapshot: " + getId();
     }
 
 	@Override @SuppressWarnings("unchecked")

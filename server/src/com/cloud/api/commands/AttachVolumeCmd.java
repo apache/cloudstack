@@ -26,7 +26,9 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.VolumeResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.storage.VolumeVO;
+import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
 @Implementation(method="attachVolumeToVM", manager=Manager.UserVmManager)
@@ -72,6 +74,25 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
     @Override
     public String getName() {
         return s_name;
+    }
+
+    @Override
+    public long getAccountId() {
+        VolumeVO volume = ApiDBUtils.findVolumeById(getId());
+        if (volume == null) {
+            return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked
+        }
+        return volume.getAccountId();
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_VOLUME_ATTACH;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "attaching volume: " + getId() + " to vm: " + getVirtualMachineId();
     }
 
 	@Override @SuppressWarnings("unchecked")

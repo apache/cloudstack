@@ -21,11 +21,15 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.network.LoadBalancerVO;
+import com.cloud.user.Account;
 
 @Implementation(method="assignToLoadBalancer", manager=Manager.NetworkManager)
 public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
@@ -66,10 +70,30 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
-    
+
+    @Override
+    public long getAccountId() {
+        LoadBalancerVO lb = ApiDBUtils.findLoadBalancerById(getLoadBalancerId());
+        if (lb == null) {
+            return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked
+        }
+        return lb.getAccountId();
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_ASSIGN_TO_LOAD_BALANCER_RULE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "applying port forwarding service for vm with id: " + getVirtualMachineId();
+    }
+
     @Override @SuppressWarnings("unchecked")
     public SuccessResponse getResponse() {
         SuccessResponse response = new SuccessResponse();

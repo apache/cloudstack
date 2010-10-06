@@ -26,6 +26,7 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SnapshotResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
@@ -76,6 +77,27 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     
     public static String getResultObjectName() {
     	return "snapshot";
+    }
+
+    @Override
+    public long getAccountId() {
+        VolumeVO volume = ApiDBUtils.findVolumeById(getVolumeId());
+        if (volume != null) {
+            return volume.getAccountId();
+        }
+
+        // bad id given, parent this command to SYSTEM so ERROR events are tracked
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_SNAPSHOT_CREATE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "creating snapshot for volume: " + getVolumeId();
     }
 
     @Override @SuppressWarnings("unchecked")

@@ -19,11 +19,15 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.network.LoadBalancerVO;
+import com.cloud.user.Account;
 
 @Implementation(method="deleteLoadBalancerRule", manager=Manager.NetworkManager)
 public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
@@ -52,6 +56,26 @@ public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
     @Override
     public String getName() {
         return s_name;
+    }
+
+    @Override
+    public long getAccountId() {
+        LoadBalancerVO lb = ApiDBUtils.findLoadBalancerById(getId());
+        if (lb != null) {
+            return lb.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_LOAD_BALANCER_DELETE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "deleting load balancer: " + getId();
     }
 
 	@Override @SuppressWarnings("unchecked")

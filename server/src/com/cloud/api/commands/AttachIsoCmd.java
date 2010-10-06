@@ -19,6 +19,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
@@ -26,6 +27,9 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.user.Account;
 
 @Implementation(method="attachIso", manager=Manager.TemplateManager)
 public class AttachIsoCmd extends BaseAsyncCmd {
@@ -66,6 +70,25 @@ public class AttachIsoCmd extends BaseAsyncCmd {
         return s_name;
     }
     
+    @Override
+    public long getAccountId() {
+        VMTemplateVO iso = ApiDBUtils.findTemplateById(getId());
+        if (iso == null) {
+            return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked
+        }
+        return iso.getAccountId();
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_ISO_ATTACH;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "attaching ISO: " + getId() + " to vm: " + getVirtualMachineId();
+    }
+
     @Override @SuppressWarnings("unchecked")
     public SuccessResponse getResponse() {
         SuccessResponse response = new SuccessResponse();

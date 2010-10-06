@@ -17,15 +17,21 @@
  */
 package com.cloud.api.commands;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.network.LoadBalancerVO;
+import com.cloud.user.Account;
+import com.cloud.utils.StringUtils;
 
 @Implementation(method="removeFromLoadBalancer", manager=Manager.NetworkManager)
 public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
@@ -69,6 +75,31 @@ public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
     @Override
     public String getName() {
         return s_name;
+    }
+
+    @Override
+    public long getAccountId() {
+        LoadBalancerVO lb = ApiDBUtils.findLoadBalancerById(getId());
+        if (lb == null) {
+            return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked
+        }
+        return lb.getAccountId();
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_REMOVE_FROM_LOAD_BALANCER_RULE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        List<Long> vmIds = getVirtualMachineIds();
+        if ((vmIds == null) || vmIds.isEmpty()) {
+            vmIds = new ArrayList<Long>();
+            vmIds.add(getVirtualMachineId());
+        }
+
+        return  "removing instances from load balancer: " + getId() + " (ids: " + StringUtils.join(vmIds, ",") + ")";
     }
 
 	@Override @SuppressWarnings("unchecked")

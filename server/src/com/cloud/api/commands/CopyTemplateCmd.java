@@ -28,6 +28,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.TemplateResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -70,7 +71,6 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
         return sourceZoneId;
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -82,6 +82,27 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
 
     public static String getStaticName() {
         return s_name;
+    }
+
+    @Override
+    public long getAccountId() {
+        VMTemplateVO template = ApiDBUtils.findTemplateById(getId());
+        if (template != null) {
+            return template.getAccountId();
+        }
+
+        // bad id given, parent this command to SYSTEM so ERROR events are tracked
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_TEMPLATE_COPY;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "copying template: " + getId() + " from zone: " + getSourceZoneId() + " to zone: " + getDestinationZoneId();
     }
 
 	@Override @SuppressWarnings("unchecked")

@@ -83,6 +83,7 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
@@ -292,7 +293,6 @@ public class StorageManagerImpl implements StorageManager {
         Host host = dest.getHost();
         
         VolumeTO[] disks = new VolumeTO[vols.size()];
-        int i = 0;
         Iterator<VolumeVO> it = vols.iterator();
         while (it.hasNext()) {
             VolumeVO vol = it.next();
@@ -653,14 +653,13 @@ public class StorageManagerImpl implements StorageManager {
         return new Pair<VolumeVO, String>(createdVolume, details);
     }
 
-    private VolumeVO createVolumeFromSnapshot(VolumeVO volume, long snapshotId/*, long startEventId*/) {
-        // FIXME:  start event id needs to come from somewhere
+    private VolumeVO createVolumeFromSnapshot(VolumeVO volume, long snapshotId, long startEventId) {
         EventVO event = new EventVO();
         event.setUserId(UserContext.current().getUserId());
         event.setAccountId(volume.getAccountId());
         event.setType(EventTypes.EVENT_VOLUME_CREATE);
         event.setState(EventState.Started);
-// FIXME:        event.setStartId(startEventId);
+        event.setStartId(startEventId);
         event.setDescription("Creating volume from snapshot with id: "+snapshotId);
         _eventDao.persist(event);
 
@@ -753,7 +752,7 @@ public class StorageManagerImpl implements StorageManager {
         event.setUserId(UserContext.current().getUserId());
         event.setType(EventTypes.EVENT_VOLUME_CREATE);
         event.setParameters(eventParams);
-// FIXME:        event.setStartId(startEventId);
+        event.setStartId(startEventId);
         event.setState(EventState.Completed);
         if (createdVolume.getPath() != null) {
             event.setDescription("Created volume: "+ createdVolume.getName() + " with size: " + sizeMB + " MB in pool: " + poolName + " from snapshot id: " + snapshotId);
@@ -1846,14 +1845,14 @@ public class StorageManagerImpl implements StorageManager {
         volume.setDataCenterId(zoneId);
         volume.setPodId(null);
         volume.setAccountId(targetAccount.getId());
-        volume.setDomainId(account.getDomainId());
+        volume.setDomainId(((account == null) ? Domain.ROOT_DOMAIN : account.getDomainId()));
         volume.setMirrorState(MirrorState.NOT_MIRRORED);
         volume.setDiskOfferingId(cmd.getDiskOfferingId());
         volume.setStorageResourceType(StorageResourceType.STORAGE_POOL);
         volume.setInstanceId(null);
         volume.setUpdated(new Date());
         volume.setStatus(AsyncInstanceCreateStatus.Creating);
-        volume.setDomainId(account.getDomainId());
+        volume.setDomainId((account == null) ? Domain.ROOT_DOMAIN : account.getDomainId());
         volume = _volsDao.persist(volume);
 
         return volume;
@@ -1866,7 +1865,7 @@ public class StorageManagerImpl implements StorageManager {
         Long userId = UserContext.current().getUserId();
 
         if (cmd.getSnapshotId() != null) {
-            return createVolumeFromSnapshot(volume, cmd.getSnapshotId());
+            return createVolumeFromSnapshot(volume, cmd.getSnapshotId(), cmd.getStartEventId());
         } else {
             DataCenterVO dc = _dcDao.findById(cmd.getZoneId());
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(cmd.getDiskOfferingId());

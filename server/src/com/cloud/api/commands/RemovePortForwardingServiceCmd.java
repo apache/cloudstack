@@ -21,9 +21,13 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.network.SecurityGroupVO;
+import com.cloud.user.Account;
 
 @Implementation(method="removeSecurityGroup", manager=Manager.ManagementServer)
 public class RemovePortForwardingServiceCmd extends BaseAsyncCmd {
@@ -67,6 +71,26 @@ public class RemovePortForwardingServiceCmd extends BaseAsyncCmd {
     @Override
     public String getName() {
         return s_name;
+    }
+
+    @Override
+    public long getAccountId() {
+        SecurityGroupVO sg = ApiDBUtils.findPortForwardingServiceById(getId());
+        if (sg != null) {
+            return sg.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_PORT_FORWARDING_SERVICE_REMOVE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "removing port forwarding service: " + getId() + " from vm: " + getVirtualMachineId() + " on IP: " + getPublicIp();
     }
 
 	@Override @SuppressWarnings("unchecked")

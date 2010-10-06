@@ -19,11 +19,15 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ExtractResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.user.Account;
 
 @Implementation(method="extract", manager=Manager.TemplateManager)
 public class ExtractIsoCmd extends BaseAsyncCmd {
@@ -67,6 +71,27 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
     @Override
     public String getName() {
         return s_name;
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_ISO_EXTRACT;
+    }
+
+    @Override
+    public long getAccountId() {
+        VMTemplateVO iso = ApiDBUtils.findTemplateById(getId());
+        if (iso != null) {
+            return iso.getId();
+        }
+
+        // invalid id, parent this command to SYSTEM so ERROR events are tracked
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "Extraction job";
     }
 
     @Override @SuppressWarnings("unchecked")

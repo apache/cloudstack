@@ -25,6 +25,9 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(method="rebootSystemVM", manager=Manager.ManagementServer)
 public class RebootSystemVmCmd extends BaseAsyncCmd {
@@ -56,7 +59,27 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
         return s_name;
     }
 
-	@Override @SuppressWarnings("unchecked")
+    @Override
+    public long getAccountId() {
+        Account account = (Account)UserContext.current().getAccountObject();
+        if (account != null) {
+            return account.getId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_SSVM_REBOOT;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "rebooting system vm: " + getId();
+    }
+
+    @Override @SuppressWarnings("unchecked")
 	public SuccessResponse getResponse() {
         Boolean success = (Boolean)getResponseObject();
         SuccessResponse response = new SuccessResponse();

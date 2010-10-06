@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
@@ -27,6 +28,9 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.user.Account;
+import com.cloud.vm.DomainRouterVO;
 
 @Implementation(method="rebootRouter", manager=Manager.NetworkManager)
 public class RebootRouterCmd extends BaseAsyncCmd {
@@ -52,10 +56,31 @@ public class RebootRouterCmd extends BaseAsyncCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
     
+    @Override
+    public long getAccountId() {
+        DomainRouterVO router = ApiDBUtils.findDomainRouterById(getId());
+        if (router != null) {
+            return router.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_ROUTER_REBOOT;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "rebooting router: " + getId();
+    }
+
     @Override @SuppressWarnings("unchecked")
     public SuccessResponse getResponse() {
         SuccessResponse response = new SuccessResponse();

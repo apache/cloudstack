@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
@@ -27,6 +28,9 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.network.SecurityGroupVO;
+import com.cloud.user.Account;
 
 @Implementation(method="deleteSecurityGroup", manager=Manager.ManagementServer)
 public class DeletePortForwardingServiceCmd extends BaseAsyncCmd {
@@ -53,10 +57,31 @@ public class DeletePortForwardingServiceCmd extends BaseAsyncCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
     
+    @Override
+    public long getAccountId() {
+        SecurityGroupVO sg = ApiDBUtils.findPortForwardingServiceById(getId());
+        if (sg != null) {
+            return sg.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_PORT_FORWARDING_SERVICE_DELETE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "deleting port forwarding service: " + getId();
+    }
+
     @Override @SuppressWarnings("unchecked")
     public SuccessResponse getResponse() {
         SuccessResponse response = new SuccessResponse();

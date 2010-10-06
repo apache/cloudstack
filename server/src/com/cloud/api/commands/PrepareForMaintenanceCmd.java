@@ -24,6 +24,9 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(method="maintain", manager=Manager.AgentManager)
 public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
@@ -57,6 +60,26 @@ public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
     
     public static String getResultObjectName() {
     	return "host";
+    }
+
+    @Override
+    public long getAccountId() {
+        Account account = (Account)UserContext.current().getAccountObject();
+        if (account != null) {
+            return account.getId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_MAINTENANCE_PREPARE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "preparing host: " + getId() + " for maintenance";
     }
 
 	@Override @SuppressWarnings("unchecked")

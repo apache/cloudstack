@@ -27,8 +27,8 @@ import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.UserVmResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
@@ -154,6 +154,35 @@ public class DeployVMCmd extends BaseAsyncCmd {
     	return "virtualmachine";
     }
     
+    @Override
+    public long getAccountId() {
+        Account account = (Account)UserContext.current().getAccountObject();
+        if ((account == null) || isAdmin(account.getType())) {
+            if ((domainId != null) && (accountName != null)) {
+                Account userAccount = ApiDBUtils.findAccountByNameDomain(accountName, domainId);
+                if (userAccount != null) {
+                    return userAccount.getId();
+                }
+            }
+        }
+
+        if (account != null) {
+            return account.getId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_VM_CREATE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "deploying Vm";
+    }
+
     @Override @SuppressWarnings("unchecked")
     public UserVmResponse getResponse() {
         UserVm userVm = (UserVm)getResponseObject();

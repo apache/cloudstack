@@ -27,8 +27,11 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.dc.ClusterVO;
+import com.cloud.event.EventTypes;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
+import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(method="cancelPrimaryStorageForMaintenance", manager=Manager.StorageManager)
 public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
@@ -57,12 +60,33 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getName() {
         return s_name;
     }
     
     public static String getResultObjectName() {
     	return "primarystorage";
+    }
+
+    @Override
+    public long getAccountId() {
+        Account account = (Account)UserContext.current().getAccountObject();
+        if (account != null) {
+            return account.getId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_MAINTENANCE_CANCEL_PRIMARY_STORAGE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "canceling maintenance for primary storage pool: " + getId();
     }
 
 	@Override @SuppressWarnings("unchecked")

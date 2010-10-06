@@ -26,8 +26,11 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.VolumeResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(createMethod="createVolumeDB", method="createVolume", manager=Manager.StorageManager)
 public class CreateVolumeCmd extends BaseAsyncCreateCmd {
@@ -106,6 +109,35 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     	return "volume";
     }
     
+    @Override
+    public long getAccountId() {
+        Account account = (Account)UserContext.current().getAccountObject();
+        if ((account == null) || isAdmin(account.getType())) {
+            if ((domainId != null) && (accountName != null)) {
+                Account userAccount = ApiDBUtils.findAccountByNameDomain(accountName, domainId);
+                if (userAccount != null) {
+                    return userAccount.getId();
+                }
+            }
+        }
+
+        if (account != null) {
+            return account.getId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_VOLUME_CREATE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "creating volume: " + getVolumeName() + ((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId());
+    }
+
     @Override @SuppressWarnings("unchecked")
     public VolumeResponse getResponse() {
         VolumeVO volume = (VolumeVO)getResponseObject();

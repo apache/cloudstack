@@ -24,7 +24,13 @@ import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.IPAddressVO;
+import com.cloud.network.LoadBalancerVO;
+import com.cloud.network.NetworkRuleConfigVO;
+import com.cloud.network.SecurityGroupVO;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.LoadBalancerDao;
+import com.cloud.network.dao.NetworkRuleConfigDao;
+import com.cloud.network.dao.SecurityGroupDao;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.Criteria;
@@ -63,11 +69,13 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VmStats;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
 public class ApiDBUtils {
@@ -86,11 +94,15 @@ public class ApiDBUtils {
     private static ClusterDao _clusterDao;
     private static DiskOfferingDao _diskOfferingDao;
     private static DomainDao _domainDao;
+    private static DomainRouterDao _domainRouterDao;
     private static GuestOSDao _guestOSDao;
     private static GuestOSCategoryDao _guestOSCategoryDao;
     private static HostDao _hostDao;
     private static IPAddressDao _ipAddressDao;
+    private static LoadBalancerDao _loadBalancerDao;
+    private static NetworkRuleConfigDao _networkRuleConfigDao;
     private static HostPodDao _podDao;
+    private static SecurityGroupDao _securityGroupDao;
     private static ServiceOfferingDao _serviceOfferingDao;
     private static SnapshotDao _snapshotDao;
     private static StoragePoolDao _storagePoolDao;
@@ -120,11 +132,15 @@ public class ApiDBUtils {
         _clusterDao = locator.getDao(ClusterDao.class);
         _diskOfferingDao = locator.getDao(DiskOfferingDao.class);
         _domainDao = locator.getDao(DomainDao.class);        
+        _domainRouterDao = locator.getDao(DomainRouterDao.class);        
         _guestOSDao = locator.getDao(GuestOSDao.class);
         _guestOSCategoryDao = locator.getDao(GuestOSCategoryDao.class);
         _hostDao = locator.getDao(HostDao.class);
         _ipAddressDao = locator.getDao(IPAddressDao.class);
+        _loadBalancerDao = locator.getDao(LoadBalancerDao.class);
+        _networkRuleConfigDao = locator.getDao(NetworkRuleConfigDao.class);        
         _podDao = locator.getDao(HostPodDao.class);
+        _securityGroupDao = locator.getDao(SecurityGroupDao.class);
         _serviceOfferingDao = locator.getDao(ServiceOfferingDao.class);
         _snapshotDao = locator.getDao(SnapshotDao.class);
         _storagePoolDao = locator.getDao(StoragePoolDao.class);
@@ -258,6 +274,10 @@ public class ApiDBUtils {
         return _accountDao.findById(accountId);
     }
 
+    public static Account findAccountByNameDomain(String accountName, Long domainId) {
+        return _accountDao.findActiveAccount(accountName, domainId);
+    }
+
     public static ClusterVO findClusterById(long clusterId) {
         return _clusterDao.findById(clusterId);
     }
@@ -268,6 +288,10 @@ public class ApiDBUtils {
 
     public static DomainVO findDomainById(Long domainId) {
         return _domainDao.findById(domainId);
+    }
+
+    public static DomainRouterVO findDomainRouterById(Long routerId) {
+        return _domainRouterDao.findById(routerId);
     }
 
     public static GuestOS findGuestOSById(Long id) {
@@ -292,8 +316,20 @@ public class ApiDBUtils {
         }
     }
 
+    public static LoadBalancerVO findLoadBalancerById(Long loadBalancerId) {
+        return _loadBalancerDao.findById(loadBalancerId);
+    }
+
+    public static NetworkRuleConfigVO findNetworkRuleById(Long ruleId) {
+        return _networkRuleConfigDao.findById(ruleId);
+    }
+
     public static HostPodVO findPodById(Long podId) {
         return _podDao.findById(podId);
+    }
+
+    public static SecurityGroupVO findPortForwardingServiceById(Long securityGroupId) {
+        return _securityGroupDao.findById(securityGroupId);
     }
 
     public static ServiceOffering findServiceOfferingById(Long serviceOfferingId) {

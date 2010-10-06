@@ -8,7 +8,10 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.FirewallRuleResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.network.FirewallRuleVO;
+import com.cloud.network.IPAddressVO;
+import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
 @Implementation(method="updatePortForwardingRule", manager=Manager.ManagementServer)
@@ -73,6 +76,27 @@ public class UpdateIPForwardingRuleCmd extends BaseAsyncCmd {
     @Override
     public String getName() {
         return s_name;
+    }
+
+    @Override
+    public long getAccountId() {
+        IPAddressVO addr = ApiDBUtils.findIpAddressById(getPublicIp());
+        if (addr != null) {
+            return addr.getAccountId();
+        }
+
+        // bad address given, parent this command to SYSTEM so ERROR events are tracked
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_NET_RULE_MODIFY;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "updating port forwarding rule";
     }
 
 	@Override @SuppressWarnings("unchecked")

@@ -48,10 +48,7 @@ import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
 import com.cloud.api.commands.ListSnapshotPoliciesCmd;
 import com.cloud.async.AsyncInstanceCreateStatus;
-import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
-import com.cloud.async.AsyncJobVO;
-import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -301,25 +298,19 @@ public class SnapshotManagerImpl implements SnapshotManager {
     public SnapshotVO createSnapshotImpl(long volumeId, List<Long> policyIds) throws InvalidParameterValueException, ResourceAllocationException {
         Long userId = UserContext.current().getUserId();
         // Get the async job id from the context.
-        Long jobId = null;
-        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-        if(asyncExecutor != null) {
-            // createSnapshot is always async. Hence asyncExecutor is always not null.
-            AsyncJobVO job = asyncExecutor.getJob();
-            jobId = job.getId();
-        }
+//        Long jobId = null;
         
         Transaction txn = Transaction.currentTxn();
-        txn.start();
-        // set the async_job_id for this in the schedule queue so that it doesn't get scheduled again and block others.
-        // mark each of the coinciding schedules as executing in the job queue.
-        for (Long policyId : policyIds) {
-            SnapshotScheduleVO snapshotSchedule = _snapshotScheduleDao.getCurrentSchedule(volumeId, policyId, false);
-            assert snapshotSchedule != null;
-            snapshotSchedule.setAsyncJobId(jobId);
-            _snapshotScheduleDao.update(snapshotSchedule.getId(), snapshotSchedule);
-        }
-        txn.commit();
+//        txn.start();
+//        // set the async_job_id for this in the schedule queue so that it doesn't get scheduled again and block others.
+//        // mark each of the coinciding schedules as executing in the job queue.
+//        for (Long policyId : policyIds) {
+//            SnapshotScheduleVO snapshotSchedule = _snapshotScheduleDao.getCurrentSchedule(volumeId, policyId, false);
+//            assert snapshotSchedule != null;
+//            snapshotSchedule.setAsyncJobId(jobId);
+//            _snapshotScheduleDao.update(snapshotSchedule.getId(), snapshotSchedule);
+//        }
+//        txn.commit();
 
         VolumeVO volume = _volsDao.lock(volumeId, true);
         
@@ -405,16 +396,6 @@ public class SnapshotManagerImpl implements SnapshotManager {
             
         }
 
-        // Update async status after snapshot creation and before backup
-        if(asyncExecutor != null) {
-            AsyncJobVO job = asyncExecutor.getJob();
-
-            if(s_logger.isDebugEnabled())
-                s_logger.debug("CreateSnapshot created a new instance " + id + ", update async job-" + job.getId() + " progress status");
-
-            _asyncMgr.updateAsyncJobAttachment(job.getId(), "snapshot", id);
-            _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, id);
-        }
         txn.commit();
         
         return createdSnapshot;

@@ -84,6 +84,7 @@ import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
+import com.cloud.event.EventUtils;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.maid.StackMaid;
 import com.cloud.serializer.GsonHelper;
@@ -99,7 +100,6 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.encoding.Base64;
-import com.google.gson.Gson;
 
 public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
@@ -351,10 +351,11 @@ public class ApiServer implements HttpRequestHandler {
                 objectId = _dispatcher.dispatchCreateCmd(createCmd, params);
                 createCmd.setId(objectId);
                 params.put("id", objectId.toString());
+            } else {
+                ApiDispatcher.setupParameters(cmdObj, params);
             }
-            BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmdObj;
 
-            Gson gson = GsonHelper.getBuilder().create();
+            BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmdObj;
 
             UserContext ctx = UserContext.current();
             Long userId = ctx.getUserId();
@@ -364,6 +365,14 @@ public class ApiServer implements HttpRequestHandler {
             }
             if (account != null) {
                 params.put("ctxAccountId", String.valueOf(account.getId()));
+            }
+
+            // save the scheduled event
+            Long eventId = EventUtils.saveScheduledEvent((userId == null) ? User.UID_SYSTEM : userId, asyncCmd.getAccountId(),
+                    asyncCmd.getEventType(), asyncCmd.getEventDescription());
+
+            if (eventId != null) {
+                params.put("starteventid", eventId.toString());
             }
 
             AsyncJobVO job = new AsyncJobVO();
@@ -377,7 +386,8 @@ public class ApiServer implements HttpRequestHandler {
                 job.setAccountId(1L);
             }
             job.setCmd(cmdObj.getClass().getName());
-            job.setCmdInfo(gson.toJson(params));
+            job.setCmdInfo(GsonHelper.getBuilder().create().toJson(params));
+
             long jobId = _asyncMgr.submitAsyncJob(job);
             if (objectId != null) {
                 return ((BaseAsyncCreateCmd)asyncCmd).getResponse(jobId, objectId);

@@ -20,11 +20,15 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.PortForwardingServiceRuleResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.network.NetworkRuleConfigVO;
+import com.cloud.network.SecurityGroupVO;
+import com.cloud.user.Account;
 
 @Implementation(createMethod="createPortForwardingServiceRule", method="applyPortForwardingServiceRule")
 public class CreatePortForwardingServiceRuleCmd extends BaseAsyncCreateCmd {
@@ -81,6 +85,28 @@ public class CreatePortForwardingServiceRuleCmd extends BaseAsyncCreateCmd {
     
     public static String getResultObjectName() {
     	return "portforwardingservicerule";
+    }
+
+    @Override
+    public long getAccountId() {
+        SecurityGroupVO portForwardingService = ApiDBUtils.findPortForwardingServiceById(getPortForwardingServiceId());
+        if (portForwardingService != null) {
+            return portForwardingService.getAccountId();
+        }
+
+        // bad id given, parent this command to SYSTEM so ERROR events are tracked
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_NET_RULE_ADD; // FIXME:  Add a new event?
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "creating port forwarding rule on service: " + getPortForwardingServiceId() + ", public port: " + getPublicPort() +
+                ", priv port: " + getPrivatePort() + ", protocol: " + ((getProtocol() == null) ? "TCP" : getProtocol());
     }
 
     @Override @SuppressWarnings("unchecked")

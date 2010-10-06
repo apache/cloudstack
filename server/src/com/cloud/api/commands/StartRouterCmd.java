@@ -26,7 +26,9 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.DomainRouterResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
 import com.cloud.vm.DomainRouterVO;
 
 
@@ -63,6 +65,26 @@ public class StartRouterCmd extends BaseAsyncCmd {
     	return "router"; 
     }
     
+    @Override
+    public long getAccountId() {
+        UserVm vm = ApiDBUtils.findUserVmById(getId());
+        if (vm != null) {
+            return vm.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_ROUTER_START;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "starting router: " + getId();
+    }
+
 	@Override @SuppressWarnings("unchecked")
 	public DomainRouterResponse getResponse() {
         DomainRouterResponse routerResponse = new DomainRouterResponse();

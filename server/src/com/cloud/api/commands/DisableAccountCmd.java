@@ -24,6 +24,9 @@ import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(method="disableAccount", manager=Manager.ManagementServer)
 public class DisableAccountCmd extends BaseAsyncCmd {
@@ -59,6 +62,26 @@ public class DisableAccountCmd extends BaseAsyncCmd {
     @Override
     public String getName() {
         return s_name;
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_ACCOUNT_DISABLE;
+    }
+
+    @Override
+    public long getAccountId() {
+        Account account = (Account)UserContext.current().getAccountObject();
+        if (account != null) {
+            return account.getId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "disabling account: " + getAccountName() + " in domain: " + getDomainId();
     }
 
     @Override @SuppressWarnings("unchecked")

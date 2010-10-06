@@ -19,10 +19,14 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ExtractResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.storage.VolumeVO;
+import com.cloud.user.Account;
 
 @Implementation(method="extractVolume")
 public class ExtractVolumeCmd extends BaseAsyncCmd {
@@ -67,6 +71,27 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
 	public String getName() {
 		return s_name;
 	}
+
+    @Override
+    public long getAccountId() {
+        VolumeVO volume = ApiDBUtils.findVolumeById(getId());
+        if (volume != null) {
+            return volume.getId();
+        }
+
+        // invalid id, parent this command to SYSTEM so ERROR events are tracked
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_VOLUME_UPLOAD;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "Extraction job";
+    }
 
 	@Override @SuppressWarnings("unchecked")
 	public ExtractResponse getResponse() {

@@ -1280,7 +1280,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     
     
     @Override
-    public boolean stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
+    public DomainRouterVO stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
 	    Long routerId = cmd.getId();
         Account account = (Account)UserContext.current().getAccountObject();
 
@@ -1296,7 +1296,12 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         
         long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_STOP, "stopping Router with Id: "+routerId);
         
-        return stopRouter(routerId, eventId);
+        boolean success = stopRouter(routerId, eventId);
+
+        if (success) {
+            return _routerDao.findById(routerId);
+        }
+        return null;
     }
 
     @DB

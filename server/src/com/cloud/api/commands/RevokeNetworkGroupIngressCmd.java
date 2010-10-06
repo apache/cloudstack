@@ -1,14 +1,21 @@
 package com.cloud.api.commands;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @SuppressWarnings("rawtypes")
 @Implementation(method="revokeNetworkGroupIngress", manager=Manager.NetworkGroupManager)
@@ -108,7 +115,59 @@ public class RevokeNetworkGroupIngressCmd extends BaseAsyncCmd {
     	return "revokenetworkgroupingress";
     }
 
-	@Override @SuppressWarnings("unchecked")
+    @Override
+    public long getAccountId() {
+        Account account = (Account)UserContext.current().getAccountObject();
+        if ((account == null) || isAdmin(account.getType())) {
+            if ((domainId != null) && (accountName != null)) {
+                Account userAccount = ApiDBUtils.findAccountByNameDomain(accountName, domainId);
+                if (userAccount != null) {
+                    return userAccount.getId();
+                }
+            }
+        }
+
+        if (account != null) {
+            return account.getId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_NETWORK_GROUP_REVOKE_INGRESS;
+    }
+
+    @Override
+    public String getEventDescription() {
+        StringBuilder sb = new StringBuilder();
+        if (getUserNetworkGroupList() != null) {
+            sb.append("group list(group/account): ");
+            Collection userGroupCollection = getUserNetworkGroupList().values();
+            Iterator iter = userGroupCollection.iterator();
+
+            HashMap userGroup = (HashMap)iter.next();
+            String group = (String)userGroup.get("group");
+            String authorizedAccountName = (String)userGroup.get("account");
+            sb.append(group + "/" + authorizedAccountName);
+
+            while (iter.hasNext()) {
+                userGroup = (HashMap)iter.next();
+                group = (String)userGroup.get("group");
+                authorizedAccountName = (String)userGroup.get("account");
+                sb.append(", " + group + "/" + authorizedAccountName);
+            }
+        } else if (getCidrList() != null) {
+            sb.append("cidr list: " + getCidrList());
+        } else {
+            sb.append("<error:  no ingress parameters>");
+        }
+
+        return  "revoking ingress from group: " + getNetworkGroupName() + " for " + sb.toString();
+    }
+
+    @Override @SuppressWarnings("unchecked")
 	public SuccessResponse getResponse() {
         Boolean success = (Boolean)getResponseObject();
         SuccessResponse response = new SuccessResponse();

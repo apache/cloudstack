@@ -19,11 +19,15 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
 
 @Implementation(method="rebootVirtualMachine", manager=Manager.UserVmManager)
 public class RebootVMCmd extends BaseAsyncCmd {
@@ -52,6 +56,26 @@ public class RebootVMCmd extends BaseAsyncCmd {
     @Override
     public String getName() {
         return s_name;
+    }
+
+    @Override
+    public long getAccountId() {
+        UserVm vm = ApiDBUtils.findUserVmById(getId());
+        if (vm != null) {
+            return vm.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_VM_REBOOT;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "rebooting user vm: " + getId();
     }
 
 	@Override @SuppressWarnings("unchecked")

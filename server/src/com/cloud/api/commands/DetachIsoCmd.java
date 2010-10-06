@@ -21,9 +21,13 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
 
 @Implementation(method="detachIso", manager=Manager.TemplateManager)
 public class DetachIsoCmd extends BaseAsyncCmd {
@@ -53,6 +57,26 @@ public class DetachIsoCmd extends BaseAsyncCmd {
     @Override
     public String getName() {
         return s_name;
+    }
+
+    @Override
+    public long getAccountId() {
+        UserVm vm = ApiDBUtils.findUserVmById(getVirtualMachineId());
+        if (vm != null) {
+            return vm.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_ISO_DETACH;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "detaching ISO from vm: " + getVirtualMachineId();
     }
 
 	@Override @SuppressWarnings("unchecked")

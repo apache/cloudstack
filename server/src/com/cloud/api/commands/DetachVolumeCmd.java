@@ -19,11 +19,16 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.storage.VolumeVO;
+import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
 
 @Implementation(method="detachVolumeFromVM", manager=Manager.UserVmManager)
 public class DetachVolumeCmd extends BaseAsyncCmd {
@@ -70,6 +75,43 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
     
     public static String getResultObjectName() {
     	return "volume";
+    }
+
+    @Override
+    public long getAccountId() {
+        Long volumeId = getId();
+        if (volumeId != null) {
+            VolumeVO volume = ApiDBUtils.findVolumeById(volumeId);
+            if (volume != null) {
+                return volume.getAccountId();
+            }
+        } else if (getVirtualMachineId() != null) {
+            UserVm vm = ApiDBUtils.findUserVmById(getVirtualMachineId());
+            if (vm != null) {
+                return vm.getAccountId();
+            }
+        }
+
+        // invalid id, parent this command to SYSTEM so ERROR events are tracked
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_VOLUME_DETACH;
+    }
+
+    @Override
+    public String getEventDescription() {
+        StringBuilder sb = new StringBuilder();
+        if (id != null) {
+            sb.append(": " + id);
+        } else if ((deviceId != null) && (virtualMachineId != null)) {
+            sb.append(" with device id: " + deviceId + " from vm: " + virtualMachineId);
+        } else {
+            sb.append(" <error:  either volume id or deviceId/vmId need to be specified>");
+        }
+        return  "detaching volume" + sb.toString();
     }
 
 	@Override @SuppressWarnings("unchecked")

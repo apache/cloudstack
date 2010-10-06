@@ -19,10 +19,14 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.DeleteDomainResponse;
+import com.cloud.domain.DomainVO;
+import com.cloud.event.EventTypes;
+import com.cloud.user.Account;
 
 @Implementation(method="deleteDomain")
 public class DeleteDomainCmd extends BaseAsyncCmd {
@@ -52,7 +56,6 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
         return cleanup;
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -60,6 +63,26 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
     @Override
     public String getName() {
         return s_name;
+    }
+
+    @Override
+    public long getAccountId() {
+        DomainVO domain = ApiDBUtils.findDomainById(getId());
+        if (domain != null) {
+            return domain.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_DOMAIN_DELETE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  "deleting domain: " + getId();
     }
 
     @Override @SuppressWarnings("unchecked")
