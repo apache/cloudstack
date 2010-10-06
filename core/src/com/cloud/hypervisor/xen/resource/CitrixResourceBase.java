@@ -3126,18 +3126,16 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("callHostPlugin executing for command " + cmd + " with " + getArgsString(args));
             }
-            if( _host.host == null ) {
-                _host.host = Host.getByUuid(conn, _host.uuid);
-            }
-            String result = _host.host.callPlugin(conn, plugin, cmd, args);
+            Host host = Host.getByUuid(conn, _host.uuid);
+            String result = host.callPlugin(conn, plugin, cmd, args);
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("callHostPlugin Result: " + result);
             }
             return result.replace("\n", "");
         } catch (XenAPIException e) {
-            s_logger.warn("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to " + e.toString());
+            s_logger.warn("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to " + e.toString(), e);
         } catch (XmlRpcException e) {
-            s_logger.debug("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to " + e.getMessage());
+            s_logger.warn("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to " + e.getMessage(), e);
         }
         return null;
     }
@@ -4247,7 +4245,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         } catch (NumberFormatException e) {
             throw new ConfigurationException("Unable to get the zone " + params.get("zone"));
         }
-        _host.host = null;
         _name = _host.uuid;
         _host.ip = (String) params.get("url");
         _host.pool = (String) params.get("pool");
@@ -6119,7 +6116,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     protected class XenServerHost {
         public String uuid;
         public String ip;
-        public Host host;
         public String publicNetwork;
         public String privateNetwork;
         public String linkLocalNetwork;
