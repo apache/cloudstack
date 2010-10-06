@@ -95,6 +95,7 @@ setup_router() {
   fi
   sed -i -e "s/^dhcp-range=.*$/dhcp-range=$DHCP_RANGE,static/" /etc/dnsmasq.conf
   sed -i -e "s/^[#]*listen-address=.*$/listen-address=$ETH0_IP/" /etc/dnsmasq.conf
+  sed -i -e "s/^log-queries.*$/#log-queries/" /etc/dnsmasq.conf
   sed -i  /gateway/d /etc/hosts
   echo "$ETH0_IP $NAME" >> /etc/hosts
   [ -f /etc/httpd/conf/httpd.conf ] && sed -i -e "s/^Listen.*$/Listen $ETH0_IP:80/" /etc/httpd/conf/httpd.conf

@@ -82,7 +82,7 @@ CREATE TABLE `cloud`.`netapp_storage_pool` (
   `aggregate_name` varchar(255) NOT NULL COMMENT 'name for the aggregate',
   `pool_name` varchar(255) NOT NULL COMMENT 'name for the pool/volume',
   `snapshot_policy` varchar(255) NOT NULL COMMENT 'snapshot policy',  
-  `pool_size` bigint unsigned COMMENT 'size of the pool',
+  `pool_size` varchar(15) COMMENT 'size of the pool eg 15g',
   `round_robin_marker` bigint unsigned COMMENT 'this is set to 1 to indicate the vol/pool to use for allocation',  
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
