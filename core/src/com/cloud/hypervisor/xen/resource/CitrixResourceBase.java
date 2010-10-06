@@ -6130,7 +6130,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         public String pool;
     }
 
-    private class VHDInfo {
+    class VHDInfo {
         private final String uuid;
         private final Long virtualSize;
 
