@@ -932,11 +932,7 @@ function doChangeService($t, selectedItemsInMidMenu, vmListAPIMap) {
     }
    
     var apiText;
-    if(itemCounts == 0) {
-        $("#dialog_info_please_select_one_item_in_middle_menu").dialog("open");		
-        return;
-    }
-    else if(itemCounts == 1){
+    if(itemCounts == 1){
         var firstItemId;
         for(var id in selectedItemsInMidMenu) {
             firstItemId = id;

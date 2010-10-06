@@ -205,6 +205,16 @@ function buildActionLinkForMidMenu(label, actionMap, $actionMenu, listAPIMap) {
     $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);
     $link.bind("click", function(event) {	
         $actionMenu.hide();    	 
+                
+        var itemCounts = 0;
+        for(var id in selectedItemsInMidMenu) {
+            itemCounts ++;
+        }
+        if(itemCounts == 0) {
+            $("#dialog_info_please_select_one_item_in_middle_menu").dialog("open");		
+            return;
+        }        
+        
         var $actionLink = $(this);   
         var dialogBeforeActionFn = $actionLink.data("dialogBeforeActionFn"); 
         if(dialogBeforeActionFn == null) {		                   

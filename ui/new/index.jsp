@@ -578,7 +578,7 @@ long milliseconds = new Date().getTime();
 	</div>
 	
 	<!-- Dialogs 2 -->
-	<div id="dialog_info_please_select_one_item_in_middle_menu" title="Info" style="display:none">
+	<div id="dialog_info_please_select_one_item_in_middle_menu" title="Alert" style="display:none">
 	    <p>
 	        <%=t.t("please.select.at.least.one.item.in.middle.menu")%>
 	    </p>
