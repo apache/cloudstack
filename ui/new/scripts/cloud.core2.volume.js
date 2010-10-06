@@ -422,8 +422,9 @@ function volumeJsonToDetailsTab(jsonObj){
     
     if(jsonObj.state != "Creating" && jsonObj.state != "Corrupted" && jsonObj.name != "attaching") {
         if(jsonObj.type=="ROOT") {
-            if (jsonObj.vmstate == "Stopped")  
-                buildActionLinkForDetailsTab("Create Template", volumeActionMap, $actionMenu, volumeListAPIMap);	//show create template
+            if (jsonObj.vmstate == "Stopped") { 
+                //buildActionLinkForDetailsTab("Create Template", volumeActionMap, $actionMenu, volumeListAPIMap);	//backend of CreateTemplateFromVolume is not working. Hide the option from UI until backend is fixed.
+            }
         } 
         else { 
 	        if (jsonObj.virtualmachineid != null) {
