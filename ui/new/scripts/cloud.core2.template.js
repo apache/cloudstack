@@ -5,11 +5,28 @@ function afterLoadTemplateJSP() {
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     
     //add button ***
+    /*
     var formatSelect = $("#dialog_add_template #add_template_format").empty();
 	if (getHypervisorType() == "kvm") 
 		formatSelect.append("<option value='QCOW2'>QCOW2</option>");
 	else if (getHypervisorType() == "xenserver") 
-		formatSelect.append("<option value='VHD'>VHD</option>");	    
+		formatSelect.append("<option value='VHD'>VHD</option>");
+	*/	
+	$("#dialog_add_template #add_template_hypervisor").bind("change", function(event) {	      
+	    var formatSelect = $("#dialog_add_template #add_template_format").empty();	     
+	    var selectedHypervisorType = $(this).val();
+	    
+	    if(selectedHypervisorType == "XenServer")
+	        formatSelect.append("<option value='VHD'>VHD</option>");	    
+	    else if(selectedHypervisorType == "VmWare")
+	        formatSelect.append("<option value='OVA'>OVA</option>");
+	    else if(selectedHypervisorType == "KVM")
+	        formatSelect.append("<option value='QCOW2'>QCOW2</option>");
+	        
+	    return false;
+	});		
+	$("#dialog_add_template #add_template_hypervisor").change();	
+			    
 		
 	if(isAdmin())
 	    $("#dialog_add_template #add_template_featured_container, #dialog_edit_template #edit_template_featured_container").show();
@@ -41,6 +58,7 @@ function afterLoadTemplateJSP() {
 				var password = thisDialog.find("#add_template_password").val();		
 				var isPublic = thisDialog.find("#add_template_public").val();	                    	
 				var osType = thisDialog.find("#add_template_os_type").val();
+				var hypervisor = thisDialog.find("#add_template_hypervisor").val();
 				
 				var moreCriteria = [];				
 				if(thisDialog.find("#add_template_featured_container").css("display")!="none") {				
@@ -51,7 +69,7 @@ function afterLoadTemplateJSP() {
 				var $midmenuItem1 = beforeAddingMidMenuItem() ;
 												
 				$.ajax({
-				    data: createURL("command=registerTemplate&name="+todb(name)+"&displayText="+todb(desc)+"&url="+encodeURIComponent(url)+"&zoneid="+zoneId+"&ispublic="+isPublic+moreCriteria.join("")+"&format="+format+"&passwordEnabled="+password+"&osTypeId="+osType+"&response=json"),
+				    data: createURL("command=registerTemplate&name="+todb(name)+"&displayText="+todb(desc)+"&url="+encodeURIComponent(url)+"&zoneid="+zoneId+"&ispublic="+isPublic+moreCriteria.join("")+"&format="+format+"&passwordEnabled="+password+"&osTypeId="+osType+"&hypervisor="+hypervisor+"&response=json"),
 					dataType: "json",
 					success: function(json) {	
 						var items = json.registertemplateresponse.template;				       

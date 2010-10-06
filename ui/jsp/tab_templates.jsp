@@ -259,10 +259,10 @@ long milliseconds = new Date().getTime();
 				</li>
 				<li>
 					<label for="add_template_hypervisor">Hypervisor:</label>
-					<select class="select" name="add_template_hypervisor" id="add_template_hypervisor">
-						<option value='VmWare'>VMware ESX</option>
+					<select class="select" name="add_template_hypervisor" id="add_template_hypervisor">						
 						<option value='XenServer'>Citrix XenServer</option>
 						<option value='KVM'>KVM</option>
+						<option value='VmWare'>VMware ESX</option>
 					</select>
 				</li>
 				<li>
