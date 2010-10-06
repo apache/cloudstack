@@ -549,7 +549,7 @@ var volumeActionMap = {
         afterActionSeccessFn: function(){}   
     },
     "Recurring Snapshot": {                 
-        customActionFn : doRecurringSnapshot 
+        dialogBeforeActionFn : doRecurringSnapshot 
     }   
 }   
 
