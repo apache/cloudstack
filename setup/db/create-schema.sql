@@ -73,7 +73,7 @@ DROP TABLE IF EXISTS `cloud`.`ext_lun_alloc`;
 DROP TABLE IF EXISTS `cloud`.`storage_pool_details`;
 DROP TABLE IF EXISTS `cloud`.`ext_lun_details`;
 DROP TABLE IF EXISTS `cloud`.`cluster`;
-DROP TABLE IF EXISTS `cloud`.`netapp_storage_pool`;
+/*DROP TABLE IF EXISTS `cloud`.`netapp_storage_pool`;*/
 
 /*
 CREATE TABLE `cloud`.`netapp_storage_pool` (
