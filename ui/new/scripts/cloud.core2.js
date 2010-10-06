@@ -215,11 +215,24 @@ function buildActionLinkForMidMenu(label, actionMap, $actionMenu, listAPIMap) {
         }
         else {
             dialogBeforeActionFn($actionLink, selectedItemsInMidMenu, listAPIMap);	
+            
         }        
         selectedItemsInMidMenu = {}; //clear selected items for action	                          
         return false;
     });  
 } 
+
+/*
+If Cancel button in dialog is clicked, action won't preceed. 
+i.e. doActionForMidMenu() won't get called => highlight won't be removd from middle menu. 
+So, we need to remove highlight here. Otherwise, it won't be consistent of selectedItemsInMidMenu which will be emptied soon.
+*/
+function removeHighlightInMiddleMenu(selectedItemsInMidMenu) {
+    for(var id in selectedItemsInMidMenu) {
+        var $midmenuItem = $("#midmenuItem_"+id);	
+        $midmenuItem.find("#content").removeClass("selected");
+    }
+}
 
 function doActionForMidMenu(id, $actionLink, apiCommand, listAPIMap) {   
     var label = $actionLink.data("label");			           

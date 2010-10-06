@@ -794,6 +794,7 @@ function doAttachISO($t, selectedItemsInMidMenu, vmListAPIMap) {
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
+			removeHighlightInMiddleMenu(selectedItemsInMidMenu);
 		} 
 	}).dialog("open");
 }
@@ -810,6 +811,7 @@ function doDetachISO($t, selectedItemsInMidMenu, vmListAPIMap) {
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
+			removeHighlightInMiddleMenu(selectedItemsInMidMenu);
 		} 
 	}).dialog("open");
 }
@@ -837,6 +839,7 @@ function doResetPassword($t, selectedItemsInMidMenu, vmListAPIMap) {
 		}, 
 		"No": function() { 
 			$(this).dialog("close"); 
+			removeHighlightInMiddleMenu(selectedItemsInMidMenu);
 		} 
 	}).dialog("open");
 }
@@ -917,6 +920,7 @@ function doChangeName($t, selectedItemsInMidMenu, vmListAPIMap) {
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
+			removeHighlightInMiddleMenu(selectedItemsInMidMenu);
 		} 
 	}).dialog("open");
 }
@@ -980,6 +984,7 @@ function doChangeService($t, selectedItemsInMidMenu, vmListAPIMap) {
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
+			removeHighlightInMiddleMenu(selectedItemsInMidMenu);
 		} 
 	}).dialog("open");
 }
@@ -1006,6 +1011,7 @@ function doChangeGroup($t, selectedItemsInMidMenu, vmListAPIMap) {
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
+			removeHighlightInMiddleMenu(selectedItemsInMidMenu);
 		} 
 	}).dialog("open");	
 }
@@ -1024,6 +1030,7 @@ function doEnableHA($t, selectedItemsInMidMenu, vmListAPIMap) {
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
+			removeHighlightInMiddleMenu(selectedItemsInMidMenu);
 		} 
 	}).dialog("open");
 }
@@ -1042,6 +1049,7 @@ function doDisableHA($t, selectedItemsInMidMenu, vmListAPIMap) {
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
+			removeHighlightInMiddleMenu(selectedItemsInMidMenu);
 		} 
 	}).dialog("open");
 }
