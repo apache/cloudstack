@@ -900,6 +900,24 @@ function doResetPassword2(id) {
 }
 
 function doChangeName($t, selectedItemsInMidMenu, vmListAPIMap) { 
+    var itemCounts = 0;
+    for(var id in selectedItemsInMidMenu) {
+        itemCounts ++;
+    }  
+    if(itemCounts == 1){
+        var firstItemId;
+        for(var id in selectedItemsInMidMenu) {
+            firstItemId = id;
+            break;
+        }            
+        var $midmenuItem1 = $("#midmenuItem_"+firstItemId);	        
+        var jsonObj = $midmenuItem1.data("jsonObj");
+        $("#dialog_change_name").find("#change_instance_name").val(fromdb(jsonObj.displayname));
+    }
+    else {
+        $("#dialog_change_name").find("#change_instance_name").val("");
+    }    
+
 	$("#dialog_change_name")
 	.dialog('option', 'buttons', { 						
 		"OK": function() { 			    
@@ -925,12 +943,56 @@ function doChangeName($t, selectedItemsInMidMenu, vmListAPIMap) {
 	}).dialog("open");
 }
 
+function doChangeGroup($t, selectedItemsInMidMenu, vmListAPIMap) { 
+	var itemCounts = 0;
+    for(var id in selectedItemsInMidMenu) {
+        itemCounts ++;
+    }  
+    if(itemCounts == 1){
+        var firstItemId;
+        for(var id in selectedItemsInMidMenu) {
+            firstItemId = id;
+            break;
+        }            
+        var $midmenuItem1 = $("#midmenuItem_"+firstItemId);	        
+        var jsonObj = $midmenuItem1.data("jsonObj");
+        $("#dialog_change_group").find("#change_group_name").val(fromdb(jsonObj.group));
+    }
+    else {
+        $("#dialog_change_group").find("#change_group_name").val("");
+    }    
+
+	$("#dialog_change_group")
+	.dialog('option', 'buttons', { 						
+		"OK": function() { 	
+		    var thisDialog = $(this);
+	        thisDialog.dialog("close"); 
+													
+			// validate values
+	        var isValid = true;					
+	        isValid &= validateString("Group", thisDialog.find("#change_group_name"), thisDialog.find("#change_group_name_errormsg"), true); //group name is optional								
+	        if (!isValid) return;
+	        
+	        for(var id in selectedItemsInMidMenu) {				
+	            var $midMenuItem = selectedItemsInMidMenu[id];
+	            var jsonObj = $midMenuItem.data("jsonObj");		
+	            var group = trim(thisDialog.find("#change_group_name").val());
+                var apiCommand = "command=updateVirtualMachine&id="+id+"&group="+todb(group);          
+                doActionForMidMenu(id, $t, apiCommand, vmListAPIMap);
+            }
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+			removeHighlightInMiddleMenu(selectedItemsInMidMenu);
+		} 
+	}).dialog("open");	
+}
+
 function doChangeService($t, selectedItemsInMidMenu, vmListAPIMap) {    
     var itemCounts = 0;
     for(var id in selectedItemsInMidMenu) {
         itemCounts ++;
-    }
-   
+    }   
     var apiText;
     if(itemCounts == 1){
         var firstItemId;
@@ -983,33 +1045,6 @@ function doChangeService($t, selectedItemsInMidMenu, vmListAPIMap) {
 			removeHighlightInMiddleMenu(selectedItemsInMidMenu);
 		} 
 	}).dialog("open");
-}
-
-function doChangeGroup($t, selectedItemsInMidMenu, vmListAPIMap) { 
-	$("#dialog_change_group")
-	.dialog('option', 'buttons', { 						
-		"OK": function() { 	
-		    var thisDialog = $(this);
-	        thisDialog.dialog("close"); 
-													
-			// validate values
-	        var isValid = true;					
-	        isValid &= validateString("Group", thisDialog.find("#change_group_name"), thisDialog.find("#change_group_name_errormsg"), true); //group name is optional								
-	        if (!isValid) return;
-	        
-	        for(var id in selectedItemsInMidMenu) {				
-	            var $midMenuItem = selectedItemsInMidMenu[id];
-	            var jsonObj = $midMenuItem.data("jsonObj");		
-	            var group = trim(thisDialog.find("#change_group_name").val());
-                var apiCommand = "command=updateVirtualMachine&id="+id+"&group="+todb(group);          
-                doActionForMidMenu(id, $t, apiCommand, vmListAPIMap);
-            }
-		}, 
-		"Cancel": function() { 
-			$(this).dialog("close"); 
-			removeHighlightInMiddleMenu(selectedItemsInMidMenu);
-		} 
-	}).dialog("open");	
 }
 
 function doEnableHA($t, selectedItemsInMidMenu, vmListAPIMap) {            
