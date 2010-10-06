@@ -6079,7 +6079,11 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 return new Answer(cmd);
             }
             Host host = Host.getByUuid(conn, hostuuid);
-            Pool.eject(conn, host);
+            try {
+            	Pool.eject(conn, host);
+            } catch (Exception e) {
+            	host.destroy(conn);
+            }
             return new Answer(cmd);
         } catch (XenAPIException e) {
             String msg = "Unable to eject host " + _host.uuid + " due to " + e.toString();
