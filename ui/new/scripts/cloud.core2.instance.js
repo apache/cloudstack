@@ -831,67 +831,69 @@ function doResetPassword($t, selectedItemsInMidMenu, vmListAPIMap) {
 	                $midMenuItem.find("#info_icon").addClass("error").show();
                     $midMenuItem.data("afterActionInfo", ($t.data("label") + " action failed. Reason: This instance is not using a template that has the password reset feature enabled.  If you have forgotten your root password, please contact support."));  
 		            continue;
-	            }	
-	            var apiCommand = "command=resetPasswordForVirtualMachine&id="+id;
-	            
-	            var $midmenuItem = $("#midmenuItem_"+id);	
-                $midmenuItem.find("#content").removeClass("selected").addClass("inaction");                          
-                $midmenuItem.find("#spinning_wheel").addClass("midmenu_addingloader").show();	
-                $midmenuItem.find("#info_icon").hide();	
-	            
-	            //???
-                $.ajax({
-                    data: createURL(apiCommand),
-                    dataType: "json",           
-                    success: function(json) {	                	                        
-                        var jobId = json.resetpasswordforvirtualmachineresponse.jobid;                  			                        
-                        var timerKey = "asyncJob_" + jobId;					                       
-                        $("body").everyTime(
-                            10000,
-                            timerKey,
-                            function() {
-                                $.ajax({
-                                    data: createURL("command=queryAsyncJobResult&jobId="+jobId),
-	                                dataType: "json",									                    					                    
-	                                success: function(json) {		                            							                       
-		                                var result = json.queryasyncjobresultresponse;										                   
-		                                if (result.jobstatus == 0) {
-			                                return; //Job has not completed
-		                                } else {											                    
-			                                $("body").stopTime(timerKey);	
-			                                $midmenuItem.find("#content").removeClass("inaction");
-			                                $midmenuItem.find("#spinning_wheel").hide();			                       
-			                                if (result.jobstatus == 1) { // Succeeded  
-			                                    $midmenuItem.find("#info_icon").removeClass("error").show();			                                		                                    
-			                                    $midmenuItem.find("#second_row").text("New password: " + result.virtualmachine[0].password);  			                                   
-												var afterActionInfo = "Your password has been successfully resetted.  Your new password is : " + result.virtualmachine[0].password;
-												$midmenuItem.data("afterActionInfo", afterActionInfo); 
-			                                } else if (result.jobstatus == 2) { // Failed	
-			                                    $midmenuItem.find("#info_icon").addClass("error").show();
-			                                    $midmenuItem.data("afterActionInfo", (label + " action failed. Reason: " + fromdb(result.jobresult)));    
-			                                }											                    
-		                                }
-	                                },
-	                                error: function(XMLHttpResponse) {
-		                                $("body").stopTime(timerKey);		                       		                        
-		                                handleErrorInMidMenu(XMLHttpResponse, $midmenuItem); 		                        
-	                                }
-                                });
-                            },
-                            0
-                        );
-                    },
-                    error: function(XMLHttpResponse) {	
-		                handleErrorInMidMenu(XMLHttpResponse, $midmenuItem);    
-                    }
-                });     
-	            //???	            
+	            }		            
+	            doResetPassword2(id);	                    
 	        }		
 		}, 
 		"No": function() { 
 			$(this).dialog("close"); 
 		} 
 	}).dialog("open");
+}
+
+function doResetPassword2(id) {
+    var apiCommand = "command=resetPasswordForVirtualMachine&id="+id;
+	            
+    var $midmenuItem = $("#midmenuItem_"+id);	
+    $midmenuItem.find("#content").removeClass("selected").addClass("inaction");                          
+    $midmenuItem.find("#spinning_wheel").addClass("midmenu_addingloader").show();	
+    $midmenuItem.find("#info_icon").hide();	
+    	            
+    $.ajax({
+        data: createURL(apiCommand),
+        dataType: "json",           
+        success: function(json) {	                	                        
+            var jobId = json.resetpasswordforvirtualmachineresponse.jobid;                  			                        
+            var timerKey = "asyncJob_" + jobId;					                       
+            $("body").everyTime(
+                10000,
+                timerKey,
+                function() {
+                    $.ajax({
+                        data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+                        dataType: "json",									                    					                    
+                        success: function(json) {		                            							                       
+                            var result = json.queryasyncjobresultresponse;										                   
+                            if (result.jobstatus == 0) {
+                                return; //Job has not completed
+                            } else {											                    
+                                $("body").stopTime(timerKey);	
+                                $midmenuItem.find("#content").removeClass("inaction");
+                                $midmenuItem.find("#spinning_wheel").hide();			                       
+                                if (result.jobstatus == 1) { // Succeeded  
+                                    $midmenuItem.find("#info_icon").removeClass("error").show();			                                		                                    
+                                    $midmenuItem.find("#second_row").text("New password: " + result.virtualmachine[0].password);  			                                   
+									var afterActionInfo = "Your password has been successfully resetted.  Your new password is : " + result.virtualmachine[0].password;
+									$midmenuItem.data("afterActionInfo", afterActionInfo); 
+                                } else if (result.jobstatus == 2) { // Failed	
+                                    $midmenuItem.find("#info_icon").addClass("error").show();
+                                    $midmenuItem.data("afterActionInfo", (label + " action failed. Reason: " + fromdb(result.jobresult)));    
+                                }											                    
+                            }
+                        },
+                        error: function(XMLHttpResponse) {
+                            $("body").stopTime(timerKey);		                       		                        
+                            handleErrorInMidMenu(XMLHttpResponse, $midmenuItem); 		                        
+                        }
+                    });
+                },
+                0
+            );
+        },
+        error: function(XMLHttpResponse) {	
+            handleErrorInMidMenu(XMLHttpResponse, $midmenuItem);    
+        }
+    });     
 }
 
 function doChangeName($t, selectedItemsInMidMenu, vmListAPIMap) { 
