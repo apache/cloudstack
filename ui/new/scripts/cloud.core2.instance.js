@@ -42,7 +42,7 @@ function clickInstanceGroupHeader($arrowIcon) {
        	initDialog("dialog_attach_iso");  
         initDialog("dialog_change_name"); 
         initDialog("dialog_change_group"); 
-        initDialog("dialog_change_service_offering"); 
+        initDialog("dialog_change_service_offering", 600); 
         initDialog("dialog_confirmation_change_root_password");
         initDialog("dialog_confirmation_enable_ha");  
         initDialog("dialog_confirmation_disable_ha");            
@@ -732,16 +732,16 @@ var vmActionMap = {
         isAsyncJob: false,            
         dialogBeforeActionFn : doChangeName,
         afterActionSeccessFn: vmToMidmenu
+    },    
+    "Change Group": {
+        isAsyncJob: false,            
+        dialogBeforeActionFn : doChangeGroup,
+        afterActionSeccessFn: vmToMidmenu
     },
     "Change Service": {
         isAsyncJob: true,
         asyncJobResponse: "changeserviceforvirtualmachineresponse",
         dialogBeforeActionFn : doChangeService,
-        afterActionSeccessFn: vmToMidmenu
-    },
-    "Change Group": {
-        isAsyncJob: false,            
-        dialogBeforeActionFn : doChangeGroup,
         afterActionSeccessFn: vmToMidmenu
     },
     "Enable HA": {
@@ -921,10 +921,31 @@ function doChangeName($t, selectedItemsInMidMenu, vmListAPIMap) {
 	}).dialog("open");
 }
 
-function doChangeService($t, selectedItemsInMidMenu, vmListAPIMap) { 
-	$.ajax({
-	    //data: createURL("command=listServiceOfferings&VirtualMachineId="+vmId), //can not specifiy VirtualMachineId since we allow multiple-item-selection.
-	    data: createURL("command=listServiceOfferings"), //can not specifiy VirtualMachineId since we support multiple-item-selection.
+function doChangeService($t, selectedItemsInMidMenu, vmListAPIMap) {    
+    var itemCounts = 0;
+    for(var id in selectedItemsInMidMenu) {
+        itemCounts ++;
+    }
+   
+    var apiText;
+    if(itemCounts == 0) {
+        $("#dialog_info_please_select_one_item_in_middle_menu").dialog("open");		
+        return;
+    }
+    else if(itemCounts == 1){
+        var firstItemId;
+        for(var id in selectedItemsInMidMenu) {
+            firstItemId = id;
+            break;
+        }    
+        apiText = "command=listServiceOfferings&VirtualMachineId="+firstItemId;
+    }
+    else {
+        apiText = "command=listServiceOfferings";
+    }   
+
+	$.ajax({	   
+	    data: createURL(apiText), 
 		dataType: "json",
 		success: function(json) {
 			var offerings = json.listserviceofferingsresponse.serviceoffering;

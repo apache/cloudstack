@@ -405,7 +405,15 @@ $(document).ready(function() {
 	});
 	$("#dialog_session_expired").siblings(".ui-widget-header").css("background", "url('/client/css/images/ui-bg_errorglass_30_ffffff_1x400.png') repeat-x scroll 50% 50% #393939");
 	$("#dialog_session_expired").siblings(".ui-dialog-buttonpane").find(".ui-state-default").css("background", "url('/client/css/images/ui-bg_errorglass_30_ffffff_1x400.png') repeat-x scroll 50% 50% #393939");
+			
+	$("#dialog_info_please_select_one_item_in_middle_menu").dialog({ 
+		autoOpen: false,
+		modal: true,
+		zIndex: 2000,
+		buttons: { "OK": function() { $(this).dialog("close"); } }
+	});
 	
+	/*
 	$("#dialog_server_error").dialog({ 
 		autoOpen: false,
 		modal: true,
@@ -414,6 +422,7 @@ $(document).ready(function() {
 	});
 	$("#dialog_server_error").siblings(".ui-widget-header").css("background", "url('/client/css/images/ui-bg_errorglass_30_ffffff_1x400.png') repeat-x scroll 50% 50% #393939");
 	$("#dialog_server_error").siblings(".ui-dialog-buttonpane").find(".ui-state-default").css("background", "url('/client/css/images/ui-bg_errorglass_30_ffffff_1x400.png') repeat-x scroll 50% 50% #393939");
+	*/
 	
 	// Menu Tabs
 	$("#global_nav").bind("click", function(event) {

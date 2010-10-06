@@ -554,7 +554,7 @@ long milliseconds = new Date().getTime();
         </div>
     </div>
    
-    <!-- Dialogs -->
+    <!-- Dialogs 1 -->
 	<div id="dialog_confirmation" title="Confirmation" style="display:none"></div>
 	<div id="dialog_info" title="Info" style="display:none"></div>
 	<div id="dialog_alert" title="Alert" style="display:none"></div>
@@ -577,6 +577,12 @@ long milliseconds = new Date().getTime();
 	     </p>
 	</div>
 	
+	<!-- Dialogs 2 -->
+	<div id="dialog_info_please_select_one_item_in_middle_menu" title="Info" style="display:none">
+	    <p>
+	        <%=t.t("please.select.at.least.one.item.in.middle.menu")%>
+	    </p>
+	</div>
 	
     <!-- templates starts here-->
     <div class="leftmenu_content" id="leftmenu_submenu_template" style="display: none">
