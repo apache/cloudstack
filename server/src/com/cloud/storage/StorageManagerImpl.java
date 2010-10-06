@@ -421,7 +421,7 @@ public class StorageManagerImpl implements StorageManager {
             _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, volumeId);
         }
         
-        final HashSet<StoragePool> poolsToAvoid = new HashSet<StoragePool>();
+
         StoragePoolVO pool = null;
         boolean success = false;
         Set<Long> podsToAvoid = new HashSet<Long>();
@@ -436,6 +436,7 @@ public class StorageManagerImpl implements StorageManager {
         while ((pod = _agentMgr.findPod(null, null, dc, account.getId(), podsToAvoid)) != null) {
             podsToAvoid.add(pod.first().getId());
             // Determine what storage pool to store the volume in
+            HashSet<StoragePool> poolsToAvoid = new HashSet<StoragePool>();
             while ((pool = findStoragePool(dskCh, dc, pod.first(), null, null, null, null, poolsToAvoid)) != null) {
                 poolsToAvoid.add(pool);
                 volumeFolder = pool.getPath();
@@ -582,7 +583,7 @@ public class StorageManagerImpl implements StorageManager {
 		if (createdVolume != null) {
 			volumeId = createdVolume.getId();
 		} else {
-			details = "Creating volue failed due to " + volumeDetails.second();
+			details = "Creating volume failed due to " + volumeDetails.second();
 			s_logger.warn(details);
 			throw new CloudRuntimeException(details);
 		}
@@ -968,7 +969,7 @@ public class StorageManagerImpl implements StorageManager {
         _storagePoolAcquisitionWaitSeconds = NumbersUtil.parseInt(configs.get("pool.acquisition.wait.seconds"), 1800);
         s_logger.info("pool.acquisition.wait.seconds is configured as " + _storagePoolAcquisitionWaitSeconds + " seconds");
 
-        _totalRetries = NumbersUtil.parseInt(configDao.getValue("total.retries"), 4);
+        _totalRetries = NumbersUtil.parseInt(configDao.getValue("total.retries"), 2);
         _pauseInterval = 2*NumbersUtil.parseInt(configDao.getValue("ping.interval"), 60);
         
         _hypervisorType = configDao.getValue("hypervisor.type");
@@ -1510,11 +1511,10 @@ public class StorageManagerImpl implements StorageManager {
         VolumeVO createdVolume = null;
 
         while ((pod = _agentMgr.findPod(null, null, dc, account.getId(), podsToAvoid)) != null) {
+            podsToAvoid.add(pod.first().getId());
             if ((createdVolume = createVolume(volume, null, null, dc, pod.first(), null, null, diskOffering, poolsToAvoid)) != null) {
             	break;
-            } else {
-                podsToAvoid.add(pod.first().getId());
-            }
+            } 
         }
 
         // Create an event
@@ -1677,13 +1677,13 @@ public class StorageManagerImpl implements StorageManager {
         }
         while ((storagePoolHost = chooseHostForStoragePool(storagePool, hostsToAvoid)) != null && tryCount++ < totalRetries) {
             String errMsg = basicErrMsg + " on host: " + hostId + " try: " + tryCount + ", reason: ";
+            hostsToAvoid.add(hostId);
             try {
                 hostId = storagePoolHost.getHostId();
                 HostVO hostVO = _hostDao.findById(hostId);
                 if (shouldBeSnapshotCapable) {
                     if (hostVO == null || hostVO.getHypervisorType() != Hypervisor.Type.XenServer) {
                         // Only XenServer hosts are snapshot capable.
-                        hostsToAvoid.add(hostId);
                         continue;
                     }
                 }

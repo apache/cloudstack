@@ -2439,10 +2439,10 @@ public class UserVmManagerImpl implements UserVmManager {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Attempting to create direct attached vm in pod " + pod.first().getName());
                 }
+        		avoids.add(pod.first().getId());
                 if (!forAccount && !forZone) {
                 	vlansForPod = _vlanDao.listVlansForPodByType(pod.first().getId(), VlanType.DirectAttached);
                 	if (vlansForPod.size() < 1) {
-                		avoids.add(pod.first().getId());
                 		if (s_logger.isDebugEnabled()) {
                 			s_logger.debug("No direct attached vlans available in pod " + pod.first().getName() + " (id:" + pod.first().getId() + "), checking other pods");
                 		}
@@ -2459,7 +2459,6 @@ public class UserVmManagerImpl implements UserVmManager {
                 } else if (rtrs.size() == 0) {
                 	router = _networkMgr.createDhcpServerForDirectlyAttachedGuests(userId, accountId, dc, pod.first(), pod.second(), guestVlan);
                 	if (router == null) {
-                		avoids.add(pod.first().getId());
     	                if (s_logger.isDebugEnabled()) {
     	                    s_logger.debug("Unable to create DHCP server in vlan " + guestVlan.getVlanId() + ", pod=" + pod.first().getName() + " (podid:" + pod.first().getId() + "), checking other pods");
     	                }
@@ -2503,7 +2502,6 @@ public class UserVmManagerImpl implements UserVmManager {
                 
                 if (guestIp == null) {
                 	s_logger.debug("No guest IP available in pod id=" + pod.first().getId());
-                	avoids.add(pod.first().getId());
                 	continue;
                 }
                 s_logger.debug("Acquired a guest IP, ip=" + guestIp);
@@ -2541,7 +2539,6 @@ public class UserVmManagerImpl implements UserVmManager {
 	                if (s_logger.isDebugEnabled()) {
 	                    s_logger.debug("Unable to find storage host in pod " + pod.first().getName() + " (id:" + pod.first().getId() + "), checking other pods");
 	                }
-                	avoids.add(pod.first().getId());
 	                continue; // didn't find a storage host in pod, go to the next pod
 	            }
 	            
@@ -2667,7 +2664,7 @@ public class UserVmManagerImpl implements UserVmManager {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Attempting to create direct attached vm in pod " + pod.first().getName());
                 }
-              
+            	avoids.add(pod.first().getId());
                 String guestMacAddress = macAddresses[0];
                 String externalMacAddress = macAddresses[1];
                 
@@ -2708,7 +2705,6 @@ public class UserVmManagerImpl implements UserVmManager {
 	                if (s_logger.isDebugEnabled()) {
 	                    s_logger.debug("Unable to find storage host in pod " + pod.first().getName() + " (id:" + pod.first().getId() + "), checking other pods");
 	                }
-                	avoids.add(pod.first().getId());
 	                continue; // didn't find a storage host in pod, go to the next pod
 	            }
 	            break; // if we got here, we found a host and can stop searching the pods
