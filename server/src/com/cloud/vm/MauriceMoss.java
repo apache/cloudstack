@@ -110,7 +110,7 @@ public class MauriceMoss implements VmManager {
         }
         
         //VMInstanceVO vm = _vmDao.findById(vm.getId());
-        VirtualMachineProfile vmProfile = new VirtualMachineProfile(vm, serviceOffering, guestOS.getName(), template.getHypervisorType());
+        VirtualMachineProfile vmProfile = new VirtualMachineProfile(vm, serviceOffering, guestOS.getDisplayName(), template.getHypervisorType());
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -270,7 +270,7 @@ public class MauriceMoss implements VmManager {
         if (guestOS == null) {
             throw new CloudRuntimeException("Guest OS is not set");
         }
-        VirtualMachineProfile vmProfile = new VirtualMachineProfile(vm, offering, guestOS.getName(), template.getHypervisorType());
+        VirtualMachineProfile vmProfile = new VirtualMachineProfile(vm, offering, guestOS.getDisplayName(), template.getHypervisorType());
         _vmDao.updateIf(vm, Event.StartRequested, null);
 
         Set<DeployDestination> avoids = new HashSet<DeployDestination>();

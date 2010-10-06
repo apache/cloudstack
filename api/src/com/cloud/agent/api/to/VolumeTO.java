@@ -19,10 +19,8 @@ package com.cloud.agent.api.to;
 
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
 
 
 public class VolumeTO {
@@ -51,7 +49,7 @@ public class VolumeTO {
         this.mountPoint = mountPoint;
     }
     
-    public VolumeTO(VolumeVO volume, StoragePoolVO pool) {
+    public VolumeTO(Volume volume, StoragePool pool) {
         this.id = volume.getId();
         this.name = volume.getName();
         this.path = volume.getPath();
@@ -62,15 +60,7 @@ public class VolumeTO {
         this.mountPoint = volume.getFolder();
     }
     
-    public VolumeTO(VMTemplateStoragePoolVO templatePoolRef, StoragePoolVO pool) {
-    	this.id = templatePoolRef.getId();
-    	this.path = templatePoolRef.getInstallPath();
-    	this.size = templatePoolRef.getTemplateSize();
-    	this.resourceType = Storage.StorageResourceType.STORAGE_POOL;
-    	this.storagePoolType = pool.getPoolType();
-    	this.mountPoint = pool.getPath();
-    }
-    
+   
     public int getDeviceId() {
         return deviceId;
     }

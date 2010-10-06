@@ -75,6 +75,10 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         Pod pod = dest.getPod();
         
         String ip = _dcDao.allocatePrivateIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), nic.getId());
+        if (ip == null) {
+            throw new InsufficientAddressCapacityException("Unable to get a management ip address");
+        }
+        
         String[] macs = _dcDao.getNextAvailableMacAddressPair(dc.getId());
         
         nic.setIp4Address(ip);

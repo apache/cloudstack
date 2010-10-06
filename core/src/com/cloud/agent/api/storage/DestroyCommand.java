@@ -18,6 +18,7 @@
 package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VolumeVO;
@@ -33,7 +34,7 @@ public class DestroyCommand extends StorageCommand {
     }
     
     public DestroyCommand(StoragePoolVO pool, VMTemplateStoragePoolVO templatePoolRef) {
-    	this.volume = new VolumeTO(templatePoolRef, pool);
+        volume = new VolumeTO(templatePoolRef.getId(), null, Storage.StorageResourceType.STORAGE_POOL, pool.getPoolType(), null, pool.getPath(), templatePoolRef.getInstallPath(), templatePoolRef.getTemplateSize());
     }
     
     public VolumeTO getVolume() {

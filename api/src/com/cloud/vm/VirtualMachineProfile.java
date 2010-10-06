@@ -96,15 +96,6 @@ public class VirtualMachineProfile {
         return _vm;
     }
     
-    public VirtualMachineProfile(long id, int core, int speed, long ram, Long templateId, HypervisorType type, Map<String, String> params) {
-        this._cpus = core;
-        this._speed = speed;
-        this._ram = ram;
-        this._hypervisorType = type;
-        this._params = params;
-        this._templateId = templateId;
-    }
-    
     public VirtualMachineProfile(VirtualMachine vm, ServiceOffering offering, String os, HypervisorType hypervisorType) {
         this._cpus = offering.getCpu();
         this._speed = offering.getSpeed();

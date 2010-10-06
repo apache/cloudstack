@@ -7,6 +7,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -72,8 +73,10 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         if (ch.getReservationId() != null) {
             return ch.getReservationId();
         }
+        
+        DataCenter dc = dest.getDataCenter();
             
-        long dcId = dest.getDataCenter().getId();
+        long dcId = dc.getId();
         
         String[] macs = _dcDao.getNextAvailableMacAddressPair(dcId);
 
@@ -91,6 +94,8 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         ch.setMacAddress(macs[1]);
         ch.setFormat(AddressFormat.Ip4);
         ch.setReservationId(Long.toString(vlan.getId()));
+        ch.setDns1(dc.getDns1());
+        ch.setDns2(dc.getDns2());
         
         return Long.toString(vlan.getId());
     }

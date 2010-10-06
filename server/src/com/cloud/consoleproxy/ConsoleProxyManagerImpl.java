@@ -518,7 +518,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     @Override
     public ConsoleProxyVO startProxy(long proxyVmId, long startEventId) {
         try {
-            return start(proxyVmId, startEventId);
+            return start2(proxyVmId, startEventId);
         } catch (StorageUnavailableException e) {
             s_logger.warn("Exception while trying to start console proxy", e);
             return null;
@@ -865,7 +865,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         if (s_logger.isDebugEnabled())
             s_logger.debug("Assign console proxy from a newly started instance for request from data center : " + dataCenterId);
 
-        Map<String, Object> context = createProxyInstance(dataCenterId);
+        Map<String, Object> context = createProxyInstance2(dataCenterId);
 
         long proxyVmId = (Long) context.get("proxyVmId");
         if (proxyVmId == 0) {
@@ -905,7 +905,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         if (s_logger.isDebugEnabled())
             s_logger.debug("Assign console proxy from a newly started instance for request from data center : " + dataCenterId);
 
-        Map<String, Object> context = createProxyInstance(dataCenterId);
+        Map<String, Object> context = createProxyInstance2(dataCenterId);
 
         long proxyVmId = (Long) context.get("proxyVmId");
         if (proxyVmId == 0) {
@@ -1442,7 +1442,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
                                 try {
                                     if (proxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
                                         try {
-                                            readyProxy = start(readyProxy.getId(), 0);
+                                            readyProxy = start2(readyProxy.getId(), 0);
                                         } finally {
                                             proxyLock.unlock();
                                         }
@@ -2344,7 +2344,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     @Override
     public boolean finalizeDeployment(VirtualMachineTO vm, VirtualMachineProfile profile, DeployDestination dest) {
         StringBuilder buf = new StringBuilder();
-        buf.append(" template=domP type=consoleproxy bootproto=dhcp");
+        buf.append(" template=domP type=consoleproxy");
         buf.append(" host=").append(_mgmt_host);
         buf.append(" port=").append(_mgmt_port);
         buf.append(" name=").append(vm.getName());
@@ -2358,7 +2358,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
         NicTO controlNic = null;
         for (NicTO nic : vm.getNics()) {
             int deviceId = nic.getDeviceId();
-            buf.append("eth").append(deviceId).append("ip=").append(nic.getIp());
+            buf.append(" eth").append(deviceId).append("ip=").append(nic.getIp());
             buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
             if (nic.isDefaultNic()) {
                 buf.append(" gateway=").append(nic.getGateway());

@@ -31,6 +31,24 @@ public class NicProfile {
     String reservationId;
     boolean defaultNic;
     Integer deviceId;
+    String dns1;
+    String dns2;
+    
+    public String getDns1() {
+        return dns1;
+    }
+    
+    public String getDns2() {
+        return dns2;
+    }
+    
+    public void setDns1(String dns1) {
+        this.dns1 = dns1;
+    }
+    
+    public void setDns2(String dns2) {
+        this.dns2 = dns2;
+    }
     
     public boolean isDefaultNic() {
         return defaultNic;

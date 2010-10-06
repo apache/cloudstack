@@ -2558,7 +2558,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         return deviceId;
     }
     
-    protected NicTO toNicTO(NicVO nic, NetworkConfigurationVO config) {
+    protected NicTO toNicTO(NicVO nic, NicProfile profile, NetworkConfigurationVO config) {
         NicTO to = new NicTO();
         to.setDeviceId(nic.getDeviceId());
         to.setBroadcastType(config.getBroadcastDomainType());
@@ -2573,10 +2573,18 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                 to.setDns2(tokens[1]);
             }
         }
-        to.setGateway(config.getGateway());
+        if (nic.getGateway() != null) {
+            to.setGateway(nic.getGateway());
+        } else {
+            to.setGateway(config.getGateway());
+        }
         to.setDefaultNic(nic.isDefaultNic());
         to.setBroadcastUri(nic.getBroadcastUri());
         to.setIsolationuri(nic.getIsolationUri());
+        if (profile != null) {
+            to.setDns1(profile.getDns1());
+            to.setDns2(profile.getDns2());
+        }
         
         return to;
     }
@@ -2588,11 +2596,12 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         int i = 0;
         for (NicVO nic : nics) {
             NetworkConfigurationVO config = _networkProfileDao.findById(nic.getNetworkConfigurationId());
+            NicProfile profile = null;
             if (nic.getReservationStrategy() == ReservationStrategy.Start) {
                 NetworkGuru concierge = _networkGurus.get(config.getGuruName());
                 nic.setState(Resource.State.Reserving);
                 _nicDao.update(nic.getId(), nic);
-                NicProfile profile = toNicProfile(nic);
+                profile = toNicProfile(nic);
                 String reservationId = concierge.reserve(profile, config, vmProfile, dest);
                 nic.setIp4Address(profile.getIp4Address());
                 nic.setIp6Address(profile.getIp6Address());
@@ -2614,7 +2623,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                 }
             }
             
-            nicTos[i++] = toNicTO(nic, config);
+            nicTos[i++] = toNicTO(nic, profile, config);
             
         }
         return nicTos;
