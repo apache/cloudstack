@@ -1068,7 +1068,7 @@ public class StorageManagerImpl implements StorageManager {
         _storagePoolAcquisitionWaitSeconds = NumbersUtil.parseInt(configs.get("pool.acquisition.wait.seconds"), 1800);
         s_logger.info("pool.acquisition.wait.seconds is configured as " + _storagePoolAcquisitionWaitSeconds + " seconds");
 
-        _totalRetries = NumbersUtil.parseInt(configDao.getValue("total.retries"), 4);
+        _totalRetries = NumbersUtil.parseInt(configDao.getValue("total.retries"), 2);
         _pauseInterval = 2*NumbersUtil.parseInt(configDao.getValue("ping.interval"), 60);
         
         _agentMgr.registerForHostEvents(new StoragePoolMonitor(this, _hostDao, _storagePoolDao), true, false, true);
@@ -1778,11 +1778,11 @@ public class StorageManagerImpl implements StorageManager {
         }
         while ((hostId = chooseHostForStoragePool(storagePool, hostsToAvoid, sendToVmHost, vmId)) != null && tryCount++ < totalRetries) {
             String errMsg = basicErrMsg + " on host: " + hostId + " try: " + tryCount + ", reason: ";
+            hostsToAvoid.add(hostId);
             try {
                 HostVO hostVO = _hostDao.findById(hostId);
                 if (shouldBeSnapshotCapable) {
                     if (hostVO == null ) {
-                        hostsToAvoid.add(hostId);
                         continue;
                     }
                 }
