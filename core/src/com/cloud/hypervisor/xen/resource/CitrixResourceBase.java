@@ -6081,17 +6081,18 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             Host host = Host.getByUuid(conn, hostuuid);
             try {
             	Pool.eject(conn, host);
-            } catch (Exception e) {
-            	host.destroy(conn);
+            } catch (XenAPIException e) {
+                String msg = "Unable to eject host " + _host.uuid + " due to " + e.toString();
+                s_logger.warn(msg);   
+                host.destroy(conn);
             }
             return new Answer(cmd);
         } catch (XenAPIException e) {
-            String msg = "Unable to eject host " + _host.uuid + " due to " + e.toString();
+            String msg = "XenAPIException Unable to destroy host " + _host.uuid + " in xenserver database due to " + e.toString();
             s_logger.warn(msg, e);
             return new Answer(cmd, false, msg);
         } catch (Exception e) {
-            s_logger.warn("Unable to eject host " + _host.uuid, e);
-            String msg = "Unable to eject host " + _host.uuid + " due to " + e.getMessage();
+            String msg = "Exception Unable to destroy host " + _host.uuid + " in xenserver database due to " + e.getMessage();
             s_logger.warn(msg, e);
             return new Answer(cmd, false, msg);
         }
