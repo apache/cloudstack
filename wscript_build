@@ -270,6 +270,7 @@ deps = " ".join( Utils.to_list(
 	deps/cloud-libvirt-0.4.5.jar
 	deps/cloud-jna.jar
 	deps/cloud-cglib.jar
+	deps/cloud-manageontap.jar
 	"""
 ) )
 thirdparties = " ".join( Utils.to_list(

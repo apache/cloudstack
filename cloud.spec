@@ -516,6 +516,7 @@ fi
 %{_javadir}/%{name}-xenserver-5.5.0-1.jar
 %{_javadir}/%{name}-xmlrpc-common-3.*.jar
 %{_javadir}/%{name}-xmlrpc-client-3.*.jar
+%{_javadir}/%{name}-manageontap.jar
 %doc README
 %doc HACKING
 %doc debian/copyright
