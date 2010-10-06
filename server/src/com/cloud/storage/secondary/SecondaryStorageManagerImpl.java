@@ -701,13 +701,13 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 					dataCenterId, (1L << 31));
 			String guestMacAddress = macAddresses[0];
 			while ((pod = _agentMgr.findPod(_template, _serviceOffering, dc, Account.ACCOUNT_ID_SYSTEM, avoidPods)) != null){
+				avoidPods.add(pod.first().getId());
 				publicIpAndVlan = allocPublicIpAddress(dataCenterId, pod.first().getId(), publicMacAddress);
-				if (publicIpAndVlan == null) {
-					s_logger.warn("Unable to allocate public IP address for secondary storage vm in data center : " + dataCenterId + ", pod="+ pod.first().getId());
-					avoidPods.add(pod.first().getId());
-				} else {
+				if (publicIpAndVlan != null) {
 					break;
 				}
+     			s_logger.warn("Unable to allocate public IP address for secondary storage vm in data center : " + dataCenterId + ", pod="+ pod.first().getId());
+
 			}
 			
 			if (pod == null || publicIpAndVlan == null) {
