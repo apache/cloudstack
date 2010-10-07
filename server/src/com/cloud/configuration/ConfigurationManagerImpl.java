@@ -192,7 +192,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     
     public boolean updateConfiguration(UpdateCfgCmd cmd) throws InvalidParameterValueException, InternalErrorException{
     	Long userId = UserContext.current().getUserId();
-    	String name = cmd.getName();
+    	String name = cmd.getCfgName();
     	String value = cmd.getValue();
     	updateConfiguration (userId, name, value);
     	if (_configDao.getValue(name).equalsIgnoreCase(value))
