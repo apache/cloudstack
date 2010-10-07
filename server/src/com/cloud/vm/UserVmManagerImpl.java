@@ -177,6 +177,7 @@ import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.xensource.xenapi.Types.UserIsNotLocalSuperuser;
 
 @Local(value={UserVmManager.class})
 public class UserVmManagerImpl implements UserVmManager {
@@ -1941,6 +1942,7 @@ public class UserVmManagerImpl implements UserVmManager {
     	s_logger.info("Found " + vms.size() + " vms to expunge.");
     	for (UserVmVO vm : vms) 
     	{
+    		boolean deleteRules = true;
     		String privateIpAddress = vm.getPrivateIpAddress();
     		long vmId = vm.getId();
     		releaseGuestIpAddress(vm);
@@ -1950,24 +1952,38 @@ public class UserVmManagerImpl implements UserVmManager {
     			s_logger.info("vm " + vmId + " is skipped because it is no longer in Destroyed state");
     			continue;
     		}
+    		
+    		if(vm.getName().startsWith("r-") && !vm.getState().equals(State.Running)){
+    			deleteRules = false;
+    		}
 
-    		List<FirewallRuleVO> forwardingRules = null;
-			forwardingRules = _rulesDao.listByPrivateIp(privateIpAddress);
-			
-			for(FirewallRuleVO rule: forwardingRules)
-			{
-				try
+    		if(deleteRules)
+    		{
+	    		List<FirewallRuleVO> forwardingRules = null;
+				forwardingRules = _rulesDao.listByPrivateIp(privateIpAddress);
+				
+				for(FirewallRuleVO rule: forwardingRules)
 				{
-					_networkMgr.deleteRule(rule.getId(), Long.valueOf(User.UID_SYSTEM), Long.valueOf(User.UID_SYSTEM));
-					if(s_logger.isDebugEnabled())
-						s_logger.debug("Rule "+rule.getId()+" for vm:"+vm.getName()+" is deleted successfully during expunge operation");
+					try
+					{
+						IPAddressVO publicIp = _ipAddressDao.findById(rule.getPublicIpAddress());
+						
+						if(publicIp!=null)
+						{
+							if((publicIp.getAccountId().longValue() == vm.getAccountId()))
+							{
+								_networkMgr.deleteRule(rule.getId(), Long.valueOf(User.UID_SYSTEM), Long.valueOf(User.UID_SYSTEM));
+								if(s_logger.isDebugEnabled())
+									s_logger.debug("Rule "+rule.getId()+" for vm:"+vm.getName()+" is deleted successfully during expunge operation");
+							}
+						}
+					}
+					catch(Exception e)
+					{
+						s_logger.warn("Failed to delete rule:"+rule.getId()+" for vm:"+vm.getName());
+					}
 				}
-				catch(Exception e)
-				{
-					s_logger.warn("Failed to delete rule:"+rule.getId()+" for vm:"+vm.getName());
-				}
-			}
-                    		
+    		}
     		
             List<VolumeVO> vols = null;
             try {
