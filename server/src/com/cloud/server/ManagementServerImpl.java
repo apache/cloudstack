@@ -1132,7 +1132,7 @@ public class ManagementServerImpl implements ManagementServer {
           throw new PermissionDeniedException("Invalid account " + accountName + " in domain " + domainId + " given, permission denied");
         }
         
-        if (account.getAccountName().equals(accountName)) {
+        if (account.getAccountName().equals(newAccountName)) {
             success = true;
         } else {
             AccountVO acctForUpdate = _accountDao.createForUpdate();
