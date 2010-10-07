@@ -23,6 +23,60 @@ function afterLoadIpJSP() {
         return false;
     }); 
     
+    //dialogs
+    initDialog("dialog_acquire_public_ip", 325);
+    
+    //*** Acquire New IP (begin) ***
+	$.ajax({
+	    data: createURL("command=listZones&available=true"+maxPageSize),
+		dataType: "json",
+		success: function(json) {
+			var zones = json.listzonesresponse.zone;				
+			var zoneSelect = $("#dialog_acquire_public_ip #acquire_zone").empty();	
+			if (zones != null && zones.length > 0) {	
+			    for (var i = 0; i < zones.length; i++) {
+				    zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
+			    }
+		    }
+		}
+	});
+	
+	
+	$("#midmenu_add_link").show();     
+    $("#midmenu_add_link").unbind("click").bind("click", function(event) {  
+		var submenuContent = $("#submenu_content_network");
+		$("#dialog_acquire_public_ip").dialog('option', 'buttons', {				
+			"Acquire": function() { 
+				var thisDialog = $(this);	
+				thisDialog.dialog("close");
+						
+				var zoneid = thisDialog.find("#acquire_zone").val();				
+				
+				var $midmenuItem1 = beforeAddingMidMenuItem() ;	
+				
+				$.ajax({
+				    data: createURL("command=associateIpAddress&zoneid="+zoneid),
+					dataType: "json",
+					success: function(json) {						   
+					    var items = json.associateipaddressresponse.publicipaddress;	
+					    //$("#dialog_info").html("<p>The IP address <b>"+items[0].ipaddress+"</b> has been assigned to your account</p>").dialog("open");	
+					    ipToMidmenu(items[0], $midmenuItem1);
+						bindClickToMidMenu($midmenuItem1, ipToRigntPanel);  
+						afterAddingMidMenuItem($midmenuItem1, true);	
+	            				
+					},
+					error: function(XMLHttpResponse) {					    
+                        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);	
+					}						
+				});
+			},
+			"Cancel": function() { 
+				$(this).dialog("close"); 
+			}
+		}).dialog("open");			
+		return false;
+	});
+    //*** Acquire New IP (end) ***
     
     //Port Fowording tab
     var $createPortForwardingRow = $("#tab_content_port_forwarding #create_port_forwarding_row");     
