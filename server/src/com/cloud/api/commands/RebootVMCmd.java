@@ -29,7 +29,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@Implementation(method="rebootVirtualMachine", manager=Manager.UserVmManager)
+@Implementation(method="rebootVirtualMachine", manager=Manager.UserVmManager, description="Reboots a virtual machine.")
 public class RebootVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RebootVMCmd.class.getName());
     private static final String s_name = "rebootvirtualmachineresponse";

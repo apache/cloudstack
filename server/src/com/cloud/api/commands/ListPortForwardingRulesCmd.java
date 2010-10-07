@@ -36,7 +36,7 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.server.Criteria;
 import com.cloud.vm.UserVmVO;
 
-@Implementation(method="listPortForwardingRules", manager=Manager.NetworkManager)
+@Implementation(method="listPortForwardingRules", manager=Manager.NetworkManager, description="Lists all port forwarding rules for an IP address.")
 public class ListPortForwardingRulesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPortForwardingRulesCmd.class.getName());
 

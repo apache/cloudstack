@@ -30,7 +30,7 @@ import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.SecurityGroupVO;
 import com.cloud.user.Account;
 
-@Implementation(createMethod="createPortForwardingServiceRule", method="applyPortForwardingServiceRule")
+@Implementation(createMethod="createPortForwardingServiceRule", method="applyPortForwardingServiceRule", description="Creates a port forwarding service rule")
 public class CreatePortForwardingServiceRuleCmd extends BaseAsyncCreateCmd {
 	public static final Logger s_logger = Logger.getLogger(CreatePortForwardingServiceRuleCmd.class.getName());
 

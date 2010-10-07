@@ -42,7 +42,7 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.vm.UserVmVO;
 
-@Implementation(method="updateHost", manager=Manager.AgentManager)
+@Implementation(method="updateHost", manager=Manager.AgentManager, description="Updates a host.")
 public class UpdateHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateHostCmd.class.getName());
     private static final String s_name = "updatehostresponse";

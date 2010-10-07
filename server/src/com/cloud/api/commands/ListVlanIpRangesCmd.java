@@ -33,7 +33,7 @@ import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.user.Account;
 
-@Implementation(method="searchForVlans")
+@Implementation(method="searchForVlans", description="Lists all VLAN IP ranges.")
 public class ListVlanIpRangesCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListVlanIpRangesCmd.class.getName());
 

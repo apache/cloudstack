@@ -30,7 +30,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@Implementation(method="detachVolumeFromVM", manager=Manager.UserVmManager)
+@Implementation(method="detachVolumeFromVM", manager=Manager.UserVmManager, description="Detaches a disk volume from a virtual machine.")
 public class DetachVolumeCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(DetachVolumeCmd.class.getName());
     private static final String s_name = "detachvolumeresponse";

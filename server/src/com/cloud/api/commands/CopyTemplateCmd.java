@@ -36,7 +36,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="copyTemplate", manager=Manager.TemplateManager)
+@Implementation(method="copyTemplate", manager=Manager.TemplateManager, description="Copies a template from one zone to another.")
 public class CopyTemplateCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(CopyTemplateCmd.class.getName());
     private static final String s_name = "copytemplateresponse";

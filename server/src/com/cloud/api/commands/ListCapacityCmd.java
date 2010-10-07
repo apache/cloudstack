@@ -40,7 +40,7 @@ import com.cloud.server.Criteria;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePoolVO;
 
-@Implementation(method="listCapacities")
+@Implementation(method="listCapacities", description="Lists capacity.")
 public class ListCapacityCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListCapacityCmd.class.getName());

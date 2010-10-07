@@ -32,7 +32,7 @@ import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 
 @SuppressWarnings("rawtypes")
-@Implementation(method="createPool", manager=Manager.StorageManager)
+@Implementation(method="createPool", manager=Manager.StorageManager, description="Creates a storage pool.")
 public class CreateStoragePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateStoragePoolCmd.class.getName());
 

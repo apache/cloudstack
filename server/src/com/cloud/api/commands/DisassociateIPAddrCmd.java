@@ -25,7 +25,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 
-@Implementation(method="disassociateIpAddress", manager=Manager.NetworkManager)
+@Implementation(method="disassociateIpAddress", manager=Manager.NetworkManager, description="Disassociates an ip address from the account.")
 public class DisassociateIPAddrCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DisassociateIPAddrCmd.class.getName());
 
@@ -35,7 +35,7 @@ public class DisassociateIPAddrCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="ipaddress", type=CommandType.STRING, required=true)
+    @Parameter(name="ipaddress", type=CommandType.STRING, required=true, description="the public ip address to disassociate")
     private String ipAddress;
 
     /////////////////////////////////////////////////////

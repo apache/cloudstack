@@ -41,7 +41,7 @@ import com.cloud.storage.template.TemplateConstants;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="listTemplates")
+@Implementation(method="listTemplates", description="List all public, private, and privileged templates.")
 public class ListTemplatesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListTemplatesCmd.class.getName());
 

@@ -31,7 +31,7 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.storage.SnapshotPolicyVO;
 
-@Implementation(method="listPoliciesforVolume", manager=Manager.SnapshotManager)
+@Implementation(method="listPoliciesforVolume", manager=Manager.SnapshotManager, description="Lists snapshot policies.")
 public class ListSnapshotPoliciesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSnapshotPoliciesCmd.class.getName());
 

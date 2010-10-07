@@ -26,7 +26,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 
-@Implementation(method="deleteIso", manager=Manager.TemplateManager)
+@Implementation(method="deleteIso", manager=Manager.TemplateManager, description="Deletes an ISO file.")
 public class DeleteIsoCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteIsoCmd.class.getName());
     private static final String s_name = "deleteisosresponse";

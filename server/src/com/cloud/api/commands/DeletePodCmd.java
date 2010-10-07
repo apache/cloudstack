@@ -27,7 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 
-@Implementation(method="deletePod", manager=Manager.ConfigManager)
+@Implementation(method="deletePod", manager=Manager.ConfigManager, description="Deletes a Pod.")
 public class DeletePodCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePodCmd.class.getName());
 

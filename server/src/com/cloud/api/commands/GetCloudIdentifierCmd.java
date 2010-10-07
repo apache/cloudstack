@@ -29,7 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.CloudIdentifierResponse;
 
-@Implementation(method="getCloudIdentifierResponse", manager=Manager.ManagementServer)
+@Implementation(method="getCloudIdentifierResponse", manager=Manager.ManagementServer, description="Retrieves a cloud identifier.")
 public class GetCloudIdentifierCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(GetCloudIdentifierCmd.class.getName());
     private static final String s_name = "getcloudidentifierresponse";

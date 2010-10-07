@@ -26,7 +26,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 
-@Implementation(method="enableAccount", manager=Manager.ManagementServer)
+@Implementation(method="enableAccount", manager=Manager.ManagementServer, description="Enables an account")
 public class EnableAccountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(EnableAccountCmd.class.getName());
     private static final String s_name = "enableaccountresponse";
@@ -35,10 +35,10 @@ public class EnableAccountCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="Enables specified account.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="Enables specified account in this domain.")
     private Long domainId;
 
     /////////////////////////////////////////////////////

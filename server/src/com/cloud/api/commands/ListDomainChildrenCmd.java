@@ -30,7 +30,7 @@ import com.cloud.api.response.DomainResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.domain.DomainVO;
 
-@Implementation(method="searchForDomainChildren")
+@Implementation(method="searchForDomainChildren", description="Lists all children domains belonging to a specified domain")
 public class ListDomainChildrenCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListDomainChildrenCmd.class.getName());
 
@@ -40,13 +40,13 @@ public class ListDomainChildrenCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name="id", type=CommandType.LONG, description="list children domain by parent domain ID.")
     private Long id;
 
-    @Parameter(name="isrecursive", type=CommandType.BOOLEAN)
+    @Parameter(name="isrecursive", type=CommandType.BOOLEAN, description="to return the entire tree, use the value \"true\". To return the first level children, use the value \"false\".")
     private Boolean recursive;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="list children domain by parent domain name.")
     private String domainName;
 
     /////////////////////////////////////////////////////

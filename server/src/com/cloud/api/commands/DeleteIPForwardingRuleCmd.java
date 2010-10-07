@@ -25,7 +25,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 
-@Implementation(method="deleteIpForwardingRule", manager=Manager.NetworkManager)
+@Implementation(method="deleteIpForwardingRule", manager=Manager.NetworkManager, description="Deletes a port forwarding rule")
 public class DeleteIPForwardingRuleCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteIPForwardingRuleCmd.class.getName());
     private static final String s_name = "deleteportforwardingruleresponse";
@@ -34,7 +34,7 @@ public class DeleteIPForwardingRuleCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the port forwarding rule")
     private Long id;
 
 

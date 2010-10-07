@@ -43,7 +43,7 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.vm.UserVmVO;
 
-@Implementation(method="discoverHosts", manager=Manager.AgentManager)
+@Implementation(method="discoverHosts", manager=Manager.AgentManager, description="Adds a new host.")
 public class AddHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddHostCmd.class.getName());
 

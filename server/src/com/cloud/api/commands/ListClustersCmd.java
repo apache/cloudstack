@@ -33,7 +33,7 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 
-@Implementation(method="searchForClusters")
+@Implementation(method="searchForClusters", description="Lists clusters.")
 public class ListClustersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
 

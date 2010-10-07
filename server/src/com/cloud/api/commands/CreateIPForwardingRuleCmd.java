@@ -29,7 +29,7 @@ import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.uservm.UserVm;
 
-@Implementation(method="createPortForwardingRule", manager=Manager.NetworkManager)
+@Implementation(method="createPortForwardingRule", manager=Manager.NetworkManager, description="Creates a port forwarding rule")
 public class CreateIPForwardingRuleCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateIPForwardingRuleCmd.class.getName());
 
@@ -39,19 +39,19 @@ public class CreateIPForwardingRuleCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="ipaddress", type=CommandType.STRING, required=true)
+    @Parameter(name="ipaddress", type=CommandType.STRING, required=true, description="the IP address of the port forwarding rule")
     private String ipAddress;
 
-    @Parameter(name="privateport", type=CommandType.STRING, required=true)
+    @Parameter(name="privateport", type=CommandType.STRING, required=true, description="the private port of the port forwarding rule")
     private String privatePort;
 
-    @Parameter(name="protocol", type=CommandType.STRING, required=true)
+    @Parameter(name="protocol", type=CommandType.STRING, required=true, description="the protocol for the port fowarding rule. Valid values are TCP or UDP.")
     private String protocol;
 
-    @Parameter(name="publicport", type=CommandType.STRING, required=true)
+    @Parameter(name="publicport", type=CommandType.STRING, required=true, description="	the public port of the port forwarding rule")
     private String publicPort;
 
-    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=true)
+    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=true, description="the ID of the virtual machine for the port forwarding rule")
     private Long virtualMachineId;
 
 

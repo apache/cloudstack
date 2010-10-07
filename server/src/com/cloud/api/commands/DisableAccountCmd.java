@@ -28,7 +28,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="disableAccount", manager=Manager.ManagementServer)
+@Implementation(method="disableAccount", manager=Manager.ManagementServer, description="Disables an account")
 public class DisableAccountCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(DisableAccountCmd.class.getName());
     private static final String s_name = "disableaccountresponse";
@@ -37,10 +37,10 @@ public class DisableAccountCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="Disables specified account.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="Disables specified account in this domain.")
     private Long domainId;
 
     /////////////////////////////////////////////////////

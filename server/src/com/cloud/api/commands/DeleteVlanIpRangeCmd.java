@@ -26,7 +26,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 
-@Implementation(method="deleteVlanIpRange", manager=Manager.ConfigManager)
+@Implementation(method="deleteVlanIpRange", manager=Manager.ConfigManager, description="Creates a VLAN IP range.")
 public class DeleteVlanIpRangeCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(DeleteVlanIpRangeCmd.class.getName());
 

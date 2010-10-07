@@ -25,7 +25,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 
-@Implementation(method="lockAccount", manager=Manager.ManagementServer)
+@Implementation(method="lockAccount", manager=Manager.ManagementServer, description="Locks an account")
 public class LockAccountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(LockAccountCmd.class.getName());
 
@@ -35,10 +35,10 @@ public class LockAccountCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, required=true)
+    @Parameter(name="account", type=CommandType.STRING, required=true, description="Locks the specified account.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, required=true)
+    @Parameter(name="domainid", type=CommandType.LONG, required=true, description="Locks the specified account on this domain.")
     private Long domainId;
 
     /////////////////////////////////////////////////////

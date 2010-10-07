@@ -26,7 +26,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.storage.VMTemplateVO;
 
-@Implementation(method="updateTemplate", manager=Manager.ManagementServer)
+@Implementation(method="updateTemplate", manager=Manager.ManagementServer, description="Updates attributes of a template.")
 public class UpdateTemplateCmd extends UpdateTemplateOrIsoCmd {
 	public static final Logger s_logger = Logger.getLogger(UpdateTemplateCmd.class.getName());
     private static final String s_name = "updatetemplateresponse";

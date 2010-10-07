@@ -26,7 +26,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 
-@Implementation(method="updateAccount", manager=Manager.ManagementServer)
+@Implementation(method="updateAccount", manager=Manager.ManagementServer, description="Updates account information for the authenticated user")
 public class UpdateAccountCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(UpdateAccountCmd.class.getName());
     private static final String s_name = "updateaccountresponse";
@@ -35,13 +35,13 @@ public class UpdateAccountCmd extends BaseCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, required=true)
+    @Parameter(name="account", type=CommandType.STRING, required=true, description="the current account name")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, required=true)
+    @Parameter(name="domainid", type=CommandType.LONG, required=true, description="the ID of the domain where the account exists")
     private Long domainId;
 
-    @Parameter(name="newname", type=CommandType.STRING, required=true)
+    @Parameter(name="newname", type=CommandType.STRING, required=true, description="new name for the account")
     private String newName;
 
     /////////////////////////////////////////////////////

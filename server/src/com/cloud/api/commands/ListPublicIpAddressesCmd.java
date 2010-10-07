@@ -35,7 +35,7 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="searchForIPAddresses")
+@Implementation(method="searchForIPAddresses", description="Lists all public ip addresses")
 public class ListPublicIpAddressesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPublicIpAddressesCmd.class.getName());
 
@@ -45,25 +45,25 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="lists all public IP addresses by account. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="allocatedonly", type=CommandType.BOOLEAN)
+    @Parameter(name="allocatedonly", type=CommandType.BOOLEAN, description="limits search results to allocated public IP addresses")
     private Boolean allocatedOnly;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="lists all public IP addresses by domain ID. If used with the account parameter, lists all public IP addresses by account for specified domain.")
     private Long domainId;
 
-    @Parameter(name="forvirtualnetwork", type=CommandType.BOOLEAN)
+    @Parameter(name="forvirtualnetwork", type=CommandType.BOOLEAN, description="the virtual network for the IP address")
     private Boolean forVirtualNetwork;
 
-    @Parameter(name="ipaddress", type=CommandType.STRING)
+    @Parameter(name="ipaddress", type=CommandType.STRING, description="lists the specified IP address")
     private String ipAddress;
 
-    @Parameter(name="vlanid", type=CommandType.LONG)
+    @Parameter(name="vlanid", type=CommandType.LONG, description="lists all public IP addresses by VLAN ID")
     private Long vlanId;
 
-    @Parameter(name="zoneid", type=CommandType.LONG)
+    @Parameter(name="zoneid", type=CommandType.LONG, description="lists all public IP addresses by Zone ID")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

@@ -25,7 +25,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 
-@Implementation(method="updateVirtualMachine", manager=Manager.UserVmManager)
+@Implementation(method="updateVirtualMachine", manager=Manager.UserVmManager, description="Updates parameters of a virtual machine.")
 public class UpdateVMCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(UpdateVMCmd.class.getName());
     private static final String s_name = "updatevirtualmachineresponse";

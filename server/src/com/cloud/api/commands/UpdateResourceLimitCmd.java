@@ -29,7 +29,7 @@ import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.user.Account;
 
-@Implementation(method="updateResourceLimit", manager=Manager.AccountManager)
+@Implementation(method="updateResourceLimit", manager=Manager.AccountManager, description="Updates resource limits for an account or domain.")
 public class UpdateResourceLimitCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateResourceLimitCmd.class.getName());
 

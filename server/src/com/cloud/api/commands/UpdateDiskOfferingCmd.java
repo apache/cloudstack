@@ -28,7 +28,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.DiskOfferingResponse;
 import com.cloud.storage.DiskOfferingVO;
 
-@Implementation(method="updateDiskOffering", manager=Manager.ConfigManager)
+@Implementation(method="updateDiskOffering", manager=Manager.ConfigManager, description="Updates a disk offering.")
 public class UpdateDiskOfferingCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(UpdateDiskOfferingCmd.class.getName());
     private static final String s_name = "updatediskofferingresponse";

@@ -34,7 +34,7 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.InstanceGroupVO;
 
-@Implementation(method="startVirtualMachine", manager=Manager.UserVmManager)
+@Implementation(method="startVirtualMachine", manager=Manager.UserVmManager, description="Starts a virtual machine.")
 public class StartVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StartVMCmd.class.getName());
 

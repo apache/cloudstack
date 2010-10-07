@@ -31,7 +31,7 @@ import com.cloud.api.response.PortForwardingServiceRuleResponse;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.network.NetworkRuleConfigVO;
 
-@Implementation(method="searchForNetworkRules")
+@Implementation(method="searchForNetworkRules", description="List port forwarding service rules")
 public class ListPortForwardingServiceRulesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPortForwardingServiceRulesCmd.class.getName());
 
@@ -41,16 +41,16 @@ public class ListPortForwardingServiceRulesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="the account associated with the port forwarding service rule. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="the domainId associated with the port forwarding service rule. If used with the account parameter, returns a list of port forwarding service rules for an account for the specified domain ID.")
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name="id", type=CommandType.LONG, description="the ID of the port forwarding service rule")
     private Long id;
 
-    @Parameter(name="portforwardingserviceid", type=CommandType.LONG)
+    @Parameter(name="portforwardingserviceid", type=CommandType.LONG, description="the ID of the port forwarding service the rule is being created for")
     private Long portForwardingServiceId;
 
     /////////////////////////////////////////////////////

@@ -28,7 +28,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.PodResponse;
 import com.cloud.dc.HostPodVO;
 
-@Implementation(method="createPod", manager=Manager.ConfigManager)
+@Implementation(method="createPod", manager=Manager.ConfigManager, description="Creates a new Pod.")
 public class CreatePodCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreatePodCmd.class.getName());
 

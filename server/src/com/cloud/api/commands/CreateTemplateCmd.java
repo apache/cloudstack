@@ -36,7 +36,9 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 
-@Implementation(method="createPrivateTemplate", createMethod="createPrivateTemplateRecord", manager=Manager.UserVmManager)
+@Implementation(method="createPrivateTemplate", createMethod="createPrivateTemplateRecord", manager=Manager.UserVmManager, description="Creates a template of a virtual machine. " +
+																															"The virtual machine must be in a STOPPED state. " +
+																															"A template created from this command is automatically designated as a private template visible to the account that created it.")
 public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTemplateCmd.class.getName());
     private static final String s_name = "createtemplateresponse";

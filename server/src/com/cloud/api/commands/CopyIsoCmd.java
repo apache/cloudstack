@@ -36,7 +36,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="copyIso", manager=Manager.TemplateManager)
+@Implementation(method="copyIso", manager=Manager.TemplateManager, description="Copies an ISO file.")
 public class CopyIsoCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(CopyIsoCmd.class.getName());
     private static final String s_name = "copyisoresponse";

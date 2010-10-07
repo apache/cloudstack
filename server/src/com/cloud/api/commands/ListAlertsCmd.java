@@ -29,7 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.AlertResponse;
 import com.cloud.api.response.ListResponse;
 
-@Implementation(method="searchForAlerts")
+@Implementation(method="searchForAlerts", description="Lists all alerts.")
 public class ListAlertsCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListAlertsCmd.class.getName());

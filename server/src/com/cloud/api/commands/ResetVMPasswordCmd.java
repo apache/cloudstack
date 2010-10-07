@@ -35,7 +35,9 @@ import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.InstanceGroupVO;
 
-@Implementation(method="resetVMPassword", manager=Manager.UserVmManager)
+@Implementation(method="resetVMPassword", manager=Manager.UserVmManager, description="Resets the password for virtual machine. " +
+																					"The virtual machine must be in a \"Stopped\" state and the template must already " +
+																					"support this feature for this command to take effect. [async]")
 public class ResetVMPasswordCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(ResetVMPasswordCmd.class.getName());
 

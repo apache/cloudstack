@@ -8,7 +8,7 @@ public abstract class BaseListCmd extends BaseCmd {
     /////////// BaseList API parameters /////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="keyword", type=CommandType.STRING)
+    @Parameter(name="keyword", type=CommandType.STRING, description="List by keyword")
     private String keyword;
 
     // FIXME:  Need to be able to specify next/prev/first/last, so Integer might not be right

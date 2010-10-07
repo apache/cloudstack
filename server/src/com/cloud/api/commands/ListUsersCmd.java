@@ -31,7 +31,7 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.UserResponse;
 import com.cloud.user.UserAccountVO;
 
-@Implementation(method="searchForUsers")
+@Implementation(method="searchForUsers", description="Lists user accounts")
 public class ListUsersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListUsersCmd.class.getName());
 
@@ -41,22 +41,22 @@ public class ListUsersCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="List user by account. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="accounttype", type=CommandType.LONG)
+    @Parameter(name="accounttype", type=CommandType.LONG, description="List users by account type. Valid types include admin, domain-admin, read-only-admin, or user.")
     private Long accountType;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="List all users in a domain. If used with the account parameter, lists an account in a specific domain.")
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name="id", type=CommandType.LONG, description="List user by ID.")
     private Long id;
 
-    @Parameter(name="state", type=CommandType.STRING)
+    @Parameter(name="state", type=CommandType.STRING, description="List users by state of the user account.")
     private String state;
 
-    @Parameter(name="username", type=CommandType.STRING)
+    @Parameter(name="username", type=CommandType.STRING, description="List user by the username")
     private String username;
 
     /////////////////////////////////////////////////////

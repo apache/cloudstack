@@ -32,7 +32,7 @@ import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.user.Account;
 
-@Implementation(method="searchForLoadBalancers")
+@Implementation(method="searchForLoadBalancers", description="Lists load balancer rules.")
 public class ListLoadBalancerRulesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger (ListLoadBalancerRulesCmd.class.getName());
 

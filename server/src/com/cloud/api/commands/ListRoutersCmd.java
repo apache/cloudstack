@@ -33,7 +33,7 @@ import com.cloud.async.AsyncJobVO;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
 
-@Implementation(method="searchForRouters")
+@Implementation(method="searchForRouters", description="List routers.")
 public class ListRoutersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListRoutersCmd.class.getName());
 

@@ -28,7 +28,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.network.LoadBalancerVO;
 
-@Implementation(method="createLoadBalancerRule", manager=Manager.NetworkManager)
+@Implementation(method="createLoadBalancerRule", manager=Manager.NetworkManager, description="Creates a load balancer rule")
 public class CreateLoadBalancerRuleCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateLoadBalancerRuleCmd.class.getName());
 

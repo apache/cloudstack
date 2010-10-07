@@ -36,7 +36,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 
-@Implementation(method="registerTemplate", manager=Manager.TemplateManager)
+@Implementation(method="registerTemplate", manager=Manager.TemplateManager, description="Registers an existing template into the Cloud.com cloud. ")
 public class RegisterTemplateCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(RegisterTemplateCmd.class.getName());
 

@@ -29,7 +29,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@Implementation(method="stopVirtualMachine", manager=Manager.UserVmManager)
+@Implementation(method="stopVirtualMachine", manager=Manager.UserVmManager, description="Stops a virtual machine.")
 public class StopVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StopVMCmd.class.getName());
 

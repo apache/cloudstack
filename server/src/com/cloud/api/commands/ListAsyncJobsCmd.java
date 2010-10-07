@@ -30,7 +30,7 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.serializer.SerializerHelper;
 
-@Implementation(method="searchForAsyncJobs")
+@Implementation(method="searchForAsyncJobs", description="Lists all pending asynchronous jobs for the account.")
 public class ListAsyncJobsCmd extends BaseListCmd {
     private static final String s_name = "listasyncjobsresponse";
 

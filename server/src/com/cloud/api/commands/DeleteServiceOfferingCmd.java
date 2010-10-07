@@ -26,7 +26,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 
-@Implementation(method="deleteServiceOffering", manager=Manager.ConfigManager)
+@Implementation(method="deleteServiceOffering", manager=Manager.ConfigManager, description="Deletes a service offering.")
 public class DeleteServiceOfferingCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(DeleteServiceOfferingCmd.class.getName());
     private static final String s_name = "deleteserviceofferingresponse";

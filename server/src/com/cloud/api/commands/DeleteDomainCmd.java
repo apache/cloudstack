@@ -28,7 +28,7 @@ import com.cloud.domain.DomainVO;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@Implementation(method="deleteDomain")
+@Implementation(method="deleteDomain", description="Deletes a specified domain")
 public class DeleteDomainCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteDomainCmd.class.getName());
     private static final String s_name = "deletedomainresponse";
@@ -37,7 +37,7 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="ID of domain to delete")
     private Long id;
 
     @Parameter(name="cleanup", type=CommandType.BOOLEAN)

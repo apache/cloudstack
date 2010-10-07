@@ -31,7 +31,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 
-@Implementation(method="attachIso", manager=Manager.TemplateManager)
+@Implementation(method="attachIso", manager=Manager.TemplateManager, description="Attaches an ISO to a virtual machine.")
 public class AttachIsoCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AttachIsoCmd.class.getName());
 

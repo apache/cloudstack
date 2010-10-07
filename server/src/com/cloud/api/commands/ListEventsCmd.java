@@ -32,7 +32,7 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.event.EventVO;
 import com.cloud.user.User;
 
-@Implementation(method="searchForEvents")
+@Implementation(method="searchForEvents", description="A command to list events.")
 public class ListEventsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListEventsCmd.class.getName());
 

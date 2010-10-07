@@ -42,7 +42,7 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.vm.UserVmVO;
 
-@Implementation(method="searchForServers")
+@Implementation(method="searchForServers", description="Lists hosts.")
 public class ListHostsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListHostsCmd.class.getName());
 

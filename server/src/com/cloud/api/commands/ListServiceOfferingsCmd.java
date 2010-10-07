@@ -30,7 +30,7 @@ import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
 
-@Implementation(method="searchForServiceOfferings")
+@Implementation(method="searchForServiceOfferings", description="Lists all available service offerings.")
 public class ListServiceOfferingsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
 

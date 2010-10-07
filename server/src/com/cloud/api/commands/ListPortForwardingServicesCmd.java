@@ -32,7 +32,7 @@ import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.network.SecurityGroupVO;
 import com.cloud.user.Account;
 
-@Implementation(method="searchForSecurityGroups")
+@Implementation(method="searchForSecurityGroups", description="Lists all available port forwarding services")
 public class ListPortForwardingServicesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPortForwardingServicesCmd.class.getName());
 

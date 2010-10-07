@@ -30,7 +30,7 @@ import com.cloud.api.response.GuestOSResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.storage.GuestOSVO;
 
-@Implementation(method="listGuestOSByCriteria")
+@Implementation(method="listGuestOSByCriteria", description="Lists all supported OS types for this cloud.")
 public class ListGuestOsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListIsosCmd.class.getName());
 

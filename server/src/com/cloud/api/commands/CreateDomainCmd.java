@@ -27,7 +27,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.DomainResponse;
 import com.cloud.domain.DomainVO;
 
-@Implementation(method="createDomain")
+@Implementation(method="createDomain", description="Creates a domain")
 public class CreateDomainCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateDomainCmd.class.getName());
 
@@ -37,10 +37,10 @@ public class CreateDomainCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="name", type=CommandType.STRING, required=true)
+    @Parameter(name="name", type=CommandType.STRING, required=true, description="creates domain with this name")
     private String domainName;
 
-    @Parameter(name="parentdomainid", type=CommandType.LONG)
+    @Parameter(name="parentdomainid", type=CommandType.LONG, description="assigns new domain a parent domain by domain ID of the parent.  If no parent domain is specied, the ROOT domain is assumed.")
     private Long parentDomainId;
 
 

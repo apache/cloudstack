@@ -26,7 +26,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 
-@Implementation(method="deleteZone", manager=Manager.ConfigManager)
+@Implementation(method="deleteZone", manager=Manager.ConfigManager, description="Deletes a Zone.")
 public class DeleteZoneCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteZoneCmd.class.getName());
 

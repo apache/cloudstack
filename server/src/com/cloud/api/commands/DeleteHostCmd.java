@@ -28,7 +28,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 
 
-@Implementation(method="deleteHost", manager=Manager.AgentManager)
+@Implementation(method="deleteHost", manager=Manager.AgentManager, description="Deletes a host.")
 public class DeleteHostCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteHostCmd.class.getName());
 

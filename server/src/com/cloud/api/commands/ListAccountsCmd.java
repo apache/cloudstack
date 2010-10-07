@@ -40,7 +40,7 @@ import com.cloud.user.UserStatisticsVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.State;
 
-@Implementation(method="searchForAccounts")
+@Implementation(method="searchForAccounts", description="Lists accounts and provides detailed account information for listed accounts")
 public class ListAccountsCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListAccountsCmd.class.getName());
     private static final String s_name = "listaccountsresponse";
@@ -49,25 +49,25 @@ public class ListAccountsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="List account for a specified account. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="accounttype", type=CommandType.LONG)
+    @Parameter(name="accounttype", type=CommandType.LONG, description="List accounts by account type. Valid account types are 1 (admin), 2 (domain-admin), and 0 (user).")
     private Long accountType;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="List all accounts in specified domain. If used with the account parameter, retrieves account information for specified account in specified domain.")
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name="id", type=CommandType.LONG, description="List account by account ID")
     private Long id;
 
     @Parameter(name="iscleanuprequired", type=CommandType.BOOLEAN)
     private Boolean cleanupRequired;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="List account by account name")
     private String searchName;
 
-    @Parameter(name="state", type=CommandType.STRING)
+    @Parameter(name="state", type=CommandType.STRING, description="List accounts by state. Valid states are enabled, disabled, and locked.")
     private String state;
 
 

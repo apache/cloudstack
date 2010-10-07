@@ -29,7 +29,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.SecurityGroupVO;
 import com.cloud.user.Account;
 
-@Implementation(method="removeSecurityGroup", manager=Manager.ManagementServer)
+@Implementation(method="removeSecurityGroup", manager=Manager.ManagementServer, description="Removes a port forwarding service from a virtual machine")
 public class RemovePortForwardingServiceCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(RemovePortForwardingServiceCmd.class.getName());
 

@@ -27,7 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.UserResponse;
 import com.cloud.user.UserAccount;
 
-@Implementation(method="createUser")
+@Implementation(method="createUser", description="Creates a user account")
 public class CreateUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateUserCmd.class.getName());
 
@@ -37,31 +37,31 @@ public class CreateUserCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="Creates the user under the specified account. If no account is specified, the username will be used as the account name.")
     private String accountName;
 
-    @Parameter(name="accounttype", type=CommandType.LONG, required=true)
+    @Parameter(name="accounttype", type=CommandType.LONG, required=true, description="Type of the account.  Specify 0 for user, 1 for root admin, and 2 for domain admin")
     private Long accountType;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="Creates the user under the specified domain.")
     private Long domainId;
 
-    @Parameter(name="email", type=CommandType.STRING, required=true)
+    @Parameter(name="email", type=CommandType.STRING, required=true, description="email")
     private String email;
 
-    @Parameter(name="firstname", type=CommandType.STRING, required=true)
+    @Parameter(name="firstname", type=CommandType.STRING, required=true, description="firstname")
     private String firstname;
 
-    @Parameter(name="lastname", type=CommandType.STRING, required=true)
+    @Parameter(name="lastname", type=CommandType.STRING, required=true, description="lastname")
     private String lastname;
 
-    @Parameter(name="password", type=CommandType.STRING, required=true)
+    @Parameter(name="password", type=CommandType.STRING, required=true, description="Hashed password (Default is MD5). If you wish to use any other hashing algorithm, you would need to write a custom authentication adapter See Docs section.")
     private String password;
 
-    @Parameter(name="timezone", type=CommandType.STRING)
+    @Parameter(name="timezone", type=CommandType.STRING, description="Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
     private String timezone;
 
-    @Parameter(name="username", type=CommandType.STRING, required=true)
+    @Parameter(name="username", type=CommandType.STRING, required=true, description="Unique username.")
     private String username;
 
 

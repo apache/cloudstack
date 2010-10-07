@@ -33,7 +33,7 @@ import com.cloud.network.LoadBalancerVO;
 import com.cloud.user.Account;
 import com.cloud.utils.StringUtils;
 
-@Implementation(method="removeFromLoadBalancer", manager=Manager.NetworkManager)
+@Implementation(method="removeFromLoadBalancer", manager=Manager.NetworkManager, description="Removes a virtual machine or a list of virtual machines from a load balancer rule.")
 public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveFromLoadBalancerRuleCmd.class.getName());
 

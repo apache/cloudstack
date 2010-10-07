@@ -39,7 +39,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status.Event;
 import com.cloud.storage.GuestOSCategoryVO;
 
-@Implementation(method="discoverHosts", manager=Manager.AgentManager)
+@Implementation(method="discoverHosts", manager=Manager.AgentManager, description="Adds secondary storage.")
 public class AddSecondaryStorageCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddSecondaryStorageCmd.class.getName());
     private static final String s_name = "addsecondarystorageresponse";

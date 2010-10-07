@@ -30,7 +30,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="listTemplatePermissions")
+@Implementation(method="listTemplatePermissions", description="List template visibility and all accounts that have permissions to view this template.")
 public class ListTemplateOrIsoPermissionsCmd extends BaseListCmd {
 	public Logger s_logger = getLogger();
     protected String s_name = getResponseName();

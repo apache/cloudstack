@@ -29,7 +29,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@Implementation(method="destroyVm", manager=Manager.UserVmManager)
+@Implementation(method="destroyVm", manager=Manager.UserVmManager, description="Destroys a virtual machine. Once destroyed, only the administrator can recover it.")
 public class DestroyVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DestroyVMCmd.class.getName());
 

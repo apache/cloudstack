@@ -44,7 +44,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.vm.UserVmVO;
 
-@Implementation(method="cancelMaintenance", manager=Manager.AgentManager)
+@Implementation(method="cancelMaintenance", manager=Manager.AgentManager, description="Cancels host maintenance.")
 public class CancelMaintenanceCmd extends BaseAsyncCmd  {
     public static final Logger s_logger = Logger.getLogger(CancelMaintenanceCmd.class.getName());
 

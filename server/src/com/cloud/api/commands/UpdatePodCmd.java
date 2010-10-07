@@ -26,7 +26,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 
-@Implementation(method="editPod", manager=Manager.ConfigManager)
+@Implementation(method="editPod", manager=Manager.ConfigManager, description="Updates a Pod.")
 public class UpdatePodCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdatePodCmd.class.getName());
 

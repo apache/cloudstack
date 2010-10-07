@@ -32,7 +32,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.SecurityGroupVO;
 import com.cloud.user.Account;
 
-@Implementation(method="deleteSecurityGroup", manager=Manager.ManagementServer)
+@Implementation(method="deleteSecurityGroup", manager=Manager.ManagementServer, description="Deletes a port forwarding service")
 public class DeletePortForwardingServiceCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePortForwardingServiceCmd.class.getName());
     private static final String s_name = "deleteportforwardingserviceresponse";

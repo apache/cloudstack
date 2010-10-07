@@ -32,7 +32,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.vm.DomainRouterVO;
 
 
-@Implementation(method="stopRouter", manager=Manager.NetworkManager)
+@Implementation(method="stopRouter", manager=Manager.NetworkManager, description="Stops a router.")
 public class StopRouterCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(StopRouterCmd.class.getName());
     private static final String s_name = "stoprouterresponse";

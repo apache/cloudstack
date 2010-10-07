@@ -35,7 +35,7 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 
-@Implementation(method="listSnapshots")
+@Implementation(method="listSnapshots", description="Lists all available snapshots for the account.")
 public class ListSnapshotsCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListSnapshotsCmd.class.getName());
 

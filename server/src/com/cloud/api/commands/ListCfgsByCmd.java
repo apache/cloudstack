@@ -30,7 +30,7 @@ import com.cloud.api.response.ConfigurationResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.configuration.ConfigurationVO;
 
-@Implementation(method="searchForConfigurations")
+@Implementation(method="searchForConfigurations", description="Lists all configurations.")
 public class ListCfgsByCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListCfgsByCmd.class.getName());
 

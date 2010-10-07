@@ -33,7 +33,7 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 
-@Implementation(method="searchForStoragePools")
+@Implementation(method="searchForStoragePools", description="Lists storage pools.")
 public class ListStoragePoolsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListStoragePoolsCmd.class.getName());
 

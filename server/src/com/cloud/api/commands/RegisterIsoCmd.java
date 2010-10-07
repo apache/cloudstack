@@ -35,7 +35,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 
-@Implementation(method="registerIso", manager=Manager.TemplateManager)
+@Implementation(method="registerIso", manager=Manager.TemplateManager, description="Registers an existing ISO into the Cloud.com Cloud.")
 public class RegisterIsoCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterIsoCmd.class.getName());
 

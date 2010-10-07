@@ -26,7 +26,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 
-@Implementation(method="deleteTemplate", manager=Manager.TemplateManager)
+@Implementation(method="deleteTemplate", manager=Manager.TemplateManager, description="Deletes a template from the system. All virtual machines using the deleted template will not be affected.")
 public class DeleteTemplateCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(DeleteTemplateCmd.class.getName());
     private static final String s_name = "deletetemplateresponse";

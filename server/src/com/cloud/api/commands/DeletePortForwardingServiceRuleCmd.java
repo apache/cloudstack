@@ -31,7 +31,7 @@ import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.SecurityGroupVO;
 import com.cloud.user.Account;
 
-@Implementation(method="deleteNetworkRuleConfig", manager=Manager.NetworkManager)
+@Implementation(method="deleteNetworkRuleConfig", manager=Manager.NetworkManager, description="Deletes a port forwarding service rule")
 public class DeletePortForwardingServiceRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePortForwardingServiceRuleCmd.class.getName());
 
@@ -41,7 +41,7 @@ public class DeletePortForwardingServiceRuleCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="The ID of the port forwarding service rule")
     private Long id;
 
     /////////////////////////////////////////////////////

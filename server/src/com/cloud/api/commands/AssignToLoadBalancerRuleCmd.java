@@ -31,7 +31,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.user.Account;
 
-@Implementation(method="assignToLoadBalancer", manager=Manager.NetworkManager)
+@Implementation(method="assignToLoadBalancer", manager=Manager.NetworkManager, description="Assigns virtual machine or a list of virtual machines to a load balancer rule.")
 public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AssignToLoadBalancerRuleCmd.class.getName());
 

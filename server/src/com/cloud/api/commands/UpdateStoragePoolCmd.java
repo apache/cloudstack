@@ -30,7 +30,7 @@ import com.cloud.dc.ClusterVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 
-@Implementation(method="updateStoragePool", manager=Manager.StorageManager)
+@Implementation(method="updateStoragePool", manager=Manager.StorageManager, description="Updates a storage pool.")
 public class UpdateStoragePoolCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateStoragePoolCmd.class.getName());
 

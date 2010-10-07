@@ -30,7 +30,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
 
-@Implementation(method="deleteSnapshot", manager=Manager.SnapshotManager)
+@Implementation(method="deleteSnapshot", manager=Manager.SnapshotManager, description="Deletes a snapshot of a disk volume.")
 public class DeleteSnapshotCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSnapshotCmd.class.getName());
     private static final String s_name = "deletesnapshotresponse";

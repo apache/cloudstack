@@ -30,7 +30,7 @@ import com.cloud.api.response.DomainResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.domain.DomainVO;
 
-@Implementation(method="searchForDomains")
+@Implementation(method="searchForDomains", description="Lists domains and provides detailed information for listed domains")
 public class ListDomainsCmd extends BaseListCmd {
 	public static final Logger s_logger = Logger.getLogger(ListDomainsCmd.class.getName());
 	
@@ -40,13 +40,13 @@ public class ListDomainsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name="id", type=CommandType.LONG, description="List domain by domain ID.")
     private Long id;
 
-    @Parameter(name="level", type=CommandType.INTEGER)
+    @Parameter(name="level", type=CommandType.INTEGER, description="List domains by domain level.")
     private Integer level;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="List domain by domain name.")
     private String domainName;
 
     /////////////////////////////////////////////////////

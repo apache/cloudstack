@@ -33,7 +33,7 @@ import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.network.SecurityGroupVO;
 import com.cloud.user.Account;
 
-@Implementation(method="searchForSecurityGroupsByVM")
+@Implementation(method="searchForSecurityGroupsByVM", description="Lists all port forwarding services applied to a virtual machine given the public ip address")
 public class ListPortForwardingServicesByVmCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPortForwardingServicesByVmCmd.class.getName());
 

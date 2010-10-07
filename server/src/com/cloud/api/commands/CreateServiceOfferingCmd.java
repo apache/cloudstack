@@ -27,7 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.service.ServiceOfferingVO;
 
-@Implementation(method="createServiceOffering", manager=Manager.ConfigManager)
+@Implementation(method="createServiceOffering", manager=Manager.ConfigManager, description="Creates a service offering.")
 public class CreateServiceOfferingCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateServiceOfferingCmd.class.getName());
 	private static final String _name = "createserviceofferingresponse";

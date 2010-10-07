@@ -28,7 +28,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.dc.VlanVO;
 
-@Implementation(method="createVlanAndPublicIpRange", manager=Manager.ConfigManager)
+@Implementation(method="createVlanAndPublicIpRange", manager=Manager.ConfigManager, description="Creates a VLAN IP range.")
 public class CreateVlanIpRangeCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateVlanIpRangeCmd.class.getName());
 

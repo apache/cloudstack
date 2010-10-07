@@ -31,7 +31,7 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="associateIP", manager=Manager.NetworkManager)
+@Implementation(method="associateIP", manager=Manager.NetworkManager, description="Acquires and associates a public IP to an account.")
 public class AssociateIPAddrCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AssociateIPAddrCmd.class.getName());
     private static final String s_name = "associateipaddressresponse";
@@ -40,13 +40,13 @@ public class AssociateIPAddrCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="the account to associate with this IP address")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="the ID of the domain to associate with this IP address")
     private Long domainId;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true)
+    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="the ID of the availability zone you want to acquire an public IP address from")
     private Long zoneId;
 
 

@@ -32,7 +32,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.vm.DomainRouterVO;
 
 
-@Implementation(method="startRouter", manager=Manager.NetworkManager)
+@Implementation(method="startRouter", manager=Manager.NetworkManager, description="Starts a router.")
 public class StartRouterCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(StartRouterCmd.class.getName());
     private static final String s_name = "startrouterresponse";

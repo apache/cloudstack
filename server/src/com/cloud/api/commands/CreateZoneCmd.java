@@ -27,7 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.dc.DataCenterVO;
 
-@Implementation(method="createZone", manager=Manager.ConfigManager)
+@Implementation(method="createZone", manager=Manager.ConfigManager, description="Creates a Zone.")
 public class CreateZoneCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateZoneCmd.class.getName());
 

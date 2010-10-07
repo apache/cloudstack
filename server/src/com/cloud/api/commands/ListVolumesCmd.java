@@ -37,7 +37,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.vm.VMInstanceVO;
 
-@Implementation(method="searchForVolumes")
+@Implementation(method="searchForVolumes", description="Lists all volumes.")
 public class ListVolumesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListVolumesCmd.class.getName());
 

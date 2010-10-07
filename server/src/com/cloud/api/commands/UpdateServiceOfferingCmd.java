@@ -27,7 +27,7 @@ import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
 
-@Implementation(method="updateServiceOffering", manager=Manager.ConfigManager)
+@Implementation(method="updateServiceOffering", manager=Manager.ConfigManager, description="Updates a service offering.")
 public class UpdateServiceOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateServiceOfferingCmd.class.getName());
     private static final String s_name = "updateserviceofferingresponse";

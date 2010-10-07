@@ -32,7 +32,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
 
-@Implementation(method="rebootRouter", manager=Manager.NetworkManager)
+@Implementation(method="rebootRouter", manager=Manager.NetworkManager, description="Starts a router.")
 public class RebootRouterCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(RebootRouterCmd.class.getName());
     private static final String s_name = "rebootrouterresponse";

@@ -28,7 +28,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.DiskOfferingResponse;
 import com.cloud.storage.DiskOfferingVO;
 
-@Implementation(method="createDiskOffering", manager=Manager.ConfigManager)
+@Implementation(method="createDiskOffering", manager=Manager.ConfigManager, description="Creates a disk offering.")
 public class CreateDiskOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateDiskOfferingCmd.class.getName());
 

@@ -24,10 +24,9 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.SuccessResponse;
 
-@Implementation(method="updateUser", manager=Manager.ManagementServer)
+@Implementation(method="updateUser", manager=Manager.ManagementServer, description="Updates a user account")
 public class UpdateUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateUserCmd.class.getName());
 
@@ -37,31 +36,31 @@ public class UpdateUserCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="apikey", type=CommandType.STRING)
+    @Parameter(name="apikey", type=CommandType.STRING, description="The API key for the user.")
     private String apiKey;
 
-    @Parameter(name="email", type=CommandType.STRING)
+    @Parameter(name="email", type=CommandType.STRING, description="email")
     private String email;
 
-    @Parameter(name="firstname", type=CommandType.STRING)
+    @Parameter(name="firstname", type=CommandType.STRING, description="first name")
     private String firstname;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="User id")
     private Long id;
 
-    @Parameter(name="lastname", type=CommandType.STRING)
+    @Parameter(name="lastname", type=CommandType.STRING, description="last name")
     private String lastname;
 
-    @Parameter(name="password", type=CommandType.STRING)
+    @Parameter(name="password", type=CommandType.STRING, description="Hashed password (default is MD5). If you wish to use any other hasing algorithm, you would need to write a custom authentication adapter")
     private String password;
 
-    @Parameter(name="secretkey", type=CommandType.STRING)
+    @Parameter(name="secretkey", type=CommandType.STRING, description="The secret key for the user.")
     private String secretKey;
 
-    @Parameter(name="timezone", type=CommandType.STRING)
+    @Parameter(name="timezone", type=CommandType.STRING, description="Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
     private String timezone;
 
-    @Parameter(name="username", type=CommandType.STRING)
+    @Parameter(name="username", type=CommandType.STRING, description="Unique username")
     private String username;
 
     /////////////////////////////////////////////////////

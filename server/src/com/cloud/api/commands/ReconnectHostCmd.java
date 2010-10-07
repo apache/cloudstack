@@ -44,7 +44,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.vm.UserVmVO;
 
-@Implementation(method="reconnectHost", manager=Manager.AgentManager)
+@Implementation(method="reconnectHost", manager=Manager.AgentManager, description="Reconnects a host.")
 public class ReconnectHostCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(ReconnectHostCmd.class.getName());
 

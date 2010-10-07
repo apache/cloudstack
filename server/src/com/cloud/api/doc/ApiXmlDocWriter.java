@@ -116,6 +116,8 @@ public class ApiXmlDocWriter {
 	            String commandDescription = impl.description();
 	            if (commandDescription != null)
 	            	apiCommand.setDescription(commandDescription);
+	            else
+	            	s_logger.warn("Command " + apiCommand.getName() + " misses description");
 	            
 	            //Get request parameters        
 	            Field[] fields = clas.getDeclaredFields();
@@ -140,6 +142,9 @@ public class ApiXmlDocWriter {
 						reqArg.setRequired(parameterAnnotation.required());
 						if (!parameterAnnotation.description().isEmpty())
 							reqArg.setDescription(parameterAnnotation.description());
+						else
+							s_logger.warn("Description is missing for the parameter " + parameterAnnotation.name() + " of the command " + apiCommand.getName() );
+						
 						request.add(reqArg);
 					}
 				}

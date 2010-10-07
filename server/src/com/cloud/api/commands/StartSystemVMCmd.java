@@ -33,7 +33,7 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VMInstanceVO;
 
-@Implementation(method="startSystemVM", manager=Manager.ManagementServer)
+@Implementation(method="startSystemVM", manager=Manager.ManagementServer, description="Starts a system virtual machine.")
 public class StartSystemVMCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(StartSystemVMCmd.class.getName());
 

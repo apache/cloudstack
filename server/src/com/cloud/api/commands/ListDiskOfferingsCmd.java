@@ -31,7 +31,7 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.domain.DomainVO;
 import com.cloud.storage.DiskOfferingVO;
 
-@Implementation(method="searchForDiskOfferings")
+@Implementation(method="searchForDiskOfferings", description="Lists all available disk offerings.")
 public class ListDiskOfferingsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDiskOfferingsCmd.class.getName());
 

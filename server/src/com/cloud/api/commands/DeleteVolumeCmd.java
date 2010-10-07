@@ -26,7 +26,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 
-@Implementation(method="deleteVolume", manager=Manager.StorageManager)
+@Implementation(method="deleteVolume", manager=Manager.StorageManager, description="Deletes a detached disk volume.")
 public class DeleteVolumeCmd extends BaseCmd {
 	public static final Logger s_logger = Logger.getLogger(DeleteVolumeCmd.class.getName());
     private static final String s_name = "deletevolumeresponse";

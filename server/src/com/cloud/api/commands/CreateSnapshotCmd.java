@@ -32,7 +32,7 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 
-@Implementation(createMethod="createSnapshotDB", method="createSnapshot", manager=Manager.SnapshotManager)
+@Implementation(createMethod="createSnapshotDB", method="createSnapshot", manager=Manager.SnapshotManager, description="Creates an instant snapshot of a volume.")
 public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 	public static final Logger s_logger = Logger.getLogger(CreateSnapshotCmd.class.getName());
 	private static final String s_name = "createsnapshotresponse";

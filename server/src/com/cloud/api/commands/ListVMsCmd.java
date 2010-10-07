@@ -38,7 +38,7 @@ import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmStats;
 
-@Implementation(method="searchForUserVMs")
+@Implementation(method="searchForUserVMs", description="List the virtual machines owned by the account.")
 public class ListVMsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMsCmd.class.getName());
 

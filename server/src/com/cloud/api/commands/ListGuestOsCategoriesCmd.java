@@ -30,7 +30,7 @@ import com.cloud.api.response.GuestOSCategoryResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.storage.GuestOSCategoryVO;
 
-@Implementation(method="listGuestOSCategoriesByCriteria")
+@Implementation(method="listGuestOSCategoriesByCriteria", description="Lists all supported OS categories for this cloud.")
 public class ListGuestOsCategoriesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListIsosCmd.class.getName());
 

@@ -33,7 +33,9 @@ import com.cloud.user.Account;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmStats;
 
-@Implementation(method="upgradeVirtualMachine", manager=Manager.UserVmManager)
+@Implementation(method="upgradeVirtualMachine", manager=Manager.UserVmManager, description="Changes the service offering for a virtual machine. " +
+																							"The virtual machine must be in a \"Stopped\" state for " +
+																							"this command to take effect.")
 public class UpgradeVMCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpgradeVMCmd.class.getName());
     private static final String s_name = "changeserviceforvirtualmachineresponse";

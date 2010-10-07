@@ -31,7 +31,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@Implementation(method="attachVolumeToVM", manager=Manager.UserVmManager)
+@Implementation(method="attachVolumeToVM", manager=Manager.UserVmManager, description="Attaches a disk volume to a virtual machine.")
 public class AttachVolumeCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(AttachVolumeCmd.class.getName());
     private static final String s_name = "attachvolumeresponse";

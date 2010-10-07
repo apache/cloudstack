@@ -28,7 +28,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 
-@Implementation(method="deleteSnapshotPolicies", manager=Manager.SnapshotManager)
+@Implementation(method="deleteSnapshotPolicies", manager=Manager.SnapshotManager, description="Deletes snapshot policies for the account.")
 public class DeleteSnapshotPoliciesCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSnapshotPoliciesCmd.class.getName());
 

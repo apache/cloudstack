@@ -33,7 +33,7 @@ import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.user.Account;
 
-@Implementation(method="searchForLimits", manager=Manager.AccountManager)
+@Implementation(method="searchForLimits", manager=Manager.AccountManager, description="Lists resource limits.")
 public class ListResourceLimitsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListResourceLimitsCmd.class.getName());
 

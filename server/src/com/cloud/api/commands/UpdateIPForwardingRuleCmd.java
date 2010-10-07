@@ -14,7 +14,7 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@Implementation(method="updatePortForwardingRule", manager=Manager.ManagementServer)
+@Implementation(method="updatePortForwardingRule", manager=Manager.ManagementServer, description="Updates a port forwarding rule.  Only the private port and the virtual machine can be updated.")
 public class UpdateIPForwardingRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIPForwardingRuleCmd.class.getName());
     private static final String s_name = "updateportforwardingruleresponse";
@@ -23,22 +23,22 @@ public class UpdateIPForwardingRuleCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="privateip", type=CommandType.STRING)
+    @Parameter(name="privateip", type=CommandType.STRING, description="the private IP address of the port forwarding rule")
     private String privateIp;
 
-    @Parameter(name="privateport", type=CommandType.STRING, required=true)
+    @Parameter(name="privateport", type=CommandType.STRING, required=true, description="the private port of the port forwarding rule")
     private String privatePort;
 
-    @Parameter(name="protocol", type=CommandType.STRING, required=true)
+    @Parameter(name="protocol", type=CommandType.STRING, required=true, description="the protocol for the port fowarding rule. Valid values are TCP or UDP.")
     private String protocol;
 
-    @Parameter(name="publicip", type=CommandType.STRING, required=true)
+    @Parameter(name="publicip", type=CommandType.STRING, required=true, description="the public IP address of the port forwarding rule")
     private String publicIp;
 
-    @Parameter(name="publicport", type=CommandType.STRING, required=true)
+    @Parameter(name="publicport", type=CommandType.STRING, required=true, description="the public port of the port forwarding rule")
     private String publicPort;
 
-    @Parameter(name="virtualmachineid", type=CommandType.LONG)
+    @Parameter(name="virtualmachineid", type=CommandType.LONG, description="the ID of the virtual machine for the port forwarding rule")
     private Long virtualMachineId;
 
     /////////////////////////////////////////////////////

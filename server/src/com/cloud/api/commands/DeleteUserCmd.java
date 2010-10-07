@@ -29,7 +29,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="deleteUser", manager=Manager.ManagementServer)
+@Implementation(method="deleteUser", manager=Manager.ManagementServer, description="Deletes a user account")
 public class DeleteUserCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(DeleteUserCmd.class.getName());
 	private static final String s_name = "deleteuserresponse";
@@ -38,7 +38,7 @@ public class DeleteUserCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="User id")
     private Long id;
 
 

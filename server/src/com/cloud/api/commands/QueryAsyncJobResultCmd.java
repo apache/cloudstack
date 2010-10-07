@@ -30,7 +30,7 @@ import com.cloud.api.response.AsyncJobResponse;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.serializer.SerializerHelper;
 
-@Implementation(method="queryAsyncJobResult")
+@Implementation(method="queryAsyncJobResult", description="Retrieves the current status of asynchronous job.")
 public class QueryAsyncJobResultCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(QueryAsyncJobResultCmd.class.getName());
 

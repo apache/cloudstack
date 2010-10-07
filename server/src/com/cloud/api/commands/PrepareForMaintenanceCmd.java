@@ -28,7 +28,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="maintain", manager=Manager.AgentManager)
+@Implementation(method="maintain", manager=Manager.AgentManager, description="Prepares a host for maintenance.")
 public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(PrepareForMaintenanceCmd.class.getName());
 	

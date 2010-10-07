@@ -31,7 +31,7 @@ import com.cloud.api.response.PodResponse;
 import com.cloud.dc.HostPodVO;
 import com.cloud.test.PodZoneConfig;
 
-@Implementation(method="searchForPods")
+@Implementation(method="searchForPods", description="Lists all Pods.")
 public class ListPodsByCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPodsByCmd.class.getName());
 

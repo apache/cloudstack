@@ -33,7 +33,7 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VMInstanceVO;
 
-@Implementation(method="stopSystemVM", manager=Manager.ManagementServer)
+@Implementation(method="stopSystemVM", manager=Manager.ManagementServer, description="Stops a system VM.")
 public class StopSystemVmCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(StopSystemVmCmd.class.getName());
 
