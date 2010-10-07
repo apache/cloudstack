@@ -77,24 +77,19 @@ DROP TABLE IF EXISTS `cloud`.`cluster`;
 /*DO NOT DELETE*/
 /*
 DROP TABLE IF EXISTS `cloud`.`netapp_storage_pool`;
-DROP TABLE IF EXISTS `cloud`.`netapp_volume`;
 
 CREATE TABLE `cloud`.`netapp_storage_pool` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `ip_address` varchar(15) NOT NULL COMMENT 'ip address of the pool/volume',
-  `aggregate_name` varchar(255) NOT NULL COMMENT 'name for the aggregate',
   `pool_name` varchar(255) NOT NULL COMMENT 'name for the pool/volume',
+  `aggregate_name` varchar(255) NOT NULL COMMENT 'name for the aggregate',
+  `volume_name` varchar(255) NOT NULL COMMENT 'name for the volume',
+  `volume_size` varchar(255) NOT NULL COMMENT 'volume size',
+  `snapshot_policy` varchar(255) NOT NULL COMMENT 'snapshot policy',
+  `snapshot_reservation` varchar(255) NOT NULL COMMENT 'snapshot reservation',  
   `username` varchar(255) NOT NULL COMMENT 'username',  
   `password` varchar(200) COMMENT 'password',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`netapp_volume` (
-  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
-  `pool_id` bigint unsigned NOT NULL COMMENT 'pool id',
-  `volume_name` varchar(255) NOT NULL COMMENT 'name for the volume',
-  `aggregate_name` varchar(255) NOT NULL COMMENT 'name for the aggregate',
-  `size` varchar(255) NOT NULL COMMENT 'volume size',
+  `round_robin_marker` int COMMENT 'This marks the volume to be picked up for lun creation, RR fashion',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 */
