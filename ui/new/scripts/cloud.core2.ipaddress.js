@@ -1,30 +1,14 @@
 //***** baseline (begin) *******************************************************************************************************************
 function afterLoadIpJSP() {
-    //switch to different tab
-    $("#tab_details").bind("click", function(event){
-        $(this).removeClass("off").addClass("on");
-        $("#tab_port_forwarding, #tab_load_balancer").removeClass("on").addClass("off");  
-        $("#tab_content_details").show();     
-        $("#tab_content_port_forwarding, #tab_content_load_balancer").hide();   
-        return false;
-    });    
-    $("#tab_port_forwarding").bind("click", function(event){
-        $(this).removeClass("off").addClass("on");
-        $("#tab_details, #tab_load_balancer").removeClass("on").addClass("off");   
-        $("#tab_content_port_forwarding").show();    
-        $("#tab_content_details, #tab_content_load_balancer").hide();    
-        return false;
-    });    
-    $("#tab_load_balancer").bind("click", function(event){
-        $(this).removeClass("off").addClass("on");
-        $("#tab_details, #tab_port_forwarding").removeClass("on").addClass("off");  
-        $("#tab_content_load_balancer").show();   
-        $("#tab_content_details, #tab_content_port_forwarding").hide();      
-        return false;
-    }); 
-    
+    //***** switch between different tabs (begin) ********************************************************************
+    var tabArray = ["tab_details", "tab_port_forwarding", "tab_load_balancer"];
+    var tabContentArray = ["tab_content_details", "tab_content_port_forwarding", "tab_content_load_balancer"];
+    switchBetweenDifferentTabs(tabArray, tabContentArray);       
+    //***** switch between different tabs (end) **********************************************************************
+        
     //dialogs
     initDialog("dialog_acquire_public_ip", 325);
+    initDialog("dialog_confirmation_release_ip");
     
     //*** Acquire New IP (begin) ***
 	$.ajax({
@@ -224,23 +208,39 @@ function ipToRigntPanel($midmenuItem1) {
     }
 }
 
-function ipJsonToDetailsTab(jsonObj) {   
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
-    $detailsTab.data("jsonObj", jsonObj);      
-    
-    $detailsTab.find("#ipaddress").text(fromdb(jsonObj.ipaddress));
-    $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));
-    $detailsTab.find("#vlanname").text(fromdb(jsonObj.vlanname));    
-    setSourceNatField(jsonObj.issourcenat, $detailsTab.find("#source_nat")); 
-    setNetworkTypeField(jsonObj.forvirtualnetwork, $detailsTab.find("#network_type"));    
-    
-    $detailsTab.find("#domain").text(fromdb(jsonObj.domain));
-    $detailsTab.find("#account").text(fromdb(jsonObj.account));
-    $detailsTab.find("#allocated").text(fromdb(jsonObj.allocated));
-}
 //***** baseline (end) *********************************************************************************************************************
 
 //***** Details tab (begin) ****************************************************************************************************************
+function ipJsonToDetailsTab(ipObj) {   
+    var $detailsTab = $("#right_panel_content #tab_content_details");   
+    $detailsTab.data("jsonObj", ipObj);      
+    
+    $detailsTab.find("#ipaddress").text(fromdb(ipObj.ipaddress));
+    $detailsTab.find("#zonename").text(fromdb(ipObj.zonename));
+    $detailsTab.find("#vlanname").text(fromdb(ipObj.vlanname));    
+    setSourceNatField(ipObj.issourcenat, $detailsTab.find("#source_nat")); 
+    setNetworkTypeField(ipObj.forvirtualnetwork, $detailsTab.find("#network_type"));    
+    
+    $detailsTab.find("#domain").text(fromdb(ipObj.domain));
+    $detailsTab.find("#account").text(fromdb(ipObj.account));
+    $detailsTab.find("#allocated").text(fromdb(ipObj.allocated));
+    
+    //actions ***
+    var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
+    $actionMenu.find("#action_list").empty();
+    var noAvailableActions = true;
+    
+    if(isIpManageable(ipObj.domainid, ipObj.account) == true) {     
+        buildActionLinkForDetailsTab("Release IP", ipActionMap, $actionMenu, null);		
+        noAvailableActions = false;
+    }
+        
+    // no available actions 
+	if(noAvailableActions == true) {
+	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
+	}	 
+}
+
 function setSourceNatField(value, $field) {
     if(value == "true")
         $field.text("Yes");
@@ -257,6 +257,38 @@ function setNetworkTypeField(value, $field) {
         $field.text("Direct");
     else
         $field.text("");
+}
+
+var ipActionMap = {  
+    "Release IP": {                  
+        isAsyncJob: false,        
+        dialogBeforeActionFn : doReleaseIp,
+        inProcessText: "Releasing IP....",
+        afterActionSeccessFn: function(jsonObj) {          
+            var $midmenuItem1 = $("#"+ipGetMidmenuId(jsonObj)); 
+            $midmenuItem1.remove();
+            clearRightPanel();
+            //ipClearRightPanel();
+        }
+    }
+}   
+
+function doReleaseIp($actionLink, listAPIMap, $detailsTab) {  
+    var $detailsTab = $("#right_panel_content #tab_content_details"); 
+    var jsonObj = $detailsTab.data("jsonObj");
+    var ipaddress = jsonObj.ipaddress;
+    
+    $("#dialog_confirmation_release_ip")	
+	.dialog('option', 'buttons', { 						
+		"Confirm": function() { 
+		    $(this).dialog("close");			
+			var apiCommand = "command=disassociateIpAddress&ipaddress="+ipaddress;
+            doActionToDetailsTab(null, $actionLink, apiCommand, listAPIMap);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		} 
+	}).dialog("open");
 }
 //***** Details tab (end) ******************************************************************************************************************
 

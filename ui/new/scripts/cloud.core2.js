@@ -54,15 +54,17 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap)
     });  
 } 
 
-function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap) {       
+function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap) {  
     var label = $actionLink.data("label");	
     var inProcessText = $actionLink.data("inProcessText");		           
     var isAsyncJob = $actionLink.data("isAsyncJob");
     var asyncJobResponse = $actionLink.data("asyncJobResponse");	
     var afterActionSeccessFn = $actionLink.data("afterActionSeccessFn");	
-    var listAPI = listAPIMap["listAPI"];
-    var listAPIResponse = listAPIMap["listAPIResponse"];
-    var listAPIResponseObj = listAPIMap["listAPIResponseObj"];
+    if(listAPIMap != null) {
+        var listAPI = listAPIMap["listAPI"];
+        var listAPIResponse = listAPIMap["listAPIResponse"];
+        var listAPIResponseObj = listAPIMap["listAPIResponseObj"];
+    }
      
     var $detailsTab = $("#right_panel_content #tab_content_details");     
     var $spinningWheel = $detailsTab.find("#spinning_wheel");
@@ -135,17 +137,17 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap) {
     //Async job (end) *****
     
     //Sync job (begin) *****
-    else { 	               
+    else { 	    
         $.ajax({
             data: createURL(apiCommand),
 	        dataType: "json",
 	        async: false,
-	        success: function(json) {	            
+	        success: function(json) {	 	                  
 	            $spinningWheel.hide(); 	        
 	            $("#right_panel_content #after_action_info").text(label + " action succeeded.");
                 $("#right_panel_content #after_action_info_container").removeClass("errorbox").show();  
 								
-				if(apiCommand.indexOf("command=delete")!=0) { 									              
+				if(apiCommand.indexOf("command=delete")!=0 && apiCommand.indexOf("command=disassociateIpAddress")!=0) { 									              
 	                //RecoverVirtualMachine API doesn't return an embedded object on success (Bug 6037)
 	                //Before Bug 6037 get fixed, use the temporary solution below.							            
 	                $.ajax({

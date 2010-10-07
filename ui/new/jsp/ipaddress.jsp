@@ -435,6 +435,12 @@
 <!-- Port Forwarding template (end) -->
 
 <!--  dialogs (begin) -->
+<div id="dialog_confirmation_release_ip" title="Confirmation" style="display:none">
+    <p>
+        <%=t.t("please.confirm.you.want.to.release.this.IP.address")%>
+    </p>
+</div>
+
 <div id="dialog_acquire_public_ip" title="Acquire New IP" style="display: none">
     <p> 
         <%=t.t("please.select.an.available.zone.to.associate.your.new.ip.with..acquiring.additional.ip.may.cost.you.an.additional.dollars.per.month.")%>
