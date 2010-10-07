@@ -3347,10 +3347,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("callHostPlugin executing for command " + cmd + " with " + getArgsString(args));
             }
-            if( _host.host == null ) {
-                _host.host = Host.getByUuid(conn, _host.uuid);
-            }
-            String result = _host.host.callPlugin(conn, plugin, cmd, args);
+            Host host = Host.getByUuid(conn, _host.uuid);
+            String result = host.callPlugin(conn, plugin, cmd, args);
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("callHostPlugin Result: " + result);
             }
@@ -4529,7 +4527,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         } catch (NumberFormatException e) {
             throw new ConfigurationException("Unable to get the zone " + params.get("zone"));
         }
-        _host.host = null;
         _name = _host.uuid;
         _host.ip = (String) params.get("url");
         _host.pool = (String) params.get("pool");
@@ -5968,6 +5965,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             s_logger.debug("Successfully copied backupUuid: " + backupSnapshotUuid + " of volumeId: " + volumeId + " to secondary storage");
         } else {
             s_logger.debug(failureString + ". Failed with status: " + status);
+            return null;
         }
 
         return backupSnapshotUuid;
@@ -6130,7 +6128,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         public String systemvmisouuid;
         public String uuid;
         public String ip;
-        public Host host;
         public String publicNetwork;
         public String privateNetwork;
         public String linkLocalNetwork;
