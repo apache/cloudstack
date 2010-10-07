@@ -1,0 +1,146 @@
+#!/bin/bash
+#set -x
+Usage() {
+  echo "migrate snapshots created from CloudStack 2.1.3 to 2.1.4 and later:"
+  echo "$0 -m {snapshot mount point} "
+  exit 1
+}
+
+if [ "$#" -ne "2" ]
+then
+  Usage
+fi
+
+mountPath=
+
+while getopts m: OPTION
+do
+  case $OPTION in
+  m)  mountPath="$OPTARG"
+      ;;
+  *) 
+      Usage
+      ;;
+  esac
+done
+
+which vhd-util >> /dev/null
+if [ $? -gt 0 ]
+then
+  echo 'Cant find vhd-utils, please install it or running this tools on a xenserver host'
+  exit 2
+fi
+
+
+echo "0: sanity checking all the snapshots under $mountPath"
+foundBadTemplt=0
+
+for account in `ls $mountPath`
+do
+  for templateId in `ls $mountPath/$account`    
+  do 
+    for template in `ls $mountPath/$account/$templateId`
+    do
+       templateFullName=$mountPath/$account/$templateId/$template
+
+       vhd-util check -n $templateFullName >> /dev/null
+       if [ $? -gt 0 ]
+       then
+          echo "snapshot $templateFullName is bad"
+          foundBadTemplt=1
+       fi
+
+    done
+  done
+done
+
+if [ "$foundBadTemplt" -eq "0" ]
+then
+   echo "All the snapshots under $mountPath are OK"
+fi
+
+# first round, rename template, removing the leading "VHD-"
+echo "1: rename all the template to uuid.vhd"
+
+for account in `ls $mountPath`
+do
+  for templateId in `ls $mountPath/$account`    
+  do 
+    for template in `ls $mountPath/$account/$templateId`
+    do
+       templateFullName=$mountPath/$account/$templateId/$template
+
+       echo $template |grep VHD- >> /dev/null
+       if [ "$?" -eq "0" ]
+       then
+	  newTemplateName=${template##VHD-}.vhd
+	  mv $mountPath/$account/$templateId/$template  $mountPath/$account/$templateId/$newTemplateName
+       fi
+
+    done 
+  done
+done
+
+foundBadTemplt=0
+
+echo "2: modify parent of all the template"
+
+for account in `ls $mountPath`
+do
+  for templateId in `ls $mountPath/$account`    
+  do 
+    for template in `ls $mountPath/$account/$templateId`
+    do
+       templateFullName=$mountPath/$account/$templateId/$template
+
+       vhd-util read -p -n $templateFullName |grep -a "Disk type" |grep -a "Differencing" >> /dev/null
+       if [ $? -gt 0 ]
+       then
+	  #skip the one which doesn;t have parent
+	  continue
+       fi
+
+       parent=`vhd-util read -p -n $templateFullName|grep -a "Parent name"|cut -d : -f 2`
+       if [ $? -gt 0 ]
+       then
+          echo "Failed to get parent of $templateFullName"
+	  continue
+       fi
+
+       echo $parent |grep VHD- >> /dev/null
+       if [ $? -gt 0 ]
+       then
+	 continue
+       fi
+
+       parent=${parent##*VHD-}.vhd
+       parentFullName=$mountPath/$account/$templateId/$parent
+       if [ ! -f $parentFullName ]
+       then
+	 echo "new parent $parentFullName does not exist, skip to change parent of $templateFullName"
+	 continue
+       fi
+
+       vhd-util modify -p $parentFullName -n $templateFullName
+       if [ $? -gt 0 ]
+       then
+          echo "Failed to change parent of $templateFullName to $parent"
+          continue
+       fi
+       
+       vhd-util check -n $templateFullName >> /dev/null
+       if [ $? -gt 0 ]
+       then
+	 echo "snapshot $templateFullName is bad, after migration"
+	 foundBadTemplt=1
+	 continiue
+       fi
+
+    done 
+  done
+done
+
+if [ "$foundBadTemplt" -eq "0" ]
+then
+   echo "All the snapshots under $mountPath are OK, after migration"
+fi

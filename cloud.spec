@@ -547,6 +547,7 @@ fi
 %files setup
 %attr(0755,root,root) %{_bindir}/%{name}-setup-databases
 %attr(0755,root,root) %{_bindir}/%{name}-migrate-databases
+%attr(0755,root,root) %{_bindir}/%{name}-migrate-snapshot
 %dir %{_datadir}/%{name}/setup
 %{_datadir}/%{name}/setup/create-database.sql
 %{_datadir}/%{name}/setup/create-index-fk.sql
