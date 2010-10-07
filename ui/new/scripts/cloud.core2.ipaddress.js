@@ -72,7 +72,7 @@ function afterLoadIpJSP() {
 		if (!isValid) return;			
 	    
 	    var $template = $("#port_forwarding_template").clone();
-	    $("#tab_content_port_forwarding #grid_container #grid_content").append($template.show());		
+	    $("#tab_content_port_forwarding #grid_content").append($template.show());		
 	    
 	    var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");	
 	    $spinningWheel.find("#description").text("Adding....");	
@@ -214,7 +214,7 @@ function ipToRigntPanel($midmenuItem1) {
     }
 }
 
-function ipClearRightPanel() {
+function ipClearRightPanel() { 
     ipClearDetailsTab();   
     ipClearPortForwardingTab();
     ipClearLoadBalancerTab(); 
@@ -255,8 +255,7 @@ function ipJsonToDetailsTab(ipObj) {
 
 function ipClearDetailsTab() {
     var $detailsTab = $("#right_panel_content #tab_content_details");   
-    $detailsTab.data("jsonObj", null);      
-    
+        
     $detailsTab.find("#ipaddress").text("");
     $detailsTab.find("#zonename").text("");
     $detailsTab.find("#vlanname").text("");   
@@ -296,7 +295,7 @@ var ipActionMap = {
         dialogBeforeActionFn : doReleaseIp,
         inProcessText: "Releasing IP....",
         afterActionSeccessFn: function(ipaddress) {                 
-            var $midmenuItem1 = $("#"+ipGetMidmenuId2(ipaddress)); 
+            var $midmenuItem1 = $("#"+ipGetMidmenuId2(ipaddress));             
             $midmenuItem1.remove();
             clearRightPanel();
             ipClearRightPanel();
@@ -325,7 +324,7 @@ function doReleaseIp($actionLink, listAPIMap, $detailsTab) {
 
 //***** Port Forwarding tab (begin) ********************************************************************************************************
 function ipClearPortForwardingTab() {
-   $("#tab_content_port_forwarding #grid_container #grid_content").empty(); 
+   $("#tab_content_port_forwarding #grid_content").empty(); 
     refreshCreatePortForwardingRow(); 
 }    
     
@@ -338,7 +337,7 @@ function listPortForwardingRules(ipObj) {
         dataType: "json",
         success: function(json) {	                                    
             var items = json.listportforwardingrulesresponse.portforwardingrule;              
-            var $portForwardingGrid = $("#tab_content_port_forwarding #grid_container #grid_content");            
+            var $portForwardingGrid = $("#tab_content_port_forwarding #grid_content");            
             $portForwardingGrid.empty();                       		    		      	    		
             if (items != null && items.length > 0) {				        			        
                 for (var i = 0; i < items.length; i++) {
@@ -522,7 +521,7 @@ function refreshCreatePortForwardingRow() {
 
 
 //***** Load Balancer tab (begin) **********************************************************************************************************
-function ipClearLoadBalancerTab() {            
+function ipClearLoadBalancerTab() {  
     $("#tab_content_load_balancer #grid_content").empty();   
     refreshCreateLoadBalancerRow();   
 }
