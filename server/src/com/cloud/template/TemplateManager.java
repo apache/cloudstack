@@ -71,11 +71,11 @@ public interface TemplateManager extends Manager {
      * @param enablePassword Does the template support password change.
      * @param guestOSId OS that is on the template
      * @param bootable true if this template will represent a bootable ISO
-     * @return id of the template created.
+     * @return the template created.
      */
 //    Long create(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable);
-    Long registerTemplate(RegisterTemplateCmd cmd) throws InvalidParameterValueException, URISyntaxException, ResourceAllocationException;
-    Long registerIso(RegisterIsoCmd cmd) throws InvalidParameterValueException, IllegalArgumentException, ResourceAllocationException;   
+    VMTemplateVO registerTemplate(RegisterTemplateCmd cmd) throws InvalidParameterValueException, URISyntaxException, ResourceAllocationException;
+    VMTemplateVO registerIso(RegisterIsoCmd cmd) throws InvalidParameterValueException, IllegalArgumentException, ResourceAllocationException;   
     /**
      * Creates a Template
      * 

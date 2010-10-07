@@ -151,7 +151,7 @@ public class TemplateManagerImpl implements TemplateManager {
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     
     @Override
-    public Long registerIso(RegisterIsoCmd cmd) throws InvalidParameterValueException, IllegalArgumentException, ResourceAllocationException{
+    public VMTemplateVO registerIso(RegisterIsoCmd cmd) throws InvalidParameterValueException, IllegalArgumentException, ResourceAllocationException{
         Account account = (Account)UserContext.current().getAccountObject();
         Long userId = UserContext.current().getUserId();
         String name = cmd.getName();
@@ -221,7 +221,7 @@ public class TemplateManagerImpl implements TemplateManager {
     }
 
     @Override
-    public Long registerTemplate(RegisterTemplateCmd cmd) throws InvalidParameterValueException, URISyntaxException, ResourceAllocationException{
+    public VMTemplateVO registerTemplate(RegisterTemplateCmd cmd) throws InvalidParameterValueException, URISyntaxException, ResourceAllocationException{
     	
         Account account = (Account)UserContext.current().getAccountObject();
         Long userId = UserContext.current().getUserId();
@@ -302,7 +302,7 @@ public class TemplateManagerImpl implements TemplateManager {
     	
     }
     
-    private Long createTemplateOrIso(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) throws InvalidParameterValueException,IllegalArgumentException, ResourceAllocationException {
+    private VMTemplateVO createTemplateOrIso(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) throws InvalidParameterValueException,IllegalArgumentException, ResourceAllocationException {
         try
         {
             if (name.length() > 32)
@@ -374,7 +374,7 @@ public class TemplateManagerImpl implements TemplateManager {
         }
     }
 
-    private Long create(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) {
+    private VMTemplateVO create(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable) {
         Long id = _tmpltDao.getNextInSequence(Long.class, "id");
         
         UserVO user = _userDao.findById(userId);
@@ -403,7 +403,7 @@ public class TemplateManagerImpl implements TemplateManager {
         
         _accountMgr.incrementResourceCount(userAccount.getAccountId(), ResourceType.template);
         
-        return id;
+        return template;
     }
 
     @Override
@@ -811,8 +811,8 @@ public class TemplateManagerImpl implements TemplateManager {
        
         return copiedTemplate;
     }
-    
-    @Override
+
+    @Override @DB
     public boolean delete(long userId, long templateId, Long zoneId) throws InternalErrorException {
     	boolean success = true;
     	VMTemplateVO template = _tmpltDao.findById(templateId);
