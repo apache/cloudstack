@@ -5157,12 +5157,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     }
 
                 }                
-                
-                VDI.Record vdir = snapshot.getRecord(conn);
-                snapshotUUID = vdir.uuid;
-
-                success = true;
-                details = null;
             } else if (cmd.getCommandSwitch().equals(ManageSnapshotCommand.DESTROY_SNAPSHOT)) {
                 // Look up the snapshot
                 snapshotUUID = cmd.getSnapshotPath();
@@ -5170,9 +5164,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
                 snapshot.destroy(conn);
                 snapshotUUID = null;
-                success = true;
-                details = null;
             }
+            success = true;
+            details = null;
         } catch (XenAPIException e) {
             details += ", reason: " + e.toString();
             s_logger.warn(details, e);
