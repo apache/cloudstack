@@ -43,6 +43,9 @@ public class DiskOfferingResponse extends BaseResponse {
     @SerializedName("created")
     private Date created;
 
+    @SerializedName("ismirrored")
+    private Boolean mirrored;
+
     @SerializedName("tags")
     private String tags;
 
@@ -100,6 +103,14 @@ public class DiskOfferingResponse extends BaseResponse {
 
     public void setCreated(Date created) {
         this.created = created;
+    }
+
+    public Boolean isMirrored() {
+        return mirrored;
+    }
+
+    public void setMirrored(Boolean mirrored) {
+        this.mirrored = mirrored;
     }
 
     public String getTags() {

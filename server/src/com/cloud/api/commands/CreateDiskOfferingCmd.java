@@ -99,6 +99,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
             response.setDomain(ApiDBUtils.findDomainById(responseObject.getDomainId()).getName());
             response.setName(responseObject.getName());
             response.setTags(responseObject.getTags());
+            response.setMirrored(responseObject.isMirrored());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create disk offering");
         }
