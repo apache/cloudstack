@@ -72,7 +72,7 @@ function afterLoadIpJSP() {
 		if (!isValid) return;			
 	    
 	    var $template = $("#port_forwarding_template").clone();
-	    $("#tab_content_port_forwarding #grid_container").append($template.show());		
+	    $("#tab_content_port_forwarding #grid_container #grid_content").append($template.show());		
 	    
 	    var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");	
 	    $spinningWheel.find("#description").text("Adding....");	
@@ -376,7 +376,7 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
     var IpAccount = ipObj.account;    
     	    
     $.ajax({
-	   data: createURL("command=listVirtualMachines&domainid="+IpDomainid+"&account="+IpAccount+maxPageSize),
+	    data: createURL("command=listVirtualMachines&domainid="+IpDomainid+"&account="+IpAccount+maxPageSize),
 	    dataType: "json",
 	    success: function(json) {			    
 		    var instances = json.listvirtualmachinesresponse.virtualmachine;			   
