@@ -121,6 +121,24 @@ $(document).ready(function() {
         return false;
     });
     
+    $("#leftmenu_resource").bind("click", function(event) {  
+        if(selected_leftmenu_id != null && selected_leftmenu_id.length > 0)
+            $("#"+selected_leftmenu_id).removeClass("selected");
+        selected_leftmenu_id = "leftmenu_resource";
+        $(this).addClass("selected");
+        
+        showMiddleMenuWithoutSearch();
+        disableMultipleSelectionInMidMenu();
+        
+        clearLeftMenu();
+        clearMiddleMenu();
+                
+        $("#right_panel").load("jsp/resource.jsp", function(){ 
+            afterLoadResourceJSP();       
+        });     
+                
+        return false;
+    });
     
            
     $("#midmenu_action_link").bind("mouseover", function(event) {

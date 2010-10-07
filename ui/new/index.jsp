@@ -67,6 +67,8 @@ long milliseconds = new Date().getTime();
   
     <script type="text/javascript" src="scripts/cloud.core2.domain.js?t=<%=milliseconds%>"></script>
   
+    <script type="text/javascript" src="scripts/cloud.core2.resource.js?t=<%=milliseconds%>"></script>
+    
     <title>Cloud.com CloudStack</title>
 </head>
 <body>
@@ -507,38 +509,38 @@ long milliseconds = new Date().getTime();
                             <div class="leftmenu_arrows close" id="arrowIcon">
                             </div>
                             <div class="leftmenu_list_icons">
-                                <img src="images/configuration_leftmenuicon.png" alt="Configuration" /></div>
-                            Configuration
+                                <img src="images/configuration_leftmenuicon.png" alt="System" /></div>
+                            <%=t.t("system")%>
                         </div>
                     </div>
                 </div>
-                <div class="leftmenu_list">
-                    <div class="leftmenu_content" id="leftmenu_global_setting">
+                <div class="leftmenu_list">                    
+                    <div class="leftmenu_content" id="leftmenu_resource">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
-                                <img src="images/configuration_leftmenuicon.png" alt="Configuration" /></div>
-                            Global Settings
-                        </div>
-                    </div>
-                    <div class="leftmenu_content" id="leftmenu_zone">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_list_icons">
-                                <img src="images/configuration_leftmenuicon.png" alt="Configuration" /></div>
-                            Zones
+                                <img src="images/configuration_leftmenuicon.png" alt="Resources" /></div>
+                            <%=t.t("resources")%>
                         </div>
                     </div>
                     <div class="leftmenu_content" id="leftmenu_service_offering">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
-                                <img src="images/configuration_leftmenuicon.png" alt="Configuration" /></div>
-                            Service Offerings
+                                <img src="images/configuration_leftmenuicon.png" alt="Service Offerings" /></div>
+                            <%=t.t("service.offerings")%>
                         </div>
                     </div>
                     <div class="leftmenu_content" id="leftmenu_disk_offering">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
-                                <img src="images/configuration_leftmenuicon.png" alt="Configuration" /></div>
-                            Disk Offerings
+                                <img src="images/configuration_leftmenuicon.png" alt="Disk Offerings" /></div>
+                            <%=t.t("disk.offerings")%>
+                        </div>
+                    </div>
+                    <div class="leftmenu_content" id="leftmenu_global_setting">
+                        <div class="leftmenu_secondindent">
+                            <div class="leftmenu_list_icons">
+                                <img src="images/configuration_leftmenuicon.png" alt="Global Settings" /></div>
+                            <%=t.t("global.settings")%>
                         </div>
                     </div>
                 </div>
