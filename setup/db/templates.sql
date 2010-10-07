@@ -1,10 +1,10 @@
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
-    VALUES (1, 'routing', 'SystemVM Template', 0, now(), 'system', 0, 64, 1, 'http://download.cloud.com/releases/2.0.0RC5/systemvm.vhd.bz2', '31cd7ce94fe68c973d5dc37c3349d02e', 0, 'SystemVM Template', 'VHD', 15, 0, 1, 'Xenserver');
+    VALUES (1, 'routing-1', 'SystemVM Template', 0, now(), 'system', 0, 64, 1, 'http://download.cloud.com/releases/2.0.0RC5/systemvm.vhd.bz2', '31cd7ce94fe68c973d5dc37c3349d02e', 0, 'SystemVM Template', 'VHD', 15, 0, 1, 'Xenserver');
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type)
     VALUES (2, 'centos53-x86_64', 'CentOS 5.3(x86_64) no GUI', 1, now(), 'builtin', 0, 64, 1, 'http://download.cloud.com/templates/builtin/f59f18fb-ae94-4f97-afd2-f84755767aca.vhd.bz2', 'b63d854a9560c013142567bbae8d98cf', 0, 'CentOS 5.3(x86_64) no GUI', 'VHD', 11, 1, 1, 'Xenserver');
 
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
-    VALUES (3, 'routing_kvm', 'SystemVM Template (KVM)', 0, now(), 'system', 0, 64, 1, 'http://nfs1.lab.vmops.com/templates/routing/debian/systemvm.qcow2.bz2', 'f366fe5c31f267a407236878988ce7bd', 0, 'SystemVM Template KVM', 'QCOW2', 15, 0, 1, 'KVM');
+    VALUES (3, 'routing-3', 'SystemVM Template (KVM)', 0, now(), 'system', 0, 64, 1, 'http://nfs1.lab.vmops.com/templates/routing/debian/systemvm.qcow2.bz2', 'f366fe5c31f267a407236878988ce7bd', 0, 'SystemVM Template KVM', 'QCOW2', 15, 0, 1, 'KVM');
 
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, display_text, enable_password, format, guest_os_id, featured, cross_zones, hypervisor_type)
     VALUES (4, 'centos55-x86_64', 'CentOS 5.5(x86_64) no GUI', 1, now(), 'builtin', 0, 64, 1, 'http://download.cloud.com/templates/builtin/eec2209b-9875-3c8d-92be-c001bd8a0faf.qcow2.bz2', '1da20ae69b54f761f3f733dce97adcc0', 'CentOS 5.5(x86_64) no GUI', 0, 'QCOW2', 112, 1, 1, 'KVM');
