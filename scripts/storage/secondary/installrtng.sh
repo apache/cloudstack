@@ -1,14 +1,16 @@
 #!/bin/bash
 # $Id: installrtng.sh 11251 2010-07-23 23:40:44Z abhishek $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/secondary/installrtng.sh $
 usage() {
-  printf "Usage: %s: -m <secondary storage mount point> -f <system vm template file> [-F]\n" $(basename $0) >&2
+  printf "Usage: %s: -m <secondary storage mount point> -f <system vm template file> [-F] [-t <template id>] [-e <template extention name>]\n" $(basename $0) >&2
   printf "or\n" >&2
-  printf "%s: -m <secondary storage mount point> -u <http url for system vm template> [-F]\n" $(basename $0) >&2
+  printf "%s: -m <secondary storage mount point> -u <http url for system vm template> [-F] [-t <template id>] [-e <template extention name>]\n" $(basename $0) >&2
 }
 
 mflag=
 fflag=
-while getopts 'm:f:u:F' OPTION
+ext="vhd"
+templateId=1
+while getopts 'm:f:u:Ft:e:' OPTION
 do
   case $OPTION in
   m)	mflag=1
@@ -21,6 +23,10 @@ do
 		url="$OPTARG"
 		;;
   F)	Fflag=1 ;;
+  t)    templateId="$OPTARG"
+  		;;
+  e)    ext="$OPTARG"
+  		;;
   ?)	usage
 		exit 2
 		;;
@@ -39,7 +45,7 @@ then
   exit 3
 fi
 
-localfile=$(uuidgen).vhd
+localfile=$(uuidgen).$ext
 
 if [ ! -d $mntpoint ] 
 then
@@ -49,7 +55,7 @@ fi
 
 mntpoint=`echo "$mntpoint" | sed 's|/*$||'`
 
-destdir=$mntpoint/template/tmpl/1/1/
+destdir=$mntpoint/template/tmpl/1/$templateId/
 
 mkdir -p $destdir
 if [ $? -ne 0 ]
@@ -73,7 +79,7 @@ then
   exit 4
 fi
 
-destvhdfiles=$(find $destdir -name \*.vhd)
+destvhdfiles=$(find $destdir -name \*.$ext)
 if [ "$destvhdfiles" != "" ]
 then
   echo "Data already exists at destination $destdir -- use -F to force cleanup of old template"
@@ -116,16 +122,21 @@ then
   echo "Failed to install system vm template $tmpltimg to $destdir"
 fi
 
+if [ "$ext" == "ova" ]
+then
+  tar xvf $destdir/$tmpfile -C $destdir &> /dev/null
+fi
+
 tmpltfile=$destdir/$localfile
 tmpltsize=$(ls -l $tmpltfile| awk -F" " '{print $5}')
 
-echo "vhd=true" >> $destdir/template.properties
+echo "$ext=true" >> $destdir/template.properties
 echo "id=1" >> $destdir/template.properties
 echo "public=true" >> $destdir/template.properties
-echo "vhd.filename=$localfile" >> $destdir/template.properties
+echo "$ext.filename=$localfile" >> $destdir/template.properties
 echo "uniquename=routing" >> $destdir/template.properties
-echo "vhd.virtualsize=$tmpltsize" >> $destdir/template.properties
+echo "$ext.virtualsize=$tmpltsize" >> $destdir/template.properties
 echo "virtualsize=$tmpltsize" >> $destdir/template.properties
-echo "vhd.size=$tmpltsize" >> $destdir/template.properties
+echo "$ext.size=$tmpltsize" >> $destdir/template.properties
 
 echo "Successfully installed system VM template $tmpltimg to $destdir"
