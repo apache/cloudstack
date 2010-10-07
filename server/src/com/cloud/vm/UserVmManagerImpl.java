@@ -1953,7 +1953,7 @@ public class UserVmManagerImpl implements UserVmManager {
     			continue;
     		}
     		
-    		if(vm.getName().startsWith("r-") && !vm.getState().equals(State.Running)){
+    		if(VirtualMachineName.isValidRouterName(vm.getName()) && !vm.getState().equals(State.Running)){
     			deleteRules = false;
     		}
 
