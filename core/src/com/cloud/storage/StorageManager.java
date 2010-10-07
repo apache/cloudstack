@@ -36,7 +36,6 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Volume.VolumeType;
@@ -320,10 +319,10 @@ public interface StorageManager extends Manager {
     <T extends VMInstanceVO> DiskProfile allocateRawVolume(VolumeType type, String name, DiskOfferingVO offering, Long size, T vm, AccountVO owner);
     <T extends VMInstanceVO> DiskProfile allocateTemplatedVolume(VolumeType type, String name, DiskOfferingVO offering, VMTemplateVO template, T vm, AccountVO owner);
     
-    <T extends VMInstanceVO> void create(T vm);
     Long findHostIdForStoragePool(StoragePool pool);
 	void createCapacityEntry(StoragePoolVO storagePool, long allocated);
 
     
     VolumeTO[] prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException;
+    void release(VirtualMachineProfile vm);
 }

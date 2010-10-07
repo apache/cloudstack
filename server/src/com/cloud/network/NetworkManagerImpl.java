@@ -2629,6 +2629,20 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         return nicTos;
     }
     
+    @Override
+    public void release(VirtualMachineProfile vmProfile) {
+        List<NicVO> nics = _nicDao.listBy(vmProfile.getId());
+        for (NicVO nic : nics) {
+            NetworkConfigurationVO config = _networkProfileDao.findById(nic.getNetworkConfigurationId());
+            if (nic.getReservationStrategy() == ReservationStrategy.Start) {
+                NetworkGuru concierge = _networkGurus.get(config.getGuruName());
+                nic.setState(Resource.State.Releasing);
+                _nicDao.update(nic.getId(), nic);
+                concierge.release(nic.getReservationId());
+            }
+        }
+    }
+    
     NicProfile toNicProfile(NicVO nic) {
         NetworkConfiguration config = _networkProfileDao.findById(nic.getNetworkConfigurationId());
         NicProfile profile = new NicProfile(nic, config, nic.getBroadcastUri(), nic.getIsolationUri());

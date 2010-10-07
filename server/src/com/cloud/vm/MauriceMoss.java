@@ -170,47 +170,6 @@ public class MauriceMoss implements VmManager {
         return allocate(vm, template, serviceOffering, new Pair<DiskOfferingVO, Long>(serviceOffering, null), null, networks, plan, owner);
     }
     
-    protected VirtualMachineProfile create(VirtualMachineProfile vmProfile, DeploymentPlan plan) throws InsufficientCapacityException {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating actual resources for VM " + vmProfile);
-        }
-        
-        Journal journal = new Journal.LogJournal("Creating " + vmProfile, s_logger);
-
-        Set<DeployDestination> avoids = new HashSet<DeployDestination>();
-        int retry = _retry;
-        while (_retry-- > 0) {
-            DeployDestination context = null;
-            for (DeploymentPlanner dispatcher : _planners) {
-                context = dispatcher.plan(vmProfile, plan, avoids);
-                if (context != null) {
-                    journal.record("Deployment found ", vmProfile, context);
-                    break;
-                }
-            }
-            
-            if (context == null) {
-                throw new CloudRuntimeException("Unable to create a deployment for " + vmProfile);
-            }
-            
-            VMInstanceVO vm = _vmDao.findById(vmProfile.getId());
-
-            vm.setDataCenterId(context.getDataCenter().getId());
-            vm.setPodId(context.getPod().getId());
-            vm.setHostId(context.getHost().getId());
-            _vmDao.update(vm.getId(), vm);
-            
-            _networkMgr.create(vm);
-            _storageMgr.create(vm);
-        }
-        
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creation complete for VM " + vmProfile);
-        }
-        
-        return vmProfile;
-    }
-
     @Override
     public void destroy() {
         // TODO Auto-generated method stub
@@ -293,7 +252,6 @@ public class MauriceMoss implements VmManager {
             vm.setDataCenterId(dest.getDataCenter().getId());
             vm.setPodId(dest.getPod().getId());
             _vmDao.updateIf(vm, Event.OperationRetry, dest.getHost().getId());
-            
 
             VirtualMachineTO vmTO = new VirtualMachineTO(vmProfile, bt);
             VolumeTO[] volumes = null;
@@ -317,11 +275,13 @@ public class MauriceMoss implements VmManager {
             Start2Command cmd = new Start2Command(vmTO);
             try {
                 Start2Answer answer = (Start2Answer)_agentMgr.send(dest.getHost().getId(), cmd);
-                if (!answer.getResult()) {
-                    s_logger.info("Unable to start VM on " + dest.getHost() + " due to " + answer.getDetails());
-                    continue;
+                if (answer.getResult()) {
+                    if (!_vmDao.updateIf(vm, Event.OperationSucceeded, dest.getHost().getId())) {
+                        throw new CloudRuntimeException("Unable to transition to a new state.");
+                    }
+                    return vm;
                 }
-                _vmDao.updateIf(vm, Event.OperationSucceeded, dest.getHost().getId());
+                s_logger.info("Unable to start VM on " + dest.getHost() + " due to " + answer.getDetails());
             } catch (AgentUnavailableException e) {
                 s_logger.debug("Unable to send the start command to host " + dest.getHost());
                 continue;

@@ -104,6 +104,7 @@ CREATE TABLE `cloud`.`network_configurations` (
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id that this configuration is used in',
   `guru_name` varchar(255) NOT NULL COMMENT 'who is responsible for this type of network configuration',
   `state` varchar(32) NOT NULL COMMENT 'what state is this configuration in',
+  `mac_address_seq` bigint unsigned DEFAULT 1 COMMENT 'mac address seq number',
   `dns` varchar(255) COMMENT 'comma separated DNS list',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
