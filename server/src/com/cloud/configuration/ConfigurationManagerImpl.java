@@ -1045,7 +1045,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
             useVirtualNetwork = Boolean.TRUE;
         }
 
-        return createServiceOffering(userId, cmd.getServiceOfferingName(), cpuSpeed.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(),
+        return createServiceOffering(userId, cmd.getServiceOfferingName(), cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), cmd.getDisplayText(),
                 localStorageRequired, offerHA, useVirtualNetwork, cmd.getTags());
     }
 
