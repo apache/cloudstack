@@ -166,7 +166,11 @@ function afterLoadIpJSP() {
 }
 
 function ipGetMidmenuId(jsonObj) {   
-    return "midmenuItem_" + jsonObj.ipaddress.replace(/\./g, "_");   //e.g. "192.168.33.108" => "192_168_33_108"
+    return ipGetMidmenuId2(jsonObj.ipaddress);
+}
+
+function ipGetMidmenuId2(ipaddress) {  
+    return "midmenuItem_" + ipaddress.replace(/\./g, "_");   //e.g. "192.168.33.108" => "192_168_33_108"
 }
 
 function ipToMidmenu(jsonObj, $midmenuItem1) {    
@@ -192,8 +196,7 @@ function ipToRigntPanel($midmenuItem1) {
     var ipObj = $midmenuItem1.data("jsonObj");
     
     //Details tab
-    ipJsonToDetailsTab(ipObj);   
-    $("#tab_details").click();
+    ipJsonToDetailsTab(ipObj);       
     
     //Port Forwarding tab, Load Balancer tab
     if(isIpManageable(ipObj.domainid, ipObj.account) == true) {     
@@ -205,7 +208,16 @@ function ipToRigntPanel($midmenuItem1) {
     } 
     else { 
 	    $("#tab_port_forwarding, #tab_load_balancer").hide();
+	    ipClearPortForwardingTab();
+	    ipClearLoadBalancerTab();
+	    $("#tab_details").click();
     }
+}
+
+function ipClearRightPanel() {
+    ipClearDetailsTab();   
+    ipClearPortForwardingTab();
+    ipClearLoadBalancerTab(); 
 }
 
 //***** baseline (end) *********************************************************************************************************************
@@ -241,6 +253,25 @@ function ipJsonToDetailsTab(ipObj) {
 	}	 
 }
 
+function ipClearDetailsTab() {
+    var $detailsTab = $("#right_panel_content #tab_content_details");   
+    $detailsTab.data("jsonObj", null);      
+    
+    $detailsTab.find("#ipaddress").text("");
+    $detailsTab.find("#zonename").text("");
+    $detailsTab.find("#vlanname").text("");   
+    $detailsTab.find("#source_nat").text("");
+    $detailsTab.find("#network_type").text("");
+    $detailsTab.find("#domain").text("");
+    $detailsTab.find("#account").text("");
+    $detailsTab.find("#allocated").text("");
+    
+    //actions ***  
+    var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");  
+    $actionMenu.find("#action_list").empty();
+    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());		 
+}
+
 function setSourceNatField(value, $field) {
     if(value == "true")
         $field.text("Yes");
@@ -264,11 +295,11 @@ var ipActionMap = {
         isAsyncJob: false,        
         dialogBeforeActionFn : doReleaseIp,
         inProcessText: "Releasing IP....",
-        afterActionSeccessFn: function(jsonObj) {          
-            var $midmenuItem1 = $("#"+ipGetMidmenuId(jsonObj)); 
+        afterActionSeccessFn: function(ipaddress) {                 
+            var $midmenuItem1 = $("#"+ipGetMidmenuId2(ipaddress)); 
             $midmenuItem1.remove();
             clearRightPanel();
-            //ipClearRightPanel();
+            ipClearRightPanel();
         }
     }
 }   
@@ -283,7 +314,7 @@ function doReleaseIp($actionLink, listAPIMap, $detailsTab) {
 		"Confirm": function() { 
 		    $(this).dialog("close");			
 			var apiCommand = "command=disassociateIpAddress&ipaddress="+ipaddress;
-            doActionToDetailsTab(null, $actionLink, apiCommand, listAPIMap);	
+            doActionToDetailsTab(ipaddress, $actionLink, apiCommand, listAPIMap);	
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
@@ -293,6 +324,10 @@ function doReleaseIp($actionLink, listAPIMap, $detailsTab) {
 //***** Details tab (end) ******************************************************************************************************************
 
 //***** Port Forwarding tab (begin) ********************************************************************************************************
+function ipClearPortForwardingTab() {
+   $("#tab_content_port_forwarding #grid_container #grid_content").empty(); 
+    refreshCreatePortForwardingRow(); 
+}    
     
 function listPortForwardingRules(ipObj) {	    
 	var ipAddress = ipObj.ipaddress;
@@ -487,6 +522,11 @@ function refreshCreatePortForwardingRow() {
 
 
 //***** Load Balancer tab (begin) **********************************************************************************************************
+function ipClearLoadBalancerTab() {            
+    $("#tab_content_load_balancer #grid_content").empty();   
+    refreshCreateLoadBalancerRow();   
+}
+
 function listLoadBalancerRules(ipObj) {  
     var ipAddress = ipObj.ipaddress;
     if(ipAddress == null || ipAddress.length == 0)
