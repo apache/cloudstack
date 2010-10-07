@@ -215,6 +215,12 @@ setup_dhcpsrvr() {
   setup_dnsmasq
   setup_apache2
 
+  sed -i -e "/^[#]*dhcp-option=option:router.*$/d" /etc/dnsmasq.conf
+  echo "dhcp-option=option:router,$GW" >> /etc/dnsmasq.conf
+  #for now set up ourself as the dns server as well
+  sed -i -e "/^[#]*dhcp-option=6.*$/d" /etc/dnsmasq.conf
+  echo "dhcp-option=6,$NS1,$NS2" >> /etc/dnsmasq.conf
+
   sed -i  /gateway/d /etc/hosts
   echo "$ETH0_IP $NAME" >> /etc/hosts
 

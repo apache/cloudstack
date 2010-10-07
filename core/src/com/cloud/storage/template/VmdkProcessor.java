@@ -38,7 +38,7 @@ public class VmdkProcessor implements Processor {
         String templateFileFullPath = templatePath + templateName + "." + ImageFormat.OVA.getFileExtension();
         File templateFile = new File(templateFileFullPath);
         
-        Script command = new Script(true, "tar", 0, s_logger);
+        Script command = new Script("tar", 0, s_logger);
         command.add("-xf", templateFileFullPath);
         command.setWorkDir(templateFile.getParent());
         String result = command.execute();

@@ -131,10 +131,10 @@ tmpltfile=$destdir/$localfile
 tmpltsize=$(ls -l $tmpltfile| awk -F" " '{print $5}')
 
 echo "$ext=true" >> $destdir/template.properties
-echo "id=1" >> $destdir/template.properties
+echo "id=$templateId" >> $destdir/template.properties
 echo "public=true" >> $destdir/template.properties
 echo "$ext.filename=$localfile" >> $destdir/template.properties
-echo "uniquename=routing" >> $destdir/template.properties
+echo "uniquename=routing-$templateId" >> $destdir/template.properties
 echo "$ext.virtualsize=$tmpltsize" >> $destdir/template.properties
 echo "virtualsize=$tmpltsize" >> $destdir/template.properties
 echo "$ext.size=$tmpltsize" >> $destdir/template.properties
