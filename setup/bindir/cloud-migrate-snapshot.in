@@ -2,7 +2,7 @@
 #set -x
 Usage() {
   echo "migrate snapshots created from CloudStack 2.1.3 to 2.1.4 and later:"
-  echo "$0 -m {snapshot mount point} "
+  echo "$0 -m {secondary-storage mount point} "
   exit 1
 }
 
@@ -31,6 +31,18 @@ then
   exit 2
 fi
 
+if [ ! -f $mountPath ]
+then
+  echo "$mountPath does not exist, please specify a valid path"
+  exit 2
+fi
+
+mountPath=$mountPath/snapshots
+if [ ! -f $mountPath ]
+then
+  echo "No snapshots exit, nothing to do"
+  exit 0
+fi
 
 echo "0: sanity checking all the snapshots under $mountPath"
 foundBadTemplt=0
