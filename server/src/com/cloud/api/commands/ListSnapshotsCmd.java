@@ -87,16 +87,13 @@ public class ListSnapshotsCmd extends BaseCmd {
         }
         
         Long accountId = null;
-        if ((account == null) || isAdmin(account.getType())) {
-        	if(account != null && account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)
-        		accountId = account.getId();
+        if (account == null) {
             if (domainId != null && accountName != null) {
-                Account userAccount = getManagementServer().findAccountByName(accountName, domainId);
-                if (userAccount != null) {
-                    accountId = userAccount.getId();
-                }
+                account = getManagementServer().findAccountByName(accountName, domainId);
             }
-        } else {
+        }
+        
+        if( account != null && !isAdmin(account.getType())) {
             accountId = account.getId();
         }
             
@@ -119,7 +116,7 @@ public class ListSnapshotsCmd extends BaseCmd {
         c.addCriteria(Criteria.ID, id);
         c.addCriteria(Criteria.KEYWORD, keyword);
         c.addCriteria(Criteria.ACCOUNTID, accountId);
-        
+
         List<SnapshotVO> snapshots = null;
 		try {
 			snapshots = getManagementServer().listSnapshots(c, interval);
