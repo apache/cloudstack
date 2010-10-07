@@ -61,7 +61,7 @@ function afterLoadIpJSP() {
 					    var items = json.associateipaddressresponse.publicipaddress;	
 					    //$("#dialog_info").html("<p>The IP address <b>"+items[0].ipaddress+"</b> has been assigned to your account</p>").dialog("open");	
 					    ipToMidmenu(items[0], $midmenuItem1);
-						bindClickToMidMenu($midmenuItem1, ipToRigntPanel);  
+						bindClickToMidMenu($midmenuItem1, ipToRigntPanel, ipGetMidmenuId);  
 						afterAddingMidMenuItem($midmenuItem1, true);	
 	            				
 					},
