@@ -71,6 +71,7 @@ import com.cloud.api.commands.DeletePortForwardingServiceCmd;
 import com.cloud.api.commands.DeletePreallocatedLunCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
+import com.cloud.api.commands.DisableAccountCmd;
 import com.cloud.api.commands.DisableUserCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
@@ -1077,6 +1078,23 @@ public class ManagementServerImpl implements ManagementServer {
         UserVO userForUpdate = _userDao.createForUpdate();
         userForUpdate.setState(state);
         return _userDao.update(Long.valueOf(userId), userForUpdate);
+    }
+
+    @Override
+    public boolean disableAccount(DisableAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+        String accountName = cmd.getAccountName();
+        Long domainId = cmd.getDomainId();
+
+        Account adminAccount = (Account)UserContext.current().getAccountObject();
+        if ((adminAccount != null) && !_domainDao.isChildDomain(adminAccount.getDomainId(), domainId)) {
+            throw new PermissionDeniedException("Failed to disable account " + accountName + " in domain " + domainId + ", permission denied.");
+        }
+
+        Account account = _accountDao.findActiveAccount(accountName, domainId);
+        if (account == null) {
+            throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+        }
+        return disableAccount(account.getId());
     }
 
     @Override
@@ -3859,7 +3877,7 @@ public class ManagementServerImpl implements ManagementServer {
                 }
 
                 if (accountName != null) {
-                    Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                    Account userAccount = _accountDao.findAccount(accountName, domainId);
                     if (userAccount != null) {
                         accountId = userAccount.getId();
                     } else {
@@ -6317,7 +6335,7 @@ public class ManagementServerImpl implements ManagementServer {
 	}
 
 	@Override
-	public boolean stopSystemVM(StopSystemVmCmd cmd) {
+	public VMInstanceVO stopSystemVM(StopSystemVmCmd cmd) {
 		Long id = cmd.getId();
 		
 	    // verify parameters      
@@ -6325,14 +6343,17 @@ public class ManagementServerImpl implements ManagementServer {
         if (systemVm == null) {
         	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + id);
         }
-        
+
+        // FIXME: We need to return the system VM from this method, so what do we do with the boolean response from stopConsoleProxy and stopSecondaryStorageVm?
 		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
 			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_STOP, "stopping console proxy with Id: "+id);
-			return stopConsoleProxy(id, eventId);
+			stopConsoleProxy(id, eventId);
 		} else {
 			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_STOP, "stopping secondary storage Vm Id: "+id);
-			return stopSecondaryStorageVm(id, eventId);
+			stopSecondaryStorageVm(id, eventId);
 		}
+
+		return systemVm;
 	}
 
 	@Override
@@ -6488,7 +6509,7 @@ public class ManagementServerImpl implements ManagementServer {
 	public boolean lockAccount(LockAccountCmd cmd) {
         Account adminAccount = (Account)UserContext.current().getAccountObject();
         Long domainId = cmd.getDomainId();
-        String accountName = UserContext.current().getAccountName();
+        String accountName = cmd.getAccountName();
 
         if ((adminAccount != null) && !_domainDao.isChildDomain(adminAccount.getDomainId(), domainId)) {
             throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Failed to lock account " + accountName + " in domain " + domainId + ", permission denied.");

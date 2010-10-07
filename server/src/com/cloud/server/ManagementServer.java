@@ -34,6 +34,7 @@ import com.cloud.api.commands.DeletePortForwardingServiceCmd;
 import com.cloud.api.commands.DeletePreallocatedLunCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DeployVMCmd;
+import com.cloud.api.commands.DisableAccountCmd;
 import com.cloud.api.commands.DisableUserCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
@@ -214,7 +215,16 @@ public interface ManagementServer {
      * @return true if disable was successful, false otherwise
      */
     boolean disableAccount(long accountId);
-    
+
+    /**
+     * Disables an account by accountName and domainId
+     * @param cmd the command wrapping the accountName and domainId
+     * @return true if disable was successful, false otherwise
+     * @throws InvalidParameterValueException
+     * @throws PermissionDeniedException
+     */
+    boolean disableAccount(DisableAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+
     /**
      * Enables an account by accountId
      * @param cmd - the enableAccount command defining the accountId to be deleted.
@@ -785,7 +795,7 @@ public interface ManagementServer {
 	String getConsoleAccessUrlRoot(long vmId);
 	ConsoleProxyVO findConsoleProxyById(long instanceId);
 	VMInstanceVO findSystemVMById(long instanceId);
-	boolean stopSystemVM(StopSystemVmCmd cmd);
+	VMInstanceVO stopSystemVM(StopSystemVmCmd cmd);
 	VMInstanceVO startSystemVM(StartSystemVMCmd cmd) throws InternalErrorException;
 	boolean rebootSystemVM(RebootSystemVmCmd cmd);
 
