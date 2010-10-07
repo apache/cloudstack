@@ -282,7 +282,7 @@ public class UserVmManagerImpl implements UserVmManager {
     }
 
     @Override
-    public boolean resetVMPassword(ResetVMPasswordCmd cmd){
+    public UserVm resetVMPassword(ResetVMPasswordCmd cmd){
     	
     	Long userId = UserContext.current().getUserId();
     	boolean result = resetVMPasswordInternal(cmd);
@@ -298,17 +298,16 @@ public class UserVmManagerImpl implements UserVmManager {
         } else {
             s_logger.warn("Unable to find vm = " + cmd.getId()+ " to reset password");
         }
-        
-        return result;
+
+        return userVm;
     }
 
-    private boolean resetVMPasswordInternal(ResetVMPasswordCmd cmd) {
-    	
+    private boolean resetVMPasswordInternal(ResetVMPasswordCmd cmd) {    	
     	//Input validation
     	Account account = (Account)UserContext.current().getAccountObject();
     	Long userId = UserContext.current().getUserId();
     	Long id = cmd.getId();
-    	
+
         String password = null;
 
         //Verify input parameters
@@ -316,9 +315,9 @@ public class UserVmManagerImpl implements UserVmManager {
         if (vmInstance == null) {
         	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + id);
         }
-        
+
         userId = accountAndUserValidation(id, account, userId, vmInstance);
-        
+
     	VMTemplateVO template = _templateDao.findById(vmInstance.getTemplateId());
     	if (template.getEnablePassword()) {
             password = PasswordGenerator.generateRandomPassword();;
@@ -328,8 +327,10 @@ public class UserVmManagerImpl implements UserVmManager {
 
         if (password == null || password.equals("")) {
             return false;
+        } else {
+            cmd.setPassword(password);
         }
-    	
+
         if (template.getEnablePassword()) {
         	if (vmInstance.getDomainRouterId() == null)
         		/*TODO: add it for external dhcp mode*/
@@ -1301,15 +1302,14 @@ public class UserVmManagerImpl implements UserVmManager {
     /*
      * TODO: cleanup eventually - Refactored API call
      */
-    public boolean upgradeVirtualMachine(UpgradeVMCmd cmd) throws ServerApiException, InvalidParameterValueException {
+    public UserVm upgradeVirtualMachine(UpgradeVMCmd cmd) throws ServerApiException, InvalidParameterValueException {
         Long virtualMachineId = cmd.getId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
         Account account = (Account)UserContext.current().getAccountObject();
         Long userId = UserContext.current().getUserId();
 
         // Verify input parameters
-        
-        UserVmVO vmInstance = _vmDao.createForUpdate(virtualMachineId.longValue());
+        UserVmVO vmInstance = _vmDao.findById(virtualMachineId);
         if (vmInstance == null) {
         	throw new ServerApiException(BaseCmd.VM_INVALID_PARAM_ERROR, "unable to find a virtual machine with id " + virtualMachineId);
         }       
@@ -1368,11 +1368,13 @@ public class UserVmManagerImpl implements UserVmManager {
 
         // FIXME:  save this eventId somewhere as part of the async process?
 		/*long eventId = */EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_UPGRADE, "upgrading Vm with Id: "+vmInstance.getId());
- 
-            vmInstance.setServiceOfferingId(serviceOfferingId);
-            vmInstance.setHaEnabled(_serviceOfferingDao.findById(serviceOfferingId).getOfferHA());
-            return _vmDao.update(vmInstance.getId(), vmInstance);
-            
+
+		UserVmVO vmForUpdate = _vmDao.createForUpdate();
+		vmForUpdate.setServiceOfferingId(serviceOfferingId);
+		vmForUpdate.setHaEnabled(_serviceOfferingDao.findById(serviceOfferingId).getOfferHA());
+		_vmDao.update(vmInstance.getId(), vmForUpdate);
+		
+		return _vmDao.findById(vmInstance.getId());
     }
 
 	private Long accountAndUserValidation(Long virtualMachineId,Account account, Long userId, UserVmVO vmInstance) throws ServerApiException {

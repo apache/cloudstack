@@ -113,9 +113,9 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
     /**
      * Resets the password of a virtual machine.
      * @param cmd - the command specifying vmId, password
-     * @return true if reset worked successfully, false otherwise
+     * @return the VM if reset worked successfully, null otherwise
      */
-    boolean resetVMPassword(ResetVMPasswordCmd cmd);
+    UserVm resetVMPassword(ResetVMPasswordCmd cmd);
     
     /**
      * Attaches the specified volume to the specified VM
@@ -182,10 +182,10 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
     /**
      * upgrade the service offering of the virtual machine
      * @param cmd - the command specifying vmId and new serviceOfferingId
-     * @return success/failure
+     * @return the vm
      * @throws InvalidParameterValueException 
      */
-    boolean upgradeVirtualMachine(UpgradeVMCmd cmd) throws ServerApiException, InvalidParameterValueException;
+    UserVm upgradeVirtualMachine(UpgradeVMCmd cmd) throws ServerApiException, InvalidParameterValueException;
     
     /**
      * Obtains statistics for a list of host or VMs; CPU and network utilization
