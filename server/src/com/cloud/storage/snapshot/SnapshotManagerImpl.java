@@ -508,7 +508,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
     }
 
     @DB
-    private boolean backupSnapshotToSecondaryStorage(SnapshotVO snapshot) {
+    public boolean backupSnapshotToSecondaryStorage(SnapshotVO snapshot) {
         Long userId = UserContext.current().getUserId();
         long id = snapshot.getId();
         
@@ -702,7 +702,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
     }
 
     @DB
-    private void postCreateSnapshot(long volumeId, long snapshotId, List<Long> policyIds, boolean backedUp) {
+    protected void postCreateSnapshot(long volumeId, long snapshotId, List<Long> policyIds, boolean backedUp) {
         Long userId = UserContext.current().getUserId();
         // Update the snapshot_policy_ref table with the created snapshot
         // Get the list of policies for this snapshot
