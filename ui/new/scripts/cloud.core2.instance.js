@@ -314,19 +314,20 @@ function clickInstanceGroupHeader($arrowIcon) {
     		   
 	        var commandString;    		  	   
             var searchInput = $vmPopup.find("#search_input").val();   
-            if (selectedTemplateTypeInVmPopup != "blank") {      
+            if (selectedTemplateTypeInVmPopup != "blank") {  //template   
+                var hypervisor = $vmPopup.find("#wizard_hypervisor").val();	                
                 if (searchInput != null && searchInput.length > 0)                 
-                    commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup; 
+                    commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&hypervisor="+hypervisor+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup; 
                 else
-                    commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&page="+currentPageInTemplateGridInVmPopup;           		    		
-		    } else {
+                    commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&hypervisor="+hypervisor+"&page="+currentPageInTemplateGridInVmPopup;           		    		
+		    } 
+		    else {  //ISO
 		        if (searchInput != null && searchInput.length > 0)                 
                     commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup;  
                 else
                     commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&page="+currentPageInTemplateGridInVmPopup;  
 		    }
-    		commandString += "&hypervisor=XenServer"; //This line is temporary. will change it later.
-    		
+    		    		
 		    var loading = $vmPopup.find("#wiz_template_loading").show();				
 		    if(currentPageInTemplateGridInVmPopup==1)
                 $vmPopup.find("#prevPage").hide();
@@ -406,7 +407,13 @@ function clickInstanceGroupHeader($arrowIcon) {
                 listTemplatesInVmPopup();         
             return false;
         });
-        
+                
+        $vmPopup.find("#wizard_hypervisor").bind("change", function(event) {       
+            var selectedHypervisor = $(this).val();
+            if(selectedHypervisor != null && selectedHypervisor.length > 0)
+                listTemplatesInVmPopup();         
+            return false;
+        });        
        
         function displayDiskOffering(type) {
             if(type=="data") {

@@ -223,6 +223,15 @@
                             Availability Zone:</label>
                         <select class="select" id="wizard_zone" name="zone">
                         </select>
+                        
+                        <label>
+                            Hypervisor:</label>
+                        <select id="wizard_hypervisor">
+                            <option value='XenServer'>Citrix XenServer</option>
+                            <option value='VmWare'>VMware ESX</option>                            
+                            <option value='KVM'>KVM</option>
+                        </select>                        
+                        
                         <div class="rev_tempsearchbox">
                             <form method="post" action="#">
                             <ol>
