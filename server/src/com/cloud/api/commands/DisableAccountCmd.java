@@ -37,10 +37,10 @@ public class DisableAccountCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING, description="Disables specified account.")
+    @Parameter(name="account", type=CommandType.STRING, required=true, description="Disables specified account.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG, description="Disables specified account in this domain.")
+    @Parameter(name="domainid", type=CommandType.LONG, required=true, description="Disables specified account in this domain.")
     private Long domainId;
 
     /////////////////////////////////////////////////////
