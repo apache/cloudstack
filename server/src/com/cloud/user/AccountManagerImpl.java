@@ -471,13 +471,15 @@ public class AccountManagerImpl implements AccountManager {
 
         if (domainId == null) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to update resource limit, unable to determine domain in which to update limit.");
-        } else if (account.getAccountName() != null) {
-            Account userAccount = _accountDao.findActiveAccount(account.getAccountName(), domainId);
-            if (userAccount == null) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find account by name " + account.getAccountName() + " in domain with id " + domainId);
+        } else if (account != null) {
+            if (account.getAccountName() != null) {
+                Account userAccount = _accountDao.findActiveAccount(account.getAccountName(), domainId);
+                if (userAccount == null) {
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find account by name " + account.getAccountName() + " in domain with id " + domainId);
+                }
+                accountId = userAccount.getId();
+                domainId = userAccount.getDomainId();
             }
-            accountId = userAccount.getId();
-            domainId = userAccount.getDomainId();
         }               
 
         if (accountId != null) domainId = null;
