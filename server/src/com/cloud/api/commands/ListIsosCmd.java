@@ -42,7 +42,7 @@ import com.cloud.storage.dao.VMTemplateDao.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(method="listTemplates", description="Lists all available ISO files.")
+@Implementation(method="listIsos", description="Lists all available ISO files.")
 public class ListIsosCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListIsosCmd.class.getName());
 
