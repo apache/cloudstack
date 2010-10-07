@@ -1276,8 +1276,13 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, VirtualMach
     public AgentControlAnswer onConsoleAccessAuthentication(ConsoleAccessAuthenticationCommand cmd) {
         long vmId = 0;
         
-		String ticket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId());
 		String ticketInUrl = cmd.getTicket();
+		if(ticketInUrl == null) {
+			s_logger.error("Access ticket could not be found, you could be running an old version of console proxy. vmId: " + cmd.getVmId());
+			return new ConsoleAccessAuthenticationAnswer(cmd, false);
+		}
+		
+        String ticket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId());
 		if(!ticket.startsWith(ticketInUrl)) {
 			s_logger.error("Access ticket expired or has been modified. vmId: " + cmd.getVmId());
 			return new ConsoleAccessAuthenticationAnswer(cmd, false);
