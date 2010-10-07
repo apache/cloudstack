@@ -72,6 +72,7 @@ import com.cloud.agent.transport.UpgradeResponse;
 import com.cloud.alert.AlertManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterIpAddressVO;
@@ -196,6 +197,13 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     @Inject protected GuestOSCategoryDao _guestOSCategoryDao = null;
     @Inject protected DetailsDao _hostDetailsDao = null;
     @Inject protected ClusterDao _clusterDao;
+        
+    private String _publicNic;
+    private String _privateNic;
+    private String _guestNic;
+    private String _storageNic1;
+    private String _storageNic2;
+
     
     protected Adapters<Discoverer> _discoverers = null;
     protected int _port;
@@ -237,7 +245,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     @Inject
     protected VMTemplateHostDao _vmTemplateHostDao;
     @Override
-    public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
+    public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {   	
         _name = name;
 
         Request.initBuilder();
@@ -249,6 +257,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
 
         final Map<String, String> configs = configDao.getConfiguration("AgentManager", params);
+        
+        _publicNic = configDao.getValue(Config.XenPublicNetwork.key());
+        _privateNic = configDao.getValue(Config.XenPrivateNetwork.key());
+        _guestNic = configDao.getValue(Config.XenGuestNetwork.key());       
+        _storageNic1 = configDao.getValue(Config.XenStorageNetwork1.key());
+        _storageNic2 = configDao.getValue(Config.XenStorageNetwork2.key());
 
         _port = NumbersUtil.parseInt(configs.get("port"), 8250);
         final int workers = NumbersUtil.parseInt(configs.get("workers"), 5);
@@ -962,6 +976,13 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         params.putAll(host.getDetails());
         // private.network.device may change when reconnect
         params.remove("private.network.device");
+        params.put("private.network.device", _privateNic);
+        params.remove("public.network.device");
+        params.put("public.network.device", _publicNic);
+        params.remove("guest.network.device");
+        params.put("guest.network.device", _guestNic);
+      
+
         params.put("guid", host.getGuid());
         params.put("zone", Long.toString(host.getDataCenterId()));
         if (host.getPodId() != null) {

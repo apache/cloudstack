@@ -3566,6 +3566,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     s_logger.warn("Unable to get private network " + name);
                     return false;
                 }
+            } else {
+                _privateNetworkName = name;
             }
             name = privateNic.nr.nameLabel;
             

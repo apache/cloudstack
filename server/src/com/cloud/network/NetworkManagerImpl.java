@@ -561,7 +561,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             Set<Long> avoids = new HashSet<Long>();
             boolean found = false;
             while ((pod = _agentMgr.findPod(template, offering, dc, accountId, avoids)) != null) {
-                
+                avoids.add(pod.first().getId());
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Attempting to create in pod " + pod.first().getName());
                 }
@@ -605,7 +605,6 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Unable to find storage host or pool in pod " + pod.first().getName() + " (id:" + pod.first().getId() + "), checking other pods");
                 }
-                avoids.add(pod.first().getId());
             }
             
             final EventVO event = new EventVO();
