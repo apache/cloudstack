@@ -498,7 +498,8 @@ function clickInstanceGroupHeader($arrowIcon) {
 			        $thisPopup.find("#root_disk_offering_container").hide();			       
 			    }	
     			
-    			$thisPopup.find("#wizard_review_zone").text($thisPopup.find("#wizard_zone option:selected").text());    	
+    			$thisPopup.find("#wizard_review_zone").text($thisPopup.find("#wizard_zone option:selected").text());    
+    			$thisPopup.find("#wizard_review_hypervisor").text($thisPopup.find("#wizard_hypervisor option:selected").text());   	
     			$thisPopup.find("#wizard_review_template").text($thisPopup.find("#step1 .rev_wiztemplistbox_selected .rev_wiztemp_listtext").text()); 
 		    }			
     		
@@ -553,7 +554,9 @@ function clickInstanceGroupHeader($arrowIcon) {
 			    // Create a new VM!!!!
 			    var moreCriteria = [];								
 			    moreCriteria.push("&zoneId="+$thisPopup.find("#wizard_zone").val());
-    									
+			    
+    			moreCriteria.push("&hypervisor="+$thisPopup.find("#wizard_hypervisor").val());	
+    								
 			    moreCriteria.push("&templateId="+$thisPopup.find("#step1 .rev_wiztemplistbox_selected").attr("id"));
     							
 			    moreCriteria.push("&serviceOfferingId="+$thisPopup.find("input:radio[name=service_offering_radio]:checked").val());
