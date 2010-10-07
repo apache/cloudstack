@@ -16,8 +16,6 @@
  * 
  */
 
-// Version: @VERSION@
-
 function showHostsTab() {
     var rIndex = 0;	
 	var sIndex = 0;

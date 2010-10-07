@@ -16,8 +16,6 @@
  * 
  */
 
-// Version: @VERSION@
-
 function showNetworkingTab(p_domainId, p_account) {   	
     //*** Network (begin) ****************************************************************************
     activateDialog($("#dialog_acquire_public_ip").dialog({ 

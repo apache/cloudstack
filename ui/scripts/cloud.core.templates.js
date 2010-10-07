@@ -16,8 +16,6 @@
  * 
  */
 
-// Version: @VERSION@
-
 var DomRTemplateId = 1;
 
 function showTemplatesTab() {

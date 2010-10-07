@@ -16,8 +16,6 @@
  * 
  */
 
-// Version: @VERSION@
-
 var rowZIndexGlobal = 300;
 var rowZIndex = 299;
 var currentVMAction = null;

@@ -16,8 +16,6 @@
  * 
  */
 
-// Version: @VERSION@
-
 function showStorageTab(domainId, targetTab) {      
     var currentSubMenu;
        		

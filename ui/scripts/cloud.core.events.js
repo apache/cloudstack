@@ -16,8 +16,6 @@
  * 
  */
 
-// Version: @VERSION@
-
 function showEventsTab(showEvents) {
     var currentSubMenu = $("#submenu_events");
     
