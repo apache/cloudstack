@@ -19,15 +19,20 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.user.Account;
 
 @Implementation(method="deleteIso", manager=Manager.TemplateManager, description="Deletes an ISO file.")
-public class DeleteIsoCmd extends BaseCmd {
+public class DeleteIsoCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteIsoCmd.class.getName());
     private static final String s_name = "deleteisosresponse";
 
@@ -53,7 +58,6 @@ public class DeleteIsoCmd extends BaseCmd {
     public Long getZoneId() {
         return zoneId;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -81,5 +85,25 @@ public class DeleteIsoCmd extends BaseCmd {
 
         response.setResponseName(getName());
         return response;
+    }
+
+    @Override
+    public long getAccountId() {
+        VMTemplateVO iso = ApiDBUtils.findTemplateById(getId());
+        if (iso != null) {
+            return iso.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_ISO_DELETE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Deleting iso " + getId();
     }
 }

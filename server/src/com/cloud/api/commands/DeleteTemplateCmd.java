@@ -20,14 +20,18 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.user.Account;
 
 @Implementation(method="deleteTemplate", manager=Manager.TemplateManager, description="Deletes a template from the system. All virtual machines using the deleted template will not be affected.")
-public class DeleteTemplateCmd extends BaseCmd {
+public class DeleteTemplateCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(DeleteTemplateCmd.class.getName());
     private static final String s_name = "deletetemplateresponse";
 
@@ -76,4 +80,24 @@ public class DeleteTemplateCmd extends BaseCmd {
         response.setResponseName(getName());
         return response;
 	}
+
+    @Override
+    public long getAccountId() {
+        VMTemplateVO template = ApiDBUtils.findTemplateById(getId());
+        if (template != null) {
+            return template.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_TEMPLATE_DELETE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Deleting template " + getId();
+    }
 }
