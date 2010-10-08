@@ -112,3 +112,37 @@
         </div>  
     </div>
 </div>
+
+<!-- Add Disk Offering Dialog -->
+<div id="dialog_add_disk" title="Add Disk Offering" style="display:none">
+	<p>Please fill in the following data to add a new disk Offering.</p>
+	<div class="dialog_formcontent">
+		<form action="#" method="post" id="form1">
+			<ol>
+				<li>
+					<label for="user_name">Name:</label>
+					<input class="text" type="text" name="add_disk_name" id="add_disk_name"/>
+					<div id="add_disk_name_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li>
+					<label for="user_name">Description:</label>
+					<input class="text" type="text" name="add_disk_description" id="add_disk_description"/>
+					<div id="add_disk_description_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>				
+				<li>
+					<label for="user_name">Disk size (in GB):</label>
+					<input class="text" type="text" name="add_disk_disksize" id="add_disk_disksize"/>
+					<div id="add_disk_disksize_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>				
+				<li id="add_disk_tags_container">
+                    <label for="add_disk_tags">
+                        Tags:</label>
+                    <input class="text" type="text" id="add_disk_tags" />
+                    <div id="add_disk_tags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                    </div>
+                </li>	
+			</ol>
+		</form>
+	</div>
+</div>
+

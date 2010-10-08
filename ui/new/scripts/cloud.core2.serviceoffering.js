@@ -31,6 +31,7 @@ function afterLoadServiceOfferingJSP() {
 				isValid &= validateString("Tags", thisDialog.find("#add_service_tags"), thisDialog.find("#add_service_tags_errormsg"), true);	//optional							
 				if (!isValid) 
 				    return;										
+				thisDialog.dialog("close");
 									
 				var $midmenuItem1 = beforeAddingMidMenuItem() ;			
 									
@@ -62,9 +63,8 @@ function afterLoadServiceOfferingJSP() {
 				
 				var tags = trim(thisDialog.find("#add_service_tags").val());
 				if(tags != null && tags.length > 0)
-				    array1.push("&tags="+todb(tags));		
+				    array1.push("&tags="+todb(tags));	
 				
-				thisDialog.dialog("close");
 				$.ajax({
 				  data: createURL("command=createServiceOffering"+array1.join("")+"&response=json"),
 					dataType: "json",
