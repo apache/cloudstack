@@ -3640,7 +3640,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             for (PIF pif : vlanNetworkr.PIFs) {
                 PIF.Record pifr = pif.getRecord(conn);
                 if (pifr.device.equals(nPifr.device) && pifr.host.equals(nPifr.host)) {
-                    pif.plug(conn);
                     return vlanNetwork;
                 }
             }
@@ -3655,11 +3654,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             s_logger.debug("VLAN is created for " + tag + ".  The uuid is " + vlanr.uuid);
         }
         
-        PIF untaggedPif = vlanr.untaggedPIF;
-        if (!untaggedPif.getCurrentlyAttached(conn)) {
-            untaggedPif.plug(conn);
-        }
-
         return vlanNetwork;
     }
     
