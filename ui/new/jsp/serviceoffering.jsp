@@ -6,7 +6,7 @@
     Locale browserLocale = request.getLocale();
     CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
 %>
-<!-- ISO detail panel (begin) -->
+
 <div class="main_title" id="right_panel_header">
     <!--  
     <div class="main_titleicon">
@@ -152,112 +152,67 @@
         </div>  
     </div>
 </div>
-<!-- ISO detail panel (end) -->
 
-<!-- Add ISO Dialog (begin) -->
-<div id="dialog_add_iso" title="Add ISO" style="display:none">		
+<!-- Add Service Offering Dialog -->
+<div id="dialog_add_service" title="Add Service Offering" style="display:none">
+	<p>Please fill in the following data to add a new Service Offering.</p>
 	<div class="dialog_formcontent">
-		<form action="#" method="post" id="form2">
+		<form action="#" method="post" id="form_acquire">
 			<ol>
 				<li>
-					<label><%=t.t("name")%>:</label>
-					<input class="text" type="text" name="add_iso_name" id="add_iso_name" style="width:250px"/>
-					<div id="add_iso_name_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+					<label for="user_name">Name:</label>
+					<input class="text" type="text" name="add_service_name" id="add_service_name"/>
+					<div id="add_service_name_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>
 				<li>
-					<label><%=t.t("display.text")%>:</label>
-					<input class="text" type="text" name="add_iso_display_text" id="add_iso_display_text" style="width:250px"/>
-					<div id="add_iso_display_text_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+					<label for="user_name">Display text:</label>
+					<input class="text" type="text" name="add_service_display" id="add_service_display"/>
+					<div id="add_service_display_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>
 				<li>
-					<label><%=t.t("URL")%>:</label>
-					<input class="text" type="text" name="add_iso_url" id="add_iso_url" style="width:250px"/>
-					<div id="add_iso_url_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
+					<label for="add_service_storagetype">Storage type:</label>
+					<select class="select" name="add_service_storagetype" id="add_service_storagetype">
+					    <option value="shared">shared</option>
+						<option value="local">local</option>						
+					</select>
+				</li>		
+				<li>
+					<label for="user_name"># of CPU cores:</label>
+					<input class="text" type="text" name="add_service_cpucore" id="add_service_cpucore"/>
+					<div id="add_service_cpucore_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li>
+					<label for="user_name">CPU (in MHz):</label>
+					<input class="text" type="text" name="add_service_cpu" id="add_service_cpu"/>
+					<div id="add_service_cpu_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
+				</li>
+				<li>
+					<label for="user_name">Memory (in MB):</label>
+					<input class="text" type="text" name="add_service_memory" id="add_service_memory"/>
+					<div id="add_service_memory_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>				
-				<li>
-                    <label><%=t.t("zone")%>:</label>
-                    <select class="select" id="add_iso_zone">
-                    </select>
-                </li>	
-				<li>
-					<label for="add_iso_public"><%=t.t("bootable")%>:</label>
-					<select class="select" name="add_iso_bootable" id="add_iso_bootable">
-						<option value="true">Yes</option>
+				<li id="add_service_offerha_container">
+					<label>Offer HA?</label>
+					<select class="select" id="add_service_offerha">						
 						<option value="false">No</option>
+						<option value="true">Yes</option>
 					</select>
-				</li>
+				</li>	
 				<li>
-					<label for="add_iso_os_type"><%=t.t("os.type")%>:</label>
-					<select class="select" name="add_iso_os_type" id="add_iso_os_type">
+					<label>Network Type</label>
+					<select class="select" id="add_service_networktype">						
+						<option value="direct">Direct</option>
+						<option value="public">Public</option>
 					</select>
-				</li>
+				</li>	
+				<li id="add_service_tags_container">
+                    <label for="add_service_tags">
+                        Tags:</label>
+                    <input class="text" type="text" id="add_service_tags" />
+                    <div id="add_service_tags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                    </div>
+                </li>						
 			</ol>
 		</form>
 	</div>
 </div>
-<!-- Add ISO Dialog (end) -->
-
-<!-- Copy ISO Dialog (begin) -->
-<div id="dialog_copy_iso" title="Copy ISO" style="display:none">	
-    <p>
-	    <%=t.t("copy.ISO.to")%>:	    
-	</p>
-	<div class="dialog_formcontent">
-		<form action="#" method="post" id="form4">
-			<ol>				
-				<li>
-                    <label><%=t.t("zone")%>:</label>
-                    <select class="select" id="copy_iso_zone">  
-                        <option value=""></option>                        
-                    </select>
-                </li>		
-				<div id="copy_iso_zone_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div> 
-			</ol>
-		</form>
-	</div>
-</div>
-<!--  Copy ISO Dialog (end) -->
-
-<!-- Create VM from ISO (begin) -->
-<div id="dialog_create_vm_from_iso" title="Create VM from ISO" style="display:none">	
-	<div class="dialog_formcontent">
-		<form action="#" method="post" id="form5">
-			<ol>			   
-				<li>
-					<label><%=t.t("name")%>:</label>
-					<input class="text" type="text" id="name"/>
-					<div id="name_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
-				</li>
-				<li>
-					<label><%=t.t("group")%>:</label>
-					<input class="text" type="text" id="group"/>
-					<div id="group_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
-				</li>				
-				<li>
-                    <label><%=t.t("service.offering")%>:</label>
-                    <select class="select" id="service_offering">
-                    </select>
-                </li>					
-				<li>
-                    <label><%=t.t("disk.offering")%>:</label>
-                    <select class="select" id="disk_offering">
-                    </select>
-                </li>					
-			</ol>
-		</form>
-	</div>
-</div>
-<!-- Create VM from template/ISO (end) -->
-
-<div id="dialog_confirmation_delete_iso_all_zones" title="Confirmation" style="display:none">
-    <p>
-        <%=t.t("the.ISO.is.used.by.all.zones.please.confirm.you.want.to.delete.it.from.all.zones")%>
-    </p>
-</div>
-
-<div id="dialog_confirmation_delete_iso" title="Confirmation" style="display:none">
-    <p>
-        <%=t.t("please.confirm.you.want.to.delete.the.ISO")%>
-    </p>
-</div>
-
