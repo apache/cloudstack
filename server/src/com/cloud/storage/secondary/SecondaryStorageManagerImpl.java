@@ -40,6 +40,7 @@ import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
@@ -1748,14 +1749,16 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	public boolean completeMigration(SecondaryStorageVmVO secStorageVm, HostVO host)
 			throws AgentUnavailableException, OperationTimedoutException {
 		CheckVirtualMachineCommand cvm = new CheckVirtualMachineCommand(secStorageVm.getInstanceName());
-		CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer) _agentMgr.send(host.getId(), cvm);
-		if (!answer.getResult()) {
+		NetworkRulesSystemVmCommand nrsvm = new NetworkRulesSystemVmCommand(secStorageVm.getInstanceName());
+		Answer [] answers =  _agentMgr.send(host.getId(), new Command[]{cvm, nrsvm}, true);
+		CheckVirtualMachineAnswer checkAnswer = (CheckVirtualMachineAnswer)answers[0];
+		if (!checkAnswer.getResult()) {
 			s_logger.debug("Unable to complete migration for " + secStorageVm.getId());
 			_secStorageVmDao.updateIf(secStorageVm, Event.AgentReportStopped, null);
 			return false;
 		}
 
-		State state = answer.getState();
+		State state = checkAnswer.getState();
 		if (state == State.Stopped) {
 			s_logger.warn("Unable to complete migration as we can not detect it on " + host.getId());
 			_secStorageVmDao.updateIf(secStorageVm, Event.AgentReportStopped, null);
@@ -1763,6 +1766,11 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		}
 
 		_secStorageVmDao.updateIf(secStorageVm, Event.OperationSucceeded, host.getId());
+		if (! answers[1].getResult()) {
+			s_logger.warn("Migration complete: Failed to program default network rules for system vm " + secStorageVm.getInstanceName());
+		} else {
+			s_logger.info("Migration complete: Programmed default network rules for system vm " + secStorageVm.getInstanceName());
+		}
 		return true;
 	}
 

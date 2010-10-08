@@ -40,6 +40,7 @@ import com.cloud.agent.api.CreateZoneVlanAnswer;
 import com.cloud.agent.api.CreateZoneVlanCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
+import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootRouterCommand;
@@ -2244,14 +2245,16 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     @Override
     public boolean completeMigration(final DomainRouterVO router, final HostVO host) throws OperationTimedoutException, AgentUnavailableException {
         final CheckVirtualMachineCommand cvm = new CheckVirtualMachineCommand(router.getInstanceName());
-        final CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer)_agentMgr.send(host.getId(), cvm);
-        if (answer == null || !answer.getResult()) {
+        final NetworkRulesSystemVmCommand nrsvm = new NetworkRulesSystemVmCommand(router.getInstanceName());
+		final Answer [] answers =  _agentMgr.send(host.getId(), new Command[]{cvm, nrsvm}, true);
+		final CheckVirtualMachineAnswer checkAnswer = (CheckVirtualMachineAnswer)answers[0];
+        if (checkAnswer == null || !checkAnswer.getResult()) {
             s_logger.debug("Unable to complete migration for " + router.getId());
             _routerDao.updateIf(router, Event.AgentReportStopped, null);
             return false;
         }
 
-        final State state = answer.getState();
+        final State state = checkAnswer.getState();
         if (state == State.Stopped) {
             s_logger.warn("Unable to complete migration as we can not detect it on " + host.getId());
             _routerDao.updateIf(router, Event.AgentReportStopped, null);
@@ -2259,7 +2262,12 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         }
 
         _routerDao.updateIf(router, Event.OperationSucceeded, host.getId());
-
+        
+        if (! answers[1].getResult()) {
+			s_logger.warn("Migration complete: Failed to program default network rules for system vm " + router.getInstanceName());
+		} else {
+			s_logger.info("Migration complete: Programmed default network rules for system vm " + router.getInstanceName());
+		}
         return true;
     }
 

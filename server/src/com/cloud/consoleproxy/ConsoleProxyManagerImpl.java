@@ -50,6 +50,7 @@ import com.cloud.agent.api.ConsoleAccessAuthenticationAnswer;
 import com.cloud.agent.api.ConsoleAccessAuthenticationCommand;
 import com.cloud.agent.api.ConsoleProxyLoadReportCommand;
 import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.StartConsoleProxyAnswer;
@@ -2465,15 +2466,16 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager,
 
 		CheckVirtualMachineCommand cvm = new CheckVirtualMachineCommand(proxy
 				.getInstanceName());
-		CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer) _agentMgr
-				.send(host.getId(), cvm);
-		if (!answer.getResult()) {
+		NetworkRulesSystemVmCommand nrsvm = new NetworkRulesSystemVmCommand(proxy.getInstanceName());
+		Answer [] answers =  _agentMgr.send(host.getId(), new Command[]{cvm, nrsvm}, true);
+		CheckVirtualMachineAnswer checkAnswer = (CheckVirtualMachineAnswer)answers[0];
+		if (!checkAnswer.getResult()) {
 			s_logger.debug("Unable to complete migration for " + proxy.getId());
 			_consoleProxyDao.updateIf(proxy, Event.AgentReportStopped, null);
 			return false;
 		}
 
-		State state = answer.getState();
+		State state = checkAnswer.getState();
 		if (state == State.Stopped) {
 			s_logger.warn("Unable to complete migration as we can not detect it on " + host.getId());
 			_consoleProxyDao.updateIf(proxy, Event.AgentReportStopped, null);
@@ -2481,6 +2483,12 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager,
 		}
 
 		_consoleProxyDao.updateIf(proxy, Event.OperationSucceeded, host.getId());
+		
+		if (! answers[1].getResult()) {
+			s_logger.warn("Migration complete: Failed to program default network rules for system vm " + proxy.getInstanceName());
+		} else {
+			s_logger.info("Migration complete: Programmed default network rules for system vm " + proxy.getInstanceName());
+		}
 		return true;
 	}
 
