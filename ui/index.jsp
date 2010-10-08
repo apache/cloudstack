@@ -73,7 +73,7 @@ long milliseconds = new Date().getTime();
 				<form id="loginForm" name="loginForm" method="post" action="#">
 					<ol>
 						<li><label for="user_name">Username</label>
-							<input class="text" type="text" name="account_username" id="account_username" />
+							<input class="text" type="text" name="account_username" id="account_username" AUTOCOMPLETE="off"/>
 						</li>
 						<li><label for="password">Password</label>
 							<input class="text" type="password" name="account_password" id="account_password" AUTOCOMPLETE="off" />
