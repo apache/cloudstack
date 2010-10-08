@@ -213,16 +213,6 @@ public class SnapshotManagerImpl implements SnapshotManager {
             throws InvalidParameterValueException, ResourceAllocationException {
         boolean runSnap = isVolumeDirty(volume.getId(), policyId);
 
-        ImageFormat format = getImageFormat(volume.getId());
-        if (format != null) {
-            if (!(format == ImageFormat.VHD || format == ImageFormat.ISO)) {
-                // We only create snapshots for root disks created from
-                // templates or ISOs.
-                s_logger
-                        .error("Currently, a snapshot can be taken from a Root Disk only if it is created from a 1) template in VHD format or 2) from an ISO.");
-                runSnap = false;
-            }
-        }
         /*
          * // Check if the resource limit for snapshots has been exceeded
          * //UserVO user = _userDao.findById(userId); //AccountVO account =
