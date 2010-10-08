@@ -88,6 +88,7 @@ $(document).ready(function() {
     
     listMidMenuItems("leftmenu_service_offering", "listServiceOfferings", "listserviceofferingsresponse", "serviceoffering", "jsp/serviceoffering.jsp", afterLoadServiceOfferingJSP, serviceOfferingToMidmenu, serviceOfferingToRigntPanel); 
     listMidMenuItems("leftmenu_disk_offering", "listDiskOfferings", "listdiskofferingsresponse", "diskoffering", "jsp/diskoffering.jsp", afterLoadDiskOfferingJSP, diskOfferingToMidmenu, diskOfferingToRigntPanel); 
+    listMidMenuItems("leftmenu_global_setting", "listConfigurations", "listconfigurationsresponse", "configuration", "jsp/globalsetting.jsp", afterLoadGlobalSettingJSP, globalSettingToMidmenu, globalSettingToRigntPanel, globalSettingGetMidmenuId); 
         
     $("#leftmenu_instance_group_header").bind("click", function(event) {  
         showMiddleMenu();
