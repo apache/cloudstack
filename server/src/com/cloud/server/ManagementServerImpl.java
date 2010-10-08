@@ -2302,41 +2302,33 @@ public class ManagementServerImpl implements ManagementServer {
             }
 
             ArrayList<StoragePoolVO> a = new ArrayList<StoragePoolVO>(avoids.values());
-            if (_directAttachNetworkExternalIpAllocator) {
-            	try {
-            		created = _vmMgr.createDirectlyAttachedVMExternal(initial, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, networkGroupVOs, startEventId);
-            	} catch (ResourceAllocationException rae) {
-            		throw rae;
-            	}
-            } else {
-            	if (offering.getGuestIpType() == GuestIpType.Virtualized) {
-            		try {
-            			externalIp = _networkMgr.assignSourceNatIpAddress(account, dc, domain, offering);
-            		} catch (ResourceAllocationException rae) {
-            			throw rae;
-            		}
 
-            		if (externalIp == null) {
-            			throw new InternalErrorException("Unable to allocate a source nat ip address");
-            		}
-
-            		if (s_logger.isDebugEnabled()) {
-            			s_logger.debug("Source Nat acquired: " + externalIp);
-            		}
-
-            		try {
-            			created = _vmMgr.createVirtualMachine(initial, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, startEventId);
-            		} catch (ResourceAllocationException rae) {
-            			throw rae;
-            		} catch (InternalErrorException iee){
-            			throw iee;
-            		}
-            	} else {
-            		try {
-            			created = _vmMgr.createDirectlyAttachedVM(initial, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, networkGroupVOs, startEventId);
-            		} catch (ResourceAllocationException rae) {
-            			throw rae;
-            		}
+            try {
+	            if (_directAttachNetworkExternalIpAllocator) {
+	        		created = _vmMgr.createDirectlyAttachedVMExternal(initial, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, networkGroupVOs, startEventId);
+	            } else {
+	            	if (offering.getGuestIpType() == GuestIpType.Virtualized) {
+	        			externalIp = _networkMgr.assignSourceNatIpAddress(account, dc, domain, offering);
+	            		if (externalIp == null) {
+	            			throw new InternalErrorException("Unable to allocate a source nat ip address");
+	            		}
+	
+	            		if (s_logger.isDebugEnabled()) {
+	            			s_logger.debug("Source Nat acquired: " + externalIp);
+	            		}
+	
+	        			created = _vmMgr.createVirtualMachine(initial, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, startEventId);
+	            	} else {
+	        			created = _vmMgr.createDirectlyAttachedVM(initial, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, networkGroupVOs, startEventId);
+	            	}
+	            }
+            } catch(ResourceAllocationException rae) {
+            	throw rae;
+            } catch(InternalErrorException iee) {
+            	throw iee;
+            } finally {
+            	if(created == null) {
+                	_vmMgr.destroyVirtualMachine(userId, initial.getId());
             	}
             }
 
@@ -2354,52 +2346,35 @@ public class ManagementServerImpl implements ManagementServer {
             String storageUnavailableExceptionMsg = "";
             String concurrentOperationExceptionMsg = "";
             UserVm started = null;
-            if (isIso)
-            {
+            if (isIso) {
                 String isoPath = _storageMgr.getAbsoluteIsoPath(templateId, dataCenterId);
-                try
-                {
+                try {
 					started = _vmMgr.startVirtualMachine(userId, created.getId(), password, isoPath);
-				}
-                catch (ExecutionException e)
-                {
+				} catch (ExecutionException e) {
 					executionExceptionFlag = true;
 					executionExceptionMsg = e.getMessage();
-				}
-                catch (StorageUnavailableException e)
-                {
+				} catch (StorageUnavailableException e) {
 					storageUnavailableExceptionFlag = true;
 					storageUnavailableExceptionMsg = e.getMessage();
+				} catch (ConcurrentOperationException e) {
+					concurrentOperationExceptionFlag = true;
+					concurrentOperationExceptionMsg = e.getMessage();
 				}
-                catch (ConcurrentOperationException e)
-                {
+            } else {
+                try {
+					started = _vmMgr.startVirtualMachine(userId, created.getId(), password, null);
+				} catch (ExecutionException e) {
+					executionExceptionFlag = true;
+					executionExceptionMsg = e.getMessage();
+				} catch (StorageUnavailableException e) {
+					storageUnavailableExceptionFlag = true;
+					storageUnavailableExceptionMsg = e.getMessage();
+				} catch (ConcurrentOperationException e) {
 					concurrentOperationExceptionFlag = true;
 					concurrentOperationExceptionMsg = e.getMessage();
 				}
             }
-            else
-            {
-                try
-                {
-					started = _vmMgr.startVirtualMachine(userId, created.getId(), password, null);
-				}
-                catch (ExecutionException e)
-                {
-					executionExceptionFlag = true;
-					executionExceptionMsg = e.getMessage();
-				}
-                catch (StorageUnavailableException e)
-                {
-						storageUnavailableExceptionFlag = true;
-						storageUnavailableExceptionMsg = e.getMessage();
-				}
-                catch (ConcurrentOperationException e)
-                {
-						concurrentOperationExceptionFlag = true;
-						concurrentOperationExceptionMsg = e.getMessage();
-				}
-
-            }
+            
             if (started == null) {
                 List<Pair<VolumeVO, StoragePoolVO>> disks = new ArrayList<Pair<VolumeVO, StoragePoolVO>>();
                 // NOTE: We now destroy a VM if the deploy process fails at any step. We now
@@ -2427,13 +2402,11 @@ public class ManagementServerImpl implements ManagementServer {
                     throw new ExecutionException(executionExceptionMsg);
                 } else if (storageUnavailableExceptionFlag){
                 	throw new StorageUnavailableException(storageUnavailableExceptionMsg);
-                }else if (concurrentOperationExceptionFlag){
+                } else if (concurrentOperationExceptionFlag){
                 	throw new ConcurrentOperationException(concurrentOperationExceptionMsg);
-                }
-                else{
+                } else {
                     throw new InternalErrorException("Unable to start the VM " + created.getId() + "-" + created.getName());
                 }
-                
             } else {
                 if (isIso) {
                     VMInstanceVO updatedInstance = _vmInstanceDao.createForUpdate();
