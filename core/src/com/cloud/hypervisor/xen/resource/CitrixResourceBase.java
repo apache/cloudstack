@@ -3334,7 +3334,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     PIF.Record pifr = pif.getRecord(conn);
                     if(pifr.host.equals(nPifr.host)) {
                         if (pifr.device.equals(nPifr.device) ) {
-                            pif.plug(conn);
                             return vlanNetwork;
                         } else {
                             throw new CloudRuntimeException("Creating VLAN " + tag + " on " + nPifr.device + " failed due to this VLAN is already created on " + pifr.device);                	
@@ -3348,10 +3347,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 s_logger.debug("Creating VLAN " + tag + " on host " + _host.ip);
             }
             VLAN vlan = VLAN.create(conn, nPif, tag, vlanNetwork);
-            PIF untaggedPif = vlan.getUntaggedPIF(conn);
-            if (!untaggedPif.getCurrentlyAttached(conn)) {
-                untaggedPif.plug(conn);
-            }
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Created VLAN " + tag + " on host " + _host.ip);
             }
