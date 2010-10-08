@@ -87,6 +87,7 @@ $(document).ready(function() {
     listMidMenuItems("leftmenu_submenu_community_iso", "listIsos&isofilter=community", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRigntPanel, isoGetMidmenuId);
     
     listMidMenuItems("leftmenu_service_offering", "listServiceOfferings", "listserviceofferingsresponse", "serviceoffering", "jsp/serviceoffering.jsp", afterLoadServiceOfferingJSP, serviceOfferingToMidmenu, serviceOfferingToRigntPanel); 
+    listMidMenuItems("leftmenu_disk_offering", "listDiskOfferings", "listdiskofferingsresponse", "diskoffering", "jsp/diskoffering.jsp", afterLoadDiskOfferingJSP, diskOfferingToMidmenu, diskOfferingToRigntPanel); 
         
     $("#leftmenu_instance_group_header").bind("click", function(event) {  
         showMiddleMenu();
