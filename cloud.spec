@@ -1,4 +1,4 @@
-define __os_install_post %{nil}
+%define __os_install_post %{nil}
 %global debug_package %{nil}
 
 # DISABLE the post-percentinstall java repacking and line number stripping
