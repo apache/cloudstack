@@ -53,7 +53,7 @@
                     </div>
                 </div>
             </div>
-            <div class="grid_rows odd">
+            <div class="grid_rows even">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
                         <%=t.t("Zone")%>:</div>
@@ -75,7 +75,7 @@
                     <div id="name_edit_errormsg" style="display:none"></div>
                 </div>
             </div>
-            <div class="grid_rows odd">
+            <div class="grid_rows even">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
                         <%=t.t("Display.Text")%>:</div>
@@ -97,6 +97,16 @@
                     </div>
                 </div>
             </div>
+            <div class="grid_rows even">
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles">
+                        <%=t.t("Size")%>:</div>
+                </div>
+                <div class="grid_row_cell" style="width: 79%;">
+                    <div class="row_celltitles" id="size">
+                    </div>
+                </div>
+            </div>        
             <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
@@ -104,6 +114,16 @@
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="bootable">                      
+                    </div>
+                </div>
+            </div>
+            <div class="grid_rows even">
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles">
+                        <%=t.t("crossZones")%>:</div>
+                </div>
+                <div class="grid_row_cell" style="width: 79%;">
+                    <div class="row_celltitles" id="crossZones">
                     </div>
                 </div>
             </div>
@@ -117,7 +137,7 @@
                     </div>
                 </div>
             </div>
-            <div class="grid_rows odd">
+            <div class="grid_rows even">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
                         <%=t.t("Created")%>:</div>
@@ -126,27 +146,7 @@
                     <div class="row_celltitles" id="created">
                     </div>
                 </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Size")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="size">
-                    </div>
-                </div>
-            </div> 
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("crossZones")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="crossZones">
-                    </div>
-                </div>
-            </div>
+            </div>                 
         </div>        
         <div class="grid_botactionpanel">
         	<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>

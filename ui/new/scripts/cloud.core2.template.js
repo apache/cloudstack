@@ -306,6 +306,10 @@ function setIconByOsType(osType, $field) {
 }
 
 function templateClearRightPanel() {       
+    templateClearDetailsTab();
+}
+
+function templateClearDetailsTab() {
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     $detailsTab.data("jsonObj", null);
     $detailsTab.find("#id").text("");

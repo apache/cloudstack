@@ -66,26 +66,8 @@ function afterLoadIsoJSP() {
     //edit button ***
     var $readonlyFields  = $detailsTab.find("#name, #displaytext");
     var $editFields = $detailsTab.find("#name_edit, #displaytext_edit"); 
-    $("#edit_button").bind("click", function(event){    
-        $readonlyFields.hide();
-        $editFields.show();  
-        $("#cancel_button, #save_button").show()
-        return false;
-    });    
-    $("#cancel_button").bind("click", function(event){    
-        $editFields.hide();
-        $readonlyFields.show();   
-        $("#save_button, #cancel_button").hide();       
-        return false;
-    });
-    $("#save_button").bind("click", function(event){        
-        doUpdateIso();     
-        $editFields.hide();      
-        $readonlyFields.show();       
-        $("#save_button, #cancel_button").hide();       
-        return false;
-    });
-    
+    initializeEditFunction($readonlyFields, $editFields, doUpdateIso); 
+       
     //populate dropdown ***
     var addIsoZoneField = $("#dialog_add_iso #add_iso_zone");    	
 	if (isAdmin())  
@@ -248,6 +230,10 @@ function isoJsonToDetailsTab(jsonObj) {
 }
 
 function isoClearRightPanel() {
+    isoClearDetailsTab(); 
+}
+
+function isoClearDetailsTab() {
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     
     $detailsTab.find("#id").text("");
@@ -263,6 +249,7 @@ function isoClearRightPanel() {
     $detailsTab.find("#size").text("");  
 	$detailsTab.find("#status").text(""); 
 	$detailsTab.find("#bootable").text("");
+	$detailsTab.find("#crossZones").text("");
     $detailsTab.find("#created").text("");   
 }
 
