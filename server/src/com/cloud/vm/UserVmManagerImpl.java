@@ -1188,11 +1188,10 @@ public class UserVmManagerImpl implements UserVmManager {
     }
 
     @Override @DB
-    public UserVmVO createVirtualMachine(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> avoids, long startEventId) throws InternalErrorException, ResourceAllocationException {
+    public UserVmVO createVirtualMachine(UserVmVO vm, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> avoids, long startEventId) throws InternalErrorException, ResourceAllocationException {
         long accountId = account.getId();
         long dataCenterId = dc.getId();
         long serviceOfferingId = offering.getId();
-        UserVmVO vm = null;
         
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating vm for account id=" + account.getId() +
@@ -1238,7 +1237,8 @@ public class UserVmManagerImpl implements UserVmManager {
         _accountMgr.incrementResourceCount(account.getId(), ResourceType.user_vm);
         _accountMgr.incrementResourceCount(account.getId(), ResourceType.volume, numVolumes);
         txn.commit();
-        
+
+    	Long vmId = vm.getId();
         name = VirtualMachineName.getVmName(vmId, accountId, _instance);
 
         String diskOfferingIdentifier = (diskOffering != null) ? String.valueOf(diskOffering.getId()) : "-1";
@@ -1257,25 +1257,12 @@ public class UserVmManagerImpl implements UserVmManager {
             Set<Long> podsToAvoid = new HashSet<Long>();
 
             while ((pod = _agentMgr.findPod(template, offering, dc, account.getId(), podsToAvoid)) != null) {
-                if (vm == null) {
-                    vm = new UserVmVO(vmId, name, template.getId(), guestOSId, accountId, account.getDomainId().longValue(),
-                    		serviceOfferingId, null, null, router.getGuestNetmask(),
-                    		null,null,null,
-                    		routerId, pod.first().getId(), dataCenterId,
-                    		offering.getOfferHA(), displayName, group, userData);
-                    
-                    if (diskOffering != null) {
-                    	vm.setMirroredVols(diskOffering.isMirrored());
-                    }
-
-                    vm.setLastHostId(pod.second());
-                    
-                    vm = _vmDao.persist(vm);
-                } else {
-                    vm.setPodId(pod.first().getId());
-                    _vmDao.updateIf(vm, Event.OperationRetry, null);
-                }
-                
+            	vm.setDomainRouterId(routerId);
+            	vm.setGuestNetmask(router.getGuestNetmask());
+            	vm.setPodId(pod.first().getId());
+            	vm.setLastHostId(pod.second());
+                _vmDao.update(vm.getId(), vm);
+            	
                 String ipAddressStr = acquireGuestIpAddress(dataCenterId, accountId, vm);
                 if (ipAddressStr == null) {
                 	s_logger.warn("Failed user vm creation : no guest ip address available");
@@ -2347,8 +2334,7 @@ public class UserVmManagerImpl implements UserVmManager {
     
     @DB
     @Override
-	public UserVmVO createDirectlyAttachedVM(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> a, List<NetworkGroupVO>  networkGroups, long startEventId) throws InternalErrorException, ResourceAllocationException {
-    	
+	public UserVmVO createDirectlyAttachedVM(UserVmVO vm, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> a, List<NetworkGroupVO>  networkGroups, long startEventId) throws InternalErrorException, ResourceAllocationException {
     	long accountId = account.getId();
 	    long dataCenterId = dc.getId();
 	    long serviceOfferingId = offering.getId();
@@ -2392,8 +2378,9 @@ public class UserVmManagerImpl implements UserVmManager {
         txn.commit();
         
 	    try {
-	        UserVmVO vm = null;
 	    	boolean forZone = false;
+	    	
+	    	Long vmId = vm.getId();
 	    	final String name = VirtualMachineName.getVmName(vmId, accountId, _instance);
 	
 	        final String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(dc.getId());
@@ -2524,7 +2511,8 @@ public class UserVmManagerImpl implements UserVmManager {
                 String guestMacAddress = macAddresses[0];
                 String externalMacAddress = macAddresses[1];
                 Long externalVlanDbId = null;
-            
+
+/*                
 	            vm = new UserVmVO(vmId, name, templateId, guestOSId, accountId, account.getDomainId().longValue(),
 	            		serviceOfferingId, guestMacAddress, guestIp, guestVlan.getVlanNetmask(),
 	            		null, externalMacAddress, externalVlanDbId,
@@ -2537,6 +2525,17 @@ public class UserVmManagerImpl implements UserVmManager {
 	
 	            vm.setLastHostId(pod.second());
 	            vm = _vmDao.persist(vm);
+*/
+                vm.setDomainRouterId(routerId);
+                vm.setGuestNetmask(guestVlan.getVlanNetmask());
+                vm.setGuestIpAddress(guestIp);
+                vm.setGuestMacAddress(guestMacAddress);
+                vm.setPodId(pod.first().getId());
+                vm.setLastHostId(pod.second());
+                vm.setExternalMacAddress(externalMacAddress);
+                vm.setExternalVlanDbId(externalVlanDbId);
+                _vmDao.update(vm.getId(), vm);
+	            
 	            boolean addedToGroups = _networkGroupManager.addInstanceToGroups(vmId, networkGroups);
 	            if (!addedToGroups) {
 	            	s_logger.warn("Not all specified network groups can be found");
@@ -2626,7 +2625,7 @@ public class UserVmManagerImpl implements UserVmManager {
     
     @DB
     @Override
-	public UserVmVO createDirectlyAttachedVMExternal(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> a, List<NetworkGroupVO>  networkGroups, long startEventId) throws InternalErrorException, ResourceAllocationException {
+	public UserVmVO createDirectlyAttachedVMExternal(UserVmVO vm, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String group, String userData, List<StoragePoolVO> a, List<NetworkGroupVO>  networkGroups, long startEventId) throws InternalErrorException, ResourceAllocationException {
 	    long accountId = account.getId();
 	    long dataCenterId = dc.getId();
 	    long serviceOfferingId = offering.getId();
@@ -2654,7 +2653,8 @@ public class UserVmManagerImpl implements UserVmManager {
         
 	    Transaction txn = Transaction.currentTxn();
 	    try {
-	        UserVmVO vm = null;
+	    	Long vmId = vm.getId();
+	        
 	        txn.start();
 	        
 	    	account = _accountDao.lock(accountId, true);
@@ -2693,6 +2693,8 @@ public class UserVmManagerImpl implements UserVmManager {
                 	publicIpAddr = publicIp.ipaddr;
                 	publicIpNetMask = publicIp.netMask;
                 }
+                
+                /*
 	            vm = new UserVmVO(vmId, name, templateId, guestOSId, accountId, account.getDomainId().longValue(),
 	            		serviceOfferingId, guestMacAddress, publicIpAddr, publicIpNetMask,
 	            		null, externalMacAddress, null,
@@ -2705,6 +2707,18 @@ public class UserVmManagerImpl implements UserVmManager {
 	
 	            vm.setLastHostId(pod.second());
 	            _vmDao.persist(vm);
+	            */
+                
+                vm.setDomainRouterId(routerId);
+                vm.setGuestMacAddress(guestMacAddress);
+                vm.setGuestIpAddress(publicIpAddr);
+                vm.setGuestNetmask(publicIpNetMask);
+                vm.setExternalMacAddress(externalMacAddress);
+                vm.setPodId(pod.first().getId());
+                vm.setLastHostId(pod.second());
+                
+                _vmDao.update(vm.getId(), vm);
+	            
 	            _networkGroupManager.addInstanceToGroups(vmId, networkGroups);
 	            
 	            _accountMgr.incrementResourceCount(account.getId(), ResourceType.user_vm);

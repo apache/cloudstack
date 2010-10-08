@@ -99,8 +99,8 @@ public class VMInstanceVO implements VirtualMachine {
     @Column(name="last_host_id", updatable=true, nullable=true)
     private Long lastHostId;
 
-    @Column(name="pod_id", updatable=true, nullable=false)
-    private long podId;
+    @Column(name="pod_id", updatable=true, nullable=true)
+    private Long podId;
 
     @Column(name="private_mac_address", updatable=true, nullable=true)
     String privateMacAddress;
@@ -143,7 +143,7 @@ public class VMInstanceVO implements VirtualMachine {
                         String privateIpAddress,
                         String privateNetmask,
                         long dataCenterId,
-                        long podId,
+                        Long podId,
                         boolean haEnabled,
                         Long hostId,
                         String displayName,
@@ -162,7 +162,7 @@ public class VMInstanceVO implements VirtualMachine {
                         String privateIpAddress,
                         String privateNetmask,
                         long dataCenterId,
-                        long podId,
+                        Long podId,
                         boolean haEnabled,
                         Long hostId,
                         String displayName,
@@ -363,7 +363,7 @@ public class VMInstanceVO implements VirtualMachine {
     }
 
     @Override
-    public long getPodId() {
+    public Long getPodId() {
         return podId;
     }
     

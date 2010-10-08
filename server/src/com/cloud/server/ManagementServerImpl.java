@@ -264,6 +264,7 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -356,6 +357,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final int _routerRamSize;
     private final int _proxyRamSize;
     private final int _ssRamSize;
+    private String _instance;
 
     private final int _maxVolumeSizeInGb;
     private final Map<String, Boolean> _availableIdsMap;
@@ -492,6 +494,11 @@ public class ManagementServerImpl implements ManagementServer {
  		
 		String hypervisorType = _configDao.getValue("hypervisor.type");
         _isHypervisorSnapshotCapable  = hypervisorType.equals(Hypervisor.Type.XenServer.name());
+        
+        _instance = _configs.get("instance.name");
+        if (_instance == null) {
+            _instance = "DEFAULT";
+        }
     }
 
     protected Map<String, String> getConfigs() {
@@ -2237,6 +2244,14 @@ public class ManagementServerImpl implements ManagementServer {
         if (password == null || password.equals("") || (!validPassword(password))) {
             throw new InvalidParameterValueException("A valid password for this virtual machine was not provided.");
         }
+        
+        long guestOSId;
+        if (template != null) {
+        	guestOSId = template.getGuestOSId();
+        } else {
+        	throw new InternalErrorException("No template or ISO was specified for the VM.");
+        }
+        
         List<NetworkGroupVO> networkGroupVOs = new ArrayList<NetworkGroupVO>();
         if (networkGroups != null) {
         	for (String groupName: networkGroups) {
@@ -2253,32 +2268,43 @@ public class ManagementServerImpl implements ManagementServer {
             stats = new UserStatisticsVO(account.getId(), dataCenterId);
             _userStatsDao.persist(stats);
         }
-        
-    	Long vmId = _vmDao.getNextInSequence(Long.class, "id");
-    	
-        // check if we are within context of async-execution
-        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-        if (asyncExecutor != null) {
-            AsyncJobVO job = asyncExecutor.getJob();
-
-            if (s_logger.isInfoEnabled())
-                s_logger.info("DeployVM acquired a new instance " + vmId + ", update async job-" + job.getId() + " progress status");
-
-            _asyncMgr.updateAsyncJobAttachment(job.getId(), "vm_instance", vmId);
-            _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, vmId);
-        }
 
         HashMap<Long, StoragePoolVO> avoids = new HashMap<Long, StoragePoolVO>();
 
-        // Pod allocator now allocate VM based on a reservation style allocation, disable retry here for now
+        // Pod allocator now allocate VM based on a reservation style allocation, disable retry here
         for (int retry = 0; retry < 1; retry++) {
             String externalIp = null;
             UserVmVO created = null;
+            
+        	Long vmId = _vmDao.getNextInSequence(Long.class, "id");
+            String name = VirtualMachineName.getVmName(vmId, accountId, _instance);
+        	
+            // router id and router mask 
+            UserVmVO initial = new UserVmVO(vmId, name, template.getId(), guestOSId, accountId, account.getDomainId().longValue(),
+            		serviceOfferingId, null, null, null,
+            		null,null,null,
+            		null, null, dataCenterId,
+            		offering.getOfferHA(), displayName, group, userData);
+            if (diskOffering != null) {
+            	initial.setMirroredVols(diskOffering.isMirrored());
+            }
+            initial = _vmDao.persist(initial);
+            
+            AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
+            if (asyncExecutor != null) {
+                AsyncJobVO job = asyncExecutor.getJob();
+
+                if (s_logger.isInfoEnabled())
+                    s_logger.info("DeployVM acquired a new instance " + vmId + ", update async job-" + job.getId() + " progress status");
+
+                _asyncMgr.updateAsyncJobAttachment(job.getId(), "vm_instance", vmId);
+                _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, vmId);
+            }
 
             ArrayList<StoragePoolVO> a = new ArrayList<StoragePoolVO>(avoids.values());
             if (_directAttachNetworkExternalIpAllocator) {
             	try {
-            		created = _vmMgr.createDirectlyAttachedVMExternal(vmId, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, networkGroupVOs, startEventId);
+            		created = _vmMgr.createDirectlyAttachedVMExternal(initial, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, networkGroupVOs, startEventId);
             	} catch (ResourceAllocationException rae) {
             		throw rae;
             	}
@@ -2299,7 +2325,7 @@ public class ManagementServerImpl implements ManagementServer {
             		}
 
             		try {
-            			created = _vmMgr.createVirtualMachine(vmId, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, startEventId);
+            			created = _vmMgr.createVirtualMachine(initial, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, startEventId);
             		} catch (ResourceAllocationException rae) {
             			throw rae;
             		} catch (InternalErrorException iee){
@@ -2307,7 +2333,7 @@ public class ManagementServerImpl implements ManagementServer {
             		}
             	} else {
             		try {
-            			created = _vmMgr.createDirectlyAttachedVM(vmId, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, networkGroupVOs, startEventId);
+            			created = _vmMgr.createDirectlyAttachedVM(initial, userId, account, dc, offering, template, diskOffering, displayName, group, userData, a, networkGroupVOs, startEventId);
             		} catch (ResourceAllocationException rae) {
             			throw rae;
             		}
@@ -2375,10 +2401,16 @@ public class ManagementServerImpl implements ManagementServer {
 
             }
             if (started == null) {
-                List<Pair<VolumeVO, StoragePoolVO>> disks = _storageMgr.isStoredOn(created);
+                List<Pair<VolumeVO, StoragePoolVO>> disks = new ArrayList<Pair<VolumeVO, StoragePoolVO>>();
                 // NOTE: We now destroy a VM if the deploy process fails at any step. We now
                 // have a lazy delete so there is still some time to figure out what's wrong.
-                _vmMgr.destroyVirtualMachine(userId, created.getId());
+                if(created != null) {
+                	disks = _storageMgr.isStoredOn(created);
+                	_vmMgr.destroyVirtualMachine(userId, created.getId());
+                } else {
+                	if(initial != null)
+                		_vmMgr.destroyVirtualMachine(userId, initial.getId());
+                }
 
                 boolean retryCreate = true;
                 for (Pair<VolumeVO, StoragePoolVO> disk : disks) {
