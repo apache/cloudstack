@@ -90,7 +90,7 @@ CREATE TABLE `cloud`.`netapp_storage_pool` (
   `username` varchar(255) NOT NULL COMMENT 'username',  
   `password` varchar(200) COMMENT 'password',
   `round_robin_marker` int COMMENT 'This marks the volume to be picked up for lun creation, RR fashion',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`ip_address`,`aggregate_name`,`volume_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 */
 
