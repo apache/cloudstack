@@ -242,7 +242,7 @@ function ipJsonToDetailsTab(ipObj) {
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
     
-    if(isIpManageable(ipObj.domainid, ipObj.account) == true) {     
+    if(isIpManageable(ipObj.domainid, ipObj.account) == true && ipObj.issourcenat != "true") {     
         buildActionLinkForDetailsTab("Release IP", ipActionMap, $actionMenu, null);		
         noAvailableActions = false;
     }
