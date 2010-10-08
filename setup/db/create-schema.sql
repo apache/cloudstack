@@ -86,7 +86,7 @@ CREATE TABLE `cloud`.`netapp_storage_pool` (
   `volume_name` varchar(255) NOT NULL COMMENT 'name for the volume',
   `volume_size` varchar(255) NOT NULL COMMENT 'volume size',
   `snapshot_policy` varchar(255) NOT NULL COMMENT 'snapshot policy',
-  `snapshot_reservation` varchar(255) NOT NULL COMMENT 'snapshot reservation',  
+  `snapshot_reservation` int NOT NULL COMMENT 'snapshot reservation',  
   `username` varchar(255) NOT NULL COMMENT 'username',  
   `password` varchar(200) COMMENT 'password',
   `round_robin_marker` int COMMENT 'This marks the volume to be picked up for lun creation, RR fashion',

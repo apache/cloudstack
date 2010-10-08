@@ -293,7 +293,7 @@ public abstract class BaseCmd {
         SUCCESS("success", BaseCmd.TYPE_BOOLEAN, "success"),
         SNAPSHOT_ID("snapshotid", BaseCmd.TYPE_LONG, "snapshotid"),
         SNAPSHOT_POLICY("snapshotpolicy", BaseCmd.TYPE_STRING, "snapshotPolicy"),
-        SNAPSHOT_RESERVATION("snapshotreservation", BaseCmd.TYPE_STRING, "snapshotReservation"),
+        SNAPSHOT_RESERVATION("snapshotreservation", BaseCmd.TYPE_INT, "snapshotReservation"),
         SNAPSHOT_POLICY_ID("snapshotpolicyid", BaseCmd.TYPE_LONG, "snapshotPolicyId"),
         SNAPSHOT_TYPE("snapshottype", BaseCmd.TYPE_STRING, "snapshotType"),
         SNAPSHOT_STRING("snapshotstring", BaseCmd.TYPE_STRING, "snapshotString"),
