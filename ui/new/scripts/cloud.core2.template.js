@@ -237,8 +237,13 @@ function templateJsonToDetailsTab(jsonObj) {
     
     var status = "Ready";
 	if (jsonObj.isready == "false") 
-		status = jsonObj.templatestatus;	
+		status = fromdb(jsonObj.templatestatus);	
 	$detailsTab.find("#status").text(status);    
+    
+    if(jsonObj.size != null)
+	    $detailsTab.find("#size").text(convertBytes(parseInt(jsonObj.size))); 
+	else
+	    $detailsTab.find("#size").text(""); 
     
     setBooleanField(jsonObj.passwordenabled, $detailsTab.find("#passwordenabled"));	
     $detailsTab.find("#passwordenabled_edit").val(jsonObj.passwordenabled);
@@ -254,10 +259,7 @@ function templateJsonToDetailsTab(jsonObj) {
     $detailsTab.find("#ostypename").text(fromdb(jsonObj.ostypename));
     $detailsTab.find("#ostypename_edit").val(jsonObj.ostypeid);    
     
-    $detailsTab.find("#account").text(fromdb(jsonObj.account));
-    
-    if(jsonObj.size != null)
-	    $detailsTab.find("#size").text(convertBytes(parseInt(jsonObj.size)));        
+    $detailsTab.find("#account").text(fromdb(jsonObj.account));   
     
     setDateField(jsonObj.created, $detailsTab.find("#created"));	
     

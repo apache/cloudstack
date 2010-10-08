@@ -178,14 +178,16 @@ function isoJsonToDetailsTab(jsonObj) {
     $detailsTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
     
     $detailsTab.find("#account").text(fromdb(jsonObj.account));
-    
-    if(jsonObj.size != null)
-	    $detailsTab.find("#size").text(convertBytes(parseInt(jsonObj.size)));       
-              
+                      
     var status = "Ready";
 	if (jsonObj.isready == "false")
-		status = jsonObj.isostatus;	
+		status = fromdb(jsonObj.isostatus);	
 	$detailsTab.find("#status").text(status); 
+	
+	if(jsonObj.size != null)
+	    $detailsTab.find("#size").text(convertBytes(parseInt(jsonObj.size)));  
+	else
+	    $detailsTab.find("#size").text("");    
               
     setBooleanField(jsonObj.bootable, $detailsTab.find("#bootable"));	
     setBooleanField(jsonObj.crossZones, $detailsTab.find("#crossZones"));	     
