@@ -2017,7 +2017,7 @@ public class UserVmManagerImpl implements UserVmManager {
             txn.start();
             _vmDao.updateIf(vm, Event.OperationSucceeded, host.getId());
             txn.commit();
-            
+            _networkGroupManager.handleVmStateTransition(vm, State.Running);
             return true;
         } catch(Exception e) {
             s_logger.warn("Exception during completion of migration process " + vm.toString());

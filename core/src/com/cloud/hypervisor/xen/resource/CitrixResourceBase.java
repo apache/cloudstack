@@ -96,6 +96,7 @@ import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkIngressRuleAnswer;
 import com.cloud.agent.api.NetworkIngressRulesCmd;
+import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
@@ -648,6 +649,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             return execute((ModifySshKeysCommand) cmd);
         } else if (cmd instanceof NetworkIngressRulesCmd) {
             return execute((NetworkIngressRulesCmd) cmd);
+        } else if (cmd instanceof NetworkRulesSystemVmCommand) {
+            return execute((NetworkRulesSystemVmCommand) cmd);
         } else if (cmd instanceof PoolEjectCommand) {
             return execute((PoolEjectCommand) cmd);
         } else {
@@ -6050,6 +6053,23 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ", numrules=" + cmd.getRuleSet().length);
             return new NetworkIngressRuleAnswer(cmd);
         }
+    }
+    
+    private Answer execute(NetworkRulesSystemVmCommand cmd) {
+    	boolean success = false;
+    	if (_canBridgeFirewall) {
+            String result = callHostPlugin("default_network_rules_systemvm", "vmName", cmd.getVmName());
+            if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+                s_logger.warn("Failed to program default system vm network rules for " + cmd.getVmName());
+                success = false;
+            } else {
+                s_logger.info("Programmed default system vm network rules for " + cmd.getVmName());
+                success = true;
+            }
+        } else {
+        	s_logger.warn("Cannot program ingress rules for system vm -- bridge firewalling not supported on host");
+        }
+    	return new Answer(cmd, success, "");
     }
     
     private Answer execute(PoolEjectCommand cmd) {
