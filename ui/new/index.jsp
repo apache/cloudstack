@@ -69,6 +69,8 @@ long milliseconds = new Date().getTime();
   
     <script type="text/javascript" src="scripts/cloud.core2.resource.js?t=<%=milliseconds%>"></script>
     
+    <script type="text/javascript" src="scripts/cloud.core2.serviceoffering.js?t=<%=milliseconds%>"></script>
+    
     <title>Cloud.com CloudStack</title>
 </head>
 <body>
