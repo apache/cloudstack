@@ -845,12 +845,12 @@ def manageAvailability(path, value):
         util.pread2(cmd)
     except: #CommandException, (rc, cmdListStr, stderr):
         #errMsg = "CommandException thrown while executing: " + cmdListStr + " with return code: " + str(rc) + " and stderr: " + stderr
-        errMsg = "Unexpected exception thrown by lvchange"
-        util.SMlog(errMsg)
         if value == "-ay":
             # Raise an error only if we are trying to make it available.
             # Just warn if we are trying to make it unavailable after the 
             # snapshot operation is done.
+            errMsg = "Unexpected exception thrown by lvchange"
+            util.SMlog(errMsg)
             raise xs_errors.XenError(errMsg)
     return
 
