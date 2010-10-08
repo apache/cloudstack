@@ -1,4 +1,4 @@
-%define __os_install_post %{nil}
+define __os_install_post %{nil}
 %global debug_package %{nil}
 
 # DISABLE the post-percentinstall java repacking and line number stripping
@@ -562,6 +562,7 @@ fi
 %{_datadir}/%{name}/setup/index-212to213.sql
 %{_datadir}/%{name}/setup/postprocess-20to21.sql
 %{_datadir}/%{name}/setup/schema-20to21.sql
+%{_datadir}/%{name}/setup/schema-213to214.sql
 %{_datadir}/%{name}/setup/schema-level.sql
 %doc README
 %doc HACKING
