@@ -62,7 +62,9 @@
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="value">
-                    </div>
+                    </div>                    
+                    <input class="text" id="value_edit" style="width: 200px; display: none;" type="text" />
+                    <div id="value_edit_errormsg" style="display:none"></div>                    
                 </div>
             </div>
             <div class="grid_rows odd">
@@ -81,4 +83,10 @@
             <div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
         </div>  
     </div>
+</div>
+
+<div id="dialog_alert_restart_management_server" title="Alert" style="display:none">
+    <p>
+        <%=t.t("please.restart.your.management.server.for.your.new.settings.to.take.effect")%>        
+    </p>
 </div>

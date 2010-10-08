@@ -1,5 +1,41 @@
 function afterLoadGlobalSettingJSP() {
+    var $detailsTab = $("#right_panel_content #tab_content_details"); 
 
+    //edit button ***
+    var $readonlyFields  = $detailsTab.find("#value");
+    var $editFields = $detailsTab.find("#value_edit"); 
+    initializeEditFunction($readonlyFields, $editFields, doUpdateGlobalSetting);   
+    
+    //initialize dialogs
+    initDialogWithOK("dialog_alert_restart_management_server");   
+}
+
+function doUpdateGlobalSetting() {
+    // validate values
+    var $detailsTab = $("#right_panel_content #tab_content_details");   
+    
+    var isValid = true;					
+    isValid &= validateString("Value", $detailsTab.find("#value_edit"), $detailsTab.find("#value_edit_errormsg"), true);					
+    if (!isValid) 
+        return;						
+	
+	var jsonObj = $detailsTab.data("jsonObj");		
+	var name = jsonObj.name;
+    var value = trim($detailsTab.find("#value_edit").val());
+
+    $.ajax({
+      data: createURL("command=updateConfiguration&name="+todb(name)+"&value="+todb(value)+"&response=json"),
+	    dataType: "json",
+	    success: function(json) {	        
+		    $detailsTab.find("#value").text(value);
+		    
+		    //no embedded object returned, so....		   
+		    jsonObj.value = value;
+		    		    
+		    globalSettingToMidmenu(jsonObj, $("#"+globalSettingGetMidmenuId(jsonObj)));		    
+		    $("#dialog_alert_restart_management_server").dialog("open");
+	    }
+    });		
 }
 
 function globalSettingGetMidmenuId(jsonObj) {
@@ -29,5 +65,6 @@ function globalSettingJsonToDetailsTab(jsonObj) {
     $detailsTab.data("jsonObj", jsonObj);          
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
     $detailsTab.find("#value").text(fromdb(jsonObj.value));
+    $detailsTab.find("#value_edit").val(fromdb(jsonObj.value));
     $detailsTab.find("#description").text(fromdb(jsonObj.description));   
 }

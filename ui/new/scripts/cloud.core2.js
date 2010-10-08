@@ -781,6 +781,26 @@ function initDialog(elementId, width1) {
     }
 } 
 
+function initDialogWithOK(elementId, width1) {
+	if(width1 == null) {
+	    $("#"+elementId).dialog({    	            
+	        autoOpen: false,
+	        modal: true,
+	        zIndex: 2000,
+	        buttons: { "OK": function() { $(this).dialog("close"); } }
+        }); 
+    }
+    else {
+        $("#"+elementId).dialog({ 
+   	        width: width1,	
+	        autoOpen: false,
+	        modal: true,
+	        zIndex: 2000,
+	        buttons: { "OK": function() { $(this).dialog("close"); } }
+        }); 
+    }
+} 
+
 function disableMultipleSelectionInMidMenu() {
     $("#midmenu_container").selectable("destroy"); //Most pages don't need multiple selection in middle menu.
 }
