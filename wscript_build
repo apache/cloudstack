@@ -524,7 +524,7 @@ def minifyjs(task):
 	return Utils.exec_command(["java",'-jar',compilerjar] + newinputfiles + outputfile,log=True)
 
 javascripts = [
-	['ui/scripts/jquery-1.4.2.min.js','ui/scripts/date.js'],
+	['ui/scripts/jquery.min.js','ui/scripts/date.js'],
 	Utils.to_list(filelist('ui/scripts/jquery*js')),
 	['ui/scripts/cloud.core.js','ui/scripts/cloud.core.callbacks.js'],
 	Utils.to_list(filelist('ui/scripts/cloud*js')),
