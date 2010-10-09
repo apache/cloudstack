@@ -296,6 +296,14 @@ Group:     System Environment/Libraries
 The Cloud.com usage monitor provides usage accounting across the entire cloud for
 cloud operators to charge based on usage parameters.
 
+%package cloud-cli
+Summary:   Cloud.com command line tools
+Requires: python
+Group:     System Environment/Libraries
+%description cloud-cli
+The Cloud.com command line tools contain a few Python modules that can call cloudStack APIs.
+
+
 %endif
 
 %prep
@@ -539,7 +547,9 @@ fi
 
 %files python
 %defattr(0644,root,root,0755)
-%{_prefix}/lib*/python*/site-packages/%{name}*
+%{_prefix}/lib*/python*/site-packages/%{name}_PrettyPrint.*
+%{_prefix}/lib*/python*/site-packages/%{name}_sxp.*
+%{_prefix}/lib*/python*/site-packages/%{name}_utils.*
 %doc README
 %doc HACKING
 %doc debian/copyright
@@ -695,6 +705,18 @@ fi
 %{_sysconfdir}/%{name}/usage/usage-components.xml
 %config(noreplace) %{_sysconfdir}/%{name}/usage/log4j-%{name}_usage.xml
 %config(noreplace) %attr(640,root,%{name}) %{_sysconfdir}/%{name}/usage/db.properties
+%doc README
+%doc HACKING
+%doc debian/copyright
+
+%files cloud-cli
+%{_bindir}/%{name}-tool
+%{_bindir}/%{name}voladm
+%{_sysconfdir}/%{name}/cli/commands.xml
+%dir %{_prefix}/lib*/python*/site-packages/%{name}tool
+%dir %{_prefix}/lib*/python*/site-packages/%{name}apis
+%{_prefix}/lib*/python*/site-packages/%{name}tool/*
+%{_prefix}/lib*/python*/site-packages/%{name}apis/*
 %doc README
 %doc HACKING
 %doc debian/copyright

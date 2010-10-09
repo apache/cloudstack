@@ -151,6 +151,7 @@ else:
 		conf.check_message_2("%s (assumed presence of Tomcat there)"%conf.env.TOMCATHOME,"GREEN")
 
 conf.env.AGENTPATH = _join(conf.env.PACKAGE,"agent")
+conf.env.CLIPATH = _join(conf.env.PACKAGE,"cli")
 conf.env.CPPATH = _join(conf.env.PACKAGE,"console-proxy")
 conf.env.MSPATH = _join(conf.env.PACKAGE,"management")
 conf.env.USAGEPATH = _join(conf.env.PACKAGE,"usage")
@@ -255,6 +256,7 @@ conf.env.USAGESYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${USAGEPATH}"
 conf.env.CPLIBDIR = Utils.subst_vars(_join("${LIBDIR}","${CPPATH}"),conf.env)
 conf.env.CPSYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${CPPATH}"),conf.env)
 conf.env.CPLOGDIR = Utils.subst_vars(_join("${LOCALSTATEDIR}","log","${CPPATH}"),conf.env)
+conf.env.CLIDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${CLIPATH}"),conf.env)
 
 conf.env.MSLOG = _join(conf.env.MSLOGDIR,"management-server.log")
 conf.env.APISERVERLOG = _join(conf.env.MSLOGDIR,"api-server.log")

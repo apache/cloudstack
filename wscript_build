@@ -195,7 +195,7 @@ for src,tgt,inst in zip(src_files,subst_files,inst_files):
 	tgen = bld(features='subst', name='patchsubst', source=src, target=tgt)
 	tgen.dict = bld.env.get_merged_dict()
 	bld.path.find_or_declare(tgt)
-
+ 
 # this is a clever little thing
 # given a list of nodes, build or source
 # construct a tar file containing them
@@ -609,16 +609,21 @@ def generate_xml_api_description(task):
 	ret = Utils.exec_command(["java","-cp",cp,"com.cloud.utils.commandlinetool.BuildCommandLineInputFile"]+arguments,log=True)
 	return ret
 
-props = " client/tomcatconf/commands.properties"
-if buildpremium: props += " cloudstack-proprietary/premium/tomcatconf/commands-ext.properties"
-jarnames = ['utils','server','core']
-if buildpremium: jarnames += ['server-extras']
-tgen = bld(
-	rule   = generate_xml_api_description,
-	source = " ".join( [ 'target/jar/cloud-%s.jar'%x for x in jarnames ] ) + props,
-	target = 'commands.xml',
-	name   = 'xmlapi',
-	after  = 'runant',
-)
-bld.process_after(tgen)
+if buildpremium:
+	props = " client/tomcatconf/commands.properties"
+	props += " cloudstack-proprietary/premium/tomcatconf/commands-ext.properties"
+	jarnames = ['utils','server','core']
+	jarnames += ['server-extras']
+	tgen = bld(
+		rule   = generate_xml_api_description,
+		source = " ".join( [ 'target/jar/cloud-%s.jar'%x for x in jarnames ] ) + props,
+		target = 'commands.xml',
+		name   = 'xmlapi',
+		after  = 'runant',
+		install_path="${CLIDIR}"
+	)
+	bld.process_after(tgen)
+
+	bld.install_files("${PYTHONDIR}//cloudtool", 'cloudstack-proprietary/cloud-cli/cloudtool/*')
+	bld.install_files("${PYTHONDIR}/cloudapis", 'cloudstack-proprietary/cloud-cli/cloudapis/*')
 
