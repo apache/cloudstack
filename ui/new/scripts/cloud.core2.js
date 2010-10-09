@@ -275,10 +275,14 @@ function doActionForMidMenu(id, $actionLink, apiCommand) {
 	        async: false,
 	        success: function(json) {
 	            $midmenuItem1.find("#content").removeClass("inaction");
-				$midmenuItem1.find("#spinning_wheel").hide();	
+				$midmenuItem1.find("#spinning_wheel").hide();				
+				$midmenuItem1.find("#info_icon").removeClass("error").show();
+			    $midmenuItem1.data("afterActionInfo", (label + " action succeeded.")); 			
 				afterActionSeccessFn(json, $midmenuItem1); 		
 	        },
             error: function(XMLHttpResponse) {	
+                $midmenuItem1.find("#content").removeClass("inaction");
+				$midmenuItem1.find("#spinning_wheel").hide();
 		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);    
             }        
         });
