@@ -88,6 +88,63 @@
     
     <!-- Network tab (start)-->
     <div style="display: none;" id="tab_content_network">
+    	<div class="text_container">
+        	<div class="network_dgbox">
+                <div class="networkdg_zonepanel">
+                    <div class="networkdg_zonebox">
+                        <div class="networkdg_zonecloud">
+                        	<p>Zone 1</p>
+                        </div>
+                        <div class="networkdg_zoneconnect"></div>
+                    </div>
+                    <div class="networkswitchpanel">
+                    	<div class="networkswitch_titlebox"><p>Guest VLAN 1000 -1001</p></div>
+                        <div class="networkswitch_top"></div>
+                        <div class="networkswitch_midpanel">
+                        	
+                            <div class="networkswitch_vlanpanel">
+                            	<div class="networkswitch_vlanconnect">
+                                	<div class="networkswitch_vlan_infoicon"></div>
+                                    <div class="networkswitch_vlan_detailsbox">
+                                    	<div class="networkswitch_vlan_detailsbox_textbox">
+                                        	<div class="networkswitch_vlan_detailsbox_textbox_label">VM Group:</div> <span>VLAN 10</span>
+                                        </div>
+                                        
+                                        <div class="networkswitch_vlan_detailsbox_textbox">
+                                        	<div class="networkswitch_vlan_detailsbox_textbox_label">IP:</div> <span>10.101.24.231</span>
+                                        </div>
+                                        
+                                    </div>
+                                    <div class="networkswitch_typeicon direct"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="networkswitch_vlanpanel">
+                            	<div class="networkswitch_vlanconnect">
+                                	<div class="networkswitch_vlan_infoicon"></div>
+                                    <div class="networkswitch_vlan_detailsbox">
+                                    	<div class="networkswitch_vlan_detailsbox_textbox">
+                                        	<div class="networkswitch_vlan_detailsbox_textbox_label">VM Group:</div> <span>VLAN 10</span>
+                                        </div>
+                                        
+                                        <div class="networkswitch_vlan_detailsbox_textbox">
+                                        	<div class="networkswitch_vlan_detailsbox_textbox_label">IP:</div> <span>10.101.24.231</span>
+                                        </div>
+                                        
+                                    </div>
+                                    <div class="networkswitch_typeicon virtual"></div>
+                                </div>
+                            </div>
+                            
+                            
+                           
+                        </div>
+                        <div class="networkswitch_end"></div>
+                    </div>
+                </div>
+             </div>
+        </div>
+    
     </div>
     <!-- Network tab (end)-->
     
