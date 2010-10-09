@@ -318,9 +318,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             }
 
             try {
-                if (isRefNull(record.affinity) || !record.affinity.getUuid(conn).equals(_host.uuid)) {
-                    continue;
-                }
                 vmentry.getKey().destroy(conn);
             } catch (Exception e) {
                 String msg = "VM destroy failed for " + record.nameLabel + " due to " + e.getMessage();
@@ -2490,6 +2487,11 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 vm.setActionsAfterCrash(conn, Types.OnCrashBehaviour.DESTROY);
 
                 vm.start(conn, false, true);
+                
+                if(!vm.getResidentOn(conn).getUuid(conn).equals(_host.uuid)){
+                    startvmfailhandle(vm, null);
+                    throw new Exception("can not start VM " + cmd.getVmName() + " On host " + _host.ip);
+                }
 
                 if (_canBridgeFirewall) {
                     String result = callHostPlugin("default_network_rules",
