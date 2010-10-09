@@ -22,7 +22,7 @@
 
 
 //***** actions for details tab in right panel (begin) ************************************************************************
-function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap) { 
+function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap, midmenuItemId) { 
     var apiInfo = actionMap[label];
     var $listItem = $("#action_list_item").clone();
     $actionMenu.find("#action_list").append($listItem.show());
@@ -45,16 +45,16 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap)
         var dialogBeforeActionFn = $actionLink.data("dialogBeforeActionFn"); 
         if(dialogBeforeActionFn == null) {	 
             var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
-            doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap); 
+            doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, midmenuItemId); 
         }
         else {
-            dialogBeforeActionFn($actionLink, listAPIMap, $detailsTab);	
+            dialogBeforeActionFn($actionLink, listAPIMap, $detailsTab, midmenuItemId);	
         }               
         return false;
     });  
 } 
 
-function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap) {  
+function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, midmenuItemId) {  
     var label = $actionLink.data("label");	
     var inProcessText = $actionLink.data("inProcessText");		           
     var isAsyncJob = $actionLink.data("isAsyncJob");
@@ -69,7 +69,8 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap) {
     var $detailsTab = $("#right_panel_content #tab_content_details");     
     var $spinningWheel = $detailsTab.find("#spinning_wheel");
     $spinningWheel.find("#description").text(inProcessText);  
-    $spinningWheel.show();        
+    $spinningWheel.show();  
+    $("#right_panel_content #after_action_info_container").removeClass("errorbox").hide();       
     
 	//Async job (begin) *****
 	if(isAsyncJob == true) {	                     
@@ -97,6 +98,9 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap) {
 			                            $("#right_panel_content #after_action_info").text(label + " action succeeded.");
                                         $("#right_panel_content #after_action_info_container").removeClass("errorbox").show(); 
                                         
+                                        afterActionSeccessFn(json, id, midmenuItemId);
+                                        
+                                        /*
 			                            if(apiCommand.indexOf("command=delete")!=0) { 	
 			                                //DestroyVirtualMachine API doesn't return an embedded object on success (Bug 6041)
 	                                        //Before Bug 6041 get fixed, use the temporary solution below.							            
@@ -112,8 +116,10 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap) {
 			                                //afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	   
 			                            }
 				                        else { //apiCommand is deleteXXXXXXX	
-				                            afterActionSeccessFn(id);
-				                        }			                             
+				                            afterActionSeccessFn(json, id, midmenuItemId);
+				                        }		
+				                        */
+				                        	                             
 			                        } else if (result.jobstatus == 2) { // Failed		
 			                            $("#right_panel_content #after_action_info").text(label + " action failed. Reason: " + fromdb(result.jobresult));
                                         $("#right_panel_content #after_action_info_container").addClass("errorbox").show();
@@ -146,7 +152,10 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap) {
 	            $spinningWheel.hide(); 	        
 	            $("#right_panel_content #after_action_info").text(label + " action succeeded.");
                 $("#right_panel_content #after_action_info_container").removeClass("errorbox").show();  
-								
+				
+				afterActionSeccessFn(json, id, midmenuItemId);
+				
+				/*				
 				if(apiCommand.indexOf("command=delete")!=0 && apiCommand.indexOf("command=disassociateIpAddress")!=0) { 									              
 	                //RecoverVirtualMachine API doesn't return an embedded object on success (Bug 6037)
 	                //Before Bug 6037 get fixed, use the temporary solution below.							            
@@ -163,8 +172,10 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap) {
 				    //afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0]);	   
 				}
 				else { //apiCommand is deleteXXXXXXX	
-				    afterActionSeccessFn(id);
+				    afterActionSeccessFn(json, id, midmenuItemId);
 				}
+				*/
+				
 	        },
             error: function(XMLHttpResponse) {	                
 		        handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label);    
@@ -594,7 +605,10 @@ function clearMiddleMenu() {
 }
 
 function clearRightPanel() {
-    $("#right_panel_content #tab_content_details #action_link #action_menu #action_list").empty();    
+    var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
+    $actionMenu.find("#action_list").empty();
+    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
+     
     $("#right_panel_content #tab_content_details #spinning_wheel").hide();
     $("#right_panel_content #after_action_info_container").hide(); 
 }
@@ -832,6 +846,9 @@ function enableMultipleSelectionInMiddleMenu() {
     });    
 }
 
+function getMidmenuId(jsonObj) {
+    return "midmenuItem_" + jsonObj.id; 
+}
 
 
 

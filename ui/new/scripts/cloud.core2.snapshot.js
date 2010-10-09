@@ -59,9 +59,10 @@ function snapshotJsonToDetailsTab(jsonObj) {
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
-    buildActionLinkForDetailsTab("Create Volume", snapshotActionMap, $actionMenu, snapshotListAPIMap);		
-    buildActionLinkForDetailsTab("Delete Snapshot", snapshotActionMap, $actionMenu, snapshotListAPIMap);	
-    buildActionLinkForDetailsTab("Create Template", snapshotActionMap, $actionMenu, snapshotListAPIMap);					
+    var midmenuItemId = getMidmenuId(jsonObj);
+    buildActionLinkForDetailsTab("Create Volume", snapshotActionMap, $actionMenu, snapshotListAPIMap, midmenuItemId);		
+    buildActionLinkForDetailsTab("Delete Snapshot", snapshotActionMap, $actionMenu, snapshotListAPIMap, midmenuItemId);	
+    buildActionLinkForDetailsTab("Create Template", snapshotActionMap, $actionMenu, snapshotListAPIMap, midmenuItemId);					
 }
 
 function snapshotClearRightPanel() {
@@ -81,7 +82,7 @@ var snapshotActionMap = {
         asyncJobResponse: "createvolumeresponse",
         dialogBeforeActionFn : doCreateVolumeFromSnapshotInSnapshotPage,
         inProcessText: "Creating Volume....",
-        afterActionSeccessFn: function(jsonObj) {}
+        afterActionSeccessFn: function(json, id, midmenuItemId) {}
     }   
     , 
     "Delete Snapshot": {              
@@ -89,9 +90,8 @@ var snapshotActionMap = {
         isAsyncJob: true,
         asyncJobResponse: "deletesnapshotresponse",        
         inProcessText: "Deleting snapshot....",
-        afterActionSeccessFn: function(id) { 
-            var $midmenuItem1 = $("#midmenuItem_"+id); 
-            $midmenuItem1.remove();
+        afterActionSeccessFn: function(json, id, midmenuItemId) {            
+            $("#"+midmenuItemId).remove();
             clearRightPanel();
             snapshotClearRightPanel();
         }
@@ -102,7 +102,7 @@ var snapshotActionMap = {
         asyncJobResponse: "createtemplateresponse",
         dialogBeforeActionFn : doCreateTemplateFromSnapshotInSnapshotPage,
         inProcessText: "Creating Template....",
-        afterActionSeccessFn: function(jsonObj) {}
+        afterActionSeccessFn: function(json, id, midmenuItemId) {}
     }
 }   
 

@@ -11,8 +11,9 @@ function routerToMidmenu(jsonObj, $midmenuItem1) {
     updateStateInMidMenu(jsonObj, $midmenuItem1);       
 }
 
-function routerAfterDetailsTabAction(jsonObj) {
-    $("#midmenuItem_"+jsonObj.id).data("jsonObj", jsonObj);   
+function routerAfterDetailsTabAction(json, id, midmenuItemId) {        
+    var jsonObj = json.queryasyncjobresultresponse.router[0];    
+    routerToMidmenu(jsonObj, $("#"+midmenuItemId));  
     routerJsonToDetailsTab(jsonObj);   
 }
 
@@ -44,12 +45,12 @@ function routerJsonToDetailsTab(jsonObj) {
     var noAvailableActions = true;
     
     if (jsonObj.state == 'Running') {   
-        buildActionLinkForDetailsTab("Stop Router", routerActionMap, $actionMenu, routerListAPIMap);	
-        buildActionLinkForDetailsTab("Reboot Router", routerActionMap, $actionMenu, routerListAPIMap);	  
+        buildActionLinkForDetailsTab("Stop Router", routerActionMap, $actionMenu, routerListAPIMap, getMidmenuId(jsonObj));	
+        buildActionLinkForDetailsTab("Reboot Router", routerActionMap, $actionMenu, routerListAPIMap, getMidmenuId(jsonObj));	  
         noAvailableActions = false;      
     }
     else if (jsonObj.state == 'Stopped') {        
-        buildActionLinkForDetailsTab("Start Router", routerActionMap, $actionMenu, routerListAPIMap);	
+        buildActionLinkForDetailsTab("Start Router", routerActionMap, $actionMenu, routerListAPIMap, getMidmenuId(jsonObj));	
         noAvailableActions = false;
     }  
     

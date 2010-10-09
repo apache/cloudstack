@@ -269,14 +269,7 @@ long milliseconds = new Date().getTime();
                                 <img src="images/routers_leftmenuicon.png" alt="Router" /></div>
                             <%=t.t("router")%>
                         </div>
-                    </div>
-                    <div class="leftmenu_content" id="leftmenu_system">
-                        <div class="leftmenu_secondindent">                           
-                            <div class="leftmenu_list_icons">
-                                <img src="images/storage_leftmenuicon.png" alt="System" /></div>
-                            System
-                        </div>
-                    </div>
+                    </div>                   
                 </div>
                 <div class="leftmenu_list">
                     <div class="leftmenu_content">

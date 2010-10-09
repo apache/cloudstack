@@ -211,13 +211,6 @@ function templateToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(fromdb(jsonObj.zonename).substring(0,25));   
 }
 
-function templateAfterDetailsTabAction(jsonObj) {
-    var $midmenuItem1 = $("#"+templateGetMidmenuId(jsonObj));
-    $midmenuItem1.data("jsonObj", jsonObj);   
-    templateToMidmenu(jsonObj, $midmenuItem1);
-    templateJsonToDetailsTab(jsonObj);       
-}
-
 function templateToRigntPanel($midmenuItem) {       
     var jsonObj = $midmenuItem.data("jsonObj");
     templateJsonToDetailsTab(jsonObj);   
@@ -275,8 +268,8 @@ function templateJsonToDetailsTab(jsonObj) {
     }
     else {
         $("#edit_button").show();
-        buildActionLinkForDetailsTab("Copy Template", templateActionMap, $actionMenu, templateListAPIMap);			
-        buildActionLinkForDetailsTab("Create VM", templateActionMap, $actionMenu, templateListAPIMap);	
+        buildActionLinkForDetailsTab("Copy Template", templateActionMap, $actionMenu, templateListAPIMap, templateGetMidmenuId(jsonObj));			
+        buildActionLinkForDetailsTab("Create VM", templateActionMap, $actionMenu, templateListAPIMap, templateGetMidmenuId(jsonObj));	
         noAvailableActions = false;		
     }
 	
@@ -285,7 +278,7 @@ function templateJsonToDetailsTab(jsonObj) {
 		//template.find("#template_delete_container").hide();
     }
     else {
-        buildActionLinkForDetailsTab("Delete Template", templateActionMap, $actionMenu, templateListAPIMap);
+        buildActionLinkForDetailsTab("Delete Template", templateActionMap, $actionMenu, templateListAPIMap, templateGetMidmenuId(jsonObj));
         noAvailableActions = false;	
     }
     
@@ -350,8 +343,8 @@ var templateActionMap = {
         asyncJobResponse: "deletetemplateresponse",
         dialogBeforeActionFn : doDeleteTemplate,
         inProcessText: "Deleting Template....",
-        afterActionSeccessFn: function(jsonObj) {           
-            var $midmenuItem1 = $("#"+templateGetMidmenuId(jsonObj)); 
+        afterActionSeccessFn: function(json, id, midmenuItemId){                    
+            var $midmenuItem1 = $("#"+midmenuItemId); 
             $midmenuItem1.remove();
             clearRightPanel();
             templateClearRightPanel();
@@ -362,7 +355,7 @@ var templateActionMap = {
         asyncJobResponse: "createtemplateresponse",            
         dialogBeforeActionFn : doCopyTemplate,
         inProcessText: "Copying Template....",
-        afterActionSeccessFn: function(){}   
+        afterActionSeccessFn: function(json, id, midmenuItemId){}   
     }  
     ,
     "Create VM": {
@@ -370,7 +363,7 @@ var templateActionMap = {
         asyncJobResponse: "deployvirtualmachineresponse",            
         dialogBeforeActionFn : doCreateVMFromTemplate,
         inProcessText: "Creating VM....",
-        afterActionSeccessFn: function(){}   
+        afterActionSeccessFn: function(json, id, midmenuItemId){}   
     }  
 }   
 
@@ -395,6 +388,7 @@ function doUpdateTemplate() {
 	
 	var jsonObj = $detailsTab.data("jsonObj"); 
 	var id = jsonObj.id;
+	var midmenuId = templateGetMidmenuId(jsonObj);
 	
 	//updateTemplate	
 	var array1 = [];
@@ -457,12 +451,14 @@ function doUpdateTemplate() {
         data:createURL("command=listTemplates&templatefilter=self&id="+id),
         dataType: "json",
         success: function(json) {            
-            templateAfterDetailsTabAction(json.listtemplatesresponse.template[0]);
+            var jsonObj = json.listtemplatesresponse.template[0];           
+            templateToMidmenu(jsonObj, $("#"+midmenuId));
+            templateJsonToDetailsTab(jsonObj);              
         }
     });   
 }
 
-function doDeleteTemplate($actionLink, listAPIMap, $detailsTab) {   
+function doDeleteTemplate($actionLink, listAPIMap, $detailsTab, midmenuItemId) {   
     var $detailsTab = $("#right_panel_content #tab_content_details"); 
     var jsonObj = $detailsTab.data("jsonObj");
 	var id = jsonObj.id;
@@ -484,7 +480,7 @@ function doDeleteTemplate($actionLink, listAPIMap, $detailsTab) {
 		"Confirm": function() { 			
 			$(this).dialog("close");			
 			var apiCommand = "command=deleteTemplate&id="+id+moreCriteria.join("");
-            doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);	
+            doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, midmenuItemId);	
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
@@ -502,7 +498,7 @@ function populateZoneFieldExcludeSourceZone(zoneField, excludeZoneId) {
     }			    
 }
 
-function doCopyTemplate($actionLink, listAPIMap, $detailsTab) { 
+function doCopyTemplate($actionLink, listAPIMap, $detailsTab, midmenuItemId) { 
 	var jsonObj = $detailsTab.data("jsonObj");
 	var id = jsonObj.id;
 	var name = jsonObj.name;						
@@ -529,7 +525,7 @@ function doCopyTemplate($actionLink, listAPIMap, $detailsTab) {
 	        
             var id = $detailsTab.data("jsonObj").id;			
 	        var apiCommand = "command=copyTemplate&id="+id+"&sourcezoneid="+sourceZoneId+"&destzoneid="+destZoneId;
-	        doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);	
+	        doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, midmenuItemId);	
 	    }, 
 	    "Cancel": function() {				        
 		    $(this).dialog("close");
@@ -537,7 +533,7 @@ function doCopyTemplate($actionLink, listAPIMap, $detailsTab) {
 	}).dialog("open");			
 }
 
-function doCreateVMFromTemplate($actionLink, listAPIMap, $detailsTab) { 
+function doCreateVMFromTemplate($actionLink, listAPIMap, $detailsTab, midmenuItemId) { 
     var jsonObj = $detailsTab.data("jsonObj");
 	var id = jsonObj.id;		
 	var name = jsonObj.name;				
@@ -573,7 +569,7 @@ function doCreateVMFromTemplate($actionLink, listAPIMap, $detailsTab) {
 	            array1.push("&diskOfferingId="+diskOfferingId);	 		    	        
 	        
 		    var apiCommand = "command=deployVirtualMachine&zoneId="+zoneId+"&templateId="+id+array1.join("");
-    	    doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);		
+    	    doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, midmenuItemId);		
 	    }, 
 	    "Cancel": function() {
 	        $(this).dialog("close");
