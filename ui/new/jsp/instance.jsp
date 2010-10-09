@@ -1010,6 +1010,8 @@
                     <%=t.t("service.offering")%>:</label>
                 <select class="select" id="change_service_offerings">
                 </select>
+                <div id="change_service_offerings_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
             </li>
         </ol>
         </form>

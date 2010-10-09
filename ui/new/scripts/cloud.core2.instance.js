@@ -1056,13 +1056,15 @@ function doChangeName($actionLink, selectedItemsInMidMenu) {
 	$("#dialog_change_name")
 	.dialog('option', 'buttons', { 						
 		"OK": function() { 			    
-		    var thisDialog = $(this);	
-		    thisDialog.dialog("close"); 
+		    var thisDialog = $(this);			    
 		    											
 			// validate values
 	        var isValid = true;					
 	        isValid &= validateString("Name", thisDialog.find("#change_instance_name"), thisDialog.find("#change_instance_name_errormsg"));								
-	        if (!isValid) return;								
+	        if (!isValid) 
+	            return;	
+	        
+	        thisDialog.dialog("close"); 							
 			
 			var name = trim(thisDialog.find("#change_instance_name").val());
 			
@@ -1100,13 +1102,15 @@ function doChangeGroup($actionLink, selectedItemsInMidMenu) {
 	$("#dialog_change_group")
 	.dialog('option', 'buttons', { 						
 		"OK": function() { 	
-		    var thisDialog = $(this);
-	        thisDialog.dialog("close"); 
-													
+		    var thisDialog = $(this);	        
+											
 			// validate values
 	        var isValid = true;					
 	        isValid &= validateString("Group", thisDialog.find("#change_group_name"), thisDialog.find("#change_group_name_errormsg"), true); //group name is optional								
-	        if (!isValid) return;
+	        if (!isValid) 
+	            return;
+	        
+	        thisDialog.dialog("close"); 
 	        
 	        for(var id in selectedItemsInMidMenu) {				
 	            var $midMenuItem = selectedItemsInMidMenu[id];
@@ -1144,6 +1148,7 @@ function doChangeService($actionLink, selectedItemsInMidMenu) {
 	$.ajax({	   
 	    data: createURL(apiText), 
 		dataType: "json",
+		async: false,
 		success: function(json) {
 			var offerings = json.listserviceofferingsresponse.serviceoffering;
 			var offeringSelect = $("#dialog_change_service_offering #change_service_offerings").empty();
@@ -1160,8 +1165,14 @@ function doChangeService($actionLink, selectedItemsInMidMenu) {
 	$("#dialog_change_service_offering")
 	.dialog('option', 'buttons', { 						
 		"OK": function() { 
-		    var thisDialog = $(this);
-			thisDialog.dialog("close"); 
+		    var $thisDialog = $(this);
+		    		   
+		    var isValid = true;				
+			isValid &= validateDropDownBox("Service Offering", $thisDialog.find("#change_service_offerings"), $thisDialog.find("#change_service_offerings_errormsg"));	
+			if (!isValid) 
+			    return;
+		    
+			$thisDialog.dialog("close"); 
 			
 			for(var id in selectedItemsInMidMenu) {				
 			    var $midMenuItem = selectedItemsInMidMenu[id];
@@ -1171,7 +1182,7 @@ function doChangeService($actionLink, selectedItemsInMidMenu) {
                     $midMenuItem.data("afterActionInfo", ($actionLink.data("label") + " action failed. Reason: virtual instance needs to be stopped before you can change its service."));  
 		            continue;
 	            }
-                var apiCommand = "command=changeServiceForVirtualMachine&id="+id+"&serviceOfferingId="+thisDialog.find("#change_service_offerings").val();	     
+                var apiCommand = "command=changeServiceForVirtualMachine&id="+id+"&serviceOfferingId="+$thisDialog.find("#change_service_offerings").val();	     
                 doActionForMidMenu(id, $actionLink, apiCommand);
             }
 		}, 
@@ -1517,14 +1528,16 @@ function doCreateTemplateFromVmVolume($actionLink, $subgridItem) {
 	$("#dialog_create_template")
 	.dialog('option', 'buttons', { 						
 		"OK": function() { 		
-		    var thisDialog = $(this);
-		    thisDialog.dialog("close"); 
+		    var thisDialog = $(this);		    
 									
 			// validate values
 	        var isValid = true;					
 	        isValid &= validateString("Name", thisDialog.find("#create_template_name"), thisDialog.find("#create_template_name_errormsg"));
 			isValid &= validateString("Display Text", thisDialog.find("#create_template_desc"), thisDialog.find("#create_template_desc_errormsg"));			
-	        if (!isValid) return;		
+	        if (!isValid) 
+	            return;		
+	        
+	        thisDialog.dialog("close"); 
 	        
 	        var name = trim(thisDialog.find("#create_template_name").val());
 			var desc = trim(thisDialog.find("#create_template_desc").val());
