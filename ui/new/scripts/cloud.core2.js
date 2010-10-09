@@ -155,7 +155,7 @@ function handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label) {
 //***** actions for middle menu (begin) ************************************************************************
 var selectedItemsInMidMenu = {};
 
-function buildActionLinkForMidMenu(label, actionMap, $actionMenu, listAPIMap) {
+function buildActionLinkForMidMenu(label, actionMap, $actionMenu) {
     var apiInfo = actionMap[label];
     var $listItem = $("#action_list_item_middle_menu").clone();
     $actionMenu.find("#action_list").append($listItem.show());
@@ -183,11 +183,11 @@ function buildActionLinkForMidMenu(label, actionMap, $actionMenu, listAPIMap) {
         if(dialogBeforeActionFn == null) {		                   
             for(var id in selectedItemsInMidMenu) {	
                 var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
-                doActionForMidMenu(id, $actionLink, apiCommand, listAPIMap); 	
+                doActionForMidMenu(id, $actionLink, apiCommand); 	
             }
         }
         else {
-            dialogBeforeActionFn($actionLink, selectedItemsInMidMenu, listAPIMap);	
+            dialogBeforeActionFn($actionLink, selectedItemsInMidMenu);	
             
         }        
         selectedItemsInMidMenu = {}; //clear selected items for action	                          
@@ -202,24 +202,21 @@ So, we need to remove highlight here. Otherwise, it won't be consistent of selec
 */
 function removeHighlightInMiddleMenu(selectedItemsInMidMenu) {
     for(var id in selectedItemsInMidMenu) {
-        var $midmenuItem = $("#midmenuItem_"+id);	
-        $midmenuItem.find("#content").removeClass("selected");
+        var $midmenuItem1 = $("#midmenuItem_"+id);	
+        $midmenuItem1.find("#content").removeClass("selected");
     }
 }
 
-function doActionForMidMenu(id, $actionLink, apiCommand, listAPIMap) {   
+function doActionForMidMenu(id, $actionLink, apiCommand) {   
     var label = $actionLink.data("label");			           
     var isAsyncJob = $actionLink.data("isAsyncJob");
     var asyncJobResponse = $actionLink.data("asyncJobResponse");	
-    var afterActionSeccessFn = $actionLink.data("afterActionSeccessFn");	
-    var listAPI = listAPIMap["listAPI"];
-    var listAPIResponse = listAPIMap["listAPIResponse"];
-    var listAPIResponseObj = listAPIMap["listAPIResponseObj"];
+    var afterActionSeccessFn = $actionLink.data("afterActionSeccessFn");	   
         
-    var $midmenuItem = $("#midmenuItem_"+id);	
-    $midmenuItem.find("#content").removeClass("selected").addClass("inaction");                          
-    $midmenuItem.find("#spinning_wheel").addClass("midmenu_addingloader").show();	
-    $midmenuItem.find("#info_icon").hide();		  
+    var $midmenuItem1 = $("#midmenuItem_"+id);	
+    $midmenuItem1.find("#content").removeClass("selected").addClass("inaction");                          
+    $midmenuItem1.find("#spinning_wheel").addClass("midmenu_addingloader").show();	
+    $midmenuItem1.find("#info_icon").hide();		  
 	
 	//Async job (begin) *****
 	if(isAsyncJob == true) {	                     
@@ -242,34 +239,21 @@ function doActionForMidMenu(id, $actionLink, apiCommand, listAPIMap) {
 			                        return; //Job has not completed
 		                        } else {											                    
 			                        $("body").stopTime(timerKey);	
-			                        $midmenuItem.find("#content").removeClass("inaction");
-			                        $midmenuItem.find("#spinning_wheel").hide();			                       
+			                        $midmenuItem1.find("#content").removeClass("inaction");
+			                        $midmenuItem1.find("#spinning_wheel").hide();			                       
 			                        if (result.jobstatus == 1) { // Succeeded  
-			                            $midmenuItem.find("#info_icon").removeClass("error").show();
-			                            $midmenuItem.data("afterActionInfo", (label + " action succeeded.")); 
-			                            
-			                            //DestroyVirtualMachine API doesn't return an embedded object on success (Bug 6041)
-	                                    //Before Bug 6041 get fixed, use the temporary solution below.							            
-	                                    $.ajax({
-                                            cache: false,
-                                            data: createURL("command="+listAPI+"&id="+id),
-                                            dataType: "json",                                            
-                                            success: function(json) {		                                                                                  
-                                                afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem);	                        
-                                            }
-                                        });										
-				                        //After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
-			                            //afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem);	   
-			                            
+			                            $midmenuItem1.find("#info_icon").removeClass("error").show();
+			                            $midmenuItem1.data("afterActionInfo", (label + " action succeeded.")); 			                            
+			                            afterActionSeccessFn(json, $midmenuItem1);  			                            
 			                        } else if (result.jobstatus == 2) { // Failed	
-			                            $midmenuItem.find("#info_icon").addClass("error").show();
-			                            $midmenuItem.data("afterActionInfo", (label + " action failed. Reason: " + fromdb(result.jobresult)));    
+			                            $midmenuItem1.find("#info_icon").addClass("error").show();
+			                            $midmenuItem1.data("afterActionInfo", (label + " action failed. Reason: " + fromdb(result.jobresult)));    
 			                        }											                    
 		                        }
 	                        },
 	                        error: function(XMLHttpResponse) {
 		                        $("body").stopTime(timerKey);		                       		                        
-		                        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem); 		                        
+		                        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1); 		                        
 	                        }
                         });
                     },
@@ -277,7 +261,7 @@ function doActionForMidMenu(id, $actionLink, apiCommand, listAPIMap) {
                 );
             },
             error: function(XMLHttpResponse) {	
-		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem);    
+		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);    
             }
         });     
     }     
@@ -290,27 +274,12 @@ function doActionForMidMenu(id, $actionLink, apiCommand, listAPIMap) {
 	        dataType: "json",
 	        async: false,
 	        success: function(json) {
-	            $midmenuItem.find("#content").removeClass("inaction");
-				$midmenuItem.find("#spinning_wheel").hide();	
-														              
-	            //RecoverVirtualMachine API doesn't return an embedded object on success (Bug 6037)
-	            //Before Bug 6037 get fixed, use the temporary solution below.							            
-	            $.ajax({
-                    cache: false,
-                    data: createURL("command="+listAPI+"&id="+id),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {	
-                        $midmenuItem.find("#info_icon").removeClass("error").show();
-			            $midmenuItem.data("afterActionInfo", (label + " action succeeded.")); 	                                                                                  
-                        afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem);	                           
-                    }
-                });										
-				//After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
-				//afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem);	   
+	            $midmenuItem1.find("#content").removeClass("inaction");
+				$midmenuItem1.find("#spinning_wheel").hide();	
+				afterActionSeccessFn(json, $midmenuItem1); 		
 	        },
             error: function(XMLHttpResponse) {	
-		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem);    
+		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);    
             }        
         });
     }
@@ -321,7 +290,7 @@ function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1) {
     $midmenuItem1.find("#content").removeClass("inaction");
 	$midmenuItem1.find("#spinning_wheel").hide();	
 	$midmenuItem1.find("#info_icon").addClass("error").show();		
-	$midmenuItem1.find("#first_row").text("Adding failed");	
+	$midmenuItem1.find("#first_row").text("Action failed");	
 		                        
     var errorMsg = "";
     if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {
