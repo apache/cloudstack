@@ -194,13 +194,15 @@ function isoJsonToDetailsTab(jsonObj) {
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
     
+    var midmenuId = isoGetMidmenuId(jsonObj);
+    
     // "Edit", "Copy", "Create VM" 
 	if ((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.isready == "false") {		
 		$("#edit_button").hide();
     }
     else {        
         $("#edit_button").show();
-        buildActionLinkForDetailsTab("Copy ISO", isoActionMap, $actionMenu, isoListAPIMap, isoGetMidmenuId(jsonObj));		
+        buildActionLinkForDetailsTab("Copy ISO", isoActionMap, $actionMenu, midmenuId);		
         noAvailableActions = false;
     }
 		
@@ -208,7 +210,7 @@ function isoJsonToDetailsTab(jsonObj) {
 	if (((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.isready == "false") || (jsonObj.bootable == "false")) {
 	}
     else {        
-        buildActionLinkForDetailsTab("Create VM", isoActionMap, $actionMenu, isoListAPIMap, isoGetMidmenuId(jsonObj));	
+        buildActionLinkForDetailsTab("Create VM", isoActionMap, $actionMenu, midmenuId);	
         noAvailableActions = false;
     }
     
@@ -216,7 +218,7 @@ function isoJsonToDetailsTab(jsonObj) {
 	if (((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) || (jsonObj.isready == "false" && jsonObj.isostatus != null && jsonObj.isostatus.indexOf("% Downloaded") != -1)) {
 	}
 	else {	    
-	    buildActionLinkForDetailsTab("Delete ISO", isoActionMap, $actionMenu, isoListAPIMap, isoGetMidmenuId(jsonObj));	
+	    buildActionLinkForDetailsTab("Delete ISO", isoActionMap, $actionMenu, midmenuId);	
 	    noAvailableActions = false;
 	}    
 	
@@ -280,12 +282,6 @@ var isoActionMap = {
     }  
 }   
 
-var isoListAPIMap = {
-    listAPI: "listIsos&isofilter=self",
-    listAPIResponse: "listisosresponse",
-    listAPIResponseObj: "iso"
-}; 
-
 function doUpdateIso() { 
     var $detailsTab = $("#right_panel_content #tab_content_details");      
     
@@ -314,7 +310,7 @@ function doUpdateIso() {
 	});
 }
 
-function doDeleteIso($actionLink, listAPIMap, $detailsTab, midmenuItemId) {   
+function doDeleteIso($actionLink, $detailsTab, midmenuItemId) {   
     var $detailsTab = $("#right_panel_content #tab_content_details"); 
     var jsonObj = $detailsTab.data("jsonObj");
 	var id = jsonObj.id;
@@ -336,7 +332,7 @@ function doDeleteIso($actionLink, listAPIMap, $detailsTab, midmenuItemId) {
 		"Confirm": function() { 			
 			$(this).dialog("close");			
 			var apiCommand = "command=deleteIso&id="+id+moreCriteria.join("");
-            doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, midmenuItemId);	
+            doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);	
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
@@ -354,7 +350,7 @@ function populateZoneFieldExcludeSourceZone(zoneField, excludeZoneId) {
     }			    
 }
 
-function doCopyIso($actionLink, listAPIMap, $detailsTab, midmenuItemId) {   
+function doCopyIso($actionLink, $detailsTab, midmenuItemId) {   
 	var jsonObj = $detailsTab.data("jsonObj");
 	var id = jsonObj.id;
 	var name = jsonObj.name;			
@@ -374,7 +370,7 @@ function doCopyIso($actionLink, listAPIMap, $detailsTab, midmenuItemId) {
 	        				        
 	        var destZoneId = thisDialog.find("#copy_iso_zone").val();	
             var apiCommand = "command=copyIso&id="+id+"&sourcezoneid="+sourceZoneId+"&destzoneid="+destZoneId;
-            doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, midmenuItemId);	 
+            doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);	 
 	    }, 
 	    "Cancel": function() {				        
 		    $(this).dialog("close");
@@ -382,7 +378,7 @@ function doCopyIso($actionLink, listAPIMap, $detailsTab, midmenuItemId) {
 	}).dialog("open");	
 }	
 
-function doCreateVMFromIso($actionLink, listAPIMap, $detailsTab, midmenuItemId) { 
+function doCreateVMFromIso($actionLink, $detailsTab, midmenuItemId) { 
     var jsonObj = $detailsTab.data("jsonObj");	
 	var id = jsonObj.id;		
 	var name = jsonObj.name;				
@@ -408,7 +404,7 @@ function doCreateVMFromIso($actionLink, listAPIMap, $detailsTab, midmenuItemId) 
 	        var diskOfferingId = thisDialog.find("#disk_offering").val();	        		        
 	                         
 		    var apiCommand = "command=deployVirtualMachine&zoneId="+zoneId+"&serviceOfferingId="+serviceOfferingId+"&diskOfferingId="+diskOfferingId+"&templateId="+id+"&group="+todb(group)+"&displayname="+todb(name);
-    	    doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, midmenuItemId);		
+    	    doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
 	    }, 
 	    "Cancel": function() {
 	        $(this).dialog("close");

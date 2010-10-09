@@ -417,28 +417,29 @@ function volumeJsonToDetailsTab(jsonObj){
     //actions ***    
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
+    var midmenuItemId = getMidmenuId(jsonObj); 
     
-    buildActionLinkForDetailsTab("Take Snapshot", volumeActionMap, $actionMenu, volumeListAPIMap, getMidmenuId(jsonObj));	//show take snapshot
-    buildActionLinkForDetailsTab("Recurring Snapshot", volumeActionMap, $actionMenu, volumeListAPIMap, getMidmenuId(jsonObj));	//show Recurring Snapshot
+    buildActionLinkForDetailsTab("Take Snapshot", volumeActionMap, $actionMenu, midmenuItemId);	//show take snapshot
+    buildActionLinkForDetailsTab("Recurring Snapshot", volumeActionMap, $actionMenu, midmenuItemId);	//show Recurring Snapshot
     
     if(jsonObj.state != "Creating" && jsonObj.state != "Corrupted" && jsonObj.name != "attaching") {
         if(jsonObj.type=="ROOT") {
             if (jsonObj.vmstate == "Stopped") { 
-                //buildActionLinkForDetailsTab("Create Template", volumeActionMap, $actionMenu, volumeListAPIMap, getMidmenuId(jsonObj));	//backend of CreateTemplateFromVolume is not working. Hide the option from UI until backend is fixed.
+                //buildActionLinkForDetailsTab("Create Template", volumeActionMap, $actionMenu, midmenuItemId);	//backend of CreateTemplateFromVolume is not working. Hide the option from UI until backend is fixed.
             }
         } 
         else { 
 	        if (jsonObj.virtualmachineid != null) {
 		        if (jsonObj.storagetype == "shared" && (jsonObj.vmstate == "Running" || jsonObj.vmstate == "Stopped")) {
-			        buildActionLinkForDetailsTab("Detach Disk", volumeActionMap, $actionMenu, volumeListAPIMap, getMidmenuId(jsonObj)); //show detach disk
+			        buildActionLinkForDetailsTab("Detach Disk", volumeActionMap, $actionMenu, midmenuItemId); //show detach disk
 		        }
 	        } else {
 		        // Disk not attached
 		        if (jsonObj.storagetype == "shared") {
-			        buildActionLinkForDetailsTab("Attach Disk", volumeActionMap, $actionMenu, volumeListAPIMap, getMidmenuId(jsonObj));   //show attach disk
+			        buildActionLinkForDetailsTab("Attach Disk", volumeActionMap, $actionMenu, midmenuItemId);   //show attach disk
     			    			  		    
 			        if(jsonObj.vmname == null || jsonObj.vmname == "none")
-			            buildActionLinkForDetailsTab("Delete Volume", volumeActionMap, $actionMenu, volumeListAPIMap, getMidmenuId(jsonObj)); //show delete volume
+			            buildActionLinkForDetailsTab("Delete Volume", volumeActionMap, $actionMenu, midmenuItemId); //show delete volume
 		        }
 	        }
         }
@@ -582,13 +583,7 @@ var volumeActionMap = {
     }   
 }   
 
-var volumeListAPIMap = {
-    listAPI: "listVolumes",
-    listAPIResponse: "listvolumesresponse",
-    listAPIResponseObj: "volume"
-}; 
-
-function doCreateTemplateFromVolume($actionLink, listAPIMap, $detailsTab) {       
+function doCreateTemplateFromVolume($actionLink, $detailsTab, midmenuItemId) {       
     var jsonObj = $detailsTab.data("jsonObj");
     $("#dialog_create_template").find("#volume_name").text(jsonObj.name);
     
@@ -612,7 +607,7 @@ function doCreateTemplateFromVolume($actionLink, listAPIMap, $detailsTab) {
 			
 			var id = $detailsTab.data("jsonObj").id;			
 			var apiCommand = "command=createTemplate&volumeId="+id+"&name="+todb(name)+"&displayText="+todb(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
-	    	doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);					
+	    	doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);					
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
@@ -620,7 +615,7 @@ function doCreateTemplateFromVolume($actionLink, listAPIMap, $detailsTab) {
 	}).dialog("open");
 }   
 
-function doTakeSnapshot($actionLink, listAPIMap, $detailsTab) {   
+function doTakeSnapshot($actionLink, $detailsTab, midmenuItemId) {   
     $("#dialog_create_snapshot")					
     .dialog('option', 'buttons', { 					    
 	    "Confirm": function() { 	
@@ -628,7 +623,7 @@ function doTakeSnapshot($actionLink, listAPIMap, $detailsTab) {
 	    	
             var id = $detailsTab.data("jsonObj").id;	
 			var apiCommand = "command=createSnapshot&volumeid="+id;
-	    	doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);	
+	    	doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);	
 	    },
 	    "Cancel": function() { 					        
 		    $(this).dialog("close"); 
@@ -832,7 +827,7 @@ function populateVirtualMachineField(domainId, account, zoneId) {
     });
 }		
 
-function doAttachDisk($actionLink, listAPIMap, $detailsTab) {       
+function doAttachDisk($actionLink, $detailsTab, midmenuItemId) {       
     var jsonObj = $detailsTab.data("jsonObj");    
     populateVirtualMachineField(jsonObj.domainid, jsonObj.account, jsonObj.zoneid);
 	    
@@ -852,7 +847,7 @@ function doAttachDisk($actionLink, listAPIMap, $detailsTab) {
 	        	    	
 	    	var id = jsonObj.id;			
 			var apiCommand = "command=attachVolume&id="+id+'&virtualMachineId='+virtualMachineId;
-	    	doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);		
+	    	doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
 	    }, 
 	    "Cancel": function() { 					        
 		    $(this).dialog("close"); 

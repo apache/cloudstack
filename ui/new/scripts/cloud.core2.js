@@ -22,7 +22,7 @@
 
 
 //***** actions for details tab in right panel (begin) ************************************************************************
-function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap, midmenuItemId) { 
+function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, midmenuItemId) { 
     var apiInfo = actionMap[label];
     var $listItem = $("#action_list_item").clone();
     $actionMenu.find("#action_list").append($listItem.show());
@@ -45,26 +45,21 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap,
         var dialogBeforeActionFn = $actionLink.data("dialogBeforeActionFn"); 
         if(dialogBeforeActionFn == null) {	 
             var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
-            doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, midmenuItemId); 
+            doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId); 
         }
         else {
-            dialogBeforeActionFn($actionLink, listAPIMap, $detailsTab, midmenuItemId);	
+            dialogBeforeActionFn($actionLink, $detailsTab, midmenuItemId);	
         }               
         return false;
     });  
 } 
 
-function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap, midmenuItemId) {  
+function doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId) {  
     var label = $actionLink.data("label");	
     var inProcessText = $actionLink.data("inProcessText");		           
     var isAsyncJob = $actionLink.data("isAsyncJob");
     var asyncJobResponse = $actionLink.data("asyncJobResponse");	
-    var afterActionSeccessFn = $actionLink.data("afterActionSeccessFn");	
-    if(listAPIMap != null) {
-        var listAPI = listAPIMap["listAPI"];
-        var listAPIResponse = listAPIMap["listAPIResponse"];
-        var listAPIResponseObj = listAPIMap["listAPIResponseObj"];
-    }
+    var afterActionSeccessFn = $actionLink.data("afterActionSeccessFn");	    
      
     var $detailsTab = $("#right_panel_content #tab_content_details");     
     var $spinningWheel = $detailsTab.find("#spinning_wheel");

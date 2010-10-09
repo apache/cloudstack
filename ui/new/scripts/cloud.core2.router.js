@@ -43,14 +43,15 @@ function routerJsonToDetailsTab(jsonObj) {
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
+    var midmenuId = getMidmenuId(jsonObj);
     
     if (jsonObj.state == 'Running') {   
-        buildActionLinkForDetailsTab("Stop Router", routerActionMap, $actionMenu, routerListAPIMap, getMidmenuId(jsonObj));	
-        buildActionLinkForDetailsTab("Reboot Router", routerActionMap, $actionMenu, routerListAPIMap, getMidmenuId(jsonObj));	  
+        buildActionLinkForDetailsTab("Stop Router", routerActionMap, $actionMenu, midmenuId);	
+        buildActionLinkForDetailsTab("Reboot Router", routerActionMap, $actionMenu, midmenuId);	  
         noAvailableActions = false;      
     }
     else if (jsonObj.state == 'Stopped') {        
-        buildActionLinkForDetailsTab("Start Router", routerActionMap, $actionMenu, routerListAPIMap, getMidmenuId(jsonObj));	
+        buildActionLinkForDetailsTab("Start Router", routerActionMap, $actionMenu, midmenuId);	
         noAvailableActions = false;
     }  
     
@@ -59,13 +60,7 @@ function routerJsonToDetailsTab(jsonObj) {
 	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
 	}	   
     //***** actions (end) *****		    
-}
-
-var routerListAPIMap = {
-    listAPI: "listRouters",
-    listAPIResponse: "listroutersresponse",
-    listAPIResponseObj: "router"
-};           
+}        
   
 var routerActionMap = {  
     "Stop Router": {

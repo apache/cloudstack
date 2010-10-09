@@ -60,9 +60,9 @@ function snapshotJsonToDetailsTab(jsonObj) {
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
     var midmenuItemId = getMidmenuId(jsonObj);
-    buildActionLinkForDetailsTab("Create Volume", snapshotActionMap, $actionMenu, snapshotListAPIMap, midmenuItemId);		
-    buildActionLinkForDetailsTab("Delete Snapshot", snapshotActionMap, $actionMenu, snapshotListAPIMap, midmenuItemId);	
-    buildActionLinkForDetailsTab("Create Template", snapshotActionMap, $actionMenu, snapshotListAPIMap, midmenuItemId);					
+    buildActionLinkForDetailsTab("Create Volume", snapshotActionMap, $actionMenu, midmenuItemId);		
+    buildActionLinkForDetailsTab("Delete Snapshot", snapshotActionMap, $actionMenu, midmenuItemId);	
+    buildActionLinkForDetailsTab("Create Template", snapshotActionMap, $actionMenu, midmenuItemId);					
 }
 
 function snapshotClearRightPanel() {
@@ -106,13 +106,7 @@ var snapshotActionMap = {
     }
 }   
 
-var snapshotListAPIMap = {
-    listAPI: "listSnapshots",
-    listAPIResponse: "listsnapshotsresponse",
-    listAPIResponseObj: "snapshot"
-}; 
-
-function doCreateVolumeFromSnapshotInSnapshotPage($actionLink, listAPIMap, $detailsTab) { 
+function doCreateVolumeFromSnapshotInSnapshotPage($actionLink, $detailsTab, midmenuItemId){ 
     var jsonObj = $detailsTab.data("jsonObj");
        
     $("#dialog_add_volume_from_snapshot")
@@ -130,7 +124,7 @@ function doCreateVolumeFromSnapshotInSnapshotPage($actionLink, listAPIMap, $deta
          
          var id = jsonObj.id;
          var apiCommand = "command=createVolume&snapshotid="+id+"&name="+name;
-    	 doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);		
+    	 doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
      },
      "Cancel": function() {	                         
          $(this).dialog("close");
@@ -138,7 +132,7 @@ function doCreateVolumeFromSnapshotInSnapshotPage($actionLink, listAPIMap, $deta
     }).dialog("open");     
 }
 
-function doCreateTemplateFromSnapshotInSnapshotPage($actionLink, listAPIMap, $detailsTab) { 
+function doCreateTemplateFromSnapshotInSnapshotPage($actionLink, $detailsTab, midmenuItemId){ 
     var jsonObj = $detailsTab.data("jsonObj");
        
     $("#dialog_create_template_from_snapshot")
@@ -159,7 +153,7 @@ function doCreateTemplateFromSnapshotInSnapshotPage($actionLink, listAPIMap, $de
        
          var id = jsonObj.id;
          var apiCommand = "command=createTemplate&snapshotid="+id+"&name="+name+"&displaytext="+displayText+"&ostypeid="+osTypeId+"&passwordEnabled="+password;
-    	 doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);		
+    	 doActionToDetailsTab(id, $actionLink, apiCommand, midmenuItemId);		
      },
      "Cancel": function() {	                         
          $(this).dialog("close");
