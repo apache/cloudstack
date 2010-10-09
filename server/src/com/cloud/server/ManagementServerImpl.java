@@ -2331,7 +2331,7 @@ public class ManagementServerImpl implements ManagementServer {
             } finally {
             	if(created == null) {
             		s_logger.warn("Failed to create VM, delete the DB record, vmId: " + initial.getId());
-                	_vmDao.delete(initial.getId());
+            		_vmMgr.destroyVirtualMachine(userId, initial.getId());
             	}
             }
 

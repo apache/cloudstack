@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.async.AsyncJobVO;
 import com.cloud.async.executor.DeployVMResultObject;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.network.security.NetworkGroupVO;
@@ -167,6 +168,14 @@ public class DeployVMCmd extends BaseCmd {
     				s_logger.debug("DeployVMAsync command has been accepted, job id: " + jobId);
 
     			vmId = waitInstanceCreation(jobId);
+    			
+    			if (s_logger.isDebugEnabled())
+    				s_logger.debug("DeployVMAsync is being executed, job id: " + jobId + ", vmId: " + vmId);
+    			
+    			if(vmId == 0) {
+    	        	AsyncJobVO job = mgr.findAsyncJobById(jobId);
+    				throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create VM due to " + job.getResult());
+    			}
     		}
 
     		List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
@@ -174,6 +183,8 @@ public class DeployVMCmd extends BaseCmd {
     		returnValues.add(new Pair<String, Object>(BaseCmd.Properties.JOB_ID.getName(), Long.valueOf(jobId)));
 
     		return returnValues;
+    	} catch(ServerApiException e) {
+    		throw e;
     	} catch (Exception ex) {
     		s_logger.error("Unhandled exception, ", ex);
     		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create VM due to unhandled exception");

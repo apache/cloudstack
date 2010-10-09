@@ -1362,9 +1362,11 @@ public class UserVmManagerImpl implements UserVmManager {
             s_logger.debug("Destroying vm " + vmId);
         }
         
-        if (!stop(userId, vm, 0)) {
-        	s_logger.error("Unable to stop vm so we can't destroy it: " + vmId);
-        	return false;
+        if(vm.getState() != State.Creating) {
+	        if (!stop(userId, vm, 0)) {
+	        	s_logger.error("Unable to stop vm so we can't destroy it: " + vmId);
+	        	return false;
+	        }
         }
         
         Transaction txn = Transaction.currentTxn();
