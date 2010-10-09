@@ -384,6 +384,7 @@ public abstract class BaseCmd {
         TAGS("tags", BaseCmd.TYPE_STRING, "tags"),
         TAKEN("taken", BaseCmd.TYPE_DATE, "taken"),
         LUN("lun", BaseCmd.TYPE_INT, "lun"),
+        LUN_SIZE("lunsize", BaseCmd.TYPE_INT, "lunsize"),
         DETAILS("details", BaseCmd.TYPE_OBJECT_MAP, "details"),
         CLUSTER_ID("clusterid", BaseCmd.TYPE_LONG, "clusterid"),
         CLUSTER_NAME("clustername", BaseCmd.TYPE_STRING, "clustername"),
