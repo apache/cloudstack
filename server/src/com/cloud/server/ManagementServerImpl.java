@@ -2323,12 +2323,15 @@ public class ManagementServerImpl implements ManagementServer {
 	            	}
 	            }
             } catch(ResourceAllocationException rae) {
+            	s_logger.error("Resource allocation failure ", rae);
             	throw rae;
             } catch(InternalErrorException iee) {
+            	s_logger.error("Internal error ", iee);
             	throw iee;
             } finally {
             	if(created == null) {
-                	_vmMgr.destroyVirtualMachine(userId, initial.getId());
+            		s_logger.warn("Failed to create VM, delete the DB record, vmId: " + initial.getId());
+                	_vmDao.delete(initial.getId());
             	}
             }
 
