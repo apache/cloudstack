@@ -1144,7 +1144,9 @@ public class StorageManagerImpl implements StorageManager {
         
         Hypervisor.Type hypervisorType = null;
         List<HostVO> hosts = null;
-        if (podId != null) {
+        if (clusterId != null) {
+            hosts = _hostDao.listByCluster(clusterId);
+        } else  if (podId != null) {
             hosts = _hostDao.listByHostPod(podId);
         } else {
             hosts = _hostDao.listByDataCenter(zoneId);
