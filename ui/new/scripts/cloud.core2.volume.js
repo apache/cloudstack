@@ -491,9 +491,9 @@ function volumeSnapshotJSONToTemplate(jsonObj, template) {
 	var $actionMenu = $actionLink.find("#snapshot_action_menu");
     $actionMenu.find("#action_list").empty();	
     
-    buildActionLinkForSubgridItem("Create Volume", volumeSnapshotActionMap, $actionMenu, snapshotListAPIMap, template);	
-    buildActionLinkForSubgridItem("Delete Snapshot", volumeSnapshotActionMap, $actionMenu, snapshotListAPIMap, template);	
-    buildActionLinkForSubgridItem("Create Template", volumeSnapshotActionMap, $actionMenu, snapshotListAPIMap, template);	
+    buildActionLinkForSubgridItem("Create Volume", volumeSnapshotActionMap, $actionMenu, template);	
+    buildActionLinkForSubgridItem("Delete Snapshot", volumeSnapshotActionMap, $actionMenu, template);	
+    buildActionLinkForSubgridItem("Create Template", volumeSnapshotActionMap, $actionMenu, template);	
 } 
  
 function volumeClearRightPanel() {       
@@ -862,11 +862,14 @@ var volumeSnapshotActionMap = {
         asyncJobResponse: "createvolumeresponse",
         dialogBeforeActionFn : doCreateVolumeFromSnapshotInVolumePage,
         inProcessText: "Creating Volume....",
-        afterActionSeccessFn: function(jsonObj, $subgridItem) {        
+        afterActionSeccessFn: function(json, id, $subgridItem) {           
+            //var jsonObj = ???  
+            /*              
             var $midmenuItem1 = $("#midmenu_item").clone();
             $("#midmenu_container").append($midmenuItem1.show());
             volumeToMidmenu(jsonObj, $midmenuItem1);
 			bindClickToMidMenu($midmenuItem1, volumeToRigntPanel);  
+			*/
         }
     }   
     , 
@@ -875,8 +878,8 @@ var volumeSnapshotActionMap = {
         isAsyncJob: true,
         asyncJobResponse: "deletesnapshotresponse",        
         inProcessText: "Deleting snapshot....",
-        afterActionSeccessFn: function(id) {             
-            $("#volume_snapshot_"+id).slideUp("slow", function() {
+        afterActionSeccessFn: function(json, id, $subgridItem) {                 
+            $subgridItem.slideUp("slow", function() {
                 $(this).remove();
             });
         }
@@ -887,11 +890,11 @@ var volumeSnapshotActionMap = {
         asyncJobResponse: "createtemplateresponse",
         dialogBeforeActionFn : doCreateTemplateFromSnapshotInVolumePage,
         inProcessText: "Creating Template....",
-        afterActionSeccessFn: function(jsonObj, $subgridItem) {}
+        afterActionSeccessFn: function(json, id, $subgridItem) {}            
     }
 }  
                                               
-function doCreateVolumeFromSnapshotInVolumePage($actionLink, listAPIMap, $subgridItem) { 
+function doCreateVolumeFromSnapshotInVolumePage($actionLink, $subgridItem) { 
     var jsonObj = $subgridItem.data("jsonObj");
        
     $("#dialog_add_volume_from_snapshot")
@@ -909,7 +912,7 @@ function doCreateVolumeFromSnapshotInVolumePage($actionLink, listAPIMap, $subgri
          
          var id = jsonObj.id;
          var apiCommand = "command=createVolume&snapshotid="+id+"&name="+fromdb(name);    	
-    	 doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgridItem);			
+    	 doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem);			
      },
      "Cancel": function() {	                         
          $(this).dialog("close");
@@ -917,7 +920,7 @@ function doCreateVolumeFromSnapshotInVolumePage($actionLink, listAPIMap, $subgri
     }).dialog("open");     
 }
 
-function doCreateTemplateFromSnapshotInVolumePage($actionLink, listAPIMap, $subgridItem) { 
+function doCreateTemplateFromSnapshotInVolumePage($actionLink, $subgridItem) { 
     var jsonObj = $subgridItem.data("jsonObj");
        
     $("#dialog_create_template_from_snapshot")
@@ -938,16 +941,10 @@ function doCreateTemplateFromSnapshotInVolumePage($actionLink, listAPIMap, $subg
        
          var id = jsonObj.id;
          var apiCommand = "command=createTemplate&snapshotid="+id+"&name="+todb(name)+"&displaytext="+todb(displayText)+"&ostypeid="+osTypeId+"&passwordEnabled="+password;    	 
-    	 doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgridItem);				
+    	 doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem);				
      },
      "Cancel": function() {	                         
          $(this).dialog("close");
      }	                     
     }).dialog("open");	     
 }
-
-var snapshotListAPIMap = {
-    listAPI: "listSnapshots",
-    listAPIResponse: "listsnapshotsresponse",
-    listAPIResponseObj: "snapshot"
-}; 

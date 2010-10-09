@@ -1234,7 +1234,7 @@ var vmVolumeActionMap = {
         isAsyncJob: true,
         asyncJobResponse: "detachvolumeresponse",
         inProcessText: "Detaching disk....",
-        afterActionSeccessFn: function(jsonObj, $subgridItem) {    
+        afterActionSeccessFn: function(json, id, $subgridItem) {         
             $subgridItem.slideUp("slow", function(){                   
                 $(this).remove();
             });
@@ -1245,7 +1245,7 @@ var vmVolumeActionMap = {
         asyncJobResponse: "createtemplateresponse",            
         dialogBeforeActionFn : doCreateTemplateFromVmVolume,
         inProcessText: "Creating template....",
-        afterActionSeccessFn: function(jsonObj, $subgridItem){}   
+        afterActionSeccessFn: function(json, id, $subgridItem) {}         
     }  
 }     
 
@@ -1280,12 +1280,12 @@ function vmVolumeJSONToTemplate(json, $template) {
     
 	if(json.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
 		if (json.vmstate == "Stopped") {
-		    buildActionLinkForSubgridItem("Create Template", vmVolumeActionMap, $actionMenu, volumeListAPIMap, $template);	
+		    buildActionLinkForSubgridItem("Create Template", vmVolumeActionMap, $actionMenu, $template);	
 		    noAvailableActions = false;		
 		}
 	} 
 	else { //json.type=="DATADISK": "detach disk" is allowed, "create template" is disallowed.			
-		buildActionLinkForSubgridItem("Detach Disk", vmVolumeActionMap, $actionMenu, volumeListAPIMap, $template);		
+		buildActionLinkForSubgridItem("Detach Disk", vmVolumeActionMap, $actionMenu, $template);		
 		noAvailableActions = false;				
 	}	
 	
@@ -1328,12 +1328,12 @@ function vmRouterJSONToTemplate(jsonObj, $template) {
     var noAvailableActions = true;
     
 	 if (jsonObj.state == 'Running') {
-	    buildActionLinkForSubgridItem("Stop Router", vmRouterActionMap, $actionMenu, routerListAPIMap, $template);
-	    buildActionLinkForSubgridItem("Reboot Router", vmRouterActionMap, $actionMenu, routerListAPIMap, $template);
+	    buildActionLinkForSubgridItem("Stop Router", vmRouterActionMap, $actionMenu, $template);
+	    buildActionLinkForSubgridItem("Reboot Router", vmRouterActionMap, $actionMenu, $template);
 	    noAvailableActions = false;		
     }
     else if (jsonObj.state == 'Stopped') {     
-        buildActionLinkForSubgridItem("Start Router", vmRouterActionMap, $actionMenu, routerListAPIMap, $template);  
+        buildActionLinkForSubgridItem("Start Router", vmRouterActionMap, $actionMenu, $template);  
         noAvailableActions = false;		 
     }          
     
@@ -1386,7 +1386,7 @@ function appendInstanceGroup(groupId, groupName) {
     $("#leftmenu_instance_group_container").append($leftmenuSubmenuTemplate);
 }	
 
-function doCreateTemplateFromVmVolume($actionLink, listAPIMap, $subgridItem) {       
+function doCreateTemplateFromVmVolume($actionLink, $subgridItem) {       
     var jsonObj = $subgridItem.data("jsonObj");
     
 	$("#dialog_create_template")
@@ -1409,7 +1409,7 @@ function doCreateTemplateFromVmVolume($actionLink, listAPIMap, $subgridItem) {
 			
 			var id = $subgridItem.data("jsonObj").id;			
 			var apiCommand = "command=createTemplate&volumeId="+id+"&name="+todb(name)+"&displayText="+todb(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
-	    	doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgridItem);					
+	    	doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem);					
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
@@ -1418,11 +1418,11 @@ function doCreateTemplateFromVmVolume($actionLink, listAPIMap, $subgridItem) {
 }   
 
 //***** Routers tab (begin) ***************************************************************************************
-var routerListAPIMap = {
-    listAPI: "listRouters",
-    listAPIResponse: "listroutersresponse",
-    listAPIResponseObj: "router"
-};           
+
+function routerAfterSubgridItemAction(json, id, $subgridItem) {        
+    var jsonObj = json.queryasyncjobresultresponse.router[0];  
+    vmRouterJSONToTemplate(jsonObj, $subgridItem);
+}     
   
 var vmRouterActionMap = {  
     "Stop Router": {
@@ -1430,27 +1430,21 @@ var vmRouterActionMap = {
         isAsyncJob: true,
         asyncJobResponse: "stoprouterresponse",
         inProcessText: "Stopping Router....",
-        afterActionSeccessFn: function(jsonObj, $subgridItem) { 
-            vmRouterJSONToTemplate(jsonObj, $subgridItem);
-        }
+        afterActionSeccessFn: routerAfterSubgridItemAction
     },
     "Start Router": {
         api: "startRouter",            
         isAsyncJob: true,
         asyncJobResponse: "startrouterresponse",
         inProcessText: "Starting Router....",
-        afterActionSeccessFn: function(jsonObj, $subgridItem) { 
-            vmRouterJSONToTemplate(jsonObj, $subgridItem);
-        }
+        afterActionSeccessFn: routerAfterSubgridItemAction
     },
     "Reboot Router": {
         api: "rebootRouter",           
         isAsyncJob: true,
         asyncJobResponse: "rebootrouterresponse",
         inProcessText: "Rebooting Router....",
-        afterActionSeccessFn: function(jsonObj, $subgridItem) { 
-            vmRouterJSONToTemplate(jsonObj, $subgridItem);
-        }
+        afterActionSeccessFn: routerAfterSubgridItemAction
     }
 }   
 //***** Routers tab (end) ***************************************************************************************
