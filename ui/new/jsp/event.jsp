@@ -34,7 +34,7 @@
                 </div>
             </div>
         </div>
-        <div class="grid_rows odd">
+        <div class="grid_rows even">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
                     <%=t.t("Initiated.By")%>:</div>
@@ -44,7 +44,7 @@
                 </div>
             </div>
         </div>
-        <div class="grid_rows even">
+        <div class="grid_rows odd">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
                     <%=t.t("Owner.Account")%>:</div>
@@ -54,7 +54,7 @@
                     </div>
             </div>
         </div>
-        <div class="grid_rows odd">
+        <div class="grid_rows even">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
                     <%=t.t("Type")%>:</div>
@@ -64,7 +64,7 @@
                 </div>
             </div>
         </div>
-        <div class="grid_rows even">
+        <div class="grid_rows odd">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
                     <%=t.t("Level")%>:</div>
@@ -74,7 +74,7 @@
                 </div>
             </div>
         </div>
-        <div class="grid_rows odd">
+        <div class="grid_rows even">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
                     <%=t.t("Description")%>:</div>
@@ -84,7 +84,7 @@
                 </div>
             </div>
         </div>
-        <div class="grid_rows even">
+        <div class="grid_rows odd">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
                     <%=t.t("State")%>:</div>
@@ -94,7 +94,7 @@
                 </div>
             </div>
         </div>
-        <div class="grid_rows odd">
+        <div class="grid_rows even">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
                     <%=t.t("Date")%>:</div>

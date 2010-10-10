@@ -40,7 +40,7 @@
             </div>                 
         </div>
         <div class="grid_container">
-            <div class="grid_rows even">
+            <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
                         <%=t.t("ID")%>:</div>
@@ -50,7 +50,7 @@
                     </div>
                 </div>
             </div>
-            <div class="grid_rows odd">
+            <div class="grid_rows even">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
                         <%=t.t("Role")%>:</div>
@@ -60,7 +60,7 @@
                     </div>
                 </div>
             </div>
-            <div class="grid_rows even">
+            <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
                         <%=t.t("Account")%>:</div>
@@ -70,7 +70,7 @@
                     </div>
                 </div>
             </div>
-            <div class="grid_rows odd">
+            <div class="grid_rows even">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
                         <%=t.t("Domain")%>:</div>
@@ -80,7 +80,7 @@
                     </div>
                 </div>
             </div>
-            <div class="grid_rows even">
+            <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
                         <%=t.t("VMs")%>:</div>
@@ -90,7 +90,7 @@
                     </div>
                 </div>
             </div>
-            <div class="grid_rows odd">
+            <div class="grid_rows even">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
                         <%=t.t("IPs")%>:</div>
@@ -100,7 +100,7 @@
                     </div>
                 </div>
             </div>
-            <div class="grid_rows even">
+            <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
                         <%=t.t("Bytes.Received")%>:</div>
@@ -110,7 +110,7 @@
                     </div>
                 </div>
             </div>
-            <div class="grid_rows odd">
+            <div class="grid_rows even">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
                         <%=t.t("Bytes.Sent")%>:</div>
@@ -120,7 +120,7 @@
                     </div>
                 </div>
             </div>
-            <div class="grid_rows even">
+            <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
                         <%=t.t("State")%>:</div>
