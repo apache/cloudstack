@@ -477,7 +477,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         long id = server.getId();
 
         AgentAttache attache = createAttache(id, server, resource);
-        notifyMonitorsOfConnection(attache, startup);
+        attache = notifyMonitorsOfConnection(attache, startup);
         return attache;
     }
 
@@ -870,14 +870,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Deregistering link for " + hostId + " with state " + nextState);
         }
+        
+        _hostDao.disconnect(host, event, _nodeId);
+        
         synchronized (_agents) {
             AgentAttache removed = _agents.remove(hostId);
-            if (removed != null && removed != attache) { // NOTE: == is intentionally used here.
-                _agents.put(removed.getId(), removed);
-            }
         }
-
-        _hostDao.disconnect(host, event, _nodeId);
         host = _hostDao.findById(host.getId());
         if (host.getStatus() == Status.Alert || host.getStatus() == Status.Down) {
             _haMgr.scheduleRestartForVmsOnHost(host);
@@ -894,7 +892,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         return true;
     }
 
-    protected void notifyMonitorsOfConnection(AgentAttache attache, final StartupCommand[] cmd) {
+    protected  AgentAttache notifyMonitorsOfConnection(AgentAttache attache, final StartupCommand[] cmd) {
         long hostId = attache.getId();
         HostVO host = _hostDao.findById(hostId);
         for (Pair<Integer, Listener> monitor : _hostMonitors) {
@@ -905,7 +903,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
                 if (!monitor.second().processConnect(host, cmd[i])) {
                     s_logger.info("Monitor " + monitor.second().getClass().getSimpleName() + " says not to continue the connect process for " + hostId);
                     handleDisconnect(attache, Event.AgentDisconnected, false);
-                    return;
+                    return null;
                 }
             }
         }
@@ -915,11 +913,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         Answer answer = easySend(hostId, ready);
         if (answer == null) {
             handleDisconnect(attache, Event.AgentDisconnected, false);
-            return;
+            return null;
         }
         
         _hostDao.updateStatus(host, Event.Ready, _nodeId);
         attache.ready();
+        return attache;
     }
 
     @Override
@@ -1553,7 +1552,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
         AgentAttache attache = createAttache(id, server, link);
 
-        notifyMonitorsOfConnection(attache, startup);
+        attache = notifyMonitorsOfConnection(attache, startup);
 
         return attache;
     }
