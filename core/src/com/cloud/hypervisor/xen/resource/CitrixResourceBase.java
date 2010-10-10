@@ -2692,6 +2692,10 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                                     disableVlanNetwork(network);
                                 }
                             }
+                        } else {
+                            String msg = "VM " + vmName + " shutdown succeed, but this vm is not in halted state, it is in " + vm.getPowerState(conn) + " state";
+                            s_logger.warn(msg);
+                            return new StopAnswer(cmd, msg);
                         }
                     } catch (XenAPIException e) {
                         String msg = "VM destroy failed in Stop " + vmName + " Command due to " + e.toString();
