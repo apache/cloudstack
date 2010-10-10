@@ -152,176 +152,6 @@ function handleErrorInDetailsTab(XMLHttpResponse, $detailsTab, label) {
 }    	                
 //***** actions for details tab in right panel (end) **************************************************************************
 
-//***** actions for middle menu (begin) ************************************************************************
-var selectedItemsInMidMenu = {};
-
-function buildActionLinkForMidMenu(label, actionMap, $actionMenu) {
-    var apiInfo = actionMap[label];
-    var $listItem = $("#action_list_item_middle_menu").clone();
-    $actionMenu.find("#action_list").append($listItem.show());
-    var $link = $listItem.find("#link").text(label);
-    $link.data("label", label);	  
-    $link.data("api", apiInfo.api);				                 
-    $link.data("isAsyncJob", apiInfo.isAsyncJob);
-    $link.data("asyncJobResponse", apiInfo.asyncJobResponse);		     
-    $link.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);
-    $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);
-    $link.bind("click", function(event) {	
-        $actionMenu.hide();    	 
-                
-        var itemCounts = 0;
-        for(var id in selectedItemsInMidMenu) {
-            itemCounts ++;
-        }
-        if(itemCounts == 0) {
-            $("#dialog_info_please_select_one_item_in_middle_menu").dialog("open");		
-            return;
-        }        
-        
-        var $actionLink = $(this);   
-        var dialogBeforeActionFn = $actionLink.data("dialogBeforeActionFn"); 
-        if(dialogBeforeActionFn == null) {		                   
-            for(var id in selectedItemsInMidMenu) {	
-                var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
-                doActionForMidMenu(id, $actionLink, apiCommand); 	
-            }
-        }
-        else {
-            dialogBeforeActionFn($actionLink, selectedItemsInMidMenu);	
-            
-        }        
-        selectedItemsInMidMenu = {}; //clear selected items for action	                          
-        return false;
-    });  
-} 
-
-/*
-If Cancel button in dialog is clicked, action won't preceed. 
-i.e. doActionForMidMenu() won't get called => highlight won't be removd from middle menu. 
-So, we need to remove highlight here. Otherwise, it won't be consistent of selectedItemsInMidMenu which will be emptied soon.
-*/
-function removeHighlightInMiddleMenu(selectedItemsInMidMenu) {
-    for(var id in selectedItemsInMidMenu) {
-        var $midmenuItem1 = $("#midmenuItem_"+id);	
-        $midmenuItem1.find("#content").removeClass("selected");
-    }
-}
-
-function doActionForMidMenu(id, $actionLink, apiCommand) {   
-    var label = $actionLink.data("label");			           
-    var isAsyncJob = $actionLink.data("isAsyncJob");
-    var asyncJobResponse = $actionLink.data("asyncJobResponse");	
-    var afterActionSeccessFn = $actionLink.data("afterActionSeccessFn");	   
-        
-    var $midmenuItem1 = $("#midmenuItem_"+id);	
-    $midmenuItem1.find("#content").removeClass("selected").addClass("inaction");                          
-    $midmenuItem1.find("#spinning_wheel").addClass("midmenu_addingloader").show();	
-    $midmenuItem1.find("#info_icon").hide();		  
-	
-	//Async job (begin) *****
-	if(isAsyncJob == true) {	                     
-        $.ajax({
-            data: createURL(apiCommand),
-            dataType: "json",           
-            success: function(json) {	                	                        
-                var jobId = json[asyncJobResponse].jobid;                  			                        
-                var timerKey = "asyncJob_" + jobId;					                       
-                $("body").everyTime(
-                    10000,
-                    timerKey,
-                    function() {
-                        $.ajax({
-                            data: createURL("command=queryAsyncJobResult&jobId="+jobId),
-	                        dataType: "json",									                    					                    
-	                        success: function(json) {		                            							                       
-		                        var result = json.queryasyncjobresultresponse;										                   
-		                        if (result.jobstatus == 0) {
-			                        return; //Job has not completed
-		                        } else {											                    
-			                        $("body").stopTime(timerKey);	
-			                        $midmenuItem1.find("#content").removeClass("inaction");
-			                        $midmenuItem1.find("#spinning_wheel").hide();			                       
-			                        if (result.jobstatus == 1) { // Succeeded  
-			                            $midmenuItem1.find("#info_icon").removeClass("error").show();
-			                            $midmenuItem1.data("afterActionInfo", (label + " action succeeded.")); 			                            
-			                            afterActionSeccessFn(json, $midmenuItem1);  			                            
-			                        } else if (result.jobstatus == 2) { // Failed	
-			                            $midmenuItem1.find("#info_icon").addClass("error").show();
-			                            $midmenuItem1.data("afterActionInfo", (label + " action failed. Reason: " + fromdb(result.jobresult)));    
-			                        }											                    
-		                        }
-	                        },
-	                        error: function(XMLHttpResponse) {
-		                        $("body").stopTime(timerKey);		                       		                        
-		                        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1); 		                        
-	                        }
-                        });
-                    },
-                    0
-                );
-            },
-            error: function(XMLHttpResponse) {	
-		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);    
-            }
-        });     
-    }     
-    //Async job (end) *****
-    
-    //Sync job (begin) *****
-    else { 	              
-        $.ajax({
-            data: createURL(apiCommand),
-	        dataType: "json",
-	        async: false,
-	        success: function(json) {
-	            $midmenuItem1.find("#content").removeClass("inaction");
-				$midmenuItem1.find("#spinning_wheel").hide();				
-				$midmenuItem1.find("#info_icon").removeClass("error").show();
-			    $midmenuItem1.data("afterActionInfo", (label + " action succeeded.")); 			
-				afterActionSeccessFn(json, $midmenuItem1); 		
-	        },
-            error: function(XMLHttpResponse) {	
-                $midmenuItem1.find("#content").removeClass("inaction");
-				$midmenuItem1.find("#spinning_wheel").hide();
-		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);    
-            }        
-        });
-    }
-    //Sync job (end) *****
-}
-
-function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1) { 
-    $midmenuItem1.find("#content").removeClass("inaction");
-	$midmenuItem1.find("#spinning_wheel").hide();	
-	$midmenuItem1.find("#info_icon").addClass("error").show();		
-	$midmenuItem1.find("#first_row").text("Action failed");	
-		                        
-    var errorMsg = "";
-    if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {
-        var start = XMLHttpResponse.responseText.indexOf("h1") + 3;
-        var end = XMLHttpResponse.responseText.indexOf("</h1");
-        errorMsg = XMLHttpResponse.responseText.substring(start, end);		
-    }
-    if(errorMsg.length > 0) 
-        $midmenuItem1.find("#second_row").text(fromdb(errorMsg));   
-    else
-        $midmenuItem1.find("#second_row").html("&nbsp;");     
-}  
-
-function handleAsyncJobFailInMidMenu(errorMsg, $midmenuItem1) { 
-    $midmenuItem1.find("#content").removeClass("inaction");
-	$midmenuItem1.find("#spinning_wheel").hide();	
-	$midmenuItem1.find("#info_icon").addClass("error").show();		
-	$midmenuItem1.find("#first_row").text("Adding failed");			                       
-    
-    if(errorMsg.length > 0) 
-        $midmenuItem1.find("#second_row").text(fromdb(errorMsg));   
-    else
-        $midmenuItem1.find("#second_row").html("&nbsp;");   
-}       	     	                
-//***** actions for middle menu (end) **************************************************************************
-
-
 //***** actions for a subgrid item in right panel (begin) ************************************************************************
 function buildActionLinkForSubgridItem(label, actionMap, $actionMenu, $subgridItem) {
     var apiInfo = actionMap[label];
@@ -451,7 +281,172 @@ function handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, label) {
 }    	                
 //***** actions for a subgrid item in right panel (end) **************************************************************************
 
+//***** actions for middle menu (begin) ************************************************************************
+var selectedItemsInMidMenu = {};
 
+function buildActionLinkForMidMenu(label, actionMap, $actionMenu) {
+    var apiInfo = actionMap[label];
+    var $listItem = $("#action_list_item_middle_menu").clone();
+    $actionMenu.find("#action_list").append($listItem.show());
+    var $link = $listItem.find("#link").text(label);
+    $link.data("label", label);	  
+    $link.data("api", apiInfo.api);				                 
+    $link.data("isAsyncJob", apiInfo.isAsyncJob);
+    $link.data("asyncJobResponse", apiInfo.asyncJobResponse);		     
+    $link.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);
+    $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);
+    $link.bind("click", function(event) {	
+        $actionMenu.hide();    	 
+                
+        var itemCounts = 0;
+        for(var id in selectedItemsInMidMenu) {
+            itemCounts ++;
+        }
+        if(itemCounts == 0) {
+            $("#dialog_info_please_select_one_item_in_middle_menu").dialog("open");		
+            return;
+        }        
+        
+        var $actionLink = $(this);   
+        var dialogBeforeActionFn = $actionLink.data("dialogBeforeActionFn"); 
+        if(dialogBeforeActionFn == null) {		                   
+            for(var id in selectedItemsInMidMenu) {	
+                var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
+                doActionForMidMenu(id, $actionLink, apiCommand); 	
+            }
+        }
+        else {
+            dialogBeforeActionFn($actionLink, selectedItemsInMidMenu);	
+            
+        }        
+        selectedItemsInMidMenu = {}; //clear selected items for action	                          
+        return false;
+    });  
+} 
+
+function doActionForMidMenu(id, $actionLink, apiCommand) {   
+    var label = $actionLink.data("label");			           
+    var isAsyncJob = $actionLink.data("isAsyncJob");
+    var asyncJobResponse = $actionLink.data("asyncJobResponse");	
+    var afterActionSeccessFn = $actionLink.data("afterActionSeccessFn");	   
+        
+    var $midmenuItem1 = $("#midmenuItem_"+id);	
+    $midmenuItem1.find("#content").removeClass("selected").addClass("inaction");                          
+    $midmenuItem1.find("#spinning_wheel").addClass("midmenu_addingloader").show();	
+    $midmenuItem1.find("#info_icon").hide();		  
+	
+	//Async job (begin) *****
+	if(isAsyncJob == true) {	                     
+        $.ajax({
+            data: createURL(apiCommand),
+            dataType: "json",           
+            success: function(json) {	                	                        
+                var jobId = json[asyncJobResponse].jobid;                  			                        
+                var timerKey = "asyncJob_" + jobId;					                       
+                $("body").everyTime(
+                    10000,
+                    timerKey,
+                    function() {
+                        $.ajax({
+                            data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+	                        dataType: "json",									                    					                    
+	                        success: function(json) {		                            							                       
+		                        var result = json.queryasyncjobresultresponse;										                   
+		                        if (result.jobstatus == 0) {
+			                        return; //Job has not completed
+		                        } else {											                    
+			                        $("body").stopTime(timerKey);	
+			                        $midmenuItem1.find("#content").removeClass("inaction");
+			                        $midmenuItem1.find("#spinning_wheel").hide();			                       
+			                        if (result.jobstatus == 1) { // Succeeded  
+			                            $midmenuItem1.find("#info_icon").removeClass("error").show();
+			                            $midmenuItem1.data("afterActionInfo", (label + " action succeeded.")); 			                            
+			                            afterActionSeccessFn(json, $midmenuItem1);  			                            
+			                        } else if (result.jobstatus == 2) { // Failed	
+			                            $midmenuItem1.find("#info_icon").addClass("error").show();
+			                            $midmenuItem1.data("afterActionInfo", (label + " action failed. Reason: " + fromdb(result.jobresult)));    
+			                        }											                    
+		                        }
+	                        },
+	                        error: function(XMLHttpResponse) {
+		                        $("body").stopTime(timerKey);		                       		                        
+		                        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1); 		                        
+	                        }
+                        });
+                    },
+                    0
+                );
+            },
+            error: function(XMLHttpResponse) {	
+		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);    
+            }
+        });     
+    }     
+    //Async job (end) *****
+    
+    //Sync job (begin) *****
+    else { 	              
+        $.ajax({
+            data: createURL(apiCommand),
+	        dataType: "json",
+	        async: false,
+	        success: function(json) {
+	            $midmenuItem1.find("#content").removeClass("inaction");
+				$midmenuItem1.find("#spinning_wheel").hide();				
+				$midmenuItem1.find("#info_icon").removeClass("error").show();
+			    $midmenuItem1.data("afterActionInfo", (label + " action succeeded.")); 			
+				afterActionSeccessFn(json, $midmenuItem1); 		
+	        },
+            error: function(XMLHttpResponse) {	                
+		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);    
+            }        
+        });
+    }
+    //Sync job (end) *****
+}
+
+function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1) { 
+    $midmenuItem1.find("#content").removeClass("inaction");
+	$midmenuItem1.find("#spinning_wheel").hide();	
+	$midmenuItem1.find("#info_icon").addClass("error").show();		
+	$midmenuItem1.find("#first_row").text("Action failed");	
+		                        
+    var errorMsg = "";
+    if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {
+        var start = XMLHttpResponse.responseText.indexOf("h1") + 3;
+        var end = XMLHttpResponse.responseText.indexOf("</h1");
+        errorMsg = XMLHttpResponse.responseText.substring(start, end);		
+    }
+    if(errorMsg.length > 0) 
+        $midmenuItem1.find("#second_row").text(fromdb(errorMsg));   
+    else
+        $midmenuItem1.find("#second_row").html("&nbsp;");     
+}  
+
+function handleAsyncJobFailInMidMenu(errorMsg, $midmenuItem1) { 
+    $midmenuItem1.find("#content").removeClass("inaction");
+	$midmenuItem1.find("#spinning_wheel").hide();	
+	$midmenuItem1.find("#info_icon").addClass("error").show();		
+	$midmenuItem1.find("#first_row").text("Adding failed");			                       
+    
+    if(errorMsg.length > 0) 
+        $midmenuItem1.find("#second_row").text(fromdb(errorMsg));   
+    else
+        $midmenuItem1.find("#second_row").html("&nbsp;");   
+}       
+
+/*
+If Cancel button in dialog is clicked, action won't preceed. 
+i.e. doActionForMidMenu() won't get called => highlight won't be removd from middle menu. 
+So, we need to remove highlight here. Otherwise, it won't be consistent of selectedItemsInMidMenu which will be emptied soon.
+*/
+function removeHighlightInMiddleMenu(selectedItemsInMidMenu) {
+    for(var id in selectedItemsInMidMenu) {
+        var $midmenuItem1 = $("#midmenuItem_"+id);	
+        $midmenuItem1.find("#content").removeClass("selected");
+    }
+}	     	                
+//***** actions for middle menu (end) **************************************************************************
 
 
 function createURL(url) {

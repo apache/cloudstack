@@ -270,27 +270,7 @@ long milliseconds = new Date().getTime();
                             <%=t.t("router")%>
                         </div>
                     </div>                   
-                </div>
-                <div class="leftmenu_list">
-                    <div class="leftmenu_content">
-                        <div class="leftmenu_firstindent">
-                            <div class="leftmenu_arrows close" id="arrowIcon">
-                            </div>
-                            <div class="leftmenu_list_icons">
-                                <img src="images/leftmenu_hosticon.png" alt="Host" /></div>
-                            Host
-                        </div>
-                    </div>
-                </div>
-                <div class="leftmenu_list">
-                    <div class="leftmenu_content" id="leftmenu_host">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_list_icons">
-                                <img src="images/leftmenu_hosticon.png" alt="Host" /></div>
-                            Host
-                        </div>
-                    </div>
-                </div>
+                </div>               
                 <div class="leftmenu_list">
                     <div class="leftmenu_content">
                         <div class="leftmenu_firstindent">
@@ -302,21 +282,7 @@ long milliseconds = new Date().getTime();
                         </div>
                     </div>
                 </div>
-                <div class="leftmenu_list">
-                    <div class="leftmenu_content" id="leftmenu_primary_storage">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_list_icons">
-                                <img src="images/storage_leftmenuicon.png" alt="Primary Storage" /></div>
-                            Primary Storage
-                        </div>
-                    </div>
-                    <div class="leftmenu_content" id="leftmenu_secondary_storage">
-                        <div class="leftmenu_secondindent">
-                            <div class="leftmenu_list_icons">
-                                <img src="images/storage_leftmenuicon.png" alt="secondary Storage" /></div>
-                            secondary Storage
-                        </div>
-                    </div>
+                <div class="leftmenu_list">                   
                     <div class="leftmenu_content" id="leftmenu_volume">
                         <div class="leftmenu_secondindent">
                             <div class="leftmenu_list_icons">
