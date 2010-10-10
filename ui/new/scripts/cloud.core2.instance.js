@@ -31,9 +31,7 @@ function clickInstanceGroupHeader($arrowIcon) {
     }	  
            
     //***** VM Detail (end) ********************************************************************************    
-    $("#right_panel").load("jsp/instance.jsp", function() {	
-        //$rightPanelHeader = $("#right_panel_header");			                                		                                
-	    	    
+    $("#right_panel").load("jsp/instance.jsp", function() {	           
 	    var $noDiskOfferingTemplate = $("#vm_popup_disk_offering_template_no");
         var $customDiskOfferingTemplate = $("#vm_popup_disk_offering_template_custom");
         var $existingDiskOfferingTemplate = $("#vm_popup_disk_offering_template_existing");
@@ -84,25 +82,15 @@ function clickInstanceGroupHeader($arrowIcon) {
 			    success: function(json) {
 				    var offerings = json.listserviceofferingsresponse.serviceoffering;
 				    var $container = $("#service_offering_container");
-				    $container.empty();	
-				    				    
-				    //var checked = "checked";
+				    $container.empty();					    
 				    if (offerings != null && offerings.length > 0) {						    
-					    for (var i = 0; i < offerings.length; i++) {						    
-						    //if (i != 0) 
-						    //    checked = "";
-						    
+					    for (var i = 0; i < offerings.length; i++) {	
 						    var $t = $serviceOfferingTemplate.clone();  						  
 						    $t.find("input:radio[name=service_offering_radio]").val(offerings[i].id); 
 						    $t.find("#name").text(fromdb(offerings[i].name));
-						    $t.find("#description").text(fromdb(offerings[i].displaytext)); 
-						    
+						    $t.find("#description").text(fromdb(offerings[i].displaytext)); 						    
 						    if (i > 0)
-						        $t.find("input:radio[name=service_offering_radio]").removeAttr("checked");	
-						
-						    //if(i == 0)
-						    //    $t.find("input:radio[name=service_offering_radio]").attr("checked", true);
-						    //var listItem = $("<li><input class='radio' type='radio' name='service' id='service' value='"+offerings[i].id+"'" + checked + "/><label style='width:500px;font-size:11px;' for='service'>"+fromdb(offerings[i].displaytext)+"</label></li>");
+						        $t.find("input:radio[name=service_offering_radio]").removeAttr("checked");							
 						    $container.append($t.show());	
 					    }
 					    //Safari and Chrome are not smart enough to make checkbox checked if html markup is appended by JQuery.append(). So, the following 2 lines are added.		
@@ -176,47 +164,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 				    //Safari and Chrome are not smart enough to make checkbox checked if html markup is appended by JQuery.append(). So, the following 2 lines are added.		
 		            var html_all = $rootDiskOfferingContainer.html();        
                     $rootDiskOfferingContainer.html(html_all);                         
-				    //***** root disk offering: "custom", existing disk offerings in database (end) *********************************************************************
-				    
-				    
-				    
-				    
-				    /*
-				    $("#wizard_root_disk_offering, #wizard_data_disk_offering").empty();
-												
-			        var html = 
-				    "<li>"
-					    +"<input class='radio' type='radio' name='datadisk' id='datadisk' value='' checked/>"
-					    +"<label style='width:500px;font-size:11px;' for='disk'>No disk offering</label>"
-			       +"</li>";
-				    $("#wizard_data_disk_offering").append(html);							
-												
-				    if (offerings != null && offerings.length > 0) {								    
-					    for (var i = 0; i < offerings.length; i++) {	
-						    var html = 
-							    "<li>"
-								    +"<input class='radio' type='radio' name='rootdisk' id='rootdisk' value='"+offerings[i].id+"'" + ((i==0)?"checked":"") + "/>"
-								    +"<label style='width:500px;font-size:11px;' for='disk'>"+fromdb(offerings[i].displaytext)+"</label>"
-						       +"</li>";
-						    $("#wizard_root_disk_offering").append(html);
-						
-						    var html2 = 
-						    "<li>"
-							    +"<input class='radio' type='radio' name='datadisk' id='datadisk' value='"+offerings[i].id+"'" + "/>"
-							    +"<label style='width:500px;font-size:11px;' for='disk'>"+fromdb(offerings[i].displaytext)+"</label>"
-					       +"</li>";
-						    $("#wizard_data_disk_offering").append(html2);																		
-					    }
-					    //Safari and Chrome are not smart enough to make checkbox checked if html markup is appended by JQuery.append(). So, the following 2 lines are added.		
-		                var html_all = $("#wizard_root_disk_offering").html();        
-                        $("#wizard_root_disk_offering").html(html_all); 
-			            
-		                var html_all2 = $("#wizard_data_disk_offering").html();        
-                        $("#wizard_data_disk_offering").html(html_all2); 
-				    }
-				    */
-				    
-				    
+				    //***** root disk offering: "custom", existing disk offerings in database (end) *********************************************************************				    
 			    }
 		    });
 		 
@@ -228,9 +176,7 @@ function clickInstanceGroupHeader($arrowIcon) {
         
 	    function vmWizardCleanup() {
 	        currentStepInVmPopup = 1;			
-		    $vmPopup.find("#step1").show().nextAll().hide();
-		    //$vmPopup.find("#prev_step").hide();
-		    //$vmPopup.find("#next_step").show();
+		    $vmPopup.find("#step1").show().nextAll().hide();		   
 		    $vmPopup.find("#wizard_message").hide();
 		    selectedTemplateTypeInVmPopup = "featured";				
 		    $("#wiz_featured").removeClass().addClass("rev_wizmid_selectedtempbut");
@@ -509,10 +455,8 @@ function clickInstanceGroupHeader($arrowIcon) {
 		            $thisPopup.find("#step2 #wiz_message #wiz_message_text").text("Please select a service offering to continue");
 		            $thisPopup.find("#step2 #wiz_message").show();
 			        return false;
-			    }
-               
+			    }               
                 $thisPopup.find("#wizard_review_service_offering").text($thisPopup.find("input:radio[name=service_offering_radio]:checked").next().text());
-
 		    }			
     		
 		    if(currentStepInVmPopup ==3) { //disk offering	 
@@ -549,16 +493,15 @@ function clickInstanceGroupHeader($arrowIcon) {
 			    var isValid = true;									
 			    isValid &= validateString("Name", $thisPopup.find("#wizard_vm_name"), $thisPopup.find("#wizard_vm_name_errormsg"), true);	 //optional	
 			    isValid &= validateString("Group", $thisPopup.find("#wizard_vm_group"), $thisPopup.find("#wizard_vm_group_errormsg"), true); //optional					
-			    if (!isValid) return;		    
-		    
+			    if (!isValid) 
+			        return;		    
+		        vmWizardClose();
+		        
 			    // Create a new VM!!!!
 			    var moreCriteria = [];								
-			    moreCriteria.push("&zoneId="+$thisPopup.find("#wizard_zone").val());
-			    
-    			moreCriteria.push("&hypervisor="+$thisPopup.find("#wizard_hypervisor").val());	
-    								
-			    moreCriteria.push("&templateId="+$thisPopup.find("#step1 .rev_wiztemplistbox_selected").attr("id"));
-    							
+			    moreCriteria.push("&zoneId="+$thisPopup.find("#wizard_zone").val());			    
+    			moreCriteria.push("&hypervisor="+$thisPopup.find("#wizard_hypervisor").val());	    								
+			    moreCriteria.push("&templateId="+$thisPopup.find("#step1 .rev_wiztemplistbox_selected").attr("id"));    							
 			    moreCriteria.push("&serviceOfferingId="+$thisPopup.find("input:radio[name=service_offering_radio]:checked").val());
     			
     			var diskOfferingId;    						
@@ -571,8 +514,7 @@ function clickInstanceGroupHeader($arrowIcon) {
     			    			
     			var customDiskSize = $thisPopup.find("#custom_disk_size").val(); //unit is MB
     			if(customDiskSize != null && customDiskSize.length > 0)
-    			    moreCriteria.push("&size="+customDiskSize);	    			
-    		   
+    			    moreCriteria.push("&size="+customDiskSize);	    
     			
     			var name = trim($thisPopup.find("#wizard_vm_name").val());
 			    if (name != null && name.length > 0) 
@@ -580,9 +522,7 @@ function clickInstanceGroupHeader($arrowIcon) {
     			
 			    var group = trim($thisPopup.find("#wizard_vm_group").val());
 			    if (group != null && group.length > 0) 
-				    moreCriteria.push("&group="+todb(group));		
-    						
-			    vmWizardClose();
+				    moreCriteria.push("&group="+todb(group));	
     			    		
     			var $midmenuItem1 = beforeAddingMidMenuItem() ;
     			    			
@@ -608,19 +548,17 @@ function clickInstanceGroupHeader($arrowIcon) {
 									    } else {
 										    $("body").stopTime(timerKey);										    
 										    if (result.jobstatus == 1) {
-											    // Succeeded
-						                        //if("virtualmachine" in result) {	
-						                            vmToMidmenu(result.virtualmachine[0], $midmenuItem1);	
-						                            if (result.virtualmachine[0].passwordenabled == 'true') {							                                									        
-												        var extraMessage = "New password: " + result.virtualmachine[0].password;
-												        afterAddingMidMenuItem($midmenuItem1, true, extraMessage);
-												        var afterActionInfo = "Your instance has been successfully created.  Your new password is : " + result.virtualmachine[0].password;
-												        $midmenuItem1.data("afterActionInfo", afterActionInfo); 
-											        } 	
-											        else {
-											            afterAddingMidMenuItem($midmenuItem1, true);
-											        }	
-						                        //}	
+											    // Succeeded						                        
+					                            vmToMidmenu(result.virtualmachine[0], $midmenuItem1);	
+					                            if (result.virtualmachine[0].passwordenabled == 'true') {							                                									        
+											        var extraMessage = "New password: " + result.virtualmachine[0].password;
+											        afterAddingMidMenuItem($midmenuItem1, true, extraMessage);
+											        var afterActionInfo = "Your instance has been successfully created.  Your new password is : " + result.virtualmachine[0].password;
+											        $midmenuItem1.data("afterActionInfo", afterActionInfo); 
+										        } 	
+										        else {
+										            afterAddingMidMenuItem($midmenuItem1, true);
+										        }							                        
 										    } else if (result.jobstatus == 2) {
 											    // Failed
 											    afterAddingMidMenuItem($midmenuItem1, false, fromdb(result.jobresult));		
@@ -644,8 +582,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 			    });
 		    } 		
     		
-		    //since no error, move to next step
-		    
+		    //since no error, move to next step		    
 		    $vmPopup.find("#step" + currentStepInVmPopup).hide().next().show();  //hide current step, show next step		    
 		    currentStepInVmPopup++;					
 	    });
@@ -653,9 +590,6 @@ function clickInstanceGroupHeader($arrowIcon) {
 	    $vmPopup.find("#prev_step").bind("click", function(event) {		
 		    var $prevStep = $vmPopup.find("#step" + currentStepInVmPopup).hide().prev().show(); //hide current step, show previous step
 		    currentStepInVmPopup--;
-//		    if (currentStepInVmPopup == 1) {
-//			    $vmPopup.find("#prev_step").hide();
-//		    }
 		    return false; //event.preventDefault() + event.stopPropagation()
 	    });
         //***** VM Wizard (end) ********************************************************************************
@@ -674,8 +608,7 @@ function clickInstanceGroupHeader($arrowIcon) {
 			    }	
 		    }
 	    });        
-        //***** Volume tab (end) *******************************************************************************    
-    
+        //***** Volume tab (end) *******************************************************************************        
     });	
 }  
 
