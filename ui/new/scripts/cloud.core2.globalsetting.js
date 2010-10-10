@@ -67,4 +67,5 @@ function globalSettingJsonToDetailsTab(jsonObj) {
     $detailsTab.find("#value").text(fromdb(jsonObj.value));
     $detailsTab.find("#value_edit").val(fromdb(jsonObj.value));
     $detailsTab.find("#description").text(fromdb(jsonObj.description));   
+    $detailsTab.find("#category").text(fromdb(jsonObj.category)); 
 }

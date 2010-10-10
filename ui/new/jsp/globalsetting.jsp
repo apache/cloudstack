@@ -76,7 +76,17 @@
                     <div class="row_celltitles" id="description">
                     </div>
                 </div>
-            </div>
+            </div>            
+            <div class="grid_rows even">
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles">
+                        <%=t.t("category")%>:</div>
+                </div>
+                <div class="grid_row_cell" style="width: 79%;">
+                    <div class="row_celltitles" id="category">
+                    </div>
+                </div>
+            </div>               
         </div>        
         <div class="grid_botactionpanel">
         	<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
