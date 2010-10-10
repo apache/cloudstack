@@ -204,6 +204,7 @@ public abstract class BaseCmd {
         INTERVAL_TYPE("intervaltype", BaseCmd.TYPE_STRING, "intervalType"),
         IP_ADDRESS("ipaddress", BaseCmd.TYPE_STRING, "ipAddress"),
         IP_AVAIL("ipavailable", BaseCmd.TYPE_INT, "ipavailable"),
+        IGROUP("igroup",BaseCmd.TYPE_STRING,"igroup"),
         IP_LIMIT("iplimit", BaseCmd.TYPE_INT, "iplimit"),
         IP_TOTAL("iptotal", BaseCmd.TYPE_INT, "iptotal"),
         IS_RECURSIVE("isrecursive", BaseCmd.TYPE_BOOLEAN, "isrecursive"),
