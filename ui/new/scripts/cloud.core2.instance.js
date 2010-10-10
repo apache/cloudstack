@@ -1241,12 +1241,15 @@ function vmToMidmenu(jsonObj, $midmenuItem1) {
     updateStateInMidMenu(jsonObj, $midmenuItem1);     
     
     $midmenuItem1.data("toRightPanelFn", vmToRightPanel);    
+    /*
     $midmenuItem1.bind("click", function(event) {  
-        var $t = $(this);     
+        var $t = $(this);    
+        $t.find("#content").addClass("selected");   
         var toRightPanelFn = $t.data("toRightPanelFn");
         toRightPanelFn($t);	 
         return false;
     }); 
+    */
 }
 
 function vmToRightPanel($midmenuItem) {
@@ -1510,9 +1513,14 @@ function appendInstanceGroup(groupId, groupName) {
                 if (instances != null && instances.length > 0) {
                     var $template = $("#midmenu_item"); 	                           
                     for(var i=0; i<instances.length;i++) {  
-                        var $newTemplate = $template.clone();                                                                                                                                              
-                        vmToMidmenu(instances[i], $newTemplate);  
-                        $("#midmenu_container").append($newTemplate.show());
+                        var $midmenuItem1 = $template.clone();                                                                                                                                              
+                        vmToMidmenu(instances[i], $midmenuItem1); 
+                        bindClickToMidMenu($midmenuItem1, vmToRightPanel, getMidmenuId);  
+                        $("#midmenu_container").append($midmenuItem1.show());                        
+                        /*
+                        if(i == 0)
+                            $midmenuItem1.click();  //click the 1st item in middle menu as default
+                        */
                     }  
                 }  
             }

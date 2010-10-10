@@ -17,7 +17,7 @@ $(document).ready(function() {
     $("#accordion_menu").show();
        
     var $midmenuItem = $("#midmenu_item");
-    function listMidMenuItems(leftmenuId, commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSP, toMidmenu, toRightPanel, getMidmenuId) { 
+    function listMidMenuItems(leftmenuId, commandString, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn) { 
         $("#"+leftmenuId).bind("click", function(event) {
             if(selected_leftmenu_id != null && selected_leftmenu_id.length > 0)
                 $("#"+selected_leftmenu_id).removeClass("selected");
@@ -46,7 +46,7 @@ $(document).ready(function() {
                     return false;
                 });	   
                               
-                afterLoadRightPanelJSP();    
+                afterLoadRightPanelJSPFn();    
                             
                 $.ajax({
 	                cache: false,
@@ -58,10 +58,12 @@ $(document).ready(function() {
 	                    if(items != null && items.length > 0) {
 	                        for(var i=0; i<items.length;i++) { 
                                 var $midmenuItem1 = $midmenuItem.clone();  
-                                $midmenuItem1.data("toRightPanelFn", toRightPanel);                             
-                                toMidmenu(items[i], $midmenuItem1);    
-                                bindClickToMidMenu($midmenuItem1, toRightPanel, getMidmenuId);             
-                                $("#midmenu_container").append($midmenuItem1.show());                            
+                                $midmenuItem1.data("toRightPanelFn", toRightPanelFn);                             
+                                toMidmenuFn(items[i], $midmenuItem1);    
+                                bindClickToMidMenu($midmenuItem1, toRightPanelFn, getMidmenuIdFn);             
+                                $("#midmenu_container").append($midmenuItem1.show());   
+                                if(i == 0)
+                                    $midmenuItem1.click();  //click the 1st item in middle menu as default                       
                             }  
                         }  
 	                }
@@ -70,13 +72,13 @@ $(document).ready(function() {
             return false;
         });
     }
-    listMidMenuItems("leftmenu_event", "listEvents", "listeventsresponse", "event", "jsp/event.jsp", afterLoadEventJSP, eventToMidmenu, eventToRigntPanel);
-    listMidMenuItems("leftmenu_alert", "listAlerts", "listalertsresponse", "alert", "jsp/alert.jsp", afterLoadAlertJSP, alertToMidmenu, alertToRigntPanel);
-    listMidMenuItems("leftmenu_account", "listAccounts", "listaccountsresponse", "account", "jsp/account.jsp", afterLoadAccountJSP, accountToMidmenu, accountToRigntPanel);
-    listMidMenuItems("leftmenu_volume", "listVolumes", "listvolumesresponse", "volume", "jsp/volume.jsp", afterLoadVolumeJSP, volumeToMidmenu, volumeToRigntPanel);
-    listMidMenuItems("leftmenu_snapshot", "listSnapshots", "listsnapshotsresponse", "snapshot", "jsp/snapshot.jsp", afterLoadSnapshotJSP, snapshotToMidmenu, snapshotToRigntPanel);
+    listMidMenuItems("leftmenu_event", "listEvents", "listeventsresponse", "event", "jsp/event.jsp", afterLoadEventJSP, eventToMidmenu, eventToRigntPanel, getMidmenuId);
+    listMidMenuItems("leftmenu_alert", "listAlerts", "listalertsresponse", "alert", "jsp/alert.jsp", afterLoadAlertJSP, alertToMidmenu, alertToRigntPanel, getMidmenuId);
+    listMidMenuItems("leftmenu_account", "listAccounts", "listaccountsresponse", "account", "jsp/account.jsp", afterLoadAccountJSP, accountToMidmenu, accountToRigntPanel, getMidmenuId);
+    listMidMenuItems("leftmenu_volume", "listVolumes", "listvolumesresponse", "volume", "jsp/volume.jsp", afterLoadVolumeJSP, volumeToMidmenu, volumeToRigntPanel, getMidmenuId);
+    listMidMenuItems("leftmenu_snapshot", "listSnapshots", "listsnapshotsresponse", "snapshot", "jsp/snapshot.jsp", afterLoadSnapshotJSP, snapshotToMidmenu, snapshotToRigntPanel, getMidmenuId);
     listMidMenuItems("leftmenu_ip", "listPublicIpAddresses", "listpublicipaddressesresponse", "publicipaddress", "jsp/ipaddress.jsp", afterLoadIpJSP, ipToMidmenu, ipToRigntPanel, ipGetMidmenuId);
-    listMidMenuItems("leftmenu_router", "listRouters", "listroutersresponse", "router", "jsp/router.jsp", afterLoadRouterJSP, routerToMidmenu, routerToRigntPanel);
+    listMidMenuItems("leftmenu_router", "listRouters", "listroutersresponse", "router", "jsp/router.jsp", afterLoadRouterJSP, routerToMidmenu, routerToRigntPanel, getMidmenuId);
       
     listMidMenuItems("leftmenu_submenu_my_template", "listTemplates&templatefilter=self", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRigntPanel, templateGetMidmenuId);
     listMidMenuItems("leftmenu_submenu_featured_template", "listTemplates&templatefilter=featured", "listtemplatesresponse", "template", "jsp/template.jsp", afterLoadTemplateJSP, templateToMidmenu, templateToRigntPanel, templateGetMidmenuId);
@@ -86,9 +88,9 @@ $(document).ready(function() {
     listMidMenuItems("leftmenu_submenu_featured_iso", "listIsos&isofilter=featured", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRigntPanel, isoGetMidmenuId);
     listMidMenuItems("leftmenu_submenu_community_iso", "listIsos&isofilter=community", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRigntPanel, isoGetMidmenuId);
     
-    listMidMenuItems("leftmenu_service_offering", "listServiceOfferings", "listserviceofferingsresponse", "serviceoffering", "jsp/serviceoffering.jsp", afterLoadServiceOfferingJSP, serviceOfferingToMidmenu, serviceOfferingToRigntPanel); 
-    listMidMenuItems("leftmenu_disk_offering", "listDiskOfferings", "listdiskofferingsresponse", "diskoffering", "jsp/diskoffering.jsp", afterLoadDiskOfferingJSP, diskOfferingToMidmenu, diskOfferingToRigntPanel); 
-    listMidMenuItems("leftmenu_global_setting", "listConfigurations", "listconfigurationsresponse", "configuration", "jsp/globalsetting.jsp", afterLoadGlobalSettingJSP, globalSettingToMidmenu, globalSettingToRigntPanel, globalSettingGetMidmenuId); 
+    listMidMenuItems("leftmenu_service_offering", "listServiceOfferings", "listserviceofferingsresponse", "serviceoffering", "jsp/serviceoffering.jsp", afterLoadServiceOfferingJSP, serviceOfferingToMidmenu, serviceOfferingToRigntPanel, getMidmenuId); 
+    listMidMenuItems("leftmenu_disk_offering", "listDiskOfferings", "listdiskofferingsresponse", "diskoffering", "jsp/diskoffering.jsp", afterLoadDiskOfferingJSP, diskOfferingToMidmenu, diskOfferingToRigntPanel, getMidmenuId); 
+    listMidMenuItems("leftmenu_global_setting", "listConfigurations", "listconfigurationsresponse", "configuration", "jsp/globalsetting.jsp", afterLoadGlobalSettingJSP, globalSettingToMidmenu, globalSettingToRigntPanel, globalSettingGetMidmenuId, getMidmenuId); 
         
     $("#leftmenu_instance_group_header").bind("click", function(event) {  
         showMiddleMenu();
