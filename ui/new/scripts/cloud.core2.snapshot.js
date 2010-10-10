@@ -30,7 +30,7 @@ function afterLoadSnapshotJSP() {
 }
 
 function snapshotToMidmenu(jsonObj, $midmenuItem1) {  
-    $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id)); 
+    $midmenuItem1.attr("id", getMidmenuId(jsonObj)); 
     $midmenuItem1.data("jsonObj", jsonObj); 
     
     var $iconContainer = $midmenuItem1.find("#icon_container").show();   

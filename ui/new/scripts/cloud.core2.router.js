@@ -3,7 +3,7 @@ function afterLoadRouterJSP() {
 }
 
 function routerToMidmenu(jsonObj, $midmenuItem1) {
-    $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));  
+    $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
     $midmenuItem1.data("jsonObj", jsonObj); 
     
     $midmenuItem1.find("#first_row").text(jsonObj.name.substring(0,25)); 

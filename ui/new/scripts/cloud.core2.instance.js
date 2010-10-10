@@ -1233,23 +1233,14 @@ function doDisableHA($actionLink, selectedItemsInMidMenu) {
 
 function vmToMidmenu(jsonObj, $midmenuItem1) {  
     $midmenuItem1.data("jsonObj", jsonObj);
-    $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));   
+    $midmenuItem1.attr("id", getMidmenuId(jsonObj));   
       
     var vmName = getVmName(jsonObj.name, jsonObj.displayname);
     $midmenuItem1.find("#first_row").text(vmName);        
     $midmenuItem1.find("#second_row").text(jsonObj.ipaddress); 
     updateStateInMidMenu(jsonObj, $midmenuItem1);     
     
-    $midmenuItem1.data("toRightPanelFn", vmToRightPanel);    
-    /*
-    $midmenuItem1.bind("click", function(event) {  
-        var $t = $(this);    
-        $t.find("#content").addClass("selected");   
-        var toRightPanelFn = $t.data("toRightPanelFn");
-        toRightPanelFn($t);	 
-        return false;
-    }); 
-    */
+    $midmenuItem1.data("toRightPanelFn", vmToRightPanel);   
 }
 
 function vmToRightPanel($midmenuItem) {
