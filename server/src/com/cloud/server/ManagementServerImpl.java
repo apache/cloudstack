@@ -266,6 +266,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VmStats;
+import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -2330,8 +2331,8 @@ public class ManagementServerImpl implements ManagementServer {
             	throw iee;
             } finally {
             	if(created == null) {
-            		s_logger.warn("Failed to create VM, delete the DB record, vmId: " + initial.getId());
-            		_vmDao.remove(initial.getId());
+            		s_logger.warn("Failed to create VM, mark VM into destroyed state, vmId: " + initial.getId());
+                    _vmDao.updateIf(initial, Event.OperationFailed, null);
             	}
             }
 
@@ -2382,13 +2383,8 @@ public class ManagementServerImpl implements ManagementServer {
                 List<Pair<VolumeVO, StoragePoolVO>> disks = new ArrayList<Pair<VolumeVO, StoragePoolVO>>();
                 // NOTE: We now destroy a VM if the deploy process fails at any step. We now
                 // have a lazy delete so there is still some time to figure out what's wrong.
-                if(created != null) {
-                	disks = _storageMgr.isStoredOn(created);
-                	_vmMgr.destroyVirtualMachine(userId, created.getId());
-                } else {
-                	if(initial != null)
-                		_vmMgr.destroyVirtualMachine(userId, initial.getId());
-                }
+            	disks = _storageMgr.isStoredOn(created);
+            	_vmMgr.destroyVirtualMachine(userId, created.getId());
 
                 boolean retryCreate = true;
                 for (Pair<VolumeVO, StoragePoolVO> disk : disks) {

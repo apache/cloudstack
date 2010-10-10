@@ -229,7 +229,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     @Override
     public List<UserVmVO> findDestroyedVms(Date date) {
     	SearchCriteria sc = DestroySearch.create();
-    	sc.setParameters("state", State.Destroyed, State.Expunging);
+    	sc.setParameters("state", State.Destroyed, State.Expunging, State.Error);
     	sc.setParameters("updateTime", date);
     	
     	return listActiveBy(sc);

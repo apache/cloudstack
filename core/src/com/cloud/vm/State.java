@@ -66,8 +66,7 @@ public enum State {
     static {
     	s_fsm.addTransition(null, VirtualMachine.Event.CreateRequested, State.Creating);
     	s_fsm.addTransition(State.Creating, VirtualMachine.Event.OperationSucceeded, State.Stopped);
-    	s_fsm.addTransition(State.Creating, VirtualMachine.Event.OperationFailed, State.Destroyed);
-    	s_fsm.addTransition(State.Creating, VirtualMachine.Event.DestroyRequested, State.Destroyed);
+    	s_fsm.addTransition(State.Creating, VirtualMachine.Event.OperationFailed, State.Error);
     	s_fsm.addTransition(State.Stopped, VirtualMachine.Event.StartRequested, State.Starting);
     	s_fsm.addTransition(State.Stopped, VirtualMachine.Event.DestroyRequested, State.Destroyed);
     	s_fsm.addTransition(State.Stopped, VirtualMachine.Event.StopRequested, State.Stopped);

@@ -1320,9 +1320,11 @@ public class UserVmManagerImpl implements UserVmManager {
             return _vmDao.findById(vmId);
         } catch (Throwable th) {
             s_logger.error("Unable to create vm", th);
+/*            
             if (vm != null) {
             	_vmDao.delete(vmId);
             }
+*/            
             _accountMgr.decrementResourceCount(account.getId(), ResourceType.user_vm);
             _accountMgr.decrementResourceCount(account.getId(), ResourceType.volume, numVolumes);
             
@@ -2541,7 +2543,10 @@ public class UserVmManagerImpl implements UserVmManager {
 	            boolean addedToGroups = _networkGroupManager.addInstanceToGroups(vmId, networkGroups);
 	            if (!addedToGroups) {
 	            	s_logger.warn("Not all specified network groups can be found");
-	            	_vmDao.delete(vm.getId());
+
+/*	            	
+	            	 _vmDao.delete(vm.getId());
+*/	            	 
 	            	throw new InvalidParameterValueException("Not all specified network groups can be found");
 	            }
 	            
@@ -2549,7 +2554,9 @@ public class UserVmManagerImpl implements UserVmManager {
 	            try {
 	            	poolId = _storageMgr.createUserVM(account,  vm, template, dc, pod.first(), offering, diskOffering, a);
 	            } catch (CloudRuntimeException e) {
+/*	            	
 	            	_vmDao.delete(vmId);
+*/	            	
 	                _ipAddressDao.unassignIpAddress(guestIp);
 	                s_logger.debug("Released a guest ip address because we could not find storage: ip=" + guestIp);
 	                guestIp = null;
@@ -2731,7 +2738,9 @@ public class UserVmManagerImpl implements UserVmManager {
 	            try {
 	            	poolId = _storageMgr.createUserVM(account,  vm, template, dc, pod.first(), offering, diskOffering, a);
 	            } catch (CloudRuntimeException e) {
+/*	            	
 	            	_vmDao.delete(vmId);
+*/	            	
 	                _accountMgr.decrementResourceCount(account.getId(), ResourceType.user_vm);
 	                _accountMgr.decrementResourceCount(account.getId(), ResourceType.volume, numVolumes);
 	                if (s_logger.isDebugEnabled()) {
