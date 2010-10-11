@@ -938,8 +938,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         ReadyCommand ready = new ReadyCommand(dcId);
         Answer answer = easySend(hostId, ready);
         if (answer == null) {
+            // this is tricky part for secondary storage
+            // make it as disconnected, wait for secondary storage VM to be up
+            // return the attache instead of null, even it is disconnectede
             handleDisconnect(attache, Event.AgentDisconnected, false);
-            return null;
         }
         
         _hostDao.updateStatus(host, Event.Ready, _nodeId);
