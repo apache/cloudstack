@@ -141,7 +141,7 @@ function diskOfferingJsonToDetailsTab(jsonObj) {
     $detailsTab.find("#tags").text(fromdb(jsonObj.tags));   
     $detailsTab.find("#domain").text(fromdb(jsonObj.domain));   
     
-     //actions ***
+    //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
     var midmenuItemId = getMidmenuId(jsonObj);    
@@ -167,7 +167,6 @@ function diskOfferingClearDetailsTab() {
     $actionMenu.find("#action_list").empty(); 
     $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
 }
-
 
 var diskOfferingActionMap = {     
     "Delete Disk Offering": {              
