@@ -8,8 +8,8 @@ function afterLoadResourceJSP() {
     var forceLogout = true;  // We force a logout only if the user has first added a POD for the very first time   
     $("#midmenu_container").append($("#zonetree").clone().attr("id", "zonetree1").show());
     
-     $.ajax({
-	  data: createURL("command=listZones&available=true&response=json"+maxPageSize),
+    $.ajax({
+	    data: createURL("command=listZones&available=true"+maxPageSize),
 		dataType: "json",
 		success: function(json) {
 			var items = json.listzonesresponse.zone;
@@ -42,7 +42,7 @@ function afterLoadResourceJSP() {
 		    template.find("#zone_name").data("vlan", json.vlan);		
     	
 	    $.ajax({
-	        data: createURL("command=listPods&zoneid="+zoneid+"&response=json"),
+	        data: createURL("command=listPods&zoneid="+zoneid+maxPageSize),
 		    dataType: "json",
 		    success: function(json) {
 			    var items = json.listpodsresponse.pod;
@@ -59,7 +59,7 @@ function afterLoadResourceJSP() {
 	    });
 	    	    
 	    $.ajax({
-	        data: createURL("command=listSystemVms&zoneid="+zoneid+"&response=json"),
+	        data: createURL("command=listSystemVms&zoneid="+zoneid+maxPageSize),
 		    dataType: "json",
 		    success: function(json) {
 			    var items = json.listsystemvmsresponse.systemvm;
@@ -74,18 +74,7 @@ function afterLoadResourceJSP() {
 		    }
 	    });
     }
-
-    function getIpRange(startip, endip) {
-	    var ipRange = "";
-		if (startip != null && startip.length > 0) {
-			ipRange = startip;
-		}
-		if (endip != null && endip.length > 0) {
-			ipRange = ipRange + "-" + endip;
-		}		
-		return ipRange;
-	}
-	
+    
     function podJSONToTemplate(json, template) {		    
 		var ipRange = getIpRange(json.startip, json.endip);			
 		template.data("id", json.id).data("name", json.name);
@@ -98,9 +87,25 @@ function afterLoadResourceJSP() {
 		podName.data("startip", json.startip);
 		podName.data("endip", json.endip);
 		podName.data("ipRange", ipRange);		
-		podName.data("gateway", json.gateway);				
+		podName.data("gateway", json.gateway);		
+		
+	    $.ajax({
+            data: createURL("command=listClusters&podid="+json.id+maxPageSize),
+	        dataType: "json",
+	        success: function(json) {
+		        var items = json.listclustersresponse.cluster;
+		        var container = template.find("#clusters_container").empty();
+		        if (items != null && items.length > 0) {					    
+			        for (var i = 0; i < items.length; i++) {
+				        var clusterTemplate = $("#cluster_template").clone(true).attr("id", "cluster_"+items[i].id);
+				        clusterJSONToTemplate(items[i], clusterTemplate);
+				        container.append(clusterTemplate.show());
+			        }
+		        }
+	        }
+        });		
 	}
-	
+		
 	function systemvmJSONToTemplate(json, template) {	
 	    template.data("id", json.id).data("name", json.name);
 	     
@@ -115,6 +120,12 @@ function afterLoadResourceJSP() {
 		systeymvmName.data("gateway", json.gateway);	
 		systeymvmName.data("created", json.created);
 		systeymvmName.data("state", json.state);	
+	}
+			
+	function clusterJSONToTemplate(json, template) {
+	    template.data("id", json.id).data("name", fromdb(json.name));
+	    
+	    var systeymvmName = template.find("#cluster_name").text(fromdb(json.name));
 	}
 	
 	$("#zone_template").bind("click", function(event) {
@@ -159,6 +170,17 @@ function afterLoadResourceJSP() {
 		}
 		return false;
 	});
-	
+
+    
+    function getIpRange(startip, endip) {
+	    var ipRange = "";
+		if (startip != null && startip.length > 0) {
+			ipRange = startip;
+		}
+		if (endip != null && endip.length > 0) {
+			ipRange = ipRange + "-" + endip;
+		}		
+		return ipRange;
+	}	
 }
 

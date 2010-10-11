@@ -3337,7 +3337,7 @@ a:hover.search_button {
 }
 
 .zonetree_secondlevel_selected {
-	width:475px;
+	width:455px;
 	height:25px;
 	float:left;
 	margin:0 0 5px 55px;
@@ -3356,6 +3356,24 @@ a:hover.search_button {
 
 .zonetree_thirdlevel_selected {
 	width:400px;
+	height:25px;
+	float:left;
+	margin:0 0 5px 110px;
+	background:#eaf3f5 repeat top left;
+	padding:0;
+}
+
+.zonetree_forthlevel {
+	width:345px;
+	height:25px;
+	float:left;
+	margin:0 0 5px 110px;
+	display:inline;
+	padding:0;
+}
+
+.zonetree_forthlevel_selected {
+	width:345px;
 	height:25px;
 	float:left;
 	margin:0 0 5px 110px;
@@ -3412,6 +3430,36 @@ a:hover.search_button {
 	height:18px;
 	float:left;
 	background:url(../images/zone_systemvmicon.png) no-repeat top left;
+	font-weight:bold;
+	margin:3px 0 0 5px;
+	padding:0;
+}
+
+.zonetree_clustericon {
+	width:22px;
+	height:18px;
+	float:left;
+	background:url(../images/zone_clustericon.png) no-repeat top left;
+	font-weight:bold;
+	margin:3px 0 0 5px;
+	padding:0;
+}
+
+.zonetree_hosticon {
+	width:22px;
+	height:18px;
+	float:left;
+	background:url(../images/zone_hosticon.png) no-repeat top left;
+	font-weight:bold;
+	margin:3px 0 0 5px;
+	padding:0;
+}
+
+.zonetree_primarystorageicon {
+	width:22px;
+	height:18px;
+	float:left;
+	background:url(../images/zone__primarystorageicon.png) no-repeat top left;
 	font-weight:bold;
 	margin:3px 0 0 5px;
 	padding:0;

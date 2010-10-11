@@ -315,7 +315,11 @@
 		    <p>Pod:<div class="zonetree_links" id="pod_name">Name of the Pod</div></p>
 	    </div>
 	    <div id="pod_content">
+	        <!--  
 	        <div id="directip_ranges_container">
+		    </div>
+		    -->
+		    <div id="clusters_container">
 		    </div>
 	    </div>
 	</div>
@@ -332,4 +336,50 @@
 	</div>
 </div>
 <!-- SystemVM Template (end) -->
+
+<!-- Cluster Template (begin) -->
+<div id="cluster_template" style="display:none">
+    <div class="adding_loading" style="height:25px;display:none" id="loading_container">
+	    <div class="adding_animation"></div>
+	    <div class="adding_text">Adding a cluster &hellip; </div>
+    </div>
+    <div id="row_container">  
+	    <div class="zonetree_thirdlevel">
+		    <div class="zonetree_clustericon"></div>
+		    <p>Cluster:<div class="zonetree_links" id="cluster_name">(Name of the Cluster)</div></p>
+	    </div>
+	</div>
+</div>
+<!-- Cluster Template (end) -->
+
+<!-- Host Template (begin) -->
+<div id="host_template" style="display:none">
+    <div class="adding_loading" style="height:25px;display:none" id="loading_container">
+	    <div class="adding_animation"></div>
+	    <div class="adding_text">Adding a host &hellip; </div>
+    </div>
+    <div id="row_container">  
+	    <div class="zonetree_forthlevel">
+		    <div class="zonetree_hosticon"></div>
+		    <p>Host:<div class="zonetree_links" id="host_name">(Name of the Host)</div></p>
+	    </div>
+	</div>
+</div>
+<!-- Host Template (end) -->
+
+<!-- Primary Storage Template (begin) -->
+<div id="primary_storage_template" style="display:none">
+    <div class="adding_loading" style="height:25px;display:none" id="loading_container">
+	    <div class="adding_animation"></div>
+	    <div class="adding_text">Adding a primary storage &hellip; </div>
+    </div>
+    <div id="row_container">  
+	    <div class="zonetree_forthlevel">
+		    <div class="zonetree_primarystorageicon"></div>
+		    <p>Primary Storage:<div class="zonetree_links" id="primary_storage_name">(Name of the Primary Storage)</div></p>
+	    </div>
+	</div>
+</div>
+<!-- Primary Storage Template (end) -->
+
 
