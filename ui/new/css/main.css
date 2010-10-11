@@ -3407,6 +3407,15 @@ a:hover.search_button {
 	padding:0;
 }
 
+.zonetree_systemvmicon {
+	width:22px;
+	height:18px;
+	float:left;
+	background:url(../images/zone_systemvmicon.png) no-repeat top left;
+	font-weight:bold;
+	margin:3px 0 0 5px;
+	padding:0;
+}
 
 .zonetree_links {
 	width:auto;

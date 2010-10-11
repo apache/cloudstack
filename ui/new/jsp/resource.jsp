@@ -295,6 +295,8 @@
 	    </div>
 	    <div id="zone_content" style="display:none">
 		    <div id="pods_container">
+		    </div>	
+		    <div id="systemvms_container">
 		    </div>		  
 	    </div>
 	</div>
@@ -319,3 +321,15 @@
 	</div>
 </div>
 <!-- Pod Template (end) -->
+
+<!-- SystemVM Template (begin) -->
+<div id="systemvm_template" style="display:none">	
+    <div id="row_container">  
+	    <div class="zonetree_secondlevel">
+		    <div class="zonetree_systemvmicon"></div>
+		    <p>System VM:<div class="zonetree_links" id="systemvm_name">(System VM name)</div></p>
+	    </div>	    
+	</div>
+</div>
+<!-- SystemVM Template (end) -->
+

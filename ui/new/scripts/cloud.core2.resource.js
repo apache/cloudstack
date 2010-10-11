@@ -12,13 +12,13 @@ function afterLoadResourceJSP() {
 	  data: createURL("command=listZones&available=true&response=json"+maxPageSize),
 		dataType: "json",
 		success: function(json) {
-			var zones = json.listzonesresponse.zone;
-			var grid = $("#zonetree1 #zones_container").empty();
-			if (zones != null && zones.length > 0) {					    
-				for (var i = 0; i < zones.length; i++) {
-					var template = $("#zone_template").clone(true).attr("id", "zone_"+zones[i].id);
-					zoneJSONToTemplate(zones[i], template);
-					grid.append(template.show());
+			var items = json.listzonesresponse.zone;
+			var container = $("#zonetree1 #zones_container").empty();
+			if (items != null && items.length > 0) {					    
+				for (var i = 0; i < items.length; i++) {
+					var template = $("#zone_template").clone(true).attr("id", "zone_"+items[i].id);
+					zoneJSONToTemplate(items[i], template);
+					container.append(template.show());
 				}
 			}
 		}
@@ -42,17 +42,33 @@ function afterLoadResourceJSP() {
 		    template.find("#zone_name").data("vlan", json.vlan);		
     	
 	    $.ajax({
-	      data: createURL("command=listPods&zoneid="+zoneid+"&response=json"),
+	        data: createURL("command=listPods&zoneid="+zoneid+"&response=json"),
 		    dataType: "json",
 		    success: function(json) {
-			    var pods = json.listpodsresponse.pod;
-			    var grid = template.find("#pods_container").empty();
-			    if (pods != null && pods.length > 0) {					    
-				    for (var i = 0; i < pods.length; i++) {
-					    var podTemplate = $("#pod_template").clone(true).attr("id", "pod_"+pods[i].id);
-					    podJSONToTemplate(pods[i], podTemplate);
-					    grid.append(podTemplate.show());
-					    forceLogout = false;
+			    var items = json.listpodsresponse.pod;
+			    var container = template.find("#pods_container").empty();
+			    if (items != null && items.length > 0) {					    
+				    for (var i = 0; i < items.length; i++) {
+					    var podTemplate = $("#pod_template").clone(true).attr("id", "pod_"+items[i].id);
+					    podJSONToTemplate(items[i], podTemplate);
+					    container.append(podTemplate.show());
+					    forceLogout = false;  // We don't force a logout if pod(s) exit.
+				    }
+			    }
+		    }
+	    });
+	    	    
+	    $.ajax({
+	        data: createURL("command=listSystemVms&zoneid="+zoneid+"&response=json"),
+		    dataType: "json",
+		    success: function(json) {
+			    var items = json.listsystemvmsresponse.systemvm;
+			    var container = template.find("#systemvms_container").empty();
+			    if (items != null && items.length > 0) {					    
+				    for (var i = 0; i < items.length; i++) {
+					    var systemvmTemplate = $("#systemvm_template").clone(true).attr("id", "systemvm_"+items[i].id);
+					    systemvmJSONToTemplate(items[i], systemvmTemplate);
+					    container.append(systemvmTemplate.show());
 				    }
 			    }
 		    }
@@ -83,6 +99,22 @@ function afterLoadResourceJSP() {
 		podName.data("endip", json.endip);
 		podName.data("ipRange", ipRange);		
 		podName.data("gateway", json.gateway);				
+	}
+	
+	function systemvmJSONToTemplate(json, template) {	
+	    template.data("id", json.id).data("name", json.name);
+	     
+	    var systeymvmName = template.find("#systemvm_name").text(json.name);
+		systeymvmName.data("systemvmtype", json.systemvmtype);
+		systeymvmName.data("name", json.name);	
+		systeymvmName.data("zonename", json.zonename);
+		systeymvmName.data("activeviewersessions", json.activeviewersessions);	
+		systeymvmName.data("publicip", json.publicip);
+		systeymvmName.data("privateip", json.privateip);	
+		systeymvmName.data("hostname", json.hostname);
+		systeymvmName.data("gateway", json.gateway);	
+		systeymvmName.data("created", json.created);
+		systeymvmName.data("state", json.state);	
 	}
 	
 	$("#zone_template").bind("click", function(event) {
