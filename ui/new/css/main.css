@@ -3222,3 +3222,218 @@ a:hover.search_button {
 	padding:0;
 }
 
+
+
+
+/* 2010-10-10 */
+
+.adding_loading {
+	width:100%;
+	float:left;
+	margin:0;
+	padding:0;
+	background: #e7f7fc repeat-x top left;
+	border-bottom:1px solid #e8e8e8;	
+}
+
+.adding_animation {
+	width:16px;
+	height:16px;
+	margin:3px 0 0 10px;
+	float:left;
+	display:inline;
+	background:url(../images/ajax-loader.gif) no-repeat top left;
+}
+
+.adding_text {
+	width:auto;
+	height:auto;
+	float:left;
+	margin:8px 0 0 10px;
+	display:inline;
+	color:#333;
+	font-size:11px;
+	font-weight:bold;
+}
+
+
+/* zonetree (begin) */
+
+.zonetree_contentbox {
+	width:530px;
+	height:590px;
+	float:left;
+	margin:15px 0 0 0;
+	overflow-x:hidden;
+	overflow-y:scroll;
+	overflow-y:auto;
+}
+
+.zonetree_contentbox p {
+	width:auto;
+	height:auto;
+	float:left;
+	text-align:left;
+	margin:5px 0 0 10px;
+	padding:0;
+	font-size:12px;
+	font-weight:bold;
+}
+
+.zonetree_addbox {
+	width:510px;
+	height:25px;
+	float:left;
+	margin:0 0 5px 0;
+	padding:0;
+}
+
+
+
+.zonetree_addicon {
+	width:16px;
+	height:16px;
+	float:left;
+	background:url(../images/zone_addicon.png) no-repeat top left;
+	margin:5px 0 0 5px;
+	padding:0;
+}
+
+.tree_minusicon {
+	width:18px;
+	height:16px;
+	float:left;
+	background:url(../images/tree_minusopen_icon.png) no-repeat top left;
+	margin:5px 5px 0 0;
+	padding:0;
+}
+
+
+
+.zonetree_firstlevel {
+	width:510px;
+	height:25px;
+	float:left;
+	margin:0 0 5px 0;
+	padding:0;
+}
+
+.zonetree_firstlevel_selected {
+	width:510px;
+	height:25px;
+	float:left;
+	margin:0 0 5px 0;
+	background:#eaf3f5 repeat top left;
+	padding:0;
+}
+
+.zonetree_secondlevel {
+	width:455px;
+	height:25px;
+	float:left;
+	margin:0 0 5px 55px;
+	display:inline;
+	padding:0;
+}
+
+.zonetree_secondlevel_selected {
+	width:475px;
+	height:25px;
+	float:left;
+	margin:0 0 5px 55px;
+	background:#eaf3f5 repeat top left;
+	padding:0;
+}
+
+.zonetree_thirdlevel {
+	width:400px;
+	height:25px;
+	float:left;
+	margin:0 0 5px 110px;
+	display:inline;
+	padding:0;
+}
+
+.zonetree_thirdlevel_selected {
+	width:400px;
+	height:25px;
+	float:left;
+	margin:0 0 5px 110px;
+	background:#eaf3f5 repeat top left;
+	padding:0;
+}
+
+.zonetree_closedarrows {
+	width:12px;
+	height:14px;
+	background:url(../images/zone_sidearrow.png) no-repeat top left;
+	float:left;
+	margin:5px 5px 0 8px;
+	display:inline;
+	padding:0;
+	cursor:pointer;
+	cursor:hand;
+}
+
+.zonetree_openarrows {
+	width:12px;
+	height:14px;
+	background:url(../images/zone_openarrow.png) no-repeat top left;
+	float:left;
+	margin:10px 5px 0 8px;
+	display:inline;
+	padding:0;
+	cursor:pointer;
+	cursor:hand;
+}
+
+.zonetree_zoneicon {
+	width:18px;
+	height:18px;
+	float:left;
+	background:url(../images/zone_zoneicon.png) no-repeat top left;
+	font-weight:bold;
+	margin:3px 0 0 5px;
+	padding:0;
+}
+
+.zonetree_podicon {
+	width:22px;
+	height:18px;
+	float:left;
+	background:url(../images/zone_podicon.png) no-repeat top left;
+	font-weight:bold;
+	margin:3px 0 0 5px;
+	padding:0;
+}
+
+
+.zonetree_links {
+	width:auto;
+	height:auto;
+	float:left;
+	color:#2c8bbc;
+	text-decoration:none;
+	font-size:12px;
+	text-align:left;
+	margin:5px 0 0 10px;
+	display:inline;
+	padding:0;
+	cursor:pointer;
+	cursor:hand;
+}
+.zonetree_links:hover {
+	width:auto;
+	height:auto;
+	float:left;
+	color:#333;
+	text-decoration:underline;
+	font-size:12px;
+	text-align:left;
+	margin:5px 0 0 10px;
+	padding:0;
+	cursor:pointer;
+	cursor:hand;
+}
+/* zonetree (begin) */
+

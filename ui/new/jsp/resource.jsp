@@ -267,3 +267,55 @@
     </div> 
 </div>
 <!-- admin account tab template (end) -->
+
+<!-- Zonetree Template (begin) -->
+<div class="zonetree_contentbox" id="zonetree" style="display:none">
+    <div class="zonetree_addbox">
+        <div class="zonetree_addicon">
+        </div>
+        <div class="zonetree_links" id="action_add_zone">
+            Add a Zone</div>
+    </div>
+    <div id="zones_container">
+    </div>
+</div>
+<!-- Zonetree Template (end) -->
+
+<!-- Zone Template (begin) -->
+<div id="zone_template" style="display:none">
+    <div class="adding_loading" style="height:25px;display:none" id="loading_container">
+	    <div class="adding_animation"></div>
+	    <div class="adding_text">Adding a zone &hellip; </div>
+    </div>
+    <div id="row_container">
+	    <div class="zonetree_firstlevel">
+		    <div class="zonetree_closedarrows" id="zone_expand"></div>
+		    <div class="zonetree_zoneicon"></div>
+		    <p>Zone:<div class="zonetree_links" id="zone_name">Zone 1</div></p>
+	    </div>
+	    <div id="zone_content" style="display:none">
+		    <div id="pods_container">
+		    </div>		  
+	    </div>
+	</div>
+</div>
+<!-- Zone Template (end) -->
+
+<!-- Pod Template (begin) -->
+<div id="pod_template" style="display:none">
+	<div class="adding_loading" style="height:25px;display:none" id="loading_container">
+	    <div class="adding_animation"></div>
+	    <div class="adding_text">Adding a pod &hellip; </div>
+    </div>
+    <div id="row_container">  
+	    <div class="zonetree_secondlevel">
+		    <div class="zonetree_podicon"></div>
+		    <p>Pod:<div class="zonetree_links" id="pod_name">Name of the Pod</div></p>
+	    </div>
+	    <div id="pod_content">
+	        <div id="directip_ranges_container">
+		    </div>
+	    </div>
+	</div>
+</div>
+<!-- Pod Template (end) -->
