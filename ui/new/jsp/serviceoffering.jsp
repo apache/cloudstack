@@ -63,6 +63,8 @@
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="name">
                     </div>
+                    <input class="text" id="name_edit" style="width: 200px; display: none;" type="text" />
+                    <div id="name_edit_errormsg" style="display:none"></div>        
                 </div>
             </div>
             <div class="grid_rows odd">
@@ -73,6 +75,8 @@
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="displaytext">
                     </div>
+                    <input class="text" id="displaytext_edit" style="width: 200px; display: none;" type="text" />
+                    <div id="displaytext_edit_errormsg" style="display:none"></div>            
                 </div>
             </div>
             <div class="grid_rows even">
@@ -113,6 +117,10 @@
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="offerha">
                     </div>
+                    <select class="select" id="offerha_edit" style="width: 202px; display: none;">
+                        <option value="false">No</option>
+						<option value="true">Yes</option>
+                    </select>
                 </div>
             </div>
             <div class="grid_rows even">

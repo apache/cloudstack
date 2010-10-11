@@ -1,8 +1,15 @@
 function afterLoadServiceOfferingJSP() {
-     //dialogs
-     initDialog("dialog_add_service");
+    var $detailsTab = $("#right_panel_content #tab_content_details"); 
+
+    //edit button ***
+    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #passwordenabled");
+    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit"); 
+    initializeEditFunction($readonlyFields, $editFields, doUpdateServiceOffering); 
      
-     //add button ***
+    //dialogs
+    initDialog("dialog_add_service");
+     
+    //add button ***
     $("#midmenu_add_link").show();     
     $("#midmenu_add_link").unbind("click").bind("click", function(event) {      
         var dialogAddService = $("#dialog_add_service");
@@ -88,6 +95,38 @@ function afterLoadServiceOfferingJSP() {
     });
 }
 
+function doUpdateServiceOffering() {
+    var $detailsTab = $("#right_panel_content #tab_content_details");   
+    var jsonObj = $detailsTab.data("jsonObj");
+    var id = jsonObj.id;
+    
+    // validate values   
+    var isValid = true;					
+    isValid &= validateString("Name", $detailsTab.find("#name_edit"), $detailsTab.find("#name_edit_errormsg"), true);		
+    isValid &= validateString("Display Text", $detailsTab.find("#displaytext_edit"), $detailsTab.find("#displaytext_edit_errormsg"), true);				
+    if (!isValid) 
+        return;	
+     
+    var array1 = [];    
+    var name = $detailsTab.find("#name_edit").val();
+    array1.push("&name="+todb(name));
+    var displaytext = $detailsTab.find("#displaytext_edit").val();
+    array1.push("&displayText="+todb(displaytext));
+    var offerha = $detailsTab.find("#offerha_edit").val();   
+    array1.push("&offerha="+offerha);		
+	
+	$.ajax({
+	    data: createURL("command=updateServiceOffering&id="+id+array1.join("")),
+		dataType: "json",
+		success: function(json) {	  
+		    var jsonObj = json.updateserviceofferingresponse;
+		    var $midmenuItem1 = $("#"+getMidmenuId(jsonObj));		  
+		    serviceOfferingToMidmenu(jsonObj, $midmenuItem1);
+		    serviceOfferingToRigntPanel($midmenuItem1);		  
+		}
+	});
+}
+
 function serviceOfferingToMidmenu(jsonObj, $midmenuItem1) {  
     $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
     $midmenuItem1.data("jsonObj", jsonObj); 
@@ -99,8 +138,8 @@ function serviceOfferingToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(jsonObj.cpunumber + " x " + convertHz(jsonObj.cpuspeed));  
 }
 
-function serviceOfferingToRigntPanel($midmenuItem) {
-    var jsonObj = $midmenuItem.data("jsonObj");
+function serviceOfferingToRigntPanel($midmenuItem1) {
+    var jsonObj = $midmenuItem1.data("jsonObj");
     serviceOfferingJsonToDetailsTab(jsonObj);   
 }
 
@@ -108,12 +147,20 @@ function serviceOfferingJsonToDetailsTab(jsonObj) {
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);      
     $detailsTab.find("#id").text(jsonObj.id);
+    
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
+    $detailsTab.find("#name_edit").val(fromdb(jsonObj.name));
+    
     $detailsTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
+    $detailsTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
+    
     $detailsTab.find("#storagetype").text(jsonObj.storagetype);
     $detailsTab.find("#cpu").text(jsonObj.cpunumber + " x " + convertHz(jsonObj.cpuspeed));
     $detailsTab.find("#memory").text(convertBytes(parseInt(jsonObj.memory)*1024*1024));
-    $detailsTab.find("#offerha").text(toBooleanText(jsonObj.offerha));
+    
+    setBooleanField(jsonObj.offerha, $detailsTab.find("#offerha"));	
+    $detailsTab.find("#offerha_edit").val(jsonObj.offerha);
+    
     $detailsTab.find("#networktype").text(toNetworkType(jsonObj.usevirtualnetwork));
     $detailsTab.find("#tags").text(fromdb(jsonObj.tags));   
     setDateField(jsonObj.created, $detailsTab.find("#created"));	
