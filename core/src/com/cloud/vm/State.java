@@ -21,6 +21,7 @@ package com.cloud.vm;
 import java.util.List;
 
 import com.cloud.utils.fsm.StateMachine;
+import com.cloud.vm.VirtualMachine.Event;
 
 public enum State {
     Creating(true),
@@ -95,5 +96,6 @@ public enum State {
     	s_fsm.addTransition(State.Stopping, VirtualMachine.Event.StopRequested, State.Stopping);
     	s_fsm.addTransition(State.Expunging, VirtualMachine.Event.OperationFailed, State.Expunging);
     	s_fsm.addTransition(State.Expunging, VirtualMachine.Event.ExpungeOperation, State.Expunging);
+    	s_fsm.addTransition(State.Error, VirtualMachine.Event.ExpungeOperation, State.Expunging);
     }
 }
