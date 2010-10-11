@@ -11,9 +11,14 @@ function alertToMidmenu(jsonObj, $midmenuItem1) {
 
 function alertToRigntPanel($midmenuItem) {      
     var jsonObj = $midmenuItem.data("jsonObj");
-    
-    var $rightPanelContent = $("#right_panel_content");    
-    $rightPanelContent.find("#type").text(jsonObj.type);
-    $rightPanelContent.find("#description").text(jsonObj.description);    
-    setDateField(jsonObj.sent, $rightPanelContent.find("#sent"));	
+    alertJsonToDetailsTab(jsonObj);   
+}
+
+function alertJsonToDetailsTab(jsonObj) {   
+    var $detailsTab = $("#right_panel_content #tab_content_details");   
+    $detailsTab.data("jsonObj", jsonObj);  
+        
+    $detailsTab.find("#type").text(jsonObj.type);
+    $detailsTab.find("#description").text(jsonObj.description);    
+    setDateField(jsonObj.sent, $detailsTab.find("#sent"));	
 }

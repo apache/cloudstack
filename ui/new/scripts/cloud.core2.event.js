@@ -20,14 +20,19 @@ function eventToMidmenu(jsonObj, $midmenuItem1) {
 
 function eventToRigntPanel($midmenuItem) {      
     var jsonObj = $midmenuItem.data("jsonObj");
-    
-    var $rightPanelContent = $("#right_panel_content");
-    $rightPanelContent.find("#id").text(fromdb(jsonObj.id));
-    $rightPanelContent.find("#username").text(fromdb(jsonObj.username));
-    $rightPanelContent.find("#account").text(fromdb(jsonObj.account));
-    $rightPanelContent.find("#type").text(jsonObj.type);
-    $rightPanelContent.find("#level").text(jsonObj.level);   
-    $rightPanelContent.find("#description").text(fromdb(jsonObj.description));  
-    $rightPanelContent.find("#state").text(jsonObj.state);     
-    setDateField(jsonObj.created, $rightPanelContent.find("#created"));	
+    eventJsonToDetailsTab(jsonObj);   
+}
+
+function eventJsonToDetailsTab(jsonObj) {   
+    var $detailsTab = $("#right_panel_content #tab_content_details");   
+    $detailsTab.data("jsonObj", jsonObj);  
+      
+    $detailsTab.find("#id").text(fromdb(jsonObj.id));
+    $detailsTab.find("#username").text(fromdb(jsonObj.username));
+    $detailsTab.find("#account").text(fromdb(jsonObj.account));
+    $detailsTab.find("#type").text(jsonObj.type);
+    $detailsTab.find("#level").text(jsonObj.level);   
+    $detailsTab.find("#description").text(fromdb(jsonObj.description));  
+    $detailsTab.find("#state").text(jsonObj.state);     
+    setDateField(jsonObj.created, $detailsTab.find("#created"));	
 }
