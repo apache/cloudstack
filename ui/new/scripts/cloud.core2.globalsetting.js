@@ -26,13 +26,21 @@ function doUpdateGlobalSetting() {
     $.ajax({
       data: createURL("command=updateConfiguration&name="+todb(name)+"&value="+todb(value)+"&response=json"),
 	    dataType: "json",
-	    success: function(json) {	        
-		    $detailsTab.find("#value").text(value);
-		    
-		    //no embedded object returned, so....		   
-		    jsonObj.value = value;
-		    		    
-		    globalSettingToMidmenu(jsonObj, $("#"+globalSettingGetMidmenuId(jsonObj)));		    
+	    success: function(json) {	
+	        //call listConfigurations before bug 6506("What updateConfiguration API returns should include an embedded object") is fixed.
+		    var jsonObj;		   
+		    $.ajax({
+		        data: createURL("command=listConfigurations&name="+name),
+		        dataType: "json",
+		        async: false,
+		        success: function(json) {			                      
+		            jsonObj = json.listconfigurationsresponse.configuration[0];
+		        }
+		    });		   
+		    var $midmenuItem1 = $("#"+globalSettingGetMidmenuId(jsonObj));		   
+		    globalSettingToMidmenu(jsonObj, $midmenuItem1);
+		    globalSettingToRigntPanel($midmenuItem1);		        
+		    	    
 		    $("#dialog_alert_restart_management_server").dialog("open");
 	    }
     });		
