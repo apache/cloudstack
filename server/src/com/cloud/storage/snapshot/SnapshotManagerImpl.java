@@ -382,41 +382,46 @@ public class SnapshotManagerImpl implements SnapshotManager {
         txn = Transaction.currentTxn();
         txn.start();
         
-        // Update the snapshot in the database
-        if ((answer != null) && answer.getResult()) {
-            // The snapshot was successfully created
-            if( preSnapshotPath != null && preSnapshotPath == answer.getSnapshotPath() ){
-                //empty snapshot
-                s_logger.debug("CreateSnapshot: this is empty snapshot, remove it ");
+        try {
+            // Update the snapshot in the database
+            if ((answer != null) && answer.getResult()) {
+                // The snapshot was successfully created
+                if (preSnapshotPath != null && preSnapshotPath == answer.getSnapshotPath()) {
+                    // empty snapshot
+                    s_logger.debug("CreateSnapshot: this is empty snapshot, remove it ");
+                    // delete from the snapshots table
+                    _snapshotDao.delete(id);
+                    throw new CloudRuntimeException(
+                            " There is no change since last snapshot, please use last snapshot " + preSnapshotPath);
+
+                } else {
+                    createdSnapshot = updateDBOnCreate(id, answer.getSnapshotPath());
+                }
+            } else {
+                String msg = "createSnapshotCommand returns null";
+                if (answer != null) {
+                    msg = answer.getDetails();
+                    s_logger.error(msg);
+                }
                 // delete from the snapshots table
                 _snapshotDao.delete(id);
-                throw new CloudRuntimeException(" There is no change since last snapshot, please use last snapshot " + preSnapshotPath);
-
-            } else {
-            	createdSnapshot = updateDBOnCreate(id, answer.getSnapshotPath());
+                throw new CloudRuntimeException(" CreateSnapshot failed due to " + msg);
             }
-        } else {
-            if (answer != null) {
-                s_logger.error(answer.getDetails());
+
+            // Update async status after snapshot creation and before backup
+            if (asyncExecutor != null) {
+                AsyncJobVO job = asyncExecutor.getJob();
+
+                if (s_logger.isDebugEnabled())
+                    s_logger.debug("CreateSnapshot created a new instance " + id + ", update async job-" + job.getId()
+                            + " progress status");
+
+                _asyncMgr.updateAsyncJobAttachment(job.getId(), "snapshot", id);
+                _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, id);
             }
-            // The snapshot was not successfully created
-            createdSnapshot = _snapshotDao.findById(id);
-            // delete from the snapshots table
-            _snapshotDao.delete(id);
-            
+        } finally {
+            txn.commit();
         }
-
-        // Update async status after snapshot creation and before backup
-        if(asyncExecutor != null) {
-            AsyncJobVO job = asyncExecutor.getJob();
-
-            if(s_logger.isDebugEnabled())
-                s_logger.debug("CreateSnapshot created a new instance " + id + ", update async job-" + job.getId() + " progress status");
-
-            _asyncMgr.updateAsyncJobAttachment(job.getId(), "snapshot", id);
-            _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, id);
-        }
-        txn.commit();
         
         return createdSnapshot;
     }

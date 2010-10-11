@@ -3929,12 +3929,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             } finally {
                 sshConnection.close();
             }
-            try {
-                // wait 2 seconds before call plugin
-                Thread.sleep(2000);
-            } catch (final InterruptedException ex) {
 
-            }
             if (!setIptables()) {
                 s_logger.warn("set xenserver Iptable failed");
             }
