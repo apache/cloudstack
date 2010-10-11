@@ -744,13 +744,9 @@ function showInstancesTab(p_domainId, p_account) {
 							data: "command=updateVirtualMachine&id="+vmId+"&displayName="+encodeURIComponent(name)+"&response=json",
 							dataType: "json",
 							success: function(json) {
-								if (isAdmin()) {
-									var systemName = vmInstance.data("systemName");
-									name = systemName + "(" + name + ")";
-									vmInstance.find("#vm_name").text(name);
-								} else {
-									vmInstance.find("#vm_name").text(name);
-								}
+								var systemName = vmInstance.data("systemName");
+								name = systemName + "(" + name + ")";
+								vmInstance.find("#vm_name").html("<strong>Name:</strong> " + name);
 								vmInstance.data("name", name);
 							},
 							error: function(XMLHttpResponse) {

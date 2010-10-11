@@ -494,14 +494,10 @@ function getVmName(p_vmName, p_vmDisplayname) {
     if(p_vmDisplayname == null)
         return sanitizeXSS(p_vmName);
     var vmName = null;
-	if (isAdmin()) {
-		if (p_vmDisplayname != p_vmName) {
-			vmName = p_vmName + "(" + sanitizeXSS(p_vmDisplayname) + ")";
-		} else {
-			vmName = p_vmName;
-		}
+	if (p_vmDisplayname != p_vmName) {
+		vmName = p_vmName + "(" + sanitizeXSS(p_vmDisplayname) + ")";
 	} else {
-		vmName = sanitizeXSS(p_vmDisplayname);
+		vmName = p_vmName;
 	}
 	return vmName;
 }
