@@ -1,4 +1,12 @@
 function afterLoadDiskOfferingJSP() {
+    var $detailsTab = $("#right_panel_content #tab_content_details"); 
+
+    //edit button ***
+    var $readonlyFields  = $detailsTab.find("#name, #displaytext");
+    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit"); 
+    initializeEditFunction($readonlyFields, $editFields, doUpdateDiskOffering);   
+    
+    //dialogs
     initDialog("dialog_add_disk");
     
     //add button ***
@@ -63,6 +71,45 @@ function afterLoadDiskOfferingJSP() {
 	});
 }
 
+function doUpdateDiskOffering() {
+    var $detailsTab = $("#right_panel_content #tab_content_details");   
+    var jsonObj = $detailsTab.data("jsonObj");
+    var id = jsonObj.id;
+    
+    // validate values   
+    var isValid = true;					
+    isValid &= validateString("Name", $detailsTab.find("#name_edit"), $detailsTab.find("#name_edit_errormsg"), true);		
+    isValid &= validateString("Display Text", $detailsTab.find("#displaytext_edit"), $detailsTab.find("#displaytext_edit_errormsg"), true);				
+    if (!isValid) 
+        return;	
+     
+    var array1 = [];    
+    var name = $detailsTab.find("#name_edit").val();
+    array1.push("&name="+todb(name));
+    var displaytext = $detailsTab.find("#displaytext_edit").val();
+    array1.push("&displayText="+todb(displaytext));
+	
+	$.ajax({
+	    data: createURL("command=updateDiskOffering&id="+id+array1.join("")),
+		dataType: "json",
+		success: function(json) {	
+		    //call listDiskOffering before bug 6502(What updateDiskOffering API returns should include an embedded object) is fixed.
+		    var jsonObj;		   
+		    $.ajax({
+		        data: createURL("command=listDiskOfferings&id="+id),
+		        dataType: "json",
+		        async: false,
+		        success: function(json) {		            
+		            jsonObj = json.listdiskofferingsresponse.diskoffering[0];
+		        }
+		    });		   
+		    var $midmenuItem1 = $("#"+getMidmenuId(jsonObj));		   
+		    diskOfferingToMidmenu(jsonObj, $midmenuItem1);
+		    diskOfferingToRigntPanel($midmenuItem1);		  
+		}
+	});
+}
+
 function diskOfferingToMidmenu(jsonObj, $midmenuItem1) {  
     $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
     $midmenuItem1.data("jsonObj", jsonObj); 
@@ -74,8 +121,8 @@ function diskOfferingToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#second_row").text(convertBytes(jsonObj.disksize));  
 }
 
-function diskOfferingToRigntPanel($midmenuItem) {
-    var jsonObj = $midmenuItem.data("jsonObj");
+function diskOfferingToRigntPanel($midmenuItem1) {
+    var jsonObj = $midmenuItem1.data("jsonObj");
     diskOfferingJsonToDetailsTab(jsonObj);   
 }
 
@@ -83,8 +130,13 @@ function diskOfferingJsonToDetailsTab(jsonObj) {
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     $detailsTab.data("jsonObj", jsonObj);      
     $detailsTab.find("#id").text(jsonObj.id);
+    
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
+    $detailsTab.find("#name_edit").val(fromdb(jsonObj.name));
+    
     $detailsTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
+    $detailsTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
+    
     $detailsTab.find("#disksize").text(convertBytes(jsonObj.disksize));
     $detailsTab.find("#tags").text(fromdb(jsonObj.tags));   
     $detailsTab.find("#domain").text(fromdb(jsonObj.domain));    
