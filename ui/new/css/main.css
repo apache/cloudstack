@@ -3367,7 +3367,7 @@ a:hover.search_button {
 	width:345px;
 	height:25px;
 	float:left;
-	margin:0 0 5px 110px;
+	margin:0 0 5px 165px;
 	display:inline;
 	padding:0;
 }
@@ -3376,7 +3376,7 @@ a:hover.search_button {
 	width:345px;
 	height:25px;
 	float:left;
-	margin:0 0 5px 110px;
+	margin:0 0 5px 165px;
 	background:#eaf3f5 repeat top left;
 	padding:0;
 }
@@ -3459,7 +3459,7 @@ a:hover.search_button {
 	width:22px;
 	height:18px;
 	float:left;
-	background:url(../images/zone__primarystorageicon.png) no-repeat top left;
+	background:url(../images/zone_primarystorageicon.png) no-repeat top left;
 	font-weight:bold;
 	margin:3px 0 0 5px;
 	padding:0;

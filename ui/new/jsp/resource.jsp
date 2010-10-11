@@ -347,7 +347,13 @@
 	    <div class="zonetree_thirdlevel">
 		    <div class="zonetree_clustericon"></div>
 		    <p>Cluster:<div class="zonetree_links" id="cluster_name">(Name of the Cluster)</div></p>
-	    </div>
+	    </div>	    
+	    <div id="cluster_content">	        
+		    <div id="hosts_container">
+		    </div>
+		    <div id="primarystorages_container">
+		    </div>
+	    </div>    
 	</div>
 </div>
 <!-- Cluster Template (end) -->
@@ -376,7 +382,7 @@
     <div id="row_container">  
 	    <div class="zonetree_forthlevel">
 		    <div class="zonetree_primarystorageicon"></div>
-		    <p>Primary Storage:<div class="zonetree_links" id="primary_storage_name">(Name of the Primary Storage)</div></p>
+		    <p>Primary:<div class="zonetree_links" id="primary_storage_name">(Name of the Primary Storage)</div></p>
 	    </div>
 	</div>
 </div>

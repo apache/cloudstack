@@ -126,6 +126,50 @@ function afterLoadResourceJSP() {
 	    template.data("id", json.id).data("name", fromdb(json.name));
 	    
 	    var systeymvmName = template.find("#cluster_name").text(fromdb(json.name));
+	    	   
+	    $.ajax({
+            data: createURL("command=listHosts&clusterid="+json.id+maxPageSize),
+	        dataType: "json",
+	        success: function(json) {
+		        var items = json.listhostsresponse.host;
+		        var container = template.find("#hosts_container").empty();
+		        if (items != null && items.length > 0) {					    
+			        for (var i = 0; i < items.length; i++) {
+				        var hostTemplate = $("#host_template").clone(true).attr("id", "host_"+items[i].id);
+				        hostJSONToTemplate(items[i], hostTemplate);
+				        container.append(hostTemplate.show());
+			        }
+		        }
+	        }
+        });		
+        
+        $.ajax({
+            data: createURL("command=listStoragePools&clusterid="+json.id+maxPageSize),
+	        dataType: "json",
+	        success: function(json) {
+		        var items = json.liststoragepoolsresponse.storagepool;
+		        var container = template.find("#primarystorages_container").empty();
+		        if (items != null && items.length > 0) {					    
+			        for (var i = 0; i < items.length; i++) {
+				        var primaryStorageTemplate = $("#primary_storage_template").clone(true).attr("id", "primary_storage_"+items[i].id);
+				        primaryStorageJSONToTemplate(items[i], primaryStorageTemplate);
+				        container.append(primaryStorageTemplate.show());
+			        }
+		        }
+	        }
+        });		    
+	}
+	
+	function hostJSONToTemplate(json, template) {
+	    template.data("id", json.id).data("name", fromdb(json.name));
+	    
+	    var hostName = template.find("#host_name").text(fromdb(json.name));
+	}
+	
+	function primaryStorageJSONToTemplate(json, template) {
+	    template.data("id", json.id).data("name", fromdb(json.name));
+	    
+	    var primaryStorageName = template.find("#primary_storage_name").text(fromdb(json.name));
 	}
 	
 	$("#zone_template").bind("click", function(event) {
