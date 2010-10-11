@@ -444,7 +444,7 @@ function showInstancesTab(p_domainId, p_account) {
 																vmInstance.find("#vm_host").html("<strong>Host:</strong>");
 																
 																vmInstance.find("#vm_action_restore").show();
-																vmInstance.find("#vm_action_volumes, #vm_actions").hide();
+																vmInstance.find("#vm_action_volumes, #vm_actions, #vm_action_statistics").hide();
 															} else {
 																vmInstance.find(".continue_button").unbind("click").bind("click", function(event) {
 																	$(this).parents(".loadingmessage_container").hide().prevAll(".row_loading").hide();
@@ -810,7 +810,7 @@ function showInstancesTab(p_domainId, p_account) {
 								vmInstance.find("#vm_state_bar").removeClass("admin_vmgrey_arrow admin_vmgreen_arrow").addClass("admin_vmred_arrow");
 								vmInstance.find("#vm_state").text("Stopped").removeClass("grid_celltitles grid_runningtitles").addClass("grid_stoppedtitles");
 								vmInstance.find("#vm_action_restore").hide();
-								vmInstance.find("#vm_action_volumes, #vm_actions").show();
+								vmInstance.find("#vm_action_volumes, #vm_actions, #vm_action_statistics").show();
 								vmInstance.find("#vm_action_start, #vm_action_reset_password, #vm_action_change_service").removeClass().addClass("vmaction_links_on");
 								if (vmInstance.data("isoId") != null) {
 									vmInstance.find("#vm_action_detach_iso").removeClass().addClass("vmaction_links_on");
@@ -1085,12 +1085,14 @@ function showInstancesTab(p_domainId, p_account) {
 	// FUNCTION: Parses the JSON object for VM Instances and applies it to the vm template
 	function vmJSONToTemplate(instanceJSON, instanceTemplate, isNew) {
 	    instanceTemplate.attr("id","vm"+instanceJSON.id);  
+		
+		// This code fixes IE 7 issues with z-index.
 		if (isNew != undefined && isNew) {
 			instanceTemplate.find("#vm_rows").attr("style", "z-index: "+(rowZIndexGlobal++));
 		} else {
 			instanceTemplate.find("#vm_rows").attr("style", "z-index: "+(rowZIndex--));
 		}
-	    
+		
 		// Setup			
 		var vmName = getVmName(instanceJSON.name, instanceJSON.displayname);
 					
@@ -1146,7 +1148,7 @@ function showInstancesTab(p_domainId, p_account) {
 			instanceTemplate.find("#vm_state_bar").removeClass("admin_vmred_arrow admin_vmgreen_arrow").addClass("admin_vmgrey_arrow");
 			instanceTemplate.find("#vm_state").text(instanceJSON.state).removeClass("grid_stoppedtitles grid_runningtitles").addClass("grid_celltitles");
 			instanceTemplate.find("#vm_action_restore").show();
-			instanceTemplate.find("#vm_action_volumes, #vm_actions").hide();
+			instanceTemplate.find("#vm_action_volumes, #vm_actions, #vm_action_statistics").hide();
 			instanceTemplate.find("#vm_action_view_console").unbind("mouseover");
 		} else if (instanceJSON.state == 'Running') {
 			instanceTemplate.find("#vm_state_bar").removeClass("admin_vmgrey_arrow admin_vmred_arrow").addClass("admin_vmgreen_arrow");
@@ -1167,6 +1169,12 @@ function showInstancesTab(p_domainId, p_account) {
 			} else {
 				instanceTemplate.find("#vm_action_detach_iso").removeClass().addClass("vmaction_links_off");
 			}
+		} else if (instanceJSON.state == 'Error') {
+			// If vm state is error, just make sure all links are no longer visible.
+			instanceTemplate.find("#vm_state_bar").removeClass("admin_vmgrey_arrow admin_vmgreen_arrow").addClass("admin_vmred_arrow");
+			instanceTemplate.find("#vm_state").text(instanceJSON.state).removeClass("grid_celltitles grid_runningtitles").addClass("grid_stoppedtitles");
+			instanceTemplate.find("#vm_action_volumes, #vm_actions, #vm_action_statistics").hide();
+			return;
 		} else {
 			if (instanceJSON.state == 'Stopped') {
 				instanceTemplate.find("#vm_state_bar").removeClass("admin_vmgrey_arrow admin_vmgreen_arrow").addClass("admin_vmred_arrow");
