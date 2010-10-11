@@ -1054,10 +1054,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 			}
 			
 			if (vlanId.equals(vlan.getVlanId()) && newVlanSubnet.equals(otherVlanSubnet)) {
-				if (NetUtils.ipRangesOverlap(startIP, endIP, otherVlanStartIP, otherVlanEndIP)) {
-					throw new InvalidParameterValueException("The VLAN with ID " + vlan.getVlanId() + " already has IPs that overlap with the new range. Please specify a different start IP/end IP.");
+				if (!(vlanType.equals(VlanType.DirectAttached) && !vlanId.equals(Vlan.UNTAGGED)))
+				{
+					if (NetUtils.ipRangesOverlap(startIP, endIP, otherVlanStartIP, otherVlanEndIP)) {
+						throw new InvalidParameterValueException("The VLAN with ID " + vlan.getVlanId() + " already has IPs that overlap with the new range. Please specify a different start IP/end IP.");
+					}
 				}
-				
 				if (!vlanGateway.equals(otherVlanGateway)) {
 					throw new InvalidParameterValueException("The VLAN with ID " + vlan.getVlanId() + " has already been added with gateway " + otherVlanGateway + ". Please specify a different VLAN ID.");
 				}
