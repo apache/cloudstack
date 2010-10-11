@@ -41,13 +41,13 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="The account of the snapshot. The account parameter must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="The domain ID of the snapshot. If used with the account parameter, specifies a domain for the account associated with the disk volume.")
     private Long domainId;
 
-    @Parameter(name="volumeid", type=CommandType.LONG, required=true)
+    @Parameter(name="volumeid", type=CommandType.LONG, required=true, description="The ID of the disk volume")
     private Long volumeId;
 
     /////////////////////////////////////////////////////

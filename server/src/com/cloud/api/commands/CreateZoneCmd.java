@@ -37,25 +37,26 @@ public class CreateZoneCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="dns1", type=CommandType.STRING, required=true)
+    @Parameter(name="dns1", type=CommandType.STRING, required=true, description="the first DNS for the Zone")
     private String dns1;
 
-    @Parameter(name="dns2", type=CommandType.STRING)
+    @Parameter(name="dns2", type=CommandType.STRING, description="the second DNS for the Zone")
     private String dns2;
 
-    @Parameter(name="guestcidraddress", type=CommandType.STRING, required=true)
+    @Parameter(name="guestcidraddress", type=CommandType.STRING, required=true, description="the guest CIDR address for the Zone")
     private String guestCidrAddress;
 
-    @Parameter(name="internaldns1", type=CommandType.STRING, required=true)
+    @Parameter(name="internaldns1", type=CommandType.STRING, required=true, description="the first internal DNS for the Zone")
     private String internalDns1;
 
-    @Parameter(name="internaldns2", type=CommandType.STRING)
+    @Parameter(name="internaldns2", type=CommandType.STRING, description="the second internal DNS for the Zone")
     private String internalDns2;
 
-    @Parameter(name="name", type=CommandType.STRING, required=true)
+    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name of the Zone")
     private String zoneName;
-
-    @Parameter(name="vlan", type=CommandType.STRING)
+    
+    //FIXME - this parameter is called "vnet" in updateZone. Have to figure out which one is right
+    @Parameter(name="vlan", type=CommandType.STRING, description="the VNET for the Zone")
     private String vlan;
 
 

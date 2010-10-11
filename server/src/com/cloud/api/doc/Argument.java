@@ -18,7 +18,7 @@
 
 package com.cloud.api.doc;
 
-public class Argument implements Comparable<Argument>{
+public class Argument{
 	private String name;
 	private String description;
 	private Boolean required;
@@ -44,10 +44,6 @@ public class Argument implements Comparable<Argument>{
 	}
 	public void setRequired(Boolean required) {
 		this.required = required;
-	}
-	
-	public int compareTo(Argument arg) {
-		return required.compareTo(arg.isRequired());
 	}
 	
 }

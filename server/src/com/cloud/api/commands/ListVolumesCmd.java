@@ -47,31 +47,31 @@ public class ListVolumesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="the account associated with the disk volume. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="Lists all disk volumes for the specified domain ID. If used with the account parameter, returns all disk volumes for an account in the specified domain ID.")
     private Long domainId;
 
-    @Parameter(name="hostid", type=CommandType.LONG)
+    @Parameter(name="hostid", type=CommandType.LONG, description="list volumes on specified host")
     private Long hostId;
 
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name="id", type=CommandType.LONG, description="the ID of the disk volume")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="the name of the disk volume")
     private String volumeName;
 
     @Parameter(name="podid", type=CommandType.LONG)
     private Long podId;
 
-    @Parameter(name="type", type=CommandType.STRING)
+    @Parameter(name="type", type=CommandType.STRING, description="the type of disk volume")
     private String type;
 
-    @Parameter(name="virtualmachineid", type=CommandType.LONG)
+    @Parameter(name="virtualmachineid", type=CommandType.LONG, description="the ID of the virtual machine")
     private Long virtualMachineId;
 
-    @Parameter(name="zoneid", type=CommandType.LONG)
+    @Parameter(name="zoneid", type=CommandType.LONG, description="the ID of the availability zone")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

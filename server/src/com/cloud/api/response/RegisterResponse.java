@@ -1,12 +1,13 @@
 package com.cloud.api.response;
 
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class RegisterResponse extends BaseResponse {
-    @SerializedName("apikey")
+    @SerializedName("apikey") @Param(description="the api key of the registered user")
     private String apiKey;
 
-    @SerializedName("secretkey")
+    @SerializedName("secretkey") @Param(description="the secret key of the registered user")
     private String secretKey;
 
     public String getApiKey() {

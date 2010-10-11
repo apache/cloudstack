@@ -40,7 +40,7 @@ public class ListAlertsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="type", type=CommandType.STRING)
+    @Parameter(name="type", type=CommandType.STRING, description="list by alert type")
     private String type;
 
     /////////////////////////////////////////////////////

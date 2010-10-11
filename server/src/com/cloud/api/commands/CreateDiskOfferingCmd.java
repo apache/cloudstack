@@ -38,19 +38,19 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="disksize", type=CommandType.LONG, required=true)
+    @Parameter(name="disksize", type=CommandType.LONG, required=true, description="disk size of the disk offering in GB")
     private Long diskSize;
 
-    @Parameter(name="displaytext", type=CommandType.STRING, required=true)
+    @Parameter(name="displaytext", type=CommandType.STRING, required=true, description="alternate display text of the disk offering")
     private String displayText;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="domain ID where disk offering is going to be created")
     private Long domainId;
 
-    @Parameter(name="name", type=CommandType.STRING, required=true)
+    @Parameter(name="name", type=CommandType.STRING, required=true, description="name of the disk offering")
     private String offeringName;
 
-    @Parameter(name="tags", type=CommandType.STRING)
+    @Parameter(name="tags", type=CommandType.STRING, description="tags for the disk offering")
     private String tags;
 
     /////////////////////////////////////////////////////

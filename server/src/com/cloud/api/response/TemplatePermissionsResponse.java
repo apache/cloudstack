@@ -19,19 +19,20 @@ package com.cloud.api.response;
 
 import java.util.List;
 
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class TemplatePermissionsResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("id") @Param(description="the template ID")
     private Long id;
 
-    @SerializedName("ispublic")
+    @SerializedName("ispublic") @Param(description="true if this template is a public template, false otherwise")
     private Boolean publicTemplate;
 
-    @SerializedName("domainid")
+    @SerializedName("domainid") @Param(description="the ID of the domain to which the template belongs")
     private Long domainId;
 
-    @SerializedName("account")
+    @SerializedName("account") @Param(description="the list of accounts the template is available for")
     private List<String> accountNames;
 
     public Long getId() {

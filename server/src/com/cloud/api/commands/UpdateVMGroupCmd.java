@@ -23,7 +23,6 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ResponseObject;
 import com.cloud.api.response.InstanceGroupResponse;
 import com.cloud.user.Account;
 import com.cloud.vm.InstanceGroupVO;
@@ -38,10 +37,10 @@ public class UpdateVMGroupCmd extends BaseCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="Instance group ID")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="new instance group name")
     private String groupName;
 
     /////////////////////////////////////////////////////

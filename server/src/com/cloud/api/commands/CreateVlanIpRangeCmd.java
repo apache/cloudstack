@@ -38,34 +38,34 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="account who will own the VLAN. If VLAN is Zone wide, this parameter should be ommited")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="domain ID of the account owning a VLAN")
     private Long domainId;
 
-    @Parameter(name="endip", type=CommandType.STRING)
+    @Parameter(name="endip", type=CommandType.STRING, description="the ending IP address in the VLAN IP range")
     private String endIp;
 
-    @Parameter(name="forvirtualnetwork", type=CommandType.BOOLEAN)
+    @Parameter(name="forvirtualnetwork", type=CommandType.BOOLEAN, description="true if VLAN is of Virtual type, false if Direct")
     private Boolean forVirtualNetwork;
 
-    @Parameter(name="gateway", type=CommandType.STRING, required=true)
+    @Parameter(name="gateway", type=CommandType.STRING, required=true, description="the gateway of the VLAN IP range")
     private String gateway;
 
-    @Parameter(name="netmask", type=CommandType.STRING, required=true)
+    @Parameter(name="netmask", type=CommandType.STRING, required=true, description="the netmask of the VLAN IP range")
     private String netmask;
 
-    @Parameter(name="podid", type=CommandType.LONG)
+    @Parameter(name="podid", type=CommandType.LONG, description="optional parameter. Have to be specified for Direct Untagged vlan only.")
     private Long podId;
 
-    @Parameter(name="startip", type=CommandType.STRING, required=true)
+    @Parameter(name="startip", type=CommandType.STRING, required=true, description="the beginning IP address in the VLAN IP range")
     private String startIp;
 
-    @Parameter(name="vlan", type=CommandType.STRING)
+    @Parameter(name="vlan", type=CommandType.STRING, description="the ID or VID of the VLAN. Default is an \"untagged\" VLAN.")
     private String vlan;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true)
+    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="	the Zone ID of the VLAN IP range")
     private Long zoneId;
 
 

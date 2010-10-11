@@ -39,7 +39,7 @@ public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="console proxy ID")
     private Long id;
 
 

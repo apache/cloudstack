@@ -39,13 +39,13 @@ public class RemovePortForwardingServiceCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the port forwarding service to remove from the virtual machine/publicIp")
     private Long id;
 
-    @Parameter(name="publicip", type=CommandType.STRING, required=true)
+    @Parameter(name="publicip", type=CommandType.STRING, required=true, description="the public IP address associated with the port forwarding service")
     private String publicIp;
 
-    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=true)
+    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=true, description="the virtual machine currently assigned to the port forwarding service")
     private Long virtualMachineId;
 
     /////////////////////////////////////////////////////

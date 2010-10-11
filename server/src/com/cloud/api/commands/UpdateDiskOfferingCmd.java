@@ -38,16 +38,16 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
     /////////////////////////////////////////////////////
     
 
-    @Parameter(name="displaytext", type=CommandType.STRING)
+    @Parameter(name="displaytext", type=CommandType.STRING, description="updates alternate display text of the disk offering with this value")
     private String displayText;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="ID of the disk offering")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="updates name of the disk offering with this value")
     private String diskOfferingName;
 
-    @Parameter(name="tags", type=CommandType.STRING)
+    @Parameter(name="tags", type=CommandType.STRING, description="update tags of the disk offering with this value")
     private String tags;
 
     /////////////////////////////////////////////////////

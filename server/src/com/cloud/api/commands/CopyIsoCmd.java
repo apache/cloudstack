@@ -45,13 +45,13 @@ public class CopyIsoCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="destzoneid", type=CommandType.LONG, required=true)
+    @Parameter(name="destzoneid", type=CommandType.LONG, required=true, description="the ID of the destination zone to which the ISO file will be copied")
     private Long destZoneId;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the ISO file")
     private Long id;
 
-    @Parameter(name="sourcezoneid", type=CommandType.LONG, required=true)
+    @Parameter(name="sourcezoneid", type=CommandType.LONG, required=true, description="the ID of the source zone from which the ISO file will be copied")
     private Long sourceZoneId;
 
     /////////////////////////////////////////////////////

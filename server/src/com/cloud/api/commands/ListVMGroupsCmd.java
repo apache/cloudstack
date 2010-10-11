@@ -41,16 +41,16 @@ public class ListVMGroupsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name="id", type=CommandType.LONG, description="list instance groups by ID")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="list instance groups by name")
     private String groupName;
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="list instance group belonging to the specified account. Must be used with domainid parameter")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists virtual machines for the specified account in this domain.")
     private Long domainId;
 
     /////////////////////////////////////////////////////

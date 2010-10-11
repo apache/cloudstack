@@ -53,25 +53,25 @@ public class AddHostCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="clusterid", type=CommandType.LONG)
+    @Parameter(name="clusterid", type=CommandType.LONG, description="the cluster ID for the host")
     private Long clusterId;
 
-    @Parameter(name="clustername", type=CommandType.STRING)
+    @Parameter(name="clustername", type=CommandType.STRING, description="the cluster name for the host")
     private String clusterName;
 
-    @Parameter(name="password", type=CommandType.STRING, required=true)
+    @Parameter(name="password", type=CommandType.STRING, required=true, description="the password for the host")
     private String password;
 
-    @Parameter(name="podid", type=CommandType.LONG)
+    @Parameter(name="podid", type=CommandType.LONG, description="the Pod ID for the host")
     private Long podId;
 
-    @Parameter(name="url", type=CommandType.STRING, required=true)
+    @Parameter(name="url", type=CommandType.STRING, required=true, description="the host URL")
     private String url;
 
-    @Parameter(name="username", type=CommandType.STRING, required=true)
+    @Parameter(name="username", type=CommandType.STRING, required=true, description="the username for the host")
     private String username;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true)
+    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="the Zone ID for the host")
     private Long zoneId;
 
 

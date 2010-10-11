@@ -17,28 +17,29 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class PortForwardingServiceRuleResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("id") @Param(description="the ID of the port forwarding service rule")
     private long ruleId;
 
-    @SerializedName("publicport")
+    @SerializedName("publicport") @Param(description="the public port of the port forwarding service rule")
     private String publicPort;
 
-    @SerializedName("privateport")
+    @SerializedName("privateport") @Param(description="the private port of the port forwarding service rule")
     private String privatePort;
 
-    @SerializedName("protocol")
+    @SerializedName("protocol") @Param(description="the protocol (TCP/UDP) of the port forwarding service rule")
     private String protocol;
 
-    @SerializedName("portforwardingserviceid")
+    @SerializedName("portforwardingserviceid") @Param(description="the id of port forwarding service where the rule belongs to")
     private Long portForwardingServiceId;
 
-    @SerializedName("jobid")
+    @SerializedName("jobid") @Param(description="the job ID associated with the port forwarding rule. This is only displayed if the rule listed is part of a currently running asynchronous job.")
     private Long jobId;
 
-    @SerializedName("jobstatus")
+    @SerializedName("jobstatus") @Param(description="the job status associated with the port forwarding rule.  This is only displayed if the rule listed is part of a currently running asynchronous job.")
     private Integer jobStatus;
 
     public Long getPortForwardingServiceId() {

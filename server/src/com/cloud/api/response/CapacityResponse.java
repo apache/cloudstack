@@ -17,31 +17,32 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class CapacityResponse extends BaseResponse {
-    @SerializedName("type")
+    @SerializedName("type") @Param(description="the capacity type")
     private Short capacityType;
 
-    @SerializedName("zoneid")
+    @SerializedName("zoneid") @Param(description="the Zone ID")
     private Long zoneId;
 
-    @SerializedName("zonename")
+    @SerializedName("zonename") @Param(description="the Zone name")
     private String zoneName;
 
-    @SerializedName("podid")
+    @SerializedName("podid") @Param(description="the Pod ID")
     private Long podId;
 
-    @SerializedName("podname")
+    @SerializedName("podname") @Param(description="the Pod name")
     private String podName;
 
-    @SerializedName("capacityused")
+    @SerializedName("capacityused") @Param(description="the capacity currently in use")
     private Long capacityUsed;
 
-    @SerializedName("capacityTotal")
+    @SerializedName("capacityTotal") @Param(description="the total capacity available")
     private Long capacityTotal;
 
-    @SerializedName("percentused")
+    @SerializedName("percentused") @Param(description="the percentage of capacity currently in use")
     private String percentUsed;
 
     public Short getCapacityType() {

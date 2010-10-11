@@ -39,13 +39,13 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="List template visibility and permissions for the specified account. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="List template visibility and permissions by domain. If used with the account parameter, specifies in which domain the specified account exists.")
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the template ID")
     private Long id;
 
     /////////////////////////////////////////////////////

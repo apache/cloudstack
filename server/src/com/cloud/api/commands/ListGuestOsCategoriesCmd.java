@@ -40,7 +40,7 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name="id", type=CommandType.LONG, description="list Os category by id")
     private Long id;
 
 

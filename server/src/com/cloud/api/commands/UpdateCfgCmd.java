@@ -36,10 +36,10 @@ public class UpdateCfgCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="name", type=CommandType.STRING, required=true)
+    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name of the configuration")
     private String cfgName;
 
-    @Parameter(name="value", type=CommandType.STRING)
+    @Parameter(name="value", type=CommandType.STRING, description="the value of the configuration")
     private String value;
 
     /////////////////////////////////////////////////////

@@ -50,31 +50,31 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     @Parameter(name="bits", type=CommandType.INTEGER)
     private Integer bits;
 
-    @Parameter(name="displaytext", type=CommandType.STRING, required=true)
+    @Parameter(name="displaytext", type=CommandType.STRING, required=true, description="the display text of the template. This is usually used for display purposes.")
     private String displayText;
 
-    @Parameter(name="isfeatured", type=CommandType.BOOLEAN)
+    @Parameter(name="isfeatured", type=CommandType.BOOLEAN, description="true if this template is a featured template, false otherwise")
     private Boolean featured;
 
-    @Parameter(name="ispublic", type=CommandType.BOOLEAN)
+    @Parameter(name="ispublic", type=CommandType.BOOLEAN, description="true if this template is a public template, false otherwise")
     private Boolean publicTemplate;
 
-    @Parameter(name="name", type=CommandType.STRING, required=true)
+    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name of the template")
     private String templateName;
 
-    @Parameter(name="ostypeid", type=CommandType.LONG, required=true)
+    @Parameter(name="ostypeid", type=CommandType.LONG, required=true, description="	the ID of the OS Type that best represents the OS of this template.")
     private Long osTypeId;
 
-    @Parameter(name="passwordenabled", type=CommandType.BOOLEAN)
+    @Parameter(name="passwordenabled", type=CommandType.BOOLEAN, description="true if the template supports the password reset feature; default is false")
     private Boolean passwordEnabled;
 
-    @Parameter(name="requireshvm", type=CommandType.BOOLEAN)
+    @Parameter(name="requireshvm", type=CommandType.BOOLEAN, description="true if the template requres HVM, false otherwise")
     private Boolean requiresHvm;
 
-    @Parameter(name="snapshotid", type=CommandType.LONG)
+    @Parameter(name="snapshotid", type=CommandType.LONG, description="the ID of the snapshot the template is being created from")
     private Long snapshotId;
 
-    @Parameter(name="volumeid", type=CommandType.LONG)
+    @Parameter(name="volumeid", type=CommandType.LONG, description="the ID of the disk volume the template is being created from")
     private Long volumeId;
 
     /////////////////////////////////////////////////////

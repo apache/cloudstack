@@ -20,40 +20,41 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.event.EventState;
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class EventResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("id") @Param(description="the ID of the event")
     private Long id;
 
-    @SerializedName("username")
+    @SerializedName("username") @Param(description="the name of the user who performed the action (can be different from the account if an admin is performing an action for a user, e.g. starting/stopping a user's virtual machine)")
     private String username;
 
-    @SerializedName("type")
+    @SerializedName("type") @Param(description="the type of the event (see event types)")
     private String eventType;
 
-    @SerializedName("level")
+    @SerializedName("level") @Param(description="the event level (INFO, WARN, ERROR)")
     private String level;
 
-    @SerializedName("description")
+    @SerializedName("description") @Param(description="a brief description of the event")
     private String description;
 
-    @SerializedName("account")
+    @SerializedName("account") @Param(description="the account name for the account that owns the object being acted on in the event (e.g. the owner of the virtual machine, ip address, or security group)")
     private String accountName;
 
-    @SerializedName("domainid")
+    @SerializedName("domainid") @Param(description="the id of the account's domain")
     private Long domainId;
 
-    @SerializedName("domain")
+    @SerializedName("domain") @Param(description="the name of the account's domain")
     private String domainName;
 
-    @SerializedName("created")
+    @SerializedName("created") @Param(description="the date the event was created")
     private Date created;
 
-    @SerializedName("state")
+    @SerializedName("state") @Param(description="the state of the event")
     private EventState state;
 
-    @SerializedName("parentid")
+    @SerializedName("parentid") @Param(description="whether the event is parented")
     private Long parentId;
 
     public Long getId() {

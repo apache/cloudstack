@@ -44,25 +44,25 @@ public class ListSystemVMsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="hostid", type=CommandType.LONG)
+    @Parameter(name="hostid", type=CommandType.LONG, description="the host ID of the system VM")
     private Long hostId;
 
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name="id", type=CommandType.LONG, description="the ID of the system VM")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="the name of the system VM")
     private String systemVmName;
 
-    @Parameter(name="podid", type=CommandType.LONG)
+    @Parameter(name="podid", type=CommandType.LONG, description="the Pod ID of the system VM")
     private Long podId;
 
-    @Parameter(name="state", type=CommandType.STRING)
+    @Parameter(name="state", type=CommandType.STRING, description="the state of the system VM")
     private String state;
 
-    @Parameter(name="systemvmtype", type=CommandType.STRING)
+    @Parameter(name="systemvmtype", type=CommandType.STRING, description="the system VM type. Possible types are \"consoleproxy\" and \"secondarystoragevm\".")
     private String systemVmType;
 
-    @Parameter(name="zoneid", type=CommandType.LONG)
+    @Parameter(name="zoneid", type=CommandType.LONG, description="the Zone ID of the system VM")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

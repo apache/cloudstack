@@ -36,22 +36,23 @@ public class AddConfigCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="category", type=CommandType.STRING, required=true)
+    @Parameter(name="category", type=CommandType.STRING, required=true, description="component's category")
     private String category;
 
-    @Parameter(name="component", type=CommandType.STRING, required=true)
+    @Parameter(name="component", type=CommandType.STRING, required=true, description="the component of the configuration")
     private String component;
 
-    @Parameter(name="description", type=CommandType.STRING)
+    @Parameter(name="description", type=CommandType.STRING, description="the description of the configuration")
     private String description;
 
+    //FIXME - add description
     @Parameter(name="instance", type=CommandType.STRING, required=true)
     private String instance;
 
-    @Parameter(name="name", type=CommandType.STRING, required=true)
+    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name of the configuration")
     private String name;
 
-    @Parameter(name="value", type=CommandType.STRING)
+    @Parameter(name="value", type=CommandType.STRING, description="the value of the configuration")
     private String value;
 
 

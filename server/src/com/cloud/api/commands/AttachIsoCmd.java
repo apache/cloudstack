@@ -41,10 +41,10 @@ public class AttachIsoCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the ISO file")
     private Long id;
 
-    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=true)
+    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=true, description="the ID of the virtual machine")
     private Long virtualMachineId;
 
 

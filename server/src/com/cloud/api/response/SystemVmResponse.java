@@ -19,79 +19,80 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class SystemVmResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("id") @Param(description="the ID of the system VM")
     private Long id;
 
-    @SerializedName("systemvmtype")
+    @SerializedName("systemvmtype") @Param(description="the system VM type")
     private String systemVmType;
 
-    @SerializedName("jobid")
+    @SerializedName("jobid") @Param(description="the job ID associated with the system VM. This is only displayed if the router listed is part of a currently running asynchronous job.")
     private Long jobId;
 
-    @SerializedName("jobstatus")
+    @SerializedName("jobstatus") @Param(description="the job status associated with the system VM.  This is only displayed if the router listed is part of a currently running asynchronous job.")
     private Integer jobStatus;
 
-    @SerializedName("zoneid")
+    @SerializedName("zoneid") @Param(description="the Zone ID for the system VM")
     private Long zoneId;
 
-    @SerializedName("zonename")
+    @SerializedName("zonename") @Param(description="the Zone name for the system VM")
     private String zoneName;
 
-    @SerializedName("dns1")
+    @SerializedName("dns1") @Param(description="the first DNS for the system VM")
     private String dns1;
 
-    @SerializedName("dns2")
+    @SerializedName("dns2") @Param(description="the second DNS for the system VM")
     private String dns2;
 
-    @SerializedName("networkdomain")
+    @SerializedName("networkdomain") @Param(description="the network domain for the system VM")
     private String networkDomain;
 
-    @SerializedName("gateway")
+    @SerializedName("gateway") @Param(description="the gateway for the system VM")
     private String gateway;
 
-    @SerializedName("name")
+    @SerializedName("name") @Param(description="the name of the system VM")
     private String name;
 
-    @SerializedName("podid")
+    @SerializedName("podid") @Param(description="the Pod ID for the system VM")
     private Long podId;
 
-    @SerializedName("hostid")
+    @SerializedName("hostid") @Param(description="the host ID for the system VM")
     private Long hostId;
 
-    @SerializedName("hostname")
+    @SerializedName("hostname") @Param(description="the hostname for the system VM")
     private String hostName;
 
-    @SerializedName("privateip")
+    @SerializedName("privateip") @Param(description="the private IP address for the system VM")
     private String privateIp;
 
-    @SerializedName("privatemacaddress")
+    @SerializedName("privatemacaddress") @Param(description="the private MAC address for the system VM")
     private String privateMacAddress;
 
-    @SerializedName("privatenetmask")
+    @SerializedName("privatenetmask") @Param(description="the private netmask for the system VM")
     private String privateNetmask;
 
-    @SerializedName("publicip")
+    @SerializedName("publicip") @Param(description="the public IP address for the system VM")
     private String publicIp;
 
-    @SerializedName("publicmacaddress")
+    @SerializedName("publicmacaddress") @Param(description="the public MAC address for the system VM")
     private String publicMacAddress;
 
-    @SerializedName("publicnetmask")
+    @SerializedName("publicnetmask") @Param(description="the public netmask for the system VM")
     private String publicNetmask;
 
-    @SerializedName("templateid")
+    @SerializedName("templateid") @Param(description="the template ID for the system VM")
     private Long templateId;
 
-    @SerializedName("created")
+    @SerializedName("created") @Param(description="the date and time the system VM was created")
     private Date created;
 
-    @SerializedName("state")
+    @SerializedName("state") @Param(description="the state of the system VM")
     private String state;
-
-    @SerializedName("activeviewersessions")
+    
+    @SerializedName("activeviewersessions") @Param(description="the number of active console sessions for the console proxy system vm")
     private Integer activeViewerSessions;
 
     public Long getId() {

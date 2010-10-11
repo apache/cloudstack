@@ -40,9 +40,11 @@ public class ListPreallocatedLunsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    //FIXME - add description
     @Parameter(name="scope", type=CommandType.STRING)
     private String scope;
 
+    //FIXME - add description
     @Parameter(name="targetiqn", type=CommandType.STRING)
     private String targetIqn;
 

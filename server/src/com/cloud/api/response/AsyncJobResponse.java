@@ -20,43 +20,44 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.api.ResponseObject;
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class AsyncJobResponse extends BaseResponse {
-    @SerializedName("jobid")
+    @SerializedName("jobid") @Param(description="async job ID")
     private Long id;
 
-    @SerializedName("accountid")
+    @SerializedName("accountid") @Param(description="the account that executed the async command")
     private Long accountId;
 
-    @SerializedName("userid")
+    @SerializedName("userid") @Param(description="the user that executed the async command")
     private Long userId;
 
-    @SerializedName("cmd")
+    @SerializedName("cmd") @Param(description="the async command executed")
     private String cmd;
 
-    @SerializedName("jobstatus")
+    @SerializedName("jobstatus") @Param(description="the current job status—should be 0 for PENDING")
     private Integer jobStatus;
 
-    @SerializedName("jobprocstatus")
+    @SerializedName("jobprocstatus") @Param(description="the progress information of the PENDING job")
     private Integer jobProcStatus;
 
-    @SerializedName("jobresultcode")
+    @SerializedName("jobresultcode") @Param(description="the result code for the job")
     private Integer jobResultCode;
 
-    @SerializedName("jobresulttype")
+    @SerializedName("jobresulttype") @Param(description="the result type")
     private String jobResultType;
 
-    @SerializedName("jobresult")
+    @SerializedName("jobresult") @Param(description="the result reason")
     private ResponseObject jobResult;
-
-    @SerializedName("jobinstancetype")
+ 
+    @SerializedName("jobinstancetype") @Param(description="the instance/entity object related to the job")
     private String jobInstanceType;
 
-    @SerializedName("jobinstanceid")
+    @SerializedName("jobinstanceid") @Param(description="the unique ID of the instance/entity object related to the job")
     private Long jobInstanceId;
 
-    @SerializedName("created")
+    @SerializedName("created") @Param(description="	the created date of the job")
     private Date created;
 
     public Long getId() {

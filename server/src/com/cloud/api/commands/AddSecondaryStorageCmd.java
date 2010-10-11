@@ -48,10 +48,10 @@ public class AddSecondaryStorageCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="url", type=CommandType.STRING, required=true)
+    @Parameter(name="url", type=CommandType.STRING, required=true, description="the URL for the secondary storage")
     private String url;
 
-    @Parameter(name="zoneid", type=CommandType.LONG)
+    @Parameter(name="zoneid", type=CommandType.LONG, description="the Zone ID for the secondary storage")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

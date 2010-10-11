@@ -45,13 +45,13 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="destzoneid", type=CommandType.LONG, required=true)
+    @Parameter(name="destzoneid", type=CommandType.LONG, required=true, description="ID of the zone the template is being copied to.")
     private Long destZoneId;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="Template ID.")
     private Long id;
 
-    @Parameter(name="sourcezoneid", type=CommandType.LONG, required=true)
+    @Parameter(name="sourcezoneid", type=CommandType.LONG, required=true, description="ID of the zone the template is currently hosted on.")
     private Long sourceZoneId;
 
 

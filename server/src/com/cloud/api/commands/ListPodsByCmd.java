@@ -41,13 +41,13 @@ public class ListPodsByCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name="id", type=CommandType.LONG, description="list Pods by ID")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="list Pods by name")
     private String podName;
 
-    @Parameter(name="zoneid", type=CommandType.LONG)
+    @Parameter(name="zoneid", type=CommandType.LONG, description="list Pods by Zone ID")
     private Long zoneId;
 
 

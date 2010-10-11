@@ -43,16 +43,16 @@ public class ListClustersCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name="id", type=CommandType.LONG, description="lists clusters by the cluster ID")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="lists clusters by the cluster name")
     private String clusterName;
 
-    @Parameter(name="podid", type=CommandType.LONG)
+    @Parameter(name="podid", type=CommandType.LONG, description="lists clusters by Pod ID")
     private Long podId;
 
-    @Parameter(name="zoneid", type=CommandType.LONG)
+    @Parameter(name="zoneid", type=CommandType.LONG, description="lists clusters by Zone ID")
     private Long zoneId;
 
 

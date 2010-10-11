@@ -40,13 +40,13 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name="id", type=CommandType.LONG, description="ID of the service offering")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="name of the service offering")
     private String serviceOfferingName;
 
-    @Parameter(name="virtualmachineid", type=CommandType.LONG)
+    @Parameter(name="virtualmachineid", type=CommandType.LONG, description="the ID of the virtual machine. Pass this in if you want to see the available service offering that a virtual machine can be changed to.")
     private Long virtualMachineId;
 
     /////////////////////////////////////////////////////

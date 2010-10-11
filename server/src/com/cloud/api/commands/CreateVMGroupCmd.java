@@ -38,13 +38,13 @@ public class CreateVMGroupCmd extends BaseCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="name", type=CommandType.STRING, required=true)
+    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name of the instance group")
     private String groupName;
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="the account of the instance group. The account parameter must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID of account owning the instance group")
     private Long domainId;
 
     /////////////////////////////////////////////////////

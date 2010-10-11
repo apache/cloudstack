@@ -19,92 +19,93 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.serializer.Param;
 import com.cloud.vm.State;
 import com.google.gson.annotations.SerializedName;
 
 public class DomainRouterResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("id") @Param(description="the id of the router")
     private Long id;
-
-    @SerializedName("jobid")
+ 
+    @SerializedName("jobid") @Param(description="the job ID associated with the router. This is only displayed if the router listed is part of a currently running asynchronous job.")
     private Long jobId;
 
-    @SerializedName("jobstatus")
+    @SerializedName("jobstatus") @Param(description="the job status associated with the router.  This is only displayed if the router listed is part of a currently running asynchronous job.")
     private Integer jobStatus;
 
-    @SerializedName("zoneid")
+    @SerializedName("zoneid") @Param(description="the Zone ID for the router")
     private Long zoneId;
 
-    @SerializedName("zonename")
-    private String zoneName;
+    @SerializedName("zonename") @Param(description="the Zone name for the router")
+    private String zoneName; 
 
-    @SerializedName("dns1")
+    @SerializedName("dns1") @Param(description="the first DNS for the router")
     private String dns1;
 
-    @SerializedName("dns2")
+    @SerializedName("dns2") @Param(description="the second DNS for the router")
     private String dns2;
 
-    @SerializedName("networkdomain")
+    @SerializedName("networkdomain") @Param(description="the network domain for the router")
     private String networkDomain;
 
-    @SerializedName("gateway")
+    @SerializedName("gateway") @Param(description="the gateway for the router")
     private String gateway;
 
-    @SerializedName("name")
+    @SerializedName("name") @Param(description="the name of the router")
     private String name;
 
-    @SerializedName("podid")
+    @SerializedName("podid") @Param(description="the Pod ID for the router")
     private Long podId;
 
-    @SerializedName("hostid")
+    @SerializedName("hostid") @Param(description="the host ID for the router")
     private Long hostId;
 
-    @SerializedName("hostname")
+    @SerializedName("hostname") @Param(description="the hostname for the router")
     private String hostName;
 
-    @SerializedName("privateip")
+    @SerializedName("privateip") @Param(description="the private IP address for the router")
     private String privateIp;
 
-    @SerializedName("privatemacaddress")
+    @SerializedName("privatemacaddress") @Param(description="the private MAC address for the router")
     private String privateMacAddress;
 
-    @SerializedName("privatenetmask")
+    @SerializedName("privatenetmask") @Param(description="the private netmask for the router")
     private String privateNetmask;
 
-    @SerializedName("publicip")
+    @SerializedName("publicip") @Param(description="the public IP address for the router")
     private String publicIp;
 
-    @SerializedName("publicmacaddress")
+    @SerializedName("publicmacaddress") @Param(description="the public MAC address for the router")
     private String publicMacAddress;
 
-    @SerializedName("publicnetmask")
+    @SerializedName("publicnetmask") @Param(description="the public netmask for the router")
     private String publicNetmask;
 
-    @SerializedName("guestipaddress")
+    @SerializedName("guestipaddress") @Param(description="the guest IP address for the router")
     private String guestIpAddress;
 
-    @SerializedName("guestmacaddress")
+    @SerializedName("guestmacaddress") @Param(description="the guest MAC address for the router")
     private String guestMacAddress;
 
-    @SerializedName("guestnetmask")
+    @SerializedName("guestnetmask") @Param(description="the guest netmask for the router")
     private String guestNetmask;
 
-    @SerializedName("templateid")
+    @SerializedName("templateid") @Param(description="the template ID for the router")
     private Long templateId;
 
-    @SerializedName("created")
+    @SerializedName("created") @Param(description="the date and time the router was created")
     private Date created;
 
-    @SerializedName("state")
+    @SerializedName("state") @Param(description="the state of the router")
     private State state;
 
-    @SerializedName("account")
+    @SerializedName("account") @Param(description="the account associated with the router")
     private String accountName;
 
-    @SerializedName("domainid")
+    @SerializedName("domainid") @Param(description="the domain ID associated with the router")
     private Long domainId;
 
-    @SerializedName("domain")
+    @SerializedName("domain") @Param(description="the domain associated with the router")
     private String domainName;
 
     public Long getId() {

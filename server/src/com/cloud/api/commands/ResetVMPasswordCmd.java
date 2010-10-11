@@ -47,7 +47,7 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="The ID of the virtual machine")
     private Long id;
 
     // unexposed parameter needed for serializing/deserializing the command

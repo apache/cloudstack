@@ -41,16 +41,16 @@ public class AssignPortForwardingServiceCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name="id", type=CommandType.LONG, description="the ID of the port forwarding service to assign to the virtual machine/public IP")
     private Long id;
 
-    @Parameter(name="ids", type=CommandType.LIST, collectionType=CommandType.LONG)
+    @Parameter(name="ids", type=CommandType.LIST, collectionType=CommandType.LONG, description="a comma delimited list of port forwarding service IDs to assign to the virtual machine/public IP")
     private List<Long> ids;
 
-    @Parameter(name="publicip", type=CommandType.STRING, required=true)
+    @Parameter(name="publicip", type=CommandType.STRING, required=true, description="the public IP address to associate to the port forwarding service")
     private String publicIp;
 
-    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=true)
+    @Parameter(name="virtualmachineid", type=CommandType.LONG, required=true, description="the ID of the virtual machine to assign to the port forwarding service")
     private Long virtualMachineId;
 
 

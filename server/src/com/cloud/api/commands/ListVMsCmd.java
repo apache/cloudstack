@@ -48,28 +48,28 @@ public class ListVMsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="account. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists virtual machines for the specified account in this domain.")
     private Long domainId;
 
-    @Parameter(name="hostid", type=CommandType.LONG)
+    @Parameter(name="hostid", type=CommandType.LONG, description="the host ID")
     private Long hostId;
 
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name="id", type=CommandType.LONG, description="the ID of the virtual machine")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="name of the virtual machine")
     private String instanceName;
 
-    @Parameter(name="podid", type=CommandType.LONG)
+    @Parameter(name="podid", type=CommandType.LONG, description="the pod ID")
     private Long podId;
 
-    @Parameter(name="state", type=CommandType.STRING)
+    @Parameter(name="state", type=CommandType.STRING, description="state of the virtual machine")
     private String state;
 
-    @Parameter(name="zoneid", type=CommandType.LONG)
+    @Parameter(name="zoneid", type=CommandType.LONG, description="the availability zone ID")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

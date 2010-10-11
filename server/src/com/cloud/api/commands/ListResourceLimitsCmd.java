@@ -43,18 +43,22 @@ public class ListResourceLimitsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="Lists resource limits by account. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="Lists resource limits by domain ID. If used with the account parameter, lists resource limits for a specified account in a specified domain.")
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name="id", type=CommandType.LONG, description="Lists resource limits by ID.")
     private Long id;
 
-    @Parameter(name="resourcetype", type=CommandType.INTEGER)
-    private Integer resourceType;
-
+    @Parameter(name="resourcetype", type=CommandType.INTEGER, required=true, description="Type of resource to update. Values are 0, 1, 2, 3, and 4. 0 — Instance. Number of instances a user can create. " +
+																						"1 — IP. Number of public IP addresses a user can own. " +
+																						"2 — Volume. Number of disk volumes a user can create." +
+																						"3 — Snapshot. Number of snapshots a user can create." +
+																						"4 — Template. Number of templates that a user can register/create.")
+	private Integer resourceType;
+			
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////

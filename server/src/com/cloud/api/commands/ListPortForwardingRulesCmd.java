@@ -46,7 +46,7 @@ public class ListPortForwardingRulesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="ipaddress", type=CommandType.STRING, required=true)
+    @Parameter(name="ipaddress", type=CommandType.STRING, required=true, description="the IP address of the port forwarding services")
     private String ipAddress;
 
     /////////////////////////////////////////////////////

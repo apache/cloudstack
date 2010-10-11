@@ -41,13 +41,13 @@ public class ListDiskOfferingsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="the ID of the domain of the disk offering. This information is not currently applicable, and should not be used as a parameter.")
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name="id", type=CommandType.LONG, description="ID of the disk offering")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="name of the disk offering")
     private String diskOfferingName;
 
     /////////////////////////////////////////////////////

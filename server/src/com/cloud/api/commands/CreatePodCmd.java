@@ -38,22 +38,22 @@ public class CreatePodCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="cidr", type=CommandType.STRING, required=true)
+    @Parameter(name="cidr", type=CommandType.STRING, required=true, description="the CIDR notation for the base IP address of the Pod")
     private String cidr;
 
-    @Parameter(name="endip", type=CommandType.STRING)
+    @Parameter(name="endip", type=CommandType.STRING, description="the ending IP address for the Pod")
     private String endIp;
 
-    @Parameter(name="gateway", type=CommandType.STRING, required=true)
+    @Parameter(name="gateway", type=CommandType.STRING, required=true, description="the gateway for the Pod")
     private String gateway;
 
-    @Parameter(name="name", type=CommandType.STRING, required=true)
+    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name of the Pod")
     private String podName;
 
-    @Parameter(name="startip", type=CommandType.STRING, required=true)
+    @Parameter(name="startip", type=CommandType.STRING, required=true, description="the starting IP address for the Pod")
     private String startIp;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true)
+    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="the Zone ID in which the Pod will be created	")
     private Long zoneId;
 
 

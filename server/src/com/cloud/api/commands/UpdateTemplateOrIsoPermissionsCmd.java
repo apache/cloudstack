@@ -21,19 +21,19 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="accounts", type=CommandType.LIST, collectionType=CommandType.STRING)
+    @Parameter(name="accounts", type=CommandType.LIST, collectionType=CommandType.STRING, description="a comma delimited list of accounts")
     private List<String> accountNames;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the template ID")
     private Long id;
 
-    @Parameter(name="isfeatured", type=CommandType.BOOLEAN)
+    @Parameter(name="isfeatured", type=CommandType.BOOLEAN, description="true for featured templates/isos, false otherwise")
     private Boolean featured;
 
-    @Parameter(name="ispublic", type=CommandType.BOOLEAN)
+    @Parameter(name="ispublic", type=CommandType.BOOLEAN, description="true for public templates/isos, false for private templates/isos")
     private Boolean isPublic;
 
-    @Parameter(name="op", type=CommandType.STRING)
+    @Parameter(name="op", type=CommandType.STRING, description="permission operator (add, remove, reset)")
     private String operation;
 
     /////////////////////////////////////////////////////

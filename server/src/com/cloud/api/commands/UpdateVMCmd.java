@@ -34,16 +34,16 @@ public class UpdateVMCmd extends BaseCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="displayname", type=CommandType.STRING)
+    @Parameter(name="displayname", type=CommandType.STRING, description="user generated name")
     private String displayName;
 
-    @Parameter(name="group", type=CommandType.STRING)
+    @Parameter(name="group", type=CommandType.STRING, description="group of the virtual machine")
     private String group;
 
-    @Parameter(name="haenable", type=CommandType.BOOLEAN)
+    @Parameter(name="haenable", type=CommandType.BOOLEAN, description="true if high-availability is enabled for the virtual machine, false otherwise")
     private Boolean haEnable;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="The ID of the virtual machine")
     private Long id;
 
     /////////////////////////////////////////////////////

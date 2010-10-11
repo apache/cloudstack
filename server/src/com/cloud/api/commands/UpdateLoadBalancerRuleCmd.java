@@ -38,19 +38,19 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="algorithm", type=CommandType.STRING)
+    @Parameter(name="algorithm", type=CommandType.STRING, description="load balancer algorithm (source, roundrobin, leastconn)")
     private String algorithm;
 
-    @Parameter(name="description", type=CommandType.STRING)
+    @Parameter(name="description", type=CommandType.STRING, description="the description of the load balancer rule")
     private String description;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the id of the load balancer rule to update")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="the name of the load balancer rule")
     private String loadBalancerName;
 
-    @Parameter(name="privateport", type=CommandType.STRING)
+    @Parameter(name="privateport", type=CommandType.STRING, description="the private port of the private ip address/virtual machine where the network traffic will be load balanced to")
     private String privatePort;
 
     /////////////////////////////////////////////////////

@@ -38,12 +38,15 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    //FIXME - add description
     @Parameter(name="id", type=CommandType.LONG, required=true)
     private Long id;
 
+    //FIXME - add description
     @Parameter(name="url", type=CommandType.STRING, required=true)
     private String url;
 
+    //FIXME - add description
     @Parameter(name="zoneid", type=CommandType.LONG, required=true)
     private Long zoneId;
 

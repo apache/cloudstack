@@ -38,13 +38,13 @@ public class ListAsyncJobsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="the account associated with the async job. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID associated with the async job.  If used with the account parameter, returns async jobs for the account in the specified domain.")
     private Long domainId;
 
-    @Parameter(name="startdate", type=CommandType.TZDATE)
+    @Parameter(name="startdate", type=CommandType.TZDATE, description="the start date of the async job")
     private Date startDate;
 
 

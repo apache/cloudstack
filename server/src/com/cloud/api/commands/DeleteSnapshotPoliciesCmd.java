@@ -44,10 +44,10 @@ public class DeleteSnapshotPoliciesCmd extends BaseCmd {
     @Parameter(name="domainid", type=CommandType.LONG)
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name="id", type=CommandType.LONG, description="the Id of the snapshot")
     private Long id;
 
-    @Parameter(name="ids", type=CommandType.LIST, collectionType=CommandType.LONG)
+    @Parameter(name="ids", type=CommandType.LIST, collectionType=CommandType.LONG, description="list of snapshots IDs separated by comma")
     private List<Long> ids;
 
 

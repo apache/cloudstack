@@ -36,22 +36,22 @@ public class UpdatePodCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="cidr", type=CommandType.STRING)
+    @Parameter(name="cidr", type=CommandType.STRING, description="the CIDR notation for the base IP address of the Pod")
     private String cidr;
 
-    @Parameter(name="endip", type=CommandType.STRING)
+    @Parameter(name="endip", type=CommandType.STRING, description="the ending IP address for the Pod")
     private String endIp;
 
-    @Parameter(name="gateway", type=CommandType.STRING)
+    @Parameter(name="gateway", type=CommandType.STRING, description="the gateway for the Pod")
     private String gateway;
 
-    @Parameter(name="id", type=CommandType.LONG, required=true)
+    @Parameter(name="id", type=CommandType.LONG, required=true, description="the ID of the Pod")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="the name of the Pod")
     private String podName;
 
-    @Parameter(name="startip", type=CommandType.STRING)
+    @Parameter(name="startip", type=CommandType.STRING, description="the starting IP address for the Pod")
     private String startIp;
 
     /////////////////////////////////////////////////////

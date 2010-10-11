@@ -51,22 +51,26 @@ public class ListTemplatesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="account", type=CommandType.STRING)
+    @Parameter(name="account", type=CommandType.STRING, description="list template by account. Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name="domainid", type=CommandType.LONG)
+    @Parameter(name="domainid", type=CommandType.LONG, description="list all templates in specified domain. If used with the account parameter, lists all templates for an account in the specified domain.")
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG)
+    @Parameter(name="id", type=CommandType.LONG, description="the template ID")
     private Long id;
 
-    @Parameter(name="name", type=CommandType.STRING)
+    @Parameter(name="name", type=CommandType.STRING, description="the template name")
     private String templateName;
 
-    @Parameter(name="templatefilter", type=CommandType.STRING, required=true)
+    @Parameter(name="templatefilter", type=CommandType.STRING, required=true, description="possible values are \"featured\", \"self\", \"self-executable\", \"executable\", and \"community\"." +
+    																					"* featured—templates that are featured and are public" +
+    																					"* self—templates that have been registered/created by the owner" +
+    																					"* selfexecutable— templates that have been registered/created by the owner that can be used to deploy a new VM" +
+    																					"* executable— all templates that can be used to deploy a new VM* community—templates that are public.")
     private String templateFilter;
 
-    @Parameter(name="zoneid", type=CommandType.LONG)
+    @Parameter(name="zoneid", type=CommandType.LONG, description="list templates by zoneId")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

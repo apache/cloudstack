@@ -46,37 +46,37 @@ public class RegisterTemplateCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="bits", type=CommandType.INTEGER)
+    @Parameter(name="bits", type=CommandType.INTEGER, description="32 or 64 bits support. 64 by default")
     private Integer bits;
 
-    @Parameter(name="displaytext", type=CommandType.STRING, required=true)
+    @Parameter(name="displaytext", type=CommandType.STRING, required=true, description="the display text of the template. This is usually used for display purposes.")
     private String displayText;
 
-    @Parameter(name="format", type=CommandType.STRING, required=true)
+    @Parameter(name="format", type=CommandType.STRING, required=true, description="the format for the template. Possible values include QCOW2, RAW, and VHD.")
     private String format;
 
-    @Parameter(name="isfeatured", type=CommandType.BOOLEAN)
+    @Parameter(name="isfeatured", type=CommandType.BOOLEAN, description="true if this template is a featured template, false otherwise")
     private Boolean featured;
 
-    @Parameter(name="ispublic", type=CommandType.BOOLEAN)
+    @Parameter(name="ispublic", type=CommandType.BOOLEAN, description="true if the template is available to all accounts; default is true")
     private Boolean publicTemplate;
 
-    @Parameter(name="name", type=CommandType.STRING, required=true)
+    @Parameter(name="name", type=CommandType.STRING, required=true, description="the name of the template")
     private String templateName;
 
-    @Parameter(name="ostypeid", type=CommandType.LONG, required=true)
+    @Parameter(name="ostypeid", type=CommandType.LONG, required=true, description="the ID of the OS Type that best represents the OS of this template.")
     private Long osTypeId;
 
-    @Parameter(name="passwordenabled", type=CommandType.BOOLEAN)
+    @Parameter(name="passwordenabled", type=CommandType.BOOLEAN, description="true if the template supports the password reset feature; default is false")
     private Boolean passwordEnabled;
 
-    @Parameter(name="requireshvm", type=CommandType.BOOLEAN)
+    @Parameter(name="requireshvm", type=CommandType.BOOLEAN, description="true if this template requires HVM")
     private Boolean requiresHvm;
 
-    @Parameter(name="url", type=CommandType.STRING, required=true)
+    @Parameter(name="url", type=CommandType.STRING, required=true, description="the URL of where the template is hosted. Possible URL include http:// and https://")
     private String url;
 
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true)
+    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="the ID of the zone the template is to be hosted on")
     private Long zoneId;
 
     /////////////////////////////////////////////////////

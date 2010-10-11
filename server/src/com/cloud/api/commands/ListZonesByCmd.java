@@ -41,7 +41,7 @@ public class ListZonesByCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name="available", type=CommandType.BOOLEAN)
+    @Parameter(name="available", type=CommandType.BOOLEAN, description="true if you want to retrieve all available Zones. False if you only want to return the Zones from which you have at least one VM. Default is false.")
     private Boolean available;
 
     /////////////////////////////////////////////////////

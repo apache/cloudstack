@@ -19,115 +19,116 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class UserVmResponse extends BaseResponse {
-    @SerializedName("id")
+    @SerializedName("id") @Param(description="the ID of the virtual machine")
     private Long id;
 
-    @SerializedName("name")
+    @SerializedName("name") @Param(description="the name of the virtual machine")
     private String name;
 
-    @SerializedName("displayname")
+    @SerializedName("displayname") @Param(description="user generated name. The name of the virtual machine is returned if no displayname exists.")
     private String displayName;
 
-    @SerializedName("ipaddress")
+    @SerializedName("ipaddress") @Param(description="the ip address of the virtual machine")
     private String ipAddress;
 
-    @SerializedName("account")
+    @SerializedName("account") @Param(description="the account associated with the virtual machine")
     private String accountName;
 
-    @SerializedName("domainid")
+    @SerializedName("domainid") @Param(description="the ID of the domain in which the virtual machine exists")
     private Long domainId;
 
-    @SerializedName("domain")
+    @SerializedName("domain") @Param(description="the name of the domain in which the virtual machine exists")
     private String domainName;
 
-    @SerializedName("created")
+    @SerializedName("created") @Param(description="the date when this virtual machine was created")
     private Date created;
 
-    @SerializedName("state")
+    @SerializedName("state") @Param(description="the state of the virtual machine")
     private String state;
 
-    @SerializedName("haenable")
+    @SerializedName("haenable") @Param(description="true if high-availability is enabled, false otherwise")
     private Boolean haEnable;
 
-    @SerializedName("groupid")
+    @SerializedName("groupid") @Param(description="the group ID of the virtual machine")
     private Long groupId;
 
-    @SerializedName("group")
+    @SerializedName("group") @Param(description="the group name of the virtual machine")
     private String group;
 
-    @SerializedName("zoneid")
+    @SerializedName("zoneid") @Param(description="the ID of the availablility zone for the virtual machine")
     private Long zoneId;
 
-    @SerializedName("zonename")
+    @SerializedName("zonename") @Param(description="the name of the availability zone for the virtual machine")
     private String zoneName;
 
-    @SerializedName("hostid")
+    @SerializedName("hostid") @Param(description="the ID of the host for the virtual machine")
     private Long hostId;
 
-    @SerializedName("hostname")
+    @SerializedName("hostname") @Param(description="the name of the host for the virtual machine")
     private String hostName;
 
-    @SerializedName("templateid")
+    @SerializedName("templateid") @Param(description="the ID of the template for the virtual machine. A -1 is returned if the virtual machine was created from an ISO file.")
     private Long templateId;
 
-    @SerializedName("templatename")
+    @SerializedName("templatename") @Param(description="the name of the template for the virtual machine")
     private String templateName;
 
-    @SerializedName("templatedisplaytext")
+    @SerializedName("templatedisplaytext") @Param(description="	an alternate display text of the template for the virtual machine")
     private String templateDisplayText;
 
-    @SerializedName("passwordenabled")
+    @SerializedName("passwordenabled") @Param(description="true if the password rest feature is enabled, false otherwise")
     private Boolean passwordEnabled;
 
-    @SerializedName("isoid")
+    @SerializedName("isoid") @Param(description="the ID of the ISO attached to the virtual machine")
     private Long isoId;
 
-    @SerializedName("isoname")
+    @SerializedName("isoname") @Param(description="the name of the ISO attached to the virtual machine")
     private String isoName;
 
-    @SerializedName("isodisplaytext")
+    @SerializedName("isodisplaytext") @Param(description="an alternate display text of the ISO attached to the virtual machine")
     private String isoDisplayText;
 
-    @SerializedName("serviceofferingid")
+    @SerializedName("serviceofferingid") @Param(description="the ID of the service offering of the virtual machine")
     private Long serviceOfferingId;
 
-    @SerializedName("serviceofferingname")
+    @SerializedName("serviceofferingname") @Param(description="the name of the service offering of the virtual machine")
     private String serviceOfferingName;
 
-    @SerializedName("cpunumber")
+    @SerializedName("cpunumber") @Param(description="the number of cpu this virtual machine is running with")
     private Integer cpuNumber;
 
-    @SerializedName("cpuspeed")
+    @SerializedName("cpuspeed") @Param(description="the speed of each cpu")
     private Integer cpuSpeed;
 
-    @SerializedName("memory")
+    @SerializedName("memory") @Param(description="the memory allocated for the virtual machine")
     private Integer memory;
 
-    @SerializedName("cpuused")
+    @SerializedName("cpuused") @Param(description="the amount of the vm's CPU currently used")
     private String cpuUsed;
-
-    @SerializedName("networkkbsread")
+    
+    @SerializedName("networkkbsread") @Param(description="the incoming network traffic on the vm")
     private Long networkKbsRead;
 
-    @SerializedName("networkkbswrite")
+    @SerializedName("networkkbswrite") @Param(description="the outgoing network traffic on the host")
     private Long networkKbsWrite;
 
-    @SerializedName("ostypeid")
+    @SerializedName("ostypeid") @Param(description="Os type ID of the virtual machine")
     private Long osTypeId;
 
-    @SerializedName("networkgrouplist")
+    @SerializedName("networkgrouplist") @Param(description="list of network groups associated with the virtual machine")
     private String networkGroupList;
 
-    @SerializedName("password")
+    @SerializedName("password") @Param(description="the password (if exists) of the virtual machine")
     private String password;
 
-    @SerializedName("jobid")
+    @SerializedName("jobid") @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the virtual machine")
     private Long jobId;
 
-    @SerializedName("jobstatus")
+    @SerializedName("jobstatus") @Param(description="shows the current pending asynchronous job status")
     private Integer jobStatus;
 
     public Long getId() {
