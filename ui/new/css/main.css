@@ -1317,11 +1317,19 @@ a:visited {
 	width:150px;
 	height:auto;
 	float:left;
-	margin:7px 0 0 65px;
+	margin:7px 0 0 60px;
 	display:inline;
 	padding:0;
 }
 
+.leftmenu_fourthindent{
+	width:170px;
+	height:auto;
+	float:left;
+	margin:7px 0 0 100px;
+	display:inline;
+	padding:0;
+}
 
 
 .leftmenu_titles {
@@ -1770,9 +1778,9 @@ a:hover.search_button {
 	margin:0 0 0 0;
 	list-style:none;
 	padding:0;
-	overflow-y:scoll;
-	overflow-y:auto;
-	overflow-x:hidden;
+	overflow-x:scoll;
+	overflow-x:auto;
+	overflow-y:hidden;
 	padding:0;
 }
 
@@ -2891,29 +2899,7 @@ a:hover.search_button {
 	text-decoration:underline;
 }
 
-.zonetree_closedarrows {
-	width:12px;
-	height:14px;
-	background:url(../images/zone_sidearrow.png) no-repeat top left;
-	float:left;
-	margin:5px 5px 0 8px;
-	display:inline;
-	padding:0;
-	cursor:pointer;
-	cursor:hand;
-}
 
-.zonetree_openarrows {
-	width:12px;
-	height:14px;
-	background:url(../images/zone_openarrow.png) no-repeat top left;
-	float:left;
-	margin:10px 5px 0 8px;
-	display:inline;
-	padding:0;
-	cursor:pointer;
-	cursor:hand;
-}
 
 .db_resourcebox {
 	width:75%;
@@ -3260,13 +3246,11 @@ a:hover.search_button {
 /* zonetree (begin) */
 
 .zonetree_contentbox {
-	width:530px;
-	height:590px;
+	width:220px;
+	height:auto;
 	float:left;
-	margin:15px 0 0 0;
-	overflow-x:hidden;
-	overflow-y:scroll;
-	overflow-y:auto;
+	margin:0 0 0 0;
+	padding:0;
 }
 
 .zonetree_contentbox p {
@@ -3311,7 +3295,7 @@ a:hover.search_button {
 
 
 .zonetree_firstlevel {
-	width:510px;
+	width:220px;
 	height:25px;
 	float:left;
 	margin:0 0 5px 0;
@@ -3319,7 +3303,7 @@ a:hover.search_button {
 }
 
 .zonetree_firstlevel_selected {
-	width:510px;
+	width:220px;
 	height:25px;
 	float:left;
 	margin:0 0 5px 0;
@@ -3386,7 +3370,7 @@ a:hover.search_button {
 	height:14px;
 	background:url(../images/zone_sidearrow.png) no-repeat top left;
 	float:left;
-	margin:5px 5px 0 8px;
+	margin:0 5px 0 0px;
 	display:inline;
 	padding:0;
 	cursor:pointer;
@@ -3398,7 +3382,7 @@ a:hover.search_button {
 	height:14px;
 	background:url(../images/zone_openarrow.png) no-repeat top left;
 	float:left;
-	margin:10px 5px 0 8px;
+	margin:2px 5px 0 0px;
 	display:inline;
 	padding:0;
 	cursor:pointer;

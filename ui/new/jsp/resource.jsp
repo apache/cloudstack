@@ -270,12 +270,6 @@
 
 <!-- Zonetree Template (begin) -->
 <div class="zonetree_contentbox" id="zonetree" style="display:none">
-    <div class="zonetree_addbox">
-        <div class="zonetree_addicon">
-        </div>
-        <div class="zonetree_links" id="action_add_zone">
-            Add a Zone</div>
-    </div>
     <div id="zones_container">
     </div>
 </div>
@@ -288,10 +282,12 @@
 	    <div class="adding_text">Adding a zone &hellip; </div>
     </div>
     <div id="row_container">
-	    <div class="zonetree_firstlevel">
-		    <div class="zonetree_closedarrows" id="zone_expand"></div>
-		    <div class="zonetree_zoneicon"></div>
-		    <p>Zone:<div class="zonetree_links" id="zone_name">Zone 1</div></p>
+	    <div class="leftmenu_content">
+        	<div class="leftmenu_firstindent">
+                <div class="zonetree_closedarrows" id="zone_expand"></div>
+                <div class="leftmenu_list_icons"><img src="images/zone_zoneicon.png" alt="Zone" /></div>
+                Zone: <strong><span id="zone_name">Zone 1</span></strong>
+            </div>
 	    </div>
 	    <div id="zone_content" style="display:none">
 		    <div id="pods_container">
@@ -304,20 +300,23 @@
 <!-- Zone Template (end) -->
 
 <!-- Pod Template (begin) -->
-<div id="pod_template" style="display:none">
-	<div class="adding_loading" style="height:25px;display:none" id="loading_container">
-	    <div class="adding_animation"></div>
-	    <div class="adding_text">Adding a pod &hellip; </div>
-    </div>
-    <div id="row_container">  
-	    <div class="zonetree_secondlevel">
-		    <div class="zonetree_podicon"></div>
-		    <p>Pod:<div class="zonetree_links" id="pod_name">Name of the Pod</div></p>
-	    </div>
-	    <div id="pod_content">
-	        <!--  
-	        <div id="directip_ranges_container">
-		    </div>
+    <div id="pod_template" style="display:none">
+        <div class="adding_loading" style="height:25px;display:none" id="loading_container">
+            <div class="adding_animation"></div>
+            <div class="adding_text">Adding a pod &hellip; </div>
+        </div>
+        <div id="row_container">  
+            <div class="leftmenu_content">
+            	<div class="leftmenu_secondindent">
+                    <div class="zonetree_openarrows" id="zone_expand"></div>
+                    <div class="leftmenu_list_icons"><img src="images/zone_podicon.png" alt="Pod" /></div>
+                    Pod: <strong><span id="pod_name">Name of the Pod</span></strong>
+                </div>
+            </div>
+            <div id="pod_content">
+                <!--  
+                <div id="directip_ranges_container">
+                </div>
 		    -->
 		    <div id="clusters_container">
 		    </div>
@@ -329,9 +328,12 @@
 <!-- SystemVM Template (begin) -->
 <div id="systemvm_template" style="display:none">	
     <div id="row_container">  
-	    <div class="zonetree_secondlevel">
-		    <div class="zonetree_systemvmicon"></div>
-		    <p>System VM:<div class="zonetree_links" id="systemvm_name">(System VM name)</div></p>
+	    <div class="leftmenu_content">
+        	<div class="leftmenu_secondindent">
+            	<div class="zonetree_openarrows" style="background:none;"></div>
+                <div class="leftmenu_list_icons"><img src="images/zone_systemvmicon.png" alt="System VM" /></div>
+                System VM: <strong><span id="systemvm_name">(System VM name)</span></strong>
+            </div>
 	    </div>	    
 	</div>
 </div>
@@ -344,9 +346,12 @@
 	    <div class="adding_text">Adding a cluster &hellip; </div>
     </div>
     <div id="row_container">  
-	    <div class="zonetree_thirdlevel">
-		    <div class="zonetree_clustericon"></div>
-		    <p>Cluster:<div class="zonetree_links" id="cluster_name">(Name of the Cluster)</div></p>
+	    <div class="leftmenu_content">
+        	<div class="leftmenu_thirdindent">
+            	<div class="zonetree_openarrows" id="zone_expand"></div>
+                <div class="leftmenu_list_icons"><img src="images/zone_clustericon.png" alt="Cluster" /></div>
+                Cluster: <strong><span id="cluster_name">(Name of the Cluster)</span></strong>
+            </div>
 	    </div>	    
 	    <div id="cluster_content">	        
 		    <div id="hosts_container">
@@ -365,9 +370,11 @@
 	    <div class="adding_text">Adding a host &hellip; </div>
     </div>
     <div id="row_container">  
-	    <div class="zonetree_forthlevel">
-		    <div class="zonetree_hosticon"></div>
-		    <p>Host:<div class="zonetree_links" id="host_name">(Name of the Host)</div></p>
+	    <div class="leftmenu_content">
+        	<div class="leftmenu_fourthindent">
+                <div class="leftmenu_list_icons"><img src="images/zone_hosticon.png" alt="Host" /></div>
+                Host: <strong><span id="host_name">(Name of the Host)</span></strong>
+            </div>
 	    </div>
 	</div>
 </div>
@@ -380,9 +387,11 @@
 	    <div class="adding_text">Adding a primary storage &hellip; </div>
     </div>
     <div id="row_container">  
-	    <div class="zonetree_forthlevel">
-		    <div class="zonetree_primarystorageicon"></div>
-		    <p>Primary:<div class="zonetree_links" id="primary_storage_name">(Name of the Primary Storage)</div></p>
+	    <div class="leftmenu_content">
+        	<div class="leftmenu_fourthindent">
+                <div class="leftmenu_list_icons"><img src="images/zone_primarystorageicon.png" alt="PrimaryStorage" /></div>
+                Primary: <strong><span id="primary_storage_name">(Name of the Primary Storage)</span></strong>
+            </div>
 	    </div>
 	</div>
 </div>
