@@ -235,6 +235,7 @@ public abstract class BaseCmd {
         MEMORY_ALLOCATED("memoryallocated", BaseCmd.TYPE_LONG, "memoryallocated"),
         MONTHLY_MAX("monthlymax", BaseCmd.TYPE_INT, "monthlyMax"),
         NAME("name", BaseCmd.TYPE_STRING, "name"),
+        CLIENT_IQN("clientiqn", BaseCmd.TYPE_STRING, "clientiqn"),
         NEW_NAME("newname", BaseCmd.TYPE_STRING, "newname"),
         NETMASK("netmask", BaseCmd.TYPE_STRING, "netmask"),
         NETWORK_DOMAIN("networkdomain", BaseCmd.TYPE_STRING, "networkdomain"),
