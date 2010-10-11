@@ -3445,7 +3445,7 @@ a:hover.add_publicipbutton {
 
 .loadingmessage_container {
 	width:30%;
-	height:66px;
+	height:56px;
 	margin:0 auto;
 	padding:0;
 	z-index:1000;
@@ -3461,7 +3461,7 @@ a:hover.add_publicipbutton {
 
 .loadingmessage_top {
 	width:99%;
-	height:45px;
+	height:29px;
 	float:left;
 	margin:0;
 	padding:2px 5px 0 5px;
@@ -3469,6 +3469,51 @@ a:hover.add_publicipbutton {
 }
 
 .loadingmessage_top p {
+	width:auto;
+	height:25px;
+	margin:0;
+	padding:0;
+	color:#333;
+	text-align:left;
+	font-weight:normal;
+	font-size:11px;
+	display:inline;
+}
+
+.loadingmessage_bottom {
+	width:100%;
+	height:25px;
+	float:left;
+	margin:0;
+	padding:0;
+}
+
+.loadingmessage_container_vm {
+	width:30%;
+	height:66px;
+	margin:0 auto;
+	padding:0;
+	z-index:1000;
+	float:left;
+	position:absolute;
+	background:url(../images/loading_messagebg.gif) #d3d3d3 repeat-x top left;
+	border:1px solid #CCC;
+	top:0;
+	left:38%;
+	display:inline;
+}
+
+
+.loadingmessage_top_vm {
+	width:99%;
+	height:45px;
+	float:left;
+	margin:0;
+	padding:2px 5px 0 5px;
+	overflow:hidden;
+}
+
+.loadingmessage_top_vm p {
 	width:auto;
 	height:45px;
 	margin:0;
@@ -3480,7 +3525,7 @@ a:hover.add_publicipbutton {
 	display:inline;
 }
 
-.loadingmessage_bottom {
+.loadingmessage_bottom_vm {
 	width:100%;
 	height:25px;
 	float:left;

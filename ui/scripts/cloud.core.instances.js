@@ -197,8 +197,8 @@ function showInstancesTab(p_domainId, p_account) {
 														vmInstance.find("#vm_loading_container").hide();
 														if (result.jobstatus == 1) {
 															// Succeeded
-															vmInstance.find(".loadingmessage_container .loadingmessage_top p").html("Your instance has been successfully started.");
-															vmInstance.find(".loadingmessage_container").fadeIn("slow");
+															vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").html("Your instance has been successfully started.");
+															vmInstance.find(".loadingmessage_container_vm").fadeIn("slow");
 															vmInstance.find("#vm_state_bar").removeClass("admin_vmgrey_arrow admin_vmred_arrow").addClass("admin_vmgreen_arrow");
 															
 															vmInstance.find("#vm_state").text(result.virtualmachine[0].state).removeClass("grid_celltitles grid_stoppedtitles").addClass("grid_runningtitles");
@@ -228,8 +228,8 @@ function showInstancesTab(p_domainId, p_account) {
 															// Failed
 															vmInstance.find("#vm_state_bar").removeClass("admin_vmgrey_arrow admin_vmgreen_arrow").addClass("admin_vmred_arrow");
 															vmInstance.find("#vm_state").text("Stopped").removeClass("grid_celltitles grid_runningtitles").addClass("grid_stoppedtitles");
-															vmInstance.find(".loadingmessage_container .loadingmessage_top p").text("Unable to start your instance due to the error: " + result.jobresult);
-															vmInstance.find(".loadingmessage_container").fadeIn("slow");
+															vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").text("Unable to start your instance due to the error: " + result.jobresult);
+															vmInstance.find(".loadingmessage_container_vm").fadeIn("slow");
 														}
 													}
 												}
@@ -287,8 +287,8 @@ function showInstancesTab(p_domainId, p_account) {
 														vmInstance.find("#vm_loading_container").hide();
 														if (result.jobstatus == 1) {
 															// Succeeded
-															vmInstance.find(".loadingmessage_container .loadingmessage_top p").html("Your instance has been successfully stopped.");
-															vmInstance.find(".loadingmessage_container").fadeIn("slow");
+															vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").html("Your instance has been successfully stopped.");
+															vmInstance.find(".loadingmessage_container_vm").fadeIn("slow");
 															vmInstance.find("#vm_state_bar").removeClass("admin_vmgrey_arrow admin_vmgreen_arrow").addClass("admin_vmred_arrow");
 															
 															vmInstance.find("#vm_state").text(result.virtualmachine[0].state).removeClass("grid_celltitles grid_runningtitles").addClass("grid_stoppedtitles");
@@ -308,8 +308,8 @@ function showInstancesTab(p_domainId, p_account) {
 															// Failed
 															vmInstance.find("#vm_state_bar").removeClass("admin_vmgrey_arrow admin_vmred_arrow").addClass("admin_vmgreen_arrow");
 															vmInstance.find("#vm_state").text("Running").removeClass("grid_celltitles grid_stoppedtitles").addClass("grid_runningtitles");
-															vmInstance.find(".loadingmessage_container .loadingmessage_top p").text("Unable to stop your instance due to the error: " + result.jobresult);
-															vmInstance.find(".loadingmessage_container").fadeIn("slow");
+															vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").text("Unable to stop your instance due to the error: " + result.jobresult);
+															vmInstance.find(".loadingmessage_container_vm").fadeIn("slow");
 														}
 													}
 												}
@@ -365,16 +365,16 @@ function showInstancesTab(p_domainId, p_account) {
 														vmInstance.find("#vm_loading_container").hide();
 														if (result.jobstatus == 1) {
 															// Succeeded
-															vmInstance.find(".loadingmessage_container .loadingmessage_top p").html("Your instance has been successfully rebooted.");
-															vmInstance.find(".loadingmessage_container").fadeIn("slow");
+															vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").html("Your instance has been successfully rebooted.");
+															vmInstance.find(".loadingmessage_container_vm").fadeIn("slow");
 															vmInstance.find("#vm_state_bar").removeClass("admin_vmgrey_arrow admin_vmred_arrow").addClass("admin_vmgreen_arrow");
 															vmInstance.find("#vm_state").text("Running").removeClass("grid_stoppedtitles grid_celltitles").addClass("grid_runningtitles");
 														} else if (result.jobstatus == 2) {
 															// Failed
 															vmInstance.find("#vm_state_bar").removeClass("admin_vmgrey_arrow admin_vmred_arrow").addClass("admin_vmgreen_arrow");
 															vmInstance.find("#vm_state").text("Running").removeClass("grid_celltitles grid_stoppedtitles").addClass("grid_runningtitles");
-															vmInstance.find(".loadingmessage_container .loadingmessage_top p").text("Unable to reboot your instance due to the error: " + result.jobresult);
-															vmInstance.find(".loadingmessage_container").fadeIn("slow");
+															vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").text("Unable to reboot your instance due to the error: " + result.jobresult);
+															vmInstance.find(".loadingmessage_container_vm").fadeIn("slow");
 														}
 													}
 												}
@@ -432,8 +432,8 @@ function showInstancesTab(p_domainId, p_account) {
 														vmInstance.find("#vm_loading_container").hide();
 														if (result.jobstatus == 1) {
 															// Succeeded
-															vmInstance.find(".loadingmessage_container .loadingmessage_top p").html("Your instance has been successfully destroyed.");
-															vmInstance.find(".loadingmessage_container").fadeIn("slow");
+															vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").html("Your instance has been successfully destroyed.");
+															vmInstance.find(".loadingmessage_container_vm").fadeIn("slow");
 															if (isAdmin()) {
 																vmInstance.find("#vm_state_bar").removeClass("admin_vmred_arrow admin_vmgreen_arrow").addClass("admin_vmgrey_arrow");
 																
@@ -447,7 +447,7 @@ function showInstancesTab(p_domainId, p_account) {
 																vmInstance.find("#vm_action_volumes, #vm_actions, #vm_action_statistics").hide();
 															} else {
 																vmInstance.find(".continue_button").unbind("click").bind("click", function(event) {
-																	$(this).parents(".loadingmessage_container").hide().prevAll(".row_loading").hide();
+																	$(this).parents(".loadingmessage_container_vm").hide().prevAll(".row_loading").hide();
 																	vmInstance.fadeOut("slow", function(event) {
 																		$(this).remove();
 																	});
@@ -462,8 +462,8 @@ function showInstancesTab(p_domainId, p_account) {
 																vmInstance.find("#vm_state_bar").removeClass("admin_vmgrey_arrow admin_vmgreen_arrow").addClass("admin_vmred_arrow");
 																vmInstance.find("#vm_state").text(vmState).removeClass("grid_runningtitles grid_celltitles").addClass("grid_stoppedtitles");
 															}
-															vmInstance.find(".loadingmessage_container .loadingmessage_top p").text("Unable to destroy your instance due to the error: " + result.jobresult);
-															vmInstance.find(".loadingmessage_container").fadeIn("slow");
+															vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").text("Unable to destroy your instance due to the error: " + result.jobresult);
+															vmInstance.find(".loadingmessage_container_vm").fadeIn("slow");
 														}
 													}
 												}
@@ -528,12 +528,12 @@ function showInstancesTab(p_domainId, p_account) {
 														vmInstance.find("#vm_loading_container").hide();
 														if (result.jobstatus == 1) {
 															// Succeeded
-															vmInstance.find(".loadingmessage_container .loadingmessage_top p").html("Your password has been successfully resetted.  Your new password is : <b>" + result.virtualmachine[0].password + "</b> .  Please reboot your virtual instance for the new password to take effect.");
-															vmInstance.find(".loadingmessage_container").fadeIn("slow");
+															vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").html("Your password has been successfully resetted.  Your new password is : <b>" + result.virtualmachine[0].password + "</b> .  Please reboot your virtual instance for the new password to take effect.");
+															vmInstance.find(".loadingmessage_container_vm").fadeIn("slow");
 														} else if (result.jobstatus == 2) {
 															// Failed
-															vmInstance.find(".loadingmessage_container .loadingmessage_top p").text("Unable to reset your password.  Please try again or contact support.");
-															vmInstance.find(".loadingmessage_container").fadeIn("slow");
+															vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").text("Unable to reset your password.  Please try again or contact support.");
+															vmInstance.find(".loadingmessage_container_vm").fadeIn("slow");
 														}
 													}
 												}
@@ -609,8 +609,8 @@ function showInstancesTab(p_domainId, p_account) {
 										            if (result.jobstatus == 1) { // Succeeded												            												            
 											            vmInstance.find("#vm_loading_container").hide();
 								                        vmInstance.find(".row_loading").show();
-								                        vmInstance.find(".loadingmessage_container .loadingmessage_top p").html("Your virtual instance has been upgraded.  Please restart your virtual instance for the new service offering to take effect.");
-								                        vmInstance.find(".loadingmessage_container").fadeIn("slow");										                        
+								                        vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").html("Your virtual instance has been upgraded.  Please restart your virtual instance for the new service offering to take effect.");
+								                        vmInstance.find(".loadingmessage_container_vm").fadeIn("slow");										                        
 								                        vmInstance.find("#vm_service").html("<strong>Service:</strong> " + fromdb(result.virtualmachine[0].serviceofferingname));		
 								                        if (result.virtualmachine[0].haenable =='true') {
 			                                                vmInstance.find("#vm_ha").html("<strong>HA:</strong> Enabled");
@@ -879,12 +879,12 @@ function showInstancesTab(p_domainId, p_account) {
 															vmInstance.data("isoId", isoId);
 															vmInstance.find("#vm_action_detach_iso").removeClass().addClass("vmaction_links_on");
 															vmInstance.find("#vm_action_attach_iso").removeClass().addClass("vmaction_links_off");
-															vmInstance.find(".loadingmessage_container .loadingmessage_top p").html("Your ISO has been successfully attached.");
-															vmInstance.find(".loadingmessage_container").fadeIn("slow");
+															vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").html("Your ISO has been successfully attached.");
+															vmInstance.find(".loadingmessage_container_vm").fadeIn("slow");
 														} else if (result.jobstatus == 2) {
 															// Failed
-															vmInstance.find(".loadingmessage_container .loadingmessage_top p").text("We were unable to attach the ISO to your VM.  Please contact support or try again.");
-															vmInstance.find(".loadingmessage_container").fadeIn("slow");
+															vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").text("We were unable to attach the ISO to your VM.  Please contact support or try again.");
+															vmInstance.find(".loadingmessage_container_vm").fadeIn("slow");
 														}
 													}
 												}
@@ -942,12 +942,12 @@ function showInstancesTab(p_domainId, p_account) {
 															vmInstance.data("isoId", null);
 															vmInstance.find("#vm_action_detach_iso").removeClass().addClass("vmaction_links_off");
 															vmInstance.find("#vm_action_attach_iso").removeClass().addClass("vmaction_links_on");
-															vmInstance.find(".loadingmessage_container .loadingmessage_top p").html("You have successfully detached your ISO.");
-															vmInstance.find(".loadingmessage_container").fadeIn("slow");
+															vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").html("You have successfully detached your ISO.");
+															vmInstance.find(".loadingmessage_container_vm").fadeIn("slow");
 														} else if (result.jobstatus == 2) {
 															// Failed
-															vmInstance.find(".loadingmessage_container .loadingmessage_top p").text(result.jobresult);
-															vmInstance.find(".loadingmessage_container").fadeIn("slow");
+															vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").text(result.jobresult);
+															vmInstance.find(".loadingmessage_container_vm").fadeIn("slow");
 														}
 													}
 												}
@@ -1066,7 +1066,7 @@ function showInstancesTab(p_domainId, p_account) {
 				break;
 			case "vm_action_continue" :
 				hideInstanceLoading(vmInstance);
-				vmInstance.find(".loadingmessage_container").fadeOut("slow");
+				vmInstance.find(".loadingmessage_container_vm").fadeOut("slow");
 				vmInstance.find(".row_loading").fadeOut("slow");
 				break;
 			default:
@@ -1705,19 +1705,19 @@ function showInstancesTab(p_domainId, p_account) {
 											// Succeeded
 											vmJSONToTemplate(result.virtualmachine[0], vmInstance, true);
 											if (result.virtualmachine[0].passwordenabled == 'true') {
-												vmInstance.find(".loadingmessage_container .loadingmessage_top p").html("Your instance has been successfully created.  Your new password is : <b>" + result.virtualmachine[0].password + "</b> .  Please change it as soon as you log into your new instance");
+												vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").html("Your instance has been successfully created.  Your new password is : <b>" + result.virtualmachine[0].password + "</b> .  Please change it as soon as you log into your new instance");
 											} else {
-												vmInstance.find(".loadingmessage_container .loadingmessage_top p").html("Your instance has been successfully created.");
+												vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").html("Your instance has been successfully created.");
 											}
-											vmInstance.find(".loadingmessage_container").fadeIn("slow");
+											vmInstance.find(".loadingmessage_container_vm").fadeIn("slow");
 											vmInstance.attr("id", "vm" + result.virtualmachine[0].id);
 											vmInstance.find("#vm_state_bar").removeClass("admin_vmred_arrow admin_vmgrey_arrow").addClass("admin_vmgreen_arrow");
 											vmInstance.find("#vm_state").text("Running").removeClass("grid_stoppedtitles grid_celltitles").addClass("grid_runningtitles");
 											changeGridRowsTotal($("#grid_rows_total"), 1); 
 										} else if (result.jobstatus == 2) {
 											// Failed
-											vmInstance.find(".loadingmessage_container .loadingmessage_top p").text("Unable to create your new instance due to the error: " + result.jobresult);
-											vmInstance.find(".loadingmessage_container").fadeIn("slow");
+											vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").text("Unable to create your new instance due to the error: " + result.jobresult);
+											vmInstance.find(".loadingmessage_container_vm").fadeIn("slow");
 											vmInstance.find(".continue_button").data("jobId", result.jobid).unbind("click").bind("click", function(event) {
 												event.preventDefault();
 												var deadVM = $("#vmNew"+$(this).data("jobId"));
