@@ -78,7 +78,7 @@ function afterLoadServiceOfferingJSP() {
 					success: function(json) {					    				
 						var item = json.createserviceofferingresponse;							
 						serviceOfferingToMidmenu(item, $midmenuItem1);	
-						bindClickToMidMenu($midmenuItem1, serviceOfferingToRigntPanel);  
+						bindClickToMidMenu($midmenuItem1, serviceOfferingToRigntPanel, getMidmenuId);  
 						afterAddingMidMenuItem($midmenuItem1, true);						
 						
 					},			

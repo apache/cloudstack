@@ -55,7 +55,7 @@ function afterLoadDiskOfferingJSP() {
 					success: function(json) {						    
 					    var item = json.creatediskofferingresponse;							
 						diskOfferingToMidmenu(item, $midmenuItem1);	
-						bindClickToMidMenu($midmenuItem1, diskOfferingToRigntPanel);  
+						bindClickToMidMenu($midmenuItem1, diskOfferingToRigntPanel, getMidmenuId);  
 						afterAddingMidMenuItem($midmenuItem1, true);						
 					},			
                     error: function(XMLHttpResponse) {		                   
@@ -139,5 +139,45 @@ function diskOfferingJsonToDetailsTab(jsonObj) {
     
     $detailsTab.find("#disksize").text(convertBytes(jsonObj.disksize));
     $detailsTab.find("#tags").text(fromdb(jsonObj.tags));   
-    $detailsTab.find("#domain").text(fromdb(jsonObj.domain));    
+    $detailsTab.find("#domain").text(fromdb(jsonObj.domain));   
+    
+     //actions ***
+    var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
+    $actionMenu.find("#action_list").empty();
+    var midmenuItemId = getMidmenuId(jsonObj);    
+    buildActionLinkForDetailsTab("Delete Disk Offering", diskOfferingActionMap, $actionMenu, midmenuItemId);	    
 }
+
+function diskOfferingClearRightPanel() {
+    diskOfferingClearDetailsTab();
+}
+
+function diskOfferingClearDetailsTab() {
+    var $detailsTab = $("#right_panel_content #tab_content_details");     
+    $detailsTab.find("#id").text("");    
+    $detailsTab.find("#name").text("");
+    $detailsTab.find("#name_edit").val("");    
+    $detailsTab.find("#displaytext").text("");
+    $detailsTab.find("#displaytext_edit").val("");    
+    $detailsTab.find("#disksize").text("");
+    $detailsTab.find("#tags").text("");   
+    $detailsTab.find("#domain").text("");   
+    
+    var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
+    $actionMenu.find("#action_list").empty(); 
+    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
+}
+
+
+var diskOfferingActionMap = {     
+    "Delete Disk Offering": {              
+        api: "deleteDiskOffering",     
+        isAsyncJob: false,           
+        inProcessText: "Deleting disk offering....",
+        afterActionSeccessFn: function(json, id, midmenuItemId) {            
+            $("#"+midmenuItemId).remove();
+            clearRightPanel();
+            diskOfferingClearRightPanel();
+        }
+    }    
+}  
