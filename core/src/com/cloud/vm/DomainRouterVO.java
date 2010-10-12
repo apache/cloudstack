@@ -320,4 +320,8 @@ public class DomainRouterVO extends VMInstanceVO implements DomainRouter {
     public String getGuestZoneMacAddress() {
         return guestZoneMacAddress;
     }
+    
+    public void setServiceOfferingId(long serviceOfferingId) {
+        this.serviceOfferingId = serviceOfferingId;
+    }
 }

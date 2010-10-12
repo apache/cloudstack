@@ -14,5 +14,4 @@ public class SuccessResponse extends BaseResponse {
 	public void setSuccess(Boolean success) {
 		this.success = success;
 	}
-
 }

@@ -36,7 +36,7 @@ function showNetworkingTab(p_domainId, p_account) {
 			var zoneSelect = $("#dialog_acquire_public_ip #acquire_zone").empty();	
 			if (zones != null && zones.length > 0) {	
 			    for (var i = 0; i < zones.length; i++) {
-				    zoneSelect.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 
+				    zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
 			    }
 		    }
 		}
@@ -221,7 +221,7 @@ function showNetworkingTab(p_domainId, p_account) {
 			    var domains = json.listdomainsresponse.domain;			 
 			    if (domains != null && domains.length > 0) {
 			        for (var i = 0; i < domains.length; i++) {
-				        domainSelect.append("<option value='" + domains[i].id + "'>" + sanitizeXSS(domains[i].name) + "</option>"); 
+				        domainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 
 			        }
 			    }
 		    }
@@ -517,7 +517,7 @@ function showNetworkingTab(p_domainId, p_account) {
 								    } else if (result.jobstatus == 2) { //Fail
 								        loadingImg.hide(); 		
 							            rowContainer.show(); 
-									    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");											    					    
+									    $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");											    					    
 								    }
 							    }
 						    },
@@ -631,8 +631,8 @@ function showNetworkingTab(p_domainId, p_account) {
 	    var loadBalancerId = json.id;	    
 	    template.attr("id", "loadBalancer_" + loadBalancerId).data("loadBalancerId", loadBalancerId);		    
 	    
-	    template.find("#row_container #name").text(json.name);
-	    template.find("#row_container_edit #name").val(json.name);
+	    template.find("#row_container #name").text(fromdb(json.name));
+	    template.find("#row_container_edit #name").val(fromdb(json.name));
 	    
 	    template.find("#row_container #public_port").text(json.publicport);
 	    template.find("#row_container_edit #public_port").text(json.publicport);
@@ -784,7 +784,7 @@ function showNetworkingTab(p_domainId, p_account) {
 								    } else if (result.jobstatus == 2) { //Fail
 								        loadingContainer.hide(); 		
 							            rowContainer.show(); 
-									    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");											    					    
+									    $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");											    					    
 								    }
 							    }
 						    },
@@ -845,7 +845,7 @@ function showNetworkingTab(p_domainId, p_account) {
 			                                loading.hide();  
 			                                rowContainer.show(); 
 										} else if (result.jobstatus == 2) { // Failed
-											$("#dialog_error").html("<p style='color:red'><b>Operation error:</b></p><br/><p style='color:red'>"+ sanitizeXSS(result.jobresult)+"</p>").dialog("open");
+											$("#dialog_error").html("<p style='color:red'><b>Operation error:</b></p><br/><p style='color:red'>"+ fromdb(result.jobresult)+"</p>").dialog("open");
 											loading.hide();  
 											rowContainer.show();  
 										}
@@ -980,7 +980,7 @@ function showNetworkingTab(p_domainId, p_account) {
 	    		   
 	    var array1 = [];
         array1.push("&publicip="+ipAddress);    
-        array1.push("&name="+name);              
+        array1.push("&name="+todb(name));              
         array1.push("&publicport="+publicPort);
         array1.push("&privateport="+privatePort);
         array1.push("&algorithm="+algorithm);
@@ -1148,14 +1148,14 @@ function showNetworkingTab(p_domainId, p_account) {
 	//*** Network Group (begin) **********************************************************************	   
     function networkGroupJSONToTemplate(json, template) {	       
         (index++ % 2 == 0)? template.addClass("smallrow_even"): template.addClass("smallrow_odd");	    
-        template.attr("id", "networkGroup_"+json.id).data("networkGroupId", json.id).data("domainId", json.domainid).data("account",json.account).data("networkGroupName", sanitizeXSS(json.name));	      		    				   
+        template.attr("id", "networkGroup_"+json.id).data("networkGroupId", json.id).data("domainId", json.domainid).data("account",json.account).data("networkGroupName", fromdb(json.name));	      		    				   
 	    template.find("#delete_link, #ingress_rule_link").data("parent_template_id", "networkGroup_"+json.id);
 	    
 	    template.find("#id").text(json.id);
-	    template.find("#name").text(json.name);
-	    template.find("#description").text(json.description);	      
-	    template.find("#domain").text(json.domain); 
-	    template.find("#account").text(json.account);  		 
+	    template.find("#name").text(fromdb(json.name));
+	    template.find("#description").text(fromdb(json.description));	      
+	    template.find("#domain").text(fromdb(json.domain)); 
+	    template.find("#account").text(fromdb(json.account));  		 
 	    
 		// disable delete link from the default group
 	    if(json.name == 'default' && json.description == 'Default Network Group') {
@@ -1180,9 +1180,9 @@ function showNetworkingTab(p_domainId, p_account) {
 		    var account = submenuContent.find("#advanced_search #adv_search_account").val();
 		    var moreCriteria = [];								
 			if (name!=null && trim(name).length > 0) 
-				moreCriteria.push("&networkgroupname="+encodeURIComponent(trim(name)));						
+				moreCriteria.push("&networkgroupname="+todb(name));						
 			if (virtualMachineId!=null && virtualMachineId.length > 0) 
-				moreCriteria.push("&virtualmachineid="+encodeURIComponent(virtualMachineId));	   
+				moreCriteria.push("&virtualmachineid="+virtualMachineId);	   
 			if (domainId!=null && domainId.length > 0) 
 				moreCriteria.push("&domainid="+domainId);		
 			if (account!=null && account.length > 0) 
@@ -1609,7 +1609,7 @@ function showNetworkingTab(p_domainId, p_account) {
                                                 });                                                        
                                             });							                                                           
 					                    } else if (result.jobstatus == 2) {										        
-						                    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");		
+						                    $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");		
 						                    loadingImg.hide();  
                                             rowContainer.show();                                                         									   					    
 					                    }
@@ -1726,7 +1726,7 @@ function showNetworkingTab(p_domainId, p_account) {
 				thisDialog.dialog("close");
 							
 				$.ajax({						
-				       data: createURL("command=createNetworkGroup&name="+encodeURIComponent(name)+"&description="+encodeURIComponent(desc)+"&response=json"),
+				       data: createURL("command=createNetworkGroup&name="+todb(name)+"&description="+todb(desc)+"&response=json"),
 					dataType: "json",
 					success: function(json) {						   
 						var items = json.createnetworkgroupresponse.networkgroup;													

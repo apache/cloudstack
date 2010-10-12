@@ -79,6 +79,10 @@ public class SnapshotPolicyVO {
         return schedule;
     }
     
+    public void setInterval(short interval) {
+        this.interval = interval;
+    }
+
     public void setTimezone(String timezone) {
         this.timezone = timezone;
     }

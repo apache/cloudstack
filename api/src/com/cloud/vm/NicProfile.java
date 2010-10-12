@@ -29,6 +29,30 @@ public class NicProfile {
     URI broadcastUri;
     ReservationStrategy strategy;
     String reservationId;
+    boolean defaultNic;
+    Integer deviceId;
+    String dns1;
+    String dns2;
+    
+    public String getDns1() {
+        return dns1;
+    }
+    
+    public String getDns2() {
+        return dns2;
+    }
+    
+    public void setDns1(String dns1) {
+        this.dns1 = dns1;
+    }
+    
+    public void setDns2(String dns2) {
+        this.dns2 = dns2;
+    }
+    
+    public boolean isDefaultNic() {
+        return defaultNic;
+    }
     
     public String getNetmask() {
         return netmask;
@@ -54,6 +78,10 @@ public class NicProfile {
         return isolationUri;
     }
     
+    public void setStrategy(ReservationStrategy strategy) {
+        this.strategy = strategy;
+    }
+    
     public BroadcastDomainType getType() {
         return broadcastType;
     }
@@ -68,6 +96,18 @@ public class NicProfile {
 
     public void setVmId(long vmId) {
         this.vmId = vmId;
+    }
+    
+    public void setDeviceId(int deviceId) {
+        this.deviceId = deviceId;
+    }
+    
+    public void setDefaultNic(boolean defaultNic) {
+        this.defaultNic = defaultNic;
+    }
+    
+    public Integer getDeviceId() {
+        return deviceId;
     }
 
     public void setGateway(String gateway) {
@@ -142,7 +182,7 @@ public class NicProfile {
         this.ip4Address = ip4Address;
     }
 
-    public NicProfile(Nic nic, NetworkConfiguration network) {
+    public NicProfile(Nic nic, NetworkConfiguration network, URI broadcastUri, URI isolationUri) {
         this.id = nic.getId();
         this.gateway = network.getGateway();
         this.mode = network.getMode();
@@ -170,6 +210,9 @@ public class NicProfile {
         this.gateway = gateway;
         this.netmask = netmask;
         this.strategy = strategy;
+    }
+    
+    public NicProfile() {
     }
 
     public ReservationStrategy getReservationStrategy() {

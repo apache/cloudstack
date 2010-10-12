@@ -79,6 +79,7 @@ import com.cloud.api.commands.ReconnectHostCmd;
 import com.cloud.api.commands.UpdateHostCmd;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
@@ -109,7 +110,7 @@ import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
 import com.cloud.maid.StackMaid;
 import com.cloud.maint.UpgradeManager;
@@ -227,6 +228,13 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     @Inject
     protected StorageManager _storageMgr = null;
 
+
+    private String _publicNic;
+    private String _privateNic;
+    private String _guestNic;
+    private String _storageNic1;
+    private String _storageNic2;
+
     protected int _retry = 2;
 
     protected String _name;
@@ -265,6 +273,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
 
         final Map<String, String> configs = configDao.getConfiguration("AgentManager", params);
+
+        _publicNic = configDao.getValue(Config.XenPublicNetwork.key());
+        _privateNic = configDao.getValue(Config.XenPrivateNetwork.key());
+        _guestNic = configDao.getValue(Config.XenGuestNetwork.key());       
+        _storageNic1 = configDao.getValue(Config.XenStorageNetwork1.key());
+        _storageNic2 = configDao.getValue(Config.XenStorageNetwork2.key());
+
+
 
         _port = NumbersUtil.parseInt(configs.get("port"), 8250);
         final int workers = NumbersUtil.parseInt(configs.get("workers"), 5);
@@ -624,21 +640,27 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
                 s_logger.debug("Delete Host: " + hostId + " Guid:" + host.getGuid());
             }
 
-            if (host.getType() == Type.Routing && host.getHypervisorType() == Hypervisor.Type.XenServer ) {
+            if (host.getType() == Type.Routing && host.getHypervisorType() == HypervisorType.XenServer ) {
                 if (host.getClusterId() != null) {
                     List<HostVO> hosts = _hostDao.listBy(Type.Routing, host.getClusterId(), host.getPodId(), host.getDataCenterId());
+                    boolean success = false;
                     for( HostVO thost: hosts ) {
                         long thostId = thost.getId();
                         if( thostId == hostId ) continue;
                        
                         PoolEjectCommand eject = new PoolEjectCommand(host.getGuid());
                         Answer answer = easySend(thostId, eject);
-                        if( answer == null || !answer.getResult()) {
+                        if( answer != null  && answer.getResult()) {
+                            s_logger.debug("Eject Host: " + hostId + " from " + thostId + " Succeed");
+                            success = true;
+                            break;
+                        } else {
                             s_logger.debug("Eject Host: " + hostId + " from " + thostId + " failed due to " + answer.getDetails());
-                            continue;
                         }
-                        break;
                     }
+                    if( !success ){
+                        throw new CloudRuntimeException("Unable to delete host " + hostId + " due to unable to eject it from pool");  
+                    } 
                 }
             }
             txn.start();
@@ -646,6 +668,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             _dcDao.releasePrivateIpAddress(host.getPrivateIpAddress(), host.getDataCenterId(), null);
             AgentAttache attache = _agents.get(hostId);
             handleDisconnect(attache, Status.Event.Remove, false);
+
+            //delete host details
+            _hostDetailsDao.deleteDetails(hostId);
+
             host.setGuid(null);
             host.setClusterId(null);
             _hostDao.update(host.getId(), host);
@@ -665,8 +691,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             _storagePoolHostDao.deletePrimaryRecordsForHost(hostId);
             
             //3.For pool ids you got, delete entries in pool table where type='FileSystem' || 'LVM'
-            if(!pool_ids.isEmpty()) {
-                _storagePoolDao.deleteStoragePoolRecords(pool_ids);
+            for( Long poolId : pool_ids) {
+            	StoragePoolVO storagePool = _storagePoolDao.findById(poolId);
+            	if( storagePool.isLocal()) {
+            		storagePool.setUuid(null);
+            		storagePool.setClusterId(null);
+            		_storagePoolDao.update(poolId, storagePool);
+            		_storagePoolDao.remove(poolId);           		
+            	}
             }
             txn.commit();
             return true;
@@ -1080,6 +1112,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
         HashMap<String, Object> params = new HashMap<String, Object>(host.getDetails().size() + 5);
         params.putAll(host.getDetails());
+        // private.network.device may change when reconnect
+        params.remove("private.network.device");
+        params.put("private.network.device", _privateNic);
+        params.remove("public.network.device");
+        params.put("public.network.device", _publicNic);
+        params.remove("guest.network.device");
+        params.put("guest.network.device", _guestNic);
+
         params.put("guid", host.getGuid());
         params.put("zone", Long.toString(host.getDataCenterId()));
         if (host.getPodId() != null) {
@@ -1489,7 +1529,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             throw new InvalidParameterValueException("Unable to find host with ID: " + hostId + ". Please specify a valid host ID.");
         }
         
-        if (_hostDao.countBy(host.getPodId(), Status.PrepareForMaintenance, Status.ErrorInMaintenance, Status.Maintenance) > 0) {
+        if (_hostDao.countBy(host.getClusterId(), Status.PrepareForMaintenance, Status.ErrorInMaintenance, Status.Maintenance) > 0) {
             throw new InvalidParameterValueException("There are other servers in maintenance mode.");
         }
         
@@ -1890,7 +1930,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
         if (type == Host.Type.Routing) {
             StartupRoutingCommand scc = (StartupRoutingCommand) startup;
-            Hypervisor.Type hypervisorType = scc.getHypervisorType();
+            HypervisorType hypervisorType = scc.getHypervisorType();
             boolean doCidrCheck = true;
 
             // If this command is from the agent simulator, don't do the CIDR
@@ -1900,7 +1940,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
             // If this command is from a KVM agent, or from an agent that has a
             // null hypervisor type, don't do the CIDR check
-            if (hypervisorType == null || hypervisorType == Hypervisor.Type.KVM || hypervisorType == Hypervisor.Type.VmWare)
+            if (hypervisorType == null || hypervisorType == HypervisorType.KVM || hypervisorType == HypervisorType.VmWare)
                 doCidrCheck = false;
 
             if (doCidrCheck)
@@ -1941,17 +1981,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             host.setCpus(scc.getCpus());
             host.setTotalMemory(scc.getMemory());
             host.setSpeed(scc.getSpeed());
-            Hypervisor.Type hyType = scc.getHypervisorType();
-            if (hyType == null) {
-                host.setHypervisorType(Hypervisor.Type.Xen);
-            } else {
-                host.setHypervisorType(hyType);
-            }
+            HypervisorType hyType = scc.getHypervisorType();
+            host.setHypervisorType(hyType);
+           
         } else if(startup instanceof StartupStorageCommand) {
             final StartupStorageCommand ssc = (StartupStorageCommand) startup;
             host.setParent(ssc.getParent());
             host.setTotalSize(ssc.getTotalSize());
-            host.setHypervisorType(Hypervisor.Type.None);
+            host.setHypervisorType(HypervisorType.None);
             if (ssc.getNfsShare() != null) {
                 host.setStorageUrl(ssc.getNfsShare());
             }

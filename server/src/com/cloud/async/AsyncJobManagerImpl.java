@@ -104,9 +104,6 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
 
     @Override @DB
     public long submitAsyncJob(AsyncJobVO job, boolean scheduleJobExecutionInContext) {
-    	if(s_logger.isDebugEnabled())
-    		s_logger.debug("submit async job-" + job.getId() + ", details: " + job.toString());
-    	
     	Transaction txt = Transaction.currentTxn();
     	try {
     	    txt.start();
@@ -117,6 +114,9 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
     	    // no sync source originally
     	    job.setSyncSource(null);
     	    scheduleExecution(job, scheduleJobExecutionInContext);
+    	    if(s_logger.isDebugEnabled()) {
+                s_logger.debug("submit async job-" + job.getId() + ", details: " + job.toString());
+            }
     	    return job.getId();
     	} catch(Exception e) {
     	    s_logger.error("Unexpected exception: ", e);

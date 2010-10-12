@@ -77,7 +77,7 @@ public class UpdateVMCmd extends BaseCmd{
     
     public static String getResultObjectName() {
     	return "virtualmachine";
-    }    
+    }
 
     @Override @SuppressWarnings("unchecked")
     public SuccessResponse getResponse() {

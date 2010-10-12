@@ -1,28 +1,66 @@
 //***** baseline (begin) *******************************************************************************************************************
 function afterLoadIpJSP() {
-    //switch to different tab
-    $("#tab_details").bind("click", function(event){
-        $(this).removeClass("off").addClass("on");
-        $("#tab_port_forwarding, #tab_load_balancer").removeClass("on").addClass("off");  
-        $("#tab_content_details").show();     
-        $("#tab_content_port_forwarding, #tab_content_load_balancer").hide();   
-        return false;
-    });    
-    $("#tab_port_forwarding").bind("click", function(event){
-        $(this).removeClass("off").addClass("on");
-        $("#tab_details, #tab_load_balancer").removeClass("on").addClass("off");   
-        $("#tab_content_port_forwarding").show();    
-        $("#tab_content_details, #tab_content_load_balancer").hide();    
-        return false;
-    });    
-    $("#tab_load_balancer").bind("click", function(event){
-        $(this).removeClass("off").addClass("on");
-        $("#tab_details, #tab_port_forwarding").removeClass("on").addClass("off");  
-        $("#tab_content_load_balancer").show();   
-        $("#tab_content_details, #tab_content_port_forwarding").hide();      
-        return false;
-    }); 
+    //***** switch between different tabs (begin) ********************************************************************
+    var tabArray = ["tab_details", "tab_port_forwarding", "tab_load_balancer"];
+    var tabContentArray = ["tab_content_details", "tab_content_port_forwarding", "tab_content_load_balancer"];
+    switchBetweenDifferentTabs(tabArray, tabContentArray);       
+    //***** switch between different tabs (end) **********************************************************************
+        
+    //dialogs
+    initDialog("dialog_acquire_public_ip", 325);
+    initDialog("dialog_confirmation_release_ip");
     
+    //*** Acquire New IP (begin) ***
+	$.ajax({
+	    data: createURL("command=listZones&available=true"+maxPageSize),
+		dataType: "json",
+		success: function(json) {
+			var zones = json.listzonesresponse.zone;				
+			var zoneSelect = $("#dialog_acquire_public_ip #acquire_zone").empty();	
+			if (zones != null && zones.length > 0) {	
+			    for (var i = 0; i < zones.length; i++) {
+				    zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
+			    }
+		    }
+		}
+	});
+	
+	
+	$("#midmenu_add_link").show();     
+    $("#midmenu_add_link").unbind("click").bind("click", function(event) {  
+		var submenuContent = $("#submenu_content_network");
+		$("#dialog_acquire_public_ip").dialog('option', 'buttons', {				
+			"Acquire": function() { 
+				var thisDialog = $(this);	
+				thisDialog.dialog("close");
+						
+				var zoneid = thisDialog.find("#acquire_zone").val();				
+				
+				var $midmenuItem1 = beforeAddingMidMenuItem() ;	
+				
+				$.ajax({
+				    data: createURL("command=associateIpAddress&zoneid="+zoneid),
+					dataType: "json",
+					success: function(json) {						   
+					    var items = json.associateipaddressresponse.publicipaddress;	
+					    //$("#dialog_info").html("<p>The IP address <b>"+items[0].ipaddress+"</b> has been assigned to your account</p>").dialog("open");	
+					    ipToMidmenu(items[0], $midmenuItem1);
+						bindClickToMidMenu($midmenuItem1, ipToRigntPanel, ipGetMidmenuId);  
+						afterAddingMidMenuItem($midmenuItem1, true);	
+	            				
+					},
+					error: function(XMLHttpResponse) {					    
+                        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1);	
+					}						
+				});
+			},
+			"Cancel": function() { 
+				$(this).dialog("close"); 
+			}
+		}).dialog("open");			
+		return false;
+	});
+    //*** Acquire New IP (end) ***
     
     //Port Fowording tab
     var $createPortForwardingRow = $("#tab_content_port_forwarding #create_port_forwarding_row");     
@@ -34,7 +72,7 @@ function afterLoadIpJSP() {
 		if (!isValid) return;			
 	    
 	    var $template = $("#port_forwarding_template").clone();
-	    $("#tab_content_port_forwarding #grid_container").append($template.show());		
+	    $("#tab_content_port_forwarding #grid_content").append($template.show());		
 	    
 	    var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");	
 	    $spinningWheel.find("#description").text("Adding....");	
@@ -102,7 +140,7 @@ function afterLoadIpJSP() {
 	    		   
 	    var array1 = [];
         array1.push("&publicip="+ipAddress);    
-        array1.push("&name="+name);              
+        array1.push("&name="+todb(name));              
         array1.push("&publicport="+publicPort);
         array1.push("&privateport="+privatePort);
         array1.push("&algorithm="+algorithm);
@@ -128,7 +166,11 @@ function afterLoadIpJSP() {
 }
 
 function ipGetMidmenuId(jsonObj) {   
-    return "midmenuItem_" + jsonObj.ipaddress.replace(/\./g, "_");   //e.g. "192.168.33.108" => "192_168_33_108"
+    return ipGetMidmenuId2(jsonObj.ipaddress);
+}
+
+function ipGetMidmenuId2(ipaddress) {  
+    return "midmenuItem_" + ipaddress.replace(/\./g, "_");   //e.g. "192.168.33.108" => "192_168_33_108"
 }
 
 function ipToMidmenu(jsonObj, $midmenuItem1) {    
@@ -154,8 +196,7 @@ function ipToRigntPanel($midmenuItem1) {
     var ipObj = $midmenuItem1.data("jsonObj");
     
     //Details tab
-    ipJsonToDetailsTab(ipObj);   
-    $("#tab_details").click();
+    ipJsonToDetailsTab(ipObj);       
     
     //Port Forwarding tab, Load Balancer tab
     if(isIpManageable(ipObj.domainid, ipObj.account) == true) {     
@@ -167,26 +208,69 @@ function ipToRigntPanel($midmenuItem1) {
     } 
     else { 
 	    $("#tab_port_forwarding, #tab_load_balancer").hide();
+	    ipClearPortForwardingTab();
+	    ipClearLoadBalancerTab();
+	    $("#tab_details").click();
     }
 }
 
-function ipJsonToDetailsTab(jsonObj) {   
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
-    $detailsTab.data("jsonObj", jsonObj);      
-    
-    $detailsTab.find("#ipaddress").text(fromdb(jsonObj.ipaddress));
-    $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));
-    $detailsTab.find("#vlanname").text(fromdb(jsonObj.vlanname));    
-    setSourceNatField(jsonObj.issourcenat, $detailsTab.find("#source_nat")); 
-    setNetworkTypeField(jsonObj.forvirtualnetwork, $detailsTab.find("#network_type"));    
-    
-    $detailsTab.find("#domain").text(fromdb(jsonObj.domain));
-    $detailsTab.find("#account").text(fromdb(jsonObj.account));
-    $detailsTab.find("#allocated").text(fromdb(jsonObj.allocated));
+function ipClearRightPanel() { 
+    ipClearDetailsTab();   
+    ipClearPortForwardingTab();
+    ipClearLoadBalancerTab(); 
 }
+
 //***** baseline (end) *********************************************************************************************************************
 
 //***** Details tab (begin) ****************************************************************************************************************
+function ipJsonToDetailsTab(ipObj) {   
+    var $detailsTab = $("#right_panel_content #tab_content_details");   
+    $detailsTab.data("jsonObj", ipObj);      
+    
+    $detailsTab.find("#ipaddress").text(fromdb(ipObj.ipaddress));
+    $detailsTab.find("#zonename").text(fromdb(ipObj.zonename));
+    $detailsTab.find("#vlanname").text(fromdb(ipObj.vlanname));    
+    setSourceNatField(ipObj.issourcenat, $detailsTab.find("#source_nat")); 
+    setNetworkTypeField(ipObj.forvirtualnetwork, $detailsTab.find("#network_type"));    
+    
+    $detailsTab.find("#domain").text(fromdb(ipObj.domain));
+    $detailsTab.find("#account").text(fromdb(ipObj.account));
+    $detailsTab.find("#allocated").text(fromdb(ipObj.allocated));
+    
+    //actions ***
+    var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
+    $actionMenu.find("#action_list").empty();
+    var noAvailableActions = true;
+    
+    if(isIpManageable(ipObj.domainid, ipObj.account) == true && ipObj.issourcenat != "true") {     
+        buildActionLinkForDetailsTab("Release IP", ipActionMap, $actionMenu, null);		
+        noAvailableActions = false;
+    }
+        
+    // no available actions 
+	if(noAvailableActions == true) {
+	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
+	}	 
+}
+
+function ipClearDetailsTab() {
+    var $detailsTab = $("#right_panel_content #tab_content_details");   
+        
+    $detailsTab.find("#ipaddress").text("");
+    $detailsTab.find("#zonename").text("");
+    $detailsTab.find("#vlanname").text("");   
+    $detailsTab.find("#source_nat").text("");
+    $detailsTab.find("#network_type").text("");
+    $detailsTab.find("#domain").text("");
+    $detailsTab.find("#account").text("");
+    $detailsTab.find("#allocated").text("");
+    
+    //actions ***  
+    var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");  
+    $actionMenu.find("#action_list").empty();
+    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());		 
+}
+
 function setSourceNatField(value, $field) {
     if(value == "true")
         $field.text("Yes");
@@ -204,9 +288,45 @@ function setNetworkTypeField(value, $field) {
     else
         $field.text("");
 }
+
+var ipActionMap = {  
+    "Release IP": {                  
+        isAsyncJob: false,        
+        dialogBeforeActionFn : doReleaseIp,
+        inProcessText: "Releasing IP....",
+        afterActionSeccessFn: function(ipaddress) {                 
+            var $midmenuItem1 = $("#"+ipGetMidmenuId2(ipaddress));             
+            $midmenuItem1.remove();
+            clearRightPanel();
+            ipClearRightPanel();
+        }
+    }
+}   
+
+function doReleaseIp($actionLink, listAPIMap, $detailsTab) {  
+    var $detailsTab = $("#right_panel_content #tab_content_details"); 
+    var jsonObj = $detailsTab.data("jsonObj");
+    var ipaddress = jsonObj.ipaddress;
+    
+    $("#dialog_confirmation_release_ip")	
+	.dialog('option', 'buttons', { 						
+		"Confirm": function() { 
+		    $(this).dialog("close");			
+			var apiCommand = "command=disassociateIpAddress&ipaddress="+ipaddress;
+            doActionToDetailsTab(ipaddress, $actionLink, apiCommand, listAPIMap);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		} 
+	}).dialog("open");
+}
 //***** Details tab (end) ******************************************************************************************************************
 
 //***** Port Forwarding tab (begin) ********************************************************************************************************
+function ipClearPortForwardingTab() {
+   $("#tab_content_port_forwarding #grid_content").empty(); 
+    refreshCreatePortForwardingRow(); 
+}    
     
 function listPortForwardingRules(ipObj) {	    
 	var ipAddress = ipObj.ipaddress;
@@ -217,7 +337,7 @@ function listPortForwardingRules(ipObj) {
         dataType: "json",
         success: function(json) {	                                    
             var items = json.listportforwardingrulesresponse.portforwardingrule;              
-            var $portForwardingGrid = $("#tab_content_port_forwarding #grid_container #grid_content");            
+            var $portForwardingGrid = $("#tab_content_port_forwarding #grid_content");            
             $portForwardingGrid.empty();                       		    		      	    		
             if (items != null && items.length > 0) {				        			        
                 for (var i = 0; i < items.length; i++) {
@@ -255,7 +375,7 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
     var IpAccount = ipObj.account;    
     	    
     $.ajax({
-	   data: createURL("command=listVirtualMachines&domainid="+IpDomainid+"&account="+IpAccount+maxPageSize),
+	    data: createURL("command=listVirtualMachines&domainid="+IpDomainid+"&account="+IpAccount+maxPageSize),
 	    dataType: "json",
 	    success: function(json) {			    
 		    var instances = json.listvirtualmachinesresponse.virtualmachine;			   
@@ -350,7 +470,7 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
                                     $rowContainer.show();                                                      
 							    } else if (result.jobstatus == 2) { //Fail
 							        $spinningWheel.hide(); 		
-						            $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");											    					    
+						            $("#dialog_alert").text(fromdb(result.jobresult)).dialog("open");											    					    
 							    }
 						    }
 					    },
@@ -401,6 +521,11 @@ function refreshCreatePortForwardingRow() {
 
 
 //***** Load Balancer tab (begin) **********************************************************************************************************
+function ipClearLoadBalancerTab() {  
+    $("#tab_content_load_balancer #grid_content").empty();   
+    refreshCreateLoadBalancerRow();   
+}
+
 function listLoadBalancerRules(ipObj) {  
     var ipAddress = ipObj.ipaddress;
     if(ipAddress == null || ipAddress.length == 0)
@@ -429,8 +554,8 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
     var loadBalancerId = jsonObj.id;	    
     $template.attr("id", "loadBalancer_" + loadBalancerId).data("loadBalancerId", loadBalancerId);		    
     
-    $template.find("#row_container #name").text(jsonObj.name);
-    $template.find("#row_container_edit #name").val(jsonObj.name);
+    $template.find("#row_container #name").text(fromdb(jsonObj.name));
+    $template.find("#row_container_edit #name").val(fromdb(jsonObj.name));
     
     $template.find("#row_container #public_port").text(jsonObj.publicport);
     $template.find("#row_container_edit #public_port").text(jsonObj.publicport);
@@ -587,7 +712,7 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 							        $spinningWheel.hide();                                   
                                     $rowContainerEdit.hide();  
                                     $rowContainer.show(); 
-								    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");											    					    
+								    $("#dialog_alert").text(fromdb(result.jobresult)).dialog("open");											    					    
 							    }
 						    }
 					    },
@@ -651,7 +776,7 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 									    refreshLbVmSelect($template, loadBalancerId);											    
 		                                $spinningWheel.hide();   
 									} else if (result.jobstatus == 2) { // Failed
-										$("#dialog_error").html("<p style='color:red'><b>Operation error:</b></p><br/><p style='color:red'>"+ sanitizeXSS(result.jobresult)+"</p>").dialog("open");
+										$("#dialog_error").text(fromdb(result.jobresult)).dialog("open");
 										$spinningWheel.hide();   
 									}
 								}
@@ -717,7 +842,7 @@ function lbVmObjToTemplate(obj, $template) {
 											$(this).remove();
 										});
 									} else if (result.jobstatus == 2) { // Failed													
-										$("#dialog_error").html("<p style='color:red'>We were unable to remove the Virtual Instance: "+vmName + " from your load balancer policy.  Please try again.").dialog("open");
+										$("#dialog_error").text(fromdb(result.jobresult)).dialog("open");
 										$spinningWheel.hide();   										
 									}
 								}

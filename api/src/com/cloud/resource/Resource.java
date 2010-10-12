@@ -26,12 +26,14 @@ public interface Resource {
     }
     
     enum State implements FiniteState<State, Event> {
-        Allocated, // Resource is allocated
-        Reserving, // Resource is being reserved right now.
-        Reserved,  // Resource is reserved
-        Releasing, // Resource is being released.
-        Ready;     // Resource is ready which means it does not need to go through reservation.
+        Allocated("Resource is allocated but not reserved"),
+        Reserving("Resource is being reserved right now"), 
+        Reserved("Resource has been reserved."),  
+        Releasing("Resource is being released"), 
+        Ready("Resource is ready which means it doesn't need to go through resservation");
 
+        String _description;
+        
         @Override
         public StateMachine<State, Event> getStateMachine() {
             
@@ -54,12 +56,24 @@ public interface Resource {
             return s_fsm.getPossibleEvents(this);
         }
         
+        private State(String description) {
+            _description = description;
+        }
+        
+        @Override
+        public String getDescription() {
+            return _description;
+        }
+        
         final static private StateMachine<State, Event> s_fsm = new StateMachine<State, Event>();
         static {
             s_fsm.addTransition(State.Allocated, Event.ReservationRequested, State.Reserving);
             s_fsm.addTransition(State.Reserving, Event.CancelRequested, State.Allocated);
             s_fsm.addTransition(State.Reserving, Event.OperationCompleted, State.Reserved);
             s_fsm.addTransition(State.Reserving, Event.OperationFailed, State.Allocated);
+            s_fsm.addTransition(State.Reserved, Event.ReleaseRequested, State.Releasing);
+            s_fsm.addTransition(State.Releasing, Event.OperationCompleted, State.Allocated);
+            s_fsm.addTransition(State.Releasing, Event.OperationFailed, State.Reserved);
         }
     }
     

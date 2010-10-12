@@ -22,7 +22,6 @@ package com.cloud.agent.api;
  * This currently assumes that both primary and secondary storage are mounted on the XenServer.  
  */
 public class CreateVolumeFromSnapshotCommand extends SnapshotCommand {
-    private String templatePath;
     
     protected CreateVolumeFromSnapshotCommand() {
         
@@ -51,18 +50,9 @@ public class CreateVolumeFromSnapshotCommand extends SnapshotCommand {
                                            Long   accountId,
                                            Long   volumeId,
                                            String backedUpSnapshotUuid,
-                                           String backedUpSnapshotName,
-                                           String templatePath) 
+                                           String backedUpSnapshotName)
     {
         super(primaryStoragePoolNameLabel, secondaryStoragePoolURL, backedUpSnapshotUuid, backedUpSnapshotName, dcId, accountId, volumeId);
-        this.templatePath = templatePath;
     }
 
-    /**
-     * @return the templatePath
-     */
-    public String getTemplatePath() {
-        return templatePath;
-    }
-    
 }

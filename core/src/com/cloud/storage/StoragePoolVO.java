@@ -49,7 +49,7 @@ public class StoragePoolVO implements StoragePool {
     @Column(name="name", updatable=false, nullable=false, length=255)
 	private String name = null;
 
-    @Column(name="uuid", updatable=false, nullable=false, length=255)
+    @Column(name="uuid", length=255)
 	private String uuid = null;
     
     @Column(name="pool_type", updatable=false, nullable=false, length=32)
@@ -82,7 +82,8 @@ public class StoragePoolVO implements StoragePool {
     @Enumerated(value=EnumType.STRING)
     private Status status;
     
-	public long getId() {
+	@Override
+    public long getId() {
 		return id;
 	}
 	
@@ -95,19 +96,23 @@ public class StoragePoolVO implements StoragePool {
 		// TODO Auto-generated constructor stub
 	}
 
-	public String getName() {
+	@Override
+    public String getName() {
 		return name;
 	}
 
-	public String getUuid() {
+	@Override
+    public String getUuid() {
 		return uuid;
 	}
 
-	public StoragePoolType getPoolType() {
+	@Override
+    public StoragePoolType getPoolType() {
 		return poolType;
 	}
 
-	public Date getCreated() {
+	@Override
+    public Date getCreated() {
 		return created;
 	}
 
@@ -115,19 +120,23 @@ public class StoragePoolVO implements StoragePool {
 		return removed;
 	}
 
-	public Date getUpdateTime() {
+	@Override
+    public Date getUpdateTime() {
 		return updateTime;
 	}
 
-	public long getDataCenterId() {
+	@Override
+    public long getDataCenterId() {
 		return dataCenterId;
 	}
 
-	public long getAvailableBytes() {
+	@Override
+    public long getAvailableBytes() {
 		return availableBytes;
 	}
 
-	public long getCapacityBytes() {
+	@Override
+    public long getCapacityBytes() {
 		return capacityBytes;
 	}
 
@@ -160,10 +169,12 @@ public class StoragePoolVO implements StoragePool {
         this.clusterId = clusterId;
     }
     
+    @Override
     public String getHostAddress() {
         return hostAddress;
     }
     
+    @Override
     public String getPath() {
         return path;
     }
@@ -217,10 +228,12 @@ public class StoragePoolVO implements StoragePool {
         return port;
     }
     
+    @Override
     public boolean isShared() {
     	return poolType.isShared();
     }
     
+    @Override
     public boolean isLocal() {
     	return !poolType.isShared();
     }
@@ -250,6 +263,10 @@ public class StoragePoolVO implements StoragePool {
 	
 	public void setName(String name) {
 	    this.name = name;
+	}
+	
+	public boolean isInMaintenance() {
+	    return status == Status.PrepareForMaintenance || status == Status.Maintenance || status == Status.ErrorInMaintenance || removed != null;
 	}
 	
 	@Override

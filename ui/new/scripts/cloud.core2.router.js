@@ -6,13 +6,9 @@ function routerToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.attr("id", ("midmenuItem_"+jsonObj.id));  
     $midmenuItem1.data("jsonObj", jsonObj); 
     
-    /*
-    var $iconContainer = $midmenuItem1.find("#icon_container").show();   
-    $iconContainer.find("#icon").attr("src", "images/midmenuicon_routers_info.png");    
-    */ 
-    
     $midmenuItem1.find("#first_row").text(jsonObj.name.substring(0,25)); 
-    $midmenuItem1.find("#second_row").text(jsonObj.publicip.substring(0,25));     
+    $midmenuItem1.find("#second_row").text(jsonObj.publicip.substring(0,25));
+    updateStateInMidMenu(jsonObj, $midmenuItem1);       
 }
 
 function routerAfterDetailsTabAction(jsonObj) {
@@ -27,8 +23,9 @@ function routerToRigntPanel($midmenuItem) {
 
 function routerJsonToDetailsTab(jsonObj) {    
     var $detailsTab = $("#right_panel_content #tab_content_details");    
-    $detailsTab.data("jsonObj", jsonObj);     
-    $detailsTab.find("#state").text(fromdb(jsonObj.state));
+    $detailsTab.data("jsonObj", jsonObj);         
+    setVmStateInRightPanel(jsonObj.state, $detailsTab.find("#state"));  
+    $detailsTab.find("#ipAddress").text(jsonObj.publicip);
     $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));
     $detailsTab.find("#name").text(fromdb(jsonObj.name));
     $detailsTab.find("#publicip").text(fromdb(jsonObj.publicip));
@@ -39,19 +36,28 @@ function routerJsonToDetailsTab(jsonObj) {
     $detailsTab.find("#account").text(fromdb(jsonObj.account));  
     setDateField(jsonObj.created, $detailsTab.find("#created"));	 
     
+    resetViewConsoleAction(jsonObj, $detailsTab);   
+    
+    //***** actions (begin) *****    
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
+    var noAvailableActions = true;
     
-    if (jsonObj.state == 'Running') {
-        //template.find(".grid_links").find("#router_action_stop_container, #router_action_reboot_container, #router_action_view_console_container").show();	
+    if (jsonObj.state == 'Running') {   
         buildActionLinkForDetailsTab("Stop Router", routerActionMap, $actionMenu, routerListAPIMap);	
-        buildActionLinkForDetailsTab("Reboot Router", routerActionMap, $actionMenu, routerListAPIMap);	
-        //buildActionLinkForDetailsTab("View Console", routerActionMap, $actionMenu, routerListAPIMap);	
+        buildActionLinkForDetailsTab("Reboot Router", routerActionMap, $actionMenu, routerListAPIMap);	  
+        noAvailableActions = false;      
     }
-    else if (jsonObj.state == 'Stopped') {
-        //template.find(".grid_links").find("#router_action_start_container").show();
+    else if (jsonObj.state == 'Stopped') {        
         buildActionLinkForDetailsTab("Start Router", routerActionMap, $actionMenu, routerListAPIMap);	
-    }   
+        noAvailableActions = false;
+    }  
+    
+    // no available actions 
+	if(noAvailableActions == true) {
+	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
+	}	   
+    //***** actions (end) *****		    
 }
 
 var routerListAPIMap = {

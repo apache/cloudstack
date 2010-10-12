@@ -19,13 +19,38 @@ package com.cloud.hypervisor;
 
 public class Hypervisor {
 
-    public static enum Type {
+    public static enum HypervisorType {
     	None, //for storage hosts
     	Xen,
     	XenServer,
     	KVM,
     	VmWare,
     	VirtualBox,
-    	Parralels;
+    	Parralels,
+    	Any; /*If you don't care about the hypervisor type*/
+
+    	public static HypervisorType getType(String hypervisor) {
+    		if (hypervisor == null) {
+    			return HypervisorType.None;
+    		}
+
+    		if (hypervisor.equalsIgnoreCase("Xen")) {
+    			return HypervisorType.Xen;
+    		} else if (hypervisor.equalsIgnoreCase("XenServer")) {
+    			return HypervisorType.XenServer;
+    		} else if (hypervisor.equalsIgnoreCase("KVM")) {
+    			return HypervisorType.KVM;
+    		} else if (hypervisor.equalsIgnoreCase("VmWare")) {
+    			return HypervisorType.VmWare;
+    		} else if (hypervisor.equalsIgnoreCase("VirtualBox")) {
+    			return HypervisorType.VirtualBox;
+    		} else if (hypervisor.equalsIgnoreCase("Parralels")) {
+    			return HypervisorType.Parralels;
+    		} else if (hypervisor.equalsIgnoreCase("Any")) {
+    			return HypervisorType.Any;
+    		} else {
+    			return HypervisorType.None;
+    		}
+    	}
     }
 }

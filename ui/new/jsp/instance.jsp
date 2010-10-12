@@ -26,12 +26,20 @@
             <%=t.t("Volume")%></div>
         <div class="content_tabs off" id="tab_statistics">
             <%=t.t("Statistics")%></div>
+        <div class="content_tabs off" id="tab_router">
+            <%=t.t("Routers")%></div>
     </div>
     <!--Details tab (start)-->
     <div class="grid_container" style="display: block;" id="tab_content_details">
         <div class="grid_rows odd">
             <div class="vm_statusbox">
-                <div class="vm_consolebox">
+                <div id="view_console_container">  
+                	<div id="view_console_template" style="display:block">
+    					<div class="vm_consolebox" id="box0">
+    					</div>
+   						<div class="vm_consolebox" id="box1" style="display: none">
+    					</div>
+					</div>           
                 </div>
                 <div class="vm_status_textbox">
                     <div class="vm_status_textline green" id="state">
@@ -51,7 +59,27 @@
                 <div class="row_celltitles" id="zoneName">
                 </div>
             </div>
+        </div>        
+        <div class="grid_rows odd">
+            <div class="grid_row_cell" style="width: 20%;">
+                <div class="row_celltitles">
+                    <%=t.t("Name")%>:</div>
+            </div>
+            <div class="grid_row_cell" style="width: 79%;">
+                <div class="row_celltitles" id="vmname">
+                </div>
+            </div>
         </div>
+        <div class="grid_rows even">
+            <div class="grid_row_cell" style="width: 20%;">
+                <div class="row_celltitles">
+                    <%=t.t("IP")%>:</div>
+            </div>
+            <div class="grid_row_cell" style="width: 79%;">
+                <div class="row_celltitles" id="ipaddress">
+                </div>
+            </div>
+        </div>        
         <div class="grid_rows odd">
             <div class="grid_row_cell" style="width: 20%;">
                 <div class="row_celltitles">
@@ -145,87 +173,19 @@
     </div>
     <!--Details tab (end)-->
     <!--Volume tab (start)-->
-    <div style="display: none;" id="tab_content_volume">
-        <div class="grid_container" id="volume_tab_template" style="display: block">
-            <div class="grid_header">
-                <div class="grid_header_title" id="name">
-                </div>
-                <div class="grid_actionbox" id="volume_action_link" style="display: block;">
-                    <div class="grid_actionsdropdown_box" id="volume_action_menu" style="display: none;">
-                        <ul class="actionsdropdown_boxlist" id="action_list">
-                            <li><a href="#">Delete </a></li>
-                            <li><a href="#">Attach Disk </a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="gridheader_loaderbox" style="height: 18px;">
-                    <div class="gridheader_loader">
-                    </div>
-                    <p>
-                        Creating Template &hellip;
-                    </p>
-                </div>
-            </div>
-            
-            <div class="grid_rows success">
-                <div class="grid_row_cell" style="width: 90%; border:none;">
-                    <div class="row_celltitles"><strong>Message will appear here</strong></div>
-                </div>
-            </div>
-            
-            <div class="grid_rows error">
-                <div class="grid_row_cell" style="width: 90%; border:none;">
-                    <div class="row_celltitles alert" style="margin-left:10px;"><strong>Error Message will appear here</strong></div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        ID:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="id">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        Type:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="type">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows even">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        Size:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="size">
-                    </div>
-                </div>
-            </div>
-            <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        Created:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="created">
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div style="display: none;" id="tab_content_volume">        
     </div>
     <!--Volume tab (end)-->
     <!--Statistics tab (start)-->
-    <div class="grid_container" style="display: none;" id="tab_content_statistics">
-        statistics....
+    <div style="display: none;" id="tab_content_statistics">
+        statistics
     </div>
     <!--Statistics tab (start)-->
+    <!--Routers tab (start)-->
+    <div style="display: none;" id="tab_content_router">
+        Routers
+    </div>
+    <!--Routers tab (start)-->
 </div>
 <!-- VM detail panel (end) -->
 <!-- VM wizard (begin)-->
@@ -263,6 +223,15 @@
                             Availability Zone:</label>
                         <select class="select" id="wizard_zone" name="zone">
                         </select>
+                        
+                        <label>
+                            Hypervisor:</label>
+                        <select id="wizard_hypervisor">
+                            <option value='XenServer'>Citrix XenServer</option>
+                            <option value='VmWare'>VMware ESX</option>                            
+                            <option value='KVM'>KVM</option>
+                        </select>                        
+                        
                         <div class="rev_tempsearchbox">
                             <form method="post" action="#">
                             <ol>
@@ -601,8 +570,17 @@
                                     Zone:</div>
                                 <span id="wizard_review_zone"></span>
                             </div>
-                        </div>
+                        </div>                        
                         <div class="vmpopup_reviewbox_even">
+                            <div class="vmopopup_reviewtextbox">
+                                <div class="vmpopup_reviewtick">
+                                </div>
+                                <div class="vmopopup_review_label">
+                                    Hypervisor:</div>
+                                <span id="wizard_review_hypervisor"></span>
+                            </div>
+                        </div>                        
+                        <div class="vmpopup_reviewbox_odd">
                             <div class="vmopopup_reviewtextbox">
                                 <div class="vmpopup_reviewtick">
                                 </div>
@@ -612,7 +590,7 @@
                                 <span id="wizard_review_template"></span>
                             </div>
                         </div>
-                        <div class="vmpopup_reviewbox_odd">
+                        <div class="vmpopup_reviewbox_even">
                             <div class="vmopopup_reviewtextbox">
                                 <div class="vmpopup_reviewtick">
                                 </div>
@@ -621,7 +599,7 @@
                                 <span id="wizard_review_service_offering"></span>
                             </div>
                         </div>
-                        <div class="vmpopup_reviewbox_even">
+                        <div class="vmpopup_reviewbox_odd">
                             <div class="vmopopup_reviewtextbox">
                                 <div class="vmpopup_reviewtick">
                                 </div>
@@ -631,7 +609,7 @@
                                 <span id="wizard_review_disk_offering"></span>
                             </div>
                         </div>
-                        <div class="vmpopup_reviewbox_odd">
+                        <div class="vmpopup_reviewbox_even">
                             <div class="vmopopup_reviewtextbox">
                                 <div class="vmpopup_reviewtick">
                                 </div>
@@ -640,7 +618,7 @@
                                 <span id="wizard_review_network"></span>
                             </div>
                         </div>
-                        <div class="vmpopup_reviewbox_even">
+                        <div class="vmpopup_reviewbox_odd">
                             <div class="vmopopup_reviewtextbox">
                                 <div class="vmpopup_reviewtick">
                                 </div>
@@ -652,7 +630,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="vmpopup_reviewbox_odd">
+                        <div class="vmpopup_reviewbox_even">
                             <div class="vmopopup_reviewtextbox">
                                 <div class="vmpopup_reviewtick">
                                 </div>
@@ -724,86 +702,11 @@
     </div>
 </div>
 <!-- VM Wizard - disk Offering template (end)-->
-<!-- Attach ISO Dialog -->
-<div id="dialog_attach_iso" title="Attach ISO" style="display: none">
-    <p>
-        Please specify the ISO you wish to attach to virtual instance.
-    </p>
-    <div class="dialog_formcontent">
-        <form action="#" method="post" id="form_acquire">
-        <ol>
-            <li>
-                <label for="user_name">
-                    Available ISO:</label>
-                <select class="select" name="attach_iso_select" id="attach_iso_select">
-                    <option value="none">No Available ISO</option>
-                </select>
-            </li>
-        </ol>
-        </form>
-    </div>
-</div>
-<!-- Change Name Dialog -->
-<div id="dialog_change_name" title="Change Name" style="display: none">
-    <p>
-        Please specify the new name you want to change for virtual instance.
-    </p>
-    <div class="dialog_formcontent">
-        <form action="#" method="post" id="form_acquire">
-        <ol>
-            <li>
-                <label for="user_name">
-                    Instance Name:</label>
-                <input class="text" type="text" name="change_instance_name" id="change_instance_name" />
-                <div id="change_instance_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-                </div>
-            </li>
-        </ol>
-        </form>
-    </div>
-</div>
-<!-- Change Service Offering Dialog -->
-<div id="dialog_change_service_offering" title="Change Service Offering" style="display: none">
-    <p>
-        After changing service offering, you must restart virtual instance for the new service
-        offering to take effect.
-    </p>
-    <div class="dialog_formcontent">
-        <form action="#" method="post" id="form_acquire">
-        <ol>
-            <li>
-                <label for="user_name">
-                    Service Offering:</label>
-                <select class="select" name="change_service_offerings" id="change_service_offerings">
-                </select>
-            </li>
-        </ol>
-        </form>
-    </div>
-</div>
-<!-- Change Group Dialog -->
-<div id="dialog_change_group" title="Change Group" style="display: none">
-    <p>
-        Please specify the new group you want to assign to your Virtual Instance. If no
-        such group exists, a new one will be created for you.</p>
-    <div class="dialog_formcontent">
-        <form action="#" method="post" id="form_acquire">
-        <ol>
-            <li>
-                <label for="change_group_name">
-                    Group Name:</label>
-                <input class="text" type="text" name="change_group_name" id="change_group_name" />
-                <div id="change_group_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-                </div>
-            </li>
-        </ol>
-        </form>
-    </div>
-</div>
-<!--  volume tab template -->
+
+<!--  volume tab template (begin) -->
 <div class="grid_container" id="volume_tab_template" style="display: none">
     <div class="grid_header">
-        <div class="grid_header_title" id="name">
+        <div class="grid_header_title" id="title">
         </div>
         <div class="grid_actionbox" id="volume_action_link">
             <div class="grid_actionsdropdown_box" id="volume_action_menu" style="display: none;">
@@ -837,7 +740,17 @@
             </div>
         </div>
     </div>
-    <div class="grid_rows odd">
+     <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Name:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="name">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 Type:</div>
@@ -847,7 +760,7 @@
             </div>
         </div>
     </div>
-    <div class="grid_rows even">
+    <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 Size:</div>
@@ -857,7 +770,7 @@
             </div>
         </div>
     </div>
-    <div class="grid_rows odd">
+    <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 Created:</div>
@@ -868,46 +781,280 @@
         </div>
     </div>
 </div>
-<!-- Create Template Dialog -->
-<div id="dialog_create_template" title="Create Template" style="display: none">
-    <p>
-        Please specify the following information before creating a template of your disk
-        volume: <b><span id="volume_name"></span></b>. Creating a template could take up
-        to several hours depending on the size of your disk volume.</p>
+<!--  volume tab template (end) -->
+
+<!-- view console template (begin)  -->
+<div id="view_console_template" style="display:none">
+    <div class="vm_consolebox" id="box0">
+    </div>
+    <div class="vm_consolebox" id="box1" style="display: none">
+    </div>
+</div>
+<!-- view console template (end)  -->
+
+<!--  router tab template (begin) -->
+<div class="grid_container" id="router_tab_template" style="display: none">
+    <div class="grid_header">
+        <div class="grid_header_title" id="title">
+        </div>
+        <div class="grid_actionbox" id="router_action_link">
+            <div class="grid_actionsdropdown_box" id="router_action_menu" style="display: none;">
+                <ul class="actionsdropdown_boxlist" id="action_list">
+                </ul>
+            </div>
+        </div>
+        <div class="gridheader_loaderbox" id="spinning_wheel" style="display: none; height: 18px;">
+            <div class="gridheader_loader" id="icon">
+            </div>
+            <p id="description">
+                Waiting &hellip;
+            </p>
+        </div>
+    </div>
+    <div class="grid_rows" id="after_action_info_container" style="display: none">
+        <div class="grid_row_cell" style="width: 90%; border: none;">
+            <div class="row_celltitles">
+                <strong id="after_action_info">Message will appear here</strong></div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="vm_statusbox">
+            <div id="view_console_container">
+                <div id="view_console_template" style="display: block">
+                    <div class="vm_consolebox" id="box0">
+                    </div>
+                    <div class="vm_consolebox" id="box1" style="display: none">
+                    </div>
+                </div>
+            </div>
+            <div class="vm_status_textbox">
+                <div class="vm_status_textline green" id="state">
+                </div>
+                <br />
+                <p id="ipAddress">
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Zone")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="zonename">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Name")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="name">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Public IP")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="publicip">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Private IP")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="privateip">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Guest IP")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="guestipaddress">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Host")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="hostname">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Network Domain")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="networkdomain">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Account")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="account">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <%=t.t("Created")%>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="created">
+            </div>
+        </div>
+    </div>
+</div>
+<!--  router tab template (end) -->
+
+<!--  ***** Dialogs (begin) ***** -->
+<!-- Detach ISO Dialog -->
+<div id="dialog_detach_iso_from_vm" title="Confirmation" style="display:none">
+    <p><%=t.t("please.confirm.you.want.to.detach.an.iso.from.the.virtual.machine")%></p>   
+</div>
+
+<!-- Attach ISO Dialog -->
+<div id="dialog_attach_iso" title="Attach ISO" style="display: none">
+    <p> 
+        <%=t.t("please.specify.the.iso.you.wish.to.attach.to.virtual.machine")%>        
+    </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>
             <li>
-                <label for="user_name">
-                    Name:</label>
+                <label>
+                    <%=t.t("iso")%>:</label>
+                <select class="select" id="attach_iso_select">
+                    <option value="none"><%=t.t("no.available.iso")%></option>
+                </select>
+                <div id="attach_iso_select_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+
+<!-- Change Name Dialog -->
+<div id="dialog_change_name" title="Change Name" style="display: none">
+    <p> 
+        <%=t.t("please.specify.the.new.name.you.want.to.change.for.the.virtual.machine")%>        
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+                <label>
+                    <%=t.t("instance.name")%>:</label>
+                <input class="text" type="text" id="change_instance_name" />
+                <div id="change_instance_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+
+<!-- Change Group Dialog -->
+<div id="dialog_change_group" title="Change Group" style="display: none">
+    <p>
+        <%=t.t("please.specify.the.new.group.you.want.to.assign.the.virtual.machine.to")%>        
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+                <label>
+                    <%=t.t("group.name")%>:</label>
+                <input class="text" type="text" id="change_group_name" />
+                <div id="change_group_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+
+
+<!-- Change Service Offering Dialog -->
+<div id="dialog_change_service_offering" title="Change Service Offering" style="display: none">
+    <p> 
+        <%=t.t("after.changing.service.offering.you.must.restart.the.virtual.machine.for.new.service.offering.to.take.effect")%>
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+                <label>
+                    <%=t.t("service.offering")%>:</label>
+                <select class="select" id="change_service_offerings">
+                </select>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+
+<!-- Create template of disk volume dialog (begin) -->
+<div id="dialog_create_template" title="Create template of disk volume" style="display: none">
+    <p> 
+        <%=t.t("creating.a.template.of.disk.volume.could.take.up.to.several.hours.depending.on.the.size.of.the.disk.volume")%>
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+                <label>
+                    <%=t.t("name")%>:</label>
                 <input class="text" type="text" name="create_template_name" id="create_template_name" />
                 <div id="create_template_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
-                <label for="user_name">
-                    Display Text:</label>
+                <label>
+                    <%=t.t("display.text")%>:</label>
                 <input class="text" type="text" name="create_template_desc" id="create_template_desc" />
                 <div id="create_template_desc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label for="create_template_os_type">
-                    OS Type:</label>
+                    <%=t.t("os.type")%>:</label>
                 <select class="select" name="create_template_os_type" id="create_template_os_type">
                 </select>
             </li>
             <li>
                 <label for="create_template_public">
-                    Public:</label>
+                    <%=t.t("public")%>:</label>
                 <select class="select" name="create_template_public" id="create_template_public">
                     <option value="false">No</option>
                     <option value="true">Yes</option>
                 </select>
             </li>
             <li>
-                <label for="user_name">
-                    Password Enabled?:</label>
+                <label>
+                    <%=t.t("password.enabled")%>?:</label>
                 <select class="select" name="create_template_password" id="create_template_password">
                     <option value="false">No</option>
                     <option value="true">Yes</option>
@@ -917,3 +1064,23 @@
         </form>
     </div>
 </div>
+<!-- Create template of disk volume dialog (end) -->
+
+<div id="dialog_confirmation_change_root_password" title="Confirmation" style="display:none">
+    <p>
+        <%=t.t("please.confirm.you.want.to.change.the.root.password.for.the.virtual.machine")%>        
+    </p>
+</div>
+
+<div id="dialog_confirmation_enable_ha" title="Confirmation" style="display:none">
+    <p>
+        <%=t.t("please.confirm.you.want.to.enable.HA.for.your.virtual.machine.once.HA.is.enabled.your.virtual.machine.will.be.automatically.restarted.in.the.event.it.is.detected.to.have.failed")%>
+    </p>
+</div>
+
+<div id="dialog_confirmation_disable_ha" title="Confirmation" style="display:none">
+    <p>
+        <%=t.t("please.confirm.you.want.to.disable.HA.for.the.virtual.machine.once.HA.is.disabled.the.virtual.machine.will.no.longer.be.automatically.restarted.in.the.event.of.a.failure")%>
+    </p>
+</div>
+<!--  ***** Dialogs (end) ***** -->

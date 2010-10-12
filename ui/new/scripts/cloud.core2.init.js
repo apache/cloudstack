@@ -25,7 +25,7 @@ $(document).ready(function() {
             $(this).addClass("selected");
             
             showMiddleMenu();
-            $("#midmenu_container").selectable("destroy" ); //Most pages don't need multiple selection in middle menu.
+            disableMultipleSelectionInMidMenu();
             
             clearLeftMenu();
             clearMiddleMenu();
@@ -85,10 +85,15 @@ $(document).ready(function() {
     listMidMenuItems("leftmenu_submenu_my_iso", "listIsos&isofilter=self", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRigntPanel, isoGetMidmenuId);
     listMidMenuItems("leftmenu_submenu_featured_iso", "listIsos&isofilter=featured", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRigntPanel, isoGetMidmenuId);
     listMidMenuItems("leftmenu_submenu_community_iso", "listIsos&isofilter=community", "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRigntPanel, isoGetMidmenuId);
+    
+    listMidMenuItems("leftmenu_service_offering", "listServiceOfferings", "listserviceofferingsresponse", "serviceoffering", "jsp/serviceoffering.jsp", afterLoadServiceOfferingJSP, serviceOfferingToMidmenu, serviceOfferingToRigntPanel); 
+    listMidMenuItems("leftmenu_disk_offering", "listDiskOfferings", "listdiskofferingsresponse", "diskoffering", "jsp/diskoffering.jsp", afterLoadDiskOfferingJSP, diskOfferingToMidmenu, diskOfferingToRigntPanel); 
+    listMidMenuItems("leftmenu_global_setting", "listConfigurations", "listconfigurationsresponse", "configuration", "jsp/globalsetting.jsp", afterLoadGlobalSettingJSP, globalSettingToMidmenu, globalSettingToRigntPanel, globalSettingGetMidmenuId); 
         
     $("#leftmenu_instance_group_header").bind("click", function(event) {  
         showMiddleMenu();
-        clearMiddleMenu(); 
+        clearMiddleMenu();          
+        enableMultipleSelectionInMiddleMenu();  //multiple-selection is needeed for actions like start VM, stop VM, reboot VM.
         var $arrowIcon = $(this).find("#arrow_icon");        
         clickInstanceGroupHeader($arrowIcon);
         return false;
@@ -96,11 +101,48 @@ $(document).ready(function() {
     
     $("#leftmenu_dashboard").bind("click", function(event) {      
         hideMiddleMenu();
-        $("#right_panel").load("jsp/dashboard.jsp", function(){});
+        $("#right_panel").load("jsp/dashboard.jsp", function(){
+            afterLoadDashboardJSP();        
+        });
         return false;
     });
     
+    $("#leftmenu_domain").bind("click", function(event) {  
+        if(selected_leftmenu_id != null && selected_leftmenu_id.length > 0)
+            $("#"+selected_leftmenu_id).removeClass("selected");
+        selected_leftmenu_id = "leftmenu_domain";
+        $(this).addClass("selected");
+        
+        showMiddleMenuWithoutSearch();
+        disableMultipleSelectionInMidMenu();
+        
+        clearLeftMenu();
+        clearMiddleMenu();
+        
+        $("#right_panel").load("jsp/domain.jsp", function(){ 
+            afterLoadDomainJSP();       
+        });     
+        return false;
+    });
     
+    $("#leftmenu_resource").bind("click", function(event) {  
+        if(selected_leftmenu_id != null && selected_leftmenu_id.length > 0)
+            $("#"+selected_leftmenu_id).removeClass("selected");
+        selected_leftmenu_id = "leftmenu_resource";
+        $(this).addClass("selected");
+        
+        showMiddleMenuWithoutSearch();
+        disableMultipleSelectionInMidMenu();
+        
+        clearLeftMenu();
+        clearMiddleMenu();
+                
+        $("#right_panel").load("jsp/resource.jsp", function(){ 
+            afterLoadResourceJSP();       
+        });     
+                
+        return false;
+    });
     
            
     $("#midmenu_action_link").bind("mouseover", function(event) {
@@ -385,7 +427,15 @@ $(document).ready(function() {
 	});
 	$("#dialog_session_expired").siblings(".ui-widget-header").css("background", "url('/client/css/images/ui-bg_errorglass_30_ffffff_1x400.png') repeat-x scroll 50% 50% #393939");
 	$("#dialog_session_expired").siblings(".ui-dialog-buttonpane").find(".ui-state-default").css("background", "url('/client/css/images/ui-bg_errorglass_30_ffffff_1x400.png') repeat-x scroll 50% 50% #393939");
+			
+	$("#dialog_info_please_select_one_item_in_middle_menu").dialog({ 
+		autoOpen: false,
+		modal: true,
+		zIndex: 2000,
+		buttons: { "OK": function() { $(this).dialog("close"); } }
+	});
 	
+	/*
 	$("#dialog_server_error").dialog({ 
 		autoOpen: false,
 		modal: true,
@@ -394,6 +444,7 @@ $(document).ready(function() {
 	});
 	$("#dialog_server_error").siblings(".ui-widget-header").css("background", "url('/client/css/images/ui-bg_errorglass_30_ffffff_1x400.png') repeat-x scroll 50% 50% #393939");
 	$("#dialog_server_error").siblings(".ui-dialog-buttonpane").find(".ui-state-default").css("background", "url('/client/css/images/ui-bg_errorglass_30_ffffff_1x400.png') repeat-x scroll 50% 50% #393939");
+	*/
 	
 	// Menu Tabs
 	$("#global_nav").bind("click", function(event) {
@@ -479,7 +530,7 @@ $(document).ready(function() {
 						var zoneSelect = $("#capacity_zone_select").empty();	
 						if (zones != null && zones.length > 0) {
 							for (var i = 0; i < zones.length; i++) {
-								zoneSelect.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 								
+								zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 								
 								if(noPods) {
 								    $.ajax({
 								data: createURL("command=listPods&zoneId="+zones[i].id+"&response=json"),
@@ -664,7 +715,7 @@ $(document).ready(function() {
 							if (pods != null && pods.length > 0) {
 								podSelect.append("<option value='All'>All</option>"); 
 							    for (var i = 0; i < pods.length; i++) {
-								    podSelect.append("<option value='" + pods[i].name + "'>" + sanitizeXSS(pods[i].name) + "</option>"); 
+								    podSelect.append("<option value='" + pods[i].name + "'>" + fromdb(pods[i].name) + "</option>"); 
 							    }
 							}
 							$("#capacity_pod_select").change();
@@ -685,7 +736,7 @@ $(document).ready(function() {
 							for (var i = 0; i < length; i++) {
 								var errorTemplate = $("#recent_error_template").clone(true);
 								errorTemplate.find("#db_error_type").text(toAlertType(alerts[i].type));
-								errorTemplate.find("#db_error_msg").append(sanitizeXSS(alerts[i].description));											
+								errorTemplate.find("#db_error_msg").append(fromdb(alerts[i].description));											
 								setDateField(alerts[i].sent, errorTemplate.find("#db_error_date"));															
 								alertGrid.append(errorTemplate.show());
 							}
@@ -705,7 +756,7 @@ $(document).ready(function() {
 							for (var i = 0; i < length; i++) {
 								var errorTemplate = $("#recent_error_template").clone(true);
 								errorTemplate.find("#db_error_type").text("Host - Alert State");
-								errorTemplate.find("#db_error_msg").append("Host - <b>" + sanitizeXSS(alerts[i].name) + "</b> has been detected in Alert state.");								
+								errorTemplate.find("#db_error_msg").append("Host - <b>" + fromdb(alerts[i].name) + "</b> has been detected in Alert state.");								
 								setDateField(alerts[i].disconnected, errorTemplate.find("#db_error_date"));											
 								alertGrid.append(errorTemplate.show());
 							}
@@ -783,7 +834,7 @@ $(document).ready(function() {
 							for (var i = 0; i < length; i++) {
 								var errorTemplate = $("#recent_error_template").clone(true);
 								errorTemplate.find("#db_error_type").text(events[i].type);
-								errorTemplate.find("#db_error_msg").text(sanitizeXSS(events[i].description));								
+								errorTemplate.find("#db_error_msg").text(fromdb(events[i].description));								
 								setDateField(events[i].created, errorTemplate.find("#db_error_date"));																
 								errorGrid.append(errorTemplate.show());
 							}
@@ -843,7 +894,7 @@ $(document).ready(function() {
 									for (var i = 0; i < length; i++) {
 										var errorTemplate = $("#recent_error_template").clone(true);
 										errorTemplate.find("#db_error_type").text(events[i].type);
-										errorTemplate.find("#db_error_msg").text(sanitizeXSS(events[i].description));										
+										errorTemplate.find("#db_error_msg").text(fromdb(events[i].description));										
 										setDateField(events[i].created, errorTemplate.find("#db_error_date"));									
 										errorGrid.append(errorTemplate.show());
 									}

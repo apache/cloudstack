@@ -77,7 +77,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final SearchBuilder<HostVO> SequenceSearch;
     protected final SearchBuilder<HostVO> DirectlyConnectedSearch;
     protected final SearchBuilder<HostVO> UnmanagedDirectConnectSearch;
-    protected final GenericSearchBuilder<HostVO, Long> MaintenanceCountSearch;
+    protected final SearchBuilder<HostVO> MaintenanceCountSearch;
     protected final SearchBuilder<HostVO> ClusterSearch;
     
     protected final Attribute _statusAttr;
@@ -88,9 +88,8 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     public HostDaoImpl() {
     
-        MaintenanceCountSearch = createSearchBuilder(Long.class);
-        MaintenanceCountSearch.and("pod", MaintenanceCountSearch.entity().getPodId(), SearchCriteria.Op.EQ);
-        MaintenanceCountSearch.select(null, Func.COUNT, null);
+        MaintenanceCountSearch = createSearchBuilder();
+        MaintenanceCountSearch.and("cluster", MaintenanceCountSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
         MaintenanceCountSearch.and("status", MaintenanceCountSearch.entity().getStatus(), SearchCriteria.Op.IN);
         MaintenanceCountSearch.done();
         
@@ -200,18 +199,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
     
     @Override
-    public long countBy(long podId, Status... statuses) {
-        SearchCriteria<Long> sc = MaintenanceCountSearch.create();
+    public long countBy(long clusterId, Status... statuses) {
+        SearchCriteria<HostVO> sc = MaintenanceCountSearch.create();
         
         sc.setParameters("status", (Object[])statuses);
-        sc.setParameters("pod", podId);
-        
-        List<Long> rs = searchIncludingRemoved(sc, null);
-        if (rs.size() == 0) {
-            return 0;
-        }
-        
-        return rs.get(0);
+        sc.setParameters("cluster", clusterId);
+
+        List<HostVO> hosts = listBy(sc);
+        return hosts.size();
     }
     
     @Override

@@ -57,6 +57,9 @@ public class ListTemplatesCmd extends BaseListCmd {
     @Parameter(name="domainid", type=CommandType.LONG)
     private Long domainId;
 
+    @Parameter(name="hypervisor", type=CommandType.STRING)
+    private String hypervisor;
+
     @Parameter(name="id", type=CommandType.LONG)
     private Long id;
 
@@ -79,6 +82,10 @@ public class ListTemplatesCmd extends BaseListCmd {
 
     public Long getDomainId() {
         return domainId;
+    }
+
+    public String getHypervisor() {
+        return hypervisor;
     }
 
     public Long getId() {
@@ -160,11 +167,15 @@ public class ListTemplatesCmd extends BaseListCmd {
                 if (template.getRemoved() != null) {
                     templateResponse.setRemoved(template.getRemoved());
                 }
+
                 templateResponse.setReady(templateHostRef.getDownloadState()==Status.DOWNLOADED);
                 templateResponse.setFeatured(template.isFeatured());
                 templateResponse.setPasswordEnabled(template.getEnablePassword());
                 templateResponse.setCrossZones(template.isCrossZones());
                 templateResponse.setFormat(template.getFormat());
+                if (template.getTemplateType() != null) {
+                    templateResponse.setTemplateType(template.getTemplateType().toString());
+                }
                 
                 GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
                 if (os != null) {

@@ -48,6 +48,8 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.user.User;
@@ -126,21 +128,17 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 				
 				_configDao.update("secstorage.secure.copy.cert", "realhostip");
 				s_logger.debug("ConfigurationServer made secondary storage copy use realhostip.");					          	         
-			}
-			
-			boolean externalIpAlloator = Boolean.parseBoolean(_configDao.getValue("direct.attach.network.externalIpAllocator.enabled"));
-			String hyperVisor = _configDao.getValue("hypervisor.type");
-			if (hyperVisor.equalsIgnoreCase("KVM") && !externalIpAlloator) {
-				/*For KVM, it's enabled by default*/
+			} else {
+				/*FOSS release, make external DHCP mode as default*/
 				_configDao.update("direct.attach.network.externalIpAllocator.enabled", "true");
 			}
 			
 			// Save Direct Networking service offerings
 			_configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Direct Networking", 1, 512, 500, "Small Instance, Direct Networking, $0.05 per hour", false, false, false, null);			
-			_configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Direct Networking", 1, 1024, 1000, "Medium Instance, Direct Networking, $0.10 per hour", false, false, false, null);			
-			  // Save Virtual Networking service offerings
-            _configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Virtual Networking", 1, 512, 500, "Small Instance, Virtual Networking, $0.05 per hour", false, false, true, null);
-            _configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Virtual Networking", 1, 1024, 1000, "Medium Instance, Virtual Networking, $0.10 per hour", false, false, true, null);
+			_configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Direct Networking", 1, 1024, 1000, "Medium Instance, Direct Networking, $0.10 per hour", false, false, false, null);
+			 // Save Virtual Networking service offerings
+			_configMgr.createServiceOffering(User.UID_SYSTEM, "Small Instance, Virtual Networking", 1, 512, 500, "Small Instance, Virtual Networking, $0.05 per hour", false, false, true, null);
+			_configMgr.createServiceOffering(User.UID_SYSTEM, "Medium Instance, Virtual Networking", 1, 1024, 1000, "Medium Instance, Virtual Networking, $0.10 per hour", false, false, true, null);
 			// Save default disk offerings
 			_configMgr.createDiskOffering(DomainVO.ROOT_DOMAIN, "Small", "Small Disk, 5 GB", 5, null);
 			_configMgr.createDiskOffering(DomainVO.ROOT_DOMAIN, "Medium", "Medium Disk, 20 GB", 20, null);

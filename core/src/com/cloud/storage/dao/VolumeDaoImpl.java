@@ -29,11 +29,14 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.async.AsyncInstanceCreateStatus;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.MirrorState;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeVO;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -42,6 +45,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value=VolumeDao.class) @DB(txn=false)
@@ -62,9 +66,14 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected final SearchBuilder<VolumeVO> RemovedButNotDestroyedSearch;
     protected final SearchBuilder<VolumeVO> PoolIdSearch;
     protected final SearchBuilder<VolumeVO> InstanceAndDeviceIdSearch;
+    protected final SearchBuilder<VolumeVO> InstanceStatesSearch;
+    protected final SearchBuilder<VolumeVO> IdStateSearch;
+    
+    protected final Attribute _stateAttr;
     
     protected static final String SELECT_VM_SQL = "SELECT DISTINCT instance_id from volumes v where v.host_id = ? and v.mirror_state = ?";
     protected static final String SELECT_VM_ID_SQL = "SELECT DISTINCT instance_id from volumes v where v.host_id = ?";
+    protected static final String SELECT_HYPERTYPE_FROM_VOLUME = "SELECT c.hypervisor_type from volumes v, storage_pool s, cluster c where v.pool_id = s.id and s.cluster_id = c.id and v.id = ?";
 
     @Override
     public List<VolumeVO> listRemovedButNotDestroyed() {
@@ -140,6 +149,15 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         sc.setParameters("instanceId", id);
         sc.setParameters("status", AsyncInstanceCreateStatus.Created);
         sc.setParameters("destroyed", false);
+        return listBy(sc);
+    }
+    
+    @Override
+    public List<VolumeVO> findUsableVolumesForInstance(long instanceId) {
+        SearchCriteria<VolumeVO> sc = InstanceStatesSearch.create();
+        sc.setParameters("instance", instanceId);
+        sc.setParameters("states", Volume.State.Creating, Volume.State.Ready, Volume.State.Allocated);
+        
         return listBy(sc);
     }
     
@@ -271,6 +289,48 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     	update(volumeId, volume);
     }
     
+    @Override
+    public boolean update(VolumeVO vol, Volume.Event event) throws ConcurrentOperationException {
+        Volume.State oldState = vol.getState();
+        Volume.State newState = oldState.getNextState(event);
+        
+        assert newState != null : "Event "+  event + " cannot happen from " + oldState; 
+        
+        UpdateBuilder builder = getUpdateBuilder(vol);
+        builder.set(vol, _stateAttr, newState);
+        
+        SearchCriteria<VolumeVO> sc = IdStateSearch.create();
+        sc.setParameters("id", vol.getId());
+        sc.setParameters("state", oldState);
+        
+        int rows = update(builder, sc, null);
+        if (rows != 1) {
+            VolumeVO dbVol = findById(vol.getId()); 
+            throw new ConcurrentOperationException("Unable to update " + vol + ": Old State=" + oldState + "; New State = " + newState + "; DB State=" + dbVol.getState());
+        }
+        return rows == 1;
+    }
+    @DB
+	public HypervisorType getHypervisorType(long volumeId) {
+		/*lookup from cluster of pool*/
+    	 Transaction txn = Transaction.currentTxn();
+         PreparedStatement pstmt = null;
+
+         try {
+             String sql = SELECT_HYPERTYPE_FROM_VOLUME;
+             pstmt = txn.prepareAutoCloseStatement(sql);
+             pstmt.setLong(1, volumeId);
+             ResultSet rs = pstmt.executeQuery();
+             if (rs.next())
+            	 return HypervisorType.getType(rs.getString(1));
+             return HypervisorType.None;
+         } catch (SQLException e) {
+             throw new CloudRuntimeException("DB Exception on: " + SELECT_HYPERTYPE_FROM_VOLUME, e);
+         } catch (Throwable e) {
+             throw new CloudRuntimeException("Caught: " + SELECT_HYPERTYPE_FROM_VOLUME, e);
+         }
+	}
+    
 	protected VolumeDaoImpl() {
         AccountIdSearch = createSearchBuilder();
         AccountIdSearch.and("accountId", AccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
@@ -353,6 +413,19 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         RemovedButNotDestroyedSearch.and("destroyed", RemovedButNotDestroyedSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         RemovedButNotDestroyedSearch.and("removed", RemovedButNotDestroyedSearch.entity().getRemoved(), SearchCriteria.Op.NNULL);
         RemovedButNotDestroyedSearch.done();
+        
+        InstanceStatesSearch = createSearchBuilder();
+        InstanceStatesSearch.and("instance", InstanceStatesSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
+        InstanceStatesSearch.and("states", InstanceStatesSearch.entity().getState(), SearchCriteria.Op.IN);
+        InstanceStatesSearch.done();
+        
+        IdStateSearch = createSearchBuilder();
+        IdStateSearch.and("id", IdStateSearch.entity().getId(), SearchCriteria.Op.EQ);
+        IdStateSearch.and("state", IdStateSearch.entity().getState(), SearchCriteria.Op.EQ);
+        IdStateSearch.done();
+        
+        _stateAttr = _allAttributes.get("state");
+        assert _stateAttr != null : "Couldn't get the state attribute";
 	}
 
 	@Override @DB(txn=false)

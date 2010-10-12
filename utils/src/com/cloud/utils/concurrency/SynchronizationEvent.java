@@ -45,7 +45,7 @@ public class SynchronizationEvent {
 		}		
 	}
 	
-	public boolean waitEvent() {
+	public boolean waitEvent() throws InterruptedException {
 		synchronized(this) {
 			if(signalled)
 				return true;
@@ -57,12 +57,13 @@ public class SynchronizationEvent {
 					return signalled;
 				} catch (InterruptedException e) {
 					s_logger.debug("unexpected awaken signal in wait()");
+					throw e;
 				}
 			}
 		}
 	}
 	
-	public boolean waitEvent(long timeOutMiliseconds) {
+	public boolean waitEvent(long timeOutMiliseconds) throws InterruptedException {
 		synchronized(this) {
 			if(signalled)
 				return true;
@@ -73,7 +74,7 @@ public class SynchronizationEvent {
 			} catch (InterruptedException e) {
 				// TODO, we don't honor time out semantics when the waiting thread is interrupted
 				s_logger.debug("unexpected awaken signal in wait(...)");
-				return false;
+				throw e;
 			}
 		}
 	}

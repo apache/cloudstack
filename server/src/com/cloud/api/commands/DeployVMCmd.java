@@ -62,6 +62,9 @@ public class DeployVMCmd extends BaseAsyncCmd {
     @Parameter(name="group", type=CommandType.STRING)
     private String group;
 
+    @Parameter(name="hypervisor", type=CommandType.STRING)
+    private String hypervisor;
+
     @Parameter(name="networkgrouplist", type=CommandType.LIST, collectionType=CommandType.STRING)
     private List<String> networkGroupList;
 
@@ -106,6 +109,10 @@ public class DeployVMCmd extends BaseAsyncCmd {
 
     public String getGroup() {
         return group;
+    }
+
+    public String getHypervisor() {
+        return hypervisor;
     }
 
     public List<String> getNetworkGroupList() {

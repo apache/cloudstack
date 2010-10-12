@@ -43,6 +43,14 @@ public class SnapshotPolicyDaoImpl extends GenericDaoBase<SnapshotPolicyVO, Long
 		return findOneIncludingRemovedBy(sc);
 	}
 	
+   @Override
+    public SnapshotPolicyVO findOneByVolume(long volumeId) {
+        SearchCriteria<SnapshotPolicyVO> sc = VolumeIdSearch.create();
+        sc.setParameters("volumeId", volumeId);
+        sc.setParameters("active", true);
+        return findOneBy(sc);
+    }
+	
 	@Override
 	public List<SnapshotPolicyVO> listByVolumeId(long volumeId) {
 		return listByVolumeId(volumeId, null);

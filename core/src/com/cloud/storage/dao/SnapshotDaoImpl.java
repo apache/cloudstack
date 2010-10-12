@@ -22,6 +22,7 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -33,6 +34,7 @@ import com.cloud.utils.db.SearchCriteria;
 public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements SnapshotDao {
     
     private final SearchBuilder<SnapshotVO> VolumeIdSearch;
+    private final SearchBuilder<SnapshotVO> VolumeIdTypeSearch;
     private final SearchBuilder<SnapshotVO> ParentIdSearch;
     private final GenericSearchBuilder<SnapshotVO, Long> lastSnapSearch;
     
@@ -42,6 +44,12 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         sc.setParameters("prevSnapshotId", snapshotId);
         return findOneIncludingRemovedBy(sc);
     }
+    
+    @Override
+    public List<SnapshotVO> listByVolumeIdType(long volumeId, String type ) {
+        return listByVolumeIdType(null, volumeId, type);
+    }
+    
 
     @Override
     public List<SnapshotVO> listByVolumeId(long volumeId) {
@@ -54,11 +62,24 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         sc.setParameters("volumeId", volumeId);
         return listBy(sc, filter);
     }
+    
+    
+    public List<SnapshotVO> listByVolumeIdType(Filter filter, long volumeId, String type ) {
+        SearchCriteria<SnapshotVO> sc = VolumeIdTypeSearch.create();
+        sc.setParameters("volumeId", volumeId);
+        sc.setParameters("type", type);
+        return listBy(sc, filter);
+    }
 
     protected SnapshotDaoImpl() {
         VolumeIdSearch = createSearchBuilder();
         VolumeIdSearch.and("volumeId", VolumeIdSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         VolumeIdSearch.done();
+        
+        VolumeIdTypeSearch = createSearchBuilder();
+        VolumeIdTypeSearch.and("volumeId", VolumeIdTypeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        VolumeIdTypeSearch.and("type", VolumeIdTypeSearch.entity().getTypeDescription(), SearchCriteria.Op.EQ);
+        VolumeIdTypeSearch.done();
         
         ParentIdSearch = createSearchBuilder();
         ParentIdSearch.and("prevSnapshotId", ParentIdSearch.entity().getPrevSnapshotId(), SearchCriteria.Op.EQ);

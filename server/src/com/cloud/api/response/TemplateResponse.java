@@ -83,6 +83,12 @@ public class TemplateResponse extends BaseResponse {
     @SerializedName("size")
     private Long size;
 
+    @SerializedName("templatetype")
+    private String templateType;
+
+    @SerializedName("hypervisor")
+    private String hypervisor;
+
     @SerializedName("jobid")
     private Long jobId;
 
@@ -253,6 +259,22 @@ public class TemplateResponse extends BaseResponse {
 
     public void setSize(Long size) {
         this.size = size;
+    }
+
+    public String getTemplateType() {
+        return templateType;
+    }
+
+    public void setTemplateType(String templateType) {
+        this.templateType = templateType;
+    }
+
+    public String getHypervisor() {
+        return hypervisor;
+    }
+
+    public void setHypervisor(String hypervisor) {
+        this.hypervisor = hypervisor;
     }
 
     public Long getJobId() {

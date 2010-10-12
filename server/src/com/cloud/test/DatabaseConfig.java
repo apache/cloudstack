@@ -42,6 +42,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.xml.DOMConfigurator;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -51,11 +52,11 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import com.cloud.host.Status;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
+import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -122,6 +123,7 @@ public class DatabaseConfig {
     	fieldNames.add("ramSize");
     	fieldNames.add("speed");
     	fieldNames.add("useLocalStorage");
+    	fieldNames.add("hypervisorType");
     	fieldNames.add("diskSpace");
     	fieldNames.add("nwRate");
     	fieldNames.add("mcRate");
@@ -332,6 +334,15 @@ public class DatabaseConfig {
     public static void main(String[] args) {
         System.setProperty("javax.xml.parsers.DocumentBuilderFactory", "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl");
         System.setProperty("javax.xml.parsers.SAXParserFactory", "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl");
+        
+        File file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
+        if(file != null) {
+			System.out.println("Log4j configuration from : " + file.getAbsolutePath());
+			DOMConfigurator.configureAndWatch(file.getAbsolutePath(), 10000);
+		} else {
+			System.out.println("Configure log4j with default properties");
+		}
+        
         if (args.length < 1) {
             s_logger.error("error starting database config, missing initial data file");
         } else {
@@ -410,7 +421,6 @@ public class DatabaseConfig {
             // Check pod CIDRs against each other, and against the guest ip network/netmask
             pzc.checkAllPodCidrSubnets();
             
-            txn.commit();
         } catch (Exception ex) {
         	System.out.print("ERROR IS"+ex);
             s_logger.error("error", ex);

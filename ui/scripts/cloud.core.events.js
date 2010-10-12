@@ -111,17 +111,17 @@ function showEventsTab(showEvents) {
 			    var enddate = submenuContent.find("#advanced_search #adv_search_enddate").val();	
 			    var moreCriteria = [];								
 				if (type!=null && trim(type).length > 0) 
-					moreCriteria.push("&type="+encodeURIComponent(trim(type)));		
+					moreCriteria.push("&type="+type);		
 			    if (level!=null && level.length > 0) 
-					moreCriteria.push("&level="+encodeURIComponent(trim(level)));	
+					moreCriteria.push("&level="+level);	
 				if (domainId!=null && domainId.length > 0) 
 					moreCriteria.push("&domainid="+domainId);					
 				if (account!=null && account.length > 0) 
-					moreCriteria.push("&account="+account);					
+					moreCriteria.push("&account="+todb(account));					
 				if (startdate!=null && startdate.length > 0) 
-					moreCriteria.push("&startdate="+encodeURIComponent(startdate));		
+					moreCriteria.push("&startdate="+todb(startdate));		
 				if (enddate!=null && enddate.length > 0) 
-					moreCriteria.push("&enddate="+encodeURIComponent(enddate));		
+					moreCriteria.push("&enddate="+todb(enddate));		
 				commandString = "command=listEvents&page="+currentPage+moreCriteria.join("")+"&response=json";   
 			} else {          	 
                 var searchInput = submenuContent.find("#search_input").val();            
@@ -238,7 +238,7 @@ function showEventsTab(showEvents) {
 		        var type = submenuContent.find("#advanced_search #adv_search_type").val();				       
 		        var moreCriteria = [];								
 			    if (type!=null && trim(type).length > 0) 
-				    moreCriteria.push("&type="+encodeURIComponent(trim(type)));			   
+				    moreCriteria.push("&type="+type);			   
 			    commandString = "command=listAlerts&page="+currentPage+moreCriteria.join("")+"&response=json";     
 		    } else {            
         	    var searchInput = submenuContent.find("#search_input").val();            

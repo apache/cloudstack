@@ -37,8 +37,9 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.storage.Storage.FileSystem;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
@@ -57,6 +58,7 @@ public interface TemplateManager extends Manager {
      * Creates a Template
      * 
      * @param userId the  Id of the user
+     * @param accountId of the template to be created.
      * @param zoneId (optional) the zone to download the template to
      * @param name - user specified name for the template
      * @param displayText user readable name.
@@ -76,6 +78,7 @@ public interface TemplateManager extends Manager {
 //    Long create(long userId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable);
     VMTemplateVO registerTemplate(RegisterTemplateCmd cmd) throws InvalidParameterValueException, URISyntaxException, ResourceAllocationException;
     VMTemplateVO registerIso(RegisterIsoCmd cmd) throws InvalidParameterValueException, IllegalArgumentException, ResourceAllocationException;   
+
     /**
      * Creates a Template
      * 
@@ -94,7 +97,7 @@ public interface TemplateManager extends Manager {
      * @param bootable true if this template will represent a bootable ISO
      * @return id of the template created.
      */
-    Long createInZone(long zoneId, long userId, String displayText, boolean isPublic, boolean featured, ImageFormat format, FileSystem fs, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable);
+    Long createInZone(long zoneId, long userId, String displayText, boolean isPublic, boolean featured, ImageFormat format, TemplateType type, URI url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable);
     
     /**
      * Prepares a template for vm creation for a certain storage pool.
@@ -103,7 +106,7 @@ public interface TemplateManager extends Manager {
      * @param pool pool to make sure the template is ready in.
      * @return VMTemplateStoragePoolVO if preparation is complete; null if not.
      */
-    VMTemplateStoragePoolVO prepareTemplateForCreate(VMTemplateVO template, StoragePoolVO pool);
+    VMTemplateStoragePoolVO prepareTemplateForCreate(VMTemplateVO template, StoragePool pool);
     
     /**
      * Copies a template from its current secondary storage server to the secondary storage server in the specified zone.

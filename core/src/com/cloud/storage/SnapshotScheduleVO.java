@@ -77,14 +77,22 @@ public class SnapshotScheduleVO {
         return policyId;
     }
 
-	/**
+	public void setPolicyId(long policyId) {
+        this.policyId = policyId;
+    }
+
+    /**
 	 * @return the scheduledTimestamp
 	 */
 	public Date getScheduledTimestamp() {
 		return scheduledTimestamp;
 	}
 	
-	public Long getAsyncJobId() {
+	public void setScheduledTimestamp(Date scheduledTimestamp) {
+        this.scheduledTimestamp = scheduledTimestamp;
+    }
+
+    public Long getAsyncJobId() {
 	    return asyncJobId;
 	}
 	

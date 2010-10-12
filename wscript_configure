@@ -144,6 +144,7 @@ except Configure.ConfigurationError,e:
 
 conf.env.AGENTPATH = _join(conf.env.PACKAGE,"agent")
 conf.env.CPPATH = _join(conf.env.PACKAGE,"console-proxy")
+conf.env.IPALLOCATORPATH = _join(conf.env.PACKAGE,"ipallocator")
 conf.env.MSPATH = _join(conf.env.PACKAGE,"management")
 conf.env.USAGEPATH = _join(conf.env.PACKAGE,"usage")
 conf.env.SETUPPATH = _join(conf.env.PACKAGE,"setup")
@@ -259,6 +260,34 @@ conf.env.CLASSPATH = pathsep.join(compilecp)
 conf.check_message_2('Done','GREEN')
 
 # log4j config and property config files require backslash escapes on Windows
+conf.env.VERSION = Utils.g_module.VERSION
+
+conf.env.AGENTLIBDIR = Utils.subst_vars(_join("${LIBDIR}","${AGENTPATH}"),conf.env)
+conf.env.AGENTSYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${AGENTPATH}"),conf.env)
+conf.env.AGENTLOGDIR = Utils.subst_vars(_join("${LOCALSTATEDIR}","log","${AGENTPATH}"),conf.env)
+
+conf.env.USAGELOGDIR = Utils.subst_vars(_join("${LOCALSTATEDIR}","log","${USAGEPATH}"),conf.env)
+conf.env.USAGESYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${USAGEPATH}"),conf.env)
+
+conf.env.CPLIBDIR = Utils.subst_vars(_join("${LIBDIR}","${CPPATH}"),conf.env)
+conf.env.CPSYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${CPPATH}"),conf.env)
+conf.env.CPLOGDIR = Utils.subst_vars(_join("${LOCALSTATEDIR}","log","${CPPATH}"),conf.env)
+
+conf.env.IPALLOCATORLIBDIR = Utils.subst_vars(_join("${LIBDIR}","${IPALLOCATORPATH}"),conf.env)
+conf.env.IPALLOCATORSYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${IPALLOCATORPATH}"),conf.env)
+conf.env.IPALLOCATORLOGDIR = Utils.subst_vars(_join("${LOCALSTATEDIR}","log","${IPALLOCATORPATH}"),conf.env)
+
+conf.env.MSLOG = _join(conf.env.MSLOGDIR,"management-server.log")
+conf.env.APISERVERLOG = _join(conf.env.MSLOGDIR,"api-server.log")
+conf.env.AGENTLOG = _join(conf.env.AGENTLOGDIR,"agent.log")
+conf.env.USAGELOG = _join(conf.env.USAGELOGDIR,"usage.log")
+conf.env.CPLOG = _join(conf.env.CPLOGDIR,"console-proxy.log")
+conf.env.IPALOCATORLOG = _join(conf.env.IPALLOCATORLOGDIR,"ipallocator.log")
+
+conf.env.SETUPDATADIR = Utils.subst_vars(_join("${DATADIR}","${SETUPPATH}"),conf.env)
+
+conf.env.SERVERSYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${SERVERPATH}"),conf.env)
+
 if conf.env.DISTRO in ["Windows"]:
 	for log in "MSLOG APISERVERLOG AGENTLIBDIR USAGELOG AGENTLOG".split(): conf.env[log] = conf.env[log].replace("\\","\\\\")
 

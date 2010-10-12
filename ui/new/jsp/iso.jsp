@@ -28,10 +28,7 @@
             <div class="grid_actionbox" id="action_link">
                 <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                     <ul class="actionsdropdown_boxlist" id="action_list">
-                        <!--  
-                    	<li> <a href="#"> Delete </a> </li>
-                        <li> <a href="#"> Attach Disk </a> </li>
-                        -->
+                        <li><%=t.t("no.available.actions")%></li>
                     </ul>
                 </div>
             </div>
@@ -140,6 +137,16 @@
                     </div>
                 </div>
             </div> 
+            <div class="grid_rows odd">
+                <div class="grid_row_cell" style="width: 20%;">
+                    <div class="row_celltitles">
+                        <%=t.t("crossZones")%>:</div>
+                </div>
+                <div class="grid_row_cell" style="width: 79%;">
+                    <div class="row_celltitles" id="crossZones">
+                    </div>
+                </div>
+            </div>
         </div>        
         <div class="grid_botactionpanel">
         	<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
@@ -150,49 +157,39 @@
 <!-- ISO detail panel (end) -->
 
 <!-- Add ISO Dialog (begin) -->
-<div id="dialog_add_iso" title="Add ISO" style="display:none">
-	<p>Please enter the following data to create your new ISO</p>
+<div id="dialog_add_iso" title="Add ISO" style="display:none">		
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form2">
 			<ol>
 				<li>
-					<label for="user_name">Name:</label>
+					<label><%=t.t("name")%>:</label>
 					<input class="text" type="text" name="add_iso_name" id="add_iso_name" style="width:250px"/>
 					<div id="add_iso_name_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
 				</li>
 				<li>
-					<label for="user_name">Display Text:</label>
+					<label><%=t.t("display.text")%>:</label>
 					<input class="text" type="text" name="add_iso_display_text" id="add_iso_display_text" style="width:250px"/>
 					<div id="add_iso_display_text_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
 				</li>
 				<li>
-					<label for="user_name">URL:</label>
+					<label><%=t.t("URL")%>:</label>
 					<input class="text" type="text" name="add_iso_url" id="add_iso_url" style="width:250px"/>
 					<div id="add_iso_url_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
 				</li>				
 				<li>
-                    <label>Zone:</label>
+                    <label><%=t.t("zone")%>:</label>
                     <select class="select" id="add_iso_zone">
                     </select>
-                </li>					
-				<!--
+                </li>	
 				<li>
-					<label>Public?:</label>
-					<select class="select" id="add_iso_public">
-						<option value="false">No</option>
-						<option value="true">Yes</option>						
-					</select>
-				</li>	
-				-->					
-				<li>
-					<label for="add_iso_public">Bootable:</label>
+					<label for="add_iso_public"><%=t.t("bootable")%>:</label>
 					<select class="select" name="add_iso_bootable" id="add_iso_bootable">
 						<option value="true">Yes</option>
 						<option value="false">No</option>
 					</select>
 				</li>
 				<li>
-					<label for="add_iso_os_type">OS Type:</label>
+					<label for="add_iso_os_type"><%=t.t("os.type")%>:</label>
 					<select class="select" name="add_iso_os_type" id="add_iso_os_type">
 					</select>
 				</li>
@@ -203,13 +200,15 @@
 <!-- Add ISO Dialog (end) -->
 
 <!-- Copy ISO Dialog (begin) -->
-<div id="dialog_copy_iso" title="Copy ISO" style="display:none">
-	<p>Copy ISO <b id="copy_iso_name_text">XXX</b> from zone <b id="copy_iso_source_zone_text">XXX</b> to</p>
+<div id="dialog_copy_iso" title="Copy ISO" style="display:none">	
+    <p>
+	    <%=t.t("copy.ISO.to")%>:	    
+	</p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form4">
 			<ol>				
 				<li>
-                    <label>Zone:</label>
+                    <label><%=t.t("zone")%>:</label>
                     <select class="select" id="copy_iso_zone">  
                         <option value=""></option>                        
                     </select>
@@ -222,28 +221,27 @@
 <!--  Copy ISO Dialog (end) -->
 
 <!-- Create VM from ISO (begin) -->
-<div id="dialog_create_vm_from_iso" title="Create VM from ISO" style="display:none">
-	<p>Create VM from ISO <b id="p_name">xxx</b></p>
+<div id="dialog_create_vm_from_iso" title="Create VM from ISO" style="display:none">	
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form5">
 			<ol>			   
 				<li>
-					<label>Name:</label>
+					<label><%=t.t("name")%>:</label>
 					<input class="text" type="text" id="name"/>
 					<div id="name_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
 				</li>
 				<li>
-					<label>Group:</label>
+					<label><%=t.t("group")%>:</label>
 					<input class="text" type="text" id="group"/>
 					<div id="group_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
 				</li>				
 				<li>
-                    <label>Service Offering:</label>
+                    <label><%=t.t("service.offering")%>:</label>
                     <select class="select" id="service_offering">
                     </select>
                 </li>					
 				<li>
-                    <label>Disk Offering:</label>
+                    <label><%=t.t("disk.offering")%>:</label>
                     <select class="select" id="disk_offering">
                     </select>
                 </li>					
@@ -252,3 +250,16 @@
 	</div>
 </div>
 <!-- Create VM from template/ISO (end) -->
+
+<div id="dialog_confirmation_delete_iso_all_zones" title="Confirmation" style="display:none">
+    <p>
+        <%=t.t("the.ISO.is.used.by.all.zones.please.confirm.you.want.to.delete.it.from.all.zones")%>
+    </p>
+</div>
+
+<div id="dialog_confirmation_delete_iso" title="Confirmation" style="display:none">
+    <p>
+        <%=t.t("please.confirm.you.want.to.delete.the.ISO")%>
+    </p>
+</div>
+

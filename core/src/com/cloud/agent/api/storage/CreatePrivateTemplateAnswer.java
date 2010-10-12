@@ -38,6 +38,10 @@ public class CreatePrivateTemplateAnswer extends Answer {
         _format = format;
     }
 
+    public CreatePrivateTemplateAnswer(Command cmd, boolean success, String result) {
+        super(cmd, success, result);
+    }
+    
     public String getPath() {
         return _path;
     }

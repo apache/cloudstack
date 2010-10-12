@@ -28,7 +28,11 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.Start2Answer;
+import com.cloud.agent.api.Start2Command;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.manager.AgentManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -36,17 +40,25 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.network.NetworkConfigurationVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume.VolumeType;
+import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
@@ -70,6 +82,8 @@ public class MauriceMoss implements VmManager {
     @Inject private AgentManager _agentMgr;
     @Inject private VMInstanceDao _vmDao;
     @Inject private ServiceOfferingDao _offeringDao;
+    @Inject private GuestOSDao _guestOsDao;
+    @Inject private VMTemplateDao _templateDao;
     
     @Inject(adapter=DeploymentPlanner.class)
     private Adapters<DeploymentPlanner> _planners;
@@ -88,8 +102,15 @@ public class MauriceMoss implements VmManager {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Allocating entries for VM: " + vm);
         }
+        
+        // Determine the VM's OS description
+        GuestOSVO guestOS = _guestOsDao.findById(vm.getGuestOSId());
+        if (guestOS == null) {
+            throw new CloudRuntimeException("Guest OS is not set");
+        }
+        
         //VMInstanceVO vm = _vmDao.findById(vm.getId());
-        VirtualMachineProfile vmProfile = new VirtualMachineProfile(vm, serviceOffering);
+        VirtualMachineProfile vmProfile = new VirtualMachineProfile(vm, serviceOffering, guestOS.getDisplayName(), template.getHypervisorType());
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -143,57 +164,12 @@ public class MauriceMoss implements VmManager {
     public <T extends VMInstanceVO> VirtualMachineProfile allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
-            List<NetworkConfigurationVO> networkProfiles,
+            List<Pair<NetworkConfigurationVO, NicProfile>> networks,
             DeploymentPlan plan, 
             AccountVO owner) throws InsufficientCapacityException {
-        List<Pair<NetworkConfigurationVO, NicProfile>> networks = new ArrayList<Pair<NetworkConfigurationVO, NicProfile>>(networkProfiles.size());
-        for (NetworkConfigurationVO profile : networkProfiles) {
-            networks.add(new Pair<NetworkConfigurationVO, NicProfile>(profile, null));
-        }
         return allocate(vm, template, serviceOffering, new Pair<DiskOfferingVO, Long>(serviceOffering, null), null, networks, plan, owner);
     }
     
-    protected VirtualMachineProfile create(VirtualMachineProfile vmProfile, DeploymentPlan plan) throws InsufficientCapacityException {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating actual resources for VM " + vmProfile);
-        }
-        
-        Journal journal = new Journal.LogJournal("Creating " + vmProfile, s_logger);
-
-        Set<DeployDestination> avoids = new HashSet<DeployDestination>();
-        int retry = _retry;
-        while (_retry-- > 0) {
-            DeployDestination context = null;
-            for (DeploymentPlanner dispatcher : _planners) {
-                context = dispatcher.plan(vmProfile, plan, avoids);
-                if (context != null) {
-                    journal.record("Deployment found ", vmProfile, context);
-                    break;
-                }
-            }
-            
-            if (context == null) {
-                throw new CloudRuntimeException("Unable to create a deployment for " + vmProfile);
-            }
-            
-            VMInstanceVO vm = _vmDao.findById(vmProfile.getId());
-
-            vm.setDataCenterId(context.getDataCenter().getId());
-            vm.setPodId(context.getPod().getId());
-            vm.setHostId(context.getHost().getId());
-            _vmDao.update(vm.getId(), vm);
-            
-            _networkMgr.create(vm);
-            _storageMgr.create(vm);
-        }
-        
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creation complete for VM " + vmProfile);
-        }
-        
-        return vmProfile;
-    }
-
     @Override
     public void destroy() {
         // TODO Auto-generated method stub
@@ -233,7 +209,7 @@ public class MauriceMoss implements VmManager {
     }
 
     @Override
-    public <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan) throws InsufficientCapacityException {
+    public <T extends VMInstanceVO> T start(T vm, DeploymentPlan plan, VirtualMachineChecker checker) throws InsufficientCapacityException, ConcurrentOperationException {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating actual resources for VM " + vm);
         }
@@ -241,12 +217,24 @@ public class MauriceMoss implements VmManager {
         Journal journal = new Journal.LogJournal("Creating " + vm, s_logger);
         
         ServiceOffering offering = _offeringDao.findById(vm.getServiceOfferingId());
+        VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
         
-        VirtualMachineProfile vmProfile = new VirtualMachineProfile(vm, offering);
+        BootloaderType bt = BootloaderType.PyGrub;
+        if (template.getFormat() == Storage.ImageFormat.ISO || template.isRequiresHvm()) {
+            bt = BootloaderType.HVM;
+        }
+        
+        // Determine the VM's OS description
+        GuestOSVO guestOS = _guestOsDao.findById(vm.getGuestOSId());
+        if (guestOS == null) {
+            throw new CloudRuntimeException("Guest OS is not set");
+        }
+        VirtualMachineProfile vmProfile = new VirtualMachineProfile(vm, offering, guestOS.getDisplayName(), template.getHypervisorType());
+        _vmDao.updateIf(vm, Event.StartRequested, null);
 
         Set<DeployDestination> avoids = new HashSet<DeployDestination>();
         int retry = _retry;
-        while (retry-- > 0) {
+        while (retry-- != 0) { // It's != so that it can match -1.
             DeployDestination dest = null;
             for (DeploymentPlanner dispatcher : _planners) {
                 dest = dispatcher.plan(vmProfile, plan, avoids);
@@ -263,11 +251,44 @@ public class MauriceMoss implements VmManager {
             
             vm.setDataCenterId(dest.getDataCenter().getId());
             vm.setPodId(dest.getPod().getId());
-            _vmDao.updateIf(vm, Event.StartRequested, dest.getHost().getId());
+            _vmDao.updateIf(vm, Event.OperationRetry, dest.getHost().getId());
+
+            VirtualMachineTO vmTO = new VirtualMachineTO(vmProfile, bt);
+            VolumeTO[] volumes = null;
+            try {
+                volumes = _storageMgr.prepare(vmProfile, dest);
+            } catch (ConcurrentOperationException e) {
+                throw e;
+            } catch (StorageUnavailableException e) {
+                s_logger.warn("Unable to contact storage.", e);
+                continue;
+            }
+            NicTO[] nics = _networkMgr.prepare(vmProfile, dest);
             
-            VirtualMachineTO vmTO = new VirtualMachineTO();
-            _networkMgr.prepare(vmProfile, dest);
-//            _storageMgr.prepare(vm, dest);
+            vmTO.setNics(nics);
+            vmTO.setDisks(volumes);
+            
+            if (checker != null) {
+                checker.finalizeDeployment(vmTO, vmProfile, dest);
+            }
+            
+            Start2Command cmd = new Start2Command(vmTO);
+            try {
+                Start2Answer answer = (Start2Answer)_agentMgr.send(dest.getHost().getId(), cmd);
+                if (answer.getResult()) {
+                    if (!_vmDao.updateIf(vm, Event.OperationSucceeded, dest.getHost().getId())) {
+                        throw new CloudRuntimeException("Unable to transition to a new state.");
+                    }
+                    return vm;
+                }
+                s_logger.info("Unable to start VM on " + dest.getHost() + " due to " + answer.getDetails());
+            } catch (AgentUnavailableException e) {
+                s_logger.debug("Unable to send the start command to host " + dest.getHost());
+                continue;
+            } catch (OperationTimedoutException e) {
+                s_logger.debug("Unable to send the start command to host " + dest.getHost());
+                continue;
+            }
         }
         
         if (s_logger.isDebugEnabled()) {

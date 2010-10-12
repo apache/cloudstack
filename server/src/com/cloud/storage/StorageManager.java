@@ -22,6 +22,7 @@ import java.util.List;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
 import com.cloud.api.commands.CreateStoragePoolCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
@@ -29,10 +30,11 @@ import com.cloud.api.commands.DeletePoolCmd;
 import com.cloud.api.commands.DeleteVolumeCmd;
 import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
-import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -41,6 +43,7 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.user.Account;
@@ -141,7 +144,7 @@ public interface StorageManager extends Manager {
      * @param datacenterId
      * @return absolute ISO path
      */
-	public String getAbsoluteIsoPath(long templateId, long dataCenterId);
+	public Pair<String, String> getAbsoluteIsoPath(long templateId, long dataCenterId);
 	
 	/**
 	 * Returns the URL of the secondary storage host
@@ -221,6 +224,24 @@ public interface StorageManager extends Manager {
 	VolumeVO createVolume(CreateVolumeCmd cmd);
 
 	/**
+	 * Create a volume based on the given criteria
+	 * @param volume
+	 * @param vm
+	 * @param template
+	 * @param dc
+	 * @param pod
+	 * @param clusterId
+	 * @param offering
+	 * @param diskOffering
+	 * @param avoids
+	 * @param size
+	 * @param hyperType
+	 * @return volume VO if success, null otherwise
+	 */
+	VolumeVO createVolume(VolumeVO volume, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, Long clusterId,
+            ServiceOfferingVO offering, DiskOfferingVO diskOffering, List<StoragePoolVO> avoids, long size, HypervisorType hyperType);
+
+	/**
 	 * Marks the specified volume as destroyed in the management server database. The expunge thread will delete the volume from its storage pool.
 	 * @param volume
 	 */
@@ -239,9 +260,9 @@ public interface StorageManager extends Manager {
 	 */
 	boolean volumeOnSharedStoragePool(VolumeVO volume);
 	
-	Answer[] sendToPool(StoragePoolVO pool, Command[] cmds, boolean stopOnError);
+	Answer[] sendToPool(StoragePool pool, Command[] cmds, boolean stopOnError);
 	
-	Answer sendToPool(StoragePoolVO pool, Command cmd);
+	Answer sendToPool(StoragePool pool, Command cmd);
 	
 	/**
 	 * Checks that one of the following is true:
@@ -320,10 +341,10 @@ public interface StorageManager extends Manager {
     <T extends VMInstanceVO> DiskProfile allocateRawVolume(VolumeType type, String name, DiskOfferingVO offering, Long size, T vm, AccountVO owner);
     <T extends VMInstanceVO> DiskProfile allocateTemplatedVolume(VolumeType type, String name, DiskOfferingVO offering, VMTemplateVO template, T vm, AccountVO owner);
     
-    <T extends VMInstanceVO> void create(T vm);
-    Long findHostIdForStoragePool(StoragePoolVO pool);
+    Long findHostIdForStoragePool(StoragePool pool);
 	void createCapacityEntry(StoragePoolVO storagePool, long allocated);
 
     
-    VolumeTO[] prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException;
+    VolumeTO[] prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException;
+    void release(VirtualMachineProfile vm);
 }

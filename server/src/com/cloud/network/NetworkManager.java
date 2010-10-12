@@ -35,6 +35,7 @@ import com.cloud.api.commands.RemoveFromLoadBalancerRuleCmd;
 import com.cloud.api.commands.StartRouterCmd;
 import com.cloud.api.commands.StopRouterCmd;
 import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
+import com.cloud.api.commands.UpgradeRouterCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.VlanVO;
@@ -49,6 +50,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.AccountVO;
@@ -187,7 +189,7 @@ public interface NetworkManager extends Manager {
      * @param so service offering associated with this request
      * @return public ip address.
      */
-    public String assignSourceNatIpAddress(AccountVO account, DataCenterVO dc, String domain, ServiceOfferingVO so, long startEventId) throws ResourceAllocationException;
+    public String assignSourceNatIpAddress(AccountVO account, DataCenterVO dc, String domain, ServiceOfferingVO so, long startEventId, HypervisorType hyperType) throws ResourceAllocationException;
     
     /**
      * @param fwRules list of rules to be updated
@@ -316,8 +318,10 @@ public interface NetworkManager extends Manager {
     List<NicProfile> allocate(VirtualMachineProfile vm, List<Pair<NetworkConfigurationVO, NicProfile>> networks) throws InsufficientCapacityException;
 
     NicTO[] prepare(VirtualMachineProfile profile, DeployDestination dest) throws InsufficientAddressCapacityException, InsufficientVirtualNetworkCapcityException;
+    void release(VirtualMachineProfile vmProfile);
     
     <K extends VMInstanceVO> void create(K vm);
     
     <K extends VMInstanceVO> List<NicVO> getNics(K vm);
+	boolean upgradeRouter(UpgradeRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 }

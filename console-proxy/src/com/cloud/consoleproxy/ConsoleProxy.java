@@ -180,14 +180,14 @@ public class ConsoleProxy {
 		}
 	}
 	
-	public static boolean authenticateConsoleAccess(String vmId, String sid) {
+	public static boolean authenticateConsoleAccess(String host, String port, String vmId, String sid, String ticket) {
 		if(standaloneStart)
 			return true;
 		
 		if(authMethod != null) {
 			Object result;
 			try {
-				result = authMethod.invoke(ConsoleProxy.context, vmId, sid);
+				result = authMethod.invoke(ConsoleProxy.context, host, port, vmId, sid, ticket);
 			} catch (IllegalAccessException e) {
 				s_logger.error("Unable to invoke authenticateConsoleAccess due to IllegalAccessException" + " for vm: " + vmId, e);
 				return false;
@@ -252,7 +252,7 @@ public class ConsoleProxy {
 		ConsoleProxy.context = context;
 		try {
 			Class<?> contextClazz = Class.forName("com.cloud.agent.resource.consoleproxy.ConsoleProxyResource");
-			authMethod = contextClazz.getDeclaredMethod("authenticateConsoleAccess", String.class, String.class);
+			authMethod = contextClazz.getDeclaredMethod("authenticateConsoleAccess", String.class, String.class, String.class, String.class, String.class);
 			reportMethod = contextClazz.getDeclaredMethod("reportLoadInfo", String.class);
 			ensureRouteMethod = contextClazz.getDeclaredMethod("ensureRoute", String.class);
 		} catch (SecurityException e) {
@@ -419,8 +419,8 @@ public class ConsoleProxy {
 		return viewer;
 	}
 	
-	static void initViewer(ConsoleProxyViewer viewer, String host, int port, String tag, String sid) throws AuthenticationException {
-		ConsoleProxyViewer.authenticationExternally(tag, sid);
+	static void initViewer(ConsoleProxyViewer viewer, String host, int port, String tag, String sid, String ticket) throws AuthenticationException {
+		ConsoleProxyViewer.authenticationExternally(host, String.valueOf(port), tag, sid, ticket);
 		
 		viewer.host = host;
 		viewer.port = port;
@@ -430,7 +430,7 @@ public class ConsoleProxy {
 		viewer.init();
 	}
 	
-	static ConsoleProxyViewer getVncViewer(String host, int port, String sid, String tag) throws Exception {
+	static ConsoleProxyViewer getVncViewer(String host, int port, String sid, String tag, String ticket) throws Exception {
 		ConsoleProxyViewer viewer = null;
 		
 		boolean reportLoadChange = false;
@@ -438,7 +438,7 @@ public class ConsoleProxy {
 			viewer = connectionMap.get(host + ":" + port);
 			if (viewer == null) {
 				viewer = createViewer();
-				initViewer(viewer, host, port, tag, sid);
+				initViewer(viewer, host, port, tag, sid, ticket);
 				connectionMap.put(host + ":" + port, viewer);
 				s_logger.info("Added viewer object " + viewer);
 				
@@ -446,12 +446,12 @@ public class ConsoleProxy {
 			} else if (!viewer.rfbThread.isAlive()) {
 				s_logger.info("The rfb thread died, reinitializing the viewer " +
 						viewer);
-				initViewer(viewer, host, port, tag, sid);
+				initViewer(viewer, host, port, tag, sid, ticket);
 				
 				reportLoadChange = true;
 			} else if (!sid.equals(viewer.passwordParam)) {
 				s_logger.warn("Bad sid detected(VNC port may be reused). sid in session: " + viewer.passwordParam + ", sid in request: " + sid);
-				initViewer(viewer, host, port, tag, sid);
+				initViewer(viewer, host, port, tag, sid, ticket);
 				
 				reportLoadChange = true;
 					
@@ -484,7 +484,7 @@ public class ConsoleProxy {
 		return viewer;
 	}
 	
-	static ConsoleProxyViewer getAjaxVncViewer(String host, int port, String sid, String tag) throws Exception {
+	static ConsoleProxyViewer getAjaxVncViewer(String host, int port, String sid, String tag, String ticket, String ajaxSession) throws Exception {
 		boolean reportLoadChange = false;
 		synchronized (connectionMap) {
 			ConsoleProxyViewer viewer = connectionMap.get(host + ":" + port);
@@ -494,25 +494,29 @@ public class ConsoleProxy {
 				viewer = createViewer();
 				viewer.ajaxViewer = true;
 				
-				initViewer(viewer, host, port, tag, sid);
+				initViewer(viewer, host, port, tag, sid, ticket);
 				connectionMap.put(host + ":" + port, viewer);
 				s_logger.info("Added viewer object " + viewer);
 				reportLoadChange = true;
 			} else if (!viewer.rfbThread.isAlive()) {
 				s_logger.info("The rfb thread died, reinitializing the viewer " +
 						viewer);
-				initViewer(viewer, host, port, tag, sid);
+				initViewer(viewer, host, port, tag, sid, ticket);
 				reportLoadChange = true;
 			} else if (!sid.equals(viewer.passwordParam)) {
 				s_logger.warn("Bad sid detected(VNC port may be reused). sid in session: " + viewer.passwordParam + ", sid in request: " + sid);
-				initViewer(viewer, host, port, tag, sid);
+				initViewer(viewer, host, port, tag, sid, ticket);
 				reportLoadChange = true;
 				
 				/*
 				throw new AuthenticationException ("Cannot use the existing viewer " +
 						viewer + ": bad sid");
 				*/
+			} else {
+				if(ajaxSession == null || ajaxSession.isEmpty())
+					ConsoleProxyViewer.authenticationExternally(host, String.valueOf(port), tag, sid, ticket);
 			}
+			
 			if (viewer.status == ConsoleProxyViewer.STATUS_NORMAL_OPERATION) {
 				// Do not update lastUsedTime if the viewer is in the process of starting up
 				// or if it failed to authenticate.

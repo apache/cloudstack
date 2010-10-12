@@ -32,15 +32,10 @@
             <div class="grid_actionbox" id="action_link">
                 <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                     <ul class="actionsdropdown_boxlist" id="action_list">
-                        <!--  
-                    	<li> <a href="#"> Delete </a> </li>
-                        <li> <a href="#"> Attach Disk </a> </li>
-                        -->
+                        <li><%=t.t("no.available.actions")%></li>
                     </ul>
                 </div>
-            </div>
-            <div class="grid_editbox">
-            </div>
+            </div>           
             <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
                 display: none;">
                 <div class="gridheader_loader" id="icon">
@@ -438,3 +433,30 @@
     </div>
 </div>
 <!-- Port Forwarding template (end) -->
+
+<!--  dialogs (begin) -->
+<div id="dialog_confirmation_release_ip" title="Confirmation" style="display:none">
+    <p>
+        <%=t.t("please.confirm.you.want.to.release.this.IP.address")%>
+    </p>
+</div>
+
+<div id="dialog_acquire_public_ip" title="Acquire New IP" style="display: none">
+    <p> 
+        <%=t.t("please.select.an.available.zone.to.associate.your.new.ip.with..acquiring.additional.ip.may.cost.you.an.additional.dollars.per.month.")%>
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form1">
+        <ol>
+            <li>
+                <label>
+                    <%=t.t("zone")%>:</label>
+                <select class="select" name="acquire_zone" id="acquire_zone">
+                    <option value="default"><%=t.t("please.wait")%>....</option>
+                </select>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+<!--  dialogs (end) -->

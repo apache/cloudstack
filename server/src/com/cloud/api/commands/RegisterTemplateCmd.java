@@ -55,6 +55,9 @@ public class RegisterTemplateCmd extends BaseCmd {
     @Parameter(name="format", type=CommandType.STRING, required=true)
     private String format;
 
+    @Parameter(name="hypervisor", type=CommandType.STRING, required=true)
+    private String hypervisor;
+
     @Parameter(name="isfeatured", type=CommandType.BOOLEAN)
     private Boolean featured;
 
@@ -93,6 +96,10 @@ public class RegisterTemplateCmd extends BaseCmd {
 
     public String getFormat() {
         return format;
+    }
+
+    public String getHypervisor() {
+        return hypervisor;
     }
 
     public Boolean isFeatured() {
@@ -148,7 +155,7 @@ public class RegisterTemplateCmd extends BaseCmd {
             zones = new ArrayList<DataCenterVO>();
             zones.add(ApiDBUtils.findZoneById(zoneId));
         } else {
-            zones = ApiDBUtils.listZones();   
+            zones = ApiDBUtils.listZones();
         }
 
         for (DataCenterVO zone : zones) {
@@ -188,6 +195,7 @@ public class RegisterTemplateCmd extends BaseCmd {
 
             templateResponse.setZoneId(zone.getId());
             templateResponse.setZoneName(zone.getName());
+            templateResponse.setHypervisor(template.getHypervisorType().toString());
             templateResponse.setResponseName("template");
 
             responses.add(templateResponse);

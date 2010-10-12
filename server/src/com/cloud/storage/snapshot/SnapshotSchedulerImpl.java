@@ -17,8 +17,6 @@
  */
 package com.cloud.storage.snapshot;
 
-import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -28,23 +26,23 @@ import java.util.TimerTask;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
+import javax.persistence.EntityExistsException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.commands.CreateSnapshotInternalCmd;
+import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.exception.InternalErrorException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceAllocationException;
+import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
-import com.cloud.storage.dao.SnapshotPolicyRefDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.DateUtil;
@@ -56,7 +54,6 @@ import com.cloud.utils.concurrency.TestClock;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 
 /**
  *
@@ -70,7 +67,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
     @Inject protected SnapshotDao             _snapshotDao;
     @Inject protected SnapshotScheduleDao     _snapshotScheduleDao;
     @Inject protected SnapshotPolicyDao       _snapshotPolicyDao;
-    @Inject protected SnapshotPolicyRefDao    _snapshotPolicyRefDao;
+    @Inject protected AsyncJobManager         _asyncMgr;
     @Inject protected SnapshotManager         _snapshotManager;
     @Inject protected StoragePoolHostDao      _poolHostDao; 
     
@@ -197,41 +194,6 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    @DB
-    public SnapshotScheduleVO scheduleManualSnapshot(Long volumeId) {
-        // Check if there is another manual snapshot scheduled which hasn't been executed yet.
-        SearchCriteria<SnapshotScheduleVO> sc = _snapshotScheduleDao.createSearchCriteria();
-        sc.addAnd("volumeId", SearchCriteria.Op.EQ, volumeId);
-        sc.addAnd("policyId", SearchCriteria.Op.EQ, Snapshot.MANUAL_POLICY_ID);
-        
-        List<SnapshotScheduleVO> snapshotSchedules = _snapshotScheduleDao.search(sc, null);
-        if (!snapshotSchedules.isEmpty()) {
-            Date scheduledTimestamp = snapshotSchedules.get(0).getScheduledTimestamp();
-            String dateDisplay = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, scheduledTimestamp);
-            s_logger.error("Can't execute another manual snapshot for volume: " + volumeId + 
-                           " while another manual snapshot for the same volume is being created/backed up. " +
-                           "The older snapshot was scheduled at " + dateDisplay);
-            return null;
-        }
-        
-        SnapshotScheduleVO snapshotSchedule = new SnapshotScheduleVO(volumeId, Snapshot.MANUAL_POLICY_ID, _currentTimestamp);
-        // There is a race condition here. Two threads enter here. 
-        // Both find that there are no manual snapshots for the same volume scheduled.
-        // Both try to schedule. One fails, which is what we wanted anyway.
-        return _snapshotScheduleDao.persist(snapshotSchedule);
-
-        // do this for async?
-        /*
-        List<Long> policyIds = new ArrayList<Long>();
-        policyIds.add(Snapshot.MANUAL_POLICY_ID);
-        return _snapshotManager.createSnapshotAsync(userId, volumeId, policyIds);
-        */
-    }
-    
     @DB
     protected void scheduleSnapshots() {
         String displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, _currentTimestamp);
@@ -239,83 +201,44 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         
         List<SnapshotScheduleVO> snapshotsToBeExecuted = _snapshotScheduleDao.getSchedulesToExecute(_currentTimestamp);
         s_logger.debug("Got " + snapshotsToBeExecuted.size() + " snapshots to be executed at " + displayTime);
-        
-        // The volumes which are going to be snapshotted now.
-        // The value contains the list of policies associated with this new snapshot.
-        // There can be more than one policy for a list if different policies coincide for the same volume.
-        Map<Long, List<Long>> listOfVolumesSnapshotted = new HashMap<Long, List<Long>>();
-        Calendar cal = Calendar.getInstance(DateUtil.GMT_TIMEZONE);
-        cal.add(Calendar.MINUTE, -15);
-        //Skip any snapshots older than 15mins
-        Date graceTime = cal.getTime();
-        
+
+        // This is done for recurring snapshots, which are executed by the system automatically
+        // Hence set user id to that of system
+        long userId = 1;
+
         for (SnapshotScheduleVO snapshotToBeExecuted : snapshotsToBeExecuted) {
-            Date scheduleTime = snapshotToBeExecuted.getScheduledTimestamp();
-            if(scheduleTime.before(graceTime)){
-                s_logger.info("Snapshot schedule older than 15mins. Skipping snapshot for volume: "+snapshotToBeExecuted.getVolumeId());
-                scheduleNextSnapshotJob(snapshotToBeExecuted);
-                continue;
-            }
             long policyId = snapshotToBeExecuted.getPolicyId();
             long volumeId = snapshotToBeExecuted.getVolumeId();
-            List<Long> coincidingPolicies = listOfVolumesSnapshotted.get(volumeId);
-            if (coincidingPolicies != null) {
-                s_logger.debug("The snapshot for this volume " + volumeId + " and policy " + policyId + " has already been sent for execution along with " + coincidingPolicies.size() + " policies in total");
-                // This can happen if this coincided with another schedule with a different policy
-                // It would have added all the coinciding policies for the volume to the Map
-                
-                if (coincidingPolicies.contains(snapshotToBeExecuted.getPolicyId())) {
-                    // Don't need to do anything now. The snapshot is already scheduled for execution.
-                    s_logger.debug("coincidingPolicies contains snapshotToBeExecuted id: " + snapshotToBeExecuted.getId() + ". Don't need to do anything now. The snapshot is already scheduled for execution.");
-                }
-                else {
-                    // This will not happen
-                    s_logger.warn("Snapshot Schedule " + snapshotToBeExecuted.getId() +
-                                  " is ready for execution now at timestamp " + _currentTimestamp +
-                                  " but is not coincident with one being executed for volume " + volumeId);
-                    // Add this to the list of policies for the snapshot schedule
-                    coincidingPolicies.add(snapshotToBeExecuted.getPolicyId());
-                    listOfVolumesSnapshotted.put(volumeId, coincidingPolicies);
-                    
-                }
+            if (s_logger.isDebugEnabled()) {
+                Date scheduledTimestamp = snapshotToBeExecuted.getScheduledTimestamp();
+                displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, scheduledTimestamp);
+                s_logger.debug("Scheduling 1 snapshot for volume " + volumeId + " for schedule id: "
+                        + snapshotToBeExecuted.getId() + " at " + displayTime);
             }
-            else {
-                coincidingPolicies = new ArrayList<Long>();
-                List<SnapshotScheduleVO> coincidingSchedules = _snapshotScheduleDao.getCoincidingSnapshotSchedules(volumeId, _currentTimestamp);
+            long snapshotScheId = snapshotToBeExecuted.getId();
+            SnapshotScheduleVO tmpSnapshotScheduleVO = null;
+            try {
+                tmpSnapshotScheduleVO = _snapshotScheduleDao.acquire(snapshotScheId);
 
-                if (s_logger.isDebugEnabled()) {
-                    Date scheduledTimestamp = snapshotToBeExecuted.getScheduledTimestamp();
-                    displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, scheduledTimestamp);
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("volumeid", ""+volumeId);
+                params.put("policyid", ""+policyId);
+                AsyncJobVO job = new AsyncJobVO();
+                job.setUserId(userId);
+                // Just have SYSTEM own the job for now.  Users won't be able to see this job, but
+                // it's an internal job so probably not a huge deal.
+                job.setAccountId(1L);
+                job.setCmd(CreateSnapshotInternalCmd.class.getName());
+                job.setCmdInfo(GsonHelper.getBuilder().create().toJson(params));
+
+                long jobId = _asyncMgr.submitAsyncJob(job);
+
+                tmpSnapshotScheduleVO.setAsyncJobId(jobId);
+                _snapshotScheduleDao.update(snapshotScheId, tmpSnapshotScheduleVO);
+            } finally {
+                if (tmpSnapshotScheduleVO != null) {
+                    _snapshotScheduleDao.release(snapshotScheId);
                 }
-
-                Transaction txn = Transaction.currentTxn();
-                txn.start();
-                // There are more snapshots scheduled for this volume at the same time.
-                // Club all the policies together and append them to the coincidingPolicies List
-                StringBuilder coincidentSchedules = new StringBuilder();
-                for (SnapshotScheduleVO coincidingSchedule : coincidingSchedules) {
-                    coincidingPolicies.add(coincidingSchedule.getPolicyId());
-                    coincidentSchedules.append(coincidingSchedule.getId() + ", ");
-                }
-                txn.commit();
-
-                s_logger.debug("Scheduling 1 snapshot for volume " + volumeId + " for schedule ids: " + coincidentSchedules + " at " + displayTime);
-                try {
-                    _snapshotManager.createSnapshotImpl(volumeId, coincidingPolicies);
-                } catch (InternalErrorException ex) {
-                    s_logger.warn("Internal error creating a recurring snapshot for volume " + volumeId + "; message: " + ex.getMessage());
-                    // TODO:  update the schedule w/ an error?  error event?
-                } catch (ResourceAllocationException ex) {
-                    s_logger.warn("Too many snapshots have been created for volume " + volumeId + "; message: " + ex.getMessage());
-                    // TODO:  update the schedule w/ an error?  error event?
-                } catch (InvalidParameterValueException ex) {
-                    s_logger.warn("Invalid parameter creating a snapshot for volume " + volumeId + "; message: " + ex.getMessage());
-                    // TODO:  update the schedule w/ an error?  error event?
-                }
-
-                // Add this snapshot to the listOfVolumesSnapshotted
-				// So that the coinciding schedules don't get scheduled again.
-				listOfVolumesSnapshotted.put(volumeId, coincidingPolicies);
             }
         }
     }
@@ -341,9 +264,25 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         long policyId = policyInstance.getId();
         Date nextSnapshotTimestamp = getNextScheduledTime(policyId, _currentTimestamp);
         SnapshotScheduleVO snapshotScheduleVO = new SnapshotScheduleVO(policyInstance.getVolumeId(), policyId, nextSnapshotTimestamp);
-        _snapshotScheduleDao.persist(snapshotScheduleVO);
+        try{
+            _snapshotScheduleDao.persist(snapshotScheduleVO);
+        } catch (EntityExistsException e ) {
+            snapshotScheduleVO = _snapshotScheduleDao.findOneByVolume(policyInstance.getVolumeId());
+            try {
+                snapshotScheduleVO = _snapshotScheduleDao.acquire(snapshotScheduleVO.getId());
+                snapshotScheduleVO.setPolicyId(policyId);
+                snapshotScheduleVO.setScheduledTimestamp(nextSnapshotTimestamp);
+                _snapshotScheduleDao.update(snapshotScheduleVO.getId(), snapshotScheduleVO);
+            } finally {
+                if(snapshotScheduleVO != null ) {
+                    _snapshotScheduleDao.release(snapshotScheduleVO.getId());
+                }
+            }
+        }
         return nextSnapshotTimestamp;
     }
+    
+ 
     
     @Override @DB
     public boolean removeSchedule(Long volumeId, Long policyId) {

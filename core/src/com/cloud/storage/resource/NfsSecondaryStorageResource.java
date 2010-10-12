@@ -431,7 +431,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private void startAdditionalServices() {
     	Script command = new Script("/bin/bash", s_logger);
 		command.add("-c");
-    	command.add("service sshd restart ");
+    	command.add("if [ -f /etc/init.d/ssh ]; then service ssh restart; else service sshd restart; fi ");
     	String result = command.execute();
     	if (result != null) {
     		s_logger.warn("Error in starting sshd service err=" + result );
@@ -556,6 +556,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         // Change permissions for the mountpoint
         script = new Script(!_inSystemVM, "chmod", _timeout, s_logger);
         script.add("777", mountPoint);
+        script.add("-R");
         result = script.execute();
         if (result != null) {
             s_logger.warn("Unable to set permissions for " + mountPoint + " due to " + result);

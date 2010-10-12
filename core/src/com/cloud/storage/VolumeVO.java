@@ -236,6 +236,8 @@ public class VolumeVO implements Volume {
         this.status = AsyncInstanceCreateStatus.Created;
         this.recreatable = false;
     }
+
+    
     
     public boolean isRecreatable() {
         return recreatable;
@@ -245,7 +247,8 @@ public class VolumeVO implements Volume {
 		return iscsiName;
 	}
 
-	public long getId() {
+	@Override
+    public long getId() {
         return id;
 	}
 	
@@ -466,6 +469,10 @@ public class VolumeVO implements Volume {
     public State getState() {
 	    return state;
 	}
+	
+	public void setState(State state) {
+        this.state = state;
+    }
 
     public void setUpdated(Date updated) {
         this.updated = updated;

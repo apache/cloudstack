@@ -25,7 +25,6 @@ public class SnapshotOperationParam {
     private long accountId;
     private long userId;
 	private long snapshotId = 0;
-	private List<Long> policyIds = null;
 	private long policyId = 0;
 	private long volumeId;
 	private String name = null;
@@ -44,11 +43,11 @@ public class SnapshotOperationParam {
 	}
 	
 	// Used to create a snapshot
-    public SnapshotOperationParam(long userId, long accountId, long volumeId, List<Long> policyIds) {
+    public SnapshotOperationParam(long userId, long accountId, long volumeId, long policyId) {
         setUserId(userId);
         setAccountId(accountId);
         setVolumeId(volumeId);
-        this.policyIds = policyIds;
+		this.policyId = policyId;
     }
     
     // Used for CreateVolumeFromSnapshot
@@ -82,10 +81,6 @@ public class SnapshotOperationParam {
 	
 	public void setSnapshotId(long snapshotId) {
 		this.snapshotId = snapshotId;
-	}
-	
-	public List<Long> getPolicyIds() {
-	    return policyIds;
 	}
 	
 	public long getPolicyId() {

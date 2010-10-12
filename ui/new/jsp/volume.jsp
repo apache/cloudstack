@@ -33,15 +33,10 @@
             <div class="grid_actionbox" id="action_link">
                 <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                     <ul class="actionsdropdown_boxlist" id="action_list">
-                        <!--  
-                    	<li> <a href="#"> Delete </a> </li>
-                        <li> <a href="#"> Attach Disk </a> </li>
-                        -->
+                       <li><%=t.t("no.available.actions")%></li>
                     </ul>
                 </div>
-            </div>
-            <div class="grid_editbox">
-            </div>
+            </div>            
             <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
                 display: none;">
                 <div class="gridheader_loader" id="icon">
@@ -582,8 +577,8 @@
                 <label for="volume_vm">
                     Virtual Machine:</label>
                 <select class="select" name="volume_vm" id="volume_vm">
-                    <option value="default">Please wait...</option>
                 </select>
+                <div id="volume_vm_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
             </li>
         </ol>
         </form>
@@ -594,7 +589,7 @@
 <!--  Snapshot tab template (begin) -->
 <div class="grid_container" id="snapshot_tab_template" style="display: none">
     <div class="grid_header">
-        <div class="grid_header_title" id="name">
+        <div class="grid_header_title" id="title">
         </div>
         <div class="grid_actionbox" id="snapshot_action_link">
             <div class="grid_actionsdropdown_box" id="snapshot_action_menu" style="display: none;">

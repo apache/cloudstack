@@ -25,6 +25,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.TableGenerator;
 
 import com.cloud.network.Network.BroadcastDomainType;
 import com.cloud.network.Network.Mode;
@@ -76,6 +77,13 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     @Column(name="state")
     @Enumerated(value=EnumType.STRING)
     State state;
+    
+    @Column(name="dns")
+    String dns;
+    
+    @Column(name="mac_address_seq", updatable=false, nullable=false)
+    @TableGenerator(name="mac_address_seq", table="network_configuration", pkColumnName="id", valueColumnName="mac_address_seq", allocationSize=1)
+    long macAddress = 1;
     
     public NetworkConfigurationVO() {
     }
@@ -183,6 +191,14 @@ public class NetworkConfigurationVO implements NetworkConfiguration {
     @Override
     public long getDataCenterId() {
         return dataCenterId;
+    }
+    
+    public String getDns() {
+        return dns;
+    }
+    
+    public void setDns(String dns) {
+        this.dns = dns;
     }
     
     @Override

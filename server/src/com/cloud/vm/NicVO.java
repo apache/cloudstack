@@ -92,6 +92,9 @@ public class NicVO implements Nic {
     
     @Column(name="update_time")
     Date updateTime;
+    
+    @Column(name="default_nic")
+    boolean defaultNic;
 
     public NicVO(String reserver, long instanceId, long configurationId) {
         this.reserver = reserver;
@@ -121,6 +124,14 @@ public class NicVO implements Nic {
     @Override
     public State getState() {
         return state;
+    }
+    
+    public boolean isDefaultNic() {
+        return defaultNic;
+    }
+    
+    public void setDefaultNic(boolean defaultNic) {
+        this.defaultNic = defaultNic;
     }
     
     public String getIp6Address() {

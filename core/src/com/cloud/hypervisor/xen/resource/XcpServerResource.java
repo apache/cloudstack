@@ -26,4 +26,9 @@ public class XcpServerResource extends CitrixResourceBase {
     public XcpServerResource() {
         super();
     }
+    
+    @Override
+    protected String getGuestOsType(String stdType) {
+    	return CitrixHelper.getXcpGuestOsType(stdType);
+    }
 }

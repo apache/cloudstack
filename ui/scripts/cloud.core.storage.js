@@ -35,10 +35,10 @@ function showStorageTab(domainId, targetTab) {
 			    if (zones != null && zones.length > 0) {
 			        for (var i = 0; i < zones.length; i++) {	
 			            if(isAdmin) {			
-				            poolZoneSelect.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 
-				            hostZoneSelect.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 
+				            poolZoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
+				            hostZoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
 				        }
-				        volumeZoneSelect.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 
+				        volumeZoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
 			        }
 			    }
 				if (isAdmin) {
@@ -58,7 +58,7 @@ function showStorageTab(domainId, targetTab) {
 			    if (offerings != null && offerings.length > 0) {								
 			        if (offerings != null && offerings.length > 0) {
 			            for (var i = 0; i < offerings.length; i++) 				
-				            volumeDiskOfferingSelect.append("<option value='" + offerings[i].id + "'>" + sanitizeXSS(offerings[i].displaytext) + "</option>"); 		
+				            volumeDiskOfferingSelect.append("<option value='" + offerings[i].id + "'>" + fromdb(offerings[i].displaytext) + "</option>"); 		
 				    }	
 				}	
 		    }
@@ -147,7 +147,7 @@ function showStorageTab(domainId, targetTab) {
                     template.fadeIn("slow");	           									
 					    					
 				    $.ajax({
- 					    data: createURL("command=createVolume&zoneId="+zoneId+"&name="+encodeURIComponent(name)+"&diskOfferingId="+diskofferingId+"&accountId="+"1"+"&response=json"), 
+ 					    data: createURL("command=createVolume&zoneId="+zoneId+"&name="+todb(name)+"&diskOfferingId="+diskofferingId+"&accountId="+"1"+"&response=json"), 
 					    dataType: "json",
 					    success: function(json) {						        
 					        var jobId = json.createvolumeresponse.jobid;
@@ -177,7 +177,7 @@ function showStorageTab(domainId, targetTab) {
                                                 });	
 											                                                              
 										    } else if (result.jobstatus == 2) {
-											    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");
+											    $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");
 											    template.slideUp("slow", function() {
 													$(this).remove();
 												});						    
@@ -249,22 +249,22 @@ function showStorageTab(domainId, targetTab) {
 		    template.data("vmname", getVmName(json.vmname, json.vmdisplayname));	
 			template.data("vmstate", json.vmstate);
 		    template.data("domainId", json.domainid);	
-		    template.data("account", sanitizeXSS(json.account));	
-			template.data("volumeName", sanitizeXSS(json.name));
+		    template.data("account", fromdb(json.account));	
+			template.data("volumeName", fromdb(json.name));
 			template.data("vmid", json.virtualmachineid);
 			template.data("zoneId", json.zoneid);
 		    
-		    template.find("#volume_id").text(noNull(json.id));
-		    template.find("#volume_name").text(noNull(json.name));
-			template.find("#volume_zone").text(noNull(json.zonename));
-		    template.find("#volume_account").text(noNull(json.account));
-		    template.find("#volume_deviceid").text(noNull(json.deviceid));
-		    template.find("#volume_domain").text(noNull(json.domain));
-		    template.find("#volume_hostname").text(noNull(json.storage));
-		    template.find("#volume_path").text(noNull(json.path));
-		    template.find("#volume_state").text(noNull(json.state));
+		    template.find("#volume_id").text(fromdb(json.id));
+		    template.find("#volume_name").text(fromdb(json.name));
+			template.find("#volume_zone").text(fromdb(json.zonename));
+		    template.find("#volume_account").text(fromdb(json.account));
+		    template.find("#volume_deviceid").text(fromdb(json.deviceid));
+		    template.find("#volume_domain").text(fromdb(json.domain));
+		    template.find("#volume_hostname").text(fromdb(json.storage));
+		    template.find("#volume_path").text(fromdb(json.path));
+		    template.find("#volume_state").text(fromdb(json.state));
 		    template.find("#volume_size").text((json.size == "0") ? "" : convertBytes(json.size));		    
-		    template.find("#volume_type").text(noNull(json.type) + " (" + noNull(json.storagetype) + " storage)");
+		    template.find("#volume_type").text(fromdb(json.type) + " (" + fromdb(json.storagetype) + " storage)");
 			if (json.virtualmachineid == null) {
 				template.find("#volume_vmname").text("detached");
 			} else {
@@ -309,7 +309,7 @@ function showStorageTab(domainId, targetTab) {
 			    var account = submenuContent.find("#advanced_search #adv_search_account").val();
 			    var moreCriteria = [];								
 				if (name!=null && trim(name).length > 0) 
-					moreCriteria.push("&name="+encodeURIComponent(trim(name)));	
+					moreCriteria.push("&name="+todb(name));	
 			    if (zone!=null && zone.length > 0) 
 					moreCriteria.push("&zoneId="+zone);		
 			    if (pod!=null && pod.length > 0) 
@@ -440,7 +440,7 @@ function showStorageTab(domainId, targetTab) {
 										            } else if (result.jobstatus == 2) {
 										                loadingImg.hide(); 		
 											            rowContainer.show(); 	
-											            $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");											    				    
+											            $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");											    				    
 										            }
 									            }
 								            },
@@ -500,7 +500,7 @@ function showStorageTab(domainId, targetTab) {
 										    } else if (result.jobstatus == 2) {
 										        loadingImg.hide(); 		
 									            rowContainer.show(); 
-											    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");											    					    
+											    $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");											    					    
 										    }
 									    }
 								    },
@@ -567,7 +567,7 @@ function showStorageTab(domainId, targetTab) {
                                                     } else if (result.jobstatus == 2) {		                                                    
                                                         loadingImg.hide();
 														rowContainer.show(); 
-														$("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");            											            										    				    
+														$("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");            											            										    				    
 										            }
 									            }
 								            },
@@ -618,10 +618,6 @@ function showStorageTab(domainId, targetTab) {
 			listSnapshots();
 		});  
 		
-		if (getHypervisorType() == "kvm") {
-		    $("#dialog_add_pool #pool_cluster_container").hide();
-		}
-			
 	    activateDialog($("#dialog_detach_volume").dialog({ 
 		    autoOpen: false,
 		    modal: true,
@@ -1042,7 +1038,7 @@ function showStorageTab(domainId, targetTab) {
 														// Failed	
 														loadingImg.hide(); 								                            
 														rowContainer.show(); 	
-														$("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");
+														$("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");
 													}
 												}
 											},
@@ -1122,7 +1118,7 @@ function showStorageTab(domainId, targetTab) {
 														// Failed		
 														loadingImg.hide(); 								                            
 														rowContainer.show(); 												               										                
-														$("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");
+														$("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");
 													}
 												}
 											},
@@ -1178,7 +1174,7 @@ function showStorageTab(domainId, targetTab) {
 							template.find("#row_container").hide();
 							
 							$.ajax({
-							        data: createURL("command=createTemplate&volumeId="+volumeId+"&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password+"&response=json"),
+							        data: createURL("command=createTemplate&volumeId="+volumeId+"&name="+todb(name)+"&displayText="+todb(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password+"&response=json"),
 								dataType: "json",
 								success: function(json) {
 									$("body").everyTime(
@@ -1199,7 +1195,7 @@ function showStorageTab(domainId, targetTab) {
 														if (result.jobstatus == 1) {
 															$("#dialog_info").html("<p>" + ((isPublic=="true")? "Public":"Private") + " template: " + name + " has been successfully created</p>").dialog("open");
 														} else if (result.jobstatus == 2) {
-															$("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");
+															$("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");
 														}
 													}
 												},
@@ -1265,7 +1261,7 @@ function showStorageTab(domainId, targetTab) {
 													} else if (result.jobstatus == 2) {
 														loadingImg.hide();
 														rowContainer.show(); 
-														$("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");
+														$("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");
 													}
 												}
 											},
@@ -1471,7 +1467,7 @@ function showStorageTab(domainId, targetTab) {
                              template.fadeIn("slow");	                                  
 	                                                
 	                         $.ajax({
-					                 data: createURL("command=createVolume&snapshotid="+snapshotId+"&name="+name+"&response=json"),
+					                 data: createURL("command=createVolume&snapshotid="+snapshotId+"&name="+todb(name)+"&response=json"),
 						         dataType: "json",
 						         success: function(json) {							           								 
 							        var jobId = json.createvolumeresponse.jobid;					        
@@ -1498,7 +1494,7 @@ function showStorageTab(domainId, targetTab) {
                                                             rowContainer.show(); 
                                                         });	                                                                     											                                                               
 										            } else if (result.jobstatus == 2) {										                
-											            $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");												            
+											            $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");												            
 											            template.slideUp("slow", function() {
 													        $(this).remove();
 												        });												            										    				    
@@ -1567,7 +1563,7 @@ function showStorageTab(domainId, targetTab) {
 										    } else if (result.jobstatus == 2) {
 										        loadingImg.hide(); 		
 									            rowContainer.show(); 
-											    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");											    					    
+											    $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");											    					    
 										    }
 									    }
 								    },
@@ -1611,7 +1607,7 @@ function showStorageTab(domainId, targetTab) {
 				             rowContainer.hide(); 	                                  
 	                                                    
 	                         $.ajax({
-					                 data: createURL("command=createTemplate&snapshotid="+snapshotId+"&name="+name+"&displaytext="+displayText+"&ostypeid="+osTypeId+"&passwordEnabled="+password+"&response=json"),
+					             data: createURL("command=createTemplate&snapshotid="+snapshotId+"&name="+todb(name)+"&displaytext="+todb(displayText)+"&ostypeid="+osTypeId+"&passwordEnabled="+password+"&response=json"),
 						         dataType: "json",
 						         success: function(json) {							            					           								 
 							        var jobId = json.createtemplateresponse.jobid;					        
@@ -1634,7 +1630,7 @@ function showStorageTab(domainId, targetTab) {
                                                     } else if (result.jobstatus == 2) {		                                                    
                                                         loadingImg.hide();
 														rowContainer.show(); 
-														$("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");            											            										    				    
+														$("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");            											            										    				    
 										            }
 									            }
 								            },
@@ -1668,11 +1664,11 @@ function showStorageTab(domainId, targetTab) {
 			      		    	    		    
 		    template.attr("id", "volume_snapshot_"+json.id).data("snapshotId", json.id).data("volumeId", json.volumeid);	   
 		    template.find("#id").text(json.id);
-		    template.find("#name").text(json.name);
-		    template.find("#volume").text(json.volumename);	
+		    template.find("#name").text(fromdb(json.name));
+		    template.find("#volume").text(fromdb(json.volumename));	
 		    template.find("#interval_type").text(json.intervaltype);
-		    template.find("#account").text(json.account);
-		    template.find("#domain").text(json.domain);		   		    
+		    template.find("#account").text(fromdb(json.account));
+		    template.find("#domain").text(fromdb(json.domain));		   		    
 		       
 		    setDateField(json.created, template.find("#created"));  		   
 		}	
@@ -1682,11 +1678,11 @@ function showStorageTab(domainId, targetTab) {
 		   			      		    	    		    
 		    template.attr("id", "snapshot_"+json.id).data("snapshotId", json.id);	   
 		    template.find("#id").text(json.id);
-		    template.find("#name").text(json.name);			      
-		    template.find("#volume").text(json.volumename);	
+		    template.find("#name").text(fromdb(json.name));			      
+		    template.find("#volume").text(fromdb(json.volumename));	
 		    template.find("#interval_type").text(json.intervaltype);	    		   
-		    template.find("#account").text(json.account);
-		    template.find("#domain").text(json.domain);
+		    template.find("#account").text(fromdb(json.account));
+		    template.find("#domain").text(fromdb(json.domain));
 		    
 		    setDateField(json.created, template.find("#created"));		    
 	    }	
@@ -1708,16 +1704,16 @@ function showStorageTab(domainId, targetTab) {
 			    template.find("#row_container").addClass("smallrow_odd");
 		    }
 	
-		    template.data("id", json.id).data("name", sanitizeXSS(json.name));
+		    template.data("id", json.id).data("name", fromdb(json.name));
 		    template.find("#pool_id").text(json.id);
-		    template.find("#pool_name").text(json.name);
-		    template.find("#pool_zone").text(json.zonename);
+		    template.find("#pool_name").text(fromdb(json.name));
+		    template.find("#pool_zone").text(fromdb(json.zonename));
 		    template.find("#pool_pod").text(json.podname);
-		    template.find("#pool_cluster").text(json.clustername);
+		    template.find("#pool_cluster").text(fromdb(json.clustername));
 		    template.find("#pool_type").text(json.type);
 		    template.find("#pool_ip").text(json.ipaddress);
 		    template.find("#pool_path").text(json.path);
-		    template.find("#pool_tags").text(json.tags);
+		    template.find("#pool_tags").text(fromdb(json.tags));
 		    
 		    var statHtml = "<strong> Disk Total:</strong> " +convertBytes(json.disksizetotal)+" | <strong>Disk Allocated:</strong> " + convertBytes(json.disksizeallocated);
 		    template.find("#pool_statistics").html(statHtml); 			
@@ -1781,7 +1777,7 @@ function showStorageTab(domainId, targetTab) {
 					var podSelect = $("#dialog_add_pool").find("#pool_pod").empty();	
 					if (pods != null && pods.length > 0) {
 					    for (var i = 0; i < pods.length; i++) {
-						    podSelect.append("<option value='" + pods[i].id + "'>" + sanitizeXSS(pods[i].name) + "</option>"); 
+						    podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 
 					    }
 					}
 					$("#dialog_add_pool").find("#pool_pod").change();
@@ -1801,7 +1797,7 @@ function showStorageTab(domainId, targetTab) {
 		            var items = json.listclustersresponse.cluster;
 		            if(items != null && items.length > 0) {				                		                
 		                for(var i=0; i<items.length; i++) 			                    
-		                    clusterSelect.append("<option value='" + items[i].id + "'>" + items[i].name + "</option>");		                
+		                    clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");		                
 		            }			            
 		        }
 		    });		    
@@ -1879,8 +1875,7 @@ function showStorageTab(domainId, targetTab) {
 					var protocol = thisDialog.find("#add_pool_protocol").val();
 					
 				    var isValid = true;						    
-				    if($("#dialog_add_pool #pool_cluster_container").css("display") != "none")	//if HypervisorType is "kvm", cluster field is hidden. Then, shouldn't validate it.				    
-				        isValid &= validateDropDownBox("Cluster", thisDialog.find("#pool_cluster"), thisDialog.find("#pool_cluster_errormsg"), false);  //required, reset error text					    				
+				    isValid &= validateDropDownBox("Cluster", thisDialog.find("#pool_cluster"), thisDialog.find("#pool_cluster_errormsg"), false);  //required, reset error text					    				
 				    isValid &= validateString("Name", thisDialog.find("#add_pool_name"), thisDialog.find("#add_pool_name_errormsg"));
 				    isValid &= validateString("Server", thisDialog.find("#add_pool_nfs_server"), thisDialog.find("#add_pool_nfs_server_errormsg"));	
 					if (protocol == "nfs") {
@@ -1903,18 +1898,15 @@ function showStorageTab(domainId, targetTab) {
 					
 					var array1 = [];
 				    var name = trim(thisDialog.find("#add_pool_name").val());
-				    array1.push("&name="+encodeURIComponent(name));
+				    array1.push("&name="+todb(name));
 				    
 				    var server = trim(thisDialog.find("#add_pool_nfs_server").val());	
 				    	
 				    var zoneId = thisDialog.find("#pool_zone").val();	
 				    array1.push("&zoneId="+zoneId);
-				    
-				    //if HypervisorType is "kvm", cluster field is hidden.				    
-				    if($("#dialog_add_pool #pool_cluster_container").css("display") != "none") { 
-				        var clusterId = thisDialog.find("#pool_cluster").val();
-				        array1.push("&clusterid="+clusterId);
-				    }
+				    				    
+				    var clusterId = thisDialog.find("#pool_cluster").val();
+				    array1.push("&clusterid="+clusterId);				    
 				    
 					var podId = thisDialog.find("#pool_pod").val();
 					array1.push("&podId="+podId);
@@ -1936,7 +1928,7 @@ function showStorageTab(domainId, targetTab) {
 					
 				    var tags = trim(thisDialog.find("#add_pool_tags").val());
 					if(tags != null && tags.length > 0)
-					    array1.push("&tags="+encodeURIComponent(tags));						
+					    array1.push("&tags="+todb(tags));						
 										    
 				    thisDialog.dialog("close");
 				    
@@ -1976,15 +1968,15 @@ function showStorageTab(domainId, targetTab) {
 		        var path = submenuContent.find("#advanced_search #adv_search_path").val();				      
 		        var moreCriteria = [];								
 			    if (name!=null && trim(name).length > 0) 
-				    moreCriteria.push("&name="+encodeURIComponent(trim(name)));					   
+				    moreCriteria.push("&name="+todb(name));					   
 		        if (zone!=null && zone.length > 0) 
 				    moreCriteria.push("&zoneId="+zone);	
 				if (pod!=null && pod.length > 0) 
 				    moreCriteria.push("&podId="+pod);	
 				if (ip!=null && trim(ip).length > 0) 
-				    moreCriteria.push("&ipaddress="+encodeURIComponent(trim(ip)));		
+				    moreCriteria.push("&ipaddress="+encodeURIComponent(ip));		
 				if (path!=null && trim(path).length > 0) 
-				    moreCriteria.push("&path="+encodeURIComponent(trim(path)));						       	
+				    moreCriteria.push("&path="+encodeURIComponent(path));						       	
 			    commandString = "command=listStoragePools&page="+currentPage+moreCriteria.join("")+"&response=json";
 		    } else {          			
                 var searchInput = submenuContent.find("#search_input").val();            
@@ -2088,7 +2080,7 @@ function showStorageTab(domainId, targetTab) {
 		    } else {
 			    template.find("#row_container").addClass("smallrow_odd");
 		    }
-		    template.data("hostName", sanitizeXSS(json.name));
+		    template.data("hostName", fromdb(json.name));
 			
 			template.find("#storage_status").text(json.state);
 			template.find("#storage_type").text(json.type);
@@ -2114,7 +2106,7 @@ function showStorageTab(domainId, targetTab) {
 		        var domainId = submenuContent.find("#advanced_search #adv_search_domain").val();
 		        var moreCriteria = [];								
 			    if (name!=null && trim(name).length > 0) 
-				    moreCriteria.push("&name="+encodeURIComponent(trim(name)));				
+				    moreCriteria.push("&name="+todb(name));				
 			    if (state!=null && state.length > 0) 
 				    moreCriteria.push("&state="+state);		
 		        if (zone!=null && zone.length > 0) 

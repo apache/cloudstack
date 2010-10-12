@@ -134,11 +134,7 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
         
         ConfigurationVO config = configurations.get(0);
         String value = config.getValue();
-        
-        if (value == null) {
-        	return "";
-        } else {
-        	return value;
-        }
+        return value;
+       
     }
 }

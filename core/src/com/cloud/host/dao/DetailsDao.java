@@ -28,4 +28,6 @@ public interface DetailsDao extends GenericDao<DetailVO, Long> {
     void persist(long hostId, Map<String, String> details);
     
     DetailVO findDetail(long hostId, String name);
+
+	void deleteDetails(long hostId);
 }

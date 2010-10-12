@@ -22,14 +22,8 @@ public class TemplateInfo {
     String installPath;
     long size;
     long id;
-
     boolean isPublic;
-    
-    public static TemplateInfo getDefaultSystemVmTemplateInfo() {
-        TemplateInfo routingInfo = new TemplateInfo(TemplateConstants.DEFAULT_SYSTEM_VM_TMPLT_NAME, TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH, false);
-        return routingInfo;
-    }
-
+  
     protected TemplateInfo() {
         
     }

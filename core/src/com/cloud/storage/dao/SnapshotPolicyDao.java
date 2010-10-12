@@ -32,4 +32,5 @@ public interface SnapshotPolicyDao extends GenericDao<SnapshotPolicyVO, Long> {
 	List<SnapshotPolicyVO> listByVolumeId(long volumeId, Filter filter);
 	SnapshotPolicyVO findOneByVolumeInterval(long volumeId, short interval);
     List<SnapshotPolicyVO> listActivePolicies();
+    SnapshotPolicyVO findOneByVolume(long volumeId);
 }

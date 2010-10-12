@@ -23,6 +23,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.NetworkRuleConfigVO;
@@ -221,23 +222,28 @@ public class ApiDBUtils {
         return _networkGroupMgr.getNetworkGroupsNamesForVm(vmId);
     }
 
-    public static String getSnapshotIntervalTypes(long snapshotId){
+    public static String getSnapshotIntervalTypes(long snapshotId) {
         String intervalTypes = "";
-        List<SnapshotPolicyVO> policies = _snapMgr.listPoliciesforSnapshot(snapshotId);
-        for (SnapshotPolicyVO policy : policies){
-            if(!intervalTypes.isEmpty()){
+
+        SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
+        if (snapshot.getSnapshotType() == Snapshot.SnapshotType.MANUAL.ordinal()) {
+            return "MANUAL";
+        }
+
+        List<SnapshotPolicyVO> policies = _snapMgr.listPoliciesforVolume(snapshot.getVolumeId());
+        for (SnapshotPolicyVO policy : policies) {
+            if (!intervalTypes.isEmpty()) {
                 intervalTypes += ",";
             }
-            if(policy.getId() == Snapshot.MANUAL_POLICY_ID){
-                intervalTypes+= "MANUAL";
-            }
-            else {
+            if (policy.getId() == Snapshot.MANUAL_POLICY_ID) {
+                intervalTypes += "MANUAL";
+            } else {
                 intervalTypes += DateUtil.getIntervalType(policy.getInterval()).toString();
             }
         }
         return intervalTypes;
     }
-    
+
     public static String getStoragePoolTags(long poolId) {
         return _storageMgr.getStoragePoolTags(poolId);
     }
@@ -403,6 +409,10 @@ public class ApiDBUtils {
         } else {
             return accountVlanMaps.get(0).getAccountId();
         }
+    }
+
+    public static HypervisorType getVolumeHyperType(long volumeId) {
+        return _volumeDao.getHypervisorType(volumeId);
     }
 
     public static List<VMTemplateHostVO> listTemplateHostBy(long templateId, Long zoneId) {

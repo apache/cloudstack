@@ -52,6 +52,7 @@ public class Script implements Callable<String> {
 
     private static final ScheduledExecutorService s_executors = Executors.newScheduledThreadPool(10, new NamedThreadFactory("Script"));
 
+    String _workDir;
     ArrayList<String> _command;
     long _timeout;
     Process _process;
@@ -104,6 +105,10 @@ public class Script implements Callable<String> {
         _command.add(name);
         _command.add(value);
         return this;
+    }
+    
+    public void setWorkDir(String workDir) {
+    	_workDir = workDir;
     }
 
     protected String buildCommandLine(String[] command) {
@@ -159,6 +164,9 @@ public class Script implements Callable<String> {
         try {
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.redirectErrorStream(true);
+            if(_workDir != null) 
+            	pb.directory(new File(_workDir));
+            
             _process = pb.start();
             if (_process == null) {
                 _logger.warn("Unable to execute: " + buildCommandLine(command));

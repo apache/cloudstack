@@ -22,6 +22,9 @@ import java.util.Date;
 import com.google.gson.annotations.SerializedName;
 
 public class AlertResponse extends BaseResponse {
+    @SerializedName("id")
+    private Long id;
+
     @SerializedName("type")
     private Short alertType;
 
@@ -30,6 +33,14 @@ public class AlertResponse extends BaseResponse {
 
     @SerializedName("sent")
     private Date lastSent;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public Short getAlertType() {
         return alertType;

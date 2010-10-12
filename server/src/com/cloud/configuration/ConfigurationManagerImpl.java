@@ -72,6 +72,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.NetworkOffering;
@@ -248,7 +249,18 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 					s_logger.error("netmask " + value + " is not a valid net mask for configuration variable " + name);
 					return "Please enter a valid netmask.";
 				}
-			} else {
+			} else if (range.equals("hypervisorList")) {
+				String [] hypervisors = value.split(",");
+				if (hypervisors == null) {
+					return "Please enter hypervisor list, seperated by comma";
+				}
+				for (String hypervisor : hypervisors) {
+					if (HypervisorType.getType(hypervisor) == HypervisorType.Any || 
+						HypervisorType.getType(hypervisor) == HypervisorType.None) {
+						return "Please enter valid hypervisor type";
+					}
+				}
+    		} else {
 				String [] options = range.split(",");
 				for( String option : options) {
 					if( option.trim().equals(value) ) {
@@ -873,7 +885,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	if (vnetRange != null) {
     		String[] tokens = vnetRange.split("-");
 	    	int begin = Integer.parseInt(tokens[0]);
-	    	int end = tokens.length == 1 ? (begin + 1) : Integer.parseInt(tokens[1]);
+	    	int end = tokens.length == 1 ? (begin) : Integer.parseInt(tokens[1]);
 	    	
 	    	_zoneDao.deleteVnet(zoneId);
 	    	_zoneDao.addVnet(zone.getId(), begin, end);
@@ -933,12 +945,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
             String[] tokens = vnetRange.split("-");
             
             try {
-                vnetStart = Integer.parseInt(tokens[0]);
-                if (tokens.length == 1) {
-                    vnetEnd = vnetStart + 1;
-                } else {
-                    vnetEnd = Integer.parseInt(tokens[1]);
-                }
+            	vnetStart = Integer.parseInt(tokens[0]);
+            	if (tokens.length == 1) {
+            		vnetEnd = vnetStart;
+            	} else {
+            		vnetEnd = Integer.parseInt(tokens[1]);
+            	}
             } catch (NumberFormatException e) {
                 throw new InvalidParameterValueException("Please specify valid integers for the vlan range.");
             }

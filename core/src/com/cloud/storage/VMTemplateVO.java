@@ -32,8 +32,10 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.cloud.async.AsyncInstanceCreateStatus;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.FileSystem;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.utils.db.GenericDao;
 import com.google.gson.annotations.Expose;
 import com.cloud.storage.Storage;
@@ -63,7 +65,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     private boolean featured;
     
     @Column(name="type")
-    private FileSystem fileSystem = null;
+    private Storage.TemplateType templateType;
     
     @Column(name="url")
     private String url = null;
@@ -105,6 +107,10 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     
     @Column(name="cross_zones")
     private boolean crossZones = false;
+    
+    @Column(name="hypervisor_type")
+    private String hypervisorType;
+    
 
 	public String getUniqueName() {
 		return uniqueName;
@@ -120,16 +126,16 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 	/**
 	 * Proper constructor for a new vm template.
 	 */
-    public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, FileSystem fs, String url, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable) {
-	    this(id, generateUniqueName(id, accountId, name), name, format, isPublic, featured, fs, url, null, requiresHvm, bits, accountId, cksum, displayText, enablePassword, guestOSId, bootable);
+    public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, TemplateType type, String url, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
+	    this(id, generateUniqueName(id, accountId, name), name, format, isPublic, featured, type, url, null, requiresHvm, bits, accountId, cksum, displayText, enablePassword, guestOSId, bootable, hyperType);
     }
 
-	public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, FileSystem fs, String url, Date created, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable) {
+	public VMTemplateVO(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, TemplateType type, String url, Date created, boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hyperType) {
 	    this.id = id;
 	    this.name = name;
 	    this.publicTemplate = isPublic;
 	    this.featured = featured;
-	    this.fileSystem = fs;
+	    this.templateType = type;
 	    this.url = url;
 	    this.requiresHvm = requiresHvm;
 	    this.bits = bits;
@@ -142,6 +148,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 	    this.created = created;
 	    this.guestOSId = guestOSId;
 	    this.bootable = bootable;
+	    this.hypervisorType = hyperType.toString();
     }
 	
 	public boolean getEnablePassword() {
@@ -175,13 +182,12 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 		return id;
 	}
 	
-	@Override
-	public FileSystem getFileSystem() {
-	    return fileSystem;
+	public TemplateType getTemplateType() {
+	    return templateType;
 	}
 	
-	public void setFileSystem(FileSystem fs) {
-		this.fileSystem = fs;
+	public void setTemplateType(TemplateType type) {
+		this.templateType = type;
 	}
 	
 	public boolean requiresHvm() {
@@ -289,6 +295,14 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 	public boolean isCrossZones() {
 		return crossZones;
 	}
+	
+	public HypervisorType getHypervisorType() {
+		return HypervisorType.getType(hypervisorType);
+	}
+	
+	public void setHypervisorType(HypervisorType hyperType) {
+		hypervisorType = hyperType.toString();
+	}
 
 	@Override
 	public boolean equals(Object that) {
@@ -299,8 +313,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 		}
 		VMTemplateVO other = (VMTemplateVO)that;
 		
-		return (this.getUniqueName().equals(other.getUniqueName()));
-		
+		return ((this.getUniqueName().equals(other.getUniqueName())));		
 	}
 
 	@Override

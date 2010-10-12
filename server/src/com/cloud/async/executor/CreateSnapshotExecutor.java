@@ -18,22 +18,15 @@
 
 package com.cloud.async.executor;
 
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseCmd;
 import com.cloud.async.AsyncJobManager;
-import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.SnapshotType;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.Account;
 import com.google.gson.Gson;
 
@@ -55,8 +48,12 @@ public class CreateSnapshotExecutor extends BaseAsyncJobExecutor {
 		} else {
 	    	SnapshotOperationParam param = gson.fromJson(job.getCmdInfo(), SnapshotOperationParam.class);
 	    	SnapshotManager snapshotManager = asyncMgr.getExecutorContext().getSnapshotMgr();
+	    	ManagementServer managementServer = getAsyncJobMgr().getExecutorContext().getManagementServer();
+	    	VolumeDao volumeDao = asyncMgr.getExecutorContext().getVolumeDao();
 	    	long volumeId = param.getVolumeId();
-	    	List<Long> policyIds = param.getPolicyIds();
+	    	long policyId = param.getPolicyId();
+	    	long startEventId = param.getEventId();
+	    	
 	    	long snapshotId = 0;
 	    	long userId = param.getUserId();
 	    	
@@ -66,34 +63,49 @@ public class CreateSnapshotExecutor extends BaseAsyncJobExecutor {
             int result = AsyncJobResult.STATUS_FAILED;
             int errorCode = BaseCmd.INTERNAL_ERROR;
             Object resultObject = "Failed to create snapshot.";
+            VolumeVO vol = null;
             
 	    	try {
-	    	    SnapshotVO snapshot = snapshotManager.createSnapshot(userId, param.getVolumeId(), param.getPolicyIds());
-
-		    	if (snapshot != null && snapshot.getStatus() == Snapshot.Status.CreatedOnPrimary) {
-				    snapshotId = snapshot.getId();
-				    asyncMgr.updateAsyncJobStatus(jobId, BaseCmd.PROGRESS_INSTANCE_CREATED, snapshotId);
-				    backedUp = snapshotManager.backupSnapshotToSecondaryStorage(userId, snapshot);
-				    if (backedUp) {
-				        result = AsyncJobResult.STATUS_SUCCEEDED;
-				        errorCode = 0; // Success
-				        resultObject = composeResultObject(snapshot);
-				    }
-				    else {
-				        // More specific error
-				        resultObject = "Created snapshot: " + snapshotId + " on primary but failed to backup on secondary";
-				    }
-				}
+	    		vol = volumeDao.acquire(volumeId, 10);
+	    		if( vol != null) {
+	    		    managementServer.saveStartedEvent(userId, vol.getAccountId(), EventTypes.EVENT_SNAPSHOT_CREATE, "Start creating snapshot for volume:"+volumeId, startEventId);
+		    	    SnapshotVO snapshot = snapshotManager.createSnapshot(userId, volumeId, policyId);
+	
+			    	if (snapshot != null && snapshot.getStatus() == Snapshot.Status.CreatedOnPrimary) {
+					    snapshotId = snapshot.getId();
+					    asyncMgr.updateAsyncJobStatus(jobId, BaseCmd.PROGRESS_INSTANCE_CREATED, snapshotId);
+					    backedUp = snapshotManager.backupSnapshotToSecondaryStorage(userId, snapshot, startEventId);
+					    if (backedUp) {
+					        result = AsyncJobResult.STATUS_SUCCEEDED;
+					        errorCode = 0; // Success
+					        resultObject = composeResultObject(snapshot);
+					    }
+					    else {
+					        // More specific error
+					        resultObject = "Created snapshot: " + snapshotId + " on primary but failed to backup on secondary";
+					    }
+					} else if (snapshot != null && snapshot.getStatus() == Snapshot.Status.EmptySnapshot) {
+					    resultObject ="There is no change since last snapshot, please use last snapshot";
+		                   s_logger.warn(resultObject);
+					}
+	    		} else {
+	    			resultObject = "Another snapshot is being created for " + volumeId + " try another time ";
+		    		s_logger.warn(resultObject);
+	    		}
 			} catch(Exception e) {
 	    	    resultObject = "Unable to create snapshot: " + e.getMessage();
 	    		s_logger.warn(resultObject, e);
+	    	} finally {
+	    		if( vol != null ){
+	    			volumeDao.release(volumeId);
+	    		}
 	    	}
 
 			// In all cases, ensure that we call completeAsyncJob to the asyncMgr.
 	    	asyncMgr.completeAsyncJob(jobId, result, errorCode, resultObject);
 	    	
 	    	// Cleanup jobs to do after the snapshot has been created.
-	    	snapshotManager.postCreateSnapshot(userId, volumeId, snapshotId, policyIds, backedUp);
+	    	snapshotManager.postCreateSnapshot(userId, volumeId, snapshotId, policyId, backedUp);
 	    	return true;
 		}
 		*/

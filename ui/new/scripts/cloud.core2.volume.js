@@ -62,7 +62,7 @@ function afterLoadVolumeJSP() {
 		    var volumeZoneSelect = $("#dialog_add_volume").find("#volume_zone").empty();			
 		    if (zones != null && zones.length > 0) {
 		        for (var i = 0; i < zones.length; i++) {
-			        volumeZoneSelect.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 
+			        volumeZoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
 		        }
 		    }				
 	    }
@@ -77,7 +77,7 @@ function afterLoadVolumeJSP() {
 		    if (offerings != null && offerings.length > 0) {								
 		        if (offerings != null && offerings.length > 0) {
 		            for (var i = 0; i < offerings.length; i++) 				
-			            volumeDiskOfferingSelect.append("<option value='" + offerings[i].id + "'>" + sanitizeXSS(offerings[i].displaytext) + "</option>"); 		
+			            volumeDiskOfferingSelect.append("<option value='" + offerings[i].id + "'>" + fromdb(offerings[i].displaytext) + "</option>"); 		
 			    }	
 			}	
 	    }
@@ -105,7 +105,7 @@ function afterLoadVolumeJSP() {
 				var $midmenuItem1 = beforeAddingMidMenuItem() ;
 				    					
 			    $.ajax({
-				    data: createURL("command=createVolume&zoneId="+zoneId+"&name="+encodeURIComponent(name)+"&diskOfferingId="+diskofferingId+"&accountId="+"1"), 
+				    data: createURL("command=createVolume&zoneId="+zoneId+"&name="+todb(name)+"&diskOfferingId="+diskofferingId+"&accountId="+"1"), 
 				    dataType: "json",
 				    success: function(json) {						        
 				        var jobId = json.createvolumeresponse.jobid;				        
@@ -362,24 +362,12 @@ function afterLoadVolumeJSP() {
 	    }		    
 	});	
 	// *** recurring snapshot dialog - event binding (end) ******************************	    
-     
-    //***** switch to different tab (begin) ********************************************************************
-    $("#tab_details").bind("click", function(event){
-        $(this).removeClass("off").addClass("on");
-        $("#tab_snapshot").removeClass("on").addClass("off");  
-        $("#tab_content_details").show();     
-        $("#tab_content_snapshot").hide();   
-        return false;
-    });
-    
-    $("#tab_snapshot").bind("click", function(event){
-        $(this).removeClass("off").addClass("on");
-        $("#tab_details").removeClass("on").addClass("off");   
-        $("#tab_content_snapshot").show();    
-        $("#tab_content_details").hide();    
-        return false;
-    });
-    //***** switch to different tab (end) ********************************************************************** 
+         
+    //***** switch between different tabs (begin) ********************************************************************
+    var tabArray = ["tab_details", "tab_snapshot"];
+    var tabContentArray = ["tab_content_details", "tab_content_snapshot"];
+    switchBetweenDifferentTabs(tabArray, tabContentArray);       
+    //***** switch between different tabs (end) **********************************************************************    
 }
 
 function volumeAfterDetailsTabAction(jsonObj) {
@@ -434,8 +422,9 @@ function volumeJsonToDetailsTab(jsonObj){
     
     if(jsonObj.state != "Creating" && jsonObj.state != "Corrupted" && jsonObj.name != "attaching") {
         if(jsonObj.type=="ROOT") {
-            if (jsonObj.vmstate == "Stopped")  
-                buildActionLinkForDetailsTab("Create Template", volumeActionMap, $actionMenu, volumeListAPIMap);	//show create template
+            if (jsonObj.vmstate == "Stopped") { 
+                //buildActionLinkForDetailsTab("Create Template", volumeActionMap, $actionMenu, volumeListAPIMap);	//backend of CreateTemplateFromVolume is not working. Hide the option from UI until backend is fixed.
+            }
         } 
         else { 
 	        if (jsonObj.virtualmachineid != null) {
@@ -476,15 +465,15 @@ function  volumeJsonToVolumeTab(jsonObj) {
 } 
  
 function volumeSnapshotJSONToTemplate(jsonObj, template) {
-    template.data("jsonObj", jsonObj);       
-    
-    template.attr("id", "volume_snapshot_"+jsonObj.id).data("volumeSnapshotId", jsonObj.id);	   
+    template.data("jsonObj", jsonObj);     
+    template.attr("id", "volume_snapshot_"+jsonObj.id).data("volumeSnapshotId", jsonObj.id);    
+    template.find("#title").text(fromdb(jsonObj.name));			   
     template.find("#id").text(jsonObj.id);
-    template.find("#name").text(jsonObj.name);			      
-    template.find("#volumename").text(jsonObj.volumename);	
+    template.find("#name").text(fromdb(jsonObj.name));			      
+    template.find("#volumename").text(fromdb(jsonObj.volumename));	
     template.find("#intervaltype").text(jsonObj.intervaltype);	    		   
-    template.find("#account").text(jsonObj.account);
-    template.find("#domain").text(jsonObj.domain);    
+    template.find("#account").text(fromdb(jsonObj.account));
+    template.find("#domain").text(fromdb(jsonObj.domain));    
     setDateField(jsonObj.created, template.find("#created"));	 
 	
 	var $actionLink = template.find("#snapshot_action_link");		
@@ -561,7 +550,7 @@ var volumeActionMap = {
         afterActionSeccessFn: function(){}   
     },
     "Recurring Snapshot": {                 
-        customActionFn : doRecurringSnapshot 
+        dialogBeforeActionFn : doRecurringSnapshot 
     }   
 }   
 
@@ -594,7 +583,7 @@ function doCreateTemplateFromVolume($actionLink, listAPIMap, $detailsTab) {
             var password = thisDialog.find("#create_template_password").val();				
 			
 			var id = $detailsTab.data("jsonObj").id;			
-			var apiCommand = "command=createTemplate&volumeId="+id+"&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
+			var apiCommand = "command=createTemplate&volumeId="+id+"&name="+todb(name)+"&displayText="+todb(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password;
 	    	doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);					
 		}, 
 		"Cancel": function() { 
@@ -821,16 +810,18 @@ function doAttachDisk($actionLink, listAPIMap, $detailsTab) {
 	    
     $("#dialog_attach_volume")					
     .dialog('option', 'buttons', { 					    
-	    "Confirm": function() { 	       
-	        var thisDialog = $(this);
-	        thisDialog.dialog("close"); 	
+	    "OK": function() { 	
+	        var $thisDialog = $(this);
+		    				
+			var isValid = true;				
+			isValid &= validateDropDownBox("Virtual Machine", $thisDialog.find("#volume_vm"), $thisDialog.find("#volume_vm_errormsg"));	
+			if (!isValid) 
+			    return;
+			    
+			$thisDialog.dialog("close");	     
 	        
-	        var virtualMachineId = thisDialog.find("#volume_vm").val();		
-	        if(virtualMachineId == null)  {	           
-	            $("#dialog_alert").html("<p>Please attach volume to a valid virtual machine</p>").dialog("open");
-	            return;					            
-	        }	
-	    	
+	        var virtualMachineId = $thisDialog.find("#volume_vm").val();		
+	        	    	
 	    	var id = jsonObj.id;			
 			var apiCommand = "command=attachVolume&id="+id+'&virtualMachineId='+virtualMachineId;
 	    	doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);		
@@ -861,8 +852,10 @@ var volumeSnapshotActionMap = {
         isAsyncJob: true,
         asyncJobResponse: "deletesnapshotresponse",        
         inProcessText: "Deleting snapshot....",
-        afterActionSeccessFn: function(id) { 
-            $("#volume_snapshot_"+id).remove();
+        afterActionSeccessFn: function(id) {             
+            $("#volume_snapshot_"+id).slideUp("slow", function() {
+                $(this).remove();
+            });
         }
     } 
     ,
@@ -892,7 +885,7 @@ function doCreateVolumeFromSnapshotInVolumePage($actionLink, listAPIMap, $subgri
          var name = thisDialog.find("#name").val();	                
          
          var id = jsonObj.id;
-         var apiCommand = "command=createVolume&snapshotid="+id+"&name="+name;    	
+         var apiCommand = "command=createVolume&snapshotid="+id+"&name="+fromdb(name);    	
     	 doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgridItem);			
      },
      "Cancel": function() {	                         
@@ -921,7 +914,7 @@ function doCreateTemplateFromSnapshotInVolumePage($actionLink, listAPIMap, $subg
          var password = thisDialog.find("#password").val();	                                         
        
          var id = jsonObj.id;
-         var apiCommand = "command=createTemplate&snapshotid="+id+"&name="+name+"&displaytext="+displayText+"&ostypeid="+osTypeId+"&passwordEnabled="+password;    	 
+         var apiCommand = "command=createTemplate&snapshotid="+id+"&name="+todb(name)+"&displaytext="+todb(displayText)+"&ostypeid="+osTypeId+"&passwordEnabled="+password;    	 
     	 doActionToSubgridItem(id, $actionLink, apiCommand, listAPIMap, $subgridItem);				
      },
      "Cancel": function() {	                         

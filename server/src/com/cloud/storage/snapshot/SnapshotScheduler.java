@@ -20,7 +20,6 @@ package com.cloud.storage.snapshot;
 import java.util.Date;
 
 import com.cloud.storage.SnapshotPolicyVO;
-import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.Scheduler;
 
@@ -45,6 +44,4 @@ public interface SnapshotScheduler extends Manager, Scheduler {
      * @return
      */
     boolean removeSchedule(Long volumeId, Long policyId);
-
-    SnapshotScheduleVO scheduleManualSnapshot(Long volumeId);
 }

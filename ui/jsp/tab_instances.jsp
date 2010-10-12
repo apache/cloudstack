@@ -2,6 +2,7 @@
 <%
 long milliseconds = new Date().getTime();
 %>
+<script type="text/javascript" src="scripts/cloud.core.instances.js?t=<%=milliseconds%>"></script>
 
 <!-- Content Panel -->
 <!-- Submenu -->
@@ -137,7 +138,7 @@ long milliseconds = new Date().getTime();
 <!-- VM Instance Template -->
 <div id="vm_instance_template" style="width: 100%; height: auto; float: left; padding: 0;
     margin: 0; display: none">
-    <div class="vm_rows">
+    <div class="vm_rows" id="vm_rows">
         <div class="vm_rows_top">
             <div class="vm_genrows_cell" style="width: 7%;">
                 <div class="admin_vmstatus">
@@ -532,6 +533,13 @@ long milliseconds = new Date().getTime();
                             Availability Zone:</label>
                         <select class="select" id="wizard_zone" name="zone">
                         </select>
+			<label for="wizard_zone">
+                            Hypervisor:</label>
+                        <select class="select" id="wizard_hypervisor" name="hypervisor">
+			  <option value='VmWare'>VMware ESX</option>
+			  <option value='XenServer'>Citrix XenServer</option>
+			  <option value='KVM'>KVM</option>
+                        </select>
                         <div class="rev_tempsearchbox">
                             <form method="post" action="#">
                             <ol>
@@ -816,6 +824,12 @@ long milliseconds = new Date().getTime();
                             <div class="rev_wiz_reviewlabel">
                                 Group:</div>
                             <div class="rev_wiz_reviewanswers" id="wizard_review_group">
+                            </div>
+                        </div>
+			<div class="rev_wiz_reviewlist">
+                            <div class="rev_wiz_reviewlabel">
+                                Hypervisor:</div>
+                            <div class="rev_wiz_reviewanswers" id="wizard_review_hypervisor">
                             </div>
                         </div>
                         <div class="rev_wiz_reviewlist">

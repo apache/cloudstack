@@ -68,6 +68,7 @@ public class ListAlertsCmd extends BaseListCmd {
         List<AlertResponse> alertResponseList = new ArrayList<AlertResponse>();
         for (AlertVO alert : alertList) {
             AlertResponse alertResponse = new AlertResponse();
+            alertResponse.setId(alert.getId());
             alertResponse.setAlertType(alert.getType());
             alertResponse.setDescription(alert.getSubject());
             alertResponse.setLastSent(alert.getLastSent());

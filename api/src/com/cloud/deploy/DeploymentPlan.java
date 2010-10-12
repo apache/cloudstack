@@ -18,10 +18,13 @@
 package com.cloud.deploy;
 
 /**
- * Describes how a VM should be deployed.
+ * Describes how a VM should be deployed.  
  *
  */
 public interface DeploymentPlan {
+    // TODO: This interface is not fully developed.  It really
+    //  should be more complicated than this and allow a 
+    //  number of parameters to be specified.  
     public long getDataCenterId();
     public int getCount();
 }

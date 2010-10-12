@@ -30,6 +30,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
 
@@ -100,7 +101,7 @@ public class ControlNetworkGuru extends AdapterBase implements NetworkGuru {
             InsufficientAddressCapacityException {
         String ip = _dcDao.allocateLinkLocalPrivateIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), vm.getId());
         nic.setIp4Address(ip);
-        nic.setMacAddress("FE:FF:FF:FF:FF:FF");
+        nic.setMacAddress(NetUtils.long2Mac(NetUtils.ip2Long(ip) | (14l << 40)));
         nic.setNetmask("255.255.0.0");
         nic.setFormat(AddressFormat.Ip4);
         

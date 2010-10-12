@@ -48,6 +48,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.http.ConnectionClosedException;
@@ -248,9 +249,10 @@ public class ApiServer implements HttpRequestHandler {
             try {
             	// always trust commands from API port, user context will always be UID_SYSTEM/ACCOUNT_ID_SYSTEM
             	UserContext.registerContext(User.UID_SYSTEM, null, null, Account.ACCOUNT_ID_SYSTEM, null, null, true);
-            	
-                String responseText = handleRequest(parameterMap, true, responseType);
+            	sb.insert(0,"(userId="+User.UID_SYSTEM+ " accountId="+Account.ACCOUNT_ID_SYSTEM+ " sessionId="+null+ ") " );
+                String responseText = handleRequest(parameterMap, true, responseType, sb);
                 sb.append(" 200 " + ((responseText == null) ? 0 : responseText.length()));
+
                 writeResponse(response, responseText, false, responseType);
             } catch (ServerApiException se) {
                 try {
@@ -273,13 +275,12 @@ public class ApiServer implements HttpRequestHandler {
             }
         } finally {
             s_accessLogger.info(sb.toString());
-            
             UserContext.unregisterContext();
         }
     }
 
     @SuppressWarnings("rawtypes")
-    public String handleRequest(Map params, boolean decode, String responseType) throws ServerApiException {
+    public String handleRequest(Map params, boolean decode, String responseType, StringBuffer auditTrailSb) throws ServerApiException {
         String response = null;
         String[] command = null;
         try {
@@ -327,9 +328,12 @@ public class ApiServer implements HttpRequestHandler {
                     cmdObj.setResponseType(responseType);
                     // This is where the command is either serialized, or directly dispatched
                     response = queueCommand(cmdObj, paramMap);
+                    buildAuditTrail(auditTrailSb, command[0], response);
                 } else {
-                    s_logger.warn("unknown API command: " + ((command == null) ? "null" : command[0]));
-                    response = buildErrorResponse("unknown API command: " + ((command == null) ? "null" : command[0]), responseType);
+                    String errorString = " unknown API command: " + ((command == null) ? "null" : command[0]);
+                    s_logger.warn(errorString);
+                    auditTrailSb.append(" " +errorString);
+                    response = buildErrorResponse(errorString, responseType);
                 }
             }
         } catch (Exception ex) {
@@ -398,8 +402,41 @@ public class ApiServer implements HttpRequestHandler {
             return ApiResponseSerializer.toSerializedString(cmdObj.getResponse(), cmdObj.getResponseType());
         }
     }
-
-    public boolean verifyRequest(Map<String, Object[]> requestParameters, Long userId) {
+     
+   private void buildAuditTrail(StringBuffer auditTrailSb, String command, String result) {
+        if (result == null) return;
+        auditTrailSb.append(" " + HttpServletResponse.SC_OK + " ");
+        auditTrailSb.append(result);
+        /*
+        if (command.equals("queryAsyncJobResult")){ //For this command we need to also log job status and job resultcode
+            for (Pair<String,Object> pair : resultValues){
+                String key = pair.first();
+                if (key.equals("jobstatus")){
+                    auditTrailSb.append(" ");
+                    auditTrailSb.append(key);
+                    auditTrailSb.append("=");
+                    auditTrailSb.append(pair.second());
+                }else if (key.equals("jobresultcode")){
+                    auditTrailSb.append(" ");
+                    auditTrailSb.append(key);
+                    auditTrailSb.append("=");
+                    auditTrailSb.append(pair.second());
+                }
+            }
+        }else {
+            for (Pair<String,Object> pair : resultValues){
+                if (pair.first().equals("jobid")){ // Its an async job so report the jobid
+                    auditTrailSb.append(" ");
+                    auditTrailSb.append(pair.first());
+                    auditTrailSb.append("=");
+                    auditTrailSb.append(pair.second());
+                }
+            }
+        }
+        */
+    }
+    
+    public boolean verifyRequest(Map<String, Object[]> requestParameters, String userId) {
         try {
             String apiKey = null;
             String secretKey = null;
@@ -416,7 +453,7 @@ public class ApiServer implements HttpRequestHandler {
             
             //if userId not null, that mean that user is logged in
             if (userId != null) {
-            	Long accountId = _ms.findUserById(userId).getAccountId();
+            	Long accountId = ApiDBUtils.findUserById(Long.valueOf(userId)).getAccountId();
             	Account userAccount = _ms.findAccountById(accountId);
             	short accountType = userAccount.getType();
             	

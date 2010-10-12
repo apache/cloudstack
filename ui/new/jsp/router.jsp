@@ -30,15 +30,10 @@
             <div class="grid_actionbox" id="action_link">
                 <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                     <ul class="actionsdropdown_boxlist" id="action_list">
-                        <!--  
-                    	<li> <a href="#"> Delete </a> </li>
-                        <li> <a href="#"> Attach Disk </a> </li>
-                        -->
+                        <li><%=t.t("no.available.actions")%></li>
                     </ul>
                 </div>
-            </div>
-            <div class="grid_editbox">
-            </div>
+            </div>            
             <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
                 display: none;">
                 <div class="gridheader_loader" id="icon">
@@ -47,17 +42,26 @@
                     Detaching Disk &hellip;</p>
             </div>                  
         </div>
-        <div class="grid_container">
+        <div class="grid_container">            
             <div class="grid_rows odd">
-                <div class="grid_row_cell" style="width: 20%;">
-                    <div class="row_celltitles">
-                        <%=t.t("Status")%>:</div>
-                </div>
-                <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="state">
+                <div class="vm_statusbox">   
+                    <div id="view_console_container">                       
+                    	<div id="view_console_template" style="display:block">
+    						<div class="vm_consolebox" id="box0">
+    						</div>
+   							<div class="vm_consolebox" id="box1" style="display: none">
+    						</div>
+						</div>   
+                    </div>
+                    <div class="vm_status_textbox">
+                        <div class="vm_status_textline green" id="state">
+                        </div>
+                        <br />
+                        <p id="ipAddress">
+                        </p>
                     </div>
                 </div>
-            </div>
+            </div>   
             <div class="grid_rows even">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
@@ -152,3 +156,13 @@
     </div>   
 </div>
 <!-- router detail panel (end) -->
+
+<!-- view console template (begin)  -->
+<div id="view_console_template" style="display:none">
+    <div class="vm_consolebox" id="box0">
+    </div>
+    <div class="vm_consolebox" id="box1" style="display: none">
+    </div>
+</div>
+<!-- view console template (end)  -->
+

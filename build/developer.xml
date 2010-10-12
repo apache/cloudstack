@@ -160,24 +160,8 @@
       <available file="${setup.db.dir}/override/server-setup.xml" />
     </condition>
 
-    <condition property="kvm.templates.file" value="override/templates.kvm.sql" else="templates.kvm.sql">
-      <available file="${setup.db.dir}/override/templates.kvm.sql" />
-    </condition>
-
-    <condition property="xenserver.templates.file" value="override/templates.xenserver.sql" else="templates.xenserver.sql">
-      <available file="${setup.db.dir}/override/templates.xenserver.sql" />
-    </condition>
-
-    <condition property="vmware.templates.file" value="override/templates.vmware.sql" else="templates.vmware.sql">
-      <available file="${setup.db.dir}/override/templates.vmware.sql" />
-    </condition>
-
-    <condition property="templates.file.intermediate" value="${kvm.templates.file}" else="${xenserver.templates.file}" >
-      <isset property="KVM"/>
-    </condition>
-
-    <condition property="templates.file" value="${vmware.templates.file}" else="${templates.file.intermediate}" >
-      <isset property="vmware"/>
+    <condition property="templates.file" value="override/templates.sql" else="templates.sql" >
+    	<available file="${setup.db.dir}/override/templates.sql" />
     </condition>
   	
     <echo message="deploydb ${server-setup.file} ${templates.file} ${DBROOTPW}" />

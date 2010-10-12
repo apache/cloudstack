@@ -31,37 +31,41 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.DomainVO;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
-import com.cloud.storage.template.TemplateConstants;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value={VMTemplateDao.class})
 public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implements VMTemplateDao {
     private static final Logger s_logger = Logger.getLogger(VMTemplateDaoImpl.class);
+    private HypervisorType _defaultHyperType;
     
     @Inject
     VMTemplateZoneDao _templateZoneDao;
+    @Inject
+    ConfigurationDao  _configDao;
 
     private final String SELECT_ALL = "SELECT t.id, t.unique_name, t.name, t.public, t.featured, t.type, t.hvm, t.bits, t.url, t.format, t.created, t.account_id, " +
-                                       "t.checksum, t.display_text, t.enable_password, t.guest_os_id, t.bootable, t.prepopulate, t.cross_zones FROM vm_template t";
-
-    private static final String SELECT_ALL_IN_ZONE =
-		"SELECT t.id, t.unique_name, t.name, t.public, t.featured, t.type, t.hvm, t.bits, t.url, t.format, t.created, t.removed, t.account_id, " +
-		"t.checksum, t.display_text, t.enable_password, t.guest_os_id, t.bootable, t.prepopulate, t.cross_zones FROM vm_template t, template_zone_ref tz where t.removed is null and tz.removed is null and t.id = tz.template_id and tz.zone_id=?  ";
+                                       "t.checksum, t.display_text, t.enable_password, t.guest_os_id, t.bootable, t.prepopulate, t.cross_zones, t.hypervisor_type FROM vm_template t";
     
-    private SearchBuilder<VMTemplateVO> UniqueNameSearch;
-    private SearchBuilder<VMTemplateVO> AccountIdSearch;
-    private SearchBuilder<VMTemplateVO> NameSearch;
+    protected SearchBuilder<VMTemplateVO> TemplateNameSearch;
+    protected SearchBuilder<VMTemplateVO> UniqueNameSearch;
+    protected SearchBuilder<VMTemplateVO> tmpltTypeSearch;
+    protected SearchBuilder<VMTemplateVO> tmpltTypeHyperSearch;
+    protected SearchBuilder<VMTemplateVO> AccountIdSearch;
+    protected SearchBuilder<VMTemplateVO> NameSearch;
+    protected SearchBuilder<VMTemplateVO> TmpltsInZoneSearch;
     private SearchBuilder<VMTemplateVO> PublicSearch;
     private SearchBuilder<VMTemplateVO> NameAccountIdSearch;
 
@@ -100,17 +104,20 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
 	@Override
+	public List<VMTemplateVO> listAllRoutingTemplates() {
+		SearchCriteria<VMTemplateVO> sc = tmpltTypeSearch.create();
+		sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
+		return listBy(sc);
+	}
+
+	@Override
 	public VMTemplateVO findRoutingTemplate() {
-		SearchCriteria<VMTemplateVO> sc = UniqueNameSearch.create();
-		sc.setParameters("uniqueName", routerTmpltName);
-		return findOneIncludingRemovedBy(sc);
+		return findSystemVMTemplate();
 	}
 	
 	@Override
 	public VMTemplateVO findConsoleProxyTemplate() {
-		SearchCriteria<VMTemplateVO> sc = UniqueNameSearch.create();
-		sc.setParameters("uniqueName", consoleProxyTmpltName);
-		return findOneIncludingRemovedBy(sc);
+		return findSystemVMTemplate();
 	}
 	
 	@Override
@@ -139,6 +146,13 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         SearchCriteria<VMTemplateVO> sc = AccountIdSearch.create();
         sc.setParameters("accountId", accountId);
         return listBy(sc);
+	}
+	
+	@Override
+	public List<VMTemplateVO> listByHypervisorType(HypervisorType hyperType) {
+		SearchCriteria<VMTemplateVO> sc = createSearchCriteria();
+		sc.addAnd("hypervisor_type", SearchCriteria.Op.EQ, hyperType.toString());
+		return listBy(sc);
 	}
 
 	@Override
@@ -170,11 +184,30 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		NameAccountIdSearch.and("name", NameAccountIdSearch.entity().getName(), SearchCriteria.Op.EQ);
 		NameAccountIdSearch.and("accountId", NameAccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
 
+		
+		tmpltTypeHyperSearch = createSearchBuilder();
+		tmpltTypeHyperSearch.and("templateType", tmpltTypeHyperSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
+		tmpltTypeHyperSearch.and("hypervisor_type", tmpltTypeHyperSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+		
+		tmpltTypeSearch = createSearchBuilder();
+		tmpltTypeSearch.and("templateType", tmpltTypeSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
+
 		AccountIdSearch = createSearchBuilder();
 		AccountIdSearch.and("accountId", AccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountIdSearch.and("publicTemplate", AccountIdSearch.entity().isPublicTemplate(), SearchCriteria.Op.EQ);
 		AccountIdSearch.done();
-
+		
+		SearchBuilder<VMTemplateZoneVO> tmpltZoneSearch = _templateZoneDao.createSearchBuilder();
+		tmpltZoneSearch.and("removed", tmpltZoneSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+		tmpltZoneSearch.and("zoneId", tmpltZoneSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
+		
+		TmpltsInZoneSearch = createSearchBuilder();
+		TmpltsInZoneSearch.and("removed", TmpltsInZoneSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+		TmpltsInZoneSearch.join("tmpltzone", tmpltZoneSearch, tmpltZoneSearch.entity().getTemplateId(), TmpltsInZoneSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+		tmpltZoneSearch.done();
+		TmpltsInZoneSearch.done();
+			
+		_defaultHyperType = HypervisorType.getType(_configDao.getValue("hypervisor.type"));
 		return result;
 	}
 
@@ -184,7 +217,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	}
 
 	@Override
-	public List<VMTemplateVO> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Account account, DomainVO domain, Integer pageSize, Long startIndex, Long zoneId) {
+	public List<VMTemplateVO> searchTemplates(String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Account account, DomainVO domain, Integer pageSize, Long startIndex, Long zoneId, HypervisorType hyperType) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         List<VMTemplateVO> templates = new ArrayList<VMTemplateVO>();
@@ -200,7 +233,12 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         		accountType = Account.ACCOUNT_TYPE_ADMIN;
         	}
         	
-        	String sql = SELECT_ALL;
+        	String guestOSJoin = "";
+        	if (isIso) {
+        		guestOSJoin = " INNER JOIN guest_os guestOS on (guestOS.id = t.guest_os_id) INNER JOIN guest_os_hypervisor goh on ( goh.guest_os_id = guestOS.id) ";
+        	}
+        	
+        	String sql = SELECT_ALL + guestOSJoin;
         	String whereClause = "";        	
         	
             if (templateFilter == TemplateFilter.featured) {
@@ -235,7 +273,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             	whereClause += " AND ";
             }
             
-            sql += whereClause + getExtrasWhere(templateFilter, name, keyword, isIso, bootable) + getOrderByLimit(pageSize, startIndex);
+            sql += whereClause + getExtrasWhere(templateFilter, name, keyword, isIso, bootable, hyperType) + getOrderByLimit(pageSize, startIndex);
 
             pstmt = txn.prepareStatement(sql);
             rs = pstmt.executeQuery();
@@ -269,7 +307,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         return templates;
 	}
 
-	private String getExtrasWhere(TemplateFilter templateFilter, String name, String keyword, boolean isIso, Boolean bootable) {
+	private String getExtrasWhere(TemplateFilter templateFilter, String name, String keyword, boolean isIso, Boolean bootable, HypervisorType hyperType) {
 	    String sql = "";
         if (keyword != null) {
             sql += " t.name LIKE \"%" + keyword + "%\" AND";
@@ -279,13 +317,21 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
         if (isIso) {
             sql += " t.format = 'ISO'";
+            if (!hyperType.equals(HypervisorType.None)) {
+            	sql += " AND goh.hypervisor_type = '" + hyperType.toString() + "'";
+            }
         } else {
             sql += " t.format <> 'ISO'";
+            if (!hyperType.equals(HypervisorType.None)) {
+            	sql += " AND t.hypervisor_type = '" + hyperType.toString() + "'";
+            }
         }
         
         if (bootable != null) {
         	sql += " AND t.bootable = " + bootable;
         }
+        
+        
 
         sql += " AND t.removed IS NULL";
 
@@ -319,29 +365,41 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	@Override
 	@DB
 	public List<VMTemplateVO> listAllInZone(long dataCenterId) {
-		Transaction txn = Transaction.currentTxn();
-		txn.start();
-		PreparedStatement pstmt = null;
-		List<VMTemplateVO> result = new ArrayList<VMTemplateVO>();
-		try {
-			String sql = SELECT_ALL_IN_ZONE;
-			pstmt = txn.prepareAutoCloseStatement(sql);
-			pstmt.setLong(1, dataCenterId);
-			ResultSet rs = pstmt.executeQuery();
-			while (rs.next()) {
-                result.add(toEntityBean(rs, false));
-            }
-			txn.commit();
-		} catch (SQLException sqle) {
-			s_logger.warn("Exception: ",sqle);
-			throw new CloudRuntimeException("Unable to list templates in zone", sqle);
-		}
-
-		return result;
+		SearchCriteria<VMTemplateVO> sc = TmpltsInZoneSearch.create();
+		sc.setJoinParameters("tmpltzone", "zoneId", dataCenterId);
+		return listBy(sc);
 	}
 
 	@Override
-	public VMTemplateVO findDefaultBuiltinTemplate() {
-		return findById(TemplateConstants.DEFAULT_BUILTIN_VM_DB_ID);
+	public List<VMTemplateVO> listDefaultBuiltinTemplates() {
+		SearchCriteria<VMTemplateVO> sc = tmpltTypeSearch.create();
+		sc.setParameters("templateType", Storage.TemplateType.BUILTIN);
+		return listBy(sc);
+	}
+	
+	private VMTemplateVO findSystemVMTemplate() {
+		SearchCriteria<VMTemplateVO> sc = tmpltTypeHyperSearch.create();
+		sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
+		sc.setParameters("hypervisor_type", _defaultHyperType.toString());
+		VMTemplateVO tmplt = findOneBy(sc);
+		
+		if (tmplt == null) {
+			/*Can't find it? We'd like to prefer xenserver */
+			if (_defaultHyperType != HypervisorType.XenServer) {
+				sc = tmpltTypeHyperSearch.create();
+				sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
+				sc.setParameters("hypervisor_type", HypervisorType.XenServer);
+				tmplt = findOneBy(sc);
+				
+				/*Still can't find it? return a random one*/
+				if (tmplt == null) {
+					sc = tmpltTypeSearch.create();
+					sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
+					tmplt = findOneBy(sc);
+				}
+			}
+		}
+		
+		return tmplt;
 	}
 }

@@ -54,6 +54,7 @@ import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.api.commands.ListGuestOsCategoriesCmd;
 import com.cloud.api.commands.ListGuestOsCmd;
 import com.cloud.api.commands.ListHostsCmd;
+import com.cloud.api.commands.ListHypervisorsCmd;
 import com.cloud.api.commands.ListIsosCmd;
 import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
 import com.cloud.api.commands.ListLoadBalancerRulesCmd;
@@ -93,6 +94,7 @@ import com.cloud.api.commands.UpdateTemplateOrIsoCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.api.commands.UpdateVMGroupCmd;
+import com.cloud.api.commands.UploadCustomCertificateCmd;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.capacity.CapacityVO;
@@ -949,13 +951,6 @@ public interface ManagementServer {
     List<CapacityVO> listCapacities(ListCapacityCmd cmd);
 
     public long getMemoryUsagebyHost(Long hostId);
-
-    /**
-     * @param userId    The Id of the user who invoked this operation.
-     * @param volumeId  The volume for which this snapshot is being taken
-     * @return          The properties of the snapshot taken
-     */
-    SnapshotVO createTemplateSnapshot(Long userId, long volumeId);
     
     /**
      * Destroy a snapshot
@@ -969,8 +964,9 @@ public interface ManagementServer {
      * @param cmd the command containing the search criteria (order by, limit, etc.)
      * @return list of snapshots
      * @throws InvalidParameterValueException
+     * @throws PermissionDeniedException
      */
-    List<SnapshotVO> listSnapshots(ListSnapshotsCmd cmd) throws InvalidParameterValueException;
+    List<SnapshotVO> listSnapshots(ListSnapshotsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 
     /**
      * Finds a diskOffering by the specified ID.
@@ -1225,4 +1221,13 @@ public interface ManagementServer {
      *
      */
     void extractVolume(ExtractVolumeCmd cmd) throws URISyntaxException, InternalErrorException;
+
+    /**
+     * return an array of available hypervisors
+     * @param cmd
+     * @return an array of available hypervisors in the cloud
+     */
+    String[] getHypervisors(ListHypervisorsCmd cmd);
+
+    boolean uploadCertificate(UploadCustomCertificateCmd cmd);
 }

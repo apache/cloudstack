@@ -21,7 +21,7 @@ import java.util.Date;
 
 import com.cloud.host.Host;
 import com.cloud.host.Status;
-import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.google.gson.annotations.SerializedName;
 
 public class HostResponse extends BaseResponse {
@@ -65,7 +65,7 @@ public class HostResponse extends BaseResponse {
     private String version;
 
     @SerializedName("hypervisor")
-    private Hypervisor.Type hypervisor;
+    private HypervisorType hypervisor;
 
     @SerializedName("cpunumber")
     private Integer cpuNumber;
@@ -234,11 +234,11 @@ public class HostResponse extends BaseResponse {
         this.version = version;
     }
 
-    public Hypervisor.Type getHypervisor() {
+    public HypervisorType getHypervisor() {
         return hypervisor;
     }
 
-    public void setHypervisor(Hypervisor.Type hypervisor) {
+    public void setHypervisor(HypervisorType hypervisor) {
         this.hypervisor = hypervisor;
     }
 

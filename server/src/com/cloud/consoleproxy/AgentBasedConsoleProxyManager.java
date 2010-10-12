@@ -70,6 +70,7 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     @Inject
     protected UserVmDao _userVmDao;
     private String _instance;
+    protected String _consoleProxyUrlDomain;
     @Inject
     private VMInstanceDao _instanceDao;
     private ConsoleProxyListener _listener;
@@ -117,6 +118,8 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
 
         _instance = configs.get("instance.name");
 
+        _consoleProxyUrlDomain = configs.get("consoleproxy.url.domain");
+        
         _listener = new ConsoleProxyListener(this);
         _agentMgr.registerForHostEvents(_listener, true, true, false);
 
@@ -171,7 +174,7 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
             if (host.getProxyPort() != null && host.getProxyPort().intValue() > 0)
                 urlPort = host.getProxyPort().intValue();
             
-            return new ConsoleProxyInfo(_sslEnabled, publicIp, _consoleProxyPort, urlPort);
+            return new ConsoleProxyInfo(_sslEnabled, publicIp, _consoleProxyPort, urlPort, _consoleProxyUrlDomain);
         } else {
             s_logger.warn("Host that VM is running is no longer available, console access to VM " + userVmId + " will be temporarily unavailable.");
         }

@@ -28,7 +28,11 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.server.StatsCollector;
@@ -71,6 +75,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     @Inject VolumeDao _volumeDao;
     @Inject StoragePoolHostDao _poolHostDao;
     @Inject ConfigurationDao _configDao;
+    @Inject ClusterDao _clusterDao;
     int _storageOverprovisioningFactor;
     long _extraBytesPerVolume = 0;
     Random _rand;
@@ -135,6 +140,15 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 		
 		// Check that the pool type is correct
 		if (!poolIsCorrectType(dskCh, pool, vm)) {
+			return false;
+		}
+		
+		/*hypervisor type is correct*/
+		// TODO : when creating a standalone volume, offering is passed as NULL, need to 
+		// refine the logic of checking hypervisorType based on offering info
+		Long clusterId = pool.getClusterId();
+		ClusterVO cluster = _clusterDao.findById(clusterId);
+		if (!(cluster.getHypervisorType() == dskCh.getHypersorType())) {
 			return false;
 		}
 
@@ -227,8 +241,11 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 	}
 	
 	@Override
-	public StoragePool allocateTo(DiskProfile dskCh, VirtualMachineProfile vm, DeployDestination dest, List<Volume> disks, Set<StoragePool> avoids) {
+	public StoragePool allocateTo(DiskProfile dskCh, VirtualMachineProfile vm, DeployDestination dest, List<? extends Volume> disks, Set<? extends StoragePool> avoids) {
 	    
-	    return null;
+	    VMInstanceVO instance = (VMInstanceVO)(vm.getVm());
+	    
+	    VMTemplateVO template = vm.getTemplateId() != null ? _templateDao.findById(vm.getTemplateId()) : null;
+	    return allocateToPool(dskCh, (DataCenterVO)dest.getDataCenter(), (HostPodVO)dest.getPod(), dest.getCluster().getId(), instance, template, avoids);
 	}
 }

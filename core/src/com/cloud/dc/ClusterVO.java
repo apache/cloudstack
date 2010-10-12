@@ -24,6 +24,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
 import com.cloud.utils.NumbersUtil;
 
@@ -44,6 +45,10 @@ public class ClusterVO implements Cluster {
     
     @Column(name="pod_id")
     long podId;
+    
+    @Column(name="hypervisor_type")
+    String hypervisorType;
+    
     
     public ClusterVO() {
     }
@@ -86,5 +91,13 @@ public class ClusterVO implements Cluster {
         }
         ClusterVO that = (ClusterVO)obj;
         return this.id == that.id;
+    }
+    
+    public HypervisorType getHypervisorType() {
+    	return HypervisorType.getType(hypervisorType);
+    }
+
+    public void setHypervisorType(String hy) {
+    	hypervisorType = hy;
     }
 }

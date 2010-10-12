@@ -124,4 +124,7 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
 	public NetworkOffering.GuestIpType getGuestIpType() {
 		return guestIpType;
 	}
+	public String gethypervisorType() {
+		return null;
+	}
 }

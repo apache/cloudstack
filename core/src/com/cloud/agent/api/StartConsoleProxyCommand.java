@@ -34,13 +34,15 @@ public class StartConsoleProxyCommand extends AbstractStartCommand {
     private String mgmt_host;
     private int mgmt_port;
     private boolean sslEnabled;
+    private String guestOSDescription;
     
 	protected StartConsoleProxyCommand() {
 	}
 	
     public StartConsoleProxyCommand(int networkRateMbps, int networkRateMulticastMbps, int proxyCmdPort, 
             ConsoleProxyVO proxy, String vmName, String storageHost, 
-    		List<VolumeVO> vols, String vncPort, String urlPort, String mgmtHost, int mgmtPort, boolean sslEnabled) {
+    		List<VolumeVO> vols, String vncPort, String urlPort, String mgmtHost, int mgmtPort, 
+    		boolean sslEnabled, String guestOSDescription) {
     	super(vmName, storageHost, vols);
     	this.networkRateMbps = networkRateMbps;
     	this.networkRateMulticastMbps = networkRateMulticastMbps;
@@ -51,6 +53,7 @@ public class StartConsoleProxyCommand extends AbstractStartCommand {
     	this.mgmt_host = mgmtHost;
     	this.mgmt_port = mgmtPort;
     	this.sslEnabled = sslEnabled;
+    	this.guestOSDescription = guestOSDescription;
     }
 	
 	@Override
@@ -64,6 +67,10 @@ public class StartConsoleProxyCommand extends AbstractStartCommand {
 	
 	public int getNetworkRateMbps() {
         return networkRateMbps;
+    }
+
+    public String getGuestOSDescription() {
+        return guestOSDescription;
     }
 
     public int getNetworkRateMulticastMbps() {

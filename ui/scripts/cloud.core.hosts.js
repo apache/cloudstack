@@ -41,7 +41,7 @@ function showHostsTab() {
 			var zoneSelect = dialogAddRouting.find("#host_zone").empty();								
 			if (zones != null && zones.length > 0) {
 				for (var i = 0; i < zones.length; i++) 
-					zoneSelect.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 				    
+					zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 				    
 			}
 			//dialogAddRouting.find("#host_zone").change();
 		}
@@ -58,7 +58,7 @@ function showHostsTab() {
 				var podSelect = dialogAddRouting.find("#host_pod").empty();	
 				if (pods != null && pods.length > 0) {
 					for (var i = 0; i < pods.length; i++) {
-						podSelect.append("<option value='" + pods[i].id + "'>" + sanitizeXSS(pods[i].name) + "</option>"); 
+						podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 
 					}
 				}
 				dialogAddRouting.find("#host_pod").change();
@@ -78,7 +78,7 @@ function showHostsTab() {
 	            var items = json.listclustersresponse.cluster;
 	            if(items != null && items.length > 0) {			                
 	                for(var i=0; i<items.length; i++) 			                    
-	                    clusterSelect.append("<option value='" + items[i].id + "'>" + items[i].name + "</option>");		      
+	                    clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");		      
                     dialogAddRouting.find("input[value=existing_cluster_radio]").attr("checked", true);
 	            }
 	            else {
@@ -95,7 +95,7 @@ function showHostsTab() {
 		zIndex: 2000
 	}));
 	$.ajax({
-	       data: createURL("command=listOsCategories&response=json"+maxPageSize),
+	    data: createURL("command=listOsCategories&response=json"+maxPageSize),
 		dataType: "json",
 		success: function(json) {
 			var categories = json.listoscategoriesresponse.oscategory;
@@ -228,7 +228,7 @@ function showHostsTab() {
 				break;
 			case "host_action_enable_maint" :
 				$("#dialog_confirmation")
-				.html("<p>Please confirm you enable maintenance for host: <b>"+sanitizeXSS(hostName)+"</b>.  Enabling maintenance mode will cause a live migration of all running instances on this host to any available host.  An alert will be sent to the admin when this process has been completed.</p>")
+				.html("<p>Please confirm you enable maintenance for host: <b>"+fromdb(hostName)+"</b>.  Enabling maintenance mode will cause a live migration of all running instances on this host to any available host.  An alert will be sent to the admin when this process has been completed.</p>")
 				.dialog('option', 'buttons', { 						
 					"Confirm": function() { 							
 						$(this).dialog("close"); 
@@ -302,7 +302,7 @@ function showHostsTab() {
 				break;
 			case "host_action_cancel_maint" :
 				$("#dialog_confirmation")
-				.html("<p>Please confirm you want to cancel maintenance for host: <b>"+sanitizeXSS(hostName)+"</b>. </p>")
+				.html("<p>Please confirm you want to cancel maintenance for host: <b>"+fromdb(hostName)+"</b>. </p>")
 				.dialog('option', 'buttons', { 						
 					"Confirm": function() { 							
 						$(this).dialog("close");
@@ -377,7 +377,7 @@ function showHostsTab() {
 				break;
 			case "host_action_reconnect" :
 				$("#dialog_confirmation")
-				.html("<p>Please confirm you want to force a reconnection for host: <b>"+sanitizeXSS(hostName)+"</b>. </p>")
+				.html("<p>Please confirm you want to force a reconnection for host: <b>"+fromdb(hostName)+"</b>. </p>")
 				.dialog('option', 'buttons', { 						
 					"Confirm": function() { 							
 						$(this).dialog("close");
@@ -452,7 +452,7 @@ function showHostsTab() {
 				break;
 			case "host_action_remove" :
 				$("#dialog_confirmation")
-				.html("<p>Please confirm you want to remove this host: <b>"+sanitizeXSS(hostName)+"</b> from the management server. </p>")
+				.html("<p>Please confirm you want to remove this host: <b>"+fromdb(hostName)+"</b> from the management server. </p>")
 				.dialog('option', 'buttons', { 						
 					"Confirm": function() { 
 						$(this).dialog("close"); 
@@ -513,13 +513,13 @@ function showHostsTab() {
 		} else {
 			template.find("#row_container").addClass("row_odd");
 		}
-		template.data("hostId", json.id).data("hostName", sanitizeXSS(json.name));
+		template.data("hostId", json.id).data("hostName", fromdb(json.name));
 				
-		template.find("#routing_zone").text(json.zonename);
-		template.find("#routing_pod").text(json.podname);
-		template.find("#routing_cluster").text(json.clustername);
+		template.find("#routing_zone").text(fromdb(json.zonename));
+		template.find("#routing_pod").text(fromdb(json.podname));
+		template.find("#routing_cluster").text(fromdb(json.clustername));
 		
-		template.find("#routing_name").text(json.name);
+		template.find("#routing_name").text(fromdb(json.name));
 		template.find("#routing_ipaddress").text(json.ipaddress);
 		template.find("#routing_version").text(json.version);
 		template.find("#routing_os").text(json.oscategoryname);
@@ -608,7 +608,7 @@ function showHostsTab() {
 											
 				if(clusterRadio == "new_cluster_radio") {
 			        var newClusterName = trim(dialogBox.find("#new_cluster_name").val());
-			        array1.push("&clustername="+encodeURIComponent(newClusterName));				    
+			        array1.push("&clustername="+todb(newClusterName));				    
 			    }
 			    else if(clusterRadio == "existing_cluster_radio") {
 			        var clusterId = dialogBox.find("#cluster_select").val();
@@ -621,7 +621,7 @@ function showHostsTab() {
 			    var hostname = trim(dialogBox.find("#host_hostname").val());
 			    var url;					
 			    if(hostname.indexOf("http://")==-1)
-			        url = "http://" + hostname;
+			        url = "http://" + todb(hostname);
 			    else
 			        url = hostname;
 			    array1.push("&url="+encodeURIComponent(url));
@@ -682,7 +682,7 @@ function showHostsTab() {
 		    var pod = submenuContent.find("#advanced_search #adv_search_pod").val();			    
 		    var moreCriteria = [];								
 			if (name!=null && trim(name).length > 0) 
-				moreCriteria.push("&name="+encodeURIComponent(trim(name)));				
+				moreCriteria.push("&name="+todb(name));				
 			if (state!=null && state.length > 0) 
 				moreCriteria.push("&state="+state);		
 		    if (zone!=null && zone.length > 0) 

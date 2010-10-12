@@ -49,6 +49,7 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.VMTemplateHostVO;
@@ -79,7 +80,6 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     static final Logger s_logger = Logger.getLogger(DownloadMonitorImpl.class);
 
 	private static final String DEFAULT_HTTP_COPY_PORT = "80";
-	private String _hyperVisorType;
     @Inject 
     VMTemplateHostDao _vmTemplateHostDao;
     @Inject
@@ -136,15 +136,12 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         _sslCopy = Boolean.parseBoolean(configs.get("secstorage.encrypt.copy"));
         
         String cert = configs.get("secstorage.secure.copy.cert");
-        if ("realhostip.com".equalsIgnoreCase(cert)) {
+        if (!"realhostip.com".equalsIgnoreCase(cert)) {
         	s_logger.warn("Only realhostip.com ssl cert is supported, ignoring self-signed and other certs");
         }
         
-        _hyperVisorType = _configDao.getValue("hypervisor.type");
-        
         _copyAuthPasswd = configs.get("secstorage.copy.password");
         
-
         _agentMgr.registerForHostEvents(new DownloadListener(this), true, false, false);
 		return true;
 	}
@@ -250,8 +247,11 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			}
 			return generateCopyUrl(ssVm.getPublicIpAddress(), srcTmpltHost.getInstallPath());
 		}
+		
+		VMTemplateVO tmplt = _templateDao.findById(srcTmpltHost.getTemplateId());
+		HypervisorType hyperType = tmplt.getHypervisorType();
 		/*No secondary storage vm yet*/
-		if (_hyperVisorType.equalsIgnoreCase("KVM")) {
+		if (hyperType != null && hyperType == HypervisorType.KVM) {
 			return "file://" + sourceServer.getParent() + "/" + srcTmpltHost.getInstallPath();
 		}
 		return null;
@@ -413,18 +413,28 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		if (storageHost == null) {
 			s_logger.warn("Huh? Agent id " + sserverId + " does not correspond to a row in hosts table?");
 			return;
-		}		Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
+		}		
+		
+		Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
 		List<VMTemplateVO> allTemplates = _templateDao.listAllInZone(storageHost.getDataCenterId());
-		VMTemplateVO rtngTmplt = _templateDao.findRoutingTemplate();
-		VMTemplateVO defaultBuiltin = _templateDao.findDefaultBuiltinTemplate();
+		List<VMTemplateVO> rtngTmplts = _templateDao.listAllRoutingTemplates();
+		List<VMTemplateVO> defaultBuiltin = _templateDao.listDefaultBuiltinTemplates();
 
-		if (rtngTmplt != null && !allTemplates.contains(rtngTmplt))
-			allTemplates.add(rtngTmplt);
-
-		if (defaultBuiltin != null && !allTemplates.contains(defaultBuiltin)) {
-			allTemplates.add(defaultBuiltin);
+		if (rtngTmplts != null) {
+			for (VMTemplateVO rtngTmplt : rtngTmplts) {
+				if (!allTemplates.contains(rtngTmplt))
+					allTemplates.add(rtngTmplt);
+			}
 		}
 		
+		if (defaultBuiltin != null) {
+			for (VMTemplateVO builtinTmplt : defaultBuiltin) {
+				if (!allTemplates.contains(builtinTmplt)) {
+					allTemplates.add(builtinTmplt);
+				}
+			}
+		}
+
 		for (Iterator<VMTemplateVO> i = allTemplates.iterator();i.hasNext();) {
 			if (i.next().getName().startsWith("xs-tools")) {
 				i.remove();
@@ -484,15 +494,14 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(tInfo.getInstallPath());
 			long result = send(sserverId, dtCommand, null);
 			if (result == -1 ){
-			    String description = "Failed to delete " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " which isn't in the database";
-			    logEvent(1L, EventTypes.EVENT_TEMPLATE_DELETE, description , EventVO.LEVEL_ERROR);
-			    s_logger.error(description);
-			    return;
+				String description = "Failed to delete " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " which isn't in the database";
+				logEvent(1L, EventTypes.EVENT_TEMPLATE_DELETE, description , EventVO.LEVEL_ERROR);
+				s_logger.error(description);
+				return;
 			}
 			String description = "Deleted template " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " since it isn't in the database, result=" + result;
 			logEvent(1L, EventTypes.EVENT_TEMPLATE_DELETE, description, EventVO.LEVEL_INFO);
 			s_logger.info(description);
-
 		}
 
 	}

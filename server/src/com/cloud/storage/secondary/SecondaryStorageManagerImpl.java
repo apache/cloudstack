@@ -89,12 +89,14 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -205,6 +207,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     @Inject private EventDao _eventDao;
     @Inject private ServiceOfferingDao _offeringDao;
     @Inject private AccountManager _accountMgr;
+    @Inject GuestOSDao _guestOSDao = null;
     
     private IpAddrAllocator _IpAllocator;
     
@@ -373,11 +376,23 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 					}
 		            VolumeVO vol = vols.get(0);
 		            
+		            // Determine the VM's OS description
+		            String guestOSDescription;
+		            GuestOSVO guestOS = _guestOSDao.findById(secStorageVm.getGuestOSId());
+		            if (guestOS == null) {
+		                String msg = "Could not find guest OS description for OSId " 
+		                    + secStorageVm.getGuestOSId() + " for vm: " + secStorageVm.getName();
+		                s_logger.debug(msg); 
+		                throw new CloudRuntimeException(msg);
+		            } else {
+		                guestOSDescription = guestOS.getDisplayName();
+		            }
+		            
 					// carry the secondary storage vm port info over so that we don't
 					// need to configure agent on this
 					StartSecStorageVmCommand cmdStart = new StartSecStorageVmCommand(_networkRate, 
 					        _multicastRate, _secStorageVmCmdPort, secStorageVm, 
-					        secStorageVm.getName(), "", vols, _mgmt_host, _mgmt_port, _useSSlCopy);
+					        secStorageVm.getName(), "", vols, _mgmt_host, _mgmt_port, _useSSlCopy, guestOSDescription);
 
 					if (s_logger.isDebugEnabled())
 						s_logger.debug("Sending start command for secondary storage vm "
@@ -1822,7 +1837,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 			if( !_storageMgr.share(secStorageVm, vols, routingHost, false) ) {
 				s_logger.warn("Can not share " + vol.getPath() + " to " + secStorageVm.getName());
-				throw new StorageUnavailableException(vol.getPoolId());
+				throw new StorageUnavailableException("Can not share " + vol.getPath() + " to " + secStorageVm.getName(), vol);
 			}
 
 			Answer answer = _agentMgr.easySend(routingHost.getId(), cmd);

@@ -82,6 +82,7 @@ DROP TABLE IF EXISTS `cloud`.`hypervisor_properties`;
 DROP TABLE IF EXISTS `cloud`.`account_network_ref`;
 DROP TABLE IF EXISTS `cloud`.`instance_group`;
 DROP TABLE IF EXISTS `cloud`.`instance_group_vm_map`;
+DROP TABLE IF EXISTS `cloud`.`certificate`;
 
 CREATE TABLE `cloud`.`hypervsior_properties` (
   `hypervisor` varchar(32) NOT NULL UNIQUE COMMENT 'hypervisor type',
@@ -102,7 +103,9 @@ CREATE TABLE `cloud`.`network_configurations` (
   `network_offering_id` bigint unsigned NOT NULL COMMENT 'network offering id that this configuration is created from',
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id that this configuration is used in',
   `guru_name` varchar(255) NOT NULL COMMENT 'who is responsible for this type of network configuration',
-  `state` varchar(32) NOT NULL COMMENT 'what state is this configuration in', 
+  `state` varchar(32) NOT NULL COMMENT 'what state is this configuration in',
+  `mac_address_seq` bigint unsigned DEFAULT 1 COMMENT 'mac address seq number',
+  `dns` varchar(255) COMMENT 'comma separated DNS list',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -110,6 +113,12 @@ CREATE TABLE `cloud`.`account_network_ref` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `account_id` bigint unsigned NOT NULL COMMENT 'account id',
   `network_configuration_id` bigint unsigned NOT NULL COMMENT 'network configuration id',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`certificate` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `certificate` text COMMENT 'the actual custom certificate being stored in the db',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -130,7 +139,8 @@ CREATE TABLE `cloud`.`nics` (
   `device_id` int(10) COMMENT 'device id for the network when plugged into the virtual machine',
   `update_time` timestamp NOT NULL COMMENT 'time the state was changed',
   `isolation_uri` varchar(255) COMMENT 'id for isolation',
-  `ip6_address` varchar(32) COMMENT 'ip6 address', 
+  `ip6_address` varchar(32) COMMENT 'ip6 address',
+  `default_nic` tinyint NOT NULL COMMENT "None", 
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -155,6 +165,7 @@ CREATE TABLE `cloud`.`cluster` (
   `name` varchar(255) NOT NULL COMMENT 'name for the cluster',
   `pod_id` bigint unsigned NOT NULL COMMENT 'pod id',
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id',
+  `hypervisor_type` varchar(255),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -542,6 +553,7 @@ CREATE TABLE  `cloud`.`vm_template` (
   `bootable` int(1) unsigned NOT NULL default 1 COMMENT 'true if this template represents a bootable ISO',
   `prepopulate` int(1) unsigned NOT NULL default 0 COMMENT 'prepopulate this template to primary storage',
   `cross_zones` int(1) unsigned NOT NULL default 0 COMMENT 'Make this template available in all zones',
+  `hypervisor_type` varchar(255) COMMENT 'hypervisor that the template is belonged to',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -971,8 +983,16 @@ CREATE TABLE  `cloud`.`template_spool_ref` (
 CREATE TABLE `cloud`.`guest_os` (
   `id` bigint unsigned NOT NULL auto_increment,
   `category_id` bigint unsigned NOT NULL,
-  `name` varchar(255) NOT NULL,
+  `name` varchar(255),
   `display_name` varchar(255) NOT NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`guest_os_hypervisor` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `hypervisor_type` varchar(255) NOT NULL,
+  `guest_os_name` varchar(255) NOT NULL,
+  `guest_os_id` bigint unsigned NOT NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
@@ -991,7 +1011,7 @@ CREATE TABLE  `cloud`.`launch_permission` (
 
 CREATE TABLE `cloud`.`snapshot_policy` (
   `id` bigint unsigned NOT NULL auto_increment,
-  `volume_id` bigint unsigned NOT NULL,
+  `volume_id` bigint unsigned NOT NULL unique,
   `schedule` varchar(100) NOT NULL COMMENT 'schedule time of execution',
   `timezone` varchar(100) NOT NULL COMMENT 'the timezone in which the schedule time is specified',
   `interval` int(4) NOT NULL default 4 COMMENT 'backup schedule, e.g. hourly, daily, etc.',
@@ -1009,12 +1029,11 @@ CREATE TABLE  `cloud`.`snapshot_policy_ref` (
 
 CREATE TABLE  `cloud`.`snapshot_schedule` (
   `id` bigint unsigned NOT NULL auto_increment,
-  `volume_id` bigint unsigned NOT NULL COMMENT 'The volume for which this snapshot is being taken',
+  `volume_id` bigint unsigned NOT NULL unique COMMENT 'The volume for which this snapshot is being taken',
   `policy_id` bigint unsigned NOT NULL COMMENT 'One of the policyIds for which this snapshot was taken',
   `scheduled_timestamp` datetime NOT NULL COMMENT 'Time at which the snapshot was scheduled for execution',
   `async_job_id` bigint unsigned COMMENT 'If this schedule is being executed, it is the id of the create aysnc_job. Before that it is null',
   `snapshot_id` bigint unsigned COMMENT 'If this schedule is being executed, then the corresponding snapshot has this id. Before that it is null',
-  UNIQUE (volume_id, policy_id),
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

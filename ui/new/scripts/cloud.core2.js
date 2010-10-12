@@ -34,7 +34,6 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap)
     $link.data("asyncJobResponse", apiInfo.asyncJobResponse);		     
     $link.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);
     $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);     
-    $link.data("customActionFn", apiInfo.customActionFn);   
     
     var $detailsTab = $("#right_panel_content #tab_content_details");  
     var id = $detailsTab.data("jsonObj").id;
@@ -42,12 +41,6 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap)
     $link.bind("click", function(event) {   
         $actionMenu.hide();    	 
         var $actionLink = $(this);   
-        
-        var customActionFn = $actionLink.data("customActionFn"); 
-        if(customActionFn != null) {
-            customActionFn();
-            return false;
-        }
         
         var dialogBeforeActionFn = $actionLink.data("dialogBeforeActionFn"); 
         if(dialogBeforeActionFn == null) {	 
@@ -61,15 +54,17 @@ function buildActionLinkForDetailsTab(label, actionMap, $actionMenu, listAPIMap)
     });  
 } 
 
-function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap) {       
+function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap) {  
     var label = $actionLink.data("label");	
     var inProcessText = $actionLink.data("inProcessText");		           
     var isAsyncJob = $actionLink.data("isAsyncJob");
     var asyncJobResponse = $actionLink.data("asyncJobResponse");	
     var afterActionSeccessFn = $actionLink.data("afterActionSeccessFn");	
-    var listAPI = listAPIMap["listAPI"];
-    var listAPIResponse = listAPIMap["listAPIResponse"];
-    var listAPIResponseObj = listAPIMap["listAPIResponseObj"];
+    if(listAPIMap != null) {
+        var listAPI = listAPIMap["listAPI"];
+        var listAPIResponse = listAPIMap["listAPIResponse"];
+        var listAPIResponseObj = listAPIMap["listAPIResponseObj"];
+    }
      
     var $detailsTab = $("#right_panel_content #tab_content_details");     
     var $spinningWheel = $detailsTab.find("#spinning_wheel");
@@ -142,17 +137,17 @@ function doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap) {
     //Async job (end) *****
     
     //Sync job (begin) *****
-    else { 	               
+    else { 	    
         $.ajax({
             data: createURL(apiCommand),
 	        dataType: "json",
 	        async: false,
-	        success: function(json) {	            
+	        success: function(json) {	 	                  
 	            $spinningWheel.hide(); 	        
 	            $("#right_panel_content #after_action_info").text(label + " action succeeded.");
                 $("#right_panel_content #after_action_info_container").removeClass("errorbox").show();  
 								
-				if(apiCommand.indexOf("command=delete")!=0) { 									              
+				if(apiCommand.indexOf("command=delete")!=0 && apiCommand.indexOf("command=disassociateIpAddress")!=0) { 									              
 	                //RecoverVirtualMachine API doesn't return an embedded object on success (Bug 6037)
 	                //Before Bug 6037 get fixed, use the temporary solution below.							            
 	                $.ajax({
@@ -201,7 +196,7 @@ var selectedItemsInMidMenu = {};
 
 function buildActionLinkForMidMenu(label, actionMap, $actionMenu, listAPIMap) {
     var apiInfo = actionMap[label];
-    var $listItem = $("#action_list_item").clone();
+    var $listItem = $("#action_list_item_middle_menu").clone();
     $actionMenu.find("#action_list").append($listItem.show());
     var $link = $listItem.find("#link").text(label);
     $link.data("label", label);	  
@@ -212,6 +207,16 @@ function buildActionLinkForMidMenu(label, actionMap, $actionMenu, listAPIMap) {
     $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);
     $link.bind("click", function(event) {	
         $actionMenu.hide();    	 
+                
+        var itemCounts = 0;
+        for(var id in selectedItemsInMidMenu) {
+            itemCounts ++;
+        }
+        if(itemCounts == 0) {
+            $("#dialog_info_please_select_one_item_in_middle_menu").dialog("open");		
+            return;
+        }        
+        
         var $actionLink = $(this);   
         var dialogBeforeActionFn = $actionLink.data("dialogBeforeActionFn"); 
         if(dialogBeforeActionFn == null) {		                   
@@ -222,11 +227,24 @@ function buildActionLinkForMidMenu(label, actionMap, $actionMenu, listAPIMap) {
         }
         else {
             dialogBeforeActionFn($actionLink, selectedItemsInMidMenu, listAPIMap);	
+            
         }        
         selectedItemsInMidMenu = {}; //clear selected items for action	                          
         return false;
     });  
 } 
+
+/*
+If Cancel button in dialog is clicked, action won't preceed. 
+i.e. doActionForMidMenu() won't get called => highlight won't be removd from middle menu. 
+So, we need to remove highlight here. Otherwise, it won't be consistent of selectedItemsInMidMenu which will be emptied soon.
+*/
+function removeHighlightInMiddleMenu(selectedItemsInMidMenu) {
+    for(var id in selectedItemsInMidMenu) {
+        var $midmenuItem = $("#midmenuItem_"+id);	
+        $midmenuItem.find("#content").removeClass("selected");
+    }
+}
 
 function doActionForMidMenu(id, $actionLink, apiCommand, listAPIMap) {   
     var label = $actionLink.data("label");			           
@@ -276,15 +294,15 @@ function doActionForMidMenu(id, $actionLink, apiCommand, listAPIMap) {
                                             data: createURL("command="+listAPI+"&id="+id),
                                             dataType: "json",                                            
                                             success: function(json) {		                                                                                  
-                                                afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem, $midmenuItem.data("toRightPanelFn"));	                        
+                                                afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem);	                        
                                             }
                                         });										
 				                        //After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
-			                            //afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem, $midmenuItem.data("toRightPanelFn"));	   
+			                            //afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem);	   
 			                            
 			                        } else if (result.jobstatus == 2) { // Failed	
 			                            $midmenuItem.find("#info_icon").addClass("error").show();
-			                            $midmenuItem.data("afterActionInfo", (label + " action failed. Reason: " + sanitizeXSS(result.jobresult)));    
+			                            $midmenuItem.data("afterActionInfo", (label + " action failed. Reason: " + fromdb(result.jobresult)));    
 			                        }											                    
 		                        }
 	                        },
@@ -324,11 +342,11 @@ function doActionForMidMenu(id, $actionLink, apiCommand, listAPIMap) {
                     success: function(json) {	
                         $midmenuItem.find("#info_icon").removeClass("error").show();
 			            $midmenuItem.data("afterActionInfo", (label + " action succeeded.")); 	                                                                                  
-                        afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem, $midmenuItem.data("toRightPanelFn"));	                           
+                        afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem);	                           
                     }
                 });										
 				//After Bug 6037 is fixed, remove temporary solution above and uncomment the line below
-				//afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem, $midmenuItem.data("toRightPanelFn"));	   
+				//afterActionSeccessFn(json[listAPIResponse][listAPIResponseObj][0], $midmenuItem);	   
 	        },
             error: function(XMLHttpResponse) {	
 		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem);    
@@ -577,6 +595,7 @@ function clearMiddleMenu() {
 
 function clearRightPanel() {
     $("#right_panel_content #tab_content_details #action_link #action_menu #action_list").empty();    
+    $("#right_panel_content #tab_content_details #spinning_wheel").hide();
     $("#right_panel_content #after_action_info_container").hide(); 
 }
     
@@ -591,7 +610,11 @@ function showMiddleMenu() {
     $("#middle_menu, #search_panel, #middle_menu_pagination").show();
     $("#right_panel").removeClass("main_contentarea_dashboard").addClass("main_contentarea");
 }    
-
+function showMiddleMenuWithoutSearch() {
+    $("#middle_menu").show();
+    $("#search_panel, #middle_menu_pagination").hide();
+    $("#right_panel").removeClass("main_contentarea_dashboard").addClass("main_contentarea");
+} 
 
 // adding middle menu item ***
 function beforeAddingMidMenuItem() {
@@ -614,10 +637,11 @@ function afterAddingMidMenuItem($midmenuItem1, isSuccessful, extraMessage) {
 	}
 	else {	
 	    $midmenuItem1.find("#info_icon").addClass("error").show();			
-	    $midmenuItem1.find("#first_row").text("Adding failed");	
-	    if(extraMessage != null)
-	        $midmenuItem1.find("#second_row").text(extraMessage);  
+	    $midmenuItem1.find("#first_row").text("Adding failed");		    
 	}
+	
+	if(extraMessage != null)
+	    $midmenuItem1.find("#second_row").text(extraMessage);  
 }
 
 function bindClickToMidMenu($midmenuItem1, toRightPanel, getMidmenuId) {
@@ -637,6 +661,165 @@ function bindClickToMidMenu($midmenuItem1, toRightPanel, getMidmenuId) {
         return false;
     }); 
 }
+
+function initializeEditFunction($readonlyFields, $editFields, doUpdateFn) {
+    $("#edit_button").bind("click", function(event){    
+        $readonlyFields.hide();
+        $editFields.show();  
+        $("#cancel_button, #save_button").show()
+        return false;
+    });    
+    $("#cancel_button").bind("click", function(event){    
+        $editFields.hide();
+        $readonlyFields.show();   
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });
+    $("#save_button").bind("click", function(event){        
+        doUpdateFn();     
+        $editFields.hide();      
+        $readonlyFields.show();       
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });    
+}
+
+function switchBetweenDifferentTabs(tabArray, tabContentArray) {        
+    for(var tabIndex=0; tabIndex<tabArray.length; tabIndex++) {  
+        switchToTab(tabIndex, tabArray, tabContentArray);
+    }
+}
+
+function switchToTab(tabIndex, tabArray, tabContentArray) {
+  $("#"+tabArray[tabIndex]).bind("click", function(event){               
+        $("#"+tabArray[tabIndex]).removeClass("off").addClass("on"); //current tab turns on
+        for(var k=0; k<tabArray.length; k++) { 
+            if(k != tabIndex)
+                $("#"+tabArray[k]).removeClass("on").addClass("off");  //other tabs turns off
+        }                    
+                        
+        $("#"+tabContentArray[tabIndex]).show();    //current tab content shows             
+        for(var k=0; k<tabContentArray.length; k++) {
+            if(k != tabIndex)
+                $("#"+tabContentArray[k]).hide();   //other tab content hide
+        }   
+        return false;
+    });   
+}
+
+function updateStateInMidMenu(jsonObj, $midmenuItem1) {         
+    if(jsonObj.state == "Running")
+        $midmenuItem1.find("#icon").attr("src", "images/status_green.png");
+    else if(jsonObj.state == "Stopped")
+        $midmenuItem1.find("#icon").attr("src", "images/status_red.png");
+    else  //Destroyed, Creating, ~                                  
+        $midmenuItem1.find("#icon").attr("src", "images/status_gray.png");
+    
+    $midmenuItem1.find("#icon_container").show();
+}
+  
+function resetViewConsoleAction(jsonObj, $detailsTab) {
+    var $viewConsoleContainer = $detailsTab.find("#view_console_container").empty(); //reset view console panel
+    var $viewConsoleTemplate = $("#view_console_template").clone();
+    $viewConsoleContainer.append($viewConsoleTemplate.show());    
+    
+	if (jsonObj.state == 'Running') {			
+		//console proxy image
+		var imgUrl = "console?cmd=thumbnail&vm=" + jsonObj.id + "&w=144&h=110";	
+		imgUrl = "http://localhost:8080/client/" + imgUrl;  //***** temporary hack. This line will be removed after new UI code (/ui/new/*) moves to /ui/*
+		
+		var time = new Date();							
+		$viewConsoleTemplate.find("#box1").hide().css("background", "url("+imgUrl+"&t="+time.getTime()+")");				
+		var index = 0;
+		$detailsTab.everyTime(2000, function() {
+			var time = new Date();	
+			if ((index % 2) == 0) {
+				$viewConsoleTemplate.find("#box0").hide().css("background", "url("+imgUrl+"&t="+time.getTime()+")");
+				$viewConsoleTemplate.find("#box1").show();
+			} else {
+				$viewConsoleTemplate.find("#box1").hide().css("background", "url("+imgUrl+"&t="+time.getTime()+")");
+				$viewConsoleTemplate.find("#box0").show();
+			}
+			index++;
+		}, 0);	
+
+		//console proxy popup
+		$viewConsoleTemplate.data("proxyUrl", "console?cmd=access&vm=" + jsonObj.id).data("vmId",jsonObj.id).click(function(event) {				
+			var proxyUrl = $(this).data("proxyUrl");				
+			proxyUrl = "http://localhost:8080/client/" + proxyUrl;  //***** temporary hack. This line will be removed after new UI code (/ui/new/*) moves to /ui/*
+			var viewer = window.open(proxyUrl, $(this).data("vmId"),"width=820,height=640,resizable=yes,menubar=no,status=no,scrollbars=no,toolbar=no,location=no");
+			viewer.focus();
+			return false;
+		});	
+	} 	
+}    
+
+function setVmStateInRightPanel(stateValue, $stateField) {    
+    if(stateValue == "Running")
+        $stateField.text(stateValue).removeClass("red gray").addClass("green");
+    else if(stateValue == "Stopped")
+        $stateField.text(stateValue).removeClass("green gray").addClass("red");
+    else  //Destroyed, Creating, ~                                  
+        $stateField.text(stateValue).removeClass("green red").addClass("gray");            			       
+}
+
+function initDialog(elementId, width1) {
+	if(width1 == null) {
+	    $("#"+elementId).dialog({    	            
+	        autoOpen: false,
+	        modal: true,
+	        zIndex: 2000
+        }); 
+    }
+    else {
+        $("#"+elementId).dialog({ 
+   	        width: width1,	
+	        autoOpen: false,
+	        modal: true,
+	        zIndex: 2000
+        }); 
+    }
+} 
+
+function disableMultipleSelectionInMidMenu() {
+    $("#midmenu_container").selectable("destroy"); //Most pages don't need multiple selection in middle menu.
+}
+function enableMultipleSelectionInMiddleMenu() {
+    $("#midmenu_container").selectable({
+        selecting: function(event, ui) {	 	                               
+            if(ui.selecting.id.indexOf("midmenuItem") != -1) {                     
+                var $midmenuItem1 = $("#"+ui.selecting.id);
+                if($midmenuItem1.find("#content").hasClass("inaction") == false) { //only items not in action are allowed to be selected
+                    var id =$midmenuItem1.data("jsonObj").id;                
+                    selectedItemsInMidMenu[id] = $midmenuItem1; 
+                    $midmenuItem1.find("#content").addClass("selected");   
+                }                               
+                clearRightPanel();      
+                var toRightPanelFn = $midmenuItem1.data("toRightPanelFn");
+                toRightPanelFn($midmenuItem1);	          
+            }                                             
+        },
+        unselecting: function(event, ui) {
+            if(ui.unselecting.id.indexOf("midmenuItem") != -1) {                     
+                var $midmenuItem1 = $("#"+ui.unselecting.id);
+                var id = $midmenuItem1.data("jsonObj").id;
+                if(id in selectedItemsInMidMenu) {                    
+                    delete selectedItemsInMidMenu[id];
+                    $midmenuItem1.find("#content").removeClass("selected"); 
+                }
+            }             
+        }
+    });    
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -718,12 +901,12 @@ function isAdmin() {
 	return (g_role == 1);
 }
 
-function isUser() {
-	return (g_role == 0);
-}
-
 function isDomainAdmin() {
 	return (g_role == 2);
+}
+
+function isUser() {
+	return (g_role == 0);
 }
 
 function setDateField(dateValue, dateField, htmlMarkup) {
@@ -1002,7 +1185,7 @@ function submenuContentEventBinder(submenuContent, listFunction) {
 			    zoneSelect.append("<option value=''></option>"); 
 			    if (zones != null && zones.length > 0) {
 			        for (var i = 0; i < zones.length; i++) {
-				        zoneSelect.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 
+				        zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
 			        }
 			    }
 		    }
@@ -1029,7 +1212,7 @@ function submenuContentEventBinder(submenuContent, listFunction) {
 				            podSelect.empty();			            
 				            if (pods != null && pods.length > 0) {
 				                for (var i = 0; i < pods.length; i++) {
-					                podSelect.append("<option value='" + pods[i].id + "'>" + sanitizeXSS(pods[i].name) + "</option>"); 
+					                podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 
 				                }
 				            }
 			            }
@@ -1052,7 +1235,7 @@ function submenuContentEventBinder(submenuContent, listFunction) {
 			    var domains = json.listdomainsresponse.domain;			 
 			    if (domains != null && domains.length > 0) {
 			        for (var i = 0; i < domains.length; i++) {
-				        domainSelect.append("<option value='" + domains[i].id + "'>" + sanitizeXSS(domains[i].name) + "</option>"); 
+				        domainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 
 			        }
 			    }
 		    }
@@ -1070,7 +1253,7 @@ function submenuContentEventBinder(submenuContent, listFunction) {
 			    var items = json.listvirtualmachinesresponse.virtualmachine;		 
 			    if (items != null && items.length > 0) {
 			        for (var i = 0; i < items.length; i++) {
-				        vmSelect.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>"); 
+				        vmSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>"); 
 			        }
 			    }
 		    }
@@ -1261,7 +1444,7 @@ function noNull(val) {
 }
 
 // Prevent cross-site-script(XSS) attack. 
-// used right before adding user input to the DOM tree. e.g. DOM_element.html(sanitizeXSS(user_input));  
+// used right before adding user input to the DOM tree. e.g. DOM_element.html(fromdb(user_input));  
 function sanitizeXSS(val) {     
     if(val == null || typeof(val) != "string")
         return val; 
@@ -1272,16 +1455,16 @@ function sanitizeXSS(val) {
 
 function getVmName(p_vmName, p_vmDisplayname) {
     if(p_vmDisplayname == null)
-        return sanitizeXSS(unescape(p_vmName));
+        return fromdb(p_vmName);
     var vmName = null;
 	if (isAdmin()) {
 		if (p_vmDisplayname != p_vmName) {
-			vmName = p_vmName + "(" + sanitizeXSS(unescape(p_vmDisplayname)) + ")";
+			vmName = p_vmName + "(" + fromdb(p_vmDisplayname) + ")";
 		} else {
 			vmName = p_vmName;
 		}
 	} else {
-		vmName = sanitizeXSS(unescape(p_vmDisplayname));
+		vmName = fromdb(p_vmDisplayname);
 	}
 	return vmName;
 }
@@ -1294,10 +1477,10 @@ function handleError(xmlHttp, handleErrorCallback) {
 		$("#dialog_session_expired").dialog("open");
 	} 	
 	else if (xmlHttp.status == ERROR_INTERNET_NAME_NOT_RESOLVED) {
-		$("#dialog_error").text("Internet name can not be resolved").dialog("open");
+		$("#dialog_error_internet_not_resolved").dialog("open");
 	} 
 	else if (xmlHttp.status == ERROR_INTERNET_CANNOT_CONNECT) {
-		$("#dialog_error").text("Management server is not accessible").dialog("open");
+		$("#dialog_error_management_server_not_accessible").dialog("open");
 	} 
 	else if (xmlHttp.status == ERROR_VMOPS_ACCOUNT_ERROR && handleErrorCallback != undefined) {
 		handleErrorCallback();
@@ -1309,7 +1492,7 @@ function handleError(xmlHttp, handleErrorCallback) {
 		var start = xmlHttp.responseText.indexOf("h1") + 3;
 		var end = xmlHttp.responseText.indexOf("</h1");
 		var errorMsg = xmlHttp.responseText.substring(start, end);		
-		$("#dialog_error").html("<p><b>Encountered an error:</b></p><br/><p>"+sanitizeXSS(errorMsg)+"</p>").dialog("open");
+		$("#dialog_error").text(fromdb(errorMsg)).dialog("open");
 	}
 }
 

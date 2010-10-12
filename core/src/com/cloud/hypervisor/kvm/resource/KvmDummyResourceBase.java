@@ -31,7 +31,7 @@ public class KvmDummyResourceBase extends ServerResourceBase implements ServerRe
 
 	@Override
 	public StartupCommand[] initialize() {
-		StartupRoutingCommand cmd = new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.Type.KVM, new HashMap<String, String>(), new HashMap<String, State>());
+		StartupRoutingCommand cmd = new StartupRoutingCommand(0, 0, 0, 0, null, Hypervisor.HypervisorType.KVM, new HashMap<String, String>(), new HashMap<String, State>());
 		cmd.setDataCenter(_zoneId);
 		cmd.setPod(_podId);
 		cmd.setCluster(_clusterId);

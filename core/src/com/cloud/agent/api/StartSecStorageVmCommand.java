@@ -34,13 +34,14 @@ public class StartSecStorageVmCommand extends AbstractStartCommand {
     private String mgmt_host;
     private int mgmt_port;
     private boolean sslCopy;
+    private String guestOSDescription;
     
 	protected StartSecStorageVmCommand() {
 	}
 	
     public StartSecStorageVmCommand(int networkRateMbps, int networkRateMulticastMbps, int proxyCmdPort, 
             SecondaryStorageVmVO secStorageVm, String vmName, String storageHost,
-    		List<VolumeVO> vols, String mgmtHost, int mgmtPort, boolean sslCopy) {
+    		List<VolumeVO> vols, String mgmtHost, int mgmtPort, boolean sslCopy, String guestOSDescription) {
     	super(vmName, storageHost, vols);
         this.networkRateMbps = networkRateMbps;
         this.networkRateMulticastMbps = networkRateMulticastMbps;
@@ -50,6 +51,7 @@ public class StartSecStorageVmCommand extends AbstractStartCommand {
     	this.mgmt_host = mgmtHost;
     	this.mgmt_port = mgmtPort;
     	this.sslCopy = sslCopy;
+    	this.guestOSDescription = guestOSDescription;
     }
 	
 	@Override
@@ -63,6 +65,10 @@ public class StartSecStorageVmCommand extends AbstractStartCommand {
 	
 	public int getNetworkRateMbps() {
         return networkRateMbps;
+    }
+
+    public String getGuestOSDescription() {
+        return guestOSDescription;
     }
 
     public int getNetworkRateMulticastMbps() {

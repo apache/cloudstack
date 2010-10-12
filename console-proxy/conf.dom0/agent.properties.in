@@ -2,6 +2,7 @@
 
 instance=ConsoleProxy
 consoleproxy.httpListenPort=8002
+public.ip=65.19.181.3
 
 #resource= the java class, which agent load to execute
 resource=com.cloud.agent.resource.consoleproxy.ConsoleProxyResource

@@ -89,6 +89,7 @@
         <dao name="UserAccount" class="com.cloud.user.dao.UserAccountDaoImpl"/>
         <dao name="VM Template Host" class="com.cloud.storage.dao.VMTemplateHostDaoImpl"/>
         <dao name="Upload" class="com.cloud.storage.dao.UploadDaoImpl"/>
+        <dao name="Certificate" class="com.cloud.certificate.dao.CertificateDaoImpl"/>
         <dao name="VM Template Pool" class="com.cloud.storage.dao.VMTemplatePoolDaoImpl"/>
         <dao name="VM Template Zone" class="com.cloud.storage.dao.VMTemplateZoneDaoImpl"/>
         <dao name="Launch Permission" class="com.cloud.storage.dao.LaunchPermissionDaoImpl"/>
@@ -101,7 +102,6 @@
         <dao name="Management Server Host" class="com.cloud.cluster.dao.ManagementServerHostDaoImpl"/>
         <dao name="Snapshot" class="com.cloud.storage.dao.SnapshotDaoImpl"/>
         <dao name="SnapshotPolicyDao" class="com.cloud.storage.dao.SnapshotPolicyDaoImpl"/>
-        <dao name="SnapshotPolicyRefDao" class="com.cloud.storage.dao.SnapshotPolicyRefDaoImpl"/>
         <dao name="SnapshotScheduleDao" class="com.cloud.storage.dao.SnapshotScheduleDaoImpl"/>
         <dao name="AsyncJobDao" class="com.cloud.async.dao.AsyncJobDaoImpl"/>
         <dao name="SyncQueueDao" class="com.cloud.async.dao.SyncQueueDaoImpl"/>

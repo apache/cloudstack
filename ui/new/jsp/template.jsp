@@ -28,10 +28,7 @@
             <div class="grid_actionbox" id="action_link">
                 <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                     <ul class="actionsdropdown_boxlist" id="action_list">
-                        <!--  
-                    	<li> <a href="#"> Delete </a> </li>
-                        <li> <a href="#"> Attach Disk </a> </li>
-                        -->
+                        <li><%=t.t("no.available.actions")%></li>
                     </ul>
                 </div>
             </div>
@@ -285,28 +282,20 @@
 					<label for="add_template_os_type">OS Type:</label>
 					<select class="select" name="add_template_os_type" id="add_template_os_type">
 					</select>
-				</li>	
+				</li>					
+				<li>
+					<label for="add_template_hypervisor">Hypervisor:</label>
+					<select class="select" name="add_template_hypervisor" id="add_template_hypervisor">						
+						<option value='XenServer'>Citrix XenServer</option>
+						<option value='VmWare'>VMware ESX</option>
+						<option value='KVM'>KVM</option>
+					</select>
+				</li>
 				<li>
 					<label for="add_template_format">Format:</label>
 					<select class="select" name="add_template_format" id="add_template_format">
 					</select>
 				</li>	
-				<!--		
-				<li>
-					<label for="user_name">Require HVM?:</label>
-					<select class="select" name="add_template_hvm" id="add_template_hvm">
-						<option value="true">Yes</option>
-						<option value="false">No</option>
-					</select>
-				</li>
-				<li>
-					<label for="user_name">OS Arch:</label>
-					<select class="select" name="add_template_os" id="add_template_os">
-						<option value="64">64 Bit</option>
-						<option value="32">32 Bit</option>
-					</select>
-				</li>
-				!-->
 				<li>
 					<label>Password Enabled?:</label>
 					<select class="select" id="add_template_password">						
@@ -333,3 +322,15 @@
 	</div>
 </div>
 <!-- Add Template Dialog (end) -->
+
+<div id="dialog_confirmation_delete_template_all_zones" title="Confirmation" style="display:none">
+    <p>
+        <%=t.t("the.template.is.used.by.all.zones.please.confirm.you.want.to.delete.it.from.all.zones")%>
+    </p>
+</div>
+
+<div id="dialog_confirmation_delete_template" title="Confirmation" style="display:none">
+    <p>
+        <%=t.t("please.confirm.you.want.to.delete.the.template")%>
+    </p>
+</div>

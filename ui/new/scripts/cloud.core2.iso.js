@@ -5,8 +5,7 @@ function afterLoadIsoJSP() {
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     
     //add button ***
-    $("#midmenu_add_link").show(); 
-    
+    $("#midmenu_add_link").show();     
     $("#midmenu_add_link").unbind("click").bind("click", function(event) {     
         $("#dialog_add_iso")
 	    .dialog('option', 'buttons', { 				
@@ -35,7 +34,7 @@ function afterLoadIsoJSP() {
 		        var $midmenuItem1 = beforeAddingMidMenuItem() ;				    
     		       		    				
 			    $.ajax({
-			        data: createURL("command=registerIso&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&url="+encodeURIComponent(url)+"&zoneId="+zoneId+"&isPublic="+isPublic+"&osTypeId="+osType+"&bootable="+bootable+"&response=json"),
+			        data: createURL("command=registerIso&name="+todb(name)+"&displayText="+todb(desc)+"&url="+encodeURIComponent(url)+"&zoneId="+zoneId+"&isPublic="+isPublic+"&osTypeId="+osType+"&bootable="+bootable+"&response=json"),
 				    dataType: "json",
 				    success: function(json) {					
 				        var items = json.registerisoresponse.iso;				       
@@ -98,7 +97,7 @@ function afterLoadIsoJSP() {
 		    var zones = json.listzonesresponse.zone;	 			     			    	
 		    if (zones != null && zones.length > 0) {
 		        for (var i = 0; i < zones.length; i++) {
-			        addIsoZoneField.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 			        
+			        addIsoZoneField.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 			        
 			        g_zoneIds.push(zones[i].id);
 			        g_zoneNames.push(zones[i].name);			       
 		        }
@@ -115,7 +114,7 @@ function afterLoadIsoJSP() {
 				var osTypeDropDownAdd = $("#dialog_add_iso #add_iso_os_type").empty();
 				var osTypeDropdownEdit = $detailsTab.find("#ostypename_edit").empty();
 				for (var i = 0; i < types.length; i++) {
-					var html = "<option value='" + types[i].id + "'>" + types[i].description + "</option>";
+					var html = "<option value='" + types[i].id + "'>" + fromdb(types[i].description) + "</option>";
 					osTypeDropDownAdd.append(html);			
 					osTypeDropdownEdit.append(html);					
 				}
@@ -131,7 +130,7 @@ function afterLoadIsoJSP() {
 	        if(items != null && items.length > 0 ) {
 	            var serviceOfferingField = $("#dialog_create_vm_from_iso #service_offering").empty();
 	            for(var i = 0; i < items.length; i++)		        
-	                serviceOfferingField.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>");
+	                serviceOfferingField.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
 	        }		        
 	    }
 	});		
@@ -144,31 +143,18 @@ function afterLoadIsoJSP() {
 	        if(items != null && items.length > 0 ) {
 	            var diskOfferingField = $("#dialog_create_vm_from_iso #disk_offering").empty();
 	            for(var i = 0; i < items.length; i++)		        
-	                diskOfferingField.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>");
+	                diskOfferingField.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
 	        }		  
 	        
 	    }
 	});		
     
     //initialize dialog box ***
-	activateDialog($("#dialog_copy_iso").dialog({ 
-		width:300,
-		autoOpen: false,
-		modal: true,
-		zIndex: 2000
-	}));	
-	activateDialog($("#dialog_create_vm_from_iso").dialog({ 
-		width:300,
-		autoOpen: false,
-		modal: true,
-		zIndex: 2000
-	}));	
-	activateDialog($("#dialog_add_iso").dialog({ 
-		width:450,
-		autoOpen: false,
-		modal: true,
-		zIndex: 2000
-	}));
+    initDialog("dialog_confirmation_delete_iso_all_zones");
+    initDialog("dialog_confirmation_delete_iso");
+    initDialog("dialog_copy_iso", 300);
+    initDialog("dialog_create_vm_from_iso", 450);
+    initDialog("dialog_add_iso", 450);   
 }
 
 function isoGetMidmenuId(jsonObj) {
@@ -185,6 +171,11 @@ function isoToMidmenu(jsonObj, $midmenuItem1) {
     
     $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
     $midmenuItem1.find("#second_row").text(fromdb(jsonObj.zonename).substring(0,25));  
+}
+
+function isoAfterDetailsTabAction(jsonObj) {
+    isoToMidmenu(jsonObj, $("#"+isoGetMidmenuId(jsonObj))); 
+    isoJsonToDetailsTab(jsonObj);	
 }
 
 function isoToRigntPanel($midmenuItem) {       
@@ -208,48 +199,52 @@ function isoJsonToDetailsTab(jsonObj) {
     
     if(jsonObj.size != null)
 	    $detailsTab.find("#size").text(convertBytes(parseInt(jsonObj.size)));       
-    
+              
     var status = "Ready";
 	if (jsonObj.isready == "false")
 		status = jsonObj.isostatus;	
 	$detailsTab.find("#status").text(status); 
-       
-    setBooleanField(jsonObj.bootable, $detailsTab.find("#bootable"));	     
+              
+    setBooleanField(jsonObj.bootable, $detailsTab.find("#bootable"));	
+    setBooleanField(jsonObj.crossZones, $detailsTab.find("#crossZones"));	     
     setDateField(jsonObj.created, $detailsTab.find("#created"));	  
     
     
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
+    var noAvailableActions = true;
     
     // "Edit", "Copy", "Create VM" 
-	if ((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.isready == "false") {
-		//template.find("#iso_edit_container, #iso_copy_container").hide();
+	if ((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.isready == "false") {		
 		$("#edit_button").hide();
     }
-    else {
-        //template.find("#iso_edit_container, #iso_copy_container").show();
+    else {        
         $("#edit_button").show();
         buildActionLinkForDetailsTab("Copy ISO", isoActionMap, $actionMenu, isoListAPIMap);		
+        noAvailableActions = false;
     }
 		
 	// "Create VM" 
 	if (((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.isready == "false") || (jsonObj.bootable == "false")) {
-		//template.find("#iso_create_vm_container").hide();
-    }
-    else {
-        //template.find("#iso_create_vm_container").show();
+	}
+    else {        
         buildActionLinkForDetailsTab("Create VM", isoActionMap, $actionMenu, isoListAPIMap);	
+        noAvailableActions = false;
     }
     
 	// "Delete" 
 	if (((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) || (jsonObj.isready == "false" && jsonObj.isostatus != null && jsonObj.isostatus.indexOf("% Downloaded") != -1)) {
-		//template.find("#iso_delete_container").hide();	
 	}
-	else {
-	    //template.find("#iso_delete_container").show();	
-	     buildActionLinkForDetailsTab("Delete ISO", isoActionMap, $actionMenu, isoListAPIMap);	
+	else {	    
+	    buildActionLinkForDetailsTab("Delete ISO", isoActionMap, $actionMenu, isoListAPIMap);	
+	    noAvailableActions = false;
 	}    
+	
+	// no available actions 
+	if(noAvailableActions == true) {
+	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
+	}	    
 }
 
 function isoClearRightPanel() {
@@ -327,9 +322,7 @@ function doUpdateIso() {
 	    data: createURL("command=updateIso&id="+id+"&name="+todb(name)+"&displayText="+todb(displaytext)),
 		dataType: "json",
 		success: function(json) {	
-		    var jsonObj = json.updateisoresponse;
-		    isoToMidmenu(jsonObj, $("#midmenuItem_"+jsonObj.id)); 
-		    isoJsonToDetailsTab(jsonObj);						
+		    isoAfterDetailsTabAction(json.updateisoresponse);		    					
 		}
 	});
 }
@@ -345,14 +338,13 @@ function doDeleteIso($actionLink, listAPIMap, $detailsTab) {
 	if (zoneId != null) 
 		moreCriteria.push("&zoneid="+zoneId);	
 	
-	var htmlMsg; 
+	var $dialog1;
 	if(jsonObj.crossZones == "true")
-	    htmlMsg = "<p>ISO <b>"+name+"</b> is used by all zones. Please confirm you want to delete it from all zones.</p>";
+	    $dialog1 = $("#dialog_confirmation_delete_iso_all_zones");
 	else
-	    htmlMsg = "<p>Please confirm you want to delete ISO <b>"+name+"</b>.</p>";
-					
-	$("#dialog_confirmation")
-	.html(htmlMsg)
+	    $dialog1 = $("#dialog_confirmation_delete_iso");	
+	
+	$dialog1	
 	.dialog('option', 'buttons', { 					
 		"Confirm": function() { 			
 			$(this).dialog("close");			
@@ -370,7 +362,7 @@ function populateZoneFieldExcludeSourceZone(zoneField, excludeZoneId) {
     if (g_zoneIds != null && g_zoneIds.length > 0) {
         for (var i = 0; i < g_zoneIds.length; i++) {
             if(g_zoneIds[i]	!= excludeZoneId)			            
-	            zoneField.append("<option value='" + g_zoneIds[i] + "'>" + sanitizeXSS(g_zoneNames[i]) + "</option>"); 			        			       
+	            zoneField.append("<option value='" + g_zoneIds[i] + "'>" + fromdb(g_zoneNames[i]) + "</option>"); 			        			       
         }
     }			    
 }
@@ -379,15 +371,9 @@ function doCopyIso($actionLink, listAPIMap, $detailsTab) {
 	var jsonObj = $detailsTab.data("jsonObj");
 	var id = jsonObj.id;
 	var name = jsonObj.name;			
-	var sourceZoneId = jsonObj.zoneid;
-				
-	populateZoneFieldExcludeSourceZone($("#dialog_copy_iso #copy_iso_zone"), sourceZoneId);
-	
-	$("#dialog_copy_iso #copy_iso_name_text").text(name);  //ISO name
-	
-	var sourceZoneName = jsonObj.zonename;
-	$("#dialog_copy_iso #copy_iso_source_zone_text").text(sourceZoneName); // source zone
-		
+	var sourceZoneId = jsonObj.zoneid;				
+	populateZoneFieldExcludeSourceZone($("#dialog_copy_iso #copy_iso_zone"), sourceZoneId);		
+			
 	$("#dialog_copy_iso")
 	.dialog('option', 'buttons', {				    
 	    "OK": function() {				       
@@ -413,11 +399,9 @@ function doCreateVMFromIso($actionLink, listAPIMap, $detailsTab) {
     var jsonObj = $detailsTab.data("jsonObj");	
 	var id = jsonObj.id;		
 	var name = jsonObj.name;				
-	var zoneId = jsonObj.zoneid;		
-					
+	var zoneId = jsonObj.zoneid;
 	var createVmDialog = $("#dialog_create_vm_from_iso");				
-	createVmDialog.find("#p_name").text(name);
-		
+			
 	createVmDialog
 	.dialog('option', 'buttons', {			    
 	    "Create": function() {
@@ -436,7 +420,7 @@ function doCreateVMFromIso($actionLink, listAPIMap, $detailsTab) {
 	        var serviceOfferingId = thisDialog.find("#service_offering").val();				        
 	        var diskOfferingId = thisDialog.find("#disk_offering").val();	        		        
 	                         
-		    var apiCommand = "command=deployVirtualMachine&zoneId="+zoneId+"&serviceOfferingId="+serviceOfferingId+"&diskOfferingId="+diskOfferingId+"&templateId="+id+"&group="+encodeURIComponent(group)+"&displayname="+encodeURIComponent(name);
+		    var apiCommand = "command=deployVirtualMachine&zoneId="+zoneId+"&serviceOfferingId="+serviceOfferingId+"&diskOfferingId="+diskOfferingId+"&templateId="+id+"&group="+todb(group)+"&displayname="+todb(name);
     	    doActionToDetailsTab(id, $actionLink, apiCommand, listAPIMap);		
 	    }, 
 	    "Cancel": function() {

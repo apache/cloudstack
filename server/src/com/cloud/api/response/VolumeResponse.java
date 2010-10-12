@@ -79,6 +79,15 @@ public class VolumeResponse extends BaseResponse {
     @SerializedName("storagetype")
     private String storageType;
 
+    @SerializedName("sourceid")
+    private Long sourceId;
+
+    @SerializedName("sourcetype")
+    private String sourceType;
+
+    @SerializedName("hypervisor")
+    private String hypervisor;
+
     @SerializedName("diskofferingid")
     private Long diskOfferingId;
 
@@ -241,6 +250,30 @@ public class VolumeResponse extends BaseResponse {
 
     public void setStorageType(String storageType) {
         this.storageType = storageType;
+    }
+
+    public Long getSourceId() {
+        return sourceId;
+    }
+
+    public void setSourceId(Long sourceId) {
+        this.sourceId = sourceId;
+    }
+
+    public String getSourceType() {
+        return sourceType;
+    }
+
+    public void setSourceType(String sourceType) {
+        this.sourceType = sourceType;
+    }
+
+    public String getHypervisor() {
+        return hypervisor;
+    }
+
+    public void setHypervisor(String hypervisor) {
+        this.hypervisor = hypervisor;
     }
 
     public Long getDiskOfferingId() {

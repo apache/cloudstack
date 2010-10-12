@@ -33,6 +33,7 @@ import com.cloud.api.response.VolumeResponse;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.vm.VMInstanceVO;
@@ -176,7 +177,12 @@ public class ListVolumesCmd extends BaseListCmd {
             String storageType;
             try {
                 if(volume.getPoolId() == null){
-                    storageType = "unknown";
+                    if (volume.getState() == Volume.State.Allocated) {
+                        /*set it as shared, so the UI can attach it to VM*/
+                        storageType = "shared";
+                    } else {
+                        storageType = "unknown";
+                    }
                 } else {
                     storageType = ApiDBUtils.volumeIsOnSharedStorage(volume.getId()) ? "shared" : "local";
                 }
@@ -185,8 +191,7 @@ public class ListVolumesCmd extends BaseListCmd {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Volume " + volume.getName() + " does not have a valid ID");
             }
 
-            volResponse.setStorageType(storageType);
-            
+            volResponse.setStorageType(storageType);            
             volResponse.setDiskOfferingId(volume.getDiskOfferingId());
 
             DiskOfferingVO diskOffering = ApiDBUtils.findDiskOfferingById(volume.getDiskOfferingId());
@@ -196,6 +201,9 @@ public class ListVolumesCmd extends BaseListCmd {
             Long poolId = volume.getPoolId();
             String poolName = (poolId == null) ? "none" : ApiDBUtils.findStoragePoolById(poolId).getName();
             volResponse.setStoragePoolName(poolName);
+            volResponse.setSourceId(volume.getSourceId());
+            volResponse.setSourceType(volume.getSourceType().toString());
+            volResponse.setHypervisor(ApiDBUtils.getVolumeHyperType(volume.getId()).toString());
 
             volResponse.setResponseName("volume");
             volResponses.add(volResponse);

@@ -65,6 +65,16 @@ public class ListGuestOsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
+    public Long getPageSizeVal() {
+        Long pageSize = 150L;
+        Integer pageSizeInt = getPageSize();
+        if (pageSizeInt != null) {
+            pageSize = pageSizeInt.longValue();
+        }
+        return pageSize;
+    }
+
+    @Override
     public String getName() {
         return s_name;
     }

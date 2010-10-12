@@ -61,6 +61,9 @@ public class ListIsosCmd extends BaseListCmd {
     @Parameter(name="domainid", type=CommandType.LONG)
     private Long domainId;
 
+    @Parameter(name="hypervisor", type=CommandType.STRING)
+    private String hypervisor;
+
     @Parameter(name="id", type=CommandType.LONG)
     private Long id;
 
@@ -94,6 +97,10 @@ public class ListIsosCmd extends BaseListCmd {
 
     public Long getDomainId() {
         return domainId;
+    }
+
+    public String getHypervisor() {
+        return hypervisor;
     }
 
     public Long getId() {
@@ -132,6 +139,7 @@ public class ListIsosCmd extends BaseListCmd {
     @Override @SuppressWarnings("unchecked")
     public ListResponse<TemplateResponse> getResponse() {
         TemplateFilter isoFilterObj = null;
+
         try {
             if (isoFilter == null) {
                 isoFilterObj = TemplateFilter.selfexecutable;
@@ -228,7 +236,7 @@ public class ListIsosCmd extends BaseListCmd {
                 DataCenterVO datacenter = ApiDBUtils.findZoneById(host.getDataCenterId());
                 isoResponse.setZoneId(host.getDataCenterId());
                 isoResponse.setZoneName(datacenter.getName());
-                            
+
                 // If the user is an admin, add the template download status
                 if (isAdmin || account.getId() == iso.getAccountId()) {
                     // add download status

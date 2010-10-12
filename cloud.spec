@@ -522,6 +522,9 @@ fi
 %files python
 %defattr(0644,root,root,0755)
 %{_prefix}/lib*/python*/site-packages/%{name}*
+%attr(0755,root,root) %{_bindir}/cloud-external-ipallocator.py
+%attr(0755,root,root) %{_initrddir}/cloud-ipallocator
+%dir %attr(770,root,root) %{_localstatedir}/log/%{name}/ipallocator
 
 %files setup
 %attr(0755,root,root) %{_bindir}/%{name}-setup-databases
@@ -532,6 +535,7 @@ fi
 %{_datadir}/%{name}/setup/create-schema.sql
 %{_datadir}/%{name}/setup/server-setup.sql
 %{_datadir}/%{name}/setup/templates.*.sql
+%{_datadir}/%{name}/setup/templates.sql
 %{_datadir}/%{name}/setup/deploy-db-dev.sh
 %{_datadir}/%{name}/setup/server-setup.xml
 %{_datadir}/%{name}/setup/data-20to21.sql
@@ -601,6 +605,7 @@ fi
 %{_libdir}/%{name}/agent/images
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
 %dir %attr(770,root,root) %{_localstatedir}/log/%{name}/agent
+
 
 %files console-proxy
 %defattr(0644,root,root,0755)

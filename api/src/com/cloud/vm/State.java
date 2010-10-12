@@ -26,21 +26,28 @@ import com.cloud.utils.fsm.StateMachine;
 import com.cloud.vm.VirtualMachine.Event;
 
 public enum State implements FiniteState<State, Event> {
-    Creating(true),
-    Starting(true),
-    Running(false),
-    Stopping(true),
-    Stopped(false),
-    Destroyed(false),
-    Expunging(true),
-    Migrating(true),
-    Error(false),
-    Unknown(false);
+    Creating(true, "VM is being created"),
+    Starting(true, "VM is being started.  At this state, you should find host id filled which means it's being started on that host."),
+    Running(false, "VM is running.  host id has the host that it is running on."),
+    Stopping(true, "VM is being stopped.  host id has the host that it is being stopped on."),
+    Stopped(false, "VM is stopped.  host id should be null."),
+    Destroyed(false, "VM is marked for destroy."),
+    Expunging(true, "VM is being   expunged."),
+    Migrating(true, "VM is being migrated.  host id holds to from host"),
+    Error(false, "VM is in error"),
+    Unknown(false, "VM state is unknown.");
     
     private final boolean _transitional;
+    String _description;
     
-    private State(boolean transitional) {
+    private State(boolean transitional, String description) {
     	_transitional = transitional;
+    	_description = description;
+    }
+    
+    @Override
+    public String getDescription() {
+        return _description;
     }
     
     public boolean isTransitional() {
@@ -66,6 +73,7 @@ public enum State implements FiniteState<State, Event> {
     public StateMachine<State, Event> getStateMachine() {
         return s_fsm;
     }
+    
     
     protected static final StateMachine<State, VirtualMachine.Event> s_fsm = new StateMachine<State, VirtualMachine.Event>();
     static {

@@ -53,7 +53,6 @@ import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.AccountVO;
@@ -213,21 +212,12 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
     
     /**
      * Creates a private template from a snapshot of a VM
-     * @param cmd the command object that defines 
-     * 
-     * template the template record that is used to store data (we need instance be created first)
      * @param cmd - the command specifying snapshotId, name, description
      * @return a template if successfully created, null otherwise
      * @throws InvalidParameterValueException
      */
     VMTemplateVO createPrivateTemplate(CreateTemplateCmd cmd) throws InternalErrorException;
 
-    /**
-     * @param userId    The Id of the user who invoked this operation.
-     * @param volumeId  The volume for which this snapshot is being taken
-     * @return          The properties of the snapshot taken
-     */
-    SnapshotVO createTemplateSnapshot(long userId, long volumeId);
     boolean destroyTemplateSnapshot(Long userId, long snapshotId);
 
     /**
@@ -256,6 +246,8 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
     boolean addInstanceToGroup(long userVmId, String group);
 
     InstanceGroupVO getGroupForVm(long vmId);
+    
+    void removeInstanceFromGroup(long vmId);
 
 	void updateVirtualMachine(UpdateVMCmd cmd);
 }

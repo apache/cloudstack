@@ -73,8 +73,8 @@ function showTemplatesTab() {
 		    var zones = json.listzonesresponse.zone;	 			     			    	
 		    if (zones != null && zones.length > 0) {
 		        for (var i = 0; i < zones.length; i++) {
-			        addTemplateZoneField.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 
-			        addIsoZoneField.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 	
+			        addTemplateZoneField.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
+			        addIsoZoneField.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 	
 			        g_zoneIds.push(zones[i].id);
 			        g_zoneNames.push(zones[i].name);			       
 		        }
@@ -87,7 +87,7 @@ function showTemplatesTab() {
 	    if (g_zoneIds != null && g_zoneIds.length > 0) {
 	        for (var i = 0; i < g_zoneIds.length; i++) {
 	            if(g_zoneIds[i]	!= excludeZoneId)			            
-		            zoneField.append("<option value='" + g_zoneIds[i] + "'>" + sanitizeXSS(g_zoneNames[i]) + "</option>"); 			        			       
+		            zoneField.append("<option value='" + g_zoneIds[i] + "'>" + fromdb(g_zoneNames[i]) + "</option>"); 			        			       
 	        }
 	    }			    
 	}
@@ -118,8 +118,8 @@ function showTemplatesTab() {
 	            var templateServiceOfferingField = $("#dialog_create_vm_from_template #service_offering").empty();
 	            var isoServiceOfferingField = $("#dialog_create_vm_from_iso #service_offering").empty();
 	            for(var i = 0; i < items.length; i++) {		        
-	                templateServiceOfferingField.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>");
-	                isoServiceOfferingField.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>");
+	                templateServiceOfferingField.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
+	                isoServiceOfferingField.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
 	            }
 	        }		        
 	    }
@@ -137,8 +137,8 @@ function showTemplatesTab() {
 	            var isoDiskOfferingField = $("#dialog_create_vm_from_iso #disk_offering").empty();
 	            
 	            for(var i = 0; i < items.length; i++) {		        
-	                templateDiskOfferingField.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>");
-	                isoDiskOfferingField.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>");
+	                templateDiskOfferingField.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
+	                isoDiskOfferingField.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
 	            }
 	        }		  
 	        
@@ -149,8 +149,12 @@ function showTemplatesTab() {
 	var formatSelect = $("#add_template_format").empty();
 	if (getHypervisorType() == "kvm") {
 		formatSelect.append("<option value='QCOW2'>QCOW2</option>");
+		formatSelect.append("<option value='VHD'>VHD</option>");
+		formatSelect.append("<option value='OVA'>OVA</option>");
 	} else if (getHypervisorType() == "xenserver") {
 		formatSelect.append("<option value='VHD'>VHD</option>");
+		formatSelect.append("<option value='QCOW2'>QCOW2</option>");
+		formatSelect.append("<option value='OVA'>OVA</option>");
 	}
 			
 	$("#template_action_new").bind("click", function(event) {		 
@@ -174,6 +178,7 @@ function showTemplatesTab() {
 				var password = thisDialog.find("#add_template_password").val();		
 				var isPublic = thisDialog.find("#add_template_public").val();	                    	
 				var osType = thisDialog.find("#add_template_os_type").val();
+				var hypervisor = thisDialog.find("#add_template_hypervisor").val();
 				
 				var moreCriteria = [];				
 				if(thisDialog.find("#add_template_featured_container").css("display")!="none") {				
@@ -193,7 +198,7 @@ function showTemplatesTab() {
 			    submenuContent.find("#grid_content").prepend(template.fadeIn("slow"));	 				
 												
 				$.ajax({
-				        data: createURL("command=registerTemplate&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&url="+encodeURIComponent(url)+"&zoneid="+zoneId+"&ispublic="+isPublic+moreCriteria.join("")+"&format="+format+"&passwordEnabled="+password+"&osTypeId="+osType+"&response=json"),
+				        data: createURL("command=registerTemplate&name="+todb(name)+"&displayText="+todb(desc)+"&url="+encodeURIComponent(url)+"&zoneid="+zoneId+"&ispublic="+isPublic+moreCriteria.join("")+"&format="+format+"&passwordEnabled="+password+"&osTypeId="+osType+"&hypervisor="+hypervisor+"&response=json"),
 					dataType: "json",
 					success: function(json) {						  
 						var result = json.registertemplateresponse;								
@@ -234,15 +239,15 @@ function showTemplatesTab() {
 		(index++ % 2 == 0)? template.addClass("dbsmallrow_odd"):template.addClass("dbsmallrow_even");	
 		template.attr("id", "template"+json.id+"_zone"+json.zoneid);	
 		template.data("templateId", json.id);
-		template.data("zoneId",sanitizeXSS(json.zoneid));
-		template.data("zoneName",sanitizeXSS(json.zonename));
-		template.data("name", sanitizeXSS(json.name));			
+		template.data("zoneId",fromdb(json.zoneid));
+		template.data("zoneName",fromdb(json.zonename));
+		template.data("name", fromdb(json.name));			
 					
 		template.find("#template_id").text(json.id);
-		template.find("#template_zone").text(json.zonename);
-		template.find("#template_name").text(json.name);
-		template.find("#template_display_text").text(json.displaytext);
-		template.find("#template_account").text(json.account);
+		template.find("#template_zone").text(fromdb(json.zonename));
+		template.find("#template_name").text(fromdb(json.name));
+		template.find("#template_display_text").text(fromdb(json.displaytext));
+		template.find("#template_account").text(fromdb(json.account));
 		if(json.size != null)
 		    template.find("#template_size").text(convertBytes(parseInt(json.size)));
 		
@@ -321,13 +326,13 @@ function showTemplatesTab() {
 					
 					var array1 = [];
 					if(newName!=oldName)
-					    array1.push("&name="+encodeURIComponent(newName));
+					    array1.push("&name="+todb(newName));
 					if(newDesc!=oldDesc)
-					    array1.push("&displaytext="+encodeURIComponent(newDesc));
+					    array1.push("&displaytext="+todb(newDesc));
 					if(newPasswordEnabled!=oldPasswordEnabled)
 					    array1.push("&passwordenabled="+newPasswordEnabled);						
 					if(newOsTypeId!=oldOsTypeId)
-					    array1.push("&ostypeid="+encodeURIComponent(newOsTypeId));
+					    array1.push("&ostypeid="+todb(newOsTypeId));
 								
 					if(array1.length > 0) {	
 					    $.ajax({
@@ -420,7 +425,7 @@ function showTemplatesTab() {
                                                 that.slideUp("slow", function() { $(this).remove() });
 							                    changeGridRowsTotal($("#submenu_content_template").find("#grid_rows_total"), -1);                                                        
 						                    } else if (result.jobstatus == 2) {										        
-							                    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");		
+							                    $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");		
 							                    loadingImg.hide();  
                                                 rowContainer.show();										   					    
 						                    }
@@ -497,13 +502,13 @@ function showTemplatesTab() {
 					                    } else {											    
 						                    $("body").stopTime(timerKey);
 						                    if (result.jobstatus == 1) {							                        
-							                    $("#dialog_info").html("<p>Template download started (ID: <b>"+result.copytemplateresponse[0].id+"</b>, Zone: <b>"+sanitizeXSS(result.copytemplateresponse[0].zonename)+"</b>, Name: <b>"+sanitizeXSS(result.copytemplateresponse[0].name)+"</b>) . Check the progress...</p>").dialog("open");									                    
+							                    $("#dialog_info").html("<p>Template download started (ID: <b>"+result.copytemplateresponse[0].id+"</b>, Zone: <b>"+fromdb(result.copytemplateresponse[0].zonename)+"</b>, Name: <b>"+fromdb(result.copytemplateresponse[0].name)+"</b>) . Check the progress...</p>").dialog("open");									                    
 							                    loadingImg.hide();  
                                                 rowContainer.show();	
                                                 $("#template_type").val("self");
 						                        $("#template_type").change();                                                         
 						                    } else if (result.jobstatus == 2) {										        
-							                    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");		
+							                    $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");		
 							                    loadingImg.hide();  
                                                 rowContainer.show();										   					    
 						                    }
@@ -568,10 +573,10 @@ function showTemplatesTab() {
 		          
 		        var array1 = [];      
 		        var name = trim(thisDialog.find("#name").val());	
-		        array1.push("&displayname="+encodeURIComponent(name));
+		        array1.push("&displayname="+todb(name));
 		        	
 		        var group = trim(thisDialog.find("#group").val());	
-		        array1.push("&group="+encodeURIComponent(group));
+		        array1.push("&group="+todb(group));
 		        	
 		        var serviceOfferingId = thisDialog.find("#service_offering").val();		
 		        array1.push("&serviceOfferingId="+serviceOfferingId);
@@ -610,15 +615,15 @@ function showTemplatesTab() {
 										        // Succeeded													        
 										        var htmlMsg;
 										        if (result.virtualmachine[0].passwordenabled == 'true') 
-											        htmlMsg = "Your instance from " + sanitizeXSS(name) + " has been successfully created.  Your new password is : <b>" + result.virtualmachine[0].password + "</b> .  Please change it as soon as you log into your new instance";
+											        htmlMsg = "Your instance from " + fromdb(name) + " has been successfully created.  Your new password is : <b>" + result.virtualmachine[0].password + "</b> .  Please change it as soon as you log into your new instance";
 										        else 
-											        htmlMsg = "Your instance from " + sanitizeXSS(name) + " has been successfully created.";												        
+											        htmlMsg = "Your instance from " + fromdb(name) + " has been successfully created.";												        
 										        $("#dialog_info").html(htmlMsg).dialog("open");		
 										        loadingImg.hide();  
                                                 rowContainer.show();								       
 									        } else if (result.jobstatus == 2) {
 										        // Failed
-										        $("#dialog_info").html("Unable to create your new instance from " + sanitizeXSS(name) + " due to the error: " + sanitizeXSS(result.jobresult)).dialog("open");	
+										        $("#dialog_info").html("Unable to create your new instance from " + fromdb(name) + " due to the error: " + fromdb(result.jobresult)).dialog("open");	
 										        loadingImg.hide();  
                                                 rowContainer.show();
 									        }
@@ -659,7 +664,7 @@ function showTemplatesTab() {
 		    var name = submenuContent.find("#advanced_search #adv_search_name").val();				 
 		    var moreCriteria = [];								
 			if (name!=null && trim(name).length > 0) 
-				moreCriteria.push("&name="+encodeURIComponent(trim(name)));				
+				moreCriteria.push("&name="+todb(trim(name)));				
 			commandString = "command=listTemplates&page="+currentPage+moreCriteria.join("")+"&templatefilter="+type+"&response=json";    
 		} else {          
             var searchInput = $("#submenu_content_template #search_input").val();  //search button          
@@ -752,12 +757,13 @@ function showTemplatesTab() {
 				//var isPublic = thisDialog.find("#add_iso_public").val();
 				var isPublic = "false"; //default to private for now
 				var osType = thisDialog.find("#add_iso_os_type").val();
-				var bootable = thisDialog.find("#add_iso_bootable").val();			
+				var bootable = thisDialog.find("#add_iso_bootable").val();	
+				var hypervisor = thisDialog.find("#add_iso_hypervisor").val();				
 			    				    
 			    thisDialog.dialog("close");									    
 			    				
 				$.ajax({
-				        data: createURL("command=registerIso&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&url="+encodeURIComponent(url)+"&zoneId="+zoneId+"&isPublic="+isPublic+"&osTypeId="+osType+"&bootable="+bootable+"&response=json"),
+				        data: createURL("command=registerIso&name="+todb(name)+"&displayText="+todb(desc)+"&url="+encodeURIComponent(url)+"&zoneId="+zoneId+"&isPublic="+isPublic+"&osTypeId="+osType+"&bootable="+bootable+"&hypervisor="+hypervisor+"&response=json"),
 					dataType: "json",
 					success: function(json) {					
 					    var result = json.registerisoresponse;					
@@ -804,15 +810,15 @@ function showTemplatesTab() {
 		}
 				
 		template.data("isoId", json.id);
-		template.data("zoneId",sanitizeXSS(json.zoneid));
-		template.data("zoneName",sanitizeXSS(json.zonename));
-		template.data("name", sanitizeXSS(json.name));		
+		template.data("zoneId",fromdb(json.zoneid));
+		template.data("zoneName",fromdb(json.zonename));
+		template.data("name", fromdb(json.name));		
 		template.data("isPublic", json.ispublic);
 		
 		template.find("#iso_id").text(json.id);
-		template.find("#iso_zone").text(json.zonename);
-		template.find("#iso_name").text(json.name);
-		template.find("#iso_display_text").text(json.displaytext);
+		template.find("#iso_zone").text(fromdb(json.zonename));
+		template.find("#iso_name").text(fromdb(json.name));
+		template.find("#iso_display_text").text(fromdb(json.displaytext));
 					
 		if(json.size != null)
 		    template.find("#iso_size").text(convertBytes(parseInt(json.size)));
@@ -871,7 +877,7 @@ function showTemplatesTab() {
 					var dialogBox = $(this);
 					dialogBox.dialog("close");
 					$.ajax({
-					        data: createURL("command=updateIso&id="+id+"&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&response=json"),
+					        data: createURL("command=updateIso&id="+id+"&name="+todb(name)+"&displayText="+todb(desc)+"&response=json"),
 						dataType: "json",
 						success: function(json) {								    					    	
 						    isoJSONToTemplate(json.updateisoresponse, template);										    
@@ -935,7 +941,7 @@ function showTemplatesTab() {
                                                 that.slideUp("slow", function() { $(this).remove() });
 							                    changeGridRowsTotal($("#submenu_content_iso").find("#grid_rows_total"), -1);                                                        
 						                    } else if (result.jobstatus == 2) {										        
-							                    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");		
+							                    $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");		
 							                    loadingImg.hide();  
                                                 rowContainer.show();										   					    
 						                    }
@@ -1016,13 +1022,13 @@ function showTemplatesTab() {
 					                    } else {											    
 						                    $("body").stopTime(timerKey);
 						                    if (result.jobstatus == 1) {								                    
-							                    $("#dialog_info").html("<p>ISO download started (ID: <b>"+result.copytemplateresponse[0].id+"</b>, Zone: <b>"+sanitizeXSS(result.copytemplateresponse[0].zonename)+"</b>, Name: <b>"+sanitizeXSS(result.copytemplateresponse[0].name)+"</b>) . Check the progress...</p>").dialog("open");                                                                                
+							                    $("#dialog_info").html("<p>ISO download started (ID: <b>"+result.copytemplateresponse[0].id+"</b>, Zone: <b>"+fromdb(result.copytemplateresponse[0].zonename)+"</b>, Name: <b>"+fromdb(result.copytemplateresponse[0].name)+"</b>) . Check the progress...</p>").dialog("open");                                                                                
 							                    loadingImg.hide();  
                                                 rowContainer.show();	
                                                 currentPage=1;  //refresh the whole ISO grid until Keshav changes copyIso to return the newly created ISO.
                                                 listIsos();                                                   
 						                    } else if (result.jobstatus == 2) {										        
-							                    $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");		
+							                    $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");		
 							                    loadingImg.hide();  
                                                 rowContainer.show();										   					    
 						                    }
@@ -1065,7 +1071,7 @@ function showTemplatesTab() {
 		    var name = submenuContent.find("#advanced_search #adv_search_name").val();				  
 		    var moreCriteria = [];								
 			if (name!=null && trim(name).length > 0) 
-				moreCriteria.push("&name="+encodeURIComponent(trim(name)));			
+				moreCriteria.push("&name="+todb(trim(name)));			
 			commandString = "command=listIsos&page="+currentPage+moreCriteria.join("")+"&isofilter="+type+"&response=json";    
 		} else {          
 		    var searchInput = $("#submenu_content_iso #search_input").val(); //keyword  				    

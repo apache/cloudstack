@@ -20,23 +20,32 @@ package com.cloud.vm;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 
 public class VirtualMachineProfile {
     VirtualMachine _vm;
-    int _cpus;
-    int _speed; // in mhz
+    Integer _cpus;
+    Integer _speed; // in mhz
     long _ram; // in bytes
-    Hypervisor.Type _hypervisorType;
+    HypervisorType _hypervisorType;
     VirtualMachine.Type _type;
     Map<String, String> _params;
     Long _templateId;
     List<DiskProfile> _disks;
     List<NicProfile> _nics;
+    String _os;
     
     public VirtualMachineProfile(VirtualMachine.Type type) {
         this._type = type;
+    }
+    
+    public String getName() {
+        return _vm.getInstanceName();
+    }
+    
+    public String getOs() {
+        return _os;
     }
     
     public long getId() {
@@ -51,11 +60,11 @@ public class VirtualMachineProfile {
         return _templateId;
     }
     
-    public int getCpus() {
+    public Integer getCpus() {
         return _cpus;
     }
     
-    public int getSpeed() {
+    public Integer getSpeed() {
         return _speed;
     }
     
@@ -79,7 +88,7 @@ public class VirtualMachineProfile {
         return _disks;
     }
     
-    public Hypervisor.Type getHypervisorType() {
+    public HypervisorType getHypervisorType() {
         return _hypervisorType;
     }
     
@@ -87,22 +96,15 @@ public class VirtualMachineProfile {
         return _vm;
     }
     
-    public VirtualMachineProfile(long id, int core, int speed, long ram, Long templateId, Hypervisor.Type type, Map<String, String> params) {
-        this._cpus = core;
-        this._speed = speed;
-        this._ram = ram;
-        this._hypervisorType = type;
-        this._params = params;
-        this._templateId = templateId;
-    }
-    
-    public VirtualMachineProfile(VirtualMachine vm, ServiceOffering offering) {
+    public VirtualMachineProfile(VirtualMachine vm, ServiceOffering offering, String os, HypervisorType hypervisorType) {
         this._cpus = offering.getCpu();
         this._speed = offering.getSpeed();
-        this._ram = offering.getRamSize();
+        this._ram = offering.getRamSize() * 1024l * 1024l;
         this._templateId = vm.getTemplateId();
         this._type = vm.getType();
         this._vm = vm;
+        this._os = os;
+        this._hypervisorType = hypervisorType;
     }
     
     protected VirtualMachineProfile() {

@@ -25,6 +25,7 @@ public class AttachVolumeCommand extends Command {
 	boolean attach;
 	String vmName;
 	StoragePoolType pooltype;
+	String poolUuid;
 	String volumeFolder;
 	String volumePath;
 	String volumeName;
@@ -83,5 +84,12 @@ public class AttachVolumeCommand extends Command {
     public void setDeviceId(Long deviceId) {
         this.deviceId = deviceId;
     }
-	
+    
+    public String getPoolUuid() {
+    	return poolUuid;
+    }
+    
+    public void setPoolUuid(String poolUuid) {
+    	this.poolUuid = poolUuid;
+    }
 }

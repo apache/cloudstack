@@ -115,49 +115,24 @@ public class CreatePrivateTemplateExecutor extends VolumeOperationExecutor {
         
                     	asyncMgr.updateAsyncJobAttachment(job.getId(), "vm_template", template.getId());
                     	asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, template.getId());
-                    	Snapshot snapshot = null;
-        	    	        
-            	        if (snapshotId == null) {
-            	            // We are create private template from volume. Create a snapshot, copy the vhd chain of the disk to secondary storage. 
-            	            // For template snapshot, we use a separate snapshot method.
-            	            snapshot = vmMgr.createTemplateSnapshot(param.getUserId(), param.getVolumeId());
-            	        }
-            	        else {
-            	            // We are creating a private template from an already present snapshot. 
-            	            // This snapshot is already backed up on secondary storage.
-            	            snapshot = managerServer.findSnapshotById(snapshotId);
-            	        }
-            	        
-                        if (snapshot == null) {
-                            details += ", reason: Failed to create snapshot for basis of private template";
-                        } else {
-                            param.setSnapshotId(snapshot.getId());
-            		    	
-            				template = managerServer.createPrivateTemplate(template, 
-            				                                               param.getUserId(), 
-            						                                       param.getSnapshotId(), 
-            						                                       param.getName(), 
-            						                                       param.getDescription());
-            				            				            			
-            				if(template != null) {
-            					VMTemplateHostVO templateHostRef = managerServer.findTemplateHostRef(template.getId(), volume.getDataCenterId());
-            				    jobStatus = AsyncJobResult.STATUS_SUCCEEDED;
-            				    resultCode = 0;
-            				    details = null;
-            				    String eventParams = "id="+template.getId()+"\nname=" + template.getName() +"\nsize="+volume.getSize()+ "\ndcId="+volume.getDataCenterId();
-            				    managerServer.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_TEMPLATE_CREATE, "Successfully created Template " +param.getName(), eventParams ,param.getEventId());
-            				    resultObject = composeResultObject(template, templateHostRef, volume.getDataCenterId());
-            				} 
-            				
-            				// Irrespective of whether the template was created or not, 
-            				// cleanup the snapshot taken for this template. (If this template is created from a volume and not a snapshot) 
-            				if(snapshotId == null) {
-            				    // Template was created from volume
-            				    // and snapshot is not null.
-            				    managerServer.destroyTemplateSnapshot(param.getUserId(), snapshot.getId());
-            				}
+
+                        template = managerServer.createPrivateTemplate(template, param.getUserId(), snapshotId, volumeId, param.getName(), param.getDescription());
+
+                        if (template != null) {
+                            VMTemplateHostVO templateHostRef = managerServer.findTemplateHostRef(template.getId(),
+                                    volume.getDataCenterId());
+                            jobStatus = AsyncJobResult.STATUS_SUCCEEDED;
+                            resultCode = 0;
+                            details = null;
+                            String eventParams = "id=" + template.getId() + "\nname=" + template.getName() + "\nsize="
+                                    + volume.getSize() + "\ndcId=" + volume.getDataCenterId();
+                            managerServer.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_INFO,
+                                    EventTypes.EVENT_TEMPLATE_CREATE, "Successfully created Template "
+                                            + param.getName(), eventParams, param.getEventId());
+                            resultObject = composeResultObject(template, templateHostRef, volume.getDataCenterId());
                         }
-    		    	}
+
+                    }
 		        }
 			} catch (InvalidParameterValueException e) {
 			    details += ", reason: " + e.getMessage();

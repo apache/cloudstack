@@ -205,7 +205,7 @@ function showInstancesTab(p_domainId, p_account) {
 															vmInstance.data("state", result.virtualmachine[0].state);
 																																										
 															if (result.virtualmachine[0].hostname != undefined) {
-				                                                vmInstance.find("#vm_host").html("<strong>Host:</strong> " + sanitizeXSS(result.virtualmachine[0].hostname));
+				                                                vmInstance.find("#vm_host").html("<strong>Host:</strong> " + fromdb(result.virtualmachine[0].hostname));
 			                                                } else {
 			                                                    vmInstance.find("#vm_host").html("<strong>Host:</strong> ");
 			                                                }	
@@ -295,7 +295,7 @@ function showInstancesTab(p_domainId, p_account) {
 															vmInstance.data("state", result.virtualmachine[0].state);
 																															
 															if (result.virtualmachine[0].hostname != undefined) {
-				                                                vmInstance.find("#vm_host").html("<strong>Host:</strong> " + sanitizeXSS(result.virtualmachine[0].hostname));
+				                                                vmInstance.find("#vm_host").html("<strong>Host:</strong> " + fromdb(result.virtualmachine[0].hostname));
 			                                                } else {
 			                                                    vmInstance.find("#vm_host").html("<strong>Host:</strong> ");
 			                                                }																	
@@ -576,7 +576,7 @@ function showInstancesTab(p_domainId, p_account) {
 						
 						if (offerings != null && offerings.length > 0) {
 							for (var i = 0; i < offerings.length; i++) {
-								var option = $("<option value='" + offerings[i].id + "'>" + sanitizeXSS(unescape(offerings[i].displaytext)) + "</option>").data("name", sanitizeXSS(unescape(offerings[i].name)));
+								var option = $("<option value='" + offerings[i].id + "'>" + fromdb(offerings[i].displaytext) + "</option>").data("name", fromdb(offerings[i].name));
 								offeringSelect.append(option); 
 							}
 						} 
@@ -611,7 +611,7 @@ function showInstancesTab(p_domainId, p_account) {
 								                        vmInstance.find(".row_loading").show();
 								                        vmInstance.find(".loadingmessage_container .loadingmessage_top p").html("Your virtual instance has been upgraded.  Please restart your virtual instance for the new service offering to take effect.");
 								                        vmInstance.find(".loadingmessage_container").fadeIn("slow");										                        
-								                        vmInstance.find("#vm_service").html("<strong>Service:</strong> " + sanitizeXSS(unescape(result.virtualmachine[0].serviceofferingname)));		
+								                        vmInstance.find("#vm_service").html("<strong>Service:</strong> " + fromdb(result.virtualmachine[0].serviceofferingname));		
 								                        if (result.virtualmachine[0].haenable =='true') {
 			                                                vmInstance.find("#vm_ha").html("<strong>HA:</strong> Enabled");
 			                                                vmInstance.find("#vm_action_ha").text("Disable HA");
@@ -620,7 +620,7 @@ function showInstancesTab(p_domainId, p_account) {
 			                                                vmInstance.find("#vm_action_ha").text("Enable HA");
 		                                                }									                        
 										            } else if (result.jobstatus == 2) { // Failed
-											            $("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");		
+											            $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");		
 										            }
 									            }
 								            },
@@ -712,7 +712,7 @@ function showInstancesTab(p_domainId, p_account) {
 						var group = trim($("#change_group_name").val());
 						var vmInstance = $("#vm"+vmId);
 						$.ajax({
-						       data: createURL("command=updateVirtualMachine&id="+vmId+"&group="+encodeURIComponent(group)+"&response=json"),
+						       data: createURL("command=updateVirtualMachine&id="+vmId+"&group="+todb(group)+"&response=json"),
 							dataType: "json",
 							success: function(json) {
 								vmInstance.find("#vm_group").text(group);
@@ -741,7 +741,7 @@ function showInstancesTab(p_domainId, p_account) {
 						var name = trim($("#change_instance_name").val());
 						
 						$.ajax({
-						       data: createURL("command=updateVirtualMachine&id="+vmId+"&displayName="+encodeURIComponent(name)+"&response=json"),
+						       data: createURL("command=updateVirtualMachine&id="+vmId+"&displayName="+todb(name)+"&response=json"),
 							dataType: "json",
 							success: function(json) {
 								if (isAdmin()) {
@@ -840,7 +840,7 @@ function showInstancesTab(p_domainId, p_account) {
 						if (isos != null && isos.length > 0) {
 							isoSelect.empty();
 							for (var i = 0; i < isos.length; i++) {
-								isoSelect.append("<option value='"+isos[i].id+"'>"+sanitizeXSS(isos[i].displaytext)+"</option>");;
+								isoSelect.append("<option value='"+isos[i].id+"'>"+fromdb(isos[i].displaytext)+"</option>");;
 							}
 						}
 					}
@@ -1062,7 +1062,7 @@ function showInstancesTab(p_domainId, p_account) {
 					link.data("expanded", false);
 				}
 				break;			    
-			case "vm_actions" :
+			case "vm_actions" :			    
 				vmInstance.find("#vm_actions_container").slideDown("fast");
 				break;
 			case "vm_actions_close" :
@@ -1090,15 +1090,15 @@ function showInstancesTab(p_domainId, p_account) {
 		var vmName = getVmName(instanceJSON.name, instanceJSON.displayname);
 					
 		instanceTemplate.data("id", instanceJSON.id)
-			.data("systemName", sanitizeXSS(instanceJSON.name))
-			.data("name", sanitizeXSS(vmName))				
+			.data("systemName", fromdb(instanceJSON.name))
+			.data("name", fromdb(vmName))				
 			.data("passwordEnabled", instanceJSON.passwordenabled)
 			.data("domainId", instanceJSON.domainid)
-			.data("account", sanitizeXSS(instanceJSON.account))
-			.data("zoneId", sanitizeXSS(instanceJSON.zoneid))
+			.data("account", fromdb(instanceJSON.account))
+			.data("zoneId", fromdb(instanceJSON.zoneid))
 			.data("state", instanceJSON.state)
 			.data("ha", instanceJSON.haenable);
-		instanceTemplate.data("group", sanitizeXSS(instanceJSON.group));	
+		instanceTemplate.data("group", fromdb(instanceJSON.group));	
 			
 		if (instanceJSON.isoId != undefined && instanceJSON.isoid.length > 0) {
 			instanceTemplate.data("isoId", instanceJSON.isoid);
@@ -1106,11 +1106,11 @@ function showInstancesTab(p_domainId, p_account) {
 		instanceTemplate.find("#vm_actions").data("id", instanceJSON.id);
 		
 		// Populate the template
-		instanceTemplate.find("#vm_name").html("<strong>Name:</strong> " + sanitizeXSS(vmName));
+		instanceTemplate.find("#vm_name").html("<strong>Name:</strong> " + fromdb(vmName));
 		instanceTemplate.find("#vm_ip_address").html("<strong>IP Address:</strong> " + instanceJSON.ipaddress);
-		instanceTemplate.find("#vm_zone").html("<strong>Zone:</strong> " + sanitizeXSS(instanceJSON.zonename));
-		instanceTemplate.find("#vm_template").html("<strong>Template:</strong> " + sanitizeXSS(instanceJSON.templatename));
-		instanceTemplate.find("#vm_service").html("<strong>Service:</strong> " + sanitizeXSS(unescape(instanceJSON.serviceofferingname)));
+		instanceTemplate.find("#vm_zone").html("<strong>Zone:</strong> " + fromdb(instanceJSON.zonename));
+		instanceTemplate.find("#vm_template").html("<strong>Template:</strong> " + fromdb(instanceJSON.templatename));
+		instanceTemplate.find("#vm_service").html("<strong>Service:</strong> " + fromdb(instanceJSON.serviceofferingname));
 		if (instanceJSON.haenable =='true') {
 			instanceTemplate.find("#vm_ha").html("<strong>HA:</strong> Enabled");
 			instanceTemplate.find("#vm_action_ha").text("Disable HA");
@@ -1121,17 +1121,17 @@ function showInstancesTab(p_domainId, p_account) {
 		
 		setDateField(instanceJSON.created, instanceTemplate.find("#vm_created"), "<strong>Created:</strong> ");
 					
-		instanceTemplate.find("#vm_account").html("<strong>Account:</strong> " + sanitizeXSS(instanceJSON.account));
-		instanceTemplate.find("#vm_domain").html("<strong>Domain:</strong> " + sanitizeXSS(instanceJSON.domain));
+		instanceTemplate.find("#vm_account").html("<strong>Account:</strong> " + fromdb(instanceJSON.account));
+		instanceTemplate.find("#vm_domain").html("<strong>Domain:</strong> " + fromdb(instanceJSON.domain));
 		if (isAdmin()) {
 			if (instanceJSON.hostname != undefined) {
-				instanceTemplate.find("#vm_host").html("<strong>Host:</strong> " + sanitizeXSS(instanceJSON.hostname));
+				instanceTemplate.find("#vm_host").html("<strong>Host:</strong> " + fromdb(instanceJSON.hostname));
 			} else {
 			    instanceTemplate.find("#vm_host").html("<strong>Host:</strong> ");
 			}				
 		}
 		if (instanceJSON.group != undefined) {
-			instanceTemplate.find("#vm_group").text(instanceJSON.group);
+			instanceTemplate.find("#vm_group").text(fromdb(instanceJSON.group));
 		} else {
 		    instanceTemplate.find("#vm_group").text("No Group");
 		}
@@ -1241,7 +1241,7 @@ function showInstancesTab(p_domainId, p_account) {
 				var zoneSelect = vmPopup.find("#wizard_zone").empty();	
 				if (zones != null && zones.length > 0) {
 					for (var i = 0; i < zones.length; i++) {
-						zoneSelect.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 
+						zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
 					}
 				}				
 				listTemplatesInVmPopup();	
@@ -1257,7 +1257,7 @@ function showInstancesTab(p_domainId, p_account) {
 				if (items != null && items.length > 0) {
 					for (var i = 0; i < items.length; i++) {
 					    if(items[i].name != "default")						
-						    networkGroupSelect.append("<option value='" + sanitizeXSS(items[i].name) + "'>" + sanitizeXSS(items[i].name) + "</option>"); 
+						    networkGroupSelect.append("<option value='" + fromdb(items[i].name) + "'>" + fromdb(items[i].name) + "</option>"); 
 					}
 				}					    
 			}
@@ -1278,7 +1278,7 @@ function showInstancesTab(p_domainId, p_account) {
 					        continue;						
 						var checked = "checked";
 						if (first == false) checked = "";
-						var listItem = $("<li><input class='radio' type='radio' name='service' id='service' value='"+offerings[i].id+"'" + checked + "/><label style='width:500px;font-size:11px;' for='service'>"+sanitizeXSS(unescape(offerings[i].displaytext))+"</label></li>");
+						var listItem = $("<li><input class='radio' type='radio' name='service' id='service' value='"+offerings[i].id+"'" + checked + "/><label style='width:500px;font-size:11px;' for='service'>"+fromdb(offerings[i].displaytext)+"</label></li>");
 						$("#wizard_service_offering").append(listItem);													
 						first = false;
 					}
@@ -1307,14 +1307,14 @@ function showInstancesTab(p_domainId, p_account) {
 								var html = 
 									"<li>"
 										+"<input class='radio' type='radio' name='rootdisk' id='rootdisk' value='"+offerings[i].id+"'" + ((i==0)?"checked":"") + "/>"
-										+"<label style='width:500px;font-size:11px;' for='disk'>"+sanitizeXSS(unescape(offerings[i].displaytext))+"</label>"
+										+"<label style='width:500px;font-size:11px;' for='disk'>"+fromdb(offerings[i].displaytext)+"</label>"
 								   +"</li>";
 								$("#wizard_root_disk_offering").append(html);
 							
 								var html2 = 
 								"<li>"
 									+"<input class='radio' type='radio' name='datadisk' id='datadisk' value='"+offerings[i].id+"'" + "/>"
-									+"<label style='width:500px;font-size:11px;' for='disk'>"+sanitizeXSS(unescape(offerings[i].displaytext))+"</label>"
+									+"<label style='width:500px;font-size:11px;' for='disk'>"+fromdb(offerings[i].displaytext)+"</label>"
 							   +"</li>";
 								$("#wizard_data_disk_offering").append(html2);																		
 							}
@@ -1412,20 +1412,24 @@ function showInstancesTab(p_domainId, p_account) {
 	    if(zoneId == null || zoneId.length == 0)
 	        return;
 	
+	    var hypervisor = vmPopup.find("#wizard_hypervisor").val();
+	    if (hypervisor == null || hypervisor.length == 0) 
+		return;
+	    
 	    var container = vmPopup.find("#template_container");	 		    	
 		   
 	    var commandString;    		  	   
         var searchInput = vmPopup.find("#search_input").val();   
         if (selectedTemplateTypeInVmPopup != "blank") {      
             if (searchInput != null && searchInput.length > 0)                 
-                commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup+"&response=json"; 
+                commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&hypervisor="+hypervisor+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup+"&response=json"; 
             else
-                commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&page="+currentPageInTemplateGridInVmPopup+"&response=json";           		    		
+                commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&hypervisor="+hypervisor+"&page="+currentPageInTemplateGridInVmPopup+"&response=json";           		    		
 		} else {
 		    if (searchInput != null && searchInput.length > 0)                 
-                commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup+"&response=json";  
+                commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&hypervisor="+hypervisor+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup+"&response=json";  
             else
-                commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&page="+currentPageInTemplateGridInVmPopup+"&response=json";  
+                commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&hypervisor="+hypervisor+"&page="+currentPageInTemplateGridInVmPopup+"&response=json";  
 		}
 		
 		var loading = vmPopup.find("#wiz_template_loading").show();				
@@ -1457,8 +1461,8 @@ function showInstancesTab(p_domainId, p_account) {
 
 						var html = '<div class="'+divClass+'" id="'+items[i].id+'">'
 									  +'<div class="'+getIconForOS(items[i].ostypename)+'"></div>'
-									  +'<div class="rev_wiztemp_listtext">'+sanitizeXSS(items[i].displaytext)+'</div>'
-									  +'<div class="rev_wiztemp_ownertext">'+sanitizeXSS(items[i].account)+'</div>'
+									  +'<div class="rev_wiztemp_listtext">'+fromdb(items[i].displaytext)+'</div>'
+									  +'<div class="rev_wiztemp_ownertext">'+fromdb(items[i].account)+'</div>'
 								  +'</div>';
 						container.append(html);
 					}						
@@ -1504,6 +1508,13 @@ function showInstancesTab(p_domainId, p_account) {
     vmPopup.find("#wizard_zone").bind("change", function(event) {       
         var selectedZone = $(this).val();
         if(selectedZone != null && selectedZone.length > 0)
+            listTemplatesInVmPopup();         
+        return false;
+    });
+    
+    vmPopup.find("#wizard_hypervisor").bind("change", function(event) {       
+        var selectedHypervisor = $(this).val();
+        if(selectedHypervisor != null && selectedHypervisor.length > 0)
             listTemplatesInVmPopup();         
         return false;
     });
@@ -1618,6 +1629,7 @@ function showInstancesTab(p_domainId, p_account) {
 			thisPopup.find("#wizard_review_zone").text(thisPopup.find("#wizard_zone option:selected").text());
 			thisPopup.find("#wizard_review_name").text(thisPopup.find("#wizard_vm_name").val());
 			thisPopup.find("#wizard_review_group").text(thisPopup.find("#wizard_vm_group").val());
+			thisPopup.find("#wizard_review_hypervisor").text(thisPopup.find("#wizard_hypervisor option:selected").text());
 			
 			if(thisPopup.find("#wizard_network_groups_container").css("display") != "none" && thisPopup.find("#wizard_network_groups").val() != null) {
 			    var networkGroupList = thisPopup.find("#wizard_network_groups").val().join(",");
@@ -1635,11 +1647,11 @@ function showInstancesTab(p_domainId, p_account) {
 			
 			var name = trim(thisPopup.find("#wizard_vm_name").val());
 			if (name != null && name.length > 0) 
-				moreCriteria.push("&displayname="+encodeURIComponent(name));	
+				moreCriteria.push("&displayname="+todb(name));	
 			
 			var group = trim(thisPopup.find("#wizard_vm_group").val());
 			if (group != null && group.length > 0) 
-				moreCriteria.push("&group="+encodeURIComponent(group));			
+				moreCriteria.push("&group="+todb(group));			
 										
 			if(thisPopup.find("#wizard_network_groups_container").css("display") != "none" && thisPopup.find("#wizard_network_groups").val() != null) {
 			    var networkGroupList = thisPopup.find("#wizard_network_groups").val().join(",");
@@ -1791,7 +1803,7 @@ function showInstancesTab(p_domainId, p_account) {
 		    var account = submenuContent.find("#advanced_search #adv_search_account").val();
 		    var moreCriteria = [];								
 			if (name!=null && trim(name).length > 0) 
-				moreCriteria.push("&name="+encodeURIComponent(trim(name)));				
+				moreCriteria.push("&name="+todb(name));				
 			if (state!=null && state.length > 0) 
 				moreCriteria.push("&state="+state);		
 		    if (zone!=null && zone.length > 0) 
@@ -2302,7 +2314,7 @@ function showInstancesTab(p_domainId, p_account) {
 		    var account = submenuContent.find("#advanced_search #adv_search_account").val();
 		    var moreCriteria = [];								
 			if (name!=null && trim(name).length > 0) 
-				moreCriteria.push("&name="+encodeURIComponent(trim(name)));				
+				moreCriteria.push("&name="+todb(name));				
 			if (state!=null && state.length > 0) 
 				moreCriteria.push("&state="+state);		
 		    if (zone!=null && zone.length > 0) 
@@ -2331,15 +2343,15 @@ function showInstancesTab(p_domainId, p_account) {
 			template.addClass("row_odd");
 		else 
 			template.addClass("row_even");			
-		template.data("routerId", json.id).data("routerName", noNull(json.name)).attr("id", "router"+json.id);		
-        template.find("#router_zonename").text(noNull(json.zonename));
-		template.find("#router_name").text(noNull(json.name));
-		template.find("#router_public_ip").text(noNull(json.publicip));			
-		template.find("#router_private_ip").text(noNull(json.privateip));
-		template.find("#router_guest_ip").text(noNull(json.guestipaddress));			
-		template.find("#router_host").text(noNull(json.hostname));			
-		template.find("#router_domain").text(noNull(json.networkdomain));
-		template.find("#router_owner").text(noNull(json.account));			
+		template.data("routerId", json.id).data("routerName", fromdb(json.name)).attr("id", "router"+json.id);		
+        template.find("#router_zonename").text(fromdb(json.zonename));
+		template.find("#router_name").text(fromdb(json.name));
+		template.find("#router_public_ip").text(fromdb(json.publicip));			
+		template.find("#router_private_ip").text(fromdb(json.privateip));
+		template.find("#router_guest_ip").text(fromdb(json.guestipaddress));			
+		template.find("#router_host").text(fromdb(json.hostname));			
+		template.find("#router_domain").text(fromdb(json.networkdomain));
+		template.find("#router_owner").text(fromdb(json.account));			
 		setDateField(json.created, template.find("#router_created"));
 					
 		// State
@@ -2400,7 +2412,7 @@ function showInstancesTab(p_domainId, p_account) {
 		    var domainId = submenuContent.find("#advanced_search #adv_search_domain").val();
 		    var moreCriteria = [];								
 			if (name!=null && trim(name).length > 0) 
-				moreCriteria.push("&name="+encodeURIComponent(trim(name)));				
+				moreCriteria.push("&name="+todb(name));				
 			if (state!=null && state.length > 0) 
 				moreCriteria.push("&state="+state);		
 		    if (zone!=null && zone.length > 0) 
@@ -2427,15 +2439,15 @@ function showInstancesTab(p_domainId, p_account) {
 			template.addClass("row_odd");
 		else 
 			template.addClass("row_even");   
-	    template.data("consoleId", json.id).data("consoleName", noNull(json.name)).attr("id", "console"+json.id);	
-		template.find("#console_type").text(noNull(json.systemvmtype));	  
-	    template.find("#console_name").text(noNull(json.name));	  
-		template.find("#console_zone").text(noNull(json.zonename));
-	    template.find("#console_active_session").text(noNull(json.activeviewersessions));	 
-	    template.find("#console_public_ip").text(noNull(json.publicip));		    
-	    template.find("#console_private_ip").text(noNull(json.privateip));   
-	    template.find("#console_host").text(noNull(json.hostname));		   
-	    template.find("#console_gateway").text(noNull(json.gateway)); 		    
+	    template.data("consoleId", json.id).data("consoleName", fromdb(json.name)).attr("id", "console"+json.id);	
+		template.find("#console_type").text(fromdb(json.systemvmtype));	  
+	    template.find("#console_name").text(fromdb(json.name));	  
+		template.find("#console_zone").text(fromdb(json.zonename));
+	    template.find("#console_active_session").text(fromdb(json.activeviewersessions));	 
+	    template.find("#console_public_ip").text(fromdb(json.publicip));		    
+	    template.find("#console_private_ip").text(fromdb(json.privateip));   
+	    template.find("#console_host").text(fromdb(json.hostname));		   
+	    template.find("#console_gateway").text(fromdb(json.gateway)); 		    
 	    setDateField(json.created, template.find("#console_created"));
 	   			
 		// State			
@@ -2531,7 +2543,7 @@ function showInstancesTab(p_domainId, p_account) {
 													// Failed
 													template.find(".adding_loading").hide();
 													template.find("#volume_body").show();
-													$("#dialog_alert").html("<p>" + sanitizeXSS(result.jobresult) + "</p>").dialog("open");
+													$("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");
 												}
 											}
 										},
@@ -2576,7 +2588,7 @@ function showInstancesTab(p_domainId, p_account) {
 						template.find(".adding_loading").show();
 						template.find("#volume_body").hide();
 						$.ajax({
-						       data: createURL("command=createTemplate&volumeId="+volumeId+"&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password+"&response=json"),
+						       data: createURL("command=createTemplate&volumeId="+volumeId+"&name="+todb(name)+"&displayText="+todb(desc)+"&osTypeId="+osType+"&isPublic="+isPublic+"&passwordEnabled="+password+"&response=json"),
 							dataType: "json",
 							success: function(json) {
 								$("body").everyTime(

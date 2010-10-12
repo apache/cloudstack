@@ -22,8 +22,7 @@ package com.cloud.agent.api;
  * This currently assumes that the secondary storage are mounted on the XenServer.  
  */
 public class DeleteSnapshotBackupCommand extends SnapshotCommand {
-    private String childUUID;
-    
+
     protected DeleteSnapshotBackupCommand() {
         
     }
@@ -59,18 +58,8 @@ public class DeleteSnapshotBackupCommand extends SnapshotCommand {
                                        Long   accountId,
                                        Long   volumeId,
                                        String backupUUID, 
-                                       String backupName,
-                                       String childUUID) 
+                                       String backupName) 
     {
         super(primaryStoragePoolNameLabel, secondaryStoragePoolURL, backupUUID, backupName, dcId, accountId, volumeId);
-        this.childUUID = childUUID;
     }
-
-    /**
-     * @return the childUUID
-     */
-    public String getChildUUID() {
-        return childUUID;
-    }
-
 }

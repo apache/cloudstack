@@ -22,11 +22,13 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd.Manager;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
+import com.cloud.user.User;
 import com.cloud.user.UserContext;
 
 @Implementation(method="deleteUser", manager=Manager.ManagementServer, description="Deletes a user account")
@@ -81,7 +83,8 @@ public class DeleteUserCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "deleting user: " + getId();
+        User user = ApiDBUtils.findUserById(getId());
+        return "User " + user.getUsername() + " (id: " + user.getId() + ") and accountId = " + user.getAccountId();
     }
 
 	@Override @SuppressWarnings("unchecked")

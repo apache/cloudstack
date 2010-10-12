@@ -769,7 +769,7 @@ public class DownloadManagerImpl implements DownloadManager {
         s_logger.info("createtmplt.sh found in " + createTmpltScr);
 
         List<Processor> processors = new ArrayList<Processor>();
-        _processors = new Adapters<Processor>("processors", processors);
+       
         Processor processor = new VhdProcessor();
         
         processor.configure("VHD Processor", params);
@@ -787,6 +787,7 @@ public class DownloadManagerImpl implements DownloadManager {
         processor.configure("VMDK Processor", params);
         processors.add(processor);
         
+        _processors = new Adapters<Processor>("processors", processors);
         // Add more processors here.
         threadPool = Executors.newFixedThreadPool(numInstallThreads);
         return true;
@@ -853,7 +854,7 @@ public class DownloadManagerImpl implements DownloadManager {
     	
     	Script command = new Script("/bin/bash", s_logger);
 		command.add("-c");
-    	command.add("service httpd stop ");
+    	command.add("if [ -d /etc/apache2 ] ; then service apache2 stop; else service httpd stop; fi ");
     	String result = command.execute();
     	if (result != null) {
     		s_logger.warn("Error in stopping httpd service err=" + result );
@@ -883,7 +884,7 @@ public class DownloadManagerImpl implements DownloadManager {
     	
     	command = new Script("/bin/bash", s_logger);
 		command.add("-c");
-    	command.add("service httpd start ");
+    	command.add("if [ -d /etc/apache2 ] ; then service apache2 start; else service httpd start; fi ");
     	result = command.execute();
     	if (result != null) {
     		s_logger.warn("Error in starting httpd service err=" + result );

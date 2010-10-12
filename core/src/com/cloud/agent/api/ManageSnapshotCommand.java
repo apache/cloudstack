@@ -38,19 +38,21 @@ public class ManageSnapshotCommand extends Command {
 
     public ManageSnapshotCommand() {}
 
-    public ManageSnapshotCommand(String commandSwitch, long snapshotId, String path, String snapshotName, String vmName) {
-        _commandSwitch = commandSwitch;
-        if (commandSwitch.equals(ManageSnapshotCommand.CREATE_SNAPSHOT)) {
-            _volumePath = path;
-        }
-        else if (commandSwitch.equals(ManageSnapshotCommand.DESTROY_SNAPSHOT)) {
-            _snapshotPath = path;
-        }
+    public ManageSnapshotCommand(long snapshotId, String volumePath, String preSnapshotPath ,String snapshotName, String vmName) {
+        _commandSwitch = ManageSnapshotCommand.CREATE_SNAPSHOT;
+        _volumePath = volumePath;
+        _snapshotPath = preSnapshotPath;
         _snapshotName = snapshotName;
         _snapshotId = snapshotId;
         _vmName = vmName;
     }
 
+    public ManageSnapshotCommand(long snapshotId, String snapshotPath) {
+        _commandSwitch = ManageSnapshotCommand.DESTROY_SNAPSHOT;
+        _snapshotPath = snapshotPath;
+    }
+    
+    
     @Override
     public boolean executeInSequence() {
         return false;

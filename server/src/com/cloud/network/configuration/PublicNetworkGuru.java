@@ -7,6 +7,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -28,7 +29,6 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
 
@@ -59,11 +59,13 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
             return null;
         }
         
-        if (nic != null) {
-            throw new CloudRuntimeException("Unsupported nic settings");
+        if (nic == null) {
+            nic = new NicProfile(ReservationStrategy.Create, null, null, null, null);
+        } else {
+            nic.setStrategy(ReservationStrategy.Create);
         }
-
-        return new NicProfile(ReservationStrategy.Create, null, null, null, null);
+        
+        return nic;
     }
 
     @Override
@@ -71,8 +73,10 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         if (ch.getReservationId() != null) {
             return ch.getReservationId();
         }
+        
+        DataCenter dc = dest.getDataCenter();
             
-        long dcId = dest.getDataCenter().getId();
+        long dcId = dc.getId();
         
         String[] macs = _dcDao.getNextAvailableMacAddressPair(dcId);
 
@@ -90,6 +94,8 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         ch.setMacAddress(macs[1]);
         ch.setFormat(AddressFormat.Ip4);
         ch.setReservationId(Long.toString(vlan.getId()));
+        ch.setDns1(dc.getDns1());
+        ch.setDns2(dc.getDns2());
         
         return Long.toString(vlan.getId());
     }

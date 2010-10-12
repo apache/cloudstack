@@ -2,6 +2,7 @@
 <%
 long milliseconds = new Date().getTime();
 %>
+<script type="text/javascript" src="scripts/cloud.core.templates.js?t=<%=milliseconds%>"></script>
 	
 <div class="submenu_links">		
     <div class="submenu_links_on" id="submenu_template">Template</div>
@@ -255,7 +256,15 @@ long milliseconds = new Date().getTime();
 					<label for="add_template_os_type">OS Type:</label>
 					<select class="select" name="add_template_os_type" id="add_template_os_type">
 					</select>
-				</li>	
+				</li>
+				<li>
+					<label for="add_template_hypervisor">Hypervisor:</label>
+					<select class="select" name="add_template_hypervisor" id="add_template_hypervisor">						
+						<option value='XenServer'>Citrix XenServer</option>
+						<option value='KVM'>KVM</option>
+						<option value='VmWare'>VMware ESX</option>
+					</select>
+				</li>
 				<li>
 					<label for="add_template_format">Format:</label>
 					<select class="select" name="add_template_format" id="add_template_format">
@@ -579,6 +588,14 @@ long milliseconds = new Date().getTime();
 					<select class="select" name="add_iso_bootable" id="add_iso_bootable">
 						<option value="true">Yes</option>
 						<option value="false">No</option>
+					</select>
+				</li>
+				<li>
+					<label for="add_iso_hypervisor">Hypervisor:</label>
+					<select class="select" name="add_iso_hypervisor" id="add_iso_hypervisor">
+						<option value='VmWare'>VMware ESX</option>
+						<option value='XenServer'>Citrix XenServer</option>
+						<option value='KVM'>KVM</option>
 					</select>
 				</li>
 				<li>

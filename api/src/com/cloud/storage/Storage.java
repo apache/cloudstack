@@ -23,7 +23,7 @@ public class Storage {
         RAW(false, false, false),
         VHD(true, true, true),
         ISO(false, false, false),
-        VMDK(true, true, true, "vmw.tar");
+        OVA(true, true, true, "ova");
         
         private final boolean thinProvisioned;
         private final boolean supportSparse;
@@ -77,6 +77,11 @@ public class Storage {
         ufs,
         hfs,
         hfsp
+    }
+    
+    public static enum TemplateType {
+    	SYSTEM,
+    	BUILTIN
     }
     
     public static enum StoragePoolType {

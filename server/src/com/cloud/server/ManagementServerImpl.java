@@ -91,6 +91,7 @@ import com.cloud.api.commands.ListEventsCmd;
 import com.cloud.api.commands.ListGuestOsCategoriesCmd;
 import com.cloud.api.commands.ListGuestOsCmd;
 import com.cloud.api.commands.ListHostsCmd;
+import com.cloud.api.commands.ListHypervisorsCmd;
 import com.cloud.api.commands.ListIsosCmd;
 import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
 import com.cloud.api.commands.ListLoadBalancerRulesCmd;
@@ -132,6 +133,7 @@ import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateTemplatePermissionsCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.api.commands.UpdateVMGroupCmd;
+import com.cloud.api.commands.UploadCustomCertificateCmd;
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
@@ -142,6 +144,8 @@ import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.async.executor.ExtractJobResultObject;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.certificate.dao.CertificateDao;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
@@ -184,7 +188,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.FirewallRuleVO;
 import com.cloud.network.IPAddressVO;
@@ -265,8 +269,6 @@ import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.DateUtil;
-import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -375,6 +377,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final InstanceGroupVMMapDao _groupVMMapDao;
     private final UploadMonitor _uploadMonitor;
     private final UploadDao _uploadDao;
+    private final CertificateDao _certDao;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -451,7 +454,7 @@ public class ManagementServerImpl implements ManagementServer {
         _vmGroupDao = locator.getDao(InstanceGroupDao.class);
         _groupVMMapDao = locator.getDao(InstanceGroupVMMapDao.class);
         _uploadDao = locator.getDao(UploadDao.class);
-
+        _certDao = locator.getDao(CertificateDao.class);
         _configs = _configDao.getConfiguration();
         _userStatsDao = locator.getDao(UserStatisticsDao.class);
         _vmInstanceDao = locator.getDao(VMInstanceDao.class);
@@ -506,9 +509,6 @@ public class ManagementServerImpl implements ManagementServer {
 		if ("true".equalsIgnoreCase(enabled)) {
 			_networkGroupsEnabled = true;
 		}
- 		
-		String hypervisorType = _configDao.getValue("hypervisor.type");
-        _isHypervisorSnapshotCapable  = hypervisorType.equals(Hypervisor.Type.XenServer.name());
     }
 
     protected Map<String, String> getConfigs() {
@@ -1510,7 +1510,7 @@ public class ManagementServerImpl implements ManagementServer {
             InsufficientStorageCapacityException, PermissionDeniedException, ExecutionException, StorageUnavailableException, ConcurrentOperationException {
 
     	EventUtils.saveStartedEvent(userId, accountId, EventTypes.EVENT_VM_CREATE, "Deploying Vm", startEventId);
-        
+
         AccountVO account = _accountDao.findById(accountId);
         DataCenterVO dc = _dcDao.findById(dataCenterId);
         ServiceOfferingVO offering = _offeringsDao.findById(serviceOfferingId);
@@ -1597,7 +1597,7 @@ public class ManagementServerImpl implements ManagementServer {
             } else {
             	if (offering.getGuestIpType() == NetworkOffering.GuestIpType.Virtualized) {
             		try {
-            			externalIp = _networkMgr.assignSourceNatIpAddress(account, dc, domain, offering, startEventId);
+            			externalIp = _networkMgr.assignSourceNatIpAddress(account, dc, domain, offering, startEventId, template.getHypervisorType());
             		} catch (ResourceAllocationException rae) {
             			throw rae;
             		}
@@ -1607,33 +1607,33 @@ public class ManagementServerImpl implements ManagementServer {
             		}
 
             		if (s_logger.isDebugEnabled()) {
-            			s_logger.debug("Source Nat acquired: " + externalIp);
-            		}
+                        s_logger.debug("Source Nat acquired: " + externalIp);
+                    }
 
-            		try {
-            			created = _vmMgr.createVirtualMachine(vmId, userId, account, dc, offering, template, diskOffering, displayName, userData, a, startEventId, size);
-            		} catch (ResourceAllocationException rae) {
-            			throw rae;
-            		}
-            	} else {
-            		try {
-            			created = _vmMgr.createDirectlyAttachedVM(vmId, userId, account, dc, offering, template, diskOffering, displayName, userData, a, networkGroupVOs, startEventId, size);
-            		} catch (ResourceAllocationException rae) {
-            			throw rae;
-            		}
-            	}
+                    try {
+                        created = _vmMgr.createVirtualMachine(vmId, userId, account, dc, offering, template, diskOffering, displayName, userData, a, startEventId, size);
+                    } catch (ResourceAllocationException rae) {
+                        throw rae;
+                    }
+                } else {
+                    try {
+                        created = _vmMgr.createDirectlyAttachedVM(vmId, userId, account, dc, offering, template, diskOffering, displayName, userData, a, networkGroupVOs, startEventId, size);
+                    } catch (ResourceAllocationException rae) {
+                        throw rae;
+                    }
+                }
             }
 
             //assign vm to the group
             try{
-            	if (group != null) {
-            	boolean addToGroup = _vmMgr.addInstanceToGroup(Long.valueOf(vmId), group);
-            	if (!addToGroup) {
-            		throw new InternalErrorException("Unable to assing Vm to the group " + group);
-            	}
+                if (group != null) {
+                boolean addToGroup = _vmMgr.addInstanceToGroup(Long.valueOf(vmId), group);
+                if (!addToGroup) {
+                    throw new InternalErrorException("Unable to assing Vm to the group " + group);
+                }
                 }
             } catch (Exception ex) {
-            	throw new InternalErrorException("Unable to assing Vm to the group " + group);
+                throw new InternalErrorException("Unable to assing Vm to the group " + group);
             }
             
             
@@ -1651,34 +1651,52 @@ public class ManagementServerImpl implements ManagementServer {
             String storageUnavailableExceptionMsg = "";
             String concurrentOperationExceptionMsg = "";
             UserVmVO started = null;
-            if (isIso) {
-                String isoPath = _storageMgr.getAbsoluteIsoPath(templateId, dataCenterId);
-                try {
-                    started = _vmMgr.startVirtualMachine(userId, created.getId(), password, isoPath, startEventId);
-                } catch (ExecutionException e) {
-                    executionExceptionFlag = true;
-                    executionExceptionMsg = e.getMessage();
-                } catch (StorageUnavailableException e) {
-                    storageUnavailableExceptionFlag = true;
-                    storageUnavailableExceptionMsg = e.getMessage();
-                } catch (ConcurrentOperationException e) {
-                    concurrentOperationExceptionFlag = true;
-                    concurrentOperationExceptionMsg = e.getMessage();
-                }
-            } else {
-                try {
-                    started = _vmMgr.startVirtualMachine(userId, created.getId(), password, null, startEventId);
-                } catch (ExecutionException e) {
-                    executionExceptionFlag = true;
-                    executionExceptionMsg = e.getMessage();
-                } catch (StorageUnavailableException e) {
-                    storageUnavailableExceptionFlag = true;
-                    storageUnavailableExceptionMsg = e.getMessage();
-                } catch (ConcurrentOperationException e) {
-                    concurrentOperationExceptionFlag = true;
-                    concurrentOperationExceptionMsg = e.getMessage();
-                }
 
+            if (isIso)
+            {
+                Pair<String, String> isoPath = _storageMgr.getAbsoluteIsoPath(templateId, dataCenterId);
+                assert(isoPath != null);
+                try
+                {
+                    started = _vmMgr.startVirtualMachine(userId, created.getId(), password, isoPath.first(), startEventId);
+                }
+                catch (ExecutionException e)
+                {
+                    executionExceptionFlag = true;
+                    executionExceptionMsg = e.getMessage();
+                }
+                catch (StorageUnavailableException e)
+                {
+                    storageUnavailableExceptionFlag = true;
+                    storageUnavailableExceptionMsg = e.getMessage();
+                }
+                catch (ConcurrentOperationException e)
+                {
+                    concurrentOperationExceptionFlag = true;
+                    concurrentOperationExceptionMsg = e.getMessage();
+                }
+            }
+            else
+            {
+                try
+                {
+                    started = _vmMgr.startVirtualMachine(userId, created.getId(), password, null, startEventId);
+                }
+                catch (ExecutionException e)
+                {
+                    executionExceptionFlag = true;
+                    executionExceptionMsg = e.getMessage();
+                }
+                catch (StorageUnavailableException e)
+                {
+                        storageUnavailableExceptionFlag = true;
+                        storageUnavailableExceptionMsg = e.getMessage();
+                }
+                catch (ConcurrentOperationException e)
+                {
+                        concurrentOperationExceptionFlag = true;
+                        concurrentOperationExceptionMsg = e.getMessage();
+                }
             }
 
             if (started == null) {
@@ -1701,9 +1719,9 @@ public class ManagementServerImpl implements ManagementServer {
                 } else if(executionExceptionFlag){
                     throw new ExecutionException(executionExceptionMsg);
                 } else if (storageUnavailableExceptionFlag){
-                	throw new StorageUnavailableException(storageUnavailableExceptionMsg);
+                    throw new StorageUnavailableException(storageUnavailableExceptionMsg);
                 }else if (concurrentOperationExceptionFlag){
-                	throw new ConcurrentOperationException(concurrentOperationExceptionMsg);
+                    throw new ConcurrentOperationException(concurrentOperationExceptionMsg);
                 }
                 else{
                     throw new InternalErrorException("Unable to start the VM " + created.getId() + "-" + created.getName());
@@ -1717,10 +1735,10 @@ public class ManagementServerImpl implements ManagementServer {
                 }
 
                 try {
-					_configMgr.associateIpAddressListToAccount(userId, accountId, dc.getId(),null);															
-				} catch (InsufficientAddressCapacityException e) {
-					s_logger.debug("Unable to assign public IP address pool: " +e.getMessage());					
-				}
+                    _configMgr.associateIpAddressListToAccount(userId, accountId, dc.getId(),null);                                                         
+                } catch (InsufficientAddressCapacityException e) {
+                    s_logger.debug("Unable to assign public IP address pool: " +e.getMessage());                    
+                }
             }
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("VM started: " + started.getId() + "-" + started.getName());
@@ -1869,10 +1887,7 @@ public class ManagementServerImpl implements ManagementServer {
         	}
         }
 
-        // FIXME:  this really needs to be invoked when the job is scheduled by the framework, so commands need a callback for
-        //         specifying event details that they are tracking...
-        long eventId = EventUtils.saveScheduledEvent(userId, accountId, EventTypes.EVENT_VM_CREATE, "deploying Vm");
-
+        Long eventId = cmd.getStartEventId();
         try {
             return deployVirtualMachineImpl(userId, accountId, dataCenterId, serviceOfferingId, templateId, diskOfferingId, domain, password, displayName, group, userData, networkGroups, eventId, size);
         } catch (ResourceAllocationException e) {
@@ -3098,7 +3113,8 @@ public class ManagementServerImpl implements ManagementServer {
             accountId = account.getId();
         }
 
-        return listTemplates(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), accountId, cmd.getPageSizeVal().intValue(), cmd.getStartIndex(), cmd.getZoneId());
+        HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
+        return listTemplates(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), accountId, cmd.getPageSizeVal().intValue(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType);
     }
 
     @Override
@@ -3128,10 +3144,11 @@ public class ManagementServerImpl implements ManagementServer {
             accountId = account.getId();
         }
 
-        return listTemplates(cmd.getId(), cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, accountId, cmd.getPageSizeVal().intValue(), cmd.getStartIndex(), cmd.getZoneId());
+        HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
+        return listTemplates(cmd.getId(), cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, accountId, cmd.getPageSizeVal().intValue(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType);
     }
 
-    private List<VMTemplateVO> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long accountId, Integer pageSize, Long startIndex, Long zoneId) throws InvalidParameterValueException {
+    private List<VMTemplateVO> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long accountId, Integer pageSize, Long startIndex, Long zoneId, HypervisorType hyperType) throws InvalidParameterValueException {
         VMTemplateVO template = null;
     	if (templateId != null) {
     		template = _templateDao.findById(templateId);
@@ -3160,7 +3177,7 @@ public class ManagementServerImpl implements ManagementServer {
         List<VMTemplateVO> templates = new ArrayList<VMTemplateVO>();
         
         if (template == null) {
-    		templates = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, bootable, account, domain, pageSize, startIndex, zoneId);
+    		templates = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, bootable, account, domain, pageSize, startIndex, zoneId, hyperType);
     	} else {
     		templates = new ArrayList<VMTemplateVO>();
     		templates.add(template);
@@ -3595,8 +3612,7 @@ public class ManagementServerImpl implements ManagementServer {
         	SearchBuilder<InstanceGroupVMMapVO> vmSearch = _groupVMMapDao.createSearchBuilder();
         	vmSearch.and("instanceId", vmSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
             sb.join("vmSearch", vmSearch, sb.entity().getId(), vmSearch.entity().getInstanceId(), JoinBuilder.JoinType.LEFTOUTER);
-        }
-        else if (groupId != null) {
+        } else if (groupId != null) {
         	SearchBuilder<InstanceGroupVMMapVO> groupSearch = _groupVMMapDao.createSearchBuilder();
         	groupSearch.and("groupId", groupSearch.entity().getGroupId(), SearchCriteria.Op.EQ);
             sb.join("groupSearch", groupSearch, sb.entity().getId(), groupSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
@@ -3607,8 +3623,7 @@ public class ManagementServerImpl implements ManagementServer {
         
         if (groupId != null && (Long)groupId == -1){
         	sc.setJoinParameters("vmSearch", "instanceId", (Object)null);
-        }
-        else if (groupId != null ) {
+        } else if (groupId != null ) {
         	sc.setJoinParameters("groupSearch", "groupId", groupId);
         }
 
@@ -4605,7 +4620,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<GuestOSVO> listGuestOSByCriteria(ListGuestOsCmd cmd) {
-        Filter searchFilter = new Filter(GuestOSVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(GuestOSVO.class, "displayName", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         Long id = cmd.getId();
         Long osCategoryId = cmd.getOsCategoryId();
 
@@ -5056,17 +5071,12 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public SnapshotVO createTemplateSnapshot(Long userId, long volumeId) {
-        return _vmMgr.createTemplateSnapshot(userId, volumeId);
-    }
-
-    @Override
     public boolean destroyTemplateSnapshot(Long userId, long snapshotId) {
         return _vmMgr.destroyTemplateSnapshot(userId, snapshotId);
     }
 
     @Override
-    public List<SnapshotVO> listSnapshots(ListSnapshotsCmd cmd) throws InvalidParameterValueException {
+    public List<SnapshotVO> listSnapshots(ListSnapshotsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Long volumeId = cmd.getVolumeId();
 
         // Verify parameters
@@ -5083,8 +5093,14 @@ public class ManagementServerImpl implements ManagementServer {
         String accountName = cmd.getAccountName();
         Long accountId = null;
         if ((account == null) || isAdmin(account.getType())) {
-            if(account != null && account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)
-                accountId = account.getId();
+            if (domainId != null) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Unable to list templates for domain " + domainId + ", permission denied.");
+                }
+            } else if ((account != null) && (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
+                domainId = account.getDomainId();
+            }
+
             if (domainId != null && accountName != null) {
                 Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
                 if (userAccount != null) {
@@ -5138,19 +5154,6 @@ public class ManagementServerImpl implements ManagementServer {
         } else {
             // Show only MANUAL and RECURRING snapshot types
             sc.addAnd("snapshotType", SearchCriteria.Op.NEQ, Snapshot.SnapshotType.TEMPLATE.ordinal());
-        }
-
-        if (interval != null && volumeId != null) {
-            IntervalType intervalType =  DateUtil.IntervalType.getIntervalType(interval);
-            if(intervalType == null) {
-                throw new InvalidParameterValueException("Unsupported interval type " + intervalType);
-            }
-            SnapshotPolicyVO snapPolicy = _snapMgr.getPolicyForVolumeByInterval(volumeId, (short)intervalType.ordinal());
-            if (snapPolicy == null) {
-                s_logger.warn("Policy with interval "+ intervalType +" not assigned to volume: "+volumeId);
-                return new ArrayList<SnapshotVO>();
-            }
-            return _snapMgr.listSnapsforPolicy(snapPolicy.getId(), searchFilter);
         }
         
         return _snapshotDao.search(sc, searchFilter);
@@ -5465,20 +5468,36 @@ public class ManagementServerImpl implements ManagementServer {
                 s_logger.debug("Mismatched account id in job and user context, perform further securty check. job id: "
                 	+ jobId + ", job owner account: " + job.getAccountId() + ", accound id in current context: " + UserContext.current().getAccountId());
         	
-        	Account account = _accountDao.findById(UserContext.current().getAccountId());
-        	if(account == null || account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-	            if (s_logger.isDebugEnabled()) {
-	            	if(account == null)
-		                s_logger.debug("queryAsyncJobResult error: Permission denied, account no long exist for account id in context, job id: " + jobId
-		                	+ ", accountId  " + UserContext.current().getAccountId());
-	            	else
-	            		s_logger.debug("queryAsyncJobResult error: Permission denied, invalid ownership for job " + jobId + ", job account owner: "
-	            			+ job.getAccountId() + ", account id in context: " + UserContext.current().getAccountId());
-	            }
-	
-	            throw new PermissionDeniedException("Permission denied, invalid job ownership, job id: " + jobId);
+        	Account account = (Account)UserContext.current().getAccountObject();
+        	if (account != null) {
+        	    if (isAdmin(account.getType())) {
+        	        Account jobAccount = _accountDao.findById(job.getAccountId());
+        	        if (jobAccount == null) {
+        	            if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("queryAsyncJobResult error: Permission denied, account no long exist for account id in context, job id: " + jobId
+                                    + ", accountId  " + job.getAccountId());
+        	            }
+        	            throw new PermissionDeniedException("Permission denied, invalid job ownership, job id: " + jobId);
+        	        }
+
+        	        if (!_domainDao.isChildDomain(account.getDomainId(), jobAccount.getDomainId())) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("queryAsyncJobResult error: Permission denied, invalid ownership for job " + jobId + ", job account owner: "
+                                    + job.getAccountId() + " in domain: " + jobAccount.getDomainId() + ", account id in context: " + account.getId() +
+                                    " in domain: " + account.getDomainId());
+                        }
+                        throw new PermissionDeniedException("Permission denied, invalid job ownership, job id: " + jobId);
+        	        }
+        	    } else {
+        	        if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("queryAsyncJobResult error: Permission denied, invalid ownership for job " + jobId + ", job account owner: "
+                                + job.getAccountId() + ", account id in context: " + account.getId());
+        	        }
+                    throw new PermissionDeniedException("Permission denied, invalid job ownership, job id: " + jobId);
+        	    }
         	}
         }
+
         return _asyncMgr.queryAsyncJobResult(jobId);
     }
 
@@ -6660,7 +6679,6 @@ public class ManagementServerImpl implements ManagementServer {
         
         long userId = UserContext.current().getUserId();
         long accountId = volume.getAccountId();        
-        long eventId = EventUtils.saveScheduledEvent(userId, accountId, EventTypes.EVENT_VOLUME_UPLOAD, "Extraction job");
 
         String secondaryStorageURL = _storageMgr.getSecondaryStorageURL(zoneId); 
         StoragePoolVO srcPool = _poolDao.findById(volume.getPoolId());
@@ -6668,8 +6686,7 @@ public class ManagementServerImpl implements ManagementServer {
         List<HostVO> storageServers = _hostDao.listByTypeDataCenter(Host.Type.SecondaryStorage, zoneId);
         HostVO sserver = storageServers.get(0);
 
-// FIXME:  fix the saving of scheduled v. started events
-//        EventUtils.saveStartedEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_UPLOAD, "Starting upload of " +volume.getName()+ " to " +url, eventId);        
+        EventUtils.saveStartedEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_UPLOAD, "Starting upload of " +volume.getName()+ " to " +url, cmd.getStartEventId());        
         UploadVO uploadJob = _uploadMonitor.createNewUploadEntry(sserver.getId(), volumeId, UploadVO.Status.COPY_IN_PROGRESS, 0, Type.VOLUME, null, null, url);
         uploadJob = _uploadDao.createForUpdate(uploadJob.getId());
         
@@ -6677,9 +6694,8 @@ public class ManagementServerImpl implements ManagementServer {
         ExtractJobResultObject resultObj = new ExtractJobResultObject(volume.getAccountId(), volume.getName(), UploadVO.Status.COPY_IN_PROGRESS.toString(), 0, uploadJob.getId());
         _asyncMgr.updateAsyncJobAttachment(job.getId(), Type.VOLUME.toString(), volumeId);
         _asyncMgr.updateAsyncJobStatus(job.getId(), AsyncJobResult.STATUS_IN_PROGRESS, resultObj);
-        
-        
-     // Copy the volume from the source storage pool to secondary storage
+
+        // Copy the volume from the source storage pool to secondary storage
         CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(), volume.getPath(), srcPool, secondaryStorageURL, true);
         CopyVolumeAnswer cvAnswer = (CopyVolumeAnswer) _agentMgr.easySend(sourceHostId, cvCmd);
                 
@@ -6705,7 +6721,7 @@ public class ManagementServerImpl implements ManagementServer {
         uploadJob.setLastUpdated(new Date());
         _uploadDao.update(uploadJob.getId(), uploadJob);
         
-        _uploadMonitor.extractVolume(uploadJob, sserver, volume, url, zoneId, volumeLocalPath, eventId, job.getId(), _asyncMgr);
+        _uploadMonitor.extractVolume(uploadJob, sserver, volume, url, zoneId, volumeLocalPath, cmd.getStartEventId(), job.getId(), _asyncMgr);
     }
 
     @Override
@@ -6834,6 +6850,35 @@ public class ManagementServerImpl implements ManagementServer {
             version = fullVersion.substring(0,fullVersion.lastIndexOf("."));
         }
         return version;
+    }
+
+    @Override
+    public boolean uploadCertificate(UploadCustomCertificateCmd cmd) {
+        String certificatePath = cmd.getPath();
+    	boolean uploadStatus = _certDao.persistCustomCertToDb(certificatePath);
+
+    	if (uploadStatus) {
+    		//certficate uploaded to db successfully
+    		//send the certificate to the dom0
+    		
+    		//get a list of all hosts from host table
+    		List<HostVO> hosts = _hostDao.listAll();
+    		
+    		//find the console proxies, and send the command to them
+    		for(HostVO host : hosts) {
+    		}
+    	}
+    	
+    	return false;
+    }
+
+    @Override
+    public String[] getHypervisors(ListHypervisorsCmd cmd) {
+    	String hypers = _configDao.getValue(Config.HypervisorList.key());
+    	if (hypers == "" || hypers == null) {
+    		return null;
+    	}
+    	return hypers.split(",");
     }
 
 	private Long checkAccountPermissions(long targetAccountId, long targetDomainId, String targetDesc, long targetId) throws ServerApiException {

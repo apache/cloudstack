@@ -5,11 +5,28 @@ function afterLoadTemplateJSP() {
     var $detailsTab = $("#right_panel_content #tab_content_details");   
     
     //add button ***
+    /*
     var formatSelect = $("#dialog_add_template #add_template_format").empty();
 	if (getHypervisorType() == "kvm") 
 		formatSelect.append("<option value='QCOW2'>QCOW2</option>");
 	else if (getHypervisorType() == "xenserver") 
-		formatSelect.append("<option value='VHD'>VHD</option>");	    
+		formatSelect.append("<option value='VHD'>VHD</option>");
+	*/	
+	$("#dialog_add_template #add_template_hypervisor").bind("change", function(event) {	      
+	    var formatSelect = $("#dialog_add_template #add_template_format").empty();	     
+	    var selectedHypervisorType = $(this).val();
+	    
+	    if(selectedHypervisorType == "XenServer")
+	        formatSelect.append("<option value='VHD'>VHD</option>");	    
+	    else if(selectedHypervisorType == "VmWare")
+	        formatSelect.append("<option value='OVA'>OVA</option>");
+	    else if(selectedHypervisorType == "KVM")
+	        formatSelect.append("<option value='QCOW2'>QCOW2</option>");
+	        
+	    return false;
+	});		
+	$("#dialog_add_template #add_template_hypervisor").change();	
+			    
 		
 	if(isAdmin())
 	    $("#dialog_add_template #add_template_featured_container, #dialog_edit_template #edit_template_featured_container").show();
@@ -41,6 +58,7 @@ function afterLoadTemplateJSP() {
 				var password = thisDialog.find("#add_template_password").val();		
 				var isPublic = thisDialog.find("#add_template_public").val();	                    	
 				var osType = thisDialog.find("#add_template_os_type").val();
+				var hypervisor = thisDialog.find("#add_template_hypervisor").val();
 				
 				var moreCriteria = [];				
 				if(thisDialog.find("#add_template_featured_container").css("display")!="none") {				
@@ -51,7 +69,7 @@ function afterLoadTemplateJSP() {
 				var $midmenuItem1 = beforeAddingMidMenuItem() ;
 												
 				$.ajax({
-				    data: createURL("command=registerTemplate&name="+encodeURIComponent(name)+"&displayText="+encodeURIComponent(desc)+"&url="+encodeURIComponent(url)+"&zoneid="+zoneId+"&ispublic="+isPublic+moreCriteria.join("")+"&format="+format+"&passwordEnabled="+password+"&osTypeId="+osType+"&response=json"),
+				    data: createURL("command=registerTemplate&name="+todb(name)+"&displayText="+todb(desc)+"&url="+encodeURIComponent(url)+"&zoneid="+zoneId+"&ispublic="+isPublic+moreCriteria.join("")+"&format="+format+"&passwordEnabled="+password+"&osTypeId="+osType+"&hypervisor="+hypervisor+"&response=json"),
 					dataType: "json",
 					success: function(json) {	
 						var items = json.registertemplateresponse.template;				       
@@ -82,27 +100,8 @@ function afterLoadTemplateJSP() {
     
     //edit button ***
     var $readonlyFields  = $detailsTab.find("#name, #displaytext, #passwordenabled, #ispublic, #isfeatured, #ostypename");
-    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit, #ispublic_edit, #isfeatured_edit, #ostypename_edit"); 
-    $("#edit_button").bind("click", function(event){    
-        $readonlyFields.hide();
-        $editFields.show();  
-        $("#cancel_button, #save_button").show()
-        return false;
-    });    
-    $("#cancel_button").bind("click", function(event){    
-        $editFields.hide();
-        $readonlyFields.show();   
-        $("#save_button, #cancel_button").hide();       
-        return false;
-    });
-    $("#save_button").bind("click", function(event){        
-        doUpdateTemplate();     
-        $editFields.hide();      
-        $readonlyFields.show();       
-        $("#save_button, #cancel_button").hide();       
-        return false;
-    });
-    
+    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit, #ispublic_edit, #isfeatured_edit, #ostypename_edit");     
+    initializeEditFunction($readonlyFields, $editFields, doUpdateTemplate);      
     
     //populate dropdown ***   			
 	var addTemplateZoneField = $("#dialog_add_template #add_template_zone");    	
@@ -115,7 +114,7 @@ function afterLoadTemplateJSP() {
 		    var zones = json.listzonesresponse.zone;	 			     			    	
 		    if (zones != null && zones.length > 0) {
 		        for (var i = 0; i < zones.length; i++) {
-			        addTemplateZoneField.append("<option value='" + zones[i].id + "'>" + sanitizeXSS(zones[i].name) + "</option>"); 			        
+			        addTemplateZoneField.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 			        
 			        g_zoneIds.push(zones[i].id);
 			        g_zoneNames.push(zones[i].name);			       
 		        }
@@ -150,7 +149,7 @@ function afterLoadTemplateJSP() {
 	        if(items != null && items.length > 0 ) {
 	            var serviceOfferingField = $("#dialog_create_vm_from_template #service_offering").empty();
 	            for(var i = 0; i < items.length; i++)		        
-	                serviceOfferingField.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>");
+	                serviceOfferingField.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
 	        }		        
 	    }
 	});		
@@ -164,13 +163,16 @@ function afterLoadTemplateJSP() {
 	            var diskOfferingField = $("#dialog_create_vm_from_template #disk_offering").empty();
 	            diskOfferingField.append("<option value=''>No disk offering</option>");
 	            for(var i = 0; i < items.length; i++)		        
-	                diskOfferingField.append("<option value='" + items[i].id + "'>" + sanitizeXSS(items[i].name) + "</option>");
+	                diskOfferingField.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
 	        }		  
 	        
 	    }
 	});		
 	
 	//initialize dialog box ***
+	initDialog("dialog_confirmation_delete_template_all_zones");
+    initDialog("dialog_confirmation_delete_template");
+    
 	activateDialog($("#dialog_add_template").dialog({ 
 		width:450,
 		autoOpen: false,
@@ -210,7 +212,7 @@ function templateToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function templateAfterDetailsTabAction(jsonObj) {
-    var $midmenuItem1 = $("#midmenuItem_"+jsonObj.id);
+    var $midmenuItem1 = $("#"+templateGetMidmenuId(jsonObj));
     $midmenuItem1.data("jsonObj", jsonObj);   
     templateToMidmenu(jsonObj, $midmenuItem1);
     templateJsonToDetailsTab(jsonObj);       
@@ -262,6 +264,7 @@ function templateJsonToDetailsTab(jsonObj) {
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
+    var noAvailableActions = true;
     
     // action Edit, Copy, Create VM 			
 	if ((isUser() && jsonObj.ispublic == "true" && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.id==DomRTemplateId || jsonObj.isready == "false") {
@@ -271,7 +274,8 @@ function templateJsonToDetailsTab(jsonObj) {
     else {
         $("#edit_button").show();
         buildActionLinkForDetailsTab("Copy Template", templateActionMap, $actionMenu, templateListAPIMap);			
-        buildActionLinkForDetailsTab("Create VM", templateActionMap, $actionMenu, templateListAPIMap);			
+        buildActionLinkForDetailsTab("Create VM", templateActionMap, $actionMenu, templateListAPIMap);	
+        noAvailableActions = false;		
     }
 	
 	// action Delete 			
@@ -279,8 +283,14 @@ function templateJsonToDetailsTab(jsonObj) {
 		//template.find("#template_delete_container").hide();
     }
     else {
-        buildActionLinkForDetailsTab("Delete Template", templateActionMap, $actionMenu, templateListAPIMap);	
+        buildActionLinkForDetailsTab("Delete Template", templateActionMap, $actionMenu, templateListAPIMap);
+        noAvailableActions = false;	
     }
+    
+    // no available actions 
+	if(noAvailableActions == true) {
+	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
+	}	  
 }
 
 //setIconByOsType() is shared by template page and ISO page
@@ -457,14 +467,13 @@ function doDeleteTemplate($actionLink, listAPIMap, $detailsTab) {
 	if (zoneId != null) 
 		moreCriteria.push("&zoneid="+zoneId);	
 	
-	var htmlMsg; 
+	var $dialog1;
 	if(jsonObj.crossZones == "true")
-	    htmlMsg = "<p>Template <b>"+name+"</b> is used by all zones. Please confirm you want to delete it from all zones.</p>";
+	    $dialog1 = $("#dialog_confirmation_delete_template_all_zones");
 	else
-	    htmlMsg = "<p>Please confirm you want to delete template <b>"+name+"</b>.</p>";
-					
-	$("#dialog_confirmation")
-	.html(htmlMsg)
+	    $dialog1 = $("#dialog_confirmation_delete_template");	
+	
+	$dialog1		
 	.dialog('option', 'buttons', { 					
 		"Confirm": function() { 			
 			$(this).dialog("close");			
@@ -482,7 +491,7 @@ function populateZoneFieldExcludeSourceZone(zoneField, excludeZoneId) {
     if (g_zoneIds != null && g_zoneIds.length > 0) {
         for (var i = 0; i < g_zoneIds.length; i++) {
             if(g_zoneIds[i]	!= excludeZoneId)			            
-	            zoneField.append("<option value='" + g_zoneIds[i] + "'>" + sanitizeXSS(g_zoneNames[i]) + "</option>"); 			        			       
+	            zoneField.append("<option value='" + g_zoneIds[i] + "'>" + fromdb(g_zoneNames[i]) + "</option>"); 			        			       
         }
     }			    
 }
@@ -545,10 +554,10 @@ function doCreateVMFromTemplate($actionLink, listAPIMap, $detailsTab) {
 	        
 	        var array1 = [];      
 	        var name = trim(thisDialog.find("#name").val());	
-	        array1.push("&displayname="+encodeURIComponent(name));
+	        array1.push("&displayname="+todb(name));
 	        	
 	        var group = trim(thisDialog.find("#group").val());	
-	        array1.push("&group="+encodeURIComponent(group));
+	        array1.push("&group="+todb(group));
 	        	
 	        var serviceOfferingId = thisDialog.find("#service_offering").val();		
 	        array1.push("&serviceOfferingId="+serviceOfferingId);
