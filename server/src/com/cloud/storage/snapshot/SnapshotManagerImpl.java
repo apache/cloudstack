@@ -387,12 +387,19 @@ public class SnapshotManagerImpl implements SnapshotManager {
             if ((answer != null) && answer.getResult()) {
                 // The snapshot was successfully created
                 if (preSnapshotPath != null && preSnapshotPath == answer.getSnapshotPath()) {
-                    // empty snapshot
-                    s_logger.debug("CreateSnapshot: this is empty snapshot, remove it ");
-                    // delete from the snapshots table
-                    _snapshotDao.delete(id);
-                    throw new CloudRuntimeException(
+
+                    if( preSnapshotVO.getRemoved() != null ) {
+                        String backupPath = preSnapshotVO.getBackupSnapshotId();
+                        _snapshotDao.delete(preId);
+                        createdSnapshot = updateDBOnCreateDuplicate(id, answer.getSnapshotPath(), backupPath);  
+                    } else {
+                        // empty snapshot
+                        s_logger.debug("CreateSnapshot: this is empty snapshot, remove it ");
+                        // delete from the snapshots table
+                        _snapshotDao.delete(id);
+                        throw new CloudRuntimeException(
                             " There is no change since last snapshot, please use last snapshot " + preSnapshotPath);
+                    }
 
                 } else {
                     createdSnapshot = updateDBOnCreate(id, answer.getSnapshotPath());
@@ -431,6 +438,17 @@ public class SnapshotManagerImpl implements SnapshotManager {
         Long volumeId = createdSnapshot.getVolumeId();
         createdSnapshot.setPath(snapshotPath);
         createdSnapshot.setStatus(Snapshot.Status.CreatedOnPrimary);
+        createdSnapshot.setPrevSnapshotId(_snapshotDao.getLastSnapshot(volumeId, id));
+        _snapshotDao.update(id, createdSnapshot);
+        return createdSnapshot;
+    }
+    
+    private SnapshotVO updateDBOnCreateDuplicate(Long id, String snapshotPath, String backUpSnapshotPath) {
+        SnapshotVO createdSnapshot = _snapshotDao.findById(id);
+        Long volumeId = createdSnapshot.getVolumeId();
+        createdSnapshot.setPath(snapshotPath);
+        createdSnapshot.setBackupSnapshotId(backUpSnapshotPath);
+        createdSnapshot.setStatus(Snapshot.Status.BackedUp);
         createdSnapshot.setPrevSnapshotId(_snapshotDao.getLastSnapshot(volumeId, id));
         _snapshotDao.update(id, createdSnapshot);
         return createdSnapshot;
